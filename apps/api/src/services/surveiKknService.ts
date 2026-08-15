@@ -154,22 +154,119 @@ export function validateData(data: ParsedWorkbookData): string[] {
 export async function importToDatabase(
   data: ParsedWorkbookData,
   userId: string,
-  filename: string
+  filename: string,
+  surveyType: string = "BASELINE"
 ): Promise<{ summary: Record<string, number>; importLogId: string }> {
   const summary: Record<string, number> = {};
+  const isEndline = surveyType.toUpperCase() === "ENDLINE";
 
   // Buat import log awal dengan status PENDING
   const importLog = await prisma.importLog.create({
     data: {
       userId,
-      filename,
+      filename: isEndline ? `[ENDLINE] ${filename}` : filename,
       status: ImportStatus.PENDING,
     },
   });
 
   try {
     await prisma.$transaction(async (tx) => {
-      // 1. Upsert tabel induk: SurveiKelurahan
+      const kelurahanIds = data.kelurahan.map((r) => r.kelurahan_id as number);
+
+      if (isEndline) {
+        // 1. Induk: EndlineSurveiKelurahan
+        for (const row of data.kelurahan) {
+          await tx.endlineSurveiKelurahan.upsert({
+            where: { kelurahanId: row.kelurahan_id as number },
+            update: {
+              namaKelurahan: row.nama_kelurahan as string,
+              kecamatan: (row.kecamatan as string) || null,
+              tanggalSurvei: row.tanggal_survei ? new Date(row.tanggal_survei as string) : null,
+              enumerator: (row.enumerator as string) || null,
+              catatanData: (row.catatan_data as string) || null,
+            },
+            create: {
+              kelurahanId: row.kelurahan_id as number,
+              namaKelurahan: row.nama_kelurahan as string,
+              kecamatan: (row.kecamatan as string) || null,
+              tanggalSurvei: row.tanggal_survei ? new Date(row.tanggal_survei as string) : null,
+              enumerator: (row.enumerator as string) || null,
+              catatanData: (row.catatan_data as string) || null,
+            },
+          });
+        }
+        summary["kelurahan"] = data.kelurahan.length;
+
+        // pemilahan_sampah
+        await tx.endlinePemilahanSampah.deleteMany({ where: { kelurahanId: { in: kelurahanIds } } });
+        for (const row of data.pemilahan_sampah) {
+          await tx.endlinePemilahanSampah.create({
+            data: {
+              kelurahanId: row.kelurahan_id as number,
+              jumlahRumahMemilah: (row.jumlah_rumah_memilah as number) || null,
+              totalJumlahRumahDiRw: (row.total_jumlah_rumah_di_rw as number) || null,
+              persentasePemilahan: row.persentase_pemilahan != null ? (row.persentase_pemilahan as number) : null,
+              tingkatPemilahan: (row.tingkat_pemilahan as string) || null,
+              catatan: (row.catatan as string) || null,
+            },
+          });
+        }
+        summary["pemilahan_sampah"] = data.pemilahan_sampah.length;
+
+        // volume_sampah
+        await tx.endlineVolumeSampah.deleteMany({ where: { kelurahanId: { in: kelurahanIds } } });
+        for (const row of data.volume_sampah) {
+          await tx.endlineVolumeSampah.create({
+            data: {
+              kelurahanId: row.kelurahan_id as number,
+              organikKgPerHari: row.organik_kg_per_hari != null ? (row.organik_kg_per_hari as number) : null,
+              anorganikKgPerHari: row.anorganik_kg_per_hari != null ? (row.anorganik_kg_per_hari as number) : null,
+              residuKgPerHari: row.residu_kg_per_hari != null ? (row.residu_kg_per_hari as number) : null,
+              totalVolumeKgPerHari: row.total_volume_kg_per_hari != null ? (row.total_volume_kg_per_hari as number) : null,
+              catatan: (row.catatan as string) || null,
+            },
+          });
+        }
+        summary["volume_sampah"] = data.volume_sampah.length;
+
+        // bank_sampah_pengolahan
+        const bankSampahRows = normalizeRows("bank_sampah_pengolahan", data.bank_sampah_pengolahan);
+        await tx.endlineBankSampahPengolahan.deleteMany({ where: { kelurahanId: { in: kelurahanIds } } });
+        for (const row of bankSampahRows) {
+          await tx.endlineBankSampahPengolahan.create({
+            data: {
+              kelurahanId: row.kelurahan_id as number,
+              bankSampahAktif: (row.bank_sampah_aktif as number) || null,
+              bankSampahTidakAktif: (row.bank_sampah_tidak_aktif as number) || null,
+              bioporiLoseda: row.biopori_loseda as boolean | null,
+              ecobrickKerajinanDaurUlang: row.ecobrick_kerajinan_daur_ulang as boolean | null,
+              buruanSae: row.buruan_sae as boolean | null,
+              pengepulMitraDaurUlang: row.pengepul_mitra_daur_ulang as boolean | null,
+              digitalisasiData: row.digitalisasi_data as boolean | null,
+              jumlahUnitKomposter: row.jumlah_unit_komposter != null ? String(row.jumlah_unit_komposter) : null,
+              jumlahTitikMaggotBsf: row.jumlah_titik_maggot_bsf != null ? String(row.jumlah_titik_maggot_bsf) : null,
+              aktivitasLainnyaKeterangan: (row.catatan as string) || (row.aktivitas_lainnya_keterangan as string) || null,
+            },
+          });
+        }
+        summary["bank_sampah_pengolahan"] = bankSampahRows.length;
+
+        // catatan_kesimpulan
+        await tx.endlineCatatanKesimpulan.deleteMany({ where: { kelurahanId: { in: kelurahanIds } } });
+        for (const row of data.catatan_kesimpulan) {
+          await tx.endlineCatatanKesimpulan.create({
+            data: {
+              kelurahanId: row.kelurahan_id as number,
+              prioritasIntervensi: (row.prioritas_intervensi as string) || null,
+              catatanTambahanRisikoSosial: (row.catatan_tambahan_risiko_sosial as string) || null,
+            },
+          });
+        }
+        summary["catatan_kesimpulan"] = data.catatan_kesimpulan.length;
+        return;
+      }
+
+      // 1. Upsert tabel induk: SurveiKelurahan (Baseline)
       for (const row of data.kelurahan) {
         await tx.surveiKelurahan.upsert({
           where: { kelurahanId: row.kelurahan_id as number },
@@ -203,7 +300,7 @@ export async function importToDatabase(
       summary["kelurahan"] = data.kelurahan.length;
 
       // 2. Child tables: hapus data lama, insert baru
-      const kelurahanIds = data.kelurahan.map((r) => r.kelurahan_id as number);
+      // (kelurahanIds sudah dideklarasikan di atas)
 
       // karakteristik_wilayah (1:1)
       const karakteristikRows = normalizeRows("karakteristik_wilayah", data.karakteristik_wilayah);

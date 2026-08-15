@@ -198,6 +198,9 @@ const SheetDetailModal: React.FC<{
 // ────────────────────────────────────────────────
 
 const ImportSurveiKkn: React.FC = () => {
+  // Tab Mode: BASELINE vs ENDLINE
+  const [activeSurveyType, setActiveSurveyType] = useState<"BASELINE" | "ENDLINE">("BASELINE");
+
   // File & Upload State
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -307,8 +310,8 @@ const ImportSurveiKkn: React.FC = () => {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
-    const f = e.dataTransfer.files?.[0];
-    if (f) handleFileSelect(f);
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile) handleFileSelect(droppedFile);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -316,7 +319,10 @@ const ImportSurveiKkn: React.FC = () => {
     setIsDragging(true);
   };
 
-  const handleDragLeave = () => setIsDragging(false);
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
 
   const handleClearFile = () => {
     setFile(null);
@@ -341,7 +347,7 @@ const ImportSurveiKkn: React.FC = () => {
     formData.append("file", file);
 
     try {
-      const res = await api.post("/survei-kkn/import", formData, {
+      const res = await api.post(`/survei-kkn/import?type=${activeSurveyType}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total) {
@@ -409,11 +415,11 @@ const ImportSurveiKkn: React.FC = () => {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
-      {/* ═══════ CARD 1: Header ═══════ */}
+      {/* ═══════ CARD 1: Header & Tab Switcher ═══════ */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
-            <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary">
+            <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[#009966]/10 text-[#009966]">
               <FileSpreadsheet size={22} />
             </span>
             Impor Data Survei KKN
@@ -424,10 +430,44 @@ const ImportSurveiKkn: React.FC = () => {
         </div>
         <button
           onClick={handleDownloadTemplate}
-          className="btn-polish inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl text-sm shadow-sm hover:border-primary hover:text-primary"
+          className="btn-polish inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl text-sm shadow-sm hover:border-[#009966] hover:text-[#009966]"
         >
           <Download size={16} />
           Unduh Template
+        </button>
+      </div>
+
+      {/* Tab Switcher: Tab 1 Baseline vs Tab 2 Endline */}
+      <div className="flex bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200 w-fit gap-1 shadow-xs">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveSurveyType("BASELINE");
+            handleClearFile();
+          }}
+          className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 cursor-pointer ${
+            activeSurveyType === "BASELINE"
+              ? "bg-white text-blue-700 shadow-sm border border-slate-200"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+          <span>Tab 1: Impor Survei Baseline (Awal)</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveSurveyType("ENDLINE");
+            handleClearFile();
+          }}
+          className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 cursor-pointer ${
+            activeSurveyType === "ENDLINE"
+              ? "bg-white text-emerald-700 shadow-sm border border-slate-200"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+          <span>Tab 2: Impor Survei Endline (Akhir)</span>
         </button>
       </div>
 

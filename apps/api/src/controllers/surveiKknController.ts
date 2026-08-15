@@ -44,11 +44,12 @@ export class SurveiKknController {
       // 3. Import ke database
       const userId = req.user!.userId;
       const filename = req.file.originalname;
-      const result = await surveiKknService.importToDatabase(data, userId, filename);
+      const surveyType = ((req.query.type || req.query.tipe) as string) || "BASELINE";
+      const result = await surveiKknService.importToDatabase(data, userId, filename, surveyType);
 
       res.status(200).json({
         success: true,
-        message: "Impor data survei KKN berhasil",
+        message: `Impor data survei KKN (${surveyType}) berhasil`,
         data: {
           importLogId: result.importLogId,
           summary: result.summary,

@@ -69,22 +69,28 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/monitoring":
         return ["Peta Wilayah"];
       case "/monitoring-absen":
-        return ["Presensi Mahasiswa KKN"];
+        return ["Program KKN", "Presensi Mahasiswa KKN"];
+      case "/pemantauan-rekapitulasi":
       case "/monitoring-pemilahan":
       case "/monitoring-aktivitas":
-        return ["Monitoring Pemilahan"];
+        return ["Tata Kelola Sampah", "Pemantauan & Rekapitulasi"];
+      case "/superUser/data-survei-baseline":
+      case "/data-survei-baseline":
       case "/superUser/data-survei-kkn":
       case "/data-survei-kkn":
-        return ["Data Survei KKN"];
+        return ["Program KKN", "Data Survei Baseline"];
+      case "/superUser/data-survei-endline":
+      case "/data-survei-endline":
+        return ["Program KKN", "Data Survei Endline"];
       case "/superUser/import-survei-kkn":
       case "/import-survei-kkn":
-        return ["Impor Survei KKN"];
+        return ["Program KKN", "Impor Survei KKN"];
       case "/evaluasi-dampak-kkn":
       case "/evaluasi-dampak":
-        return ["Evaluasi Dampak KKN"];
+        return ["Program KKN", "Evaluasi Dampak KKN"];
       case "/pengangkutan-residu":
       case "/manajemen-pengangkutan":
-        return ["Pengangkutan Residu"];
+        return ["Tata Kelola Sampah", "Pengumpulan & Pengangkutan"];
       case "/master-pengguna":
       case "/master-data-pengguna":
       case "/manajemen-pengguna":
@@ -116,28 +122,29 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       }
       case "/master-data/manajemen-tempat-sampah":
       case "/manajemen-tempat-sampah":
-        return ["Master Data", "Manajemen Tempat Sampah"];
+        return ["Tata Kelola Sampah", "Manajemen Tempat Sampah"];
       case "/master-data/rule-engine":
       case "/master-rule-engine":
       case "/rule-engine":
-        return ["Master Data", "Rule Engine"];
+      case "/pengaturan/rule-engine":
+        return ["Pengaturan Sistem", "Rule Engine & Bobot"];
       case "/master-data/provinsi":
       case "/master-provinsi":
-        return ["Master Data", "Provinsi"];
+        return ["Data Wilayah", "Provinsi"];
       case "/master-data/kota-kabupaten":
       case "/master-kota-kabupaten":
       case "/master-kabupaten":
-        return ["Master Data", "Kota, Kabupaten"];
+        return ["Data Wilayah", "Kota, Kabupaten"];
       case "/master-data/kecamatan":
       case "/master-data/kecematan":
       case "/master-kecamatan":
-        return ["Master Data", "Kecamatan"];
+        return ["Data Wilayah", "Kecamatan"];
       case "/master-data/kelurahan":
       case "/master-kelurahan":
-        return ["Master Data", "Kelurahan"];
+        return ["Data Wilayah", "Kelurahan"];
       case "/master-data/rukun-warga":
       case "/master-rw":
-        return ["Master Data", "Rukun Warga"];
+        return ["Data Wilayah", "Rukun Warga"];
       case "/manajemen-lokasi":
       case "/peta":
         return ["Manajemen Lokasi"];
@@ -146,29 +153,28 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/role-permissions":
         return ["Hak Akses & Peran"];
       case "/manajemen-ekosistem-kkn":
-        return ["Ekosistem Program KKN"];
+        return ["Program KKN", "Ekosistem Dampingan KKN"];
       case "/kkn-portal":
         return ["Portal KKN"];
       case "/residu-portal":
         return ["Portal Petugas Pemilah"];
       case "/pengelolaan-sampah":
       case "/pemanfaatan-sampah":
-        return ["Pengelolaan Sampah"];
+        return ["Tata Kelola Sampah", "Pengolahan & Inovasi"];
       case "/hasil-pemanfaatan":
-        return ["Hasil Pemanfaatan"];
+        return ["Tata Kelola Sampah", "Pemanfaatan & Hasil"];
       case "/setor-sampah":
       case "/setor":
-        return ["Setoran Sampah Warga"];
+        return ["Tata Kelola Sampah", "Pemilahan Sampah"];
       case "/jadwal-kegiatan":
         return ["Jadwal Kegiatan"];
       case "/input-manual":
         return ["Input Setoran Manual"];
       case "/penyetoran-sampah":
-      case "/setor-sampah":
-        return ["Penyetoran Sampah"];
+        return ["Tata Kelola Sampah", "Pemilahan Sampah"];
       case "/rekapitulasi-setoran":
       case "/rekap-setoran":
-        return ["Rekapitulasi Setoran"];
+        return ["Tata Kelola Sampah", "Pemantauan & Rekapitulasi"];
       case "/dataset/hasil-klasifikasi":
       case "/master-dataset-klasifikasi":
       case "/dataset-klasifikasi":

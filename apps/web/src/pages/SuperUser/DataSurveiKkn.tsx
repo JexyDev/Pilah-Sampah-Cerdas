@@ -1,14 +1,27 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Search, Loader2, ChevronLeft, ChevronRight, Eye, Edit3 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
 import EditSurveiModal from "./EditSurveiModal";
 
-export default function DataSurveiKkn() {
+interface DataSurveiKknProps {
+  type?: "BASELINE" | "ENDLINE";
+}
+
+export default function DataSurveiKkn({ type: propType }: DataSurveiKknProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { user } = useAuthStore();
+
+  const isEndline =
+    propType === "ENDLINE" ||
+    location.pathname.includes("endline") ||
+    searchParams.get("type")?.toUpperCase() === "ENDLINE" ||
+    searchParams.get("tipe")?.toUpperCase() === "ENDLINE";
+
   const [surveys, setSurveys] = useState<any[]>([]);
   const [meta, setMeta] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,12 +35,29 @@ export default function DataSurveiKkn() {
   const fetchSurveys = async (page: number, search: string = "") => {
     setIsLoading(true);
     try {
-      const response = await api.get(`/survei-kkn`, {
-        params: { page, limit, search },
-      });
-      if (response.data.success) {
-        setSurveys(response.data.data);
-        setMeta(response.data.meta);
+      if (isEndline) {
+        const response = await api.get(`/evaluasi-dampak/endline`);
+        if (response.data.success && Array.isArray(response.data.data)) {
+          let data = response.data.data;
+          if (search) {
+            data = data.filter((d: any) =>
+              (d.namaKelurahan || "").toLowerCase().includes(search.toLowerCase())
+            );
+          }
+          const total = data.length;
+          const totalPages = Math.ceil(total / limit) || 1;
+          const paginated = data.slice((page - 1) * limit, page * limit);
+          setSurveys(paginated);
+          setMeta({ page, limit, total, totalPages });
+        }
+      } else {
+        const response = await api.get(`/survei-kkn`, {
+          params: { page, limit, search },
+        });
+        if (response.data.success) {
+          setSurveys(response.data.data);
+          setMeta(response.data.meta);
+        }
       }
     } catch (error: any) {
       console.error(error);
@@ -44,13 +74,13 @@ export default function DataSurveiKkn() {
       fetchSurveys(1, searchQuery);
     }, 500);
     return () => clearTimeout(handler);
-  }, [searchQuery]);
+  }, [searchQuery, isEndline]);
 
   useEffect(() => {
     if (!searchQuery) {
       fetchSurveys(currentPage, "");
     }
-  }, [currentPage]);
+  }, [currentPage, isEndline]);
 
   const handleOpenDetail = (kelurahanId: number) => {
     navigate(`/superUser/data-survei-kkn/${kelurahanId}`);
@@ -91,8 +121,25 @@ export default function DataSurveiKkn() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Tabel Data Survei KKN</h1>
-          <p className="text-slate-500 mt-2 font-medium">Manajemen data hasil survei pemilahan sampah dan profil kelurahan oleh mahasiswa KKN.</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+              {isEndline ? "Data Survei Endline" : "Data Survei Baseline"}
+            </h1>
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-black border ${
+                isEndline
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : "bg-blue-50 text-blue-700 border-blue-200"
+              }`}
+            >
+              {isEndline ? "🟢 Survei Akhir (Endline)" : "🔵 Survei Awal (Baseline)"}
+            </span>
+          </div>
+          <p className="text-slate-500 mt-2 font-medium">
+            {isEndline
+              ? "Manajemen data hasil survei evaluasi akhir (Endline) pemilahan sampah dan dampak program pasca-kegiatan KKN."
+              : "Manajemen data hasil survei kondisi awal (Baseline) pemilahan sampah dan profil kelurahan oleh mahasiswa KKN."}
+          </p>
         </div>
 
         {/* Search & Actions */}
