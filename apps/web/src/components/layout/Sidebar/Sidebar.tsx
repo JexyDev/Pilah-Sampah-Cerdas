@@ -18,16 +18,12 @@ import {
   Database,
   Trophy,
   Info,
-  Bell,
   GraduationCap,
   ChevronDown,
   Clock,
   Tags,
   Recycle,
-  Radio,
   ShieldCheck,
-  QrCode,
-  Sliders,
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -416,9 +412,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       header: "ANALITIK PERILAKU",
       items: [
         {
-          to: "/peringkat",
+          type: "group",
+          label: "Leaderboard & Peringkat",
           icon: Trophy,
-          label: "Peringkat Warga",
           allowed: [
             "DEVELOPER",
             "SUPER_USER",
@@ -432,25 +428,76 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "PEMIMPIN",
             "WARGA",
           ] as UserRole[],
+          children: [
+            {
+              to: "/peringkat",
+              label: "Peringkat Warga",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "MAHASISWA_KKN",
+                "PANITIA_TASKFORCE",
+                "PEMIMPIN",
+                "WARGA",
+              ] as UserRole[],
+            },
+          ],
         },
       ],
     },
     {
       header: "ADMINISTRASI SISTEM",
       items: [
-        { to: "/log-aktivitas", icon: FileText, label: "Monitoring Log Aktivitas", allowed: ["DEVELOPER"] as UserRole[] },
-        { to: "/pengguna-online", icon: Radio, label: "Monitoring Pengguna Online", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[] },
-        { to: "/superUser/discrepancies", icon: ShieldCheck, label: "Review Diskrepansi AI", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[] },
-        { to: "/superUser/master-qr", icon: QrCode, label: "Master Batch QR Code", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
+        {
+          type: "group",
+          label: "Audit & Log Sistem",
+          icon: FileText,
+          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[],
+          children: [
+            { to: "/log-aktivitas", label: "Monitoring Log Aktivitas", allowed: ["DEVELOPER"] as UserRole[] },
+            { to: "/pengguna-online", label: "Monitoring Pengguna Online", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[] },
+          ],
+        },
+        {
+          type: "group",
+          label: "Verifikasi & QR Batch",
+          icon: ShieldCheck,
+          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[],
+          children: [
+            { to: "/superUser/discrepancies", label: "Review Diskrepansi AI", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[] },
+            { to: "/superUser/master-qr", label: "Master Batch QR Code", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
+          ],
+        },
       ],
     },
     {
       header: "PENGATURAN SISTEM",
       items: [
-        { to: "/master-data/rule-engine", icon: Sliders, label: "Rule Engine & Bobot", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[] },
-        { to: "/notifikasi", icon: Bell, label: "Notifikasi", allowed: ALL_ROLES },
-        { to: "/pengaturan", icon: Settings, label: "Pengaturan", allowed: ALL_ROLES },
-        { to: "/informasi", icon: Info, label: "Panduan & Informasi", allowed: ALL_ROLES },
+        {
+          type: "group",
+          label: "Konfigurasi & Notifikasi",
+          icon: Settings,
+          allowed: ALL_ROLES,
+          children: [
+            { to: "/master-data/rule-engine", label: "Rule Engine & Bobot", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[] },
+            { to: "/notifikasi", label: "Notifikasi", allowed: ALL_ROLES },
+            { to: "/pengaturan", label: "Pengaturan Akun & Sistem", allowed: ALL_ROLES },
+          ],
+        },
+        {
+          type: "group",
+          label: "Pusat Panduan",
+          icon: Info,
+          allowed: ALL_ROLES,
+          children: [
+            { to: "/informasi", label: "Panduan & Informasi", allowed: ALL_ROLES },
+          ],
+        },
       ],
     },
   ];
