@@ -300,6 +300,7 @@ const ChangeMapView: React.FC<{
 const MonitoringAbsen: React.FC = () => {
   const { user } = useAuthStore();
   const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
+  const isDeveloper = userRole === "DEVELOPER";
   const isDpl = userRole === "DPL" || userRole === "DOSEN_PEMBIMBING";
 
   const [schedules, setSchedules] = useState<ScheduleActivity[]>([]);
@@ -313,7 +314,9 @@ const MonitoringAbsen: React.FC = () => {
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
   const [attendanceFilterTab, setAttendanceFilterTab] = useState<"ALL" | "ACTIVE" | "COMPLETED" | "NOT_ATTENDED">("ALL");
   const [studentSearch, setStudentSearch] = useState<string>("");
-  const [panelViewMode, setPanelViewMode] = useState<"split" | "expanded" | "fullscreen" | "minimized">("split");
+  const [panelViewMode, setPanelViewMode] = useState<"split" | "expanded" | "fullscreen" | "minimized">(
+    isDeveloper ? "split" : "fullscreen"
+  );
   const [displayMode, setDisplayMode] = useState<"table" | "cards">("table");
   const [isLegendOpen, setIsLegendOpen] = useState<boolean>(true);
 
@@ -1028,59 +1031,61 @@ const MonitoringAbsen: React.FC = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black text-slate-400 uppercase hidden sm:inline">Mode Tampilan:</span>
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-600">
-              <button
-                type="button"
-                onClick={() => setPanelViewMode("split")}
-                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  panelViewMode === "split" ? "bg-white text-emerald-800 shadow-xs font-black" : "hover:text-slate-900"
-                }`}
-                title="Tampilan Kombinasi Peta di Atas & Tabel di Bawah"
-              >
-                <span>⛶</span>
-                <span className="hidden md:inline">Mode Split</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPanelViewMode("fullscreen")}
-                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  panelViewMode === "fullscreen" ? "bg-emerald-600 text-white shadow-xs font-black" : "hover:text-slate-900"
-                }`}
-                title="Buka Tabel Rekap Presensi Layar Penuh (100% Lega)"
-              >
-                <Maximize2 size={12} />
-                <span>Tabel Layar Penuh</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPanelViewMode("expanded")}
-                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  panelViewMode === "expanded" ? "bg-white text-emerald-800 shadow-xs font-black" : "hover:text-slate-900"
-                }`}
-                title="Perluas Panel Rekap (Tabel 75% Layar)"
-              >
-                <span>⤡</span>
-                <span className="hidden md:inline">Perluas Tabel</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPanelViewMode("minimized")}
-                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  panelViewMode === "minimized" ? "bg-white text-slate-900 shadow-xs font-black" : "hover:text-slate-900"
-                }`}
-                title="Fokus Peta Penuh (Minimalkan Tabel)"
-              >
-                <Layers size={12} />
-                <span className="hidden md:inline">Peta Penuh</span>
-              </button>
+          {isDeveloper && (
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black text-slate-400 uppercase hidden sm:inline">Mode Tampilan:</span>
+              <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-600">
+                <button
+                  type="button"
+                  onClick={() => setPanelViewMode("split")}
+                  className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                    panelViewMode === "split" ? "bg-white text-emerald-800 shadow-xs font-black" : "hover:text-slate-900"
+                  }`}
+                  title="Tampilan Kombinasi Peta di Atas & Tabel di Bawah"
+                >
+                  <span>⛶</span>
+                  <span className="hidden md:inline">Mode Split</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPanelViewMode("fullscreen")}
+                  className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                    panelViewMode === "fullscreen" ? "bg-emerald-600 text-white shadow-xs font-black" : "hover:text-slate-900"
+                  }`}
+                  title="Buka Tabel Rekap Presensi Layar Penuh (100% Lega)"
+                >
+                  <Maximize2 size={12} />
+                  <span>Tabel Layar Penuh</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPanelViewMode("expanded")}
+                  className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                    panelViewMode === "expanded" ? "bg-white text-emerald-800 shadow-xs font-black" : "hover:text-slate-900"
+                  }`}
+                  title="Perluas Panel Rekap (Tabel 75% Layar)"
+                >
+                  <span>⤡</span>
+                  <span className="hidden md:inline">Perluas Tabel</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPanelViewMode("minimized")}
+                  className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                    panelViewMode === "minimized" ? "bg-white text-slate-900 shadow-xs font-black" : "hover:text-slate-900"
+                  }`}
+                  title="Fokus Peta Penuh (Minimalkan Tabel)"
+                >
+                  <Layers size={12} />
+                  <span className="hidden md:inline">Peta Penuh</span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Area Peta Leaflet (Tampil saat bukan mode Layar Penuh) */}
-        {panelViewMode !== "fullscreen" && (
+        {/* Area Peta Leaflet (Khusus Role DEVELOPER, Tampil saat bukan mode Layar Penuh) */}
+        {isDeveloper && panelViewMode !== "fullscreen" && (
           <div
             className={`relative z-10 transition-all duration-300 ${
               panelViewMode === "minimized"

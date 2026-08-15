@@ -204,7 +204,7 @@ Backend bertanggung jawab untuk:
 
 -   Menghitung apakah mahasiswa berada di dalam zona yang ditentukan.
 
--   Menghitung durasi keberadaan mahasiswa di zona.
+-   Menghitung durasi jam kerja aktif presensi mahasiswa di zona penugasan.
 
 -   Melakukan validasi kehadiran.
 

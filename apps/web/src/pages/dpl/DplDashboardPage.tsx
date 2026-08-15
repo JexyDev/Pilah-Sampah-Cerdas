@@ -143,10 +143,13 @@ import {
   type ApprovalHistoryLog,
 } from "../../services/dplService";
 
-type TabType = "OVERVIEW" | "KELOMPOK" | "MAHASISWA" | "APPROVAL" | "MAP" | "INOVASI";
+type TabType = "OVERVIEW" | "KELOMPOK" | "MAHASISWA" | "APPROVAL" | "INOVASI" | "MAP";
 
 export const DplDashboardPage: React.FC = () => {
   const { user } = useAuthStore();
+  const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
+  const isDeveloper = userRole === "DEVELOPER";
+
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get("tab")?.toUpperCase() || "OVERVIEW";
 
@@ -154,11 +157,12 @@ export const DplDashboardPage: React.FC = () => {
   const activeTab: TabType = useMemo(() => {
     if (rawTab === "STUDENTS") return "MAHASISWA";
     if (rawTab === "APPROVALS") return "APPROVAL";
-    if (["OVERVIEW", "KELOMPOK", "MAHASISWA", "APPROVAL", "MAP", "INOVASI"].includes(rawTab)) {
+    if (rawTab === "MAP" && !isDeveloper) return "OVERVIEW";
+    if (["OVERVIEW", "KELOMPOK", "MAHASISWA", "APPROVAL", "INOVASI", "MAP"].includes(rawTab)) {
       return rawTab as TabType;
     }
     return "OVERVIEW";
-  }, [rawTab]);
+  }, [rawTab, isDeveloper]);
 
   const setActiveTab = (newTab: TabType) => {
     setSearchParams({ tab: newTab });
@@ -773,7 +777,7 @@ export const DplDashboardPage: React.FC = () => {
             { key: "KELOMPOK", label: "Kelompok Binaan", icon: Users },
             { key: "MAHASISWA", label: "Mahasiswa & Nilai", icon: GraduationCap },
             { key: "APPROVAL", label: "Validasi Izin", icon: FileCheck, badge: alerts?.pendingApprovalsCount },
-            { key: "MAP", label: "Peta Wilayah", icon: MapPin },
+            ...(isDeveloper ? [{ key: "MAP" as TabType, label: "Peta Wilayah (Dev)", icon: MapPin }] : []),
             { key: "INOVASI", label: "Inovasi & Hasil", icon: Sprout },
           ] as { key: TabType; label: string; icon: any; badge?: number }[]
         ).map((t) => {
@@ -1615,8 +1619,8 @@ export const DplDashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* VIEW 5: PETA SEBARAN */}
-      {activeTab === "MAP" && (
+      {/* VIEW 5: PETA SEBARAN (KHUSUS DEVELOPER) */}
+      {activeTab === "MAP" && isDeveloper && (
         <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
             <div>
