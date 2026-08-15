@@ -11,7 +11,7 @@ Mahasiswa **TIDAK PERLU** melakukan presensi (tap absen) secara manual.
 - **Hasil:** Jika durasi memenuhi syarat jam kerja (misal: minimal 2 jam), absen dinyatakan valid/diterima.
 
 ## 2. Fitur Edukasi & Aktivasi QR Code Warga
-Mahasiswa **TIDAK PERLU** melakukan scan QR code untuk di-assign ke diri mereka (status tong sampah tidak lagi ada `DIPEGANG_MAHASISWA`).
+Mahasiswa **TIDAK PERLU** melakukan scan QR code untuk di-assign ke diri mereka (status Tempat Sampah tidak lagi ada `DIPEGANG_MAHASISWA`).
 - **Pendaftaran Warga:** Warga melakukan registrasi akun secara mandiri (atau dibantu).
 - **Kunjungan Edukasi:** Mahasiswa datang ke rumah warga untuk mengecek pemahaman warga tentang cara aktivasi QR Code.
 - **Bantuan Aktivasi:** Jika warga belum paham, mahasiswa membantu warga melakukan proses aktivasi QR Code di HP warga (atau melalui sistem).
@@ -24,5 +24,5 @@ Mahasiswa **TIDAK PERLU** melakukan scan QR code untuk di-assign ke diri mereka 
 ---
 > **Catatan untuk Developer Mobile & Backend:**
 > - Hapus fitur scan QR Code awal oleh mahasiswa (pengubahan status ke `ASSIGNED_TO_PIC`).
-> - Hapus status `PENDING_APPROVAL` pada aktivasi tong.
+> - Hapus status `PENDING_APPROVAL` pada aktivasi Tempat Sampah.
 > - Pastikan endpoint absensi berbasis pengiriman stream koordinat (location tracking background/foreground) yang dikalkulasi durasinya oleh backend.

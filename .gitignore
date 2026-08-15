@@ -13,6 +13,7 @@ apps/web/dist/
 .gradle/
 *.bin
 *.lock
+*.tsbuildinfo
 
 # Environment & Secrets (NEVER COMMIT)
 .env

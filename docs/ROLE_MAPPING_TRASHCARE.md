@@ -731,12 +731,12 @@ erDiagram
 | `id_gelombang_qr` | String? (FK) | Batch QR asal |
 | `status` | Enum BinStatus | PRINTED → ASSIGNED_TO_PIC → PENDING_APPROVAL → ACTIVE_BOUND → INACTIVE / BROKEN |
 | `id_pengguna` | String? (FK) | Pemilik warga |
-| `bentuk` | String? | Bentuk wadah |
+| `bentuk` | String? | Bentuk Tempat Sampah |
 | `diameter` | Decimal(5,2)? | |
 | `lebar` | Decimal(5,2)? | |
 | `panjang` | Decimal(5,2)? | |
 | `tinggi` | Decimal(5,2)? | |
-| `tipe_wadah` | String? | Tipe |
+| `tipe_wadah` | String? | Tipe Tempat Sampah |
 | `id_mahasiswa_pendaftar` | String? (FK) | Mahasiswa pendaftar |
 | **Relasi** | → BinOwnership[], Violation[], BinResetRequest[], SetoranOtomatis[], DispatchTask[] | |
 
