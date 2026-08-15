@@ -286,7 +286,7 @@ export const AuditTrailList: React.FC = () => {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">
-              Log Aktivitas
+              Monitoring Log Aktivitas
             </h1>
             <p className="text-xs text-slate-500 font-semibold mt-0.5">
               Riwayat pencatatan seluruh perubahan data, transaksi, dan konfigurasi sistem secara <strong className="text-slate-600">permanen</strong> dan <strong className="text-slate-600">tidak dapat diubah</strong>.

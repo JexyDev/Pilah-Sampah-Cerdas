@@ -365,12 +365,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             { to: "/dataset/hasil-klasifikasi", label: "Hasil Klasifikasi" },
           ],
         },
-        {
-          to: "/pengguna-online",
-          icon: Radio,
-          label: "Pengguna Online",
-          allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER"] as UserRole[],
-        },
       ],
     },
     {
@@ -382,7 +376,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "ADMINISTRASI SISTEM",
       items: [
-        { to: "/log-aktivitas", icon: FileText, label: "Log Aktivitas", allowed: ["SUPER_USER", "DEVELOPER"] as UserRole[] },
+        { to: "/log-aktivitas", icon: FileText, label: "Monitoring Log Aktivitas", allowed: ["SUPER_USER", "DEVELOPER"] as UserRole[] },
+        { to: "/pengguna-online", icon: Radio, label: "Monitoring Pengguna Online", allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER"] as UserRole[] },
         { to: "/superUser/discrepancies", icon: ShieldCheck, label: "Review Diskrepansi AI", allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
         { to: "/superUser/master-qr", icon: QrCode, label: "Master Batch QR Code", allowed: ["SUPER_USER", "DEVELOPER"] as UserRole[] },
       ],

@@ -190,16 +190,19 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Notifikasi"];
       case "/pengaturan":
         return ["Pengaturan"];
-      case "/evaluasi-ai":
-      case "/superUser/discrepancies":
-        return ["Evaluasi Selisih AI"];
-      case "/superUser/configs":
-        return ["Konfigurasi Sistem"];
+      case "/pengguna-online":
+        return ["Administrasi Sistem", "Monitoring Pengguna Online"];
       case "/log-aktivitas":
       case "/superUser/audit":
-        return ["Log Aktivitas"];
+        return ["Administrasi Sistem", "Monitoring Log Aktivitas"];
+      case "/evaluasi-ai":
+      case "/superUser/discrepancies":
+        return ["Administrasi Sistem", "Review Diskrepansi AI"];
+      case "/superUser/configs":
+        return ["Pengaturan Sistem", "Konfigurasi Sistem"];
+      case "/superUser/master-qr":
       case "/superUser/qr-master":
-        return ["Master Kode QR"];
+        return ["Administrasi Sistem", "Master Batch QR Code"];
       case "/rw/approval":
         return ["Persetujuan Tempat Sampah"];
       case "/rw/fasilitas":

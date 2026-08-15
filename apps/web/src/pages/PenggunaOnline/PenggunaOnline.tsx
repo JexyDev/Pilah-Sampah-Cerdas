@@ -282,7 +282,7 @@ export const PenggunaOnline: React.FC = () => {
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                Pengguna Online
+                Monitoring Pengguna Online
               </h1>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-[#009966] border border-emerald-200">
                 <span className="w-2 h-2 rounded-full bg-[#009966] animate-ping" />
