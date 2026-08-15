@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../core/utils/safe_storage.dart';
 
@@ -14,8 +14,8 @@ import '../repositories/api_waste_log_repository.dart';
 import '../repositories/api_notification_repository.dart';
 import '../repositories/kkn_repository.dart';
 import '../repositories/api_kkn_repository.dart';
-import '../repositories/petugas_residu_repository.dart';
-import '../repositories/api_petugas_residu_repository.dart';
+import '../repositories/petugas_pemilahan_repository.dart';
+import '../repositories/api_petugas_pemilahan_repository.dart';
 
 final secureStorageProvider = Provider<SafeStorage>((ref) {
   return const SafeStorage();
@@ -63,9 +63,10 @@ final kknRepositoryProvider = Provider<KknRepository>((ref) {
   );
 });
 
-final petugasResiduRepositoryProvider = Provider<PetugasResiduRepository>((ref) {
-  return ApiPetugasResiduRepository(
+final petugasPemilahanRepositoryProvider = Provider<PetugasPemilahanRepository>((ref) {
+  return ApiPetugasPemilahanRepository(
     apiClient: ref.read(apiClientProvider),
   );
 });
+
 

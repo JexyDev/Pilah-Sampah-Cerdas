@@ -2,16 +2,16 @@ import '../models/bin_entity.dart';
 import '../models/ai_detection_entity.dart';
 import '../models/bin_reset_entity.dart';
 
-/// Interface repository tong sampah.
+/// Interface repository tempat sampah.
 /// Implementasi: ApiBinRepository (data layer).
 abstract class BinRepository {
-  /// Ambil tong sampah milik user/rumah tangga tertentu.
+  /// Ambil tempat sampah milik user/rumah tangga tertentu.
   Future<List<BinEntity>> getBinsByHousehold(String householdId);
 
-  /// Ambil semua data tong sampah untuk Peta Monitoring
+  /// Ambil semua data tempat sampah untuk Peta Monitoring
   Future<List<BinEntity>> getAllBins();
 
-  /// Ambil tong berdasarkan QR serial.
+  /// Ambil tempat sampah berdasarkan QR serial.
   Future<BinEntity?> getBinByQrSerial(String qrSerial);
 
   /// Deteksi AI — kirim foto sampah ke backend, return jenis + estimasi berat.
@@ -29,12 +29,13 @@ abstract class BinRepository {
     required WasteType detectedType,
     required double estimatedVolume,
     double? confidence,
+    String? evidencePhotoUrl,
     required String householdId,
     required double userLat,
     required double userLng,
   });
 
-  /// Aktivasi tong baru — scan pertama kali oleh warga (prd.md §4.1).
+  /// Aktivasi tempat sampah baru — scan pertama kali oleh warga (prd.md §4.1).
   Future<BinEntity> activateBin({
     required String qrSerial,
     required String userId,
@@ -43,7 +44,7 @@ abstract class BinRepository {
     double? longitude,
   });
 
-  /// Aktivasi beberapa tong sekaligus secara atomic
+  /// Aktivasi beberapa tempat sampah sekaligus secara atomic
   Future<List<BinEntity>> activateBinsBatch({
     required List<String> qrSerials,
     required String userId,
@@ -52,17 +53,18 @@ abstract class BinRepository {
     double? longitude,
   });
 
-  /// Ajukan pengosongan tong — FR (prd.md §3.1, sdd.md §7.1).
+  /// Ajukan pengosongan tempat sampah — FR (prd.md §3.1, sdd.md §7.1).
   Future<BinResetEntity> submitResetRequest({
     required String binId,
     required String userId,
     required String evidencePhotoPath,
+    String? wargaName,
   });
 
   /// Ambil active reset request dari local storage
   Future<BinResetEntity?> getActiveResetRequest(String userId);
 
-  /// Set kapasitas tong setelah aktivasi.
+  /// Set kapasitas tempat sampah setelah aktivasi.
   Future<void> measureBin({
     required String qrCode,
     required WasteType binType,
@@ -91,5 +93,7 @@ class BinException implements Exception {
   final String? message;
 
   @override
-  String toString() => 'BinException($code): $message';
+  String toString() => message != null && message!.isNotEmpty
+      ? message!
+      : 'Terjadi kendala pada data tempat sampah. Silakan coba beberapa saat lagi.';
 }

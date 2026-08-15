@@ -4,8 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_assets.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/utils/phone_formatter.dart';
+import '../../../core/utils/input_sanitizer.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../shared/widgets/otp_input_widget.dart';
+import '../../shared/widgets/password_strength_widget.dart';
 
 /// Layar Lupa Kata Sandi — 3-step berbasis OTP ke nomor telepon.
 ///
@@ -46,6 +49,37 @@ class _ForgotPasswordViewState
   bool _isToastVisible = false;
   bool _isErrorToast = true;
   Timer? _toastTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _phoneController.addListener(_onPhoneChanged);
+  }
+
+  void _onPhoneChanged() {
+    String text = _phoneController.text;
+    String clean = text.replaceAll(RegExp(r'[^\d]'), '');
+
+    bool changed = false;
+    if (clean.startsWith('0')) {
+      clean = clean.substring(1);
+      changed = true;
+    } else if (clean.startsWith('62')) {
+      clean = clean.substring(2);
+      changed = true;
+    }
+
+    if (changed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _phoneController.value = TextEditingValue(
+          text: clean,
+          selection: TextSelection.collapsed(offset: clean.length),
+        );
+      });
+    } else {
+      setState(() {});
+    }
+  }
 
   @override
   void dispose() {
@@ -98,30 +132,27 @@ class _ForgotPasswordViewState
   // ─── Normalise ────────────────────────────────────────────────────────────
 
   String _normalizePhone(String raw) {
-    String phone = raw.replaceAll(RegExp(r'[\s\-]'), '');
-    if (phone.startsWith('+62')) phone = '0${phone.substring(3)}';
-    if (phone.startsWith('62')) phone = '0${phone.substring(2)}';
-    if (phone.startsWith('8')) phone = '0$phone';
-    return phone;
+    return PhoneFormatter.prepareLoginPhoneInput(raw);
   }
 
   // ─── Step 1: Request OTP ──────────────────────────────────────────────────
 
   Future<void> _onRequestOtp() async {
     if (!_formKey1.currentState!.validate()) return;
-
-    final phone = _normalizePhone(_phoneController.text.trim());
+    
+    final phone = InputSanitizer.sanitize(_phoneController.text);
+    final normalizedPhone = _normalizePhone(phone);
     ref.read(authProvider.notifier).clearError();
 
     final bool ok = await ref
         .read(authProvider.notifier)
-        .requestOtp(phone: phone);
+        .requestOtp(phone: normalizedPhone);
 
     if (ok && mounted) {
       setState(() => _currentStep = 2);
       _startResendCountdown();
       _showToast(
-        'OTP telah dikirim ke ${_maskPhone(phone)}',
+        'OTP dikirim ke ${_maskPhone(phone)} (Gunakan Kode OTP Dev: 123456)',
         isError: false,
       );
     }
@@ -141,7 +172,7 @@ class _ForgotPasswordViewState
   // ─── Step 2: Verifikasi OTP ───────────────────────────────────────────────
 
   Future<void> _onVerifyOtp() async {
-    if (!_otpCompleted) {
+    if (!_otpCompleted || _otpValue.length < 6) {
       _showToast('Masukkan 6 digit kode OTP terlebih dahulu');
       return;
     }
@@ -154,7 +185,7 @@ class _ForgotPasswordViewState
     if (ok && mounted) {
       setState(() => _currentStep = 3);
     } else if (mounted) {
-      _showToast('OTP salah atau expired');
+      _showToast('Kode OTP salah atau kedaluwarsa');
     }
   }
 
@@ -163,27 +194,29 @@ class _ForgotPasswordViewState
   Future<void> _onResetPassword() async {
     if (!_formKey3.currentState!.validate()) return;
 
-    final phone = _normalizePhone(_phoneController.text.trim());
+    final phone = _normalizePhone(InputSanitizer.sanitize(_phoneController.text));
     final newPassword = _newPasswordController.text;
 
     ref.read(authProvider.notifier).clearError();
 
     // UI-only: Sementara kirim ke resetPassword dengan email = phone
     final bool ok = await ref.read(authProvider.notifier).resetPassword(
-          email: phone,
+          phone: phone,
           token: _otpValue,
           newPassword: newPassword,
         );
 
     if (ok && mounted) {
-      _showToast('Kata sandi berhasil diperbarui!', isError: false);
+      _showToast('Kata sandi berhasil diperbarui! Silakan masuk.', isError: false);
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) Navigator.of(context).pop();
       });
     } else if (mounted) {
       final authState = ref.read(authProvider);
       String errorText = 'Gagal menyetel ulang kata sandi.';
-      if (authState.errorCode == 'INVALID_TOKEN' ||
+      if (authState.errorCode == 'USER_NOT_FOUND') {
+        errorText = 'Nomor telepon tidak terdaftar di sistem.';
+      } else if (authState.errorCode == 'INVALID_TOKEN' ||
           authState.errorCode == 'OTP_INVALID') {
         errorText = 'Kode OTP salah atau sudah kedaluwarsa.';
       } else if (authState.errorCode == 'NETWORK_ERROR') {
@@ -330,7 +363,7 @@ class _ForgotPasswordViewState
                       const Opacity(
                         opacity: 0.6,
                         child: Text(
-                          '© 2026 TrashCare. All rights reserved.',
+                          '© 2026 Universitas Komputer Indonesia. All rights reserved.',
                           style: TextStyle(
                             fontSize: 10,
                             color: AppColors.textSecondary,
@@ -500,9 +533,13 @@ class _ForgotPasswordViewState
           ),
           const SizedBox(height: 24),
 
-          const Text(
-            'NOMOR TELEPON',
-            style: TextStyle(
+          Text(
+            _phoneController.text.isEmpty
+                ? 'NOMOR TELEPON ATAU NIM'
+                : (_phoneController.text.length >= 11 && _phoneController.text.length <= 13)
+                    ? 'NOMOR TELEPON'
+                    : 'NIM',
+            style: const TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
               color: AppColors.textSecondary,
@@ -512,25 +549,43 @@ class _ForgotPasswordViewState
           const SizedBox(height: 6),
           TextFormField(
             controller: _phoneController,
-            keyboardType: TextInputType.phone,
+            keyboardType: TextInputType.number,
             autocorrect: false,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _onRequestOtp(),
             inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9\+\-\s]')),
+              FilteringTextInputFormatter.digitsOnly,
+              PhonePrefixFormatter(),
             ],
-            decoration: const InputDecoration(
-              hintText: '81234567890',
-              prefixText: '+62 ',
-              prefixStyle: TextStyle(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-              prefixIcon: Icon(
-                Icons.phone_outlined,
-                color: AppColors.textSecondary,
-                size: 20,
+            decoration: InputDecoration(
+              hintText: _phoneController.text.isEmpty || (_phoneController.text.length >= 11 && _phoneController.text.length <= 13)
+                  ? '81234567890'
+                  : '1301210000',
+              prefixIcon: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                margin: const EdgeInsets.only(right: 8),
+                decoration: const BoxDecoration(
+                  border: Border(
+                    right: BorderSide(color: Color(0xFFE5E7EB)),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('🇮🇩', style: TextStyle(fontSize: 18)),
+                    SizedBox(width: 6),
+                    Text(
+                      '+62',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: AppColors.textSecondary),
+                  ],
+                ),
               ),
             ),
             validator: (v) {
@@ -631,7 +686,29 @@ class _ForgotPasswordViewState
             ],
           ),
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 16),
+
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppColors.primaryBlueLight,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.info_outline_rounded, size: 18, color: AppColors.primaryBlueDark),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Mode Pengujian: Masukkan kode OTP 123456 untuk melanjutkan.',
+                  style: TextStyle(fontSize: 11, color: AppColors.primaryBlueDark, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
 
         // OTP Input
         Center(
@@ -830,7 +907,7 @@ class _ForgotPasswordViewState
             obscureText: _obscurePassword,
             textInputAction: TextInputAction.next,
             decoration: InputDecoration(
-              hintText: 'Minimal 6 karakter...',
+              hintText: 'Minimal 8 karakter...',
               prefixIcon: const Icon(
                 Icons.lock_outline_rounded,
                 color: AppColors.textSecondary,
@@ -850,8 +927,15 @@ class _ForgotPasswordViewState
             ),
             validator: (v) {
               if (v == null || v.isEmpty) return 'Kata sandi wajib diisi';
-              if (v.length < 6) return 'Kata sandi minimal 6 karakter';
+              if (v.length < 8) return 'Kata sandi minimal 8 karakter';
               return null;
+            },
+          ),
+          const SizedBox(height: 12),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _newPasswordController,
+            builder: (context, value, child) {
+              return PasswordStrengthWidget(password: value.text);
             },
           ),
           const SizedBox(height: 16),

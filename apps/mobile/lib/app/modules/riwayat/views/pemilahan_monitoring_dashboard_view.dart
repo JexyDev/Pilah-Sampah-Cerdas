@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/values/app_config.dart';
 import '../../../data/models/waste_log_entity.dart';
 import '../controllers/riwayat_controller.dart';
 import '../../shared/widgets/skeleton_loading.dart';
@@ -88,7 +90,7 @@ class _PemilahanMonitoringDashboardViewState
                             child: SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
                               child: DataTable(
-                                headingRowColor: MaterialStateProperty.all(
+                                headingRowColor: WidgetStateProperty.all(
                                   const Color(0xFFF8FAFC),
                                 ),
                                 columnSpacing: 24,
@@ -108,7 +110,7 @@ class _PemilahanMonitoringDashboardViewState
                                     cells: [
                                       DataCell(Text(formattedDate, style: const TextStyle(fontSize: 13))),
                                       DataCell(Text(item.wargaName ?? 'Warga #${item.userId.substring(0, 6)}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
-                                      DataCell(Text(item.wilayah ?? 'RT 01 / RW 03', style: const TextStyle(fontSize: 13))),
+                                      DataCell(Text(item.wilayah ?? 'RW 03', style: const TextStyle(fontSize: 13))),
                                       DataCell(
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -135,10 +137,12 @@ class _PemilahanMonitoringDashboardViewState
                                               context: context,
                                               builder: (ctx) => AlertDialog(
                                                 title: const Text('Foto Bukti Pemilahan'),
-                                                content: Image.network(
-                                                  item.photoUrl ?? 'https://via.placeholder.com/300?text=Bukti+Sampah',
-                                                  errorBuilder: (_, __, ___) => const Icon(Icons.broken_image_rounded, size: 80, color: Colors.grey),
-                                                ),
+                                                content: (item.photoUrl == null || item.photoUrl!.isEmpty)
+                                                    ? const SizedBox(height: 150, child: Center(child: Icon(Icons.image_not_supported_rounded, size: 80, color: Colors.grey)))
+                                                    : CachedNetworkImage(
+                                                        imageUrl: AppConfig.getImageUrl(item.photoUrl),
+                                                        errorWidget: (_, __, ___) => const SizedBox(height: 150, child: Center(child: Icon(Icons.broken_image_rounded, size: 80, color: Colors.grey))),
+                                                      ),
                                                 actions: [
                                                   TextButton(
                                                     onPressed: () => Navigator.pop(ctx),
@@ -222,14 +226,14 @@ class _PemilahanMonitoringDashboardViewState
           ),
         ),
 
-        // Filter RT/RW
+        // Filter RW
         DropdownButton<String>(
           value: _selectedRtRw,
           items: const [
             DropdownMenuItem(value: 'Semua', child: Text('Semua Wilayah')),
-            DropdownMenuItem(value: 'RT 01 / RW 03', child: Text('RT 01 / RW 03')),
-            DropdownMenuItem(value: 'RT 02 / RW 03', child: Text('RT 02 / RW 03')),
-            DropdownMenuItem(value: 'RT 03 / RW 03', child: Text('RT 03 / RW 03')),
+            DropdownMenuItem(value: 'RW 03', child: Text('RW 03')),
+            DropdownMenuItem(value: 'RW 03', child: Text('RW 03')),
+            DropdownMenuItem(value: 'RW 03', child: Text('RW 03')),
           ],
           onChanged: (val) => setState(() {
             _selectedRtRw = val ?? 'Semua';

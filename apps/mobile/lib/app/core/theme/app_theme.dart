@@ -25,39 +25,41 @@ class AppTheme {
       scaffoldBackgroundColor: AppColors.backgroundCanvas,
 
       // --- Typography (Plus Jakarta Sans) — applied globally ---
-      textTheme: GoogleFonts.plusJakartaSansTextTheme(ThemeData.light().textTheme)
+      textTheme: GoogleFonts.poppinsTextTheme(ThemeData.light().textTheme)
           .copyWith(
-            headlineLarge: GoogleFonts.plusJakartaSans(
+            headlineLarge: GoogleFonts.poppins(
               fontSize: 24,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
-            headlineMedium: GoogleFonts.plusJakartaSans(
+            headlineMedium: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
-            headlineSmall: GoogleFonts.plusJakartaSans(
+            headlineSmall: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
             ),
-            bodyLarge: GoogleFonts.plusJakartaSans(
+            bodyLarge: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w400,
               color: AppColors.textPrimary,
+              height: 1.5,
             ),
-            bodyMedium: GoogleFonts.plusJakartaSans(
+            bodyMedium: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w400,
               color: AppColors.textPrimary,
+              height: 1.5,
             ),
-            bodySmall: GoogleFonts.plusJakartaSans(
+            bodySmall: GoogleFonts.poppins(
               fontSize: 12,
               fontWeight: FontWeight.w400,
               color: AppColors.textSecondary,
             ),
-            labelLarge: GoogleFonts.plusJakartaSans(
+            labelLarge: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.textOnPrimary,
@@ -71,7 +73,7 @@ class AppTheme {
         elevation: 0,
         centerTitle: false,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        titleTextStyle: GoogleFonts.plusJakartaSans(
+        titleTextStyle: GoogleFonts.poppins(
           fontSize: 17,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
@@ -79,6 +81,18 @@ class AppTheme {
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.dark,
+        ),
+      ),
+
+      // --- TabBar: SEMI-BOLD ---
+      tabBarTheme: TabBarThemeData(
+        labelStyle: GoogleFonts.poppins(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: GoogleFonts.poppins(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
         ),
       ),
 
@@ -91,7 +105,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
           ),
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: GoogleFonts.poppins(
             fontSize: 15,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
@@ -109,7 +123,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
           ),
           side: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: GoogleFonts.poppins(
             fontSize: 15,
             fontWeight: FontWeight.w600,
           ),
@@ -120,7 +134,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primaryGreen,
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: GoogleFonts.poppins(
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -155,8 +169,8 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
           borderSide: const BorderSide(color: AppColors.dangerRed, width: 2),
         ),
-        hintStyle: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppColors.textHint),
-        labelStyle: GoogleFonts.plusJakartaSans(
+        hintStyle: GoogleFonts.poppins(fontSize: 14, color: AppColors.textHint),
+        labelStyle: GoogleFonts.poppins(
           fontSize: 14,
           color: AppColors.textSecondary,
         ),
@@ -183,7 +197,7 @@ class AppTheme {
       // --- SnackBar ---
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.textPrimary,
-        contentTextStyle: GoogleFonts.plusJakartaSans(
+        contentTextStyle: GoogleFonts.poppins(
           fontSize: 14,
           color: Colors.white,
         ),

@@ -67,7 +67,7 @@ const ROLE_COLORS: Record<string, string> = {
 
 const RolePermissionPage: React.FC = () => {
   const { user } = useAuthStore();
-  const isDev = user?.peran?.toUpperCase() === "DEVELOPER";
+  const isDev = ["DEVELOPER", "SUPER_USER"].includes(user?.peran?.toUpperCase() || "");
 
   const [roles, setRoles] = useState<RolePermissions[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +88,7 @@ const RolePermissionPage: React.FC = () => {
   if (!isDev) {
     return (
       <div className="p-8 text-center bg-rose-50 rounded-2xl border border-rose-200 text-rose-700 font-extrabold text-xs">
-        Akses Ditolak: Fitur Manajemen Hak Akses (RBAC) hanya dapat diakses oleh akun dengan peran Developer.
+        Akses Ditolak: Fitur Manajemen Hak Akses (RBAC) hanya dapat diakses oleh akun dengan peran Developer atau Super User.
       </div>
     );
   }

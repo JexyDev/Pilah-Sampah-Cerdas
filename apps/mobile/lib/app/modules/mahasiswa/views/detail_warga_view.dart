@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
@@ -68,7 +66,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                     end: Alignment.bottomRight,
                     colors: [
                       AppColors.primaryGreen,
-                      AppColors.primaryBlueDark,
+                      AppColors.successDark,
                     ],
                   ),
                 ),
@@ -134,6 +132,27 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                                       ),
                                     ],
                                   ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.delete_outline_rounded,
+                                          size: 14, color: Colors.white70),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          warga.binId.isEmpty || warga.binId == 'Belum Ada Tempat Sampah'
+                                              ? 'Belum Ada Tempat Sampah'
+                                              : 'ID Tempat Sampah: ${warga.binId}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
@@ -186,10 +205,6 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
 
                 // Chart Section
                 _buildChartSection(warga),
-                const SizedBox(height: AppDimensions.md),
-
-                // Riwayat Section
-                _buildRiwayatSection(warga),
                 const SizedBox(height: AppDimensions.lg),
               ]),
             ),
@@ -312,102 +327,6 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
             percentage: warga.errorPercentage,
             color: AppColors.dangerRed,
           ),
-
-          const SizedBox(height: 16),
-
-          // Kategori breakdown
-          if (warga.recentLogs.isNotEmpty) ...[
-            const Divider(color: AppColors.divider),
-            const SizedBox(height: 8),
-            const Text(
-              'Distribusi Kategori',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            ..._buildCategoryBreakdown(warga),
-          ],
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildCategoryBreakdown(WargaDampingan warga) {
-    final Map<String, int> categoryCount = {};
-    for (final log in warga.recentLogs) {
-      categoryCount[log.category] = (categoryCount[log.category] ?? 0) + 1;
-    }
-    final total = warga.recentLogs.length;
-
-    return categoryCount.entries.map((entry) {
-      final pct = total > 0 ? (entry.value / total) * 100 : 0.0;
-      final isOrganic = entry.key.toUpperCase() == 'ORGANIK';
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: _HorizontalBar(
-          label: entry.key,
-          percentage: pct,
-          color: isOrganic ? AppColors.success : AppColors.primaryBlue,
-        ),
-      );
-    }).toList();
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Riwayat Section
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  Widget _buildRiwayatSection(WargaDampingan warga) {
-    return Container(
-      padding: const EdgeInsets.all(AppDimensions.md),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Riwayat Pemilahan',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              Text(
-                '${warga.recentLogs.length} catatan',
-                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          if (warga.recentLogs.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              child: Center(
-                child: Text(
-                  'Belum ada riwayat pemilahan',
-                  style: TextStyle(color: AppColors.textHint, fontSize: 13),
-                ),
-              ),
-            )
-          else
-            ...warga.recentLogs.map((log) => _RiwayatItem(log: log)),
         ],
       ),
     );
@@ -499,91 +418,6 @@ class _HorizontalBar extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _RiwayatItem extends StatelessWidget {
-  const _RiwayatItem({required this.log});
-
-  final WasteLogEntry log;
-
-  @override
-  Widget build(BuildContext context) {
-    final dateStr = DateFormat('dd/MM/yyyy').format(log.createdAt);
-    final timeStr = DateFormat('HH:mm').format(log.createdAt);
-    final isOrganic = log.category.toUpperCase() == 'ORGANIK';
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.backgroundCanvas,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-        ),
-        child: Row(
-          children: [
-            // Category icon
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: isOrganic
-                    ? AppColors.success.withValues(alpha: 0.1)
-                    : AppColors.primaryBlue.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                isOrganic ? Icons.eco_rounded : Icons.recycling_rounded,
-                color: isOrganic ? AppColors.success : AppColors.primaryBlue,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 10),
-
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        log.category,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${log.weightKg.toStringAsFixed(1)} kg',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '$dateStr • $timeStr',
-                    style: const TextStyle(fontSize: 11, color: AppColors.textHint),
-                  ),
-                ],
-              ),
-            ),
-
-            // Status
-            Icon(
-              log.isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded,
-              color: log.isCorrect ? AppColors.success : AppColors.dangerRed,
-              size: 22,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

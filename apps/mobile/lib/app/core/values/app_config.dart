@@ -6,17 +6,29 @@ class AppConfig {
   AppConfig._();
 
   // --- API Base URL ---
-  // Server backend di-hosting pada VPS secara publik
-  static const String _devServerIp = '157.10.252.252'; 
-  static const int _port = 3000;
+  // Default: domain produksi ber-SSL.
+  // Override saat build tanpa mengubah kode, contoh:
+  //   flutter build apk --dart-define=API_BASE_URL=http://157.10.252.252:3000
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://trashcare.id',
+  );
 
-  static String get baseUrl {
-    return 'http://$_devServerIp:$_port';
-  }
+  /// Alamat cadangan (akses langsung via IP) bila domain belum ter-resolve
+  /// pada jaringan klien tertentu.
+  static const String fallbackBaseUrl = 'http://157.10.252.252:3000';
 
   static String get apiBaseUrl => '$baseUrl/api/v1';
 
   static const String appName = 'TrashCare';
+
+  /// Format URL gambar dari API agar selalu valid
+  static String getImageUrl(String? path) {
+    if (path == null || path.isEmpty) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    final cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    return '$baseUrl/$cleanPath';
+  }
 
   // --- Geofencing (FR-02) ---
   static const int geofenceRadiusMeters = 10;
@@ -33,8 +45,9 @@ class AppConfig {
   static const String refreshTokenKey = 'refresh_token';
   static const String userDataKey = 'user_data';
   static const String householdIdKey = 'household_id';
+  static const String mahasiswaKecamatanKey = 'mahasiswa_kecamatan';
   static const String mahasiswaKelurahanKey = 'mahasiswa_kelurahan';
-  static const String mahasiswaRtRwKey = 'mahasiswa_rtrw';
+  static const String mahasiswaRwKey = 'mahasiswa_rw';
 
   // --- Bin Capacity (FR-02) ---
   static const double binMaxCapacityLiters = 25.0;

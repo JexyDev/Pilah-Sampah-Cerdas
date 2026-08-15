@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import '../../core/values/app_config.dart';
 
-/// Entitas tong sampah — sesuai sdd.md §2 tabel `bins`.
+/// Entitas tempat sampah — sesuai sdd.md §2 tabel `bins`.
 class BinEntity extends Equatable {
   const BinEntity({
     required this.id,
@@ -12,12 +12,14 @@ class BinEntity extends Equatable {
     required this.lat,
     required this.lng,
     required this.householdName,
-    required this.rt,
     required this.rw,
-    required this.kelurahan,
+    this.kecamatan = '',
+    this.kelurahan = '',
     required this.isActive,
+    this.isResetPending = false,
     this.createdAt,
     this.activatedAt,
+    this.backendStatus = '',
   });
 
   BinEntity copyWith({
@@ -29,10 +31,12 @@ class BinEntity extends Equatable {
     double? lat,
     double? lng,
     String? householdName,
-    String? rt,
     String? rw,
+    String? kecamatan,
     String? kelurahan,
     bool? isActive,
+    bool? isResetPending,
+    String? backendStatus,
   }) {
     return BinEntity(
       id: id ?? this.id,
@@ -43,10 +47,12 @@ class BinEntity extends Equatable {
       lat: lat ?? this.lat,
       lng: lng ?? this.lng,
       householdName: householdName ?? this.householdName,
-      rt: rt ?? this.rt,
       rw: rw ?? this.rw,
+      kecamatan: kecamatan ?? this.kecamatan,
       kelurahan: kelurahan ?? this.kelurahan,
       isActive: isActive ?? this.isActive,
+      isResetPending: isResetPending ?? this.isResetPending,
+      backendStatus: backendStatus ?? this.backendStatus,
     );
   }
 
@@ -58,12 +64,14 @@ class BinEntity extends Equatable {
   final double lat;
   final double lng;
   final String householdName;
-  final String rt;
   final String rw;
+  final String kecamatan;
   final String kelurahan;
   final bool isActive;
+  final bool isResetPending;
   final DateTime? createdAt;
   final DateTime? activatedAt;
+  final String backendStatus;
 
   /// Persentase kapasitas terisi (0.0 – 1.0).
   double get capacityPercent => currentVolumeL / maxCapacityL;
@@ -71,7 +79,7 @@ class BinEntity extends Equatable {
   /// Volume sisa dalam liter.
   double get remainingVolumeL => maxCapacityL - currentVolumeL;
 
-  /// Status kapasitas tong sesuai threshold srs.md FR-04.
+  /// Status kapasitas tempat sampah sesuai threshold srs.md FR-04.
   BinStatus get status {
     if (capacityPercent >= AppConfig.binCriticalThresholdPercent) {
       return BinStatus.critical;
@@ -98,5 +106,5 @@ enum WasteType {
   final String apiValue;
 }
 
-/// Status kapasitas tong.
+/// Status kapasitas tempat sampah.
 enum BinStatus { safe, warning, critical }

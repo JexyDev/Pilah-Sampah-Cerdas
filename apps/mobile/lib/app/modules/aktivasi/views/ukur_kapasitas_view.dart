@@ -88,7 +88,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: AppColors.dangerRed,
@@ -269,7 +269,9 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                 child: RadioListTile<String>(
                   title: const Text('Standar', style: TextStyle(fontSize: 13)),
                   value: 'Standar',
+                  // ignore: deprecated_member_use
                   groupValue: mode,
+                  // ignore: deprecated_member_use
                   onChanged: onModeChanged,
                   contentPadding: EdgeInsets.zero,
                   activeColor: color,
@@ -279,7 +281,9 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                 child: RadioListTile<String>(
                   title: const Text('Manual (Dimensi)', style: TextStyle(fontSize: 13)),
                   value: 'Manual',
+                  // ignore: deprecated_member_use
                   groupValue: mode,
+                  // ignore: deprecated_member_use
                   onChanged: onModeChanged,
                   contentPadding: EdgeInsets.zero,
                   activeColor: color,
@@ -290,7 +294,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
           const SizedBox(height: 12),
           if (mode == 'Standar')
             DropdownButtonFormField<String>(
-              value: standardSize,
+              initialValue: standardSize,
               decoration: InputDecoration(
                 labelText: 'Ukuran Kapasitas (Kg)',
                 border: OutlineInputBorder(

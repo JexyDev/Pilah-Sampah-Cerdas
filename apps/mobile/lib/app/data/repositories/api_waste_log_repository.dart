@@ -6,6 +6,7 @@ import '../models/bin_entity.dart';
 import 'waste_log_repository.dart';
 import '../../core/utils/app_exceptions.dart';
 import '../providers/api_client.dart';
+import '../../core/values/api_constants.dart';
 
 /// Implementasi WasteLogRepository yang terhubung ke backend Express.js.
 ///
@@ -22,10 +23,27 @@ class ApiWasteLogRepository implements WasteLogRepository {
   // Response: { success: true, data: [{ id, tanggal, warga, kategori, berat, poin, createdAt }] }
 
   @override
+  Future<List<WasteLogEntity>?> getCachedWasteLogs(String userId) async {
+    final cacheKey = 'cached_waste_logs_$userId';
+    try {
+      final cachedStr = await apiClient.secureStorage.read(key: cacheKey);
+      if (cachedStr != null) {
+        final List<dynamic> cachedData = jsonDecode(cachedStr);
+        return cachedData
+            .map((json) => _mapWasteLog(json as Map<String, dynamic>, userId))
+            .toList();
+      }
+    } catch (e) {
+      // Abaikan error saat membaca cache
+    }
+    return null;
+  }
+
+  @override
   Future<List<WasteLogEntity>> getWasteLogsByUser(String userId) async {
     final cacheKey = 'cached_waste_logs_$userId';
     try {
-      final response = await apiClient.dio.get('/transactions/my-deposits');
+      final response = await apiClient.dio.get(ApiEndpoints.transactionsMyDeposits);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] as List<dynamic>;
@@ -38,22 +56,8 @@ class ApiWasteLogRepository implements WasteLogRepository {
       }
       return [];
     } on DioException catch (e) {
-      final cachedStr = await apiClient.secureStorage.read(key: cacheKey);
-      if (cachedStr != null) {
-        final List<dynamic> cachedData = jsonDecode(cachedStr);
-        return cachedData
-            .map((json) => _mapWasteLog(json as Map<String, dynamic>, userId))
-            .toList();
-      }
       throw AppNetworkException(mapDioExceptionToMessage(e));
     } catch (e) {
-      final cachedStr = await apiClient.secureStorage.read(key: cacheKey);
-      if (cachedStr != null) {
-        final List<dynamic> cachedData = jsonDecode(cachedStr);
-        return cachedData
-            .map((json) => _mapWasteLog(json as Map<String, dynamic>, userId))
-            .toList();
-      }
       if (e is AppNetworkException) rethrow;
       throw AppNetworkException('Kesalahan sistem: $e');
     }
@@ -66,7 +70,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
   @override
   Future<List<PointHistoryEntity>> getPointHistoryByUser(String userId) async {
     try {
-      final response = await apiClient.dio.get('/points/me');
+      final response = await apiClient.dio.get(ApiEndpoints.pointsMe);
 
       if (response.statusCode == 200) {
         final data = response.data['data'] as Map<String, dynamic>;
@@ -90,7 +94,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
   @override
   Future<int> getTotalPointsByUser(String userId) async {
     try {
-      final response = await apiClient.dio.get('/points/me');
+      final response = await apiClient.dio.get(ApiEndpoints.pointsMe);
 
       if (response.statusCode == 200) {
         final data = response.data['data'] as Map<String, dynamic>;
@@ -110,7 +114,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
   @override
   Future<String> getUserLeaderboardRank(String userId) async {
     try {
-      final response = await apiClient.dio.get('/gamification/leaderboard');
+      final response = await apiClient.dio.get(ApiEndpoints.pointsLeaderboard);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] as List<dynamic>;
@@ -122,7 +126,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
 
         if (userEntry != null) {
           final rank = userEntry['rank'];
-          return '#$rank';
+          return '$rank';
         }
         return '-';
       }
@@ -155,7 +159,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
         (json['poin'] as num?)?.toInt() ?? 
         (json['points'] as num?)?.toInt() ?? 0;
 
-    // Ambil lokasi tong jika ada
+    // Ambil lokasi tempat sampah jika ada
     final String rawLoc = json['binLocation']?.toString() ??
         json['kelurahan']?.toString() ??
         json['rtRw']?.toString() ??
@@ -185,6 +189,8 @@ class ApiWasteLogRepository implements WasteLogRepository {
       pointsAwarded: poin,
       createdAt: createdAt,
       kelurahan: binLocation,
+      discrepancyStatus: json['discrepancyStatus']?.toString() ?? 'NONE',
+      aiConfidence: (json['confidence'] as num?)?.toDouble() ?? (json['aiConfidence'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -230,4 +236,23 @@ class ApiWasteLogRepository implements WasteLogRepository {
     final year = int.tryParse(parts[2]) ?? DateTime.now().year;
     return DateTime(year, month, day);
   }
+
+  @override
+  Future<void> ajukanPengosonganBin(String binId) async {
+    try {
+      final response = await apiClient.dio.post(
+        '/warga/pengajuan-pengosongan',
+        data: {'binId': binId},
+      );
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception('Gagal mengajukan pengosongan.');
+      }
+    } catch (e) {
+      if (e is DioException) {
+        throw AppNetworkException(mapDioExceptionToMessage(e));
+      }
+      rethrow;
+    }
+  }
 }
+

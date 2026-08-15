@@ -48,6 +48,22 @@ class NetworkExceptionHelper {
           return 'Terjadi masalah jaringan yang tidak diketahui.';
       }
     }
-    return error?.toString() ?? 'Terjadi kesalahan sistem yang tidak diharapkan.';
+    if (error is Exception) {
+      final str = error.toString();
+      if (str.contains('SocketException') || str.contains('Connection refused')) {
+        return 'Tidak ada koneksi internet atau server sedang mati.';
+      }
+      if (str.contains('TimeoutException')) {
+        return 'Waktu permintaan habis. Coba lagi.';
+      }
+      if (str.contains('FormatException')) {
+        return 'Format data dari server tidak valid.';
+      }
+      if (str.startsWith('Exception: ')) {
+        return str.substring(11);
+      }
+      return str;
+    }
+    return 'Terjadi kesalahan sistem. Harap coba beberapa saat lagi.';
   }
 }

@@ -82,11 +82,13 @@ class WasteLogEntry extends Equatable {
 /// ─────────────────────────────────────────────────────────────────────────────
 class WargaDampingan extends Equatable {
   const WargaDampingan({
+    required this.wargaId,
     required this.binId,
     required this.wargaName,
     required this.address,
+    this.kecamatan = '',
     this.kelurahan = '',
-    this.rtRw = '',
+    this.rw = '',
     this.mahasiswaId = '',
     this.pendampingName = '',
     this.status = '',
@@ -97,11 +99,13 @@ class WargaDampingan extends Equatable {
     this.apiCorrectPercentage,
   });
 
+  final String wargaId;
   final String binId;
   final String wargaName;
   final String address;
+  final String kecamatan;
   final String kelurahan;
-  final String rtRw;
+  final String rw;
   final String mahasiswaId;
   final String pendampingName;
   final String status;
@@ -128,8 +132,8 @@ class WargaDampingan extends Equatable {
   double get errorPercentage =>
       totalActivities > 0 ? (incorrectCount / totalActivities) * 100 : 0.0;
 
-  /// Apakah warga membutuhkan edukasi ulang (threshold > 30% kesalahan)
-  bool get needsReeducation => errorPercentage > 30;
+  /// Apakah warga membutuhkan edukasi ulang (threshold < 80% pemilahan benar)
+  bool get needsReeducation => totalActivities > 0 && correctPercentage < 80;
 
   /// Tanggal terakhir warga aktif membuang sampah
   DateTime? get lastActiveDate {
@@ -144,11 +148,13 @@ class WargaDampingan extends Equatable {
             .toList() ??
         [];
 
-    final String extractedBinId = json['binId']?.toString() ??
-        json['id']?.toString() ??
-        json['wargaId']?.toString() ??
-        json['userId']?.toString() ??
-        '';
+    String extractedBinId = json['binId']?.toString() ?? '';
+    if (extractedBinId.isEmpty && json['bin'] != null && json['bin']['qrCode'] != null) {
+      extractedBinId = json['bin']['qrCode'].toString();
+    }
+    if (extractedBinId.isEmpty) {
+      extractedBinId = 'Belum Ada Tempat Sampah';
+    }
 
     String extractMhsId() {
       final candidates = [
@@ -191,30 +197,33 @@ class WargaDampingan extends Equatable {
     }
 
     final rawStatus = json['status']?.toString() ?? json['statusPendamping']?.toString() ?? json['status_pendamping']?.toString() ?? '';
+    final extractedWargaId = json['wargaId']?.toString() ?? json['id']?.toString() ?? '';
 
     return WargaDampingan(
+      wargaId: extractedWargaId,
       binId: extractedBinId,
       wargaName: json['wargaName']?.toString() ?? json['name']?.toString() ?? json['warga_name']?.toString() ?? 'Warga',
-      address: json['address']?.toString() ?? json['alamat']?.toString() ?? '',
+      address: json['address']?.toString() ?? json['alamat']?.toString() ?? 'Alamat tidak diketahui',
+      kecamatan: json['kecamatan']?.toString() ?? '',
       kelurahan: json['kelurahan']?.toString() ?? '',
-      rtRw: json['rtRw']?.toString() ?? json['rt_rw']?.toString() ?? '',
+      rw: json['rw']?.toString() ?? json['rt_rw']?.toString() ?? json['rtRw']?.toString() ?? '',
       mahasiswaId: extractMhsId(),
       pendampingName: extractPendampingName(),
-      status: rawStatus,
+      status: rawStatus.isEmpty ? 'Aktif' : rawStatus,
       recentLogs: logs,
       isActivated: (json['isActivated'] == true) ||
           (json['is_activated'] == true) ||
           (json['status']?.toString().toUpperCase() == 'ACTIVATED') ||
+          (json['status'] == 'ACTIVE_BOUND') ||
           (json['binOrganikId'] != null && json['binOrganikId'].toString().trim().isNotEmpty),
       role: json['role']?.toString().toUpperCase() ?? json['user']?['role']?.toString().toUpperCase() ?? 'WARGA',
-      totalPoints: (json['totalPoints'] as num?)?.toInt() ?? 
-                   (logs.fold(0, (sum, log) => sum + (log.weightKg * 10).toInt())),
+      totalPoints: (json['totalPoints'] as num?)?.toInt() ?? 0,
       apiCorrectPercentage: (json['complianceScore'] as num?)?.toDouble() ?? (json['correctPercentage'] as num?)?.toDouble(),
     );
   }
 
   @override
-  List<Object?> get props => [binId, wargaName, totalPoints, mahasiswaId, pendampingName, status];
+  List<Object?> get props => [wargaId, binId, wargaName, totalPoints, mahasiswaId, pendampingName, status];
 }
 
 /// ─────────────────────────────────────────────────────────────────────────────
@@ -227,11 +236,13 @@ class RegisterWargaRequest {
     this.name,
     this.address,
     this.qrCode,
-    this.rtRwId,
-    this.rtRw,
+    this.rwId,
+    this.rw,
+    this.kecamatan,
     this.kelurahan,
     this.latitude,
     this.longitude,
+    this.familySize,
   });
 
   /// Required: Nomor HP / WhatsApp
@@ -246,16 +257,17 @@ class RegisterWargaRequest {
   /// Opsional: Alamat warga
   final String? address;
 
-  /// Opsional: QR Code tong sampah
+  /// Opsional: QR Code tempat sampah
   final String? qrCode;
 
   /// Opsional: ID RT/RW
-  final String? rtRwId;
+  final String? rwId;
 
-  /// Opsional: String RT/RW (fallback jika rtRwId tidak digunakan)
-  final String? rtRw;
+  /// Opsional: String RW (fallback jika rwId tidak digunakan)
+  final String? rw;
 
   /// Opsional: Kelurahan
+  final String? kecamatan;
   final String? kelurahan;
 
   /// Opsional: Latitude lokasi pendaftaran
@@ -263,6 +275,9 @@ class RegisterWargaRequest {
 
   /// Opsional: Longitude lokasi pendaftaran
   final double? longitude;
+
+  /// Opsional: Jumlah Anggota Keluarga dalam 1 Rumah
+  final int? familySize;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{
@@ -272,11 +287,13 @@ class RegisterWargaRequest {
     if (name != null && name!.isNotEmpty) map['name'] = name;
     if (address != null && address!.isNotEmpty) map['address'] = address;
     if (qrCode != null && qrCode!.isNotEmpty) map['qrCode'] = qrCode;
-    if (rtRwId != null && rtRwId!.isNotEmpty) map['rtRwId'] = rtRwId;
-    if (rtRw != null && rtRw!.isNotEmpty) map['rtRw'] = rtRw;
+    if (rwId != null && rwId!.isNotEmpty) map['rwId'] = rwId;
+    if (rw != null && rw!.isNotEmpty) map['rw'] = rw;
+    if (kecamatan != null && kecamatan!.isNotEmpty) map['kecamatan'] = kecamatan;
     if (kelurahan != null && kelurahan!.isNotEmpty) map['kelurahan'] = kelurahan;
     if (latitude != null) map['latitude'] = latitude;
     if (longitude != null) map['longitude'] = longitude;
+    if (familySize != null) map['familySize'] = familySize;
     return map;
   }
 }
@@ -352,6 +369,8 @@ class PemanfaatanSampahRequest {
     required this.satuan,
     required this.wilayahDampingan,
     required this.deskripsi,
+    this.rwTerkait,
+    this.dplId,
     this.fotoPath,
     this.timestamp,
   });
@@ -362,6 +381,8 @@ class PemanfaatanSampahRequest {
   final String satuan;
   final String wilayahDampingan;
   final String deskripsi;
+  final String? rwTerkait;
+  final String? dplId;
   final String? fotoPath;
   final String? timestamp;
 
@@ -373,6 +394,8 @@ class PemanfaatanSampahRequest {
       'satuan': satuan,
       'wilayahDampingan': wilayahDampingan,
       'deskripsi': deskripsi,
+      if (rwTerkait != null) 'rwTerkait': rwTerkait,
+      if (dplId != null) 'dplId': dplId,
       if (fotoPath != null) 'fotoPath': fotoPath,
       'timestamp': timestamp ?? DateTime.now().toUtc().toIso8601String(),
     };
@@ -414,7 +437,27 @@ class KelompokMemberData extends Equatable {
   }
 
   @override
-  List<Object?> get props => [userId, nim, individualPoints, fakultas];
+  List<Object?> get props => [userId, nim, individualPoints, fakultas, isLeader, name, jurusan];
+
+  KelompokMemberData copyWith({
+    String? userId,
+    String? nim,
+    String? name,
+    String? jurusan,
+    String? fakultas,
+    int? individualPoints,
+    bool? isLeader,
+  }) {
+    return KelompokMemberData(
+      userId: userId ?? this.userId,
+      nim: nim ?? this.nim,
+      name: name ?? this.name,
+      jurusan: jurusan ?? this.jurusan,
+      fakultas: fakultas ?? this.fakultas,
+      individualPoints: individualPoints ?? this.individualPoints,
+      isLeader: isLeader ?? this.isLeader,
+    );
+  }
 }
 
 class KelompokKknData extends Equatable {
@@ -459,11 +502,11 @@ class KelompokKknData extends Equatable {
       dpl = json['dplObj']['name']?.toString() ?? json['dplObj']['nama']?.toString() ?? '';
     }
 
-    if (dpl.isEmpty) dpl = 'Belum Ditentukan';
+    if (dpl.isEmpty) dpl = '-';
 
     return KelompokKknData(
       groupId: json['groupId']?.toString() ?? json['id']?.toString() ?? '',
-      groupName: json['groupName']?.toString() ?? json['namaKelompok']?.toString() ?? json['nama']?.toString() ?? 'Kelompok KKN',
+      groupName: json['groupName']?.toString() ?? json['namaKelompok']?.toString() ?? json['nama']?.toString() ?? '-',
       dosenPembimbing: dpl,
       poskoLocation: json['poskoLocation']?.toString() ?? json['lokasiPosko']?.toString() ?? json['kelurahan']?.toString() ?? '-',
       totalGroupPoints: (json['totalGroupPoints'] as num?)?.toInt() ?? (json['totalPoints'] as num?)?.toInt() ?? 0,
@@ -473,4 +516,64 @@ class KelompokKknData extends Equatable {
 
   @override
   List<Object?> get props => [groupId, groupName, totalGroupPoints, members];
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Model untuk GET /api/v1/kkn/dampak-kelurahan
+/// ─────────────────────────────────────────────────────────────────────────────
+class DampakKelurahanData extends Equatable {
+  const DampakKelurahanData({
+    required this.kelurahanName,
+    required this.activeHouseholdsPercentage,
+    required this.totalWasteVolumeKg,
+    required this.organicVolumeKg,
+    required this.nonOrganicVolumeKg,
+    required this.totalHouseholdsRegistered,
+    required this.totalActiveBins,
+  });
+
+  final String kelurahanName;
+  final double activeHouseholdsPercentage;
+  final double totalWasteVolumeKg;
+  final double organicVolumeKg;
+  final double nonOrganicVolumeKg;
+  final int totalHouseholdsRegistered;
+  final int totalActiveBins;
+
+  factory DampakKelurahanData.fromJson(Map<String, dynamic> json) {
+    return DampakKelurahanData(
+      kelurahanName: json['kelurahanName']?.toString() ?? json['kelurahan']?.toString() ?? json['rw']?.toString() ?? '-',
+      activeHouseholdsPercentage: (json['activeHouseholdsPercentage'] as num?)?.toDouble() ??
+          (json['persentaseAktif'] as num?)?.toDouble() ??
+          (json['activeSortingPercentage'] as num?)?.toDouble() ??
+          0.0,
+      totalWasteVolumeKg: (json['totalWasteVolumeKg'] as num?)?.toDouble() ??
+          (json['totalVolumeKg'] as num?)?.toDouble() ??
+          (json['totalVolume'] as num?)?.toDouble() ??
+          0.0,
+      organicVolumeKg: (json['organicVolumeKg'] as num?)?.toDouble() ??
+          (json['organicVolume'] as num?)?.toDouble() ??
+          0.0,
+      nonOrganicVolumeKg: (json['nonOrganicVolumeKg'] as num?)?.toDouble() ??
+          (json['nonOrganicVolume'] as num?)?.toDouble() ??
+          0.0,
+      totalHouseholdsRegistered: (json['totalHouseholdsRegistered'] as num?)?.toInt() ??
+          (json['totalWarga'] as num?)?.toInt() ??
+          0,
+      totalActiveBins: (json['totalActiveBins'] as num?)?.toInt() ??
+          (json['totalBin'] as num?)?.toInt() ??
+          0,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+        kelurahanName,
+        activeHouseholdsPercentage,
+        totalWasteVolumeKg,
+        organicVolumeKg,
+        nonOrganicVolumeKg,
+        totalHouseholdsRegistered,
+        totalActiveBins,
+      ];
 }

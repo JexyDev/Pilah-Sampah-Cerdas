@@ -34,7 +34,7 @@ class AppStrings {
   static const String berandaAnorganik = 'Anorganik';
   static const String berandaRiwayatTerakhir = 'Riwayat Terakhir';
   static const String berandaLihatSemua = 'Lihat Semua';
-  static const String berandaStatusTong = 'Status Tong';
+  static const String berandaStatusTong = 'Status Tempat Sampah';
 
   // --- Scan / Setor Flow ---
   static const String scanStep1Title = 'Foto Sampah';
@@ -42,13 +42,13 @@ class AppStrings {
   static const String scanStep2Title = 'Verifikasi AI';
   static const String scanStep2Subtitle = 'Mendeteksi jenis & volume sampah';
   static const String scanStep3Title = 'Scan QR Tong';
-  static const String scanStep3Subtitle = 'Pindai QR Code pada tong sampah';
+  static const String scanStep3Subtitle = 'Pindai QR Code pada tempat sampah';
   static const String scanStep4Title = 'Selesai';
   static const String scanStep4Subtitle = 'Sampah berhasil tercatat';
 
   static const String buttonAmbilFoto = 'Ambil Foto Sampah';
   static const String buttonKirimAI = 'Kirim ke AI Detector';
-  static const String buttonScanQR = 'Scan QR Tong Sampah';
+  static const String buttonScanQR = 'Scan QR Tempat Sampah';
   static const String buttonSelesai = 'Setor Lagi';
 
   static const String aiDetecting = 'Mendeteksi sampah...';
@@ -60,12 +60,12 @@ class AppStrings {
       'Kuota harian AI sudah habis (50/hari).';
 
   static const String binOverflow =
-      'Tong sudah penuh! Ajukan pengosongan tong.';
-  static const String binTypeMismatch = 'Jenis sampah tidak sesuai tong ini.';
+      'Tempat Sampah sudah penuh! Ajukan pengosongan tempat sampah.';
+  static const String binTypeMismatch = 'Jenis sampah tidak sesuai tempat sampah ini.';
   static const String locationOutOfRange =
-      'Anda terlalu jauh dari tong sampah (> 500m).';
+      'Anda terlalu jauh dari tempat sampah (> 500m).';
   static const String binNotCritical =
-      'Tong belum penuh, reset belum diperlukan.';
+      'Tempat Sampah belum penuh, reset belum diperlukan.';
 
   // --- Riwayat ---
   static const String riwayatTitle = 'Riwayat Pemilahan';
@@ -85,16 +85,16 @@ class AppStrings {
   static const String profilRW = 'RW';
   static const String profilKelurahan = 'Kelurahan';
 
-  // --- Aktivasi Tong ---
-  static const String aktivasiTitle = 'Aktivasi Tong Baru';
+  // --- Aktivasi Tempat Sampah ---
+  static const String aktivasiTitle = 'Aktivasi Tempat Sampah Baru';
   static const String aktivasiSubtitle =
-      'Pindai QR pada tong baru untuk mengaktifkan';
-  static const String aktivasiSuccess = 'Tong berhasil diaktivasi!';
+      'Pindai QR pada tempat sampah baru untuk mengaktifkan';
+  static const String aktivasiSuccess = 'Tempat Sampah berhasil diaktivasi!';
 
-  // --- Reset Tong ---
-  static const String resetTitle = 'Ajukan Pengosongan Tong';
+  // --- Reset Tempat Sampah ---
+  static const String resetTitle = 'Ajukan Pengosongan Tempat Sampah';
   static const String resetSubtitle =
-      'Foto tong penuh sebagai bukti pengajuan reset';
+      'Foto tempat sampah penuh sebagai bukti pengajuan reset';
   static const String resetButton = 'Ajukan Reset';
   static const String resetSuccess = 'Pengajuan pengosongan terkirim!';
   static const String resetPending = 'Menunggu persetujuan petugas RT';

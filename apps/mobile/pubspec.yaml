@@ -17,7 +17,7 @@ dependencies:
   flutter_riverpod: ^2.6.1
 
   # HTTP Client (dikunci per sdd.md §12 — sementara tidak dipakai, disiapkan untuk integrasi BE)
-  dio: ^5.8.0
+  dio: ^5.11.0
 
   # QR Scanner
   mobile_scanner: ^6.0.10
@@ -62,17 +62,30 @@ dependencies:
   flutter_local_notifications: ^22.1.0
   timezone: ^0.11.1
   flutter_timezone: ^5.1.0
+  lottie: ^3.5.1
+  http_parser: ^4.1.2
 
+  path_provider: any
+  path: any
+  cached_network_image: ^3.4.1
+  package_info_plus: ^9.0.1
+  url_launcher: ^6.3.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
 
+  http: any
 flutter:
   uses-material-design: true
 
   assets:
+    # Gambar Onboarding (Mockup UI)
+    - assets/on_boarding/
+
     # Logo aplikasi
+    - assets/logos.webp
     - assets/logos.jpeg
 
     # Stitch UI — screen reference assets

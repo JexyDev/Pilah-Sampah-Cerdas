@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/phone_formatter.dart';
 import '../../../core/values/app_assets.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../routes/app_routes.dart';
@@ -27,6 +28,37 @@ class _LoginViewState extends ConsumerState<LoginView> {
   Timer? _toastTimer;
 
   @override
+  void initState() {
+    super.initState();
+    _phoneController.addListener(_onPhoneChanged);
+  }
+
+  void _onPhoneChanged() {
+    String text = _phoneController.text;
+    String clean = text.replaceAll(RegExp(r'[^\d]'), '');
+    bool changed = false;
+
+    if (clean.startsWith('08')) {
+      clean = clean.substring(1);
+      changed = true;
+    } else if (clean.startsWith('628')) {
+      clean = clean.substring(2);
+      changed = true;
+    }
+
+    if (text != clean || changed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _phoneController.value = TextEditingValue(
+          text: clean,
+          selection: TextSelection.collapsed(offset: clean.length),
+        );
+      });
+    } else {
+      setState(() {});
+    }
+  }
+
+  @override
   void dispose() {
     _phoneController.dispose();
     _passwordController.dispose();
@@ -35,7 +67,8 @@ class _LoginViewState extends ConsumerState<LoginView> {
   }
 
   void _showToast(String message) {
-    _toastTimer?.cancel();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     setState(() {
       _toastMessage = message;
       _isToastVisible = true;
@@ -46,16 +79,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
   }
 
   String _normalizeIdentifier(String raw) {
-    String input = raw.trim().replaceAll(RegExp(r'[\s\-]'), '');
-    final digitsOnly = input.replaceAll(RegExp(r'[^\d]'), '');
-    if (digitsOnly.length >= 10 &&
-        (input.startsWith('0') ||
-            input.startsWith('8') ||
-            input.startsWith('+62') ||
-            input.startsWith('62'))) {
-      if (!input.startsWith('0') && input.startsWith('8')) input = '0$input';
-    }
-    return input;
+    return PhoneFormatter.prepareLoginPhoneInput(raw);
   }
 
   Future<void> _onLogin() async {
@@ -63,12 +87,12 @@ class _LoginViewState extends ConsumerState<LoginView> {
     final password = _passwordController.text;
 
     if (identifier.isEmpty && password.isEmpty) {
-      _showToast('Nomor telepon/NIM dan kata sandi wajib diisi');
+      _showToast('Nomor Telepon atau NIM, serta Kata Sandi wajib diisi');
       _formKey.currentState!.validate();
       return;
     }
     if (identifier.isEmpty) {
-      _showToast('Nomor telepon/NIM wajib diisi');
+      _showToast('Nomor Telepon atau NIM wajib diisi');
       _formKey.currentState!.validate();
       return;
     }
@@ -89,10 +113,15 @@ class _LoginViewState extends ConsumerState<LoginView> {
         );
 
     if (ok && mounted) {
-      Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+      final user = ref.read(authProvider).user;
+      if (user != null) {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+      } else {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+      }
     } else if (mounted) {
       final authState = ref.read(authProvider);
-      String errorText = 'Nomor telepon/NIM atau kata sandi salah. Coba lagi.';
+      String errorText = 'Nomor telepon/NIM atau kata sandi salah. Silakan coba lagi.';
       if (authState.errorCode == 'NETWORK_ERROR') {
         errorText = 'Tidak dapat terhubung ke server. Periksa koneksi.';
       } else if (authState.errorCode == 'UNAPPROVED_ACCOUNT') {
@@ -209,7 +238,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                               ),
                               const SizedBox(height: 4),
                               const Text(
-                                'Masukkan nomor HP atau NIM terdaftar Anda',
+                                'Masukkan nomor telepon terdaftar Anda',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: AppColors.textSecondary,
@@ -217,9 +246,9 @@ class _LoginViewState extends ConsumerState<LoginView> {
                               ),
                               const SizedBox(height: 24),
 
-                              // Field No. Telepon / NIM
+                              // Field No. Telepon
                               const Text(
-                                'NOMOR TELEPON / NIM',
+                                'NOMOR TELEPON',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
@@ -230,35 +259,57 @@ class _LoginViewState extends ConsumerState<LoginView> {
                               const SizedBox(height: 6),
                               TextFormField(
                                 controller: _phoneController,
-                                keyboardType: TextInputType.text,
+                                keyboardType: TextInputType.number,
                                 autocorrect: false,
                                 textInputAction: TextInputAction.next,
                                 inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                    RegExp(r'[0-9a-zA-Z\+\-\s]'),
-                                  ),
+                                  FilteringTextInputFormatter.digitsOnly,
                                 ],
-                                decoration: const InputDecoration(
-                                  hintText: '081234567890 atau NIM Anda',
-                                  prefixIcon: Icon(
-                                    Icons.person_outline_rounded,
-                                    color: AppColors.textSecondary,
-                                    size: 20,
+                                decoration: InputDecoration(
+                                  hintText: '81112345678',
+                                  prefixIcon: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(4),
+                                            border: Border.all(color: Colors.grey.shade300),
+                                            color: Colors.white,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                          child: const Text('🇮🇩', style: TextStyle(fontSize: 16)),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        const Text(
+                                          '+62',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          height: 20,
+                                          width: 1,
+                                          color: Colors.grey.shade300,
+                                        ),
+                                        const SizedBox(width: 8),
+                                      ],
+                                    ),
                                   ),
                                 ),
                                 validator: (v) {
                                   if (v == null || v.trim().isEmpty) {
                                     return 'Nomor telepon atau NIM wajib diisi';
                                   }
-                                  final clean = v.trim();
-                                  final digits = clean.replaceAll(RegExp(r'[^\d]'), '');
-                                  if (digits.length >= 10 && digits.length <= 13) {
-                                    return null; // Phone number valid
+                                  final clean = v.trim().replaceAll(RegExp(r'[^\d]'), '');
+                                  if (clean.length >= 8 && clean.length <= 16) {
+                                    return null; // Valid
                                   }
-                                  if (clean.length >= 8 && clean.length <= 10) {
-                                    return null; // NIM valid
-                                  }
-                                  return 'Format tidak valid (12 digit No. HP atau 8-10 digit NIM)';
+                                  return 'Format tidak valid (8-16 digit)';
                                 },
                               ),
                               const SizedBox(height: 18),
@@ -301,10 +352,10 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                 ),
                                 validator: (v) {
                                   if (v == null || v.isEmpty) {
-                                    return 'Password wajib diisi';
+                                    return 'Kata sandi wajib diisi';
                                   }
                                   if (v.length < 6) {
-                                    return 'Password minimal 6 karakter';
+                                    return 'Kata sandi minimal 6 karakter';
                                   }
                                   return null;
                                 },
@@ -408,7 +459,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                       const Opacity(
                         opacity: 0.6,
                         child: Text(
-                          '© 2026 TrashCare. All rights reserved.',
+                          '© 2026 Universitas Komputer Indonesia. All rights reserved.',
                           style: TextStyle(
                             fontSize: 10,
                             color: AppColors.textSecondary,

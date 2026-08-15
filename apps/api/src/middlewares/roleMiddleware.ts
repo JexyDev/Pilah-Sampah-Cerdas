@@ -38,7 +38,7 @@ export const roleMiddleware = (allowedRoles: string[]) => {
       const userRole = normalizeRole(user.role);
       const normalizedAllowed = allowedRoles.map(normalizeRole);
 
-      if (userRole === "DEVELOPER") {
+      if (userRole === "DEVELOPER" || userRole === "SUPER_USER") {
         return next();
       }
 

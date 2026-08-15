@@ -14,28 +14,56 @@ class KelompokKknView extends ConsumerWidget {
     final notifier = ref.read(kelompokKknProvider.notifier);
     final user = ref.watch(authProvider).user;
 
-    final kel = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : 'Bojongsoang';
-    final rt = user?.rtRw.isNotEmpty == true ? user!.rtRw : '01/02';
+    final kel = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : '-';
+    final rw = user?.rw.isNotEmpty == true ? user!.rw : '-';
+    final kelDisplay = kel.toLowerCase().startsWith('kel') ? kel : 'Kel. $kel';
 
     final KelompokKknData kelompokData = state.kelompok ?? KelompokKknData(
-      groupId: 'kkn-${user?.id ?? "1"}',
-      groupName: 'Kelompok KKN $kel RT $rt',
-      poskoLocation: 'Posko KKN RT $rt, Kel. $kel, Kec. Bojongsoang',
-      dosenPembimbing: 'Dr. Ir. Pembimbing, M.T.',
-      totalGroupPoints: 1250,
-      members: [
+      groupId: user?.id ?? '',
+      groupName: kel != '-' ? 'Kelompok KKN $kel RW $rw' : 'Kelompok KKN',
+      poskoLocation: kel != '-' ? 'Posko KKN RW $rw, $kelDisplay' : '-',
+      dosenPembimbing: '-',
+      totalGroupPoints: 0,
+      members: user != null ? [
         KelompokMemberData(
-          userId: user?.id ?? '1',
-          nim: user?.id ?? '136467959797',
-          name: user?.name.isNotEmpty == true ? user!.name : 'Mahasiswa KKN',
-          jurusan: 'S1 Teknik Elektro',
-          individualPoints: 450,
+          userId: user.id,
+          nim: user.nim.isNotEmpty ? user.nim : '-',
+          name: user.name.isNotEmpty ? user.name : '-',
+          jurusan: user.prodi.isNotEmpty ? user.prodi : (user.jurusan.isNotEmpty ? user.jurusan : '-'),
+          individualPoints: 0,
           isLeader: true,
         ),
-        const KelompokMemberData(userId: '2', nim: '136467959798', name: 'Siti Rahma', jurusan: 'S1 Teknik Informatika', individualPoints: 380, isLeader: false),
-        const KelompokMemberData(userId: '3', nim: '136467959799', name: 'Andi Wijaya', jurusan: 'S1 Sistem Informasi', individualPoints: 420, isLeader: false),
-      ],
+      ] : [],
     );
+
+    // Deduplicate members by name
+    final uniqueMembers = <String, KelompokMemberData>{};
+    for (final m in kelompokData.members) {
+      final key = m.name.toLowerCase().trim();
+      if (!uniqueMembers.containsKey(key) || m.isLeader) {
+        uniqueMembers[key] = m;
+      }
+    }
+    // Ensure ONLY ONE leader exists to fix the double KETUA badge bug (First found wins)
+    bool hasFoundLeader = false;
+    final membersToDisplay = <KelompokMemberData>[];
+    
+    for (final m in uniqueMembers.values) {
+      if (m.isLeader && !hasFoundLeader) {
+        membersToDisplay.add(m);
+        hasFoundLeader = true;
+      } else if (m.isLeader && hasFoundLeader) {
+        // Strip the leader status from the secondary member
+        membersToDisplay.add(m.copyWith(isLeader: false));
+      } else {
+        membersToDisplay.add(m);
+      }
+    }
+    membersToDisplay.sort((a, b) {
+      if (a.isLeader && !b.isLeader) return -1;
+      if (!a.isLeader && b.isLeader) return 1;
+      return 0;
+    });
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -46,6 +74,10 @@ class KelompokKknView extends ConsumerWidget {
         ),
         backgroundColor: AppColors.primaryGreen,
         iconTheme: const IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
         elevation: 0,
         actions: [
           IconButton(
@@ -78,7 +110,7 @@ class KelompokKknView extends ConsumerWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                        colors: [AppColors.primaryGreen, AppColors.successDark],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -91,10 +123,10 @@ class KelompokKknView extends ConsumerWidget {
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: AppColors.primaryGreen.withValues(alpha: 0.2),
+                                color: Colors.white.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(Icons.groups_rounded, color: AppColors.primaryGreen, size: 28),
+                              child: const Icon(Icons.groups_rounded, color: Colors.white, size: 28),
                             ),
                             const SizedBox(width: 14),
                             Expanded(
@@ -135,7 +167,7 @@ class KelompokKknView extends ConsumerWidget {
                         ),
                         Row(
                           children: [
-                            const Icon(Icons.school_rounded, color: AppColors.primaryGreen, size: 20),
+                            const Icon(Icons.school_rounded, color: Colors.white, size: 20),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Column(
@@ -206,7 +238,7 @@ class KelompokKknView extends ConsumerWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Penjumlahan poin individu ${kelompokData.members.length} anggota kelompok',
+                              'Penjumlahan poin individu ${membersToDisplay.length} anggota kelompok',
                               style: const TextStyle(fontSize: 11, color: Colors.black45),
                             ),
                           ],
@@ -232,7 +264,7 @@ class KelompokKknView extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        '${kelompokData.members.length} Orang',
+                        '${membersToDisplay.length} Orang',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
                       ),
                     ),
@@ -244,10 +276,11 @@ class KelompokKknView extends ConsumerWidget {
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: kelompokData.members.length,
+                  itemCount: membersToDisplay.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
-                    final member = kelompokData.members[index];
+                    final member = membersToDisplay[index];
+                    final isCurrentUser = user != null && (member.name.toLowerCase().trim() == user.name.toLowerCase().trim());
                     return Card(
                       elevation: 1,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -288,11 +321,29 @@ class KelompokKknView extends ConsumerWidget {
                                   ),
                                 ),
                               ),
+                            if (isCurrentUser)
+                              Container(
+                                margin: const EdgeInsets.only(left: 6),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryBlue.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
+                                ),
+                                child: const Text(
+                                  'ANDA',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primaryBlue,
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                         subtitle: Text(
-                          'NIM: ${member.nim.isNotEmpty ? member.nim : "-"} • ${member.jurusan}',
-                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          member.nim.isNotEmpty ? member.nim : '-',
+                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
                         ),
                         trailing: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -322,9 +373,9 @@ class KelompokKknView extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.06),
+                    color: AppColors.primaryBlue.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+                    border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.2)),
                   ),
                   child: const Row(
                     children: [

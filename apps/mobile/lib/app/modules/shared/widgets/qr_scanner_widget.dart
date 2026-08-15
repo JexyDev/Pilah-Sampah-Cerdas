@@ -1,12 +1,14 @@
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/utils/platform_utils.dart';
 
-/// Widget QR Scanner terpusat — scan QR tong & aktivasi bin.
+/// Widget QR Scanner terpusat — scan QR tempat sampah & aktivasi tempat sampah.
 ///
 /// - Android/iOS: MobileScanner dengan permission request runtime
 /// - Web/Desktop: Input manual fallback
@@ -16,11 +18,13 @@ class QrScannerWidget extends StatefulWidget {
     required this.onQrDetected,
     this.hint,
     this.overlayColor,
+    this.isFullScreen = false,
   });
 
   final Future<bool> Function(String qrCode) onQrDetected;
   final String? hint;
   final Color? overlayColor;
+  final bool isFullScreen;
 
   @override
   State<QrScannerWidget> createState() => QrScannerWidgetState();
@@ -60,6 +64,9 @@ class QrScannerWidgetState extends State<QrScannerWidget>
     if (!mounted) return;
 
     if (status.isGranted) {
+      // Beri delay sedikit agar OS melepas hardware kamera sepenuhnya setelah izin diberikan pertama kali
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
       _startScanner();
     } else if (status.isPermanentlyDenied) {
       setState(() => _state = _QrState.permDenied);
@@ -83,6 +90,7 @@ class QrScannerWidgetState extends State<QrScannerWidget>
     final String? code = capture.barcodes.firstOrNull?.rawValue;
     if (code != null && code.isNotEmpty) {
       setState(() => _scanned = true);
+      _controller?.stop(); // Hentikan kamera segera agar tidak freeze/stuck
       
       // Feedback instan saat barcode terbaca
       HapticFeedback.vibrate();
@@ -91,11 +99,6 @@ class QrScannerWidgetState extends State<QrScannerWidget>
       
       // Panggil callback
       await widget.onQrDetected(code);
-      
-      // Reset state agar siap menscan ulang jika parent belum berpindah/unmount
-      if (mounted) {
-        setState(() => _scanned = false);
-      }
     }
   }
   
@@ -106,7 +109,7 @@ class QrScannerWidgetState extends State<QrScannerWidget>
       _scanned = false;
       _state = _QrState.ready;
     });
-    // Controller will automatically resume when MobileScanner is rebuilt
+    _controller?.start(); // Nyalakan kembali kamera
   }
 
   @override
@@ -138,6 +141,123 @@ class QrScannerWidgetState extends State<QrScannerWidget>
 
   Widget _buildScanner() {
     final Color frameColor = widget.overlayColor ?? AppColors.primaryGreen;
+
+    if (widget.isFullScreen) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          MobileScanner(
+            controller: _controller!,
+            onDetect: _onDetect,
+            errorBuilder: (ctx, error, child) {
+              return Container(
+                color: Colors.black,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        color: AppColors.dangerRed,
+                        size: 36,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Error: ${error.errorDetails?.message ?? 'Kamera gagal'}',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _state = _QrState.loading;
+                            _scanned = false;
+                          });
+                          _requestPermissionAndStart();
+                        },
+                        child: const Text(
+                          'Coba Lagi',
+                          style: TextStyle(
+                            color: AppColors.primaryGreen,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          // Overlay frame full screen
+          CustomPaint(
+            painter: _ScanOverlayPainter(color: frameColor, isFullScreen: true),
+            child: const SizedBox.expand(),
+          ),
+          // Flash button
+          Positioned(
+            top: 24,
+            right: 20,
+            child: SafeArea(
+              child: _FlashButton(controller: _controller!),
+            ),
+          ),
+          // Floating Label (positioned neatly below scan box with generous spacing above bottom card)
+          Positioned(
+            bottom: 265,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: const Text(
+                  'Posisikan QR Code di dalam kotak',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
+          if (_scanned)
+            Container(
+              color: Colors.black87,
+              child: const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.check_circle_rounded,
+                      color: AppColors.primaryGreen,
+                      size: 56,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'QR Terdeteksi!',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      );
+    }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -216,7 +336,7 @@ class QrScannerWidgetState extends State<QrScannerWidget>
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
                       shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
                     ),
                     textAlign: TextAlign.center,
@@ -483,30 +603,40 @@ class _FlashButtonState extends State<_FlashButton> {
 // ─── Scan Overlay Painter ─────────────────────────────────────────────────────
 
 class _ScanOverlayPainter extends CustomPainter {
-  _ScanOverlayPainter({required this.color});
+  _ScanOverlayPainter({required this.color, this.isFullScreen = false});
   final Color color;
+  final bool isFullScreen;
 
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
-    const m = 48.0;
     const cLen = 32.0;
     const sw = 3.5;
 
+    Rect scanRect;
+    if (isFullScreen) {
+      final double boxSize = (w - 80).clamp(240.0, 300.0);
+      final double left = (w - boxSize) / 2;
+      final double top = (h - boxSize) / 2 - 70; // Shifted up to give generous breathing room above label & bottom card
+      scanRect = Rect.fromLTWH(left, top, boxSize, boxSize);
+    } else {
+      const m = 48.0;
+      scanRect = Rect.fromLTWH(m, m, w - m * 2, h - m * 2);
+    }
+
     // Overlay gelap dengan hole transparan di tengah
-    final scanRect = Rect.fromLTWH(m, m, w - m * 2, h - m * 2);
     final path = Path()
       ..addRect(Rect.fromLTWH(0, 0, w, h))
-      ..addRRect(RRect.fromRectAndRadius(scanRect, const Radius.circular(8)))
+      ..addRRect(RRect.fromRectAndRadius(scanRect, const Radius.circular(12)))
       ..fillType = PathFillType.evenOdd;
-    canvas.drawPath(path, Paint()..color = Colors.black.withValues(alpha: 0.5));
+    canvas.drawPath(path, Paint()..color = Colors.black.withValues(alpha: 0.55));
 
     // Border scan area
     canvas.drawRRect(
-      RRect.fromRectAndRadius(scanRect, const Radius.circular(8)),
+      RRect.fromRectAndRadius(scanRect, const Radius.circular(12)),
       Paint()
-        ..color = color.withValues(alpha: 0.5)
+        ..color = color.withValues(alpha: 0.6)
         ..strokeWidth = 1.5
         ..style = PaintingStyle.stroke,
     );
@@ -518,12 +648,18 @@ class _ScanOverlayPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
+    final left = scanRect.left;
+    final top = scanRect.top;
+    final right = scanRect.right;
+    final bottom = scanRect.bottom;
+
     final corners = [
-      [m, m + cLen, m, m, m + cLen, m],
-      [w - m - cLen, m, w - m, m, w - m, m + cLen],
-      [m, h - m - cLen, m, h - m, m + cLen, h - m],
-      [w - m - cLen, h - m, w - m, h - m, w - m, h - m - cLen],
+      [left, top + cLen, left, top, left + cLen, top],
+      [right - cLen, top, right, top, right, top + cLen],
+      [left, bottom - cLen, left, bottom, left + cLen, bottom],
+      [right - cLen, bottom, right, bottom, right, bottom - cLen],
     ];
+
     for (final c in corners) {
       canvas.drawPath(
         Path()
@@ -536,6 +672,7 @@ class _ScanOverlayPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter _) => false;
+  bool shouldRepaint(covariant _ScanOverlayPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.isFullScreen != isFullScreen;
 }
 

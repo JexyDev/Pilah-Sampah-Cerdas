@@ -48,6 +48,21 @@ export const scheduleController = {
         return;
       }
 
+      let resolvedKelompokId = kelompokId || undefined;
+      const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(
+        String(req.user?.role || "").toUpperCase()
+      );
+      if (isDpl && !resolvedKelompokId && req.user?.userId) {
+        const { PrismaClient } = await import("@prisma/client");
+        const prisma = new PrismaClient();
+        const dplGroup = await prisma.kelompokKkn.findFirst({
+          where: { OR: [{ dplId: req.user.userId }, { dpl: { id: req.user.userId } }] },
+        });
+        if (dplGroup) {
+          resolvedKelompokId = dplGroup.id;
+        }
+      }
+
       const schedule = await scheduleService.createSchedule({
         title,
         date: parsedDate,
@@ -58,7 +73,7 @@ export const scheduleController = {
         longitude: longitude ? Number(longitude) : undefined,
         radius: radius ? Number(radius) : undefined,
         polygon: polygon ? polygon : undefined,
-        kelompokId: kelompokId || undefined,
+        kelompokId: resolvedKelompokId,
       });
       res.status(201).json({
         success: true,

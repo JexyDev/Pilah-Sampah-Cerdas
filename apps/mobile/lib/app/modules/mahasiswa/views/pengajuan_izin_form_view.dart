@@ -50,7 +50,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_photoPath == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Foto surat/bukti izin wajib diunggah!'),
           backgroundColor: AppColors.dangerRed,
@@ -86,7 +86,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
       if (errMsg.contains('404') || errMsg.contains('network') || errMsg.contains('connection')) {
         setState(() => _isSuccess = true);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal mengirim: $e'),
             backgroundColor: AppColors.dangerRed,
@@ -107,6 +107,10 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
         ),
         backgroundColor: AppColors.primaryGreen,
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
         elevation: 0,
       ),
       body: _isSuccess ? _buildSuccessView() : _buildForm(),
@@ -123,7 +127,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.green.shade50,
+                color: AppColors.primaryGreenLight,
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.primaryGreen, width: 2),
               ),
@@ -139,24 +143,24 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.amber.shade50,
+                color: AppColors.warningYellow,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.amber.shade300),
+                border: Border.all(color: AppColors.warningYellow),
               ),
-              child: Column(
+              child: const Column(
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.access_time_rounded, color: Colors.amber, size: 20),
+                      Icon(Icons.access_time_rounded, color: AppColors.warningYellow, size: 20),
                       SizedBox(width: 8),
                       Text(
                         'Status: Menunggu Verifikasi',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.amber),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.warningYellow),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
+                  SizedBox(height: 8),
+                  Text(
                     'Pengajuan izin/sakit Anda telah dikirimkan ke DPL (Dosen Pembimbing Lapangan) untuk diverifikasi. Anda akan mendapat notifikasi setelah diproses.',
                     style: TextStyle(fontSize: 12, color: Colors.black87),
                   ),
@@ -206,9 +210,9 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryBlue.withOpacity(0.08),
+                  color: AppColors.primaryBlue.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.primaryBlue.withOpacity(0.3)),
+                  border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -236,13 +240,13 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.amber[50],
+                color: AppColors.warningYellow,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.amber[300]!),
+                border: Border.all(color: AppColors.warningYellow),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.info_outline_rounded, color: Colors.amber, size: 22),
+                  Icon(Icons.info_outline_rounded, color: AppColors.warningYellow, size: 22),
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -359,9 +363,17 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             const SizedBox(height: 20),
 
             // Upload Foto Bukti
-            const Text('Foto Bukti Surat / Resep Dokter', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            Text(
+              _selectedKategori == KategoriIzin.sakit ? 'Foto Bukti Surat Sakit / Resep Dokter' : 'Foto Dokumen Pendukung Izin', 
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)
+            ),
             const SizedBox(height: 4),
-            const Text('Wajib — surat izin, surat sakit, atau dokumen relevan lainnya.', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+            Text(
+              _selectedKategori == KategoriIzin.sakit 
+                ? 'Wajib — surat keterangan sakit dari dokter, resep obat, dsb.' 
+                : 'Wajib — surat izin instansi, surat pengantar, atau dokumen relevan lainnya.', 
+              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)
+            ),
             const SizedBox(height: 8),
             InkWell(
               onTap: _pickPhoto,
@@ -376,7 +388,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                     style: BorderStyle.solid,
                   ),
                   borderRadius: BorderRadius.circular(10),
-                  color: _photoPath != null ? Colors.green.shade50 : Colors.grey[50],
+                  color: _photoPath != null ? AppColors.primaryGreenLight : Colors.grey[50],
                 ),
                 child: _photoPath == null
                     ? const Column(
@@ -454,7 +466,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                       ),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 80),
           ],
         ),
       ),

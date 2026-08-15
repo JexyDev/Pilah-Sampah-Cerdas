@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/values/app_assets.dart';
@@ -100,9 +102,16 @@ class _SplashViewState extends ConsumerState<SplashView>
     if (!mounted) return;
 
     final authState = ref.read(authProvider);
-    Navigator.of(context).pushReplacementNamed(
-      authState.isAuthenticated ? AppRoutes.main : AppRoutes.login,
-    );
+    if (authState.isAuthenticated) {
+      final user = authState.user;
+      if (user != null) {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+      } else {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+      }
+    } else {
+      Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+    }
   }
 
   @override
@@ -165,7 +174,7 @@ class _SplashViewState extends ConsumerState<SplashView>
                           opacity: _titleFade,
                           child: Text(
                             'TrashCare',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.poppins(
                               color: AppColors.primaryGreen,
                               fontSize: 26,
                               fontWeight: FontWeight.w700,
@@ -183,7 +192,7 @@ class _SplashViewState extends ConsumerState<SplashView>
                           opacity: _taglineFade,
                           child: Text(
                             'Sampah Terdata, Lingkungan Tertata',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.poppins(
                               color: AppColors.textSecondary,
                               fontSize: 14,
                               fontWeight: FontWeight.w600,

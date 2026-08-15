@@ -85,8 +85,8 @@ const Pengaturan: React.FC = () => {
   });
 
   const isDeveloper =
-    storeUser?.peran?.toUpperCase() === "DEVELOPER" ||
-    profileData.role?.toUpperCase() === "DEVELOPER";
+    ["DEVELOPER", "SUPER_USER"].includes(storeUser?.peran?.toUpperCase() || "") ||
+    ["DEVELOPER", "SUPER_USER"].includes(profileData.role?.toUpperCase() || "");
 
   const getInitialTab = (): "profil" | "database" | "rbac" => {
     const t = (searchParams.get("tab") || "profil").toLowerCase();

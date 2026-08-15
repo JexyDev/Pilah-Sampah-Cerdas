@@ -26,26 +26,39 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
     super.dispose();
   }
 
-  List<WargaDampingan> _filteredList(List<WargaDampingan> list, String userKelurahan, String userRtRw, String userId, String userNim) {
-    // Hanya tampilkan warga yang diaktivasi/didampingi oleh mahasiswa ini (mahasiswaId tidak boleh kosong)
-    var activatedOnly = list.where((w) {
-      if (!w.isActivated) return false;
-      if (w.mahasiswaId.isEmpty) return false;
-      return w.mahasiswaId == userId || (userNim.isNotEmpty && w.mahasiswaId == userNim);
+  int _activationFilterIndex = 0; // 0=Semua, 1=Sudah, 2=Belum
+
+  List<WargaDampingan> _filteredList(List<WargaDampingan> list, String userKecamatan, String userKelurahan, String userRw, String userId, String userNim) {
+    // Tampilkan Warga Dampingan mahasiswa sesuai filter aktivasi
+    var filtered = list.where((w) {
+      // Filter Aktivasi
+      if (_activationFilterIndex == 1 && !w.isActivated) return false;
+      if (_activationFilterIndex == 2 && w.isActivated) return false;
+
+      final mhsId = w.mahasiswaId.trim();
+      if (mhsId.isEmpty || mhsId.toLowerCase() == 'null' || mhsId.toLowerCase() == 'undefined') {
+        return false;
+      }
+      
+      final matchesUser = (userId.isNotEmpty && mhsId == userId) || (userNim.isNotEmpty && mhsId == userNim);
+      return matchesUser;
     }).map((w) {
       // Selaraskan alamat warga ke wilayah penugasan mahasiswa jika data mentah backend masih umum
-      final targetKel = userKelurahan.isNotEmpty ? userKelurahan : 'Bojongsoang';
-      final targetRt = userRtRw.isNotEmpty ? userRtRw : '01/02';
-      final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RT')
+      final targetKel = userKelurahan;
+      final targetRw = userRw;
+      final targetKec = w.kecamatan.isNotEmpty ? w.kecamatan : userKecamatan;
+      final kelDisplay = targetKel.toLowerCase().startsWith('kel') ? targetKel : 'Kel. $targetKel';
+      final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RW')
           ? w.address
-          : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RT $targetRt, Kel. $targetKel';
+          : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $targetRw, $kelDisplay, Kec. $targetKec';
       
       return WargaDampingan(
+        wargaId: w.wargaId,
         binId: w.binId,
         wargaName: w.wargaName,
         address: displayAddr,
         kelurahan: targetKel,
-        rtRw: targetRt,
+        rw: targetRw,
         mahasiswaId: w.mahasiswaId,
         recentLogs: w.recentLogs,
         isActivated: w.isActivated,
@@ -55,9 +68,9 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
       );
     }).toList();
 
-    if (_searchQuery.isEmpty) return activatedOnly;
+    if (_searchQuery.isEmpty) return filtered;
     final query = _searchQuery.toLowerCase();
-    return activatedOnly
+    return filtered
         .where((w) =>
             w.wargaName.toLowerCase().contains(query) ||
             w.address.toLowerCase().contains(query))
@@ -68,12 +81,13 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
   Widget build(BuildContext context) {
     final state = ref.watch(mahasiswaControllerProvider);
     final user = ref.watch(authProvider).user;
-    final userKel = user?.kelurahan ?? 'Bojongsoang';
-    final userRt = user?.rtRw ?? '01/02';
+    final userRw = user?.rw ?? '';
+    final userKec = user?.kecamatan ?? '';
+    final userKel = user?.kelurahan ?? '';
     final userId = user?.id ?? '';
     final userNim = user?.nim ?? '';
     
-    final filtered = _filteredList(state.wargaList, userKel, userRt, userId, userNim);
+    final filtered = _filteredList(state.wargaList, userKec, userKel, userRw, userId, userNim);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -86,7 +100,7 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
         ),
       ),
-      body: state.isLoading
+      body: state.isLoading && state.wargaList.isEmpty
           ? const AppLoading(message: 'Memuat daftar warga...')
           : Column(
               children: [
@@ -135,6 +149,25 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
                             BorderRadius.circular(AppDimensions.radiusMd),
                         borderSide: BorderSide.none,
                       ),
+                    ),
+                  ),
+                ),
+                
+                // ── Filter Aktivasi ─────────────────────────────
+                Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.only(bottom: AppDimensions.md),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
+                    child: Row(
+                      children: [
+                        _filterChip('Semua', 0),
+                        const SizedBox(width: 8),
+                        _filterChip('Sudah Aktivasi', 1),
+                        const SizedBox(width: 8),
+                        _filterChip('Belum Aktivasi', 2),
+                      ],
                     ),
                   ),
                 ),
@@ -190,6 +223,40 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
                 ),
               ],
             ),
+    );
+  }
+
+  Widget _filterChip(String label, int index) {
+    final bool active = _activationFilterIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _activationFilterIndex = index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        decoration: BoxDecoration(
+          color: active ? AppColors.primaryGreen : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: active ? AppColors.primaryGreen : AppColors.border,
+          ),
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.25),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: active ? Colors.white : AppColors.textSecondary,
+          ),
+        ),
+      ),
     );
   }
 }

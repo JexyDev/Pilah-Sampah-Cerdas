@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/values/app_colors.dart';
@@ -27,6 +29,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   String _qrAnorganik = '';
   bool _bothBinsDetected = false;
   bool _localLoading = false;
+  int _scanAttempt = 0;
 
   bool _argsLoaded = false;
   bool _hasOrganic = false;
@@ -97,7 +100,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     if (permission == LocationPermission.deniedForever ||
         permission == LocationPermission.denied) {
       if (mounted && showDialogs) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Akses lokasi diperlukan untuk mencatat titik posisi tempat sampah.'),
             backgroundColor: AppColors.dangerRed,
@@ -131,8 +134,11 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           success = false;
         } else {
           _qrAnorganik = detected;
-          _bothBinsDetected = true; // Kedua/satu tong berhasil di-scan
+          _bothBinsDetected = true; // Kedua/satu tempat sampah berhasil di-scan
         }
+      }
+      if (!success) {
+        _scanAttempt++;
       }
     });
     
@@ -140,7 +146,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: AppColors.dangerRed,
@@ -156,6 +162,8 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     double? lng;
 
     final user = ref.read(authProvider).user;
+    if (!mounted) return;
+    
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final double orgCapacity = args?['orgCapacity'] ?? 20.0;
     final double anorgCapacity = args?['anorgCapacity'] ?? 20.0;
@@ -201,10 +209,10 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           anorgCapacity: anorgCapacity,
         );
     if (ref.read(aktivasiBinProvider).isSuccess) {
-      // Refresh semua data yang terpengaruh setelah tong baru diaktivasi
+      // Refresh semua data yang terpengaruh setelah tempat sampah baru diaktivasi
       ref.invalidate(binsProvider);
       ref.invalidate(notificationsProvider);
-      // Refresh profil agar data tong di halaman Profil ikut segar
+      // Refresh profil agar data tempat sampah di halaman Profil ikut segar
       await ref.read(authProvider.notifier).fetchProfile();
     }
   }
@@ -222,6 +230,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         return 'QR Code tempat sampah tidak terdaftar di sistem.';
       case 'BIN_CATEGORY_DUPLICATE':
         return msg ?? 'Kategori tempat sampah sudah terdaftar untuk warga ini.';
+      case 'HOUSEHOLDS_NOT_FOUND':
+      case 'HOUSEHOLD_REQUIRED':
+        return 'Akun Anda belum memiliki Rumah Tangga terdaftar. Harap hubungi Mahasiswa Pendamping/Admin untuk pendaftaran rumah Anda terlebih dahulu.';
       default:
         if (msg != null && msg.isNotEmpty && !msg.startsWith('BIN_ALREADY_USED')) {
           return msg;
@@ -236,7 +247,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
 
     ref.listen(aktivasiBinProvider, (prev, next) {
       if (next.errorCode != null && !next.isLoading) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_mapError(next.errorCode!, next.errorMessage)),
             backgroundColor: AppColors.dangerRed,
@@ -296,7 +307,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           // ── Area Scanner ──────────────────────────────────────────
           Expanded(
             child: _bothBinsDetected
-                // Setelah kedua tong terdeteksi — tampil konfirmasi
+                // Setelah kedua tempat sampah terdeteksi — tampil konfirmasi
                 ? Container(
                     color: const Color(0xFF3D4A3F),
                     child: Center(
@@ -310,7 +321,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                           ),
                           const SizedBox(height: 12),
                           const Text(
-                            'Tempat Sampah Berhasil Di-scan',
+                            'Tempat Sampah Berhasil Dipindai',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -324,13 +335,14 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                               _step = _hasOrganic ? 2 : 1;
                               _qrOrganik = '';
                               _qrAnorganik = '';
+                              _scanAttempt++;
                             }),
                             icon: const Icon(
                               Icons.refresh_rounded,
                               color: Colors.white54,
                             ),
                             label: const Text(
-                              'Scan Ulang',
+                              'Pindai Ulang',
                               style: TextStyle(color: Colors.white54),
                             ),
                           ),
@@ -343,6 +355,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: QrScannerWidget(
+                        key: ValueKey('$_step-$_scanAttempt'),
                         hint: _step == 1 ? 'BIN-ORG-EF2072F0' : 'BIN-NON-EF2072F1',
                         overlayColor: _step == 1 ? AppColors.organicColor : AppColors.nonOrganicColor,
                         onQrDetected: _onQrDetected,
@@ -400,11 +413,11 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         Text(
           _step == 1
               ? (_hasAnorganic 
-                  ? 'Arahkan kamera ke QR Code\npada Tempat Sampah Organik Anda' 
-                  : 'Langkah 1/2: Arahkan kamera ke QR Code\npada Tempat Sampah Organik Anda')
+                  ? 'Arahkan kamera ke Kode QR\npada Tempat Sampah Organik Anda' 
+                  : 'Langkah 1/2: Arahkan kamera ke Kode QR\npada Tempat Sampah Organik Anda')
               : (_hasOrganic 
-                  ? 'Arahkan kamera ke QR Code\npada Tempat Sampah Anorganik Anda' 
-                  : 'Langkah 2/2: Arahkan kamera ke QR Code\npada Tempat Sampah Anorganik Anda'),
+                  ? 'Arahkan kamera ke Kode QR\npada Tempat Sampah Anorganik Anda' 
+                  : 'Langkah 2/2: Arahkan kamera ke Kode QR\npada Tempat Sampah Anorganik Anda'),
           style: const TextStyle(
             fontSize: 14,
             color: AppColors.textSecondary,
@@ -426,11 +439,12 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                 _qrOrganik = '';
                 _qrAnorganik = '';
                 _bothBinsDetected = false;
+                _scanAttempt++;
               });
             },
             icon: const Icon(Icons.refresh_rounded, color: AppColors.dangerRed),
             label: const Text(
-              'Ulangi Scan dari Awal',
+              'Ulangi Pemindaian dari Awal',
               style: TextStyle(color: AppColors.dangerRed),
             ),
           ),
@@ -478,6 +492,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                 _step = _hasOrganic ? 2 : 1;
                 _qrOrganik = '';
                 _qrAnorganik = '';
+                _scanAttempt++;
               }),
               child: const Icon(
                 Icons.close_rounded,

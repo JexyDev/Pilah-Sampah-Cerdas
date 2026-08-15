@@ -33,6 +33,7 @@ import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 
 interface PemanfaatanItem {
   id: string;
@@ -90,6 +91,8 @@ export const PemanfaatanSampah: React.FC = () => {
   const [tanggalPencatatan, setTanggalPencatatan] = useState("");
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [deleteProgramId, setDeleteProgramId] = useState<string | null>(null);
+  const [isDeletingProgram, setIsDeletingProgram] = useState(false);
 
   const isReadOnly = user?.peran === "ADMIN_DLH" || user?.peran === "CAMAT" || user?.peran === "LURAH";
   const isMahasiswaMember = user?.peran === "MAHASISWA_KKN";
@@ -304,19 +307,26 @@ export const PemanfaatanSampah: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (isReadOnly) {
       showToast.error("Akses Ditolak: Peran Anda hanya memiliki akses Read-Only");
       return;
     }
-    if (!window.confirm("Apakah Anda yakin ingin menghapus program pengelolaan sampah ini?")) return;
+    setDeleteProgramId(id);
+  };
 
+  const handleConfirmDeleteProgram = async () => {
+    if (!deleteProgramId) return;
     try {
-      await api.delete(`/pemanfaatan/${id}`);
+      setIsDeletingProgram(true);
+      await api.delete(`/pemanfaatan/${deleteProgramId}`);
       showToast.success("Program pengelolaan sampah berhasil dihapus");
+      setDeleteProgramId(null);
       fetchItems();
     } catch (err: any) {
       showToast.error(err.response?.data?.message || "Gagal menghapus data");
+    } finally {
+      setIsDeletingProgram(false);
     }
   };
 
@@ -883,6 +893,18 @@ export const PemanfaatanSampah: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal Hapus Program Pengelolaan Sampah */}
+      <ConfirmModal
+        isOpen={Boolean(deleteProgramId)}
+        onClose={() => setDeleteProgramId(null)}
+        onConfirm={handleConfirmDeleteProgram}
+        isLoading={isDeletingProgram}
+        title="Hapus Program Pengelolaan Sampah"
+        message="Apakah Anda yakin ingin menghapus data program daur ulang & pemanfaatan sampah ini? Data historis terkait akan dihapus."
+        confirmText="Ya, Hapus Program"
+        type="danger"
+      />
     </div>
   );
 };

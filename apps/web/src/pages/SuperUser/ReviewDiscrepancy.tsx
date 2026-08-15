@@ -10,6 +10,7 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
 import { Pagination } from "../../components/common/Pagination";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 
 interface DiscrepancyLog {
   id: string;
@@ -52,6 +53,7 @@ export const ReviewDiscrepancy: React.FC = () => {
   const [koreksiClass, setKoreksiClass] = useState("ORGANIC");
   const [koreksiWeight, setKoreksiWeight] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deleteLogId, setDeleteLogId] = useState<string | null>(null);
 
   const fetchDiscrepancies = useCallback(async () => {
     try {
@@ -190,11 +192,15 @@ export const ReviewDiscrepancy: React.FC = () => {
   };
 
   const handleDeleteLog = (id: string) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus data diskrepansi ini?")) {
-      setLogs((prev) => prev.filter((item) => item.id !== id));
-      if (selectedLog?.id === id) setSelectedLog(null);
-      toast.success("Data diskrepansi berhasil dihapus.");
-    }
+    setDeleteLogId(id);
+  };
+
+  const handleConfirmDeleteLog = () => {
+    if (!deleteLogId) return;
+    setLogs((prev) => prev.filter((item) => item.id !== deleteLogId));
+    if (selectedLog?.id === deleteLogId) setSelectedLog(null);
+    toast.success("Data diskrepansi berhasil dihapus.");
+    setDeleteLogId(null);
   };
 
   const handleExportCsv = () => {
@@ -730,9 +736,19 @@ export const ReviewDiscrepancy: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal Hapus Diskrepansi */}
+      <ConfirmModal
+        isOpen={Boolean(deleteLogId)}
+        onClose={() => setDeleteLogId(null)}
+        onConfirm={handleConfirmDeleteLog}
+        title="Hapus Data Diskrepansi"
+        message="Apakah Anda yakin ingin menghapus catatan diskrepansi ini dari log evaluasi AI?"
+        confirmText="Ya, Hapus Catatan"
+        type="danger"
+      />
     </div>
   );
 };
 
-
-
+export default ReviewDiscrepancy;

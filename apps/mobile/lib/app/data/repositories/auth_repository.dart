@@ -38,13 +38,30 @@ abstract class AuthRepository {
   /// Mengunggah foto profil baru.
   Future<void> uploadAvatar(String imagePath);
 
+  /// Memperbarui profil pengguna.
+  Future<bool> updateProfile({
+    required String name,
+    required String phone,
+    String? address,
+    String? kecamatan,
+    String? kelurahan,
+    String? rw,
+    String? jenjangPendidikan,
+  });
+
   /// Request token untuk lupa kata sandi.
-  Future<String?> forgotPassword({required String email});
+  Future<String?> forgotPassword({required String phone});
 
   /// Reset kata sandi menggunakan token/kode verifikasi.
   Future<void> resetPassword({
-    required String email,
+    required String phone,
     required String token,
+    required String newPassword,
+  });
+
+  /// Ubah kata sandi pengguna aktif.
+  Future<bool> changePassword({
+    required String oldPassword,
     required String newPassword,
   });
 
@@ -60,5 +77,5 @@ class AuthException implements Exception {
   final String? message;
 
   @override
-  String toString() => 'AuthException($code): $message';
+  String toString() => message != null && message!.isNotEmpty ? message! : 'Terjadi kesalahan autentikasi. Silakan periksa kembali data Anda.';
 }

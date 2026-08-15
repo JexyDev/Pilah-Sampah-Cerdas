@@ -45,7 +45,17 @@ interface KPIStats {
 const MapFlyTo: React.FC<{ target: { center: [number, number]; zoom: number; timestamp?: number } | null }> = ({ target }) => {
   const map = useMapEvents({});
   useEffect(() => {
-    if (target && target.center) {
+    map.invalidateSize();
+    const t1 = setTimeout(() => map.invalidateSize(), 150);
+    const t2 = setTimeout(() => map.invalidateSize(), 400);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [map]);
+
+  useEffect(() => {
+    if (target && target.center && !isNaN(target.center[0]) && !isNaN(target.center[1]) && target.center[0] < 0 && target.center[1] > 0) {
       map.flyTo(target.center, target.zoom, { duration: 1.2 });
     }
   }, [target, map]);
@@ -599,7 +609,10 @@ const Monitoring: React.FC = () => {
             </div>
 
             {/* Map Overlay Unified Legend Card (Single Consolidated Source of Truth) */}
-            <div className="absolute bottom-4 right-4 z-20 flex flex-col pointer-events-auto max-w-[280px] sm:max-w-[300px]">
+            <div
+              className="absolute bottom-4 right-4 flex flex-col pointer-events-auto max-w-[280px] sm:max-w-[300px] select-none"
+              style={{ zIndex: 1000, isolation: "isolate" }}
+            >
               {!isLegendOpen ? (
                 <button
                   type="button"

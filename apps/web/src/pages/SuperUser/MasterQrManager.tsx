@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
 import { Badge } from "../../components/common/Badge";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { QrCode, AlertTriangle, PlayCircle, Printer, RefreshCw, Trash2, Plus, Search, Filter } from "lucide-react";
 
 import { useAuthStore } from "../../store/useAuthStore";
@@ -53,6 +54,8 @@ export const MasterQrManager: React.FC = () => {
   const [selectedOldBin, setSelectedOldBin] = useState<BinQr | null>(null);
   const [newQrInput, setNewQrInput] = useState<string>("");
   const [submittingReplace, setSubmittingReplace] = useState<boolean>(false);
+  const [deleteQrModal, setDeleteQrModal] = useState<{ id: string; qrCode: string } | null>(null);
+  const [isDeletingQr, setIsDeletingQr] = useState<boolean>(false);
 
   const fetchQrData = async () => {
     try {
@@ -175,17 +178,25 @@ export const MasterQrManager: React.FC = () => {
     }
   };
 
-  const handleDeleteBin = async (binId: string, qrCode: string) => {
-    if (!window.confirm(`Yakin ingin menghapus QR Code ${qrCode}? Tindakan ini permanen.`)) return;
+  const handleDeleteBin = (binId: string, qrCode: string) => {
+    setDeleteQrModal({ id: binId, qrCode });
+  };
+
+  const handleConfirmDeleteBin = async () => {
+    if (!deleteQrModal) return;
     try {
-      const res = await api.delete(`/super-user/bins/${binId}`);
+      setIsDeletingQr(true);
+      const res = await api.delete(`/super-user/bins/${deleteQrModal.id}`);
       if (res.data?.success) {
-        toast.success(`QR Code ${qrCode} berhasil dihapus dari database`);
+        toast.success(`QR Code ${deleteQrModal.qrCode} berhasil dihapus dari database`);
+        setDeleteQrModal(null);
         fetchQrData();
       }
     } catch (e: any) {
       console.error("Gagal menghapus QR Code:", e);
       toast.error(e.response?.data?.message || "Gagal menghapus QR Code");
+    } finally {
+      setIsDeletingQr(false);
     }
   };
 
@@ -780,6 +791,20 @@ export const MasterQrManager: React.FC = () => {
           </form>
         </div>
       )}
+
+      {/* Confirmation Modal Hapus Master QR */}
+      <ConfirmModal
+        isOpen={Boolean(deleteQrModal)}
+        onClose={() => setDeleteQrModal(null)}
+        onConfirm={handleConfirmDeleteBin}
+        isLoading={isDeletingQr}
+        title="Hapus Master QR Tempat Sampah"
+        message={`Apakah Anda yakin ingin menghapus QR Code ${deleteQrModal?.qrCode || ""}? Tindakan ini permanen.`}
+        confirmText="Ya, Hapus QR"
+        type="danger"
+      />
     </div>
   );
 };
+
+export default MasterQrManager;

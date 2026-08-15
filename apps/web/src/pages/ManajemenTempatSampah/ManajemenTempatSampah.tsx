@@ -13,6 +13,7 @@ import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 import KategoriSampah from "../KategoriSampah/KategoriSampah";
 import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
@@ -51,7 +52,17 @@ const MapEvents = ({
 const MapFlyTo = ({ target }: { target: { center: [number, number]; zoom: number; timestamp: number } | null }) => {
   const map = useMap();
   useEffect(() => {
-    if (target) {
+    map.invalidateSize();
+    const t1 = setTimeout(() => map.invalidateSize(), 150);
+    const t2 = setTimeout(() => map.invalidateSize(), 400);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [map]);
+
+  useEffect(() => {
+    if (target && target.center && !isNaN(target.center[0]) && !isNaN(target.center[1]) && target.center[0] < 0 && target.center[1] > 0) {
       map.flyTo(target.center, target.zoom, { duration: 1.2 });
     }
   }, [target, map]);
@@ -227,6 +238,8 @@ const ManajemenTempatSampah: React.FC = () => {
   // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [binToDelete, setBinToDelete] = useState<string | null>(null);
+  const [rejectBinKode, setRejectBinKode] = useState<string | null>(null);
+  const [isRejecting, setIsRejecting] = useState(false);
 
   // Kategori Add Modal Trigger Signal
   const [openKategoriAddSignal, setOpenKategoriAddSignal] = useState(0);
@@ -474,18 +487,25 @@ const ManajemenTempatSampah: React.FC = () => {
     }
   };
 
-  const handleRejectActivation = async (binKode: string) => {
-    if (window.confirm(`Apakah Anda yakin ingin menolak aktivasi untuk tempat sampah ${binKode}? Akun warga terkait akan dihapus.`)) {
-      try {
-        const res = await api.put(`/bins/${binKode}/reject-activation`);
-        if (res.data?.success) {
-          toast.success("Aktivasi tempat sampah ditolak dan akun warga dibersihkan!");
-          fetchBins();
-          fetchHouseholds();
-        }
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || "Gagal menolak aktivasi");
+  const handleRejectActivation = (binKode: string) => {
+    setRejectBinKode(binKode);
+  };
+
+  const handleConfirmRejectActivation = async () => {
+    if (!rejectBinKode) return;
+    try {
+      setIsRejecting(true);
+      const res = await api.put(`/bins/${rejectBinKode}/reject-activation`);
+      if (res.data?.success) {
+        toast.success("Aktivasi tempat sampah ditolak dan akun warga dibersihkan!");
+        setRejectBinKode(null);
+        fetchBins();
+        fetchHouseholds();
       }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Gagal menolak aktivasi");
+    } finally {
+      setIsRejecting(false);
     }
   };
 
@@ -949,7 +969,10 @@ const ManajemenTempatSampah: React.FC = () => {
               </div>
 
               {/* Map Overlay Legend Card (Legenda Peta) */}
-              <div className="absolute bottom-4 right-4 z-10 flex flex-col pointer-events-auto max-w-[280px] sm:max-w-[300px]">
+              <div
+                className="absolute bottom-4 right-4 flex flex-col pointer-events-auto max-w-[280px] sm:max-w-[300px] select-none"
+                style={{ zIndex: 1000, isolation: "isolate" }}
+              >
                 {!isLegendOpen ? (
                   <button
                     type="button"
@@ -2051,6 +2074,18 @@ const ManajemenTempatSampah: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal Tolak Aktivasi Tempat Sampah */}
+      <ConfirmModal
+        isOpen={Boolean(rejectBinKode)}
+        onClose={() => setRejectBinKode(null)}
+        onConfirm={handleConfirmRejectActivation}
+        isLoading={isRejecting}
+        title="Tolak Aktivasi Tempat Sampah"
+        message={`Apakah Anda yakin ingin menolak aktivasi untuk tempat sampah ${rejectBinKode || ""}? Akun warga terkait akan dibersihkan.`}
+        confirmText="Ya, Tolak Aktivasi"
+        type="danger"
+      />
     </div>
   );
 };

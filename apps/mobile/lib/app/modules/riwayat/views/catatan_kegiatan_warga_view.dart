@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/values/app_config.dart';
 import '../../../data/models/waste_log_entity.dart';
 import '../controllers/riwayat_controller.dart';
 import '../../shared/widgets/skeleton_loading.dart';
@@ -40,7 +42,7 @@ class CatatanKegiatanWargaView extends ConsumerWidget {
           // Group entries by Warga
           final Map<String, List<WasteLogEntity>> grouped = {};
           for (final log in logs) {
-            final key = '${log.wargaName ?? "Warga #${log.userId.substring(0, 6)}"} — ${log.wilayah ?? "RT 01/RW 03"}';
+            final key = '${log.wargaName ?? "Warga #${log.userId.substring(0, 6)}"} — ${log.wilayah ?? "RW 03"}';
             grouped.putIfAbsent(key, () => []).add(log);
           }
 
@@ -123,10 +125,12 @@ class CatatanKegiatanWargaView extends ConsumerWidget {
                                 context: context,
                                 builder: (ctx) => AlertDialog(
                                   title: const Text('Foto Bukti Setoran'),
-                                  content: Image.network(
-                                    entry.photoUrl ?? 'https://via.placeholder.com/300?text=Foto+Bukti+Pemilahan',
-                                    errorBuilder: (_, __, ___) => const Icon(Icons.broken_image_rounded, size: 80, color: Colors.grey),
-                                  ),
+                                  content: (entry.photoUrl == null || entry.photoUrl!.isEmpty)
+                                      ? const SizedBox(height: 150, child: Center(child: Icon(Icons.image_not_supported_rounded, size: 80, color: Colors.grey)))
+                                      : CachedNetworkImage(
+                                          imageUrl: AppConfig.getImageUrl(entry.photoUrl),
+                                          errorWidget: (_, __, ___) => const SizedBox(height: 150, child: Center(child: Icon(Icons.broken_image_rounded, size: 80, color: Colors.grey))),
+                                        ),
                                   actions: [
                                     TextButton(
                                       onPressed: () => Navigator.pop(ctx),

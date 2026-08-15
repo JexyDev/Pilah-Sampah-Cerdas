@@ -23,6 +23,7 @@ import {
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 
 export const ManajemenEkosistemKkn: React.FC = () => {
   const { user: currentUser } = useAuthStore();
@@ -57,6 +58,9 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   const [studentToAssignId, setStudentToAssignId] = useState("");
   const [filterStudentQuery, setFilterStudentQuery] = useState("");
   const [submittingMemberAction, setSubmittingMemberAction] = useState(false);
+  const [deleteKelompokId, setDeleteKelompokId] = useState<string | null>(null);
+  const [deleteUniName, setDeleteUniName] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleOpenMembersModal = async (k: any) => {
     setSelectedGroupForMembers(k);
@@ -304,15 +308,22 @@ export const ManajemenEkosistemKkn: React.FC = () => {
     setIsKelompokModalOpen(true);
   };
 
-  const handleDeleteKelompok = async (id: string) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus kelompok ini?")) {
-      try {
-        await api.delete(`/kelompok/${id}`);
-        toast.success("Kelompok berhasil dihapus");
-        fetchKelompok();
-      } catch (err: any) {
-        toast.error(err.response?.data?.message || "Gagal menghapus kelompok");
-      }
+  const handleDeleteKelompok = (id: string) => {
+    setDeleteKelompokId(id);
+  };
+
+  const handleConfirmDeleteKelompok = async () => {
+    if (!deleteKelompokId) return;
+    try {
+      setIsDeleting(true);
+      await api.delete(`/kelompok/${deleteKelompokId}`);
+      toast.success("Kelompok berhasil dihapus");
+      setDeleteKelompokId(null);
+      fetchKelompok();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal menghapus kelompok");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -389,10 +400,14 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   };
 
   const handleRemoveUni = (name: string) => {
-    if (window.confirm(`Hapus universitas ${name}?`)) {
-      setUniList(uniList.filter((u) => u !== name));
-      toast.success("Universitas dihapus.");
-    }
+    setDeleteUniName(name);
+  };
+
+  const handleConfirmRemoveUni = () => {
+    if (!deleteUniName) return;
+    setUniList(uniList.filter((u) => u !== deleteUniName));
+    toast.success("Universitas berhasil dihapus.");
+    setDeleteUniName(null);
   };
 
   // Generate page numbers array for pagination
@@ -1317,6 +1332,29 @@ export const ManajemenEkosistemKkn: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Confirm Modal Hapus Kelompok */}
+      <ConfirmModal
+        isOpen={Boolean(deleteKelompokId)}
+        onClose={() => setDeleteKelompokId(null)}
+        onConfirm={handleConfirmDeleteKelompok}
+        isLoading={isDeleting}
+        title="Hapus Kelompok KKN"
+        message="Apakah Anda yakin ingin menghapus kelompok KKN ini? Data relasi mahasiswa dalam kelompok ini akan dilepaskan."
+        confirmText="Ya, Hapus Kelompok"
+        type="danger"
+      />
+
+      {/* Confirm Modal Hapus Universitas */}
+      <ConfirmModal
+        isOpen={Boolean(deleteUniName)}
+        onClose={() => setDeleteUniName(null)}
+        onConfirm={handleConfirmRemoveUni}
+        title="Hapus Universitas Mitra"
+        message={`Apakah Anda yakin ingin menghapus universitas ${deleteUniName || ""}?`}
+        confirmText="Ya, Hapus"
+        type="warning"
+      />
     </div>
   );
 };

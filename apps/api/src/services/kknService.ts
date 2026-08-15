@@ -1107,6 +1107,25 @@ export class KknService {
     };
   }
 
+  async getLeaveRequests(studentId: string) {
+    const list = await (prisma as any).studentLeaveRequest.findMany({
+      where: { studentId },
+      orderBy: { createdAt: "desc" },
+    });
+    return list.map((item: any) => ({
+      id: item.id,
+      kategori: item.type,
+      deskripsi: item.reason,
+      fotoBuktiUrl: item.evidenceUrl,
+      startDate: item.startDate,
+      endDate: item.endDate,
+      status: item.status,
+      rejectionReason: item.rejectionReason,
+      reviewedAt: item.reviewedAt,
+      createdAt: item.createdAt,
+    }));
+  }
+
   async createPemanfaatanSampah(
     userId: string,
     payload: {
@@ -1363,6 +1382,62 @@ export class KknService {
               [lat - 0.002, lng - 0.002],
             ]
           : [],
+    };
+  }
+
+  async getDampakStatistik(userId: string, targetType: "rw" | "kelurahan" = "kelurahan") {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        rw: { include: { kelurahan: true } },
+        studentProfile: {
+          include: {
+            assignedRw: { include: { kelurahan: true } },
+            kelompok: true,
+          },
+        },
+      },
+    });
+
+    const kelurahanName =
+      user?.rw?.kelurahan?.name ||
+      user?.studentProfile?.assignedRw?.kelurahan?.name ||
+      user?.studentProfile?.kelompok?.kelurahan ||
+      "Coblong";
+    const rwName = user?.rw?.name || user?.studentProfile?.assignedRw?.name || "RW Terkait";
+
+    const totalHouseholdsRegistered = await prisma.household.count();
+    const totalActiveBins = await prisma.bin.count({ where: { status: "ACTIVE_BOUND" } });
+
+    const setoranAll = await prisma.setoranOtomatis.findMany();
+    let totalWasteVolumeKg = 0;
+    let organicVolumeKg = 0;
+    let nonOrganicVolumeKg = 0;
+
+    setoranAll.forEach((s) => {
+      const b = Number(s.berat || 0);
+      totalWasteVolumeKg += b;
+      const k = (s.hasilKlasifikasiAi || "").toUpperCase();
+      if (k.includes("ORGANIK") && !k.includes("ANORGANIK")) {
+        organicVolumeKg += b;
+      } else {
+        nonOrganicVolumeKg += b;
+      }
+    });
+
+    const activePercentage =
+      totalHouseholdsRegistered > 0
+        ? Number(((totalActiveBins / (totalHouseholdsRegistered * 2)) * 100).toFixed(1))
+        : 0.0;
+
+    return {
+      kelurahanName: targetType === "rw" ? rwName : kelurahanName,
+      activeHouseholdsPercentage: activePercentage,
+      totalWasteVolumeKg: Number(totalWasteVolumeKg.toFixed(2)),
+      organicVolumeKg: Number(organicVolumeKg.toFixed(2)),
+      nonOrganicVolumeKg: Number(nonOrganicVolumeKg.toFixed(2)),
+      totalHouseholdsRegistered,
+      totalActiveBins,
     };
   }
 }

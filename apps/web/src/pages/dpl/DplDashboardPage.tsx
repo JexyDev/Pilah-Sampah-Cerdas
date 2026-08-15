@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
+import { useAuthStore } from "../../store/useAuthStore";
 import {
   QrCode,
   CalendarCheck,
@@ -18,6 +19,8 @@ import {
   RefreshCw,
   Users,
   Clock,
+  Download,
+  Printer,
 } from "lucide-react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend } from "recharts";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from "react-leaflet";
@@ -34,7 +37,19 @@ L.Icon.Default.mergeOptions({
 const MapAutoFlyer: React.FC<{ center: [number, number]; zoom: number }> = ({ center, zoom }) => {
   const map = useMap();
   useEffect(() => {
-    map.flyTo(center, zoom, { duration: 1.1 });
+    map.invalidateSize();
+    const t1 = setTimeout(() => map.invalidateSize(), 150);
+    const t2 = setTimeout(() => map.invalidateSize(), 400);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [map]);
+
+  useEffect(() => {
+    if (center && !isNaN(center[0]) && !isNaN(center[1]) && center[0] < 0 && center[1] > 0) {
+      map.flyTo(center, zoom, { duration: 1.1 });
+    }
   }, [center, zoom, map]);
   return null;
 };
@@ -122,6 +137,7 @@ import {
 type TabType = "OVERVIEW" | "KELOMPOK" | "MAHASISWA" | "APPROVAL" | "MAP" | "INOVASI";
 
 export const DplDashboardPage: React.FC = () => {
+  const { user } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get("tab")?.toUpperCase() || "OVERVIEW";
 
@@ -343,6 +359,176 @@ export const DplDashboardPage: React.FC = () => {
     }
   };
 
+  const handleExportPerformanceCsv = () => {
+    if (!students || students.length === 0) {
+      toast.error("Tidak ada data mahasiswa bimbingan untuk diekspor.");
+      return;
+    }
+    const headers = [
+      "No",
+      "Nama Mahasiswa",
+      "NIM",
+      "Jurusan / Fakultas",
+      "Kelompok KKN",
+      "Total Hadir (Kegiatan)",
+      "Tingkat Kehadiran (%)",
+      "Poin Individu",
+      "Nilai Asesmen DPL",
+      "Status Asesmen"
+    ];
+    const rows = students.map((s, idx) => [
+      idx + 1,
+      `"${(s.name || "").replace(/"/g, '""')}"`,
+      `"${s.nim || "-"}"`,
+      `"${((s.jurusan || "") + (s.fakultas ? ` / ${s.fakultas}` : "")).replace(/"/g, '""')}"`,
+      `"${(s.kelompokName || "").replace(/"/g, '""')}"`,
+      s.attendedCount || 0,
+      s.attendanceRate ? `${s.attendanceRate}%` : "0%",
+      s.individualPoints || 0,
+      s.assessmentScore !== undefined && s.assessmentScore !== null ? s.assessmentScore : "Belum Dinilai",
+      s.assessmentScore !== undefined && s.assessmentScore !== null ? "SUDAH_DINILAI" : "BELUM_DINILAI"
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Rekap_Kinerja_KKN_DPL_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Rekapitulasi nilai & kinerja mahasiswa KKN berhasil diekspor!");
+  };
+
+  const handlePrintOfficialReport = () => {
+    if (!students || students.length === 0) {
+      toast.error("Tidak ada data mahasiswa untuk dicetak");
+      return;
+    }
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("Gagal membuka jendela cetak. Izinkan popup di browser Anda.");
+      return;
+    }
+
+    const todayStr = new Date().toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    });
+
+    const dplName = user?.name || (groups.length > 0 ? groups[0].name : "Dosen Pembimbing Lapangan");
+
+    const studentRowsHtml = students.map((s, i) => `
+      <tr>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 8px;">${i + 1}</td>
+        <td style="border: 1px solid #cbd5e1; padding: 8px; font-weight: bold;">${s.name} ${s.isKetua ? '<span style="font-size:8pt; background:#fef3c7; color:#92400e; padding:1px 4px; border-radius:4px;">Ketua</span>' : ''}</td>
+        <td style="border: 1px solid #cbd5e1; padding: 8px; font-family: monospace;">${s.nim || "-"}</td>
+        <td style="border: 1px solid #cbd5e1; padding: 8px;">${s.kelompokName || "-"}</td>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 8px;">${s.attendedCount || 0} Kali</td>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 8px; font-weight: bold; color: #047857;">${s.attendanceRate || 0}%</td>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 8px; font-weight: bold; color: #1d4ed8;">${s.assessmentScore !== null && s.assessmentScore !== undefined ? s.assessmentScore : '<span style="color:#94a3b8;">-</span>'}</td>
+      </tr>
+    `).join("");
+
+    const avgAttendance = students.length > 0
+      ? (students.reduce((acc, curr) => acc + (curr.attendanceRate || 0), 0) / students.length).toFixed(1)
+      : "0";
+    
+    const assessedStudents = students.filter(s => s.assessmentScore !== null && s.assessmentScore !== undefined);
+    const avgScore = assessedStudents.length > 0
+      ? (assessedStudents.reduce((acc, curr) => acc + (curr.assessmentScore || 0), 0) / assessedStudents.length).toFixed(1)
+      : "-";
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="id">
+      <head>
+        <meta charset="UTF-8">
+        <title>Laporan Kinerja KKN DPL - ${todayStr}</title>
+        <style>
+          @page { size: A4 portrait; margin: 15mm; }
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 11pt; color: #0f172a; line-height: 1.5; padding: 20px; }
+          .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 20px; }
+          .header h2 { margin: 0; font-size: 14pt; text-transform: uppercase; letter-spacing: 0.5px; }
+          .header h3 { margin: 4px 0 0 0; font-size: 11pt; font-weight: normal; color: #334155; }
+          .meta-table { width: 100%; margin-bottom: 15px; font-size: 10pt; }
+          .meta-table td { padding: 3px 0; }
+          table.data { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 9.5pt; }
+          table.data th { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px; font-weight: bold; text-align: left; }
+          .signature-section { margin-top: 40px; display: flex; justify-content: space-between; font-size: 10pt; page-break-inside: avoid; }
+          .sig-box { width: 220px; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h2>KECAMATAN COBLONG — KOTA BANDUNG</h2>
+          <h3>REKAPITULASI PEMBIMBINGAN & EVALUASI MAHASISWA KKN TRASHCARE</h3>
+        </div>
+
+        <table class="meta-table">
+          <tr>
+            <td width="20%"><strong>Dosen Pembimbing</strong></td>
+            <td width="40%">: ${dplName}</td>
+            <td width="18%"><strong>Tanggal Cetak</strong></td>
+            <td width="22%">: ${todayStr}</td>
+          </tr>
+          <tr>
+            <td><strong>Cakupan Wilayah</strong></td>
+            <td>: Kecamatan Coblong, Kota Bandung</td>
+            <td><strong>Total Mahasiswa</strong></td>
+            <td>: ${students.length} Mahasiswa</td>
+          </tr>
+        </table>
+
+        <div style="margin-bottom: 12px; font-size: 9pt; color: #475569;">
+          <strong>Ringkasan Kinerja:</strong> Rata-rata Kehadiran: <strong>${avgAttendance}%</strong> | Rata-rata Asesmen DPL: <strong>${avgScore}</strong> | Mahasiswa Terasesmen: <strong>${assessedStudents.length}/${students.length}</strong>
+        </div>
+
+        <table class="data">
+          <thead>
+            <tr>
+              <th width="5%" style="text-align:center;">No</th>
+              <th width="28%">Nama Mahasiswa</th>
+              <th width="14%">NIM</th>
+              <th width="22%">Kelompok</th>
+              <th width="11%" style="text-align:center;">Kehadiran</th>
+              <th width="10%" style="text-align:center;">Presensi %</th>
+              <th width="10%" style="text-align:center;">Nilai DPL</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${studentRowsHtml}
+          </tbody>
+        </table>
+
+        <div class="signature-section">
+          <div class="sig-box">
+            <p>Mengetahui,<br><strong>Koordinator Taskforce KKN</strong></p>
+            <div style="height: 60px;"></div>
+            <p style="text-decoration: underline; font-weight: bold;">( Panitia Taskforce Coblong )</p>
+          </div>
+          <div class="sig-box">
+            <p>Kota Bandung, ${todayStr}<br><strong>Dosen Pembimbing Lapangan</strong></p>
+            <div style="height: 60px;"></div>
+            <p style="text-decoration: underline; font-weight: bold;">( ${dplName} )</p>
+          </div>
+        </div>
+
+        <script>
+          window.onload = function() {
+            window.print();
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
   // Filtered & Paginated Kelompok
   const filteredKelompok = useMemo(() => {
     return groups.filter((g) => {
@@ -440,7 +626,25 @@ export const DplDashboardPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={handleExportPerformanceCsv}
+            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+            title="Ekspor Data Kinerja Mahasiswa (CSV/Excel)"
+          >
+            <Download size={14} className="text-emerald-400" />
+            <span>Ekspor CSV</span>
+          </button>
+
+          <button
+            onClick={handlePrintOfficialReport}
+            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+            title="Cetak Rekapitulasi Nilai & Evaluasi Resmi untuk LPPM/DLH"
+          >
+            <Printer size={14} />
+            <span>Cetak Rekap LPPM</span>
+          </button>
+
           <button
             onClick={loadDashboardData}
             className="p-2.5 bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700 hover:text-white transition flex items-center gap-1.5 text-xs font-semibold border border-slate-700 cursor-pointer"
@@ -891,7 +1095,7 @@ export const DplDashboardPage: React.FC = () => {
               />
             </div>
 
-            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+            <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
               <span className="bg-emerald-50 text-emerald-800 text-xs font-bold px-3 py-2 rounded-lg border border-emerald-200/80 flex items-center gap-1.5 whitespace-nowrap">
                 <Users size={14} className="text-emerald-600" />
                 {groups.length} Kelompok KKN
@@ -914,6 +1118,14 @@ export const DplDashboardPage: React.FC = () => {
                   ))}
                 </select>
               </div>
+              <button
+                onClick={handleExportPerformanceCsv}
+                className="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                title="Ekspor CSV Data Mahasiswa"
+              >
+                <Download size={13} className="text-emerald-600" />
+                <span>Ekspor CSV</span>
+              </button>
             </div>
           </div>
 

@@ -52,13 +52,22 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
 
   /// Fetch dashboard + warga dampingan secara paralel.
   Future<void> fetchAll() async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    final repo = _ref.read(kknRepositoryProvider);
+    
+    // 1. Tampilkan cache jika ada
+    final cachedDashboard = await repo.getCachedDashboard();
+    final cachedWarga = await repo.getCachedWargaDampingan();
+    
+    if (cachedDashboard != null || cachedWarga != null) {
+      state = state.copyWith(
+        dashboard: cachedDashboard ?? state.dashboard,
+        wargaList: cachedWarga ?? state.wargaList,
+      );
+    } else {
+      state = state.copyWith(isLoading: true, errorMessage: null);
+    }
+    
     try {
-      final repo = _ref.read(kknRepositoryProvider);
-      final user = _ref.read(authProvider).user;
-      final userId = user?.id ?? '';
-      final userNim = user?.nim ?? '';
-
       final results = await Future.wait([
         repo.getDashboard(),
         repo.getWargaDampingan(),
@@ -66,31 +75,20 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
 
       final rawWarga = results[1] as List<WargaDampingan>;
 
-      // Filter ketat: HANYA warga yang terikat pada akun mahasiswa ini (berdasarkan ID atau NIM)
-      final myWarga = rawWarga.where((w) {
-        if (!w.isActivated) return false;
-        
-        final mhsId = w.mahasiswaId.trim();
-        if (mhsId.isEmpty || mhsId.toLowerCase() == 'null' || mhsId.toLowerCase() == 'undefined') {
-          return false;
-        }
-        
-        final matchUserId = userId.isNotEmpty && mhsId == userId;
-        final matchUserNim = userNim.isNotEmpty && mhsId == userNim;
-
-        return matchUserId || matchUserNim;
-      }).toList();
-
       state = state.copyWith(
         isLoading: false,
         dashboard: results[0] as KknDashboardData,
-        wargaList: myWarga,
+        wargaList: rawWarga,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: NetworkExceptionHelper.getErrorMessage(e),
-      );
+      if (cachedDashboard != null) {
+        state = state.copyWith(isLoading: false);
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: NetworkExceptionHelper.getErrorMessage(e),
+        );
+      }
     }
   }
 

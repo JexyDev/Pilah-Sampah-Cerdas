@@ -45,9 +45,9 @@ class TentangAplikasiView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              Text(
+              const Text(
                 AppConfig.appName,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
                   color: AppColors.primaryGreen,
@@ -74,7 +74,7 @@ class TentangAplikasiView extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               const Text(
-                'Hak Cipta © 2026 PT Makerindo.\nSeluruh hak dilindungi undang-undang.',
+                'Hak Cipta © 2026 Universitas Komputer Indonesia.\nSeluruh hak dilindungi undang-undang.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,

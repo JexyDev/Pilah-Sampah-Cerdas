@@ -147,7 +147,7 @@ const MasterWilayah: React.FC = () => {
               Ekspor CSV
             </button>
             <button
-              onClick={() => alert("Tambah wilayah via UI belum didukung")}
+              onClick={() => toast.error("Penambahan wilayah administratif dikelola terpusat oleh Administrator Kota.")}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
             >
               <MapPin size={15} />

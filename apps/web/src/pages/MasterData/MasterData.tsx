@@ -10,6 +10,7 @@ import { Loader2, Trash2, GraduationCap, MapPin, Phone, Eye, Search, Users, Dele
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useMasterDataStore } from "../../store/useMasterDataStore";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 import api from "../../services/api";
 import styles from "./MasterData.module.css";
 
@@ -56,37 +57,52 @@ const MasterData: React.FC = () => {
     );
   }, [mahasiswas, mhsSearch]);
 
-  const handleDeleteUser = async (id: string, name: string) => {
-    if (window.confirm(`Yakin ingin menghapus ${name}?`)) {
-      try {
+  const [deleteModalConfig, setDeleteModalConfig] = useState<{
+    isOpen: boolean;
+    id: string;
+    name: string;
+    type: "user" | "bin" | "mahasiswa";
+  }>({
+    isOpen: false,
+    id: "",
+    name: "",
+    type: "user",
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteUser = (id: string, name: string) => {
+    setDeleteModalConfig({ isOpen: true, id, name, type: "user" });
+  };
+
+  const handleDeleteBin = (id: string, name: string) => {
+    setDeleteModalConfig({ isOpen: true, id, name, type: "bin" });
+  };
+
+  const handleDeleteMahasiswa = (mhs: any) => {
+    setDeleteModalConfig({ isOpen: true, id: mhs.id, name: mhs.name, type: "mahasiswa" });
+  };
+
+  const handleExecuteDelete = async () => {
+    const { id, name, type } = deleteModalConfig;
+    if (!id) return;
+    try {
+      setIsDeleting(true);
+      if (type === "user") {
         await deleteUser(id);
         toast.success(`Berhasil menghapus ${name}`);
-      } catch (e: any) {
-        toast.error("Gagal menghapus user");
-      }
-    }
-  };
-
-  const handleDeleteBin = async (id: string, name: string) => {
-    if (window.confirm(`Yakin ingin menghapus ${name}?`)) {
-      try {
+      } else if (type === "bin") {
         await deleteBin(id);
         toast.success(`Berhasil menghapus ${name}`);
-      } catch (e: any) {
-        toast.error("Gagal menghapus tempat sampah");
-      }
-    }
-  };
-
-  const handleDeleteMahasiswa = async (mhs: any) => {
-    if (window.confirm(`Yakin ingin menonaktifkan mahasiswa ${mhs.name}?`)) {
-      try {
-        await api.delete(`/admin/mahasiswa/${mhs.id}`);
-        toast.success(`Mahasiswa ${mhs.name} berhasil dinonaktifkan`);
+      } else if (type === "mahasiswa") {
+        await api.delete(`/admin/mahasiswa/${id}`);
+        toast.success(`Mahasiswa ${name} berhasil dinonaktifkan`);
         fetchMahasiswas();
-      } catch (err: any) {
-        toast.error(err.response?.data?.message || "Gagal menonaktifkan mahasiswa");
       }
+      setDeleteModalConfig({ isOpen: false, id: "", name: "", type: "user" });
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || "Gagal melakukan penghapusan");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -455,6 +471,24 @@ const MasterData: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal Hapus Data Master */}
+      <ConfirmModal
+        isOpen={deleteModalConfig.isOpen}
+        onClose={() => setDeleteModalConfig({ isOpen: false, id: "", name: "", type: "user" })}
+        onConfirm={handleExecuteDelete}
+        isLoading={isDeleting}
+        title={
+          deleteModalConfig.type === "mahasiswa"
+            ? "Nonaktifkan Mahasiswa KKN"
+            : deleteModalConfig.type === "bin"
+            ? "Hapus Tempat Sampah"
+            : "Hapus Pengguna"
+        }
+        message={`Apakah Anda yakin ingin menghapus/menonaktifkan ${deleteModalConfig.name}? Tindakan ini akan memengaruhi relasi data terkait.`}
+        confirmText="Ya, Lanjutkan"
+        type="danger"
+      />
     </div>
   );
 };

@@ -92,7 +92,12 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: Us
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && user.peran !== "DEVELOPER" && !allowedRoles.includes(user.peran)) {
+  if (
+    allowedRoles &&
+    user.peran !== "DEVELOPER" &&
+    user.peran !== "SUPER_USER" &&
+    !allowedRoles.includes(user.peran)
+  ) {
     // Redirect role yang tidak diizinkan kembali ke dashboard
     return <Navigate to="/dasbor" replace />;
   }
@@ -512,7 +517,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/dataset/hasil-klasifikasi"
           element={
-            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER"]}>
               <MasterDatasetKlasifikasi />
             </ProtectedRoute>
           }
@@ -520,7 +525,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/master-dataset-klasifikasi"
           element={
-            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER"]}>
               <MasterDatasetKlasifikasi />
             </ProtectedRoute>
           }

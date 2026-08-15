@@ -21,6 +21,7 @@ export interface PaginationProps {
   onItemsPerPageChange?: (itemsPerPage: number) => void;
   itemsPerPageOptions?: number[];
   className?: string;
+  compact?: boolean;
 }
 
 export const Pagination: React.FC<PaginationProps> = ({
@@ -32,6 +33,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   onItemsPerPageChange,
   itemsPerPageOptions = [10, 25, 50, 100],
   className = "",
+  compact = false,
 }) => {
   const safeTotalPages = Math.max(1, totalPages || 1);
   const safeCurrentPage = Math.min(Math.max(1, currentPage), safeTotalPages);
@@ -76,6 +78,48 @@ export const Pagination: React.FC<PaginationProps> = ({
     totalItems !== undefined
       ? Math.min(safeCurrentPage * itemsPerPage, totalItems)
       : safeCurrentPage * itemsPerPage;
+
+  if (compact) {
+    return (
+      <div
+        className={`flex items-center justify-between gap-2 py-3 px-4 bg-white/95 border-t border-slate-200/80 font-sans text-xs text-slate-600 shrink-0 select-none ${className}`}
+      >
+        <div className="text-[11px] font-semibold text-slate-500 truncate">
+          {totalItems !== undefined ? (
+            <span>
+              <strong className="text-slate-800">{startItem}–{endItem}</strong> / <strong className="text-emerald-700">{totalItems}</strong>
+            </span>
+          ) : (
+            <span>Hal <strong className="text-slate-800">{safeCurrentPage}</strong> dari {safeTotalPages}</span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={() => onPageChange(safeCurrentPage - 1)}
+            disabled={safeCurrentPage <= 1}
+            className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 flex items-center justify-center disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-slate-600 disabled:cursor-not-allowed transition shadow-2xs cursor-pointer"
+            title="Halaman Sebelumnya"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <span className="px-2 py-0.5 bg-slate-50 rounded-lg text-[11px] font-mono font-bold text-slate-700 border border-slate-200">
+            {safeCurrentPage}/{safeTotalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => onPageChange(safeCurrentPage + 1)}
+            disabled={safeCurrentPage >= safeTotalPages}
+            className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 flex items-center justify-center disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-slate-600 disabled:cursor-not-allowed transition shadow-2xs cursor-pointer"
+            title="Halaman Selanjutnya"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

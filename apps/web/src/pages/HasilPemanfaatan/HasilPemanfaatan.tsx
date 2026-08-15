@@ -30,6 +30,7 @@ import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 
 interface FeedbackItem {
   id: string;
@@ -92,6 +93,8 @@ export const HasilPemanfaatan: React.FC = () => {
   const [respondTanggapan, setRespondTanggapan] = useState("");
   const [respondStatus, setRespondStatus] = useState<string>("SELESAI");
   const [submittingRespond, setSubmittingRespond] = useState(false);
+  const [deleteFeedbackId, setDeleteFeedbackId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchFeedbackList = async () => {
     try {
@@ -240,16 +243,24 @@ export const HasilPemanfaatan: React.FC = () => {
   };
 
   // Handlers - Delete Feedback
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Apakah Anda yakin ingin menghapus kritik & saran ini?")) return;
+  const handleDelete = (id: string) => {
+    setDeleteFeedbackId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteFeedbackId) return;
     try {
-      const res = await api.delete(`/pemanfaatan/feedback/${id}`);
+      setIsDeleting(true);
+      const res = await api.delete(`/pemanfaatan/feedback/${deleteFeedbackId}`);
       if (res.data && res.data.success) {
         showToast.success("Kritik & saran berhasil dihapus");
+        setDeleteFeedbackId(null);
         fetchFeedbackList();
       }
     } catch (e: any) {
       showToast.error(e.response?.data?.message || "Gagal menghapus kritik & saran");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -848,6 +859,18 @@ export const HasilPemanfaatan: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal Delete Feedback */}
+      <ConfirmModal
+        isOpen={Boolean(deleteFeedbackId)}
+        onClose={() => setDeleteFeedbackId(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+        title="Hapus Kritik & Saran"
+        message="Apakah Anda yakin ingin menghapus kritik & saran warga ini? Data yang dihapus tidak dapat dipulihkan."
+        confirmText="Ya, Hapus"
+        type="danger"
+      />
     </div>
   );
 };

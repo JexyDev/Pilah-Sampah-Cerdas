@@ -119,7 +119,7 @@ class PoinView extends ConsumerWidget {
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Poin akan anda dapatkan setelah Setor Sampah menggunakan Bin yang sesuai.',
+                            'Poin akan Anda dapatkan setelah menyetor sampah menggunakan tempat sampah yang sesuai.',
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.primaryGreen,
@@ -144,8 +144,17 @@ class PoinView extends ConsumerWidget {
     // Pagi: 06:00 - 08:00
     // Sore: 16:00 - 18:00
     final now = DateTime.now();
+    final isPagiAvailable = now.hour >= 6 && now.hour < 8;
+    final isSoreAvailable = now.hour >= 16 && now.hour < 18;
+    
     final isPagiOver = now.hour >= 8;
     final isSoreOver = now.hour >= 18;
+
+    final statusPagi = isPagiAvailable ? 'Tersedia' : (isPagiOver ? 'Terlewat' : 'Belum Mulai');
+    final colorPagi = isPagiAvailable ? AppColors.primaryGreen : (isPagiOver ? AppColors.dangerRed : Colors.grey);
+
+    final statusSore = isSoreAvailable ? 'Tersedia' : (isSoreOver ? 'Terlewat' : 'Belum Mulai');
+    final colorSore = isSoreAvailable ? AppColors.primaryGreen : (isSoreOver ? AppColors.dangerRed : Colors.grey);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -164,7 +173,7 @@ class PoinView extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Status Jadwal Hari Ini',
+            'Jadwal Buang Sampah Pagi dan Sore',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -178,8 +187,8 @@ class PoinView extends ConsumerWidget {
                 child: _ScheduleTimeItem(
                   title: 'Pagi',
                   time: '06:00 - 08:00',
-                  status: isPagiOver ? 'Terlewat' : 'Tersedia',
-                  statusColor: isPagiOver ? AppColors.dangerRed : AppColors.primaryGreen,
+                  status: statusPagi,
+                  statusColor: colorPagi,
                   icon: Icons.wb_sunny_rounded,
                 ),
               ),
@@ -193,8 +202,8 @@ class PoinView extends ConsumerWidget {
                 child: _ScheduleTimeItem(
                   title: 'Sore',
                   time: '16:00 - 18:00',
-                  status: isSoreOver ? 'Terlewat' : 'Tersedia',
-                  statusColor: isSoreOver ? AppColors.dangerRed : AppColors.primaryGreen,
+                  status: statusSore,
+                  statusColor: colorSore,
                   icon: Icons.nights_stay_rounded,
                 ),
               ),
@@ -473,7 +482,7 @@ class _ScheduleTimeItem extends StatelessWidget {
       children: [
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: AppColors.backgroundCanvas,
             shape: BoxShape.circle,
           ),
@@ -522,10 +531,19 @@ class _PoinHistoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isPunishment = item.points < 0 || item.description.toLowerCase().contains('penalti');
     final bool isOrganic = item.wasteType == WasteType.organic;
-    final Color color = isOrganic
-        ? AppColors.organicColor
-        : AppColors.nonOrganicColor;
+    final Color color = isPunishment
+        ? AppColors.dangerRed
+        : (isOrganic ? AppColors.organicColor : AppColors.nonOrganicColor);
+    final IconData iconData = isPunishment ? Icons.warning_rounded : Icons.delete_rounded;
+
+    String title = isOrganic ? 'Setor Sampah Organik' : 'Setor Sampah Anorganik';
+    if (item.description.toLowerCase().contains('aktivasi')) {
+      title = 'Aktivasi Tempat Sampah Berhasil';
+    } else if (isPunishment) {
+      title = 'Punishment Pengurangan Poin';
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -542,7 +560,7 @@ class _PoinHistoryItem extends StatelessWidget {
               color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(Icons.delete_rounded, color: color, size: 20),
+            child: Icon(iconData, color: color, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -550,9 +568,7 @@ class _PoinHistoryItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.description.toLowerCase().contains('aktivasi')
-                      ? 'Aktivasi Bin Berhasil'
-                      : (isOrganic ? 'Setor Sampah Organik' : 'Setor Sampah Anorganik'),
+                  title,
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -578,11 +594,11 @@ class _PoinHistoryItem extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    '+${item.points}',
-                    style: const TextStyle(
+                    isPunishment ? '-${item.points.abs()}' : '+${item.points.abs()}',
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primaryGreen,
+                      color: isPunishment ? AppColors.dangerRed : AppColors.primaryGreen,
                     ),
                   ),
                   const SizedBox(width: 2),

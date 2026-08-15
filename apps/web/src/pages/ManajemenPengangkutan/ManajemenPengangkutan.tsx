@@ -15,6 +15,7 @@ import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import showToast from "../../utils/showToast";
 import { Pagination } from "../../components/common/Pagination";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { 
   Loader2, 
   Pencil, 
@@ -136,6 +137,8 @@ export const ManajemenPengangkutan: React.FC = () => {
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<DispatchTask | null>(null);
+  const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form States
   const [selectedBinId, setSelectedBinId] = useState("");
@@ -309,20 +312,26 @@ export const ManajemenPengangkutan: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (isReadOnly) {
       showToast.error("Akses Ditolak: Peran Anda hanya memiliki akses Read-Only");
       return;
     }
+    setDeleteTaskId(id);
+  };
 
-    if (!window.confirm("Apakah Anda yakin ingin membatalkan/menghapus tugas pengangkutan ini?")) return;
-
+  const handleConfirmDelete = async () => {
+    if (!deleteTaskId) return;
     try {
-      await api.delete(`/pengangkutan/${id}`);
+      setIsDeleting(true);
+      await api.delete(`/pengangkutan/${deleteTaskId}`);
       showToast.success("Tugas pengangkutan berhasil dihapus");
+      setDeleteTaskId(null);
       fetchTasks(true);
     } catch (err: any) {
       showToast.error(err.response?.data?.message || "Gagal menghapus tugas");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -1088,6 +1097,18 @@ export const ManajemenPengangkutan: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal Delete Tugas Pengangkutan */}
+      <ConfirmModal
+        isOpen={Boolean(deleteTaskId)}
+        onClose={() => setDeleteTaskId(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+        title="Hapus Tugas Pengangkutan"
+        message="Apakah Anda yakin ingin membatalkan/menghapus tugas pengangkutan ini? Status antrean penjemputan akan disesuaikan."
+        confirmText="Ya, Hapus Tugas"
+        type="danger"
+      />
     </div>
   );
 };

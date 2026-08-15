@@ -252,14 +252,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     "PANITIA_TASKFORCE",
   ];
 
-  const hasAccess = (allowed: UserRole[]) => userRole === "DEVELOPER" || allowed.includes(userRole);
+  const hasAccess = (allowed: UserRole[]) =>
+    userRole === "DEVELOPER" || userRole === "SUPER_USER" || allowed.includes(userRole);
 
   const menuSections = [
     {
-      header: "OPERATIONAL",
+      header: "OPERASIONAL",
       items: [
-        { to: "/dasbor", icon: LayoutDashboard, label: "Dasbor", allowed: ALL_ROLES },
-        { to: "/monitoring-wilayah", icon: MapPin, label: "Monitoring Wilayah", allowed: ALL_ROLES },
+        { to: "/dasbor", icon: LayoutDashboard, label: "Dasbor Utama", allowed: ALL_ROLES },
+        { to: "/monitoring-wilayah", icon: MapPin, label: "Peta Wilayah", allowed: ALL_ROLES },
       ],
     },
     {
@@ -267,21 +268,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       items: [
         { to: "/penyetoran-sampah", icon: ScanLine, label: "Penyetoran Sampah", allowed: ALL_ROLES },
         { to: "/pengangkutan-residu", icon: Truck, label: "Pengangkutan Residu", allowed: ["SUPER_USER", "PETUGAS_RESIDU", "ADMIN_DLH", "PEMIMPIN"] as UserRole[] },
-        { to: "/rekapitulasi-setoran", icon: Receipt, label: "Rekapitulasi Setoran", allowed: ["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"] as UserRole[] },
+        { to: "/rekapitulasi-setoran", icon: Receipt, label: "Riwayat & Rekap Setoran", allowed: ["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"] as UserRole[] },
         { to: "/monitoring-pemilahan", icon: Activity, label: "Monitoring Pemilahan", allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN"] as UserRole[] },
         { to: "/pengelolaan-sampah", icon: Sprout, label: "Pengelolaan Sampah", allowed: ALL_ROLES },
         { to: "/hasil-pemanfaatan", icon: Archive, label: "Hasil Pemanfaatan", allowed: ALL_ROLES },
       ],
     },
     {
-      header: "PENGOLAHAN & KKN",
+      header: "PROGRAM KKN",
       items: [
         { to: "/dashboard-kkn", icon: LayoutDashboard, label: "Dasbor KKN", allowed: ["SUPER_USER", "ADMIN_DLH", "MAHASISWA_KKN", "DPL", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
-        { to: "/manajemen-ekosistem-kkn", icon: GraduationCap, label: "Ekosistem Program KKN", allowed: ["SUPER_USER", "ADMIN_DLH", "DPL", "KOORDINATOR_KECAMATAN"] as UserRole[] },
+        { to: "/manajemen-ekosistem-kkn", icon: GraduationCap, label: "Ekosistem Dampingan KKN", allowed: ["SUPER_USER", "ADMIN_DLH", "DPL", "KOORDINATOR_KECAMATAN"] as UserRole[] },
         { to: "/superUser/data-survei-kkn", icon: FileText, label: "Data Survei KKN", allowed: ["SUPER_USER", "DPL"] as UserRole[] },
         { to: "/superUser/import-survei-kkn", icon: FileText, label: "Impor Survei KKN", allowed: ["SUPER_USER"] as UserRole[] },
         { to: "/evaluasi-dampak-kkn", icon: BarChart3, label: "Evaluasi Dampak KKN", allowed: ["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
-        { to: "/monitoring-absen", icon: ClipboardCheck, label: "Presensi & Absensi KKN", allowed: ["SUPER_USER", "ADMIN_DLH", "DPL", "KOORDINATOR_KECAMATAN"] as UserRole[] },
+        { to: "/monitoring-absen", icon: ClipboardCheck, label: "Presensi Mahasiswa KKN", allowed: ["SUPER_USER", "ADMIN_DLH", "DPL", "KOORDINATOR_KECAMATAN"] as UserRole[] },
       ],
     },
     {
@@ -289,7 +290,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       items: [
         {
           type: "group",
-          label: "Master Data Pengguna",
+          label: "Data Pengguna",
           icon: Users,
           allowed: ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "RW"] as UserRole[],
           children: [
@@ -309,7 +310,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         },
         {
           type: "group",
-          label: "Master Data Wilayah & Tempat Sampah",
+          label: "Data Wilayah & Tempat Sampah",
           icon: Trash2,
           allowed: ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "RW", "PETUGAS_RESIDU"] as UserRole[],
           children: [

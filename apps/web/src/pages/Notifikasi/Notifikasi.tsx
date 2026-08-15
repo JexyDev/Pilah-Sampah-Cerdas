@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 
 const NotificationModal = ({
   notif,
@@ -379,6 +380,8 @@ const Notifikasi: React.FC = () => {
   const [error, setError] = useState("");
   const [selectedNotif, setSelectedNotif] = useState<any | null>(null);
   const [filterTab, setFilterTab] = useState<"SEMUA" | "CRITICAL" | "INFO">("SEMUA");
+  const [isClearAllModalOpen, setIsClearAllModalOpen] = useState(false);
+  const [isClearingAll, setIsClearingAll] = useState(false);
 
   const { user } = useAuthStore();
   const rawRole = user?.peran || (user as any)?.role || "WARGA";
@@ -418,15 +421,21 @@ const Notifikasi: React.FC = () => {
     }
   };
 
-  const handleClearAll = async () => {
-    if (window.confirm("Yakin ingin menghapus semua notifikasi?")) {
-      try {
-        await api.delete("/notifications/all").catch(() => {});
-        setNotifications([]);
-        toast.success("Semua log notifikasi berhasil dihapus!");
-      } catch (_error) {
-        toast.error("Gagal menghapus notifikasi");
-      }
+  const handleClearAll = () => {
+    setIsClearAllModalOpen(true);
+  };
+
+  const handleConfirmClearAll = async () => {
+    try {
+      setIsClearingAll(true);
+      await api.delete("/notifications/all").catch(() => {});
+      setNotifications([]);
+      toast.success("Semua log notifikasi berhasil dihapus!");
+      setIsClearAllModalOpen(false);
+    } catch (_error) {
+      toast.error("Gagal menghapus notifikasi");
+    } finally {
+      setIsClearingAll(false);
     }
   };
 
@@ -776,6 +785,18 @@ const Notifikasi: React.FC = () => {
           onReject={handleReject}
         />
       )}
+
+      {/* Confirmation Modal Hapus Semua Notifikasi */}
+      <ConfirmModal
+        isOpen={isClearAllModalOpen}
+        onClose={() => setIsClearAllModalOpen(false)}
+        onConfirm={handleConfirmClearAll}
+        isLoading={isClearingAll}
+        title="Hapus Semua Notifikasi"
+        message="Apakah Anda yakin ingin menghapus seluruh riwayat notifikasi sistem? Data notifikasi yang dihapus tidak dapat dipulihkan."
+        confirmText="Ya, Hapus Semua"
+        type="danger"
+      />
     </div>
   );
 };

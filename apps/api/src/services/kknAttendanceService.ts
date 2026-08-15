@@ -7,7 +7,7 @@
 
 import { PrismaClient } from "@prisma/client";
 import { configService } from "./configService.js";
-import { isPointInPolygon } from "../utils/geoUtils.js";
+import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
 
 const prisma = new PrismaClient();
 
@@ -168,7 +168,7 @@ export class KknAttendanceService {
           lat: Number(p[0]),
           lng: Number(p[1]),
         }));
-        isInside = isPointInPolygon({ lat: latitude, lng: longitude }, polyPoints);
+        isInside = isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, 15);
       } else if (schedule.latitude && schedule.longitude) {
         const dist = calculateDistance(
           latitude,
@@ -176,7 +176,7 @@ export class KknAttendanceService {
           Number(schedule.latitude),
           Number(schedule.longitude)
         );
-        isInside = dist <= (schedule.radius || 100);
+        isInside = dist <= ((schedule.radius || 100) + 15);
       }
 
       if (isInside) {
@@ -288,10 +288,10 @@ export class KknAttendanceService {
           lat: Number(p[0]),
           lng: Number(p[1]),
         }));
-        isInside = isPointInPolygon({ lat: latitude, lng: longitude }, polyPoints);
+        isInside = isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, 15);
       } else {
         const distance = calculateDistance(latitude, longitude, actLoc.latitude, actLoc.longitude);
-        isInside = distance <= actLoc.radius;
+        isInside = distance <= (actLoc.radius + 15);
       }
     }
 
@@ -467,87 +467,63 @@ export class KknAttendanceService {
       }
     }
 
-    // Include registered Mahasiswa KKN who have active sessions
-    const allMahasiswa = await prisma.user.findMany({
-      where: {
-        role: { name: "MAHASISWA_KKN" },
-        ...(loggedInUserIds.size > 0 ? { id: { in: Array.from(loggedInUserIds) } } : {}),
-      },
-      select: {
-        id: true,
-        name: true,
-        phone: true,
-        createdAt: true,
-        studentProfile: {
-          select: {
-            nim: true,
-            jurusan: true,
-            assignedRw: {
-              select: {
-                name: true,
-                latitude: true,
-                longitude: true,
-              },
+    // Include registered Mahasiswa KKN who have real active attendance records today
+    if (loggedInUserIds.size > 0) {
+      const activeMahasiswaWithAbsen = await prisma.user.findMany({
+        where: {
+          role: { name: "MAHASISWA_KKN" },
+          id: { in: Array.from(loggedInUserIds) },
+        },
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          studentProfile: {
+            select: {
+              nim: true,
+              jurusan: true,
+            },
+          },
+          attendances: {
+            where: {
+              attendedAt: { gte: cutoff },
+            },
+            orderBy: { attendedAt: "desc" },
+            take: 1,
+            select: {
+              latitude: true,
+              longitude: true,
+              attendedAt: true,
             },
           },
         },
-        attendances: {
-          orderBy: { attendedAt: "desc" },
-          take: 1,
-          select: {
-            latitude: true,
-            longitude: true,
-            attendedAt: true,
-          },
-        },
-      },
-    });
+      });
 
-    for (const mhs of allMahasiswa) {
-      if (!uniqueStudents.has(mhs.id)) {
-        let lat = -6.8915;
-        let lng = 107.6107;
-        let recAt = mhs.createdAt;
-
-        if (
-          mhs.attendances.length > 0 &&
-          mhs.attendances[0].latitude &&
-          mhs.attendances[0].longitude
-        ) {
-          lat = Number(mhs.attendances[0].latitude);
-          lng = Number(mhs.attendances[0].longitude);
-          recAt = mhs.attendances[0].attendedAt;
-        } else if (
-          mhs.studentProfile?.assignedRw?.latitude &&
-          mhs.studentProfile?.assignedRw?.longitude
-        ) {
-          lat = Number(mhs.studentProfile.assignedRw.latitude);
-          lng = Number(mhs.studentProfile.assignedRw.longitude);
-        } else {
-          const charSum = mhs.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-          lat = -6.8915 + ((charSum % 30) - 15) * 0.0003;
-          lng = 107.6107 + ((charSum % 25) - 12) * 0.0003;
+      for (const mhs of activeMahasiswaWithAbsen) {
+        if (!uniqueStudents.has(mhs.id) && mhs.attendances.length > 0) {
+          const latestAbsen = mhs.attendances[0];
+          if (latestAbsen.latitude && latestAbsen.longitude) {
+            uniqueStudents.set(mhs.id, {
+              id: `absen-${mhs.id}`,
+              studentId: mhs.id,
+              latitude: latestAbsen.latitude as any,
+              longitude: latestAbsen.longitude as any,
+              recordedAt: latestAbsen.attendedAt,
+              student: {
+                id: mhs.id,
+                name: mhs.name,
+                email: mhs.phone,
+                phone: mhs.phone,
+                studentProfile: mhs.studentProfile
+                  ? {
+                      nim: mhs.studentProfile.nim,
+                      jurusan: mhs.studentProfile.jurusan,
+                    }
+                  : undefined,
+              },
+            } as any);
+          }
         }
-
-        uniqueStudents.set(mhs.id, {
-          id: `fallback-${mhs.id}`,
-          studentId: mhs.id,
-          latitude: lat as any,
-          longitude: lng as any,
-          recordedAt: recAt,
-          student: {
-            id: mhs.id,
-            name: mhs.name,
-            email: mhs.phone,
-            phone: mhs.phone,
-            studentProfile: mhs.studentProfile
-              ? {
-                  nim: mhs.studentProfile.nim,
-                  jurusan: mhs.studentProfile.jurusan,
-                }
-              : undefined,
-          },
-        } as any);
       }
     }
 
@@ -562,7 +538,7 @@ export class KknAttendanceService {
     let dplStudentUserIds: string[] | undefined;
     if (dplUserId) {
       const dplGroups = await prisma.kelompokKkn.findMany({
-        where: { dplId: dplUserId },
+        where: { OR: [{ dplId: dplUserId }, { dpl: { id: dplUserId } }] },
         include: {
           students: {
             select: { userId: true },
@@ -619,9 +595,10 @@ export class KknAttendanceService {
             lat: Number(p[0]),
             lng: Number(p[1]),
           }));
-          isInside = isPointInPolygon(
+          isInside = isPointInPolygonWithBuffer(
             { lat: Number(latestLoc.latitude), lng: Number(latestLoc.longitude) },
-            polyPoints
+            polyPoints,
+            15
           );
         } else {
           const dist = calculateDistance(
@@ -630,7 +607,7 @@ export class KknAttendanceService {
             scheduleLoc.latitude,
             scheduleLoc.longitude
           );
-          isInside = dist <= scheduleLoc.radius;
+          isInside = dist <= scheduleLoc.radius + 15;
         }
         currentStatus = isInside ? "MASIH_DI_LOKASI" : "SUDAH_MENINGGALKAN_RADIUS";
       }
@@ -724,9 +701,10 @@ export class KknAttendanceService {
               lat: Number(p[0]),
               lng: Number(p[1]),
             }));
-            isInside = isPointInPolygon(
+            isInside = isPointInPolygonWithBuffer(
               { lat: Number(latestLoc.latitude), lng: Number(latestLoc.longitude) },
-              polyPoints
+              polyPoints,
+              15
             );
           } else {
             const dist = calculateDistance(
@@ -735,7 +713,7 @@ export class KknAttendanceService {
               scheduleLoc.latitude,
               scheduleLoc.longitude
             );
-            isInside = dist <= scheduleLoc.radius;
+            isInside = dist <= scheduleLoc.radius + 15;
           }
           currentStatus = isInside ? "DI_LOKASI_BELUM_ABSEN" : "BELUM_ABSEN";
         }

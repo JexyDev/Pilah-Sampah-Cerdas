@@ -4,9 +4,16 @@ const prisma = new PrismaClient();
 
 function getKelompokWhere(dplUserId: string, role?: string) {
   const normalizedRole = String(role || "").toUpperCase();
-  const isAdmin = ["ADMIN_DLH", "DLH", "DLH_ADMIN", "SUPER_USER", "ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN"].some((r) =>
-    normalizedRole.includes(r)
-  );
+  const isAdmin = [
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DLH",
+    "DLH_ADMIN",
+    "SUPER_USER",
+    "ADMIN",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ].some((r) => normalizedRole.includes(r));
 
   if (isAdmin) {
     return {};
@@ -374,6 +381,19 @@ export const dplService = {
    * 5. Notifikasi / Alert DPL (Hanya Pengajuan Izin dari Mahasiswa Bimbingan DPL)
    */
   getAlerts: async (dplUserId: string, role?: string) => {
+    // 1. Auto-eskalasi pengajuan izin yang PENDING lebih dari 48 jam (2x24 jam) ke Task Force
+    const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    await prisma.studentLeaveRequest.updateMany({
+      where: {
+        status: "PENDING",
+        createdAt: { lt: twoDaysAgo },
+      },
+      data: {
+        status: "ESCALATED",
+        rejectionReason: "Auto-eskalasi ke Panitia Task Force (Melewati batas respon 2x24 jam)",
+      },
+    });
+
     const groups = await prisma.kelompokKkn.findMany({
       where: getKelompokWhere(dplUserId, role),
       select: {
@@ -425,9 +445,16 @@ export const dplService = {
    */
   getApprovalHistory: async (dplUserId: string, role?: string) => {
     const normalizedRole = String(role || "").toUpperCase();
-    const isAdmin = ["ADMIN_DLH", "DLH", "DLH_ADMIN", "SUPER_USER", "ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN"].some(
-      (r) => normalizedRole.includes(r)
-    );
+    const isAdmin = [
+      "DEVELOPER",
+      "ADMIN_DLH",
+      "DLH",
+      "DLH_ADMIN",
+      "SUPER_USER",
+      "ADMIN",
+      "PANITIA_TASKFORCE",
+      "PEMIMPIN",
+    ].some((r) => normalizedRole.includes(r));
 
     const groups = await prisma.kelompokKkn.findMany({
       where: getKelompokWhere(dplUserId, role),
@@ -442,7 +469,12 @@ export const dplService = {
         : {
             AND: [
               { studentId: { in: studentUserIds } },
-              { OR: [{ reviewedById: dplUserId }, { status: { in: ["APPROVED", "REJECTED", "ESCALATED"] } }] },
+              {
+                OR: [
+                  { reviewedById: dplUserId },
+                  { status: { in: ["APPROVED", "REJECTED", "ESCALATED"] } },
+                ],
+              },
             ],
           },
       include: {
@@ -467,6 +499,10 @@ export const dplService = {
    * 7. Form Penilaian Aktivitas Mahasiswa
    */
   assessStudent: async (dplUserId: string, studentId: string, score: number, note?: string) => {
+    if (typeof score !== "number" || isNaN(score) || score < 0 || score > 100) {
+      throw new Error("INVALID_SCORE_RANGE: Nilai asesmen harus berada di antara 0 sampai 100");
+    }
+
     const student = await prisma.studentKkn.findFirst({
       where: {
         OR: [{ id: studentId }, { userId: studentId }],
@@ -496,6 +532,7 @@ export const dplService = {
 
   /**
    * Decide (Approve/Reject/Escalate) Leave Request
+   * Saat APPROVED: otomatis mengupdate / meng-generate absensi SAKIT/IZIN pada jadwal terkait.
    */
   decideLeaveRequest: async (
     dplUserId: string,
@@ -529,6 +566,55 @@ export const dplService = {
         rejectionReason: status === "REJECTED" || status === "ESCALATED" ? rejectionReason : null,
       },
     });
+
+    // Jika disetujui (APPROVED), sinkronkan presensi otomatis untuk seluruh jadwal kegiatan dalam rentang tanggal izin
+    if (status === "APPROVED") {
+      const start = new Date(req.startDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(req.endDate || req.startDate);
+      end.setHours(23, 59, 59, 999);
+
+      const schedules = await prisma.schedule.findMany({
+        where: {
+          date: {
+            gte: start,
+            lte: end,
+          },
+        },
+      });
+
+      const attStatus = String(req.type || "")
+        .toUpperCase()
+        .includes("SAKIT")
+        ? "SAKIT"
+        : "IZIN";
+
+      for (const sch of schedules) {
+        const lat = sch.latitude ? Number(sch.latitude) : 0;
+        const lng = sch.longitude ? Number(sch.longitude) : 0;
+        await prisma.activityAttendance.upsert({
+          where: {
+            studentId_scheduleId: {
+              studentId: req.studentId,
+              scheduleId: sch.id,
+            },
+          },
+          create: {
+            studentId: req.studentId,
+            scheduleId: sch.id,
+            status: attStatus,
+            method: "IZIN_DPL",
+            latitude: lat,
+            longitude: lng,
+            attendedAt: new Date(),
+          },
+          update: {
+            status: attStatus,
+            method: "IZIN_DPL",
+          },
+        });
+      }
+    }
 
     return updated;
   },

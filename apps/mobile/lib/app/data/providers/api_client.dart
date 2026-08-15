@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/utils/safe_storage.dart';
 import '../../core/values/app_config.dart';
 import '../../routes/app_routes.dart';
+import 'offline_cache_interceptor.dart';
 import '../../../main.dart' show navigatorKey;
 
 /// HTTP Client terpusat dengan interceptor auto-refresh token.
@@ -38,6 +39,7 @@ class ApiClient {
       'Content-Type': 'application/json',
       'Bypass-Tunnel-Reminder': 'true' // Bypass localtunnel warning page
     };
+    dio.interceptors.add(OfflineCacheInterceptor());
     dio.interceptors.add(
       InterceptorsWrapper(
         // ── Inject access token ke setiap request ────────────────────────

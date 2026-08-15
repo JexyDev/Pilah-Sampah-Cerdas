@@ -105,6 +105,7 @@ describe("BinService", () => {
         longitude: 106.123,
         maxCapacityLiter: 30.0,
         userId: null,
+        status: "PRINTED",
       });
       expect(result).toEqual(mockCreatedBin);
     });

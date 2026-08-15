@@ -382,6 +382,13 @@ router.post(
   kknController.createLeaveRequest
 );
 
+router.get(
+  "/pengajuan-izin",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.getLeaveRequests
+);
+
 // Alias routes matching exact Mahasiswa KKN spec
 /**
  * @swagger
@@ -492,5 +499,43 @@ import { scheduleController } from "../controllers/scheduleController.js";
  *         description: Berhasil mengambil list jadwal KKN
  */
 router.get("/schedules", authMiddleware, scheduleController.getAllSchedules);
+
+/**
+ * @swagger
+ * /api/v1/kkn/dampak-rw:
+ *   get:
+ *     summary: Statistik riil dampak pemilahan di wilayah RW binaan Mahasiswa KKN
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Statistik dampak RW
+ */
+router.get(
+  "/dampak-rw",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DPL", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  kknController.getDampakRw
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/dampak-kelurahan:
+ *   get:
+ *     summary: Statistik riil dampak pemilahan di tingkat Kelurahan
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Statistik dampak Kelurahan
+ */
+router.get(
+  "/dampak-kelurahan",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DPL", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  kknController.getDampakKelurahan
+);
 
 export default router;

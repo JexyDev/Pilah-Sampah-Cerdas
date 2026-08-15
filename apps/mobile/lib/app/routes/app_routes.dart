@@ -7,6 +7,7 @@ class AppRoutes {
   static const String register = '/register';
   static const String forgotPassword = '/forgot-password';
   static const String main = '/main';
+  static const String onboarding = '/onboarding';
   static const String dashboard = '/main';
   static const String scan = '/scan';
   static const String aktivasiBin = '/aktivasi-bin';
@@ -15,7 +16,7 @@ class AppRoutes {
   static const String resetBin = '/reset-bin';
   static const String poin = '/poin';
   static const String notifikasi = '/notifikasi';
-  static const String timbanganResidu = '/timbangan-residu';
+  static const String timbanganPemilahan = '/timbangan-pemilahan';
   static const String tentang = '/tentang';
   static const String kknAttendance = '/kkn-attendance';
   static const String monitoringWarga = '/monitoring-warga';
@@ -25,11 +26,15 @@ class AppRoutes {
   static const String detailWarga = '/detail-warga';
   static const String aktivasiWarga = '/aktivasi-warga';
 
-  static const String riwayatPetugasResidu = '/riwayat-petugas-residu';
+  static const String riwayatPetugasPemilahan = '/riwayat-petugas-pemilahan';
   static const String pemanfaatanSampah = '/pemanfaatan-sampah';
-  static const String petugasResidu = '/petugas-residu';
-  static const String petugasResiduGantiPassword = '/petugas-residu/ganti-password';
+  static const String petugasPemilahan = '/petugas-pemilahan';
+  static const String petugasPemilahanGantiPassword = '/petugas-pemilahan/ganti-password';
   static const String editProfilMahasiswa = '/mahasiswa/edit-profil';
   static const String pengajuanIzin = '/mahasiswa/pengajuan-izin';
   static const String mahasiswaNotifikasi = '/mahasiswa/notifikasi';
+  static const String petugasNotifikasi = '/petugas-pemilahan/notifikasi';
+  static const String pengajuanWarga = '/petugas-pemilahan/pengajuan-warga';
+  static const String monitoringDampakKelurahan = '/mahasiswa/dampak-kelurahan';
 }
+

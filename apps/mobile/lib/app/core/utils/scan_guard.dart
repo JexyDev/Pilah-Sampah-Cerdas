@@ -1,5 +1,7 @@
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../modules/scan/controllers/scan_controller.dart';
 import '../../data/models/bin_entity.dart';
@@ -17,7 +19,7 @@ class ScanGuard {
             children: [
               Icon(Icons.desktop_windows_rounded, color: AppColors.primaryGreen),
               SizedBox(width: 8),
-              Text('Monitoring Web', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              Expanded(child: Text('Monitoring Web', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
             ],
           ),
           content: const Text(
@@ -53,14 +55,16 @@ class ScanGuard {
             children: [
               Icon(Icons.warning_rounded, color: AppColors.dangerRed),
               SizedBox(width: 8),
-              Text(
-                'Tong Penuh',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              Expanded(
+                child: Text(
+                  'Tempat Sampah Penuh',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
               ),
             ],
           ),
           content: const Text(
-            'Salah satu tempat sampah Anda sudah penuh (100%). Anda tidak dapat melakukan setor sampah sebelum mengajukan pengosongan tong.',
+            'Salah satu tempat sampah Anda sudah penuh (100%). Anda tidak dapat melakukan setor sampah sebelum mengajukan pengosongan tempat sampah.',
             style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
           ),
           actions: [
@@ -91,14 +95,16 @@ class ScanGuard {
             children: [
               Icon(Icons.info_outline_rounded, color: AppColors.warningOrange),
               SizedBox(width: 8),
-              Text(
-                'Tong Sampah Belum Diaktivasi',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+              Expanded(
+                child: Text(
+                  'Tempat Sampah Belum Diaktivasi',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                ),
               ),
             ],
           ),
           content: const Text(
-            'Anda belum mengaktivasi tong sampah milik Anda! Silakan ukur & aktivasi tong sampah terlebih dahulu sebelum dapat menyetor sampah.',
+            'Anda belum mengaktivasi tempat sampah milik Anda! Silakan ukur & aktivasi tempat sampah terlebih dahulu sebelum dapat menyetor sampah.',
             style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
           ),
           actions: [

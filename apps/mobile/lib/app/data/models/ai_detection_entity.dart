@@ -12,6 +12,7 @@ class AiDetectionEntity extends Equatable {
     this.organicPercentage,
     this.estimatedPoints,
     this.requestId,
+    this.evidencePhotoUrl,
   });
 
   final WasteType detectedType;
@@ -24,31 +25,23 @@ class AiDetectionEntity extends Equatable {
 
   /// Confidence score 0.0–1.0
   final double? confidence;
-  
+
   /// Persentase probabilitas sampah ini organik (0.0-1.0)
   final double? organicPercentage;
-  
+
   /// Estimasi poin yang akan didapat
   final int? estimatedPoints;
 
   final bool isBlurry;
   final String? requestId;
 
-  /// Berat yang ditampilkan ke user — pakai dari backend jika ada, fallback hitung lokal
-  double get displayWeightKg {
-    if (weightKg != null && weightKg! > 0) return weightKg!;
-    final density = detectedType == WasteType.organic ? 0.4 : 0.2;
-    return volumeEstimate * density;
-  }
+  /// URL foto bukti sampah yang tersimpan di server (dari respons /detect).
+  /// Wajib dikirim ulang saat scanAndCommit agar backend tidak menolak transaksi.
+  final String? evidencePhotoUrl;
 
-  /// Kalkulasi poin lokal (BUG-003)
-  /// Formula: Poin = (kategori_rate x berat/volume sampah x 100) x confidence_AI x 0.9
-  int get calculatedPoints {
-    if (estimatedPoints != null && estimatedPoints! > 0) return estimatedPoints!;
-    final weight = displayWeightKg;
-    final conf = confidence ?? 0.85;
-    final double rawPoint = (weight * 100.0) * conf * 0.9;
-    return rawPoint.round();
+  /// Berat yang ditampilkan ke user (harus dari backend)
+  double get displayWeightKg {
+    return weightKg ?? 0.0;
   }
 
   @override

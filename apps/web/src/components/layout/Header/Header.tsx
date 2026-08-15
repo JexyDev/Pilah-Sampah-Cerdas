@@ -64,12 +64,12 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/dasbor":
       case "/dashboard":
       case "/":
-        return ["Dasbor"];
+        return ["Dasbor Utama"];
       case "/monitoring-wilayah":
       case "/monitoring":
-        return ["Monitoring Wilayah"];
+        return ["Peta Wilayah"];
       case "/monitoring-absen":
-        return ["Presensi & Absensi KKN"];
+        return ["Presensi Mahasiswa KKN"];
       case "/monitoring-pemilahan":
       case "/monitoring-aktivitas":
         return ["Monitoring Pemilahan"];

@@ -68,12 +68,18 @@ class LocationService {
         return null;
       }
 
-      return await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 10,
-        ),
-      );
+      Position? pos;
+      try {
+        pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 0,
+          ),
+        ).timeout(const Duration(seconds: 5));
+      } catch (_) {
+        pos = await Geolocator.getLastKnownPosition();
+      }
+      return pos;
     } catch (_) {
       return null;
     }

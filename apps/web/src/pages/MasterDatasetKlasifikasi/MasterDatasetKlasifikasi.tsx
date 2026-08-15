@@ -281,7 +281,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                 Live Telemetri Stream Real-Time
               </div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 border border-amber-300/30 text-amber-200 text-xs font-black backdrop-blur-md">
-                <Lock size={12} /> Khusus Peran Developer (Read-Only Audit)
+                <Lock size={12} /> Khusus Peran Developer &amp; Super User (Read-Only Audit)
               </div>
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white">

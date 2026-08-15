@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
@@ -9,9 +11,8 @@ import '../../shared/widgets/skeleton_loading.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/weight_text.dart';
 import '../../shared/controllers/connectivity_controller.dart';
-import '../../auth/controllers/auth_controller.dart';
 
-import 'package:flutter/foundation.dart';
+
 import 'pemilahan_monitoring_dashboard_view.dart';
 
 /// Halaman riwayat pemilahan — sesuai desain:
@@ -39,26 +40,73 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
       appBar: AppBar(title: const Text('Riwayat Pemilahan')),
       body: Column(
         children: [
-          // Filter Tabs (Seamless canvas background)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-            child: Row(
+          // Header Bar Filter (Row 1: Chips, Row 2: Dropdown Periode)
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
               children: [
-                _filterTab('Semua', 0),
-                const SizedBox(width: 8),
-                _filterTab('Organik', 1),
-                const SizedBox(width: 8),
-                _filterTab('Non-Organik', 2),
+                // Baris 1: Tab Filter Kategori
+                Row(
+                  children: [
+                    _filterTab('Semua', 0),
+                    const SizedBox(width: 8),
+                    _filterTab('Organik', 1),
+                    const SizedBox(width: 8),
+                    _filterTab('Non-Organik', 2),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Baris 2: Filter Waktu (Label & Dropdown)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Periode Riwayat',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundCanvas,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<int>(
+                          value: _timeFilterIndex,
+                          isDense: true,
+                          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primaryGreen, size: 20),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          items: const [
+                            DropdownMenuItem(value: 0, child: Text('Semua Waktu')),
+                            DropdownMenuItem(value: 1, child: Text('Hari Ini')),
+                            DropdownMenuItem(value: 2, child: Text('Minggu Ini')),
+                            DropdownMenuItem(value: 3, child: Text('Bulan Ini')),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) setState(() => _timeFilterIndex = val);
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
+          const Divider(height: 1),
 
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {
                 final isOnline = ref.read(isOnlineProvider);
                 if (!isOnline) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Anda sedang offline'),
                       backgroundColor: AppColors.dangerRed,
@@ -105,7 +153,7 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
   }
 
   List<WasteLogEntity> _applyFilter(List<WasteLogEntity> logs) {
-    List<WasteLogEntity> result = logs;
+    List<WasteLogEntity> result = List.from(logs);
 
     // 1. Filter Kategori
     if (_categoryFilterIndex == 1) {
@@ -119,16 +167,22 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
     final todayStart = DateTime(now.year, now.month, now.day);
     if (_timeFilterIndex == 1) {
       // Hari Ini
-      result = result.where((l) => l.createdAt.toLocal().isAfter(todayStart)).toList();
+      result = result.where((l) {
+        final dt = l.createdAt.toLocal();
+        return dt.year == now.year && dt.month == now.month && dt.day == now.day;
+      }).toList();
     } else if (_timeFilterIndex == 2) {
       // Minggu Ini
       final weekStart = todayStart.subtract(Duration(days: now.weekday - 1));
-      result = result.where((l) => l.createdAt.toLocal().isAfter(weekStart)).toList();
+      result = result.where((l) {
+        final dt = l.createdAt.toLocal();
+        return !dt.isBefore(weekStart);
+      }).toList();
     } else if (_timeFilterIndex == 3) {
       // Bulan Ini
       result = result.where((l) {
-        final local = l.createdAt.toLocal();
-        return local.month == now.month && local.year == now.year;
+        final dt = l.createdAt.toLocal();
+        return dt.month == now.month && dt.year == now.year;
       }).toList();
     }
 
@@ -189,112 +243,95 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
       grouped.putIfAbsent(key, () => []).add(log);
     }
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Summary row
-        Row(
-          children: [
-            Expanded(
-              child: _SummaryCard(
-                icon: Icons.delete_rounded,
-                iconColor: AppColors.organicColor,
-                bgColor: AppColors.organicColor.withValues(alpha: 0.12),
-                label: 'Organik',
-                valueWidget: WeightText(
-                  organicKg,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                value: '',
-                valueColor: AppColors.organicColor,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _SummaryCard(
-                icon: Icons.delete_rounded,
-                iconColor: AppColors.nonOrganicColor,
-                bgColor: AppColors.nonOrganicColor.withValues(alpha: 0.12),
-                label: 'Anorganik',
-                valueWidget: WeightText(
-                  nonOrganicKg,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                value: '',
-                valueColor: AppColors.nonOrganicColor,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
+    final List<dynamic> flatList = [];
+    flatList.add('SUMMARY');
+    for (final entry in grouped.entries) {
+      flatList.add(entry.key);
+      flatList.addAll(entry.value);
+    }
 
-        // Grouped entries
-        ...grouped.entries.map(
-          (entry) => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: flatList.length + 1,
+      itemBuilder: (context, index) {
+        if (index == flatList.length) {
+          return const SizedBox(height: 80);
+        }
+        final item = flatList[index];
+
+        if (item == 'SUMMARY') {
+          return Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8, top: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      entry.key.toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                        letterSpacing: 0.5,
+              Row(
+                children: [
+                  Expanded(
+                    child: _SummaryCard(
+                      icon: Icons.delete_rounded,
+                      iconColor: AppColors.organicColor,
+                      bgColor: AppColors.organicColor.withValues(alpha: 0.12),
+                      label: 'Organik',
+                      valueWidget: WeightText(
+                        organicKg,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
+                      value: '',
+                      valueColor: AppColors.organicColor,
                     ),
-                    if (entry.key == grouped.keys.first)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<int>(
-                            value: _timeFilterIndex,
-                            isDense: true,
-                            icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primaryGreen, size: 18),
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                            items: const [
-                              DropdownMenuItem(value: 0, child: Text('Semua Waktu')),
-                              DropdownMenuItem(value: 1, child: Text('Hari Ini')),
-                              DropdownMenuItem(value: 2, child: Text('Minggu Ini')),
-                              DropdownMenuItem(value: 3, child: Text('Bulan Ini')),
-                            ],
-                            onChanged: (val) {
-                              if (val != null) setState(() => _timeFilterIndex = val);
-                            },
-                          ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _SummaryCard(
+                      icon: Icons.delete_rounded,
+                      iconColor: AppColors.nonOrganicColor,
+                      bgColor: AppColors.nonOrganicColor.withValues(alpha: 0.12),
+                      label: 'Anorganik',
+                      valueWidget: WeightText(
+                        nonOrganicKg,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
                         ),
                       ),
-                  ],
-                ),
+                      value: '',
+                      valueColor: AppColors.nonOrganicColor,
+                    ),
+                  ),
+                ],
               ),
-              ...entry.value.map(
-                (log) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _RiwayatItem(log: log),
-                ),
-              ),
+              const SizedBox(height: 16),
             ],
-          ),
-        ),
-        const SizedBox(height: 80),
-      ],
+          );
+        } else if (item is String) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8, top: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  item.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          );
+        } else if (item is WasteLogEntity) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _RiwayatItem(log: item),
+          );
+        }
+        return const SizedBox.shrink();
+      },
     );
   }
 
@@ -314,9 +351,15 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
   }
 
   Widget _buildEmpty() {
-    return const EmptyState(
-      message: 'Belum ada riwayat pemilahan.',
-      icon: Icons.history_rounded,
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: const [
+        SizedBox(height: 80),
+        EmptyState(
+          message: 'Belum ada riwayat pemilahan yang sesuai filter.',
+          icon: Icons.history_rounded,
+        ),
+      ],
     );
   }
 }
@@ -392,14 +435,7 @@ class _RiwayatItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authProvider).user;
-    final String userLocation = (user != null && user.rtRw.isNotEmpty)
-        ? '${user.rtRw}, Kel. ${user.kelurahan}'
-        : 'RT 04 / RW 02';
-
-    final String displayLocation = (log.kelurahan != null && log.kelurahan!.isNotEmpty && log.kelurahan != 'Lokasi tidak diketahui' && log.kelurahan != 'null')
-        ? log.kelurahan!
-        : (log.binQrSerial != null && log.binQrSerial!.isNotEmpty ? log.binQrSerial! : userLocation);
+    // final String displayLocation = ...; (reserved for future location display feature)
 
     final bool isOrganic = log.wasteType == WasteType.organic;
     final Color color = isOrganic
@@ -447,48 +483,7 @@ class _RiwayatItem extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.star_rounded,
-                      color: AppColors.warningYellow,
-                      size: 13,
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      '+${log.pointsAwarded} Poin',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.warningYellow,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      color: AppColors.textSecondary,
-                      size: 11,
-                    ),
-                    const SizedBox(width: 3),
-                    Flexible(
-                      child: Text(
-                        displayLocation,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textSecondary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 6),
                 Row(
                   children: [
                     const Icon(
@@ -509,8 +504,23 @@ class _RiwayatItem extends ConsumerWidget {
               ],
             ),
           ),
-          // Schedule badge
-          _buildScheduleBadge(log.createdAt.toLocal()),
+          // Points & Schedule badge
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '+${log.pointsAwarded.abs()} pts',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.warningYellow,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 6),
+              _buildScheduleBadge(log.createdAt.toLocal()),
+            ],
+          ),
         ],
       ),
     );

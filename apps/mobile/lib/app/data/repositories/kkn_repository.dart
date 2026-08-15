@@ -9,16 +9,16 @@ import '../models/mahasiswa_kkn_models.dart';
 /// - POST /api/kkn/location-ping    → Ping lokasi mahasiswa
 abstract class KknRepository {
   /// Mengambil data dashboard statistik KKN mahasiswa.
+  Future<KknDashboardData?> getCachedDashboard();
   Future<KknDashboardData> getDashboard();
 
-  /// Mengambil daftar warga yang didampingi beserta riwayat pemilahan.
+  Future<List<WargaDampingan>?> getCachedWargaDampingan();
   Future<List<WargaDampingan>> getWargaDampingan();
 
   /// Mendaftarkan warga baru melalui akun mahasiswa.
   /// Backend otomatis melakukan binding mahasiswa ↔ warga.
-  Future<void> registerWarga(RegisterWargaRequest request);
 
-  /// Mengambil log aktivitas KKN mahasiswa (/kkn/activity-log).
+  Future<List<dynamic>?> getCachedActivityLog();
   Future<List<dynamic>> getActivityLog();
 
   /// Mengirim ping lokasi (latitude, longitude) ke backend dan mengembalikan nama posko/wilayah zona.
@@ -42,20 +42,20 @@ abstract class KknRepository {
     String? nim,
     String? namaMahasiswa,
     String? kodeZona,
-    String? rtRw,
-    String? kelurahan,
+    String? rw,
+    String? kecamatan, String? kelurahan,
     int? durationMinutes,
     String? timestamp,
   });
 
   /// Mengambil daftar warga (untuk fitur aktivasi)
-  Future<List<dynamic>> getWargaForAktivasi({String? kelurahan, String? rtRw, String? search});
+  Future<List<dynamic>> getWargaForAktivasi({String? kecamatan, String? kelurahan, String? rw, String? search});
 
   /// Mengaktivasi warga by scan (wargaId + qrCode)
   Future<bool> activateWargaByScan(String wargaId, String qrCode, double latitude, double longitude);
 
-  /// Mengaktivasi bin untuk warga
-  Future<bool> activateBin(String wargaId, String binOrganikId, String binAnorganikId);
+  /// Mengaktivasi tempat sampah untuk warga dengan lokasi GPS (latitude, longitude)
+  Future<bool> activateBin(String wargaId, String binOrganikId, String binAnorganikId, {double? lat, double? lng});
 
   /// Mengambil riwayat aktivitas KKN
   Future<List<dynamic>> getKknHistory();
@@ -75,4 +75,7 @@ abstract class KknRepository {
     required String deskripsi,
     required String fotoPath,
   });
+
+  /// Mengambil data statistik dampak kelurahan (GET /api/v1/kkn/dampak-kelurahan)
+  Future<DampakKelurahanData> getDampakKelurahan();
 }

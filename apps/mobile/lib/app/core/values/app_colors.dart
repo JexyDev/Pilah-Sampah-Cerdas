@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 
-/// Palet warna resmi aplikasi — sesuai perombakan desain (Clean Design).
+
+/// Palet warna resmi aplikasi â€” sesuai perombakan desain (Clean Design).
 /// Primary color adalah HIJAU ORGANIK (#2E7D32).
 /// Biru digunakan untuk sekunder/non-organik.
 class AppColors {
   AppColors._();
 
   // --- Primary Blue (non-organik / sky blue accents) ---
-  static const Color primaryBlue = Color(0xFF0284C7); // Clean Sky Blue
-  static const Color primaryBlueDark = Color(0xFF0369A1); // Deep Sky Blue
-  static const Color primaryBlueLight = Color(0xFFE0F2FE); // Very Light Sky Blue
+  static const Color primaryBlue = Color(0xFF0084DC); // Dari palette
+  static const Color primaryBlueDark = Color(0xFF0267AC); // Deep Sky Blue
+  static const Color primaryBlueLight = Color(0xFFFAFBFF); // Dari palette
 
-  // --- Primary Green (Now clean light blue for main brand) ---
-  static const Color primaryGreen = Color(0xFF0EA5E9); // Bright Sky Blue
-  static const Color primaryGreenLight = Color(0xFFF0F9FF); // Soft white-blue
-  static const Color organicColor = Color(0xFF10B981); // Green for organic
+  // --- Primary Color (Clean Sky Blue khas Warga & Petugas Pemilahan) ---
+  static const Color primary = primaryGreen;
+  static const Color primaryGreen = Color(0xFF009966); // Dari palette
+  static const Color primaryGreenLight = Color(0xFFE8F5E9); // Soft Light Green
+  static const Color organicColor = Color(0xFF009966); // Green for organic waste
 
   // --- Non-Organic (orange/amber/yellow) ---
   static const Color nonOrganicColor = Color(0xFFF59E0B); // Yellow for non-organic
@@ -59,3 +61,4 @@ class AppColors {
   static const Color statusTervalidasi = Color(0xFF10B981);
   static const Color statusTervalidasiBg = Color(0xFFD1FAE5);
 }
+

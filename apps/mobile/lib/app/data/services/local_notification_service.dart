@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -59,7 +61,7 @@ class LocalNotificationService {
     // 1. Pengingat Pagi (07:00)
     await _scheduleDailyAtTime(
       id: 1,
-      title: 'Waktunya Buang Sampah Pagi! 🌅',
+      title: 'Jadwal Buang Sampah Pagi! 🌅',
       body: 'Jangan lupa buang sampah hari ini untuk dapatkan full poin.',
       hour: 7,
       minute: 0,
@@ -68,8 +70,8 @@ class LocalNotificationService {
     // 2. Pengingat Sore (16:00)
     await _scheduleDailyAtTime(
       id: 2,
-      title: 'Waktunya Buang Sampah Sore! 🌇',
-      body: 'Sudah buang sampah? Yuk scan sekarang sebelum jadwal terlewat.',
+      title: 'Jadwal Buang Sampah Sore! 🌇',
+      body: 'Sudah buang sampah? Yuk buang sekarang sebelum jadwal terlewat.',
       hour: 16,
       minute: 0,
     );

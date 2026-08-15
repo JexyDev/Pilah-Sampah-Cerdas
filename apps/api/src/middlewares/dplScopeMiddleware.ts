@@ -20,6 +20,7 @@ export const dplScopeMiddleware = async (
     const roleName = String(user.role || "").toUpperCase();
 
     const allowedRoles = [
+      "DEVELOPER",
       "SUPER_USER",
       "superUser",
       "PEMIMPIN",

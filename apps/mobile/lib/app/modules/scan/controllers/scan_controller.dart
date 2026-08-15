@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../data/models/bin_entity.dart';
@@ -10,7 +11,7 @@ import '../../auth/controllers/auth_controller.dart';
 
 // ─── Bins Provider ────────────────────────────────────────────────────────────
 
-/// Provider daftar tong sampah pribadi warga yang login.
+/// Provider daftar tempat sampah pribadi warga yang login.
 /// Memanggil GET /api/v1/bins/my — backend filter by ownerUserId dari JWT.
 /// householdId parameter tidak digunakan lagi (dikirim kosong).
 final binsProvider = FutureProvider<List<BinEntity>>((ref) async {
@@ -18,7 +19,7 @@ final binsProvider = FutureProvider<List<BinEntity>>((ref) async {
   // Pastikan user sudah login sebelum fetch
   final user = ref.watch(authProvider).user;
   if (user == null) return [];
-  // Hanya role warga yang memiliki akses tong sampah pribadi
+  // Hanya role warga yang memiliki akses tempat sampah pribadi
   if (user.role != UserRole.warga) return [];
   return repo.getBinsByHousehold('');
 });
@@ -128,34 +129,42 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
 
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      // 1. Ambil data tong dari cache/server untuk client-side geofencing
+      // 1. Ambil data tempat sampah dari cache/server untuk client-side geofencing
       final bin = await _binRepository.getBinByQrSerial(qrCode);
       if (bin != null) {
         // Hitung jarak Haversine (client-side)
         final distance = Geolocator.distanceBetween(
-          userLat, userLng,
-          bin.lat, bin.lng,
+          userLat,
+          userLng,
+          bin.lat,
+          bin.lng,
         );
 
-        if (distance > 500.0) { // Diperbesar jadi 500m agar tidak mudah error saat QC testing
-          throw const BinException(
+        const maxDistance = kDebugMode ? 500.0 : 10.0;
+        // Jika userLat == 0.0, itu adalah fallback dari error GPS, jadi skip geofencing
+        if (userLat != 0.0 && distance > maxDistance) {
+          throw BinException(
             'LOCATION_OUT_OF_RANGE',
-            'Anda terlalu jauh dari tong sampah (> 500m).',
+            'Anda terlalu jauh dari tempat sampah (> ${maxDistance.toInt()}m).',
           );
         }
 
         // Cek kapasitas
-        final double projectedVol = bin.currentVolumeL + state.aiResult!.volumeEstimate;
+        final double projectedVol =
+            bin.currentVolumeL + state.aiResult!.volumeEstimate;
         if (bin.currentVolumeL >= bin.maxCapacityL) {
           throw const BinException(
             'BIN_OVERFLOW',
             'Tempat sampah ini sudah penuh (100%)! Silakan ajukan pengosongan.',
           );
         } else if (projectedVol > bin.maxCapacityL) {
-          final sisa = (bin.maxCapacityL - bin.currentVolumeL).clamp(0.0, 999.0);
+          final sisa = (bin.maxCapacityL - bin.currentVolumeL).clamp(
+            0.0,
+            999.0,
+          );
           throw BinException(
             'BIN_OVERFLOW',
-            'Kapasitas tong tersisa ${sisa.toStringAsFixed(1)}L, tidak muat untuk sampah sekitar ${state.aiResult!.volumeEstimate.toStringAsFixed(1)}L.',
+            'Kapasitas tempat sampah tersisa ${sisa.toStringAsFixed(1)}L, tidak muat untuk sampah sekitar ${state.aiResult!.volumeEstimate.toStringAsFixed(1)}L.',
           );
         }
       }
@@ -166,6 +175,7 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
         detectedType: state.aiResult!.detectedType,
         estimatedVolume: state.aiResult!.volumeEstimate,
         confidence: state.aiResult!.confidence,
+        evidencePhotoUrl: state.aiResult!.evidencePhotoUrl,
         householdId: _householdId,
         userLat: userLat,
         userLng: userLng,
@@ -203,7 +213,7 @@ final scanFlowProvider = StateNotifierProvider<ScanFlowNotifier, ScanFlowState>(
   },
 );
 
-// ─── Aktivasi Bin Provider ────────────────────────────────────────────────────
+// ─── Aktivasi Tempat Sampah Provider ────────────────────────────────────────────────────
 
 class AktivasiBinState {
   const AktivasiBinState({
@@ -266,17 +276,22 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
         latitude: latitude,
         longitude: longitude,
       );
-      
+
       // Panggil measureBin sesuai jenis QR Code secara berurutan
       for (final qr in qrSerials) {
-        final isOrganik = !qr.toUpperCase().contains('NON') && !qr.toUpperCase().contains('ANORG') && !qr.toUpperCase().startsWith('ANO');
+        final isOrganik =
+            !qr.toUpperCase().contains('NON') &&
+            !qr.toUpperCase().contains('ANORG') &&
+            !qr.toUpperCase().startsWith('ANO');
         await _binRepository.measureBin(
           qrCode: qr,
           binType: isOrganik ? WasteType.organic : WasteType.nonOrganic,
           maxCapacityLiter: isOrganik ? orgCapacity : anorgCapacity,
         );
       }
-      state = AktivasiBinState(result: results.isNotEmpty ? results.last : null);
+      state = AktivasiBinState(
+        result: results.isNotEmpty ? results.last : null,
+      );
     } on BinException catch (e) {
       state = AktivasiBinState(errorCode: e.code, errorMessage: e.message);
     }
@@ -290,7 +305,7 @@ final aktivasiBinProvider =
       return AktivasiBinNotifier(ref.watch(binRepositoryProvider));
     });
 
-// ─── Reset Bin Provider ───────────────────────────────────────────────────────
+// ─── Reset Tempat Sampah Provider ───────────────────────────────────────────────────────
 
 class ResetBinState {
   const ResetBinState({
@@ -317,15 +332,17 @@ class ResetBinNotifier extends StateNotifier<ResetBinState> {
     required List<String> binIds,
     required String userId,
     required String evidencePhotoPath,
+    String? wargaName,
   }) async {
     state = const ResetBinState(isLoading: true);
     try {
       BinResetEntity? lastResult;
-      for (final binId in binIds) {
+      for (final id in binIds) {
         lastResult = await _binRepository.submitResetRequest(
-          binId: binId,
+          binId: id,
           userId: userId,
           evidencePhotoPath: evidencePhotoPath,
+          wargaName: wargaName,
         );
       }
       state = ResetBinState(result: lastResult);

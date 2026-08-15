@@ -80,3 +80,37 @@ export function convexHull(points: Point[]): Point[] {
   lower.pop();
   return lower.concat(upper);
 }
+
+/**
+ * Distance from point P to line segment AB in meters.
+ */
+export function distToSegmentInMeters(p: Point, a: Point, b: Point): number {
+  const l2 = getDistanceInMeters(a, b);
+  if (l2 === 0) return getDistanceInMeters(p, a);
+
+  const dLat = b.lat - a.lat;
+  const dLng = b.lng - a.lng;
+  const t = Math.max(
+    0,
+    Math.min(1, ((p.lat - a.lat) * dLat + (p.lng - a.lng) * dLng) / (dLat * dLat + dLng * dLng || 1))
+  );
+  const projection: Point = {
+    lat: a.lat + t * dLat,
+    lng: a.lng + t * dLng,
+  };
+  return getDistanceInMeters(p, projection);
+}
+
+/**
+ * Checks if point is inside polygon OR within bufferMeters from any polygon edge.
+ */
+export function isPointInPolygonWithBuffer(point: Point, polygon: Point[], bufferMeters = 15): boolean {
+  if (isPointInPolygon(point, polygon)) return true;
+  if (bufferMeters <= 0) return false;
+
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const dist = distToSegmentInMeters(point, polygon[i], polygon[j]);
+    if (dist <= bufferMeters) return true;
+  }
+  return false;
+}

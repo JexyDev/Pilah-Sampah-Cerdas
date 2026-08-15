@@ -19,16 +19,20 @@ const options: swaggerJSDoc.Options = {
     },
     servers: [
       {
-        url: "http://157.10.252.252",
-        description: "VPS Production Server (157.10.252.252)",
+        url: "http://192.168.1.157:3000",
+        description: "Local Wi-Fi Network Server (192.168.1.157:3000)",
       },
       {
-        url: "http://192.168.1.16:3000",
-        description: "Local Wi-Fi Network Server (192.168.1.16)",
+        url: "http://10.0.2.2:3000",
+        description: "Android Emulator Local Server (10.0.2.2:3000)",
       },
       {
         url: "http://localhost:3000",
-        description: "Localhost Server",
+        description: "Localhost Server (localhost:3000)",
+      },
+      {
+        url: "http://157.10.252.252:3000",
+        description: "VPS Production Server (157.10.252.252:3000)",
       },
     ],
     tags: [
@@ -91,7 +95,7 @@ export function setupSwagger(app: Express) {
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   // Docs in JSON format
-  app.get("/api-docs.json", (req, res) => {
+  app.get(["/api-docs.json", "/swagger.json"], (req, res) => {
     res.setHeader("Content-Type", "application/json");
     res.send(swaggerSpec);
   });

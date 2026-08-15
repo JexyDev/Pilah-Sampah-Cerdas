@@ -21,7 +21,7 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
     'Poin KKN',
     'DPL & Izin',
     'Presensi & Posko GPS',
-    'Aktivasi Bin Warga',
+    'Aktivasi Tempat Sampah Warga',
     'Laporan Pemanfaatan'
   ];
 
@@ -97,72 +97,8 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
               color: AppColors.primaryGreen,
               child: notifAsync.when(
                 data: (list) {
-                  // Notifikasi Dinamis Khusus Mahasiswa KKN (5 Kategori Lengkap Sesuai Spesifikasi)
-                  final List<NotificationEntity> combinedList = [
-                    ...list,
-                    // 1. Poin KKN (Individu, Kelompok, Akumulasi)
-                    const NotificationEntity(
-                      id: 'MHS-POIN-01',
-                      type: 'POIN_KKN_INDIVIDU',
-                      title: 'Poin Individu Bertambah (+10 Poin)',
-                      desc: 'Selamat! Poin individu Anda bertambah 10 poin dari kegiatan presensi harian Posko KKN.',
-                      isRead: false,
-                      time: '5 menit lalu',
-                      icon: 'stars',
-                    ),
-                    const NotificationEntity(
-                      id: 'MHS-POIN-02',
-                      type: 'POIN_KKN_KELOMPOK',
-                      title: 'Poin Kelompok KKN Bertambah (+50 Poin)',
-                      desc: 'Akumulasi total poin Kelompok KKN Bojongsoang 01 meningkat menjadi 450 Poin.',
-                      isRead: false,
-                      time: '20 menit lalu',
-                      icon: 'stars',
-                    ),
-                    // 2. DPL & Izin (Disetujui, Ditolak, Update Status)
-                    const NotificationEntity(
-                      id: 'MHS-IZIN-01',
-                      type: 'IZIN_DPL_APPROVED',
-                      title: 'Pengajuan Izin Disetujui DPL',
-                      desc: 'Pengajuan izin kegiatan / sakit Anda telah disetujui oleh DPL (Dr. Ir. Ahmad).',
-                      isRead: false,
-                      time: '1 jam lalu',
-                      icon: 'assignment_turned_in',
-                    ),
-                    // 3. Presensi & Posko GPS (Reminder, Berhasil, Reminder Posko)
-                    const NotificationEntity(
-                      id: 'MHS-GPS-01',
-                      type: 'PRESENSI_GPS_BERHASIL',
-                      title: 'Presensi GPS Posko Berhasil',
-                      desc: 'Anda berada di radius 50m Posko Bojongsoang selama 2 jam. Presensi harian tercatat HADIR.',
-                      isRead: true,
-                      time: '2 jam lalu',
-                      icon: 'location_on',
-                    ),
-                    // 4. Aktivasi Bin Warga (Bin Diaktivasi, QR Dipasang)
-                    const NotificationEntity(
-                      id: 'MHS-AKTIVASI-01',
-                      type: 'AKTIVASI_BIN_SUKSES',
-                      title: 'Bin QR Warga Berhasil Dipasang',
-                      desc: 'Aktivasi Bin QR untuk Warga Binaan (Bpk. Slamet - RT 01) sukses terdaftar.',
-                      isRead: true,
-                      time: '3 jam lalu',
-                      icon: 'qr_code_scanner',
-                    ),
-                    // 5. Laporan Pemanfaatan Sampah (Dikirim, Disetujui, Direvisi)
-                    const NotificationEntity(
-                      id: 'MHS-LAPORAN-01',
-                      type: 'LAPORAN_PEMANFAATAN_STATUS',
-                      title: 'Laporan Pemanfaatan Sampah Disetujui',
-                      desc: 'Laporan program kerja pemanfaatan sampah organik RW 02 telah disetujui oleh DPL.',
-                      isRead: true,
-                      time: 'Kemarin',
-                      icon: 'description',
-                    ),
-                  ];
-
                   // Filter berdasarkan kategori tab chip yang dipilih
-                  final filteredList = combinedList.where((n) {
+                  final filteredList = list.where((n) {
                     if (_selectedFilter == 'Semua') return true;
                     final typeUpper = n.type.toUpperCase();
                     final titleLower = n.title.toLowerCase();
@@ -174,10 +110,10 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
                       return typeUpper.contains('IZIN') || typeUpper.contains('DPL') || titleLower.contains('dpl') || titleLower.contains('izin');
                     }
                     if (_selectedFilter == 'Presensi & Posko GPS') {
-                      return typeUpper.contains('PRESENSI') || typeUpper.contains('GPS') || titleLower.contains('presensi') || titleLower.contains('posko');
+                      return typeUpper.contains('PRESENSI') || typeUpper.contains('GPS') || typeUpper.contains('WELCOME') || typeUpper.contains('KKN') || titleLower.contains('presensi') || titleLower.contains('posko');
                     }
-                    if (_selectedFilter == 'Aktivasi Bin Warga') {
-                      return typeUpper.contains('AKTIVASI') || typeUpper.contains('BIN') || titleLower.contains('bin') || titleLower.contains('aktivasi');
+                    if (_selectedFilter == 'Aktivasi Tempat Sampah Warga') {
+                      return typeUpper.contains('AKTIVASI') || typeUpper.contains('BIN') || titleLower.contains('bin') || titleLower.contains('aktivasi') || titleLower.contains('tempat sampah');
                     }
                     if (_selectedFilter == 'Laporan Pemanfaatan') {
                       return typeUpper.contains('LAPORAN') || typeUpper.contains('PEMANFAATAN') || titleLower.contains('laporan') || titleLower.contains('pemanfaatan');
@@ -277,7 +213,11 @@ class _MahasiswaNotificationCard extends StatelessWidget {
     Color iconBg = AppColors.primaryGreen.withValues(alpha: 0.1);
 
     final type = item.type.toUpperCase();
-    if (type.contains('POIN_KKN') || item.title.toLowerCase().contains('poin')) {
+    if (type.contains('PEMANFAATAN') || type.contains('AI') || type.contains('LAPORAN')) {
+      iconData = Icons.psychology_rounded;
+      iconColor = const Color(0xFF8E24AA);
+      iconBg = const Color(0xFF8E24AA).withValues(alpha: 0.12);
+    } else if (type.contains('POIN_KKN') || item.title.toLowerCase().contains('poin')) {
       iconData = Icons.stars_rounded;
       iconColor = AppColors.warningOrange;
       iconBg = AppColors.warningOrange.withValues(alpha: 0.15);

@@ -5,10 +5,12 @@
  * Utility to generate and trigger PDF print/download of Buku Panduan TrashCare
  */
 
+import toast from "react-hot-toast";
+
 export const downloadPanduanPdf = () => {
   const printWindow = window.open("", "_blank");
   if (!printWindow) {
-    alert("Gagal membuka jendela cetak. Mohon izinkan popup di browser Anda.");
+    toast.error("Gagal membuka jendela cetak. Mohon izinkan popup di browser Anda.");
     return;
   }
 

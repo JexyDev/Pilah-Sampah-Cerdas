@@ -177,12 +177,23 @@ export class KknController {
       });
       res.status(201).json({
         success: true,
-        message: "Pengajuan izin berhasil dikirim. Menunggu verifikasi Admin DLH.",
+        message: "Pengajuan izin berhasil dikirim. Menunggu verifikasi Dosen Pembimbing Lapangan (DPL).",
         data,
       });
     } catch (error: any) {
       console.error("[KknController] createLeaveRequest error:", error);
       res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async getLeaveRequests(req: Request, res: Response) {
+    try {
+      const studentId = req.user!.userId;
+      const data = await kknService.getLeaveRequests(studentId);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[KknController] getLeaveRequests error:", error);
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -313,6 +324,28 @@ export class KknController {
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[KknController] getActiveZone error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async getDampakRw(req: Request, res: Response): Promise<void> {
+    try {
+      const kknUserId = req.user!.userId;
+      const data = await kknService.getDampakStatistik(kknUserId, "rw");
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[KknController] getDampakRw error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async getDampakKelurahan(req: Request, res: Response): Promise<void> {
+    try {
+      const kknUserId = req.user!.userId;
+      const data = await kknService.getDampakStatistik(kknUserId, "kelurahan");
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[KknController] getDampakKelurahan error:", error);
       res.status(500).json({ success: false, message: error.message });
     }
   }

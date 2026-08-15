@@ -9,11 +9,12 @@ import '../../notifikasi/controllers/notifikasi_controller.dart';
 
 /// State autentikasi.
 class AuthState {
-  const AuthState({this.user, this.isLoading = false, this.errorCode});
+  const AuthState({this.user, this.isLoading = false, this.errorCode, this.errorMessage});
 
   final UserEntity? user;
   final bool isLoading;
   final String? errorCode;
+  final String? errorMessage;
 
   bool get isAuthenticated => user != null;
 
@@ -21,6 +22,7 @@ class AuthState {
     UserEntity? user,
     bool? isLoading,
     String? errorCode,
+    String? errorMessage,
     bool clearUser = false,
     bool clearError = false,
   }) {
@@ -28,6 +30,7 @@ class AuthState {
       user: clearUser ? null : (user ?? this.user),
       isLoading: isLoading ?? this.isLoading,
       errorCode: clearError ? null : (errorCode ?? this.errorCode),
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }
@@ -54,6 +57,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(user: user);
       // Daftarkan FCM token jika sesi sudah ada (app restart)
       _registerFcmToken();
+      NotificationEngine().scheduleRoleBasedNotifications(user.role.apiValue);
     }
   }
 
@@ -97,6 +101,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(user: user, isLoading: false);
       // Daftarkan FCM token setelah login berhasil
       _registerFcmToken();
+      NotificationEngine().scheduleRoleBasedNotifications(user.role.apiValue);
       return true;
     } on AuthException catch (e) {
       state = state.copyWith(
@@ -134,13 +139,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         isLoading: false,
         errorCode: e.code,
+        errorMessage: e.message,
         clearUser: true,
       );
       return false;
-    } catch (_) {
+    } catch (e) {
       state = state.copyWith(
         isLoading: false,
         errorCode: 'INTERNAL_SERVER_ERROR',
+        errorMessage: e.toString(),
         clearUser: true,
       );
       return false;
@@ -205,12 +212,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  /// Update kelurahan & rtRw mahasiswa KKN langsung di state.
+  /// Update kelurahan & rw mahasiswa KKN langsung di state.
   /// Data ini disimpan permanen di local storage oleh AuthRepository.
-  void setMahasiswaRegion({required String kelurahan, required String rtRw}) {
+  void setMahasiswaRegion({required String kelurahan, required String rw, String kecamatan = ''}) {
     if (state.user == null) return;
     state = state.copyWith(
-      user: state.user!.copyWith(kelurahan: kelurahan, rtRw: rtRw),
+      user: state.user!.copyWith(kecamatan: kecamatan, kelurahan: kelurahan, rw: rw),
     );
   }
 
@@ -254,10 +261,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Request token untuk lupa kata sandi.
-  Future<String?> forgotPassword({required String email}) async {
+  Future<String?> forgotPassword({required String phone}) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final token = await _authRepository.forgotPassword(email: email);
+      final token = await _authRepository.forgotPassword(phone: phone);
       state = state.copyWith(isLoading: false);
       return token;
     } on AuthException catch (e) {
@@ -277,14 +284,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Reset kata sandi.
   Future<bool> resetPassword({
-    required String email,
+    required String phone,
     required String token,
     required String newPassword,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       await _authRepository.resetPassword(
-        email: email,
+        phone: phone,
         token: token,
         newPassword: newPassword,
       );
@@ -305,23 +312,45 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Update data profil editable pengguna (Nama, HP, Alamat)
+  /// Update data profil editable pengguna (Nama, HP, Alamat, Wilayah)
   Future<bool> updateProfile({
     required String name,
     required String phone,
     String? address,
+    String? kecamatan,
+    String? kelurahan,
+    String? rw,
+    String? jenjangPendidikan,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      if (state.user != null) {
+      final success = await _authRepository.updateProfile(
+        name: name,
+        phone: phone,
+        address: address,
+        kecamatan: kecamatan,
+        kelurahan: kelurahan,
+        rw: rw,
+        jenjangPendidikan: jenjangPendidikan,
+      );
+      if (success && state.user != null) {
         final updatedUser = state.user!.copyWith(
           name: name,
           phone: phone,
           address: address ?? state.user!.address,
+          kecamatan: kecamatan ?? state.user!.kecamatan,
+          kelurahan: kelurahan ?? state.user!.kelurahan,
+          rw: rw ?? state.user!.rw,
+          jenjangPendidikan: jenjangPendidikan ?? state.user!.jenjangPendidikan,
         );
         state = state.copyWith(user: updatedUser, isLoading: false);
+      } else {
+        state = state.copyWith(isLoading: false);
       }
-      return true;
+      return success;
+    } on AuthException catch (e) {
+      state = state.copyWith(isLoading: false, errorCode: e.code);
+      return false;
     } catch (_) {
       state = state.copyWith(isLoading: false, errorCode: 'UPDATE_FAILED');
       return false;
@@ -335,9 +364,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      // In production, calls PUT /api/v1/auth/change-password via authRepository
+      final success = await _authRepository.changePassword(
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
       state = state.copyWith(isLoading: false);
-      return true;
+      return success;
+    } on AuthException catch (e) {
+      state = state.copyWith(isLoading: false, errorCode: e.code);
+      return false;
     } catch (_) {
       state = state.copyWith(isLoading: false, errorCode: 'CHANGE_PASSWORD_FAILED');
       return false;

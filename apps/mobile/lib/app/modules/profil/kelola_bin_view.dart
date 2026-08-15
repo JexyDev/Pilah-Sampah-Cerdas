@@ -4,6 +4,8 @@ import '../../core/values/app_colors.dart';
 import '../scan/controllers/scan_controller.dart';
 import '../../routes/app_routes.dart';
 import '../../data/models/bin_entity.dart';
+import '../auth/controllers/auth_controller.dart';
+import '../../data/models/user_entity.dart';
 
 class KelolaBinView extends ConsumerWidget {
   const KelolaBinView({super.key});
@@ -11,8 +13,11 @@ class KelolaBinView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final binsAsync = ref.watch(binsProvider);
+    final userAsync = ref.watch(authProvider);
+    final user = userAsync.user;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text(
           'Kelola Tempat Sampah',
@@ -34,13 +39,13 @@ class KelolaBinView extends ConsumerWidget {
       body: binsAsync.when(
         data: (bins) {
           if (bins.isEmpty) {
-            return Center(
+            return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.delete_outline, size: 64, color: AppColors.textHint),
-                  const SizedBox(height: 16),
-                  const Text(
+                  Icon(Icons.delete_outline, size: 64, color: AppColors.textHint),
+                  SizedBox(height: 16),
+                  Text(
                     'Belum ada tempat sampah terdaftar.',
                     style: TextStyle(color: AppColors.textSecondary),
                   ),
@@ -55,7 +60,7 @@ class KelolaBinView extends ConsumerWidget {
               final bin = bins[index];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: _BinCardLarge(bin: bin),
+                child: _BinCardLarge(bin: bin, user: user),
               );
             },
           );
@@ -89,8 +94,9 @@ class KelolaBinView extends ConsumerWidget {
 }
 
 class _BinCardLarge extends StatelessWidget {
-  const _BinCardLarge({required this.bin});
+  const _BinCardLarge({required this.bin, this.user});
   final BinEntity bin;
+  final UserEntity? user;
 
   @override
   Widget build(BuildContext context) {
@@ -120,9 +126,25 @@ class _BinCardLarge extends StatelessWidget {
                     fontSize: 16,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 Text(
-                  'ID: ${bin.qrSerial}',
+                  'Pemilik: ${user?.name ?? '-'}',
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'User ID: ${user?.id ?? '-'}',
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'ID Tempat Sampah: ${bin.qrSerial}',
                   style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 12,
@@ -139,16 +161,16 @@ class _BinCardLarge extends StatelessWidget {
                 Row(
                   children: [
                     const Text(
-                      'Status: ',
+                      'Status Backend: ',
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12,
                       ),
                     ),
                     Text(
-                      bin.isActive ? 'AKTIF' : 'NON-AKTIF',
+                      bin.backendStatus.isNotEmpty ? bin.backendStatus.replaceAll('_', ' ').toUpperCase() : (bin.isActive ? 'AKTIF' : 'NON-AKTIF'),
                       style: TextStyle(
-                        color: bin.isActive ? AppColors.primaryGreen : Colors.red,
+                        color: (bin.backendStatus.toUpperCase() == 'ACTIVE_BOUND' || bin.backendStatus.toUpperCase() == 'AKTIF' || (bin.backendStatus.isEmpty && bin.isActive)) ? AppColors.primaryGreen : AppColors.dangerRed,
                         fontWeight: FontWeight.w700,
                         fontSize: 12,
                       ),

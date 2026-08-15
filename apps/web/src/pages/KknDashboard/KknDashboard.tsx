@@ -70,7 +70,17 @@ const MapFlyToController: React.FC<{
 }> = ({ center, zoom }) => {
   const map = useMap();
   useEffect(() => {
-    if (center) {
+    map.invalidateSize();
+    const t1 = setTimeout(() => map.invalidateSize(), 150);
+    const t2 = setTimeout(() => map.invalidateSize(), 400);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [map]);
+
+  useEffect(() => {
+    if (center && !isNaN(center[0]) && !isNaN(center[1]) && center[0] < 0 && center[1] > 0) {
       map.flyTo(center, zoom, { duration: 1.0 });
     }
   }, [center, zoom, map]);
@@ -1012,8 +1022,11 @@ const KknDashboard: React.FC = () => {
               })}
           </MapContainer>
 
-          {/* Map Legend Overlay */}
-          <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2 max-w-xs font-sans text-xs pointer-events-auto">
+          {/* Map Legend Overlay (High Z-Index & Isolate to prevent flickering on zoom in/out) */}
+          <div
+            className="absolute bottom-4 right-4 flex flex-col gap-2 max-w-xs font-sans text-xs pointer-events-auto select-none"
+            style={{ zIndex: 1000, isolation: "isolate" }}
+          >
             {!isLegendOpen ? (
               <button
                 type="button"

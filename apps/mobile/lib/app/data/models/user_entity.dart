@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// Entitas pengguna — sesuai schema backend tabel `users`.
+/// Entitas pengguna â€” sesuai schema backend tabel `users`.
 /// Backend menggunakan email sebagai identifier login (bukan NIK).
 class UserEntity extends Equatable {
   const UserEntity({
@@ -10,7 +10,7 @@ class UserEntity extends Equatable {
     this.phone = '',
     this.address = '',
     this.kelurahan = '',
-    this.rtRw = '',
+    this.rw = '',
     this.householdId,
     this.fcmToken,
     this.fotoProfil,
@@ -20,7 +20,12 @@ class UserEntity extends Equatable {
     this.prodi = '',
     this.fakultas = '',
     this.universitas = '',
-    this.kecamatan = 'Coblong',
+    this.kecamatan = '',
+    this.provinsi = '',
+    this.kota = '',
+    this.jenjangPendidikan = '',
+    this.pendampingName,
+    this.familySize = 1,
   });
 
   final String id;
@@ -28,8 +33,11 @@ class UserEntity extends Equatable {
   final String phone;
   final String address;
   final UserRole role;
+  final String kecamatan;
+  final String provinsi;
+  final String kota;
   final String kelurahan;
-  final String rtRw;
+  final String rw;
   final String? householdId; // diisi setelah GET /households/me
   final String? fcmToken;
   final String? fotoProfil;
@@ -39,23 +47,11 @@ class UserEntity extends Equatable {
   final String prodi;
   final String fakultas;
   final String universitas;
-  final String kecamatan;
+  final String jenjangPendidikan;
+  final String? pendampingName;
+  final int familySize;
 
-  String get rt {
-    if (rtRw.contains('/')) {
-      final parts = rtRw.split('/');
-      return parts[0].trim();
-    }
-    return rtRw;
-  }
 
-  String get rw {
-    if (rtRw.contains('/')) {
-      final parts = rtRw.split('/');
-      return parts.length > 1 ? parts[1].trim() : '';
-    }
-    return '';
-  }
 
   UserEntity copyWith({
     String? id,
@@ -63,8 +59,11 @@ class UserEntity extends Equatable {
     String? phone,
     String? address,
     UserRole? role,
+    String? kecamatan,
+    String? provinsi,
+    String? kota,
     String? kelurahan,
-    String? rtRw,
+    String? rw,
     String? householdId,
     String? fcmToken,
     String? fotoProfil,
@@ -74,6 +73,9 @@ class UserEntity extends Equatable {
     String? prodi,
     String? fakultas,
     String? universitas,
+    String? jenjangPendidikan,
+    String? pendampingName,
+    int? familySize,
   }) {
     return UserEntity(
       id: id ?? this.id,
@@ -81,8 +83,11 @@ class UserEntity extends Equatable {
       phone: phone ?? this.phone,
       address: address ?? this.address,
       role: role ?? this.role,
+      kecamatan: kecamatan ?? this.kecamatan,
+      provinsi: provinsi ?? this.provinsi,
+      kota: kota ?? this.kota,
       kelurahan: kelurahan ?? this.kelurahan,
-      rtRw: rtRw ?? this.rtRw,
+      rw: rw ?? this.rw,
       householdId: householdId ?? this.householdId,
       fcmToken: fcmToken ?? this.fcmToken,
       fotoProfil: fotoProfil ?? this.fotoProfil,
@@ -92,15 +97,18 @@ class UserEntity extends Equatable {
       prodi: prodi ?? this.prodi,
       fakultas: fakultas ?? this.fakultas,
       universitas: universitas ?? this.universitas,
+      jenjangPendidikan: jenjangPendidikan ?? this.jenjangPendidikan,
+      pendampingName: pendampingName ?? this.pendampingName,
+      familySize: familySize ?? this.familySize,
     );
   }
 
   @override
-  List<Object?> get props => [id, phone, address, role, nim, jurusan, prodi, fakultas, kelurahan, rtRw];
+  List<Object?> get props => [id, phone, address, role, nim, jurusan, prodi, fakultas, jenjangPendidikan, kecamatan, kelurahan, rw, pendampingName];
 }
 
 /// 5 role RBAC sesuai backend tabel `roles`.
-enum UserRole { admin, petugasKelurahan, petugasRw, petugasRt, warga, mahasiswaKkn, petugasResidu }
+enum UserRole { admin, petugasKelurahan, petugasRw, petugasRt, warga, mahasiswaKkn, petugasPemilahan }
 
 extension UserRoleExtension on UserRole {
   String get displayName {
@@ -117,8 +125,8 @@ extension UserRoleExtension on UserRole {
         return 'Warga';
       case UserRole.mahasiswaKkn:
         return 'Mahasiswa KKN';
-      case UserRole.petugasResidu:
-        return 'Petugas Residu';
+      case UserRole.petugasPemilahan:
+        return 'Petugas Pemilahan';
     }
   }
 
@@ -136,28 +144,48 @@ extension UserRoleExtension on UserRole {
         return 'WARGA';
       case UserRole.mahasiswaKkn:
         return 'MAHASISWA_KKN';
-      case UserRole.petugasResidu:
+      case UserRole.petugasPemilahan:
         return 'PETUGAS_RESIDU';
     }
   }
 
   /// Parse role string dari backend response.
   static UserRole fromApi(String value) {
-    switch (value.toUpperCase()) {
+    final v = value.trim().toUpperCase();
+    switch (v) {
       case 'ADMIN':
         return UserRole.admin;
       case 'PETUGAS_KELURAHAN':
+      case 'KELURAHAN':
         return UserRole.petugasKelurahan;
       case 'PETUGAS_RW':
+      case 'RW':
         return UserRole.petugasRw;
       case 'PETUGAS_RT':
+      case 'RT':
         return UserRole.petugasRt;
       case 'MAHASISWA_KKN':
+      case 'MAHASISWA':
+      case 'KKN':
         return UserRole.mahasiswaKkn;
+      case 'PETUGAS_PEMILAHAN':
       case 'PETUGAS_RESIDU':
-        return UserRole.petugasResidu;
+      case 'PETUGAS_RESIDU_PEMILAHAN':
+      case 'PETUGAS_SAMPAH':
+      case 'PETUGAS':
+      case 'RESIDU':
+      case 'PEMILAHAN':
+      case 'OFFICER':
+        return UserRole.petugasPemilahan;
       default:
+        if (v.contains('PETUGAS') || v.contains('RESIDU') || v.contains('PEMILAHAN')) {
+          return UserRole.petugasPemilahan;
+        }
+        if (v.contains('MAHASISWA') || v.contains('KKN')) {
+          return UserRole.mahasiswaKkn;
+        }
         return UserRole.warga;
     }
   }
 }
+

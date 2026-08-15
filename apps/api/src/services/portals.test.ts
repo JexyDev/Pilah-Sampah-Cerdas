@@ -27,7 +27,8 @@ describe("Portals A & B Service Integration Tests", () => {
     await prisma.pointHistory.deleteMany({});
     await prisma.notification.deleteMany({});
     await prisma.violation.deleteMany({});
-    await prisma.setoranOtomatis.deleteMany({});
+    await prisma.aiRequestLog.deleteMany({});
+    await prisma.auditTrail.deleteMany({});
     await prisma.setoranManual.deleteMany({});
     await prisma.bin.deleteMany({});
     await prisma.household.deleteMany({});

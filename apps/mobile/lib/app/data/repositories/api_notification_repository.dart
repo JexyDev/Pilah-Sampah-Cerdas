@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import '../models/notification_entity.dart';
 import 'notification_repository.dart';
 import '../providers/api_client.dart';
+import '../../core/values/api_constants.dart';
 
 /// Implementasi NotificationRepository yang terhubung ke backend Express.js.
 ///
@@ -19,17 +20,19 @@ class ApiNotificationRepository implements NotificationRepository {
   @override
   Future<List<NotificationEntity>> getNotifications() async {
     try {
-      final response = await apiClient.dio.get('/notifications');
+      final response = await apiClient.dio.get(ApiEndpoints.notifications);
 
+      List<NotificationEntity> result = [];
       if (response.statusCode == 200 && response.data != null) {
         final rawData = response.data['data'] ?? response.data['notifications'] ?? response.data;
         if (rawData is List) {
-          return rawData
+          result = rawData
               .map((json) => _mapNotification(json as Map<String, dynamic>))
               .toList();
         }
       }
-      return [];
+
+      return result;
     } on DioException catch (e) {
       throw NotificationException(
         'NETWORK_ERROR',
@@ -45,7 +48,7 @@ class ApiNotificationRepository implements NotificationRepository {
   @override
   Future<void> markAsRead(String id) async {
     try {
-      await apiClient.dio.put('/notifications/$id/read');
+      await apiClient.dio.put(ApiEndpoints.notificationsRead(id));
     } on DioException catch (e) {
       throw NotificationException(
         'NETWORK_ERROR',
@@ -58,7 +61,7 @@ class ApiNotificationRepository implements NotificationRepository {
   @override
   Future<void> markAllAsRead() async {
     try {
-      await apiClient.dio.put('/notifications/read-all');
+      await apiClient.dio.put(ApiEndpoints.notificationsReadAll);
     } on DioException catch (e) {
       throw NotificationException(
         'NETWORK_ERROR',
@@ -72,7 +75,7 @@ class ApiNotificationRepository implements NotificationRepository {
   Future<void> registerDeviceToken(String token) async {
     try {
       await apiClient.dio.post(
-        '/notifications/device-token',
+        ApiEndpoints.notificationsDeviceToken,
         data: {'token': token},
       );
     } on DioException catch (e) {
@@ -89,7 +92,7 @@ class ApiNotificationRepository implements NotificationRepository {
   Future<void> unregisterDeviceToken(String token) async {
     try {
       await apiClient.dio.post(
-        '/notifications/unregister-token',
+        ApiEndpoints.notificationsUnregisterToken,
         data: {'token': token},
       );
     } on DioException catch (e) {

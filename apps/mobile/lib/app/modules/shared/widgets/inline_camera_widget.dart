@@ -1,6 +1,8 @@
 import 'dart:io';
-import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
+
+import 'package:camera/camera.dart';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -80,8 +82,12 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
       }
 
       // Izin diberikan → reset flag
-      _permDenied = false;
-      _permPermanentlyDenied = false;
+      setState(() {
+        _permDenied = false;
+        _permPermanentlyDenied = false;
+      });
+      // Beri waktu sebentar bagi OS untuk me-release kamera ke aplikasi (mencegah layar gelap saat pertama kali diizinkan)
+      await Future.delayed(const Duration(milliseconds: 500));
     }
 
     try {
@@ -153,7 +159,7 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
     } catch (e) {
       if (mounted) {
         setState(() => _isCapturing = false);
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal mengambil foto: $e'),
             backgroundColor: AppColors.dangerRed,
@@ -188,7 +194,7 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal membuka galeri: $e'),
             backgroundColor: AppColors.dangerRed,

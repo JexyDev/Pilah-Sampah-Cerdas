@@ -66,6 +66,10 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
       appBar: AppBar(
         title: const Text('Riwayat Aktivitas KKN', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: Colors.white)),
         backgroundColor: AppColors.primaryGreen,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Column(
         children: [
@@ -107,7 +111,7 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
             child: state.isLoading
                 ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen))
                 : state.errorMessage != null
-                    ? Center(child: Text(state.errorMessage!, style: const TextStyle(color: Colors.red)))
+                    ? Center(child: Text(state.errorMessage!, style: const TextStyle(color: AppColors.dangerRed)))
                     : filteredLogs.isEmpty
                         ? _buildEmpty()
                         : RefreshIndicator(
