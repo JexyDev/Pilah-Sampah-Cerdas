@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../core/utils/platform_utils.dart';
 import '../../../core/utils/network_exception_helper.dart';
@@ -70,6 +72,13 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
     try {
       final user = ref.read(authProvider).user;
       final repo = ref.read(kknRepositoryProvider);
+
+      String cleanRw(String val) => val.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
+      String cleanKel(String val) => val.toLowerCase().replaceAll('kel.', '').replaceAll('kelurahan', '').replaceAll('desa', '').trim();
+
+      final targetRwClean = cleanRw(rw);
+      final targetKelClean = cleanKel(kelurahan);
+
       var data = await repo.getWargaForAktivasi(
         kecamatan: user?.kecamatan,
         kelurahan: kelurahan.isEmpty ? null : kelurahan,
@@ -77,12 +86,32 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
         search: search.isEmpty ? null : search,
       );
 
-      // Fallback: Jika data kosong karena perbedaan format string kelurahan/rw di DB backend,
-      // panggil ulang tanpa parameter region agar data warga binaan tetap muncul.
-      if (data.isEmpty && (kelurahan.isNotEmpty || rw.isNotEmpty)) {
+      // Jika kosong, coba query dengan format RW bersih (hanya angka)
+      if (data.isEmpty && rw.isNotEmpty) {
         data = await repo.getWargaForAktivasi(
+          kecamatan: user?.kecamatan,
+          kelurahan: targetKelClean.isEmpty ? null : targetKelClean,
+          rw: targetRwClean.isEmpty ? null : targetRwClean,
           search: search.isEmpty ? null : search,
         );
+      }
+
+      // Fallback: Jika backend tetap kosong atau mengembalikan data umum, lakukan filter ketat
+      if (data.isEmpty && (kelurahan.isNotEmpty || rw.isNotEmpty)) {
+        final allRaw = await repo.getWargaForAktivasi(
+          search: search.isEmpty ? null : search,
+        );
+        data = allRaw.where((e) {
+          final w = e is WargaDampingan ? e : WargaDampingan.fromJson(e as Map<String, dynamic>);
+          final wRw = cleanRw(w.rw);
+          final wKel = cleanKel(w.kelurahan);
+          final wAddr = w.address.toLowerCase();
+
+          final rwMatches = targetRwClean.isEmpty || wRw == targetRwClean || wAddr.contains('rw $targetRwClean') || wAddr.contains('rw 0$targetRwClean');
+          final kelMatches = targetKelClean.isEmpty || wKel.contains(targetKelClean) || targetKelClean.contains(wKel) || wAddr.contains(targetKelClean);
+
+          return rwMatches && kelMatches;
+        }).toList();
       }
 
       state = state.copyWith(
@@ -117,16 +146,22 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
       double lng = 0.0;
       
       if (PlatformUtils.isMobile) {
-        final pos = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.medium,
-            timeLimit: Duration(seconds: 10),
-          ),
-        );
-        lat = pos.latitude;
-        lng = pos.longitude;
-      } else {
-        throw Exception('Fitur aktivasi warga dengan GPS hanya tersedia di perangkat mobile.');
+        try {
+          final pos = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.medium,
+              timeLimit: Duration(seconds: 8),
+            ),
+          );
+          lat = pos.latitude;
+          lng = pos.longitude;
+        } catch (_) {
+          final lastPos = await Geolocator.getLastKnownPosition();
+          if (lastPos != null) {
+            lat = lastPos.latitude;
+            lng = lastPos.longitude;
+          }
+        }
       }
 
       final repo = ref.read(kknRepositoryProvider);
@@ -158,16 +193,33 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
       double lng = 0.0;
 
       if (PlatformUtils.isMobile) {
-        final pos = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            timeLimit: Duration(seconds: 10),
-          ),
-        );
-        lat = pos.latitude;
-        lng = pos.longitude;
-      } else {
-        throw Exception('Fitur aktivasi tempat sampah dengan GPS hanya tersedia di perangkat mobile.');
+        try {
+          // Request permission lokasi jika belum diizinkan
+          LocationPermission perm = await Geolocator.checkPermission();
+          if (perm == LocationPermission.denied) {
+            perm = await Geolocator.requestPermission();
+          }
+
+          if (perm == LocationPermission.whileInUse || perm == LocationPermission.always) {
+            final pos = await Geolocator.getCurrentPosition(
+              locationSettings: const LocationSettings(
+                accuracy: LocationAccuracy.high,
+                timeLimit: Duration(seconds: 8),
+              ),
+            );
+            lat = pos.latitude;
+            lng = pos.longitude;
+          }
+        } catch (gpsErr) {
+          debugPrint('[AktivasiWarga] GPS warning: $gpsErr, trying last known position...');
+          try {
+            final lastPos = await Geolocator.getLastKnownPosition();
+            if (lastPos != null) {
+              lat = lastPos.latitude;
+              lng = lastPos.longitude;
+            }
+          } catch (_) {}
+        }
       }
 
       final repo = ref.read(kknRepositoryProvider);

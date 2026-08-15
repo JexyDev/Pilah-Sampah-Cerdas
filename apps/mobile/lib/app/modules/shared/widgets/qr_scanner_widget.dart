@@ -35,6 +35,7 @@ class QrScannerWidgetState extends State<QrScannerWidget>
   MobileScannerController? _controller;
   bool _scanned = false;
   _QrState _state = _QrState.loading;
+  bool _isRequestingPermission = false;
 
   @override
   void initState() {
@@ -48,30 +49,38 @@ class QrScannerWidgetState extends State<QrScannerWidget>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (_controller == null) return;
-    if (state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
       _controller?.stop();
-    } else if (state == AppLifecycleState.resumed && !_scanned) {
-      _controller?.start();
+    } else if (state == AppLifecycleState.resumed) {
+      if (_state == _QrState.ready && !_scanned) {
+        _controller?.start();
+      }
     }
   }
 
   Future<void> _requestPermissionAndStart() async {
     if (kIsWeb) return;
+    if (_isRequestingPermission) return;
+    _isRequestingPermission = true;
 
-    // Request permission kamera runtime
-    final PermissionStatus status = await Permission.camera.request();
+    try {
+      // Request permission kamera runtime
+      final PermissionStatus status = await Permission.camera.request();
 
-    if (!mounted) return;
-
-    if (status.isGranted) {
-      // Beri delay sedikit agar OS melepas hardware kamera sepenuhnya setelah izin diberikan pertama kali
-      await Future.delayed(const Duration(milliseconds: 500));
       if (!mounted) return;
-      _startScanner();
-    } else if (status.isPermanentlyDenied) {
-      setState(() => _state = _QrState.permDenied);
-    } else {
-      setState(() => _state = _QrState.denied);
+
+      if (status.isGranted) {
+        // Beri waktu sejenak bagi OS melepaskan resource kamera ke aplikasi
+        await Future.delayed(const Duration(milliseconds: 300));
+        if (!mounted) return;
+        _startScanner();
+      } else if (status.isPermanentlyDenied) {
+        setState(() => _state = _QrState.permDenied);
+      } else {
+        setState(() => _state = _QrState.denied);
+      }
+    } finally {
+      _isRequestingPermission = false;
     }
   }
 

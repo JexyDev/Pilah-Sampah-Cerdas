@@ -4,6 +4,16 @@ import 'package:equatable/equatable.dart';
 /// Model untuk response GET /api/kkn/dashboard
 /// ─────────────────────────────────────────────────────────────────────────────
 class KknDashboardData extends Equatable {
+  static const empty = KknDashboardData(
+    nim: '',
+    jurusan: '',
+    totalRegisteredBins: 0,
+    assignmentLimit: 0,
+    remainingQuota: 0,
+    progressPercentage: 0.0,
+    contributionPoints: 0,
+  );
+
   const KknDashboardData({
     required this.nim,
     required this.jurusan,

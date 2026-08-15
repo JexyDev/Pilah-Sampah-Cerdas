@@ -137,14 +137,42 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: const Color(0xFFFFFBEB),
+                                border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.5)),
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              child: const Center(
-                                child: Text(
-                                  'Belum ada tempat sampah aktif terdaftar.',
-                                  style: TextStyle(color: AppColors.textSecondary),
-                                ),
+                              child: const Row(
+                                children: [
+                                  Icon(
+                                    Icons.warning_amber_rounded,
+                                    color: AppColors.warningYellow,
+                                    size: 28,
+                                  ),
+                                  SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Belum Aktivasi Tempat Sampah',
+                                          style: TextStyle(
+                                            color: AppColors.textPrimary,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        SizedBox(height: 2),
+                                        Text(
+                                          'Silakan ketuk "Kelola" untuk menambah.',
+                                          style: TextStyle(
+                                            color: AppColors.textSecondary,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             );
                           }

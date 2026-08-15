@@ -24,6 +24,7 @@ import '../modules/mahasiswa/views/pemanfaatan_sampah_view.dart';
 import '../modules/mahasiswa/views/edit_profil_mahasiswa_view.dart';
 import '../modules/mahasiswa/views/pengajuan_izin_form_view.dart';
 import '../modules/mahasiswa/views/monitoring_dampak_kelurahan_view.dart';
+import '../modules/mahasiswa/views/riwayat_kkn_view.dart';
 import '../modules/petugas_pemilahan/views/riwayat_petugas_pemilahan_view.dart';
 import '../modules/petugas_pemilahan/views/ganti_password_petugas_view.dart';
 import 'app_routes.dart';
@@ -107,6 +108,8 @@ class AppPages {
         return _buildRoute(const PengajuanWargaView(), settings);
       case AppRoutes.monitoringDampakKelurahan:
         return _buildRoute(const MonitoringDampakKelurahanView(), settings);
+      case AppRoutes.riwayatKkn:
+        return _buildRoute(const RiwayatKknView(), settings);
       default:
         return _buildRoute(const _NotFoundScreen(), settings);
     }

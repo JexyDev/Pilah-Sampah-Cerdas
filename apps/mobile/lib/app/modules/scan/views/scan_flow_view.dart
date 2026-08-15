@@ -1762,7 +1762,7 @@ class _OverflowDialog extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: onAjukanReset,
                 icon: const Icon(Icons.cleaning_services_rounded, size: 18, color: AppColors.primaryGreen),
-                label: const Text('Ajukan Pengosongan Tong', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryGreen)),
+                label: const Text('Ajukan Pengosongan Tempat Sampah', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryGreen)),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.primaryGreen),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
