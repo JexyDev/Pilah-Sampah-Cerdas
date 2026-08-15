@@ -301,6 +301,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       data['rw'] = _selectedRw ?? '';
       data['kelurahan'] = _selectedKelurahan ?? '';
       data['jumlahAnggotaKeluarga'] = int.tryParse(_familySizeController.text) ?? 1;
+      data['familySize'] = int.tryParse(_familySizeController.text) ?? 1;
     } else if (_selectedRole == 'Mahasiswa') {
       data['nim'] = InputSanitizer.sanitize(_nimController.text);
       
