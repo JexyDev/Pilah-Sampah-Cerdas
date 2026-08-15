@@ -28,14 +28,16 @@ const mapNotification = (n: any) => {
     iconBg = "bg-yellow-100";
     iconColor = "text-yellow-500";
   } else if (
+    titleUpper.includes("TEMPAT SAMPAH") ||
     titleUpper.includes("TONG") ||
     titleUpper.includes("KRITIS") ||
     titleUpper.includes("PENUH") ||
+    messageUpper.includes("TEMPAT SAMPAH") ||
     messageUpper.includes("TONG") ||
     messageUpper.includes("KRITIS") ||
     messageUpper.includes("PENUH")
   ) {
-    type = "TONG_PENUH";
+    type = "TEMPAT_SAMPAH_PENUH";
     icon = "warning";
     iconBg = "bg-red-100";
     iconColor = "text-red-500";

@@ -34,7 +34,7 @@ class AppStrings {
   static const String berandaAnorganik = 'Anorganik';
   static const String berandaRiwayatTerakhir = 'Riwayat Terakhir';
   static const String berandaLihatSemua = 'Lihat Semua';
-  static const String berandaStatusTong = 'Status Tempat Sampah';
+  static const String berandaStatusTempatSampah = 'Status Tempat Sampah';
 
   // --- Scan / Setor Flow ---
   static const String scanStep1Title = 'Foto Sampah';
