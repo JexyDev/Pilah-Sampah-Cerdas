@@ -37,6 +37,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useLeaderboardStore } from "../../store/useLeaderboardStore";
+import { useAuthStore } from "../../store/useAuthStore";
 import { BarChartRace } from "../../components/BarChartRace";
 import { AnalyticsOverviewBoard } from "../../components/analytics/AnalyticsOverviewBoard";
 import { Pagination } from "../../components/common/Pagination";
@@ -141,6 +142,10 @@ const Leaderboard: React.FC = () => {
     setCurrentPage(1);
   }, [system, s1Tab, s2Tab, searchTerm]);
 
+  const { user } = useAuthStore();
+  const isLurah = (user?.role || user?.peran || "").toUpperCase() === "LURAH";
+  const userKelurahan = user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "Cipaganti");
+
   // ALL HOOKS MUST RUN UNCONDITIONALLY BEFORE ANY COMPUTATION OR RETURN
   const currentData: GenericItem[] = useMemo(() => {
     let raw: GenericItem[] = [];
@@ -153,6 +158,10 @@ const Leaderboard: React.FC = () => {
           subtitle: u.wilayah || "-",
           points: u.points,
         }));
+        if (isLurah && userKelurahan) {
+          const filtered = raw.filter((u) => (u.subtitle || "").toLowerCase().includes(userKelurahan.toLowerCase()));
+          if (filtered.length > 0) raw = filtered.map((u, idx) => ({ ...u, rank: idx + 1 }));
+        }
       } else if (s1Tab === "rtrw") {
         raw = rtRw.map((r, i) => ({
           id: r.rtRwId || i.toString(),
@@ -161,6 +170,10 @@ const Leaderboard: React.FC = () => {
           subtitle: r.kelurahanName,
           points: r.totalPoints,
         }));
+        if (isLurah && userKelurahan) {
+          const filtered = raw.filter((r) => (r.subtitle || "").toLowerCase().includes(userKelurahan.toLowerCase()));
+          if (filtered.length > 0) raw = filtered.map((r, idx) => ({ ...r, rank: idx + 1 }));
+        }
       } else if (s1Tab === "pengangkut") {
         raw = pengangkut.map((p, i) => ({
           id: p.id,

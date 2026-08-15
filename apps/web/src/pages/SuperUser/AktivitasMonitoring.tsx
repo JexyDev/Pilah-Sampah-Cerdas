@@ -42,6 +42,7 @@ import {
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { Pagination } from "../../components/common/Pagination";
+import PageHeader from "../../components/common/PageHeader";
 
 interface TransactionItem {
   id: string;
@@ -140,64 +141,58 @@ export const AktivitasMonitoring: React.FC = () => {
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 font-sans">
-      {/* Executive Hero Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-white shadow-lg flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 relative overflow-hidden">
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full text-xs font-extrabold w-fit mb-2 border border-emerald-500/30">
-            <Activity size={14} className="animate-pulse" /> Live Audit &amp; Pemilahan Wilayah
+      {/* Clean Enterprise Page Header */}
+      <PageHeader
+        icon={Activity}
+        category="Live Audit & Pemilahan Wilayah"
+        scope={selectedKelurahan === "ALL" ? "Kecamatan Coblong" : `Kelurahan ${selectedKelurahan}`}
+        title="Monitoring Pemilahan Sampah"
+        description="Pemantauan real-time komposisi pemilahan sampah harian, evaluasi kepatuhan warga per kelurahan/RW, serta insentif poin terintegrasi."
+        actions={
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Period Filter Dropdown */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs">
+              {["harian", "mingguan", "bulanan", "tahunan"].map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer ${
+                    period === p
+                      ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+
+            {/* Kelurahan Select */}
+            <select
+              value={selectedKelurahan}
+              onChange={(e) => setSelectedKelurahan(e.target.value)}
+              className="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-emerald-500 transition cursor-pointer shadow-xs"
+            >
+              <option value="ALL">Semua Kelurahan</option>
+              <option value="Dago">Kel. Dago</option>
+              <option value="Lebak Gede">Kel. Lebak Gede</option>
+              <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
+              <option value="Sadang Serang">Kel. Sadang Serang</option>
+              <option value="Sekeloa">Kel. Sekeloa</option>
+              <option value="Cipaganti">Kel. Cipaganti</option>
+            </select>
+
+            {/* Refresh Button */}
+            <button
+              onClick={() => fetchMonitoringData(false)}
+              title="Refresh Data Audit"
+              className="p-2 bg-white hover:bg-slate-50 text-slate-700 rounded-xl border border-slate-200 transition cursor-pointer shadow-xs"
+            >
+              <RefreshCw size={14} className={refreshing ? "animate-spin text-emerald-600" : "text-slate-500"} />
+            </button>
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-            Monitoring Pemilahan Sampah
-          </h1>
-          <p className="text-slate-300 text-xs md:text-sm mt-1 max-w-2xl font-semibold">
-            Pemantauan real-time komposisi pemilahan sampah harian, evaluasi kepatuhan warga per kelurahan/RW, serta insentif poin terintegrasi.
-          </p>
-        </div>
-
-        {/* Global Controls & Period Selector */}
-        <div className="relative z-10 flex flex-wrap items-center gap-2.5 shrink-0">
-          {/* Period Filter Dropdown */}
-          <div className="flex items-center bg-slate-800/80 border border-slate-700/80 rounded-2xl p-1 shadow-2xs">
-            {["harian", "mingguan", "bulanan", "tahunan"].map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold capitalize transition-all cursor-pointer ${
-                  period === p
-                    ? "bg-[#009966] text-white shadow-xs"
-                    : "text-slate-400 hover:text-white hover:bg-slate-700/50"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-
-          {/* Kelurahan Select */}
-          <select
-            value={selectedKelurahan}
-            onChange={(e) => setSelectedKelurahan(e.target.value)}
-            className="px-3.5 py-2 bg-slate-800/80 border border-slate-700/80 rounded-2xl text-xs font-extrabold text-white outline-none focus:border-[#009966] transition cursor-pointer"
-          >
-            <option value="ALL">Semua Kelurahan</option>
-            <option value="Dago">Kel. Dago</option>
-            <option value="Lebak Gede">Kel. Lebak Gede</option>
-            <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
-            <option value="Sadang Serang">Kel. Sadang Serang</option>
-            <option value="Sekeloa">Kel. Sekeloa</option>
-            <option value="Cipaganti">Kel. Cipaganti</option>
-          </select>
-
-          {/* Refresh Button */}
-          <button
-            onClick={() => fetchMonitoringData(false)}
-            title="Refresh Data Audit"
-            className="p-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl border border-slate-700/80 transition-all cursor-pointer"
-          >
-            <RefreshCw size={15} className={refreshing ? "animate-spin text-[#009966]" : ""} />
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* KPI Metric Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
@@ -411,7 +406,7 @@ export const AktivitasMonitoring: React.FC = () => {
             <span className="inline-flex items-center gap-1.5 text-[11px] font-black text-emerald-300 bg-emerald-500/20 px-3 py-1 rounded-lg border border-emerald-500/30">
               <CheckCircle2 size={13} /> Optimalisasi Komposting
             </span>
-            <h4 className="text-sm font-extrabold text-white tracking-tight">Perluas Wadah Komposter Organik</h4>
+            <h4 className="text-sm font-extrabold text-white tracking-tight">Perluas Tempat Sampah Komposter Organik</h4>
             <p className="text-xs text-slate-100 font-medium leading-relaxed">
               Alokasikan 5 komposter tambahan di RW dengan volume sampah organik tinggi untuk mempercepat pembuatan Pupuk Organik Cair (POC).
             </p>

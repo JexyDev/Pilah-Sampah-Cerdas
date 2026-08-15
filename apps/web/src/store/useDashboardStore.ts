@@ -12,7 +12,8 @@ export interface KPI {
   totalWarga: number;
   totalSampahKg: number;
   averageAiAccuracy: number;
-  alertTongPenuh: number;
+  alertTongPenuh?: number;
+  alertTempatSampahPenuh?: number;
   tempatSampahAktif: number;
   lokasiTerdaftar: number;
   setoranHariIniKg: number;

@@ -15,7 +15,6 @@ export type UserRole =
   | "CAMAT"
   | "LURAH"
   | "RW"
-  | "RT"
   | "PETUGAS_RESIDU"
   | "WARGA"
   | "MAHASISWA_KKN"
@@ -29,7 +28,11 @@ export interface User {
   name: string;
   email: string;
   peran: UserRole;
+  role?: string;
   wilayah: string;
+  kelurahan?: string;
+  kecamatan?: string;
+  rw?: string;
   avatar: string;
   avatarBg: string;
   avatarColor: string;
@@ -78,8 +81,6 @@ const getAvatarConfig = (rawRole: string): { avatarBg: string; avatarColor: stri
       return { avatarBg: "bg-pink-100", avatarColor: "text-pink-700" };
     case "RW":
       return { avatarBg: "bg-teal-100", avatarColor: "text-teal-700" };
-    case "RT":
-      return { avatarBg: "bg-cyan-100", avatarColor: "text-cyan-700" };
     case "PETUGAS_RESIDU":
       return { avatarBg: "bg-orange-100", avatarColor: "text-orange-700" };
     case "WARGA":
@@ -105,12 +106,10 @@ const getWilayahByRole = (role: string): string => {
       return "Kelurahan Dago";
     case "RW":
       return "RW 06 Dago";
-    case "RT":
-      return "RT 04 / RW 06 Dago";
     case "PETUGAS_RESIDU":
-      return "RT 02 / RW 06";
+      return "RW 06 Dago";
     case "WARGA":
-      return "RT 04 / RW 06";
+      return "RW 06 Dago";
     case "MAHASISWA_KKN":
       return "Area KKN Dago";
     default:

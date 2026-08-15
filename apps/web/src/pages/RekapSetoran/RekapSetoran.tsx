@@ -33,6 +33,7 @@ import { Pagination } from "../../components/common/Pagination";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
+import PageHeader from "../../components/common/PageHeader";
 
 export default function RekapSetoran() {
   const [deposits, setDeposits] = useState<any[]>([]);
@@ -222,37 +223,33 @@ export default function RekapSetoran() {
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 font-sans">
-      {/* Executive Hero Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden">
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full text-xs font-extrabold w-fit mb-2 border border-emerald-500/30">
-            <Receipt size={14} className="text-emerald-400" /> Audit Transaksi Pemilahan
-          </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-            Rekapitulasi Setoran Sampah
-          </h1>
-          <p className="text-slate-300 text-xs md:text-sm mt-1 max-w-2xl font-medium">
-            Laporan rekapitulasi audit transaksi penyetoran sampah terpilah warga di tingkat Rukun Warga secara terpadu dan akuntabel.
-          </p>
-        </div>
-
-        <div className="relative z-10 flex flex-wrap items-center gap-2.5 shrink-0">
-          <button
-            onClick={() => fetchDeposits(false)}
-            disabled={loading}
-            title="Refresh Data Setoran"
-            className="p-3 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl border border-slate-700 transition cursor-pointer"
-          >
-            <RefreshCw size={15} className={refreshing ? "animate-spin text-[#009966]" : ""} />
-          </button>
-          <button
-            onClick={handleExportCSV}
-            className="px-5 py-3 bg-[#009966] hover:bg-[#008855] text-white text-xs font-black rounded-2xl transition flex items-center gap-2 shadow-md hover:scale-105 active:scale-95 cursor-pointer"
-          >
-            <FileSpreadsheet size={16} /> Ekspor Laporan CSV
-          </button>
-        </div>
-      </div>
+      {/* Clean Enterprise Page Header */}
+      <PageHeader
+        icon={Receipt}
+        category="Audit Transaksi Pemilahan"
+        scope="Kecamatan Coblong"
+        title="Rekapitulasi Setoran Sampah"
+        description="Laporan rekapitulasi audit transaksi penyetoran sampah terpilah warga di tingkat Rukun Warga secara terpadu dan akuntabel."
+        actions={
+          <>
+            <button
+              onClick={() => fetchDeposits(false)}
+              disabled={loading}
+              title="Sinkronkan Data Setoran"
+              className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-xs"
+            >
+              <RefreshCw size={14} className={refreshing ? "animate-spin text-[#009966]" : "text-slate-500"} />
+              <span>Sinkronkan Data</span>
+            </button>
+            <button
+              onClick={handleExportCSV}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <FileSpreadsheet size={15} /> <span>Ekspor Laporan CSV</span>
+            </button>
+          </>
+        }
+      />
 
       {/* KPI Metric Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
@@ -548,7 +545,7 @@ export default function RekapSetoran() {
                   </div>
                   <div className="absolute bottom-2 left-2 right-2 p-2.5 rounded-xl bg-slate-900/80 backdrop-blur-md text-white flex justify-between items-center text-xs font-bold">
                     <span>Setor: {new Date(selectedDeposit.waktu).toLocaleString("id-ID")}</span>
-                    <span className="font-mono text-emerald-300">{selectedDeposit.lokasi || "Wadah Terdaftar"}</span>
+                    <span className="font-mono text-emerald-300">{selectedDeposit.lokasi || "Tempat Sampah Terdaftar"}</span>
                   </div>
                 </div>
               )}

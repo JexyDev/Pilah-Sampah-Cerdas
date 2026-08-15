@@ -95,7 +95,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: Us
   if (
     allowedRoles &&
     user.peran !== "DEVELOPER" &&
-    user.peran !== "SUPER_USER" &&
     !allowedRoles.includes(user.peran)
   ) {
     // Redirect role yang tidak diizinkan kembali ke dashboard
@@ -147,7 +146,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/monitoring"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA", "DEVELOPER"]}>
               <Monitoring />
             </ProtectedRoute>
           }
@@ -155,7 +154,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/monitoring-wilayah"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA", "DEVELOPER"]}>
               <Monitoring />
             </ProtectedRoute>
           }
@@ -163,7 +162,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/monitoring-absen"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL"]}>
               <MonitoringAbsen />
             </ProtectedRoute>
           }
@@ -171,7 +170,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/pemantauan-rekapitulasi"
           element={
-            <ProtectedRoute allowedRoles={["LURAH", "CAMAT", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER", "RW", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN", "DPL"]}>
+            <ProtectedRoute allowedRoles={["LURAH", "CAMAT", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN", "DPL"]}>
               <PemantauanDanRekapitulasi />
             </ProtectedRoute>
           }
@@ -191,7 +190,6 @@ const AppRoutes: React.FC = () => {
                 "CAMAT",
                 "LURAH",
                 "RW",
-                "RT",
                 "PETUGAS_RESIDU",
                 "PANITIA_TASKFORCE",
                 "PEMIMPIN",
@@ -287,9 +285,10 @@ const AppRoutes: React.FC = () => {
                 "CAMAT",
                 "LURAH",
                 "RW",
-                "RT",
                 "PETUGAS_RESIDU",
                 "MAHASISWA_KKN",
+                "DPL",
+                "DOSEN_PEMBIMBING",
                 "PEMIMPIN",
                 "PANITIA_TASKFORCE",
                 "DEVELOPER",
@@ -310,7 +309,6 @@ const AppRoutes: React.FC = () => {
                 "CAMAT",
                 "LURAH",
                 "RW",
-                "RT",
                 "PETUGAS_RESIDU",
                 "MAHASISWA_KKN",
                 "PEMIMPIN",
@@ -461,7 +459,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/pengelolaan-sampah"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA"]}>
               <PemanfaatanSampah />
             </ProtectedRoute>
           }
@@ -470,7 +468,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/hasil-pemanfaatan"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA"]}>
               <HasilPemanfaatan />
             </ProtectedRoute>
           }
@@ -503,7 +501,6 @@ const AppRoutes: React.FC = () => {
                 "CAMAT",
                 "LURAH",
                 "RW",
-                "RT",
                 "PETUGAS_RESIDU",
                 "MAHASISWA_KKN",
                 "PEMIMPIN",
@@ -521,7 +518,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/dataset/hasil-klasifikasi"
           element={
-            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
               <MasterDatasetKlasifikasi />
             </ProtectedRoute>
           }
@@ -529,7 +526,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/master-dataset-klasifikasi"
           element={
-            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
               <MasterDatasetKlasifikasi />
             </ProtectedRoute>
           }
@@ -545,7 +542,6 @@ const AppRoutes: React.FC = () => {
                 "CAMAT",
                 "LURAH",
                 "RW",
-                "RT",
                 "PETUGAS_RESIDU",
                 "MAHASISWA_KKN",
                 "PEMIMPIN",
@@ -564,7 +560,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/penyetoran-sampah"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA", "DEVELOPER"]}>
               <SetorSampah />
             </ProtectedRoute>
           }
@@ -634,7 +630,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/superUser/data-survei-baseline"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN", "ADMIN_DLH", "CAMAT", "LURAH"]}>
               <DataSurveiKkn type="BASELINE" />
             </ProtectedRoute>
           }
@@ -642,7 +638,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/superUser/data-survei-endline"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN", "ADMIN_DLH", "CAMAT", "LURAH"]}>
               <DataSurveiKkn type="ENDLINE" />
             </ProtectedRoute>
           }
@@ -653,7 +649,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/evaluasi-dampak-kkn"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN", "ADMIN_DLH", "CAMAT", "LURAH"]}>
               <EvaluasiDampakKkn />
             </ProtectedRoute>
           }
@@ -661,7 +657,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/superUser/data-survei-kkn/:id"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN", "ADMIN_DLH", "CAMAT", "LURAH"]}>
               <DetailSurveiKkn />
             </ProtectedRoute>
           }
@@ -677,7 +673,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/rw/approval"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "RW", "RT"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "RW"]}>
               <RwApproval />
             </ProtectedRoute>
           }
@@ -685,7 +681,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/rw/fasilitas"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "RW", "RT"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "RW"]}>
               <RwFacilityInput />
             </ProtectedRoute>
           }

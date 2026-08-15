@@ -31,6 +31,7 @@ import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+import PageHeader from "../../components/common/PageHeader";
 
 interface FeedbackItem {
   id: string;
@@ -120,6 +121,9 @@ export const HasilPemanfaatan: React.FC = () => {
     fetchFeedbackList();
   }, []);
 
+  const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
+  const dplKelurahan = user?.kelurahan || "";
+
   // Filtered feedback calculation
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
@@ -142,9 +146,12 @@ export const HasilPemanfaatan: React.FC = () => {
       const matchesKategori =
         kategoriFilter === "ALL" ? true : item.kategori === kategoriFilter;
 
-      return matchesSearch && matchesStatus && matchesKategori;
+      const matchesDplKelurahan =
+        !isDpl || !dplKelurahan || kelName.toLowerCase().includes(dplKelurahan.toLowerCase());
+
+      return matchesSearch && matchesStatus && matchesKategori && matchesDplKelurahan;
     });
-  }, [items, searchQuery, statusFilter, kategoriFilter]);
+  }, [items, searchQuery, statusFilter, kategoriFilter, isDpl, dplKelurahan]);
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -319,27 +326,22 @@ export const HasilPemanfaatan: React.FC = () => {
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 font-sans">
-      {/* Executive Header Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden">
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full text-xs font-extrabold w-fit mb-2 border border-emerald-500/30">
-            <Sparkles size={14} /> Suara Warga & Evaluasi Daur Ulang
-          </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-            Hasil Pemanfaatan &amp; Ulasan Warga
-          </h1>
-          <p className="text-slate-400 text-xs md:text-sm mt-1 max-w-2xl font-medium">
-            Pusat aspirasi, masukan, dan evaluasi hasil daur ulang serta pemanfaatan sampah di kelurahan secara transparan dan akuntabel.
-          </p>
-        </div>
-
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="relative z-10 px-5 py-3 bg-[#009966] hover:bg-[#008855] text-white text-xs font-black rounded-2xl transition-all flex items-center gap-2 shadow-md hover:scale-105 active:scale-95 cursor-pointer shrink-0"
-        >
-          <Plus size={16} /> Sampaikan Kritik &amp; Saran
-        </button>
-      </div>
+      {/* Clean Enterprise Page Header */}
+      <PageHeader
+        icon={Sparkles}
+        category="Suara Warga & Evaluasi Daur Ulang"
+        scope="Kecamatan Coblong"
+        title="Hasil Pemanfaatan & Ulasan Warga"
+        description="Pusat aspirasi, masukan, dan evaluasi hasil daur ulang serta pemanfaatan sampah di kelurahan secara transparan dan akuntabel."
+        actions={
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <Plus size={15} /> <span>Sampaikan Kritik & Saran</span>
+          </button>
+        }
+      />
 
       {/* KPI Metric Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">

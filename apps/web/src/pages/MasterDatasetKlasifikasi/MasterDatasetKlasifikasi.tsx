@@ -803,7 +803,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                 />
                 <div className="absolute bottom-2 left-2 right-2 p-2.5 rounded-xl bg-slate-900/75 backdrop-blur-md text-white flex justify-between items-center text-xs font-bold">
                   <span>Waktu Scan: {new Date(selectedItemForDetail.createdAt).toLocaleString("id-ID")} WIB</span>
-                  <span className="font-mono text-emerald-300">Wadah: {selectedItemForDetail.bin.qrCode}</span>
+                  <span className="font-mono text-emerald-300">Tempat Sampah: {selectedItemForDetail.bin.qrCode}</span>
                 </div>
               </div>
 

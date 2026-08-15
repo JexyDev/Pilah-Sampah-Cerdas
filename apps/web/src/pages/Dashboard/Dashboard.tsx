@@ -1604,7 +1604,6 @@ const Dashboard: React.FC = () => {
       user?.peran === "MAHASISWA_KKN" ||
       user?.peran === "PETUGAS_RESIDU" ||
       user?.peran === "RW" ||
-      user?.peran === "RT" ||
       user?.peran === "DPL" ||
       user?.peran === "DOSEN_PEMBIMBING"
     ) {
@@ -1612,11 +1611,17 @@ const Dashboard: React.FC = () => {
       return;
     }
 
+    const isLurahRole = (user?.role || user?.peran || "").toUpperCase() === "LURAH";
+    const userKelurahan = user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "");
+    const effectiveWilayah = isLurahRole
+      ? (userKelurahan || "Cipaganti")
+      : (user?.wilayah || "Kecamatan Coblong");
+
     const fetchStats = async () => {
       try {
         setError("");
         const response = await api.get("/dashboard/kpi", {
-          params: { wilayah: user?.wilayah, period: timeFilter },
+          params: { wilayah: effectiveWilayah, period: timeFilter },
         });
         const kpi = response.data?.data ?? response.data;
         if (!kpi) throw new Error("KPI kosong");
@@ -1638,9 +1643,9 @@ const Dashboard: React.FC = () => {
           },
           tempatSampahAktif: {
             value: (kpi.tempatSampahAktif ?? 0).toLocaleString("id-ID"),
-            trend: (kpi.alertTongPenuh ?? 0) > 0 ? `${kpi.alertTongPenuh} Penuh` : "Kondisi Aman",
+            trend: (kpi.alertTempatSampahPenuh ?? kpi.alertTongPenuh ?? 0) > 0 ? `${kpi.alertTempatSampahPenuh ?? kpi.alertTongPenuh} Penuh` : "Kondisi Aman",
             trendLabel: "Status Operasional",
-            trendUp: (kpi.alertTongPenuh ?? 0) === 0,
+            trendUp: (kpi.alertTempatSampahPenuh ?? kpi.alertTongPenuh ?? 0) === 0,
           },
           lokasiTerdaftar: {
             value: (kpi.lokasiTerdaftar ?? 0).toLocaleString("id-ID"),
@@ -1764,7 +1769,7 @@ const Dashboard: React.FC = () => {
   }
 
   if (user?.peran === "WARGA") return <WargaDashboard />;
-  if (user?.peran === "RW" || user?.peran === "RT") return <RwDashboard />;
+  if (user?.peran === "RW") return <RwDashboard />;
   if (user?.peran === "MAHASISWA_KKN") return <KknDashboard />;
   if (user?.peran === "PETUGAS_RESIDU") return <ResiduDashboard />;
   if (user?.peran === "DPL" || user?.peran === "DOSEN_PEMBIMBING") return <DplDashboardPage />;
@@ -1840,12 +1845,31 @@ const Dashboard: React.FC = () => {
         {/* Top Controls Right */}
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">
           <CustomSelect
-            value={user?.wilayah || "Kecamatan Coblong"}
-            onChange={(val) => handleRegionChange(val)}
-            options={WILAYAH_OPTIONS}
+            value={
+              (user?.role || user?.peran || "").toUpperCase() === "LURAH"
+                ? `Kel. ${user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "Cipaganti")}`
+                : user?.wilayah || "Kecamatan Coblong"
+            }
+            onChange={(val) => {
+              if ((user?.role || user?.peran || "").toUpperCase() !== "LURAH") {
+                handleRegionChange(val);
+              }
+            }}
+            options={
+              (user?.role || user?.peran || "").toUpperCase() === "LURAH"
+                ? [
+                    {
+                      value: `Kel. ${user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "Cipaganti")}`,
+                      label: `Kel. ${user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "Cipaganti")} (Terkunci - Wilayah Tugas)`,
+                      sublabel: "Wilayah Administratif Tugas Lurah",
+                    },
+                  ]
+                : WILAYAH_OPTIONS
+            }
             icon={<MapPin size={15} className="text-[#009966] flex-shrink-0" />}
             label="Wilayah:"
             variant="emerald"
+            disabled={(user?.role || user?.peran || "").toUpperCase() === "LURAH"}
           />
 
           <CustomSelect
@@ -2348,7 +2372,7 @@ const Dashboard: React.FC = () => {
                 </span>
               </div>
               <div className="bg-white p-2 rounded-xl border border-rose-100 shadow-2xs">
-                <span className="text-[10px] text-slate-400 font-bold uppercase block">Salah Wadah</span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Salah Tempat Sampah</span>
                 <span className="text-sm font-black text-rose-600">
                   {stats?.kepatuhanPemilahan?.nonCompliantCount ?? 0} <span className="text-[10px] font-normal text-slate-400">setoran</span>
                 </span>
@@ -2360,7 +2384,7 @@ const Dashboard: React.FC = () => {
           <div className="md:col-span-4 space-y-4">
             <h5 className="font-extrabold text-xs text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
               <span className="material-symbols-outlined text-sm text-emerald-600">pie_chart</span>
-              Kesesuaian Per Kategori Wadah
+              Kesesuaian Per Kategori Tempat Sampah
             </h5>
 
             {/* Organik Bin */}
@@ -2368,7 +2392,7 @@ const Dashboard: React.FC = () => {
               <div className="flex justify-between items-center text-xs">
                 <span className="font-extrabold text-emerald-900 flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-xs" />
-                  Wadah Tempat Sampah Organik
+                  Tempat Sampah Organik
                 </span>
                 <span className="font-black text-emerald-700 font-mono">
                   {stats?.kepatuhanPemilahan?.organikRate ?? 0}% Sesuai
@@ -2381,7 +2405,7 @@ const Dashboard: React.FC = () => {
                 />
               </div>
               <p className="text-[10px] text-emerald-700/80 font-medium leading-tight">
-                Kesesuaian hasil AI terdeteksi Organik pada wadah berkategori Organik ({stats?.kepatuhanPemilahan?.organikBinTotal ?? 0} wadah terdata).
+                Kesesuaian hasil AI terdeteksi Organik pada Tempat Sampah berkategori Organik ({stats?.kepatuhanPemilahan?.organikBinTotal ?? 0} Tempat Sampah terdata).
               </p>
             </div>
 
@@ -2390,7 +2414,7 @@ const Dashboard: React.FC = () => {
               <div className="flex justify-between items-center text-xs">
                 <span className="font-extrabold text-amber-900 flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-xs" />
-                  Wadah Tempat Sampah Anorganik
+                  Tempat Sampah Anorganik
                 </span>
                 <span className="font-black text-amber-700 font-mono">
                   {stats?.kepatuhanPemilahan?.anorganikRate ?? 0}% Sesuai
@@ -2403,7 +2427,7 @@ const Dashboard: React.FC = () => {
                 />
               </div>
               <p className="text-[10px] text-amber-700/80 font-medium leading-tight">
-                Kesesuaian hasil AI terdeteksi Anorganik pada wadah berkategori Anorganik ({stats?.kepatuhanPemilahan?.anorganikBinTotal ?? 0} wadah terdata).
+                Kesesuaian hasil AI terdeteksi Anorganik pada Tempat Sampah berkategori Anorganik ({stats?.kepatuhanPemilahan?.anorganikBinTotal ?? 0} Tempat Sampah terdata).
               </p>
             </div>
           </div>

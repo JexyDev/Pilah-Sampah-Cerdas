@@ -12,6 +12,7 @@ import {
   Star,
 } from "lucide-react";
 import api from "../services/api";
+import { useAuthStore } from "../store/useAuthStore";
 
 interface LeaderboardItem {
   rank: number;
@@ -305,6 +306,10 @@ export const LeaderboardWidget: React.FC = () => {
     }
   };
 
+  const { user } = useAuthStore();
+  const isLurah = (user?.role || user?.peran || "").toUpperCase() === "LURAH";
+  const userKelurahan = user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "");
+
   // Official 6 Kelurahan of Kecamatan Coblong
   const COBLONG_6_KELURAHAN = [
     "Cipaganti",
@@ -315,8 +320,34 @@ export const LeaderboardWidget: React.FC = () => {
     "Sekeloa",
   ];
 
-  // Map real database kelurahan data or 0 for each of the 6 kelurahan
-  const kelurahanChartData = useMemo(() => {
+  // RW items for Lurah's kelurahan
+  const lurahRwItems = useMemo(() => {
+    if (!isLurah || !userKelurahan) return [];
+    return rwList.filter((r) =>
+      (r.subtitle || "").toLowerCase().includes(userKelurahan.toLowerCase()) ||
+      (r.name || "").toLowerCase().includes(userKelurahan.toLowerCase())
+    );
+  }, [isLurah, userKelurahan, rwList]);
+
+  // Citizens filtered for Lurah
+  const displayedWargaList = useMemo(() => {
+    if (isLurah && userKelurahan) {
+      const filtered = wargaList.filter((w) =>
+        (w.subtitle || "").toLowerCase().includes(userKelurahan.toLowerCase())
+      );
+      return filtered.length > 0 ? filtered.map((w, i) => ({ ...w, rank: i + 1 })) : wargaList;
+    }
+    return wargaList;
+  }, [isLurah, userKelurahan, wargaList]);
+
+  // Map real database kelurahan data or RW data for charts
+  const activeChartData = useMemo(() => {
+    if (isLurah && lurahRwItems.length > 0) {
+      return lurahRwItems.slice(0, 10).map((r) => ({
+        name: r.name,
+        points: r.points || 0,
+      }));
+    }
     return COBLONG_6_KELURAHAN.map((kelName) => {
       const match = kelurahanList.find((k) =>
         k.name.toLowerCase().includes(kelName.toLowerCase())
@@ -326,13 +357,15 @@ export const LeaderboardWidget: React.FC = () => {
         points: match ? Number(match.points || 0) : 0,
       };
     });
-  }, [kelurahanList]);
+  }, [isLurah, lurahRwItems, kelurahanList]);
 
   const maxVolumeKg = useMemo(() => {
-    const vals = kelurahanChartData.map((k) => k.points);
+    const vals = activeChartData.map((k) => k.points);
     const max = Math.max(...vals, 0);
     return max > 0 ? max : 10;
-  }, [kelurahanChartData]);
+  }, [activeChartData]);
+
+  const chartColCount = Math.max(1, activeChartData.length);
 
   return (
     <div className="space-y-6 w-full">
@@ -340,7 +373,7 @@ export const LeaderboardWidget: React.FC = () => {
       {/* ----------------- TOP SECTION: 2 BAR CHARTS ----------------- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         
-        {/* Chart 1: Kepatuhan Pemilahan per Kelurahan */}
+        {/* Chart 1: Kepatuhan Pemilahan */}
         <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -349,10 +382,14 @@ export const LeaderboardWidget: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-extrabold text-base text-slate-900 leading-snug">
-                  Grafik Kepatuhan Pemilahan per Kelurahan
+                  {isLurah
+                    ? `Grafik Kepatuhan Pemilahan per Rukun Warga (Kel. ${userKelurahan || "Cipaganti"})`
+                    : "Grafik Kepatuhan Pemilahan per Kelurahan"}
                 </h3>
                 <p className="text-xs text-slate-500 font-medium">
-                  Persentase kepatuhan dalam pemilahan sampah real-time
+                  {isLurah
+                    ? "Performa kepatuhan pemilahan tiap RW di wilayah kelurahan"
+                    : "Persentase kepatuhan dalam pemilahan sampah real-time"}
                 </p>
               </div>
             </div>
@@ -374,12 +411,15 @@ export const LeaderboardWidget: React.FC = () => {
               <span>0%</span>
             </div>
 
-            <div className="flex-1 grid grid-cols-6 gap-2 items-end h-40 border-b border-slate-200 pb-1 relative">
-              {kelurahanChartData.map((d, idx) => {
+            <div
+              className="flex-1 grid gap-2 items-end h-40 border-b border-slate-200 pb-1 relative"
+              style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
+            >
+              {activeChartData.map((d, idx) => {
                 const valPct = d.points > 0 ? Math.min(100, Math.round(d.points)) : 0;
                 return (
                   <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
-                    <span className="text-[10px] font-black text-slate-800 group-hover:text-emerald-600 transition">
+                    <span className="text-[10px] font-black text-slate-800 group-hover:text-emerald-600 transition truncate w-full text-center">
                       {valPct}%
                     </span>
                     <div className="w-full bg-slate-100 rounded-t-lg overflow-hidden h-[80%] flex items-end">
@@ -394,8 +434,11 @@ export const LeaderboardWidget: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-6 gap-2 pl-9 text-center">
-            {kelurahanChartData.map((item, idx) => (
+          <div
+            className="grid gap-2 pl-9 text-center"
+            style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
+          >
+            {activeChartData.map((item, idx) => (
               <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 truncate" title={item.name}>
                 {item.name}
               </span>
@@ -403,7 +446,7 @@ export const LeaderboardWidget: React.FC = () => {
           </div>
         </div>
 
-        {/* Chart 2: Volume Sampah per Kelurahan */}
+        {/* Chart 2: Volume Sampah */}
         <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -412,10 +455,14 @@ export const LeaderboardWidget: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-extrabold text-base text-slate-900 leading-snug">
-                  Grafik Volume Sampah per Kelurahan
+                  {isLurah
+                    ? `Grafik Volume Sampah per Rukun Warga (Kel. ${userKelurahan || "Cipaganti"})`
+                    : "Grafik Volume Sampah per Kelurahan"}
                 </h3>
                 <p className="text-xs text-slate-500 font-medium">
-                  Total volume sampah terkumpul real (Kg)
+                  {isLurah
+                    ? "Total volume sampah terkumpul per RW binaan (Kg)"
+                    : "Total volume sampah terkumpul real (Kg)"}
                 </p>
               </div>
             </div>
@@ -423,7 +470,7 @@ export const LeaderboardWidget: React.FC = () => {
             <div className="px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-xs font-black flex items-center gap-1">
               <span className="text-[10px] text-sky-600 font-bold uppercase">Total</span>
               <span className="text-sky-700">
-                {kelurahanChartData.reduce((acc, k) => acc + (k.points || 0), 0).toFixed(1)} Kg
+                {activeChartData.reduce((acc, k) => acc + (k.points || 0), 0).toFixed(1)} Kg
               </span>
             </div>
           </div>
@@ -439,12 +486,15 @@ export const LeaderboardWidget: React.FC = () => {
               <span>0</span>
             </div>
 
-            <div className="flex-1 grid grid-cols-6 gap-2 items-end h-40 border-b border-slate-200 pb-1 relative">
-              {kelurahanChartData.map((d, idx) => {
+            <div
+              className="flex-1 grid gap-2 items-end h-40 border-b border-slate-200 pb-1 relative"
+              style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
+            >
+              {activeChartData.map((d, idx) => {
                 const heightPct = d.points > 0 ? Math.min(100, Math.round((d.points / maxVolumeKg) * 100)) : 0;
                 return (
                   <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
-                    <span className="text-[10px] font-black text-slate-800 group-hover:text-sky-600 transition">
+                    <span className="text-[10px] font-black text-slate-800 group-hover:text-sky-600 transition truncate w-full text-center">
                       {(d.points || 0).toFixed(1)} Kg
                     </span>
                     <div className="w-full bg-slate-100 rounded-t-lg overflow-hidden h-[80%] flex items-end">
@@ -459,8 +509,11 @@ export const LeaderboardWidget: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-6 gap-2 pl-9 text-center">
-            {kelurahanChartData.map((item, idx) => (
+          <div
+            className="grid gap-2 pl-9 text-center"
+            style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
+          >
+            {activeChartData.map((item, idx) => (
               <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 truncate" title={item.name}>
                 {item.name}
               </span>
@@ -478,7 +531,9 @@ export const LeaderboardWidget: React.FC = () => {
           </div>
           <div>
             <h3 className="font-extrabold text-[15px] text-slate-800 tracking-tight leading-tight">
-              Top 10 Warga &amp; Wilayah
+              {isLurah
+                ? `Top 10 Warga & Wilayah (Kel. ${userKelurahan || "Cipaganti"})`
+                : "Top 10 Warga & Wilayah"}
             </h3>
             <p className="text-[11px] text-slate-500 leading-none mt-0.5">
               Ranking dan performa warga serta wilayah berdasarkan perolehan poin.
@@ -489,12 +544,12 @@ export const LeaderboardWidget: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 items-stretch min-w-0">
           {/* 1. Top 10 Warga */}
           <ColumnCard
-            title="Top 10 Warga"
+            title={isLurah ? `Top Warga Kel. ${userKelurahan || "Cipaganti"}` : "Top 10 Warga"}
             icon={<User size={14} />}
             iconBg="bg-emerald-600"
             barColor="#10b981"
-            items={wargaList}
-            maxPoints={wargaList[0]?.points || 0}
+            items={displayedWargaList}
+            maxPoints={displayedWargaList[0]?.points || 0}
             linkTo="/peringkat?system=system1&tab=citizens"
           />
 

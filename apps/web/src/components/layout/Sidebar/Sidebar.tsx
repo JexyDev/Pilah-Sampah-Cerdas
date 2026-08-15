@@ -242,25 +242,30 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
   const ALL_ROLES: UserRole[] = [
     "DEVELOPER",
     "SUPER_USER",
-    "WARGA",
-    "PETUGAS_RESIDU",
-    "MAHASISWA_KKN",
-    "PEMIMPIN",
-    "RW",
-    "RT",
-    "DPL",
-    "DOSEN_PEMBIMBING",
+    "ADMIN_DLH",
     "CAMAT",
     "LURAH",
-    "ADMIN_DLH",
+    "RW",
+    "PETUGAS_RESIDU",
+    "MAHASISWA_KKN",
+    "DPL",
+    "DOSEN_PEMBIMBING",
     "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+    "WARGA",
   ];
 
   const hasAccess = (allowed: UserRole[]) =>
-    userRole === "DEVELOPER" || userRole === "SUPER_USER" || allowed.includes(userRole);
+    userRole === "DEVELOPER" || allowed.includes(userRole);
 
   const getFilteredGroupChildren = (groupLabel: string, items: Array<{ to: string; label: string }>) => {
     if (groupLabel === "Data Pengguna") {
+      if (userRole === "DEVELOPER") {
+        return items;
+      }
+      if (userRole === "SUPER_USER") {
+        return items.filter((c) => c.to !== "/master-pengguna?role=developer");
+      }
       if (userRole === "PANITIA_TASKFORCE" || userRole === "PEMIMPIN") {
         const KKN_PENGGUNA = [
           "/master-pengguna?role=taskforce",
@@ -273,17 +278,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         const RW_PENGGUNA = [
           "/master-pengguna?role=warga",
           "/master-pengguna?role=petugas-residu",
-          "/master-pengguna?role=mahasiswa",
         ];
         return items.filter((c) => RW_PENGGUNA.includes(c.to));
       }
+      return [];
     }
 
     if (groupLabel === "Data Wilayah") {
-      if (userRole === "PANITIA_TASKFORCE" || userRole === "PEMIMPIN" || userRole === "RW" || userRole === "PETUGAS_RESIDU") {
-        const RELEVANT_WILAYAH = ["/master-data/kelurahan", "/master-data/rukun-warga"];
-        return items.filter((c) => RELEVANT_WILAYAH.includes(c.to));
+      if (userRole === "DEVELOPER" || userRole === "SUPER_USER" || userRole === "ADMIN_DLH") {
+        return items;
       }
+      return [];
+    }
+
+    if (groupLabel === "Dataset") {
+      if (userRole === "DEVELOPER") {
+        return items;
+      }
+      return [];
     }
 
     return items;
@@ -294,35 +306,35 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       header: "OPERASIONAL",
       items: [
         { to: "/dasbor", icon: LayoutDashboard, label: "Dasbor Utama", allowed: ALL_ROLES },
-        { to: "/monitoring-wilayah", icon: MapPin, label: "Peta Wilayah", allowed: ALL_ROLES },
+        { to: "/monitoring-wilayah", icon: MapPin, label: "Peta Wilayah", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU"] as UserRole[] },
       ],
     },
     {
       header: "TATA KELOLA SAMPAH",
       items: [
-        { to: "/master-data/manajemen-tempat-sampah", icon: Trash2, label: "Manajemen Tempat Sampah", allowed: ALL_ROLES },
-        { to: "/penyetoran-sampah", icon: ScanLine, label: "Pemilahan Sampah", allowed: ALL_ROLES },
-        { to: "/pengangkutan-residu", icon: Truck, label: "Pengumpulan & Pengangkutan", allowed: ["SUPER_USER", "PETUGAS_RESIDU", "ADMIN_DLH", "PEMIMPIN", "RW", "LURAH", "CAMAT"] as UserRole[] },
-        { to: "/pemantauan-rekapitulasi", icon: Activity, label: "Pemantauan & Rekapitulasi", allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "CAMAT", "LURAH", "PANITIA_TASKFORCE", "RW", "RT", "PETUGAS_RESIDU", "DPL"] as UserRole[] },
-        { to: "/pengelolaan-sampah", icon: Sprout, label: "Pengolahan & Inovasi", allowed: ALL_ROLES },
-        { to: "/hasil-pemanfaatan", icon: Archive, label: "Pemanfaatan & Hasil", allowed: ALL_ROLES },
+        { to: "/master-data/manajemen-tempat-sampah", icon: Trash2, label: "Manajemen Tempat Sampah", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "RW", "MAHASISWA_KKN"] as UserRole[] },
+        { to: "/penyetoran-sampah", icon: ScanLine, label: "Pemilahan Sampah", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"] as UserRole[] },
+        { to: "/pengangkutan-residu", icon: Truck, label: "Pengumpulan & Pengangkutan", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "PETUGAS_RESIDU"] as UserRole[] },
+        { to: "/pemantauan-rekapitulasi", icon: Activity, label: "Pemantauan & Rekapitulasi", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PANITIA_TASKFORCE"] as UserRole[] },
+        { to: "/pengelolaan-sampah", icon: Sprout, label: "Pengolahan & Inovasi", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "RW"] as UserRole[] },
+        { to: "/hasil-pemanfaatan", icon: Archive, label: "Pemanfaatan & Hasil", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "RW"] as UserRole[] },
       ],
     },
     {
       header: "PROGRAM KKN",
       items: [
         {
-          to: userRole === "DPL" || userRole === "DOSEN_PEMBIMBING" ? "/dashboard-dpl" : "/dashboard-kkn",
+          to: "/dashboard-kkn",
           icon: LayoutDashboard,
-          label: userRole === "DPL" || userRole === "DOSEN_PEMBIMBING" ? "Dasbor Bimbingan DPL" : "Dasbor KKN",
-          allowed: ["SUPER_USER", "ADMIN_DLH", "MAHASISWA_KKN", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "CAMAT", "LURAH"] as UserRole[],
+          label: "Dasbor KKN",
+          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[],
         },
-        { to: "/manajemen-ekosistem-kkn", icon: GraduationCap, label: "Ekosistem Dampingan KKN", allowed: ["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "KOORDINATOR_KECAMATAN"] as UserRole[] },
-        { to: "/superUser/data-survei-baseline", icon: FileText, label: "Data Survei Baseline", allowed: ["SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
-        { to: "/superUser/import-survei-kkn", icon: FileSpreadsheet, label: "Impor Survei KKN", allowed: ["SUPER_USER", "PANITIA_TASKFORCE"] as UserRole[] },
-        { to: "/superUser/data-survei-endline", icon: FileCheck, label: "Data Survei Endline", allowed: ["SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
-        { to: "/evaluasi-dampak-kkn", icon: BarChart3, label: "Evaluasi Dampak KKN", allowed: ["SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
-        { to: "/monitoring-absen", icon: ClipboardCheck, label: "Presensi Mahasiswa KKN", allowed: ["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "KOORDINATOR_KECAMATAN"] as UserRole[] },
+        { to: "/manajemen-ekosistem-kkn", icon: GraduationCap, label: "Ekosistem Dampingan KKN", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
+        { to: "/superUser/data-survei-baseline", icon: FileText, label: "Data Survei Baseline", allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
+        { to: "/superUser/import-survei-kkn", icon: FileSpreadsheet, label: "Impor Survei KKN", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"] as UserRole[] },
+        { to: "/superUser/data-survei-endline", icon: FileCheck, label: "Data Survei Endline", allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
+        { to: "/evaluasi-dampak-kkn", icon: BarChart3, label: "Evaluasi Dampak KKN", allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
+        { to: "/monitoring-absen", icon: ClipboardCheck, label: "Presensi Mahasiswa KKN", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
       ],
     },
     {
@@ -332,7 +344,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           type: "group",
           label: "Data Pengguna",
           icon: Users,
-          allowed: ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "RW", "CAMAT", "LURAH"] as UserRole[],
+          allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN", "RW"] as UserRole[],
           children: [
             { to: "/master-pengguna?role=developer", label: "Developer" },
             { to: "/master-pengguna?role=su", label: "Super User" },
@@ -352,7 +364,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           type: "group",
           label: "Data Wilayah",
           icon: MapPin,
-          allowed: ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "RW", "PETUGAS_RESIDU", "CAMAT", "LURAH"] as UserRole[],
+          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[],
           children: [
             { to: "/master-data/provinsi", label: "Provinsi" },
             { to: "/master-data/kota-kabupaten", label: "Kota, Kabupaten" },
@@ -365,7 +377,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           type: "group",
           label: "Dataset",
           icon: Database,
-          allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
+          allowed: ["DEVELOPER"] as UserRole[],
           children: [
             { to: "/dataset/hasil-klasifikasi", label: "Hasil Klasifikasi" },
           ],
@@ -381,16 +393,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "ADMINISTRASI SISTEM",
       items: [
-        { to: "/log-aktivitas", icon: FileText, label: "Monitoring Log Aktivitas", allowed: ["SUPER_USER", "DEVELOPER"] as UserRole[] },
-        { to: "/pengguna-online", icon: Radio, label: "Monitoring Pengguna Online", allowed: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER"] as UserRole[] },
-        { to: "/superUser/discrepancies", icon: ShieldCheck, label: "Review Diskrepansi AI", allowed: ["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"] as UserRole[] },
-        { to: "/superUser/master-qr", icon: QrCode, label: "Master Batch QR Code", allowed: ["SUPER_USER", "DEVELOPER"] as UserRole[] },
+        { to: "/log-aktivitas", icon: FileText, label: "Monitoring Log Aktivitas", allowed: ["DEVELOPER"] as UserRole[] },
+        { to: "/pengguna-online", icon: Radio, label: "Monitoring Pengguna Online", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[] },
+        { to: "/superUser/discrepancies", icon: ShieldCheck, label: "Review Diskrepansi AI", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[] },
+        { to: "/superUser/master-qr", icon: QrCode, label: "Master Batch QR Code", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
       ],
     },
     {
       header: "PENGATURAN SISTEM",
       items: [
-        { to: "/master-data/rule-engine", icon: Sliders, label: "Rule Engine & Bobot", allowed: ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN"] as UserRole[] },
+        { to: "/master-data/rule-engine", icon: Sliders, label: "Rule Engine & Bobot", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[] },
         { to: "/notifikasi", icon: Bell, label: "Notifikasi", allowed: ALL_ROLES },
         { to: "/pengaturan", icon: Settings, label: "Pengaturan Umum", allowed: ALL_ROLES },
         { to: "/informasi", icon: Info, label: "Panduan & Informasi", allowed: ALL_ROLES },

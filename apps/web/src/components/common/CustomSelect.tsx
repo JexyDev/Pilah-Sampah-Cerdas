@@ -26,6 +26,7 @@ interface CustomSelectProps {
   variant?: "emerald" | "slate" | "primary";
   className?: string;
   maxHeightClass?: string;
+  disabled?: boolean;
 }
 
 export const CustomSelect: React.FC<CustomSelectProps> = ({
@@ -38,6 +39,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   variant = "slate",
   className = "",
   maxHeightClass = "max-h-56",
+  disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -86,19 +88,24 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       {/* Trigger Button */}
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all duration-200 cursor-pointer select-none ${style.btn}`}
+        disabled={disabled}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all duration-200 select-none ${
+          disabled ? "opacity-90 cursor-not-allowed bg-slate-100 border-slate-200 text-slate-700" : `cursor-pointer ${style.btn}`
+        }`}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
         {icon && <span className="flex-shrink-0">{icon}</span>}
         {label && <span className={`text-[11px] uppercase tracking-wider hidden sm:inline ${style.label}`}>{label}</span>}
-        <span className="truncate max-w-[160px] sm:max-w-[200px] text-left">
+        <span className="truncate max-w-[160px] sm:max-w-[220px] text-left">
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <ChevronDown
           size={15}
-          className={`flex-shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180 opacity-100" : "opacity-60"}`}
+          className={`flex-shrink-0 transition-transform duration-200 ${
+            disabled ? "opacity-30" : isOpen ? "rotate-180 opacity-100" : "opacity-60"
+          }`}
         />
       </button>
 

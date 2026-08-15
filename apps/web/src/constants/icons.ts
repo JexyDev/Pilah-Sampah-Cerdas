@@ -26,6 +26,8 @@ import {
   BataTerawangIcon,
   BankSampahIcon,
   LosedaIcon,
+  TempatSampahOrganikIcon,
+  TempatSampahNonOrganikIcon,
   TongOrganikIcon,
   TongNonOrganikIcon,
 } from "../components/CustomIcons";
@@ -56,6 +58,8 @@ export {
   BataTerawangIcon,
   BankSampahIcon,
   LosedaIcon,
+  TempatSampahOrganikIcon,
+  TempatSampahNonOrganikIcon,
   TongOrganikIcon,
   TongNonOrganikIcon,
 };

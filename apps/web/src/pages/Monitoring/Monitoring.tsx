@@ -83,8 +83,11 @@ const Monitoring: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
 
+  const isLurah = (user?.role || user?.peran || "").toUpperCase() === "LURAH";
+  const userKelurahan = user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "Cipaganti");
+
   // Filter & Search States (100% Identik ManajemenTempatSampah.tsx)
-  const [selectedMapKelurahan, setSelectedMapKelurahan] = useState<string>("Semua Kelurahan");
+  const [selectedMapKelurahan, setSelectedMapKelurahan] = useState<string>(isLurah ? userKelurahan : "Semua Kelurahan");
   const [selectedRukunWarga, setSelectedRukunWarga] = useState<string>("Semua Rukun Warga");
   const [mapCategoryFilter, setMapCategoryFilter] = useState<string>("Semua");
   const [mapStatusFilter, setMapStatusFilter] = useState<string>("Semua");
@@ -100,11 +103,22 @@ const Monitoring: React.FC = () => {
   const [flyTarget, setFlyTarget] = useState<{ center: [number, number]; zoom: number; timestamp?: number } | null>(null);
 
   const apiFilterWilayah = useMemo(() => {
-    if (user?.peran === "RW" || user?.peran === "RT") return user?.wilayah || "RW 06 Dago";
-    if (user?.peran === "LURAH") return "Kelurahan Dago";
+    if (user?.peran === "RW") return user?.wilayah || "RW 06 Dago";
+    if (isLurah) return userKelurahan || "Cipaganti";
     if (user?.peran === "CAMAT") return "Kecamatan Coblong";
     return undefined;
-  }, [user]);
+  }, [user, isLurah, userKelurahan]);
+
+  useEffect(() => {
+    if (isLurah && userKelurahan) {
+      setSelectedMapKelurahan(userKelurahan);
+      const geoKey = userKelurahan.toUpperCase().replace(/\s+/g, "_");
+      if (KELURAHAN_GEODATA[geoKey]) {
+        const geo = KELURAHAN_GEODATA[geoKey];
+        setFlyTarget({ center: geo.centroid, zoom: 16, timestamp: Date.now() });
+      }
+    }
+  }, [isLurah, userKelurahan]);
 
   const loadData = async (silent = false) => {
     try {
@@ -413,7 +427,9 @@ const Monitoring: React.FC = () => {
                 {/* 1. Kelurahan Filter */}
                 <select
                   value={selectedMapKelurahan}
+                  disabled={isLurah}
                   onChange={(e) => {
+                    if (isLurah) return;
                     const val = e.target.value;
                     setSelectedMapKelurahan(val);
                     if (val !== "Semua Kelurahan" && KELURAHAN_GEODATA[val.toUpperCase().replace(/\s+/g, "_")]) {
@@ -423,15 +439,25 @@ const Monitoring: React.FC = () => {
                       setFlyTarget({ center: [-6.8903, 107.611], zoom: 15, timestamp: Date.now() });
                     }
                   }}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-extrabold text-slate-700 bg-slate-50 shadow-2xs cursor-pointer hover:bg-slate-100 transition-all focus:outline-none"
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold shadow-2xs transition-all focus:outline-none ${
+                    isLurah
+                      ? "bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed opacity-90"
+                      : "bg-slate-50 border-slate-200 text-slate-700 cursor-pointer hover:bg-slate-100"
+                  }`}
                 >
-                  <option value="Semua Kelurahan">Semua Kelurahan</option>
-                  <option value="Dago">Kel. Dago</option>
-                  <option value="Sadang Serang">Kel. Sadang Serang</option>
-                  <option value="Sekeloa">Kel. Sekeloa</option>
-                  <option value="Lebak Gede">Kel. Lebak Gede</option>
-                  <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
-                  <option value="Cipaganti">Kel. Cipaganti</option>
+                  {!isLurah && <option value="Semua Kelurahan">Semua Kelurahan</option>}
+                  {isLurah ? (
+                    <option value={userKelurahan}>Kel. {userKelurahan} (Terkunci - Wilayah Tugas)</option>
+                  ) : (
+                    <>
+                      <option value="Dago">Kel. Dago</option>
+                      <option value="Sadang Serang">Kel. Sadang Serang</option>
+                      <option value="Sekeloa">Kel. Sekeloa</option>
+                      <option value="Lebak Gede">Kel. Lebak Gede</option>
+                      <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
+                      <option value="Cipaganti">Kel. Cipaganti</option>
+                    </>
+                  )}
                 </select>
 
                 {/* 2. Rukun Warga Filter */}

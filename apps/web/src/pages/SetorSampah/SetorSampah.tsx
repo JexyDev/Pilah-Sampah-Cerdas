@@ -34,6 +34,8 @@ import { Pagination } from "../../components/common/Pagination";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
+import { useAuthStore } from "../../store/useAuthStore";
+import PageHeader from "../../components/common/PageHeader";
 
 interface DepositLog {
   id: string;
@@ -54,6 +56,10 @@ interface DepositLog {
 }
 
 export default function SetorSampah() {
+  const { user } = useAuthStore();
+  const isLurah = (user?.role || user?.peran || "").toUpperCase() === "LURAH";
+  const userKelurahan = user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "Cipaganti");
+
   const [logs, setLogs] = useState<DepositLog[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -64,7 +70,7 @@ export default function SetorSampah() {
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [filterKelurahan, setFilterKelurahan] = useState<string>("ALL");
+  const [filterKelurahan, setFilterKelurahan] = useState<string>(isLurah ? userKelurahan : "ALL");
   const [filterRw, setFilterRw] = useState<string>("ALL");
   const [filterCategory, setFilterCategory] = useState<string>("ALL");
   const [filterPeriode, setFilterPeriode] = useState<string>("ALL");
@@ -72,6 +78,12 @@ export default function SetorSampah() {
   // Pagination State
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+
+  useEffect(() => {
+    if (isLurah && userKelurahan) {
+      setFilterKelurahan(userKelurahan);
+    }
+  }, [isLurah, userKelurahan]);
 
   const fetchLogs = async (silent = false) => {
     if (!silent) setIsLoading(true);
@@ -138,25 +150,43 @@ export default function SetorSampah() {
     return 0;
   };
 
+  // Official 6 Kelurahan of Kecamatan Coblong
+  const COBLONG_6_KELURAHAN = [
+    "Cipaganti",
+    "Dago",
+    "Lebak Gede",
+    "Lebak Siliwangi",
+    "Sadang Serang",
+    "Sekeloa",
+  ];
+
   // Dynamic Options for Filters
   const kelurahanOptions = useMemo(() => {
-    const set = new Set<string>();
-    logs.forEach((log) => {
-      if (log.kelurahan) set.add(log.kelurahan);
-    });
-    ["Coblong", "Lebak Siliwangi", "Sadang Serang", "Dago", "Sekeloa", "Lebak Gede"].forEach((k) => set.add(k));
-    return Array.from(set);
-  }, [logs]);
+    if (isLurah && userKelurahan) return [userKelurahan];
+    return COBLONG_6_KELURAHAN;
+  }, [isLurah, userKelurahan]);
 
+  // Cascading RW filter options: only show RWs belonging to the selected kelurahan
   const rwOptions = useMemo(() => {
+    const targetKel = isLurah ? userKelurahan : filterKelurahan;
     const set = new Set<string>();
+
     logs.forEach((log) => {
-      const formatted = formatRukunWarga(log.rw || log.rtRw);
-      if (formatted) set.add(formatted);
+      if (targetKel === "ALL" || (log.kelurahan || "").toLowerCase().includes(targetKel.toLowerCase())) {
+        const formatted = formatRukunWarga(log.rw || log.rtRw);
+        if (formatted) set.add(formatted);
+      }
     });
-    ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05"].forEach((r) => set.add(r));
-    return Array.from(set);
-  }, [logs]);
+
+    if (set.size === 0 && targetKel !== "ALL") {
+      const rwCount = targetKel.toLowerCase().includes("cipaganti") ? 18 : 13;
+      for (let i = 1; i <= rwCount; i++) {
+        set.add(`RW ${String(i).padStart(2, "0")}`);
+      }
+    }
+
+    return Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  }, [logs, isLurah, userKelurahan, filterKelurahan]);
 
   // Filtered Logs
   const filteredLogs = useMemo(() => {
@@ -173,7 +203,8 @@ export default function SetorSampah() {
       }
 
       // 2. Filter Kelurahan
-      if (filterKelurahan !== "ALL" && (log.kelurahan || "").toLowerCase() !== filterKelurahan.toLowerCase()) {
+      const targetKel = isLurah ? userKelurahan : filterKelurahan;
+      if (targetKel !== "ALL" && !(log.kelurahan || "").toLowerCase().includes(targetKel.toLowerCase())) {
         return false;
       }
 
@@ -260,32 +291,25 @@ export default function SetorSampah() {
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 font-sans">
-      {/* Executive Hero Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden">
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full text-xs font-extrabold w-fit mb-2 border border-emerald-500/30">
-            <ScanLine size={14} className="text-emerald-400" /> Monitoring Real-Time Penyetoran
-          </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-            Penyetoran Sampah Terpilah
-          </h1>
-          <p className="text-slate-300 text-xs md:text-sm mt-1 max-w-2xl font-medium">
-            Pemantauan real-time transaksi penyetoran sampah warga, inferensi model AI, dan bukti telemetri foto lapangan secara terpadu.
-          </p>
-        </div>
-
-        <div className="relative z-10 flex items-center gap-2.5 shrink-0">
+      {/* Clean Enterprise Page Header */}
+      <PageHeader
+        icon={ScanLine}
+        category="Monitoring Real-Time Penyetoran"
+        scope={isLurah ? `Kelurahan ${userKelurahan || "Cipaganti"}` : "Kecamatan Coblong"}
+        title="Penyetoran Sampah Terpilah"
+        description="Pemantauan real-time transaksi penyetoran sampah warga, inferensi model AI, dan bukti telemetri foto lapangan secara terpadu."
+        actions={
           <button
             onClick={() => fetchLogs(false)}
             disabled={isLoading}
-            title="Refresh Data Penyetoran"
-            className="p-3 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl border border-slate-700 transition cursor-pointer flex items-center gap-2 text-xs font-extrabold"
+            title="Sinkronkan Data Penyetoran"
+            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-xs"
           >
-            <RefreshCw size={15} className={refreshing ? "animate-spin text-[#009966]" : ""} />
+            <RefreshCw size={14} className={refreshing ? "animate-spin text-[#009966]" : "text-slate-500"} />
             <span>Sinkronkan Data</span>
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* KPI Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
@@ -364,13 +388,18 @@ export default function SetorSampah() {
           {/* Kelurahan */}
           <select
             value={filterKelurahan}
+            disabled={isLurah}
             onChange={(e) => setFilterKelurahan(e.target.value)}
-            className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-[#009966] transition cursor-pointer"
+            className={`px-3.5 py-2.5 border rounded-2xl text-xs font-bold transition ${
+              isLurah
+                ? "bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed opacity-90"
+                : "bg-slate-50 border-slate-200 text-slate-700 outline-none focus:border-[#009966] cursor-pointer"
+            }`}
           >
-            <option value="ALL">Semua Kelurahan</option>
+            {!isLurah && <option value="ALL">Semua Kelurahan</option>}
             {kelurahanOptions.map((kel) => (
               <option key={kel} value={kel}>
-                Kel. {kel}
+                Kel. {kel} {isLurah ? "(Terkunci - Wilayah Tugas)" : ""}
               </option>
             ))}
           </select>
@@ -655,7 +684,7 @@ export default function SetorSampah() {
                   </div>
                   <div className="absolute bottom-2 left-2 right-2 p-2.5 rounded-xl bg-slate-900/80 backdrop-blur-md text-white flex justify-between items-center text-xs font-bold">
                     <span>Waktu Setor: {new Date(selectedLogForDetail.waktu).toLocaleString("id-ID")}</span>
-                    <span className="font-mono text-emerald-300">{selectedLogForDetail.lokasi || "Wadah Terdaftar"}</span>
+                    <span className="font-mono text-emerald-300">{selectedLogForDetail.lokasi || "Tempat Sampah Terdaftar"}</span>
                   </div>
                 </div>
               )}

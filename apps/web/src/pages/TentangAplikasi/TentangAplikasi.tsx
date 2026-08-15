@@ -191,7 +191,7 @@ const Informasi: React.FC = () => {
               </div>
               <h3 className="text-base font-black text-slate-800">2. Gamifikasi &amp; Sistem Poin Warga</h3>
               <p className="text-xs font-medium text-slate-600 leading-relaxed">
-                Setiap aktivitas pemilahan dan pengapalan sampah yang terekam pada wadah ber-QR Code akan dikonversi menjadi poin insentif, leaderboard lingkungan, serta riwayat partisipasi aktif warga.
+                Setiap aktivitas pemilahan dan pengapalan sampah yang terekam pada Tempat Sampah ber-QR Code akan dikonversi menjadi poin insentif, leaderboard lingkungan, serta riwayat partisipasi aktif warga.
               </p>
             </div>
 
@@ -291,7 +291,7 @@ const Informasi: React.FC = () => {
                 </div>
                 <h4 className="text-sm font-black text-slate-800">Warga</h4>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                  Mengunggah foto sampah, memindai QR Code wadah, memantau riwayat setoran, serta mengumpulkan poin insentif.
+                  Mengunggah foto sampah, memindai QR Code Tempat Sampah, memantau riwayat setoran, serta mengumpulkan poin insentif.
                 </p>
               </div>
 
@@ -416,7 +416,7 @@ const Informasi: React.FC = () => {
                 </div>
                 <h4 className="text-sm font-black text-slate-800">Rukun Warga</h4>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                  Mengelola persetujuan aktivasi wadah sampah, pemetaan wilayah RW, serta koordinasi warga setempat.
+                  Mengelola persetujuan aktivasi Tempat Sampah, pemetaan wilayah RW, serta koordinasi warga setempat.
                 </p>
               </div>
             </div>

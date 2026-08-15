@@ -101,14 +101,40 @@ const Pengaturan: React.FC = () => {
       const response = await authService.getCurrentUser() as { user: any };
       if (response?.user) {
         const u = response.user;
+        const roleUpper = (u.role || "").toUpperCase();
+        let resolvedKel = u.kelurahan || "";
+        if (!resolvedKel || resolvedKel === "Dago") {
+          const combined = `${u.name || ""} ${u.address || ""}`.toLowerCase();
+          if (combined.includes("cipaganti")) resolvedKel = "Cipaganti";
+          else if (combined.includes("sekeloa")) resolvedKel = "Sekeloa";
+          else if (combined.includes("lebak gede")) resolvedKel = "Lebak Gede";
+          else if (combined.includes("lebak siliwangi")) resolvedKel = "Lebak Siliwangi";
+          else if (combined.includes("sadang serang")) resolvedKel = "Sadang Serang";
+          else if (combined.includes("dago")) resolvedKel = "Dago";
+          else resolvedKel = u.kelurahan || "Cipaganti";
+        }
+
+        let resolvedRw = u.rw || "";
+        if (roleUpper === "LURAH") {
+          resolvedRw = "Seluruh RW (1 Kelurahan)";
+        } else if (roleUpper === "CAMAT") {
+          resolvedRw = "Seluruh Kecamatan";
+          resolvedKel = "Seluruh Kelurahan";
+        } else if (["ADMIN_DLH", "SUPER_USER", "DEVELOPER"].includes(roleUpper)) {
+          resolvedRw = "Seluruh Kota";
+          resolvedKel = "Kota Bandung";
+        } else if (!resolvedRw) {
+          resolvedRw = "RW 01";
+        }
+
         setProfileData({
           id: u.id || "", name: u.name || "", role: u.role || "Warga",
           phone: u.phone || "", address: u.address || "", fotoProfil: u.fotoProfil || "",
           provinsi: u.provinsi || "Jawa Barat", kabupaten: u.kabupaten || u.kota || "Kota Bandung",
-          kecamatan: u.kecamatan || "Coblong", kelurahan: u.kelurahan || "Dago", rw: u.rw || "RW 01",
+          kecamatan: u.kecamatan || "Coblong", kelurahan: resolvedKel, rw: resolvedRw,
           jumlahAnggotaKeluarga: u.jumlahAnggotaKeluarga ? String(u.jumlahAnggotaKeluarga) : "",
         });
-        updateStoreUser({ name: u.name, phone: u.phone, address: u.address, fotoProfil: u.fotoProfil });
+        updateStoreUser({ name: u.name, phone: u.phone, address: u.address, fotoProfil: u.fotoProfil, kelurahan: resolvedKel, rw: resolvedRw });
       }
     } catch {
       toast.error("Gagal memuat data profil.");

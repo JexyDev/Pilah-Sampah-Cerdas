@@ -34,6 +34,7 @@ import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+import PageHeader from "../../components/common/PageHeader";
 
 interface PemanfaatanItem {
   id: string;
@@ -94,7 +95,9 @@ export const PemanfaatanSampah: React.FC = () => {
   const [deleteProgramId, setDeleteProgramId] = useState<string | null>(null);
   const [isDeletingProgram, setIsDeletingProgram] = useState(false);
 
-  const isReadOnly = user?.peran === "ADMIN_DLH" || user?.peran === "CAMAT" || user?.peran === "LURAH";
+  const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
+  const dplKelurahan = user?.kelurahan || "";
+  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
   const isMahasiswaMember = user?.peran === "MAHASISWA_KKN";
   const isKetuaKelompok = (user as any)?.isKetuaKelompok === true || (user as any)?.wargaSubtype === "KETUA_KELOMPOK";
   const canSubmitRecap = !isReadOnly && (!isMahasiswaMember || isKetuaKelompok);
@@ -158,9 +161,12 @@ export const PemanfaatanSampah: React.FC = () => {
       const matchesRw =
         selectedRwFilter === "ALL" ? true : item.rwId.toString() === selectedRwFilter;
 
-      return matchesSearch && matchesProgram && matchesBahan && matchesRw;
+      const matchesDplKelurahan =
+        !isDpl || !dplKelurahan || kelName.toLowerCase().includes(dplKelurahan.toLowerCase());
+
+      return matchesSearch && matchesProgram && matchesBahan && matchesRw && matchesDplKelurahan;
     });
-  }, [items, searchQuery, selectedProgramFilter, selectedBahanFilter, selectedRwFilter]);
+  }, [items, searchQuery, selectedProgramFilter, selectedBahanFilter, selectedRwFilter, isDpl, dplKelurahan]);
 
   // Reset pagination on filter change
   useEffect(() => {
@@ -362,33 +368,28 @@ export const PemanfaatanSampah: React.FC = () => {
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 font-sans">
-      {/* Executive Hero Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden">
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full text-xs font-extrabold w-fit mb-2 border border-emerald-500/30">
-            <Sparkles size={14} /> Tata Kelola Daur Ulang Hilir
-          </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-            Pengelolaan Sampah
-          </h1>
-          <p className="text-slate-400 text-xs md:text-sm mt-1 max-w-2xl font-medium">
-            Pencatatan operasional, sirkulasi bahan baku, dan monitoring konversi hasil panen daur ulang lingkungan (Buruan Sae, Maggot BSF, POC, Bank Sampah).
-          </p>
-        </div>
-
-        {canSubmitRecap ? (
-          <button
-            onClick={openAddModal}
-            className="relative z-10 px-5 py-3 bg-[#009966] hover:bg-[#008855] text-white text-xs font-black rounded-2xl transition-all flex items-center gap-2 shadow-md hover:scale-105 active:scale-95 cursor-pointer shrink-0"
-          >
-            <PlusCircle size={16} /> Catat Program Baru
-          </button>
-        ) : isMahasiswaMember ? (
-          <div className="relative z-10 bg-amber-500/20 border border-amber-500/30 px-4 py-2.5 rounded-2xl text-xs font-bold text-amber-300">
-            Hanya Ketua Kelompok KKN yang memproses pencatatan rekap
-          </div>
-        ) : null}
-      </div>
+      {/* Clean Enterprise Page Header */}
+      <PageHeader
+        icon={Sparkles}
+        category="Tata Kelola Daur Ulang Hilir"
+        scope="Kecamatan Coblong"
+        title="Pengelolaan Sampah"
+        description="Pencatatan operasional, sirkulasi bahan baku, dan monitoring konversi hasil panen daur ulang lingkungan (Buruan Sae, Maggot BSF, POC, Bank Sampah)."
+        actions={
+          canSubmitRecap ? (
+            <button
+              onClick={openAddModal}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <PlusCircle size={15} /> <span>Catat Program Baru</span>
+            </button>
+          ) : isMahasiswaMember ? (
+            <div className="bg-amber-50 border border-amber-200 px-3.5 py-1.5 rounded-xl text-xs font-bold text-amber-800">
+              Hanya Ketua Kelompok KKN yang memproses pencatatan rekap
+            </div>
+          ) : null
+        }
+      />
 
       {/* KPI Metric Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">

@@ -8,7 +8,6 @@ import {
   AlertTriangle,
   CheckCircle,
   XCircle,
-  X,
   MapPin,
   FileCheck,
   Search,
@@ -18,12 +17,14 @@ import {
   ChevronRight,
   RefreshCw,
   Users,
-  Clock,
   Download,
   Printer,
+  GraduationCap,
+  LayoutDashboard,
+  Sprout,
 } from "lucide-react";
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend } from "recharts";
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polygon, useMapEvents, useMap } from "react-leaflet";
+import { KELURAHAN_GEODATA } from "../../constants/coblongGeoData";
 import L from "leaflet";
 
 // Fix default Leaflet icon issue
@@ -85,18 +86,24 @@ const createRwPinIcon = (rwName: string) => {
   });
 };
 
-const createKelurahanPinIcon = (kelName: string, rwCount: number) => {
+const createKelurahanPinIcon = (kelName: string, rwCount: number, isDplZone: boolean) => {
+  const borderColor = isDplZone ? "#10b981" : "#64748b";
+  const dotColor = isDplZone ? "#10b981" : "#94a3b8";
+  const badgeBg = isDplZone ? "rgba(16,185,129,0.25)" : "rgba(100,116,139,0.25)";
+  const badgeColor = isDplZone ? "#34d399" : "#cbd5e1";
+  const badgeText = isDplZone ? `${rwCount} RW Binaan` : `${rwCount} RW`;
+
   return L.divIcon({
     className: "custom-kelurahan-pin-icon",
     html: `
-      <div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 6px 14px; border-radius: 20px; border: 2.5px solid #10b981; box-shadow: 0 4px 16px rgba(0,0,0,0.35); font-family: sans-serif; display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; transition: transform 0.2s;">
-        <span style="background-color: #10b981; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
-        <span style="font-weight: 800; font-size: 12px;">Kel. ${kelName}</span>
-        <span style="background-color: rgba(16,185,129,0.25); color: #34d399; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px;">${rwCount} RW</span>
+      <div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 5px 12px; border-radius: 20px; border: 2px solid ${borderColor}; box-shadow: 0 4px 14px rgba(0,0,0,0.3); font-family: sans-serif; display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap;">
+        <span style="background-color: ${dotColor}; width: 8px; height: 8px; border-radius: 50%; display: inline-block;"></span>
+        <span style="font-weight: 800; font-size: 11px;">Kel. ${kelName}</span>
+        <span style="background-color: ${badgeBg}; color: ${badgeColor}; font-size: 9.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 8px;">${badgeText}</span>
       </div>
     `,
-    iconSize: [130, 36],
-    iconAnchor: [65, 18],
+    iconSize: [140, 32],
+    iconAnchor: [70, 16],
   });
 };
 
@@ -166,14 +173,13 @@ export const DplDashboardPage: React.FC = () => {
   const [ideLoading, setIdeLoading] = useState(false);
 
   const kelurahanCentroids = useMemo(
-    () => [
-      { name: "Dago", lat: -6.8850, lng: 107.6140 },
-      { name: "Sadang Serang", lat: -6.8930, lng: 107.6250 },
-      { name: "Sekeloa", lat: -6.8910, lng: 107.6180 },
-      { name: "Lebak Gede", lat: -6.8890, lng: 107.6100 },
-      { name: "Lebak Siliwangi", lat: -6.8870, lng: 107.6060 },
-      { name: "Cipaganti", lat: -6.8950, lng: 107.6030 },
-    ],
+    () =>
+      Object.values(KELURAHAN_GEODATA).map((kg) => ({
+        name: kg.name,
+        lat: kg.centroid[0],
+        lng: kg.centroid[1],
+        rwCount: kg.rwCount,
+      })),
     []
   );
 
@@ -182,44 +188,60 @@ export const DplDashboardPage: React.FC = () => {
   const [selectedGroupFilter, setSelectedGroupFilter] = useState<string>("");
   const [selectedApprovalStatus, setSelectedApprovalStatus] = useState<string>("ALL");
 
-  const [minAttendanceHours] = useState<number>(() => {
-    return Number(localStorage.getItem("TRASHCARE_MIN_ATTENDANCE_HOURS") || localStorage.getItem("TRASHCARE_DPL_MIN_ATTENDANCE_HOURS") || "4");
-  });
-
   const [kelompokPage, setKelompokPage] = useState(1);
   const [mahasiswaPage, setMahasiswaPage] = useState(1);
   const [approvalPage, setApprovalPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  const [chartGroupMode, setChartGroupMode] = useState<"KELURAHAN" | "KELOMPOK">("KELURAHAN");
+  const gradeDistribution = useMemo(() => {
+    let countA = 0;
+    let countB = 0;
+    let countC = 0;
+    let countD = 0;
+    let countUnassessed = 0;
+    let totalHadir = 0;
+    let totalSakit = 0;
+    let totalIzin = 0;
+    let totalAlpha = 0;
 
-  const kelurahanChartData = useMemo(() => {
-    const palette = ["#10b981", "#3b82f6", "#8b5cf6", "#f59e0b", "#ec4899", "#14b8a6", "#6366f1", "#f97316"];
-    const map: Record<string, { name: string; studentCount: number; groupCount: number }> = {};
-    groups.forEach((g) => {
-      const kel = g.kelurahan || "Lainnya";
-      if (!map[kel]) {
-        map[kel] = { name: kel, studentCount: 0, groupCount: 0 };
+    students.forEach((s) => {
+      totalHadir += s.attendedCount || 0;
+      totalSakit += s.sickCount || 0;
+      totalIzin += s.izinCount || 0;
+      totalAlpha += s.alphaCount || 0;
+
+      if (s.assessmentScore === null || s.assessmentScore === undefined || s.assessmentScore === 0) {
+        countUnassessed++;
+      } else if (s.assessmentScore >= 85) {
+        countA++;
+      } else if (s.assessmentScore >= 75) {
+        countB++;
+      } else if (s.assessmentScore >= 65) {
+        countC++;
+      } else {
+        countD++;
       }
-      map[kel].studentCount += g.studentCount || 0;
-      map[kel].groupCount += 1;
     });
-    return Object.values(map).map((item, idx) => ({
-      name: `Kel. ${item.name}`,
-      value: item.studentCount,
-      groupCount: item.groupCount,
-      color: palette[idx % palette.length],
-    }));
-  }, [groups]);
 
-  const kelompokChartData = useMemo(() => {
-    const palette = ["#10b981", "#3b82f6", "#8b5cf6", "#f59e0b", "#ec4899", "#14b8a6", "#6366f1", "#f97316"];
-    return groups.map((g, idx) => ({
-      name: g.name,
-      value: g.studentCount || 6,
-      color: palette[idx % palette.length],
-    }));
-  }, [groups]);
+    const totalStudents = students.length;
+    const assessedCount = totalStudents - countUnassessed;
+    const percentAssessed = totalStudents > 0 ? Math.round((assessedCount / totalStudents) * 100) : 0;
+
+    return {
+      countA,
+      countB,
+      countC,
+      countD,
+      countUnassessed,
+      assessedCount,
+      totalStudents,
+      percentAssessed,
+      totalHadir,
+      totalSakit,
+      totalIzin,
+      totalAlpha,
+    };
+  }, [students]);
 
   // Drill-down Modal States
   const [selectedStudentForCitizens, setSelectedStudentForCitizens] = useState<StudentDetail | null>(null);
@@ -359,6 +381,49 @@ export const DplDashboardPage: React.FC = () => {
     }
   };
 
+  const getGradeBadge = (score: number | null | undefined) => {
+    if (score === null || score === undefined || score === 0) {
+      return {
+        letter: "-",
+        label: "Belum Dinilai",
+        bg: "bg-slate-100 text-slate-500 border-slate-200",
+      };
+    }
+    if (score >= 85) {
+      return {
+        letter: "A",
+        label: "Sangat Baik (A)",
+        bg: "bg-emerald-100 text-emerald-800 border-emerald-300 font-black",
+      };
+    }
+    if (score >= 75) {
+      return {
+        letter: "B",
+        label: "Baik (B)",
+        bg: "bg-blue-100 text-blue-800 border-blue-300 font-bold",
+      };
+    }
+    if (score >= 65) {
+      return {
+        letter: "C",
+        label: "Cukup (C)",
+        bg: "bg-amber-100 text-amber-800 border-amber-300 font-bold",
+      };
+    }
+    if (score >= 50) {
+      return {
+        letter: "D",
+        label: "Kurang (D)",
+        bg: "bg-orange-100 text-orange-800 border-orange-300 font-bold",
+      };
+    }
+    return {
+      letter: "E",
+      label: "Tidak Lulus (E)",
+      bg: "bg-rose-100 text-rose-800 border-rose-300 font-bold",
+    };
+  };
+
   const handleExportPerformanceCsv = () => {
     if (!students || students.length === 0) {
       toast.error("Tidak ada data mahasiswa bimbingan untuk diekspor.");
@@ -366,34 +431,47 @@ export const DplDashboardPage: React.FC = () => {
     }
     const headers = [
       "No",
-      "Nama Mahasiswa",
       "NIM",
-      "Jurusan / Fakultas",
+      "Nama Mahasiswa",
+      "Peran Kepengurusan",
+      "Program Studi / Fakultas",
       "Kelompok KKN",
       "Total Hadir (Kegiatan)",
+      "Sakit (Hari)",
+      "Izin (Hari)",
+      "Alpha (Hari)",
       "Tingkat Kehadiran (%)",
       "Poin Individu",
       "Nilai Asesmen DPL",
-      "Status Asesmen"
+      "Huruf Mutu",
+      "Status Evaluasi"
     ];
-    const rows = students.map((s, idx) => [
-      idx + 1,
-      `"${(s.name || "").replace(/"/g, '""')}"`,
-      `"${s.nim || "-"}"`,
-      `"${((s.jurusan || "") + (s.fakultas ? ` / ${s.fakultas}` : "")).replace(/"/g, '""')}"`,
-      `"${(s.kelompokName || "").replace(/"/g, '""')}"`,
-      s.attendedCount || 0,
-      s.attendanceRate ? `${s.attendanceRate}%` : "0%",
-      s.individualPoints || 0,
-      s.assessmentScore !== undefined && s.assessmentScore !== null ? s.assessmentScore : "Belum Dinilai",
-      s.assessmentScore !== undefined && s.assessmentScore !== null ? "SUDAH_DINILAI" : "BELUM_DINILAI"
-    ]);
+    const rows = students.map((s, idx) => {
+      const grade = getGradeBadge(s.assessmentScore);
+      return [
+        idx + 1,
+        `"${s.nim || "-"}"`,
+        `"${(s.name || "").replace(/"/g, '""')}"`,
+        s.isKetua ? '"Ketua Kelompok"' : '"Anggota"',
+        `"${((s.jurusan || "") + (s.fakultas ? ` / ${s.fakultas}` : "")).replace(/"/g, '""')}"`,
+        `"${(s.kelompokName || "").replace(/"/g, '""')}"`,
+        s.attendedCount || 0,
+        s.sickCount || 0,
+        s.izinCount || 0,
+        s.alphaCount || 0,
+        s.attendanceRate ? `${s.attendanceRate}%` : "0%",
+        s.individualPoints || 0,
+        s.assessmentScore !== undefined && s.assessmentScore !== null ? s.assessmentScore : "Belum Dinilai",
+        `"${grade.letter}"`,
+        s.assessmentScore !== undefined && s.assessmentScore !== null ? '"SUDAH_DINILAI"' : '"BELUM_DINILAI"'
+      ];
+    });
 
     const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Rekap_Kinerja_KKN_DPL_${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute("download", `Rekapitulasi_Evaluasi_KKN_DPL_${new Date().toISOString().split("T")[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -419,17 +497,22 @@ export const DplDashboardPage: React.FC = () => {
 
     const dplName = user?.name || (groups.length > 0 ? groups[0].name : "Dosen Pembimbing Lapangan");
 
-    const studentRowsHtml = students.map((s, i) => `
+    const studentRowsHtml = students.map((s, i) => {
+      const grade = getGradeBadge(s.assessmentScore);
+      return `
       <tr>
-        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 8px;">${i + 1}</td>
-        <td style="border: 1px solid #cbd5e1; padding: 8px; font-weight: bold;">${s.name} ${s.isKetua ? '<span style="font-size:8pt; background:#fef3c7; color:#92400e; padding:1px 4px; border-radius:4px;">Ketua</span>' : ''}</td>
-        <td style="border: 1px solid #cbd5e1; padding: 8px; font-family: monospace;">${s.nim || "-"}</td>
-        <td style="border: 1px solid #cbd5e1; padding: 8px;">${s.kelompokName || "-"}</td>
-        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 8px;">${s.attendedCount || 0} Kali</td>
-        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 8px; font-weight: bold; color: #047857;">${s.attendanceRate || 0}%</td>
-        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 8px; font-weight: bold; color: #1d4ed8;">${s.assessmentScore !== null && s.assessmentScore !== undefined ? s.assessmentScore : '<span style="color:#94a3b8;">-</span>'}</td>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 6px;">${i + 1}</td>
+        <td style="border: 1px solid #cbd5e1; padding: 6px; font-family: monospace; font-size: 8.5pt;">${s.nim || "-"}</td>
+        <td style="border: 1px solid #cbd5e1; padding: 6px; font-weight: bold;">${s.name} ${s.isKetua ? '<span style="font-size:7.5pt; background:#fef3c7; color:#92400e; padding:1px 4px; border-radius:4px;">Ketua</span>' : ''}</td>
+        <td style="border: 1px solid #cbd5e1; padding: 6px; font-size: 8.5pt;">${s.jurusan || "-"}</td>
+        <td style="border: 1px solid #cbd5e1; padding: 6px; font-size: 8.5pt;">${s.kelompokName || "-"}</td>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 6px;">${s.attendedCount || 0} Sesi</td>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 6px; font-weight: bold; color: #047857;">${s.attendanceRate || 0}%</td>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 6px; font-weight: bold; color: #1d4ed8;">${s.assessmentScore !== null && s.assessmentScore !== undefined ? s.assessmentScore : '<span style="color:#94a3b8;">-</span>'}</td>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 6px; font-weight: 900;">${grade.letter}</td>
       </tr>
-    `).join("");
+      `;
+    }).join("");
 
     const avgAttendance = students.length > 0
       ? (students.reduce((acc, curr) => acc + (curr.attendanceRate || 0), 0) / students.length).toFixed(1)
@@ -445,56 +528,58 @@ export const DplDashboardPage: React.FC = () => {
       <html lang="id">
       <head>
         <meta charset="UTF-8">
-        <title>Laporan Kinerja KKN DPL - ${todayStr}</title>
+        <title>Rekapitulasi Pembimbingan & Nilai KKN DPL - ${todayStr}</title>
         <style>
-          @page { size: A4 portrait; margin: 15mm; }
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 11pt; color: #0f172a; line-height: 1.5; padding: 20px; }
-          .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 20px; }
-          .header h2 { margin: 0; font-size: 14pt; text-transform: uppercase; letter-spacing: 0.5px; }
-          .header h3 { margin: 4px 0 0 0; font-size: 11pt; font-weight: normal; color: #334155; }
-          .meta-table { width: 100%; margin-bottom: 15px; font-size: 10pt; }
-          .meta-table td { padding: 3px 0; }
-          table.data { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 9.5pt; }
-          table.data th { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px; font-weight: bold; text-align: left; }
-          .signature-section { margin-top: 40px; display: flex; justify-content: space-between; font-size: 10pt; page-break-inside: avoid; }
-          .sig-box { width: 220px; text-align: center; }
+          @page { size: A4 landscape; margin: 12mm; }
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 10pt; color: #0f172a; line-height: 1.4; padding: 10px; }
+          .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 15px; }
+          .header h2 { margin: 0; font-size: 13pt; text-transform: uppercase; letter-spacing: 0.5px; }
+          .header h3 { margin: 3px 0 0 0; font-size: 10pt; font-weight: normal; color: #334155; }
+          .meta-table { width: 100%; margin-bottom: 12px; font-size: 9.5pt; }
+          .meta-table td { padding: 2px 0; }
+          table.data { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 9pt; }
+          table.data th { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px; font-weight: bold; text-align: left; font-size: 8.5pt; }
+          .signature-section { margin-top: 30px; display: flex; justify-content: space-between; font-size: 9.5pt; page-break-inside: avoid; }
+          .sig-box { width: 240px; text-align: center; }
         </style>
       </head>
       <body>
         <div class="header">
-          <h2>KECAMATAN COBLONG — KOTA BANDUNG</h2>
-          <h3>REKAPITULASI PEMBIMBINGAN & EVALUASI MAHASISWA KKN TRASHCARE</h3>
+          <h2>KECAMATAN COBLONG — KOTA BANDUNG & LPPM PERGURUAN TINGGI</h2>
+          <h3>REKAPITULASI RESMI PEMBIMBINGAN & EVALUASI NILAI AKADEMIK MAHASISWA KKN</h3>
         </div>
 
         <table class="meta-table">
           <tr>
-            <td width="20%"><strong>Dosen Pembimbing</strong></td>
-            <td width="40%">: ${dplName}</td>
+            <td width="18%"><strong>Dosen Pembimbing (DPL)</strong></td>
+            <td width="42%">: ${dplName}</td>
             <td width="18%"><strong>Tanggal Cetak</strong></td>
             <td width="22%">: ${todayStr}</td>
           </tr>
           <tr>
-            <td><strong>Cakupan Wilayah</strong></td>
+            <td><strong>Wilayah Dampingan</strong></td>
             <td>: Kecamatan Coblong, Kota Bandung</td>
             <td><strong>Total Mahasiswa</strong></td>
-            <td>: ${students.length} Mahasiswa</td>
+            <td>: ${students.length} Mahasiswa Binaan</td>
           </tr>
         </table>
 
-        <div style="margin-bottom: 12px; font-size: 9pt; color: #475569;">
-          <strong>Ringkasan Kinerja:</strong> Rata-rata Kehadiran: <strong>${avgAttendance}%</strong> | Rata-rata Asesmen DPL: <strong>${avgScore}</strong> | Mahasiswa Terasesmen: <strong>${assessedStudents.length}/${students.length}</strong>
+        <div style="margin-bottom: 10px; font-size: 8.5pt; color: #334155; background: #f8fafc; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+          <strong>Ringkasan Eksekutif:</strong> Rata-rata Presensi: <strong>${avgAttendance}%</strong> | Rata-rata Skor DPL: <strong>${avgScore}</strong> | Mahasiswa Terasesmen: <strong>${assessedStudents.length} / ${students.length} Mahasiswa</strong>
         </div>
 
         <table class="data">
           <thead>
             <tr>
-              <th width="5%" style="text-align:center;">No</th>
-              <th width="28%">Nama Mahasiswa</th>
-              <th width="14%">NIM</th>
-              <th width="22%">Kelompok</th>
-              <th width="11%" style="text-align:center;">Kehadiran</th>
-              <th width="10%" style="text-align:center;">Presensi %</th>
-              <th width="10%" style="text-align:center;">Nilai DPL</th>
+              <th width="4%" style="text-align:center;">No</th>
+              <th width="13%">NIM</th>
+              <th width="23%">Nama Mahasiswa</th>
+              <th width="17%">Program Studi</th>
+              <th width="17%">Kelompok KKN</th>
+              <th width="8%" style="text-align:center;">Presensi</th>
+              <th width="7%" style="text-align:center;">Hadir %</th>
+              <th width="6%" style="text-align:center;">Skor DPL</th>
+              <th width="5%" style="text-align:center;">Mutu</th>
             </tr>
           </thead>
           <tbody>
@@ -504,13 +589,13 @@ export const DplDashboardPage: React.FC = () => {
 
         <div class="signature-section">
           <div class="sig-box">
-            <p>Mengetahui,<br><strong>Koordinator Taskforce KKN</strong></p>
-            <div style="height: 60px;"></div>
+            <p>Mengetahui,<br><strong>Koordinator Panitia Taskforce KKN</strong></p>
+            <div style="height: 55px;"></div>
             <p style="text-decoration: underline; font-weight: bold;">( Panitia Taskforce Coblong )</p>
           </div>
           <div class="sig-box">
-            <p>Kota Bandung, ${todayStr}<br><strong>Dosen Pembimbing Lapangan</strong></p>
-            <div style="height: 60px;"></div>
+            <p>Kota Bandung, ${todayStr}<br><strong>Dosen Pembimbing Lapangan (DPL)</strong></p>
+            <div style="height: 55px;"></div>
             <p style="text-decoration: underline; font-weight: bold;">( ${dplName} )</p>
           </div>
         </div>
@@ -606,293 +691,255 @@ export const DplDashboardPage: React.FC = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
-      {/* Executive Header Banner */}
-      {/* Executive Header Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full text-xs font-bold w-fit mb-2 border border-emerald-500/30">
-            <Sparkles size={14} /> Dashboard Kegiatan KKN
+      {/* Clean Academic Portal Header */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-xs font-bold text-emerald-700">
+            <GraduationCap size={16} />
+            <span>Portal Akademik & Pembimbing Lapangan</span>
+            <span className="text-slate-300">•</span>
+            <span className="text-slate-500 font-normal">Kecamatan Coblong</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-            {activeTab === "OVERVIEW" && "Ringkasan Kegiatan KKN"}
-            {activeTab === "KELOMPOK" && "Kelompok KKN"}
-            {activeTab === "MAHASISWA" && "Portofolio Mahasiswa"}
-            {activeTab === "APPROVAL" && "Persetujuan Sakit / Izin"}
-            {activeTab === "MAP" && "Peta Sebaran Bins & RW"}
-            {activeTab === "INOVASI" && "Ide Kreatif Mahasiswa"}
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            Dasbor Pembimbing Lapangan (DPL)
           </h1>
-          <p className="text-slate-400 text-xs md:text-sm mt-1">
-            Portal agregasi kegiatan mahasiswa KKN, rekam portofolio mandiri, dan validasi presensi.
+          <p className="text-slate-500 text-xs sm:text-sm max-w-2xl">
+            Rekapitulasi portofolio mahasiswa KKN, verifikasi presensi lapangan, dan penilaian akademik wilayah Kecamatan Coblong.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          {alerts && alerts.pendingApprovalsCount > 0 && (
+            <button
+              onClick={() => setActiveTab("APPROVAL")}
+              className="bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-amber-100 transition cursor-pointer"
+            >
+              <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+              <span>{alerts.pendingApprovalsCount} Izin Pending</span>
+            </button>
+          )}
           <button
             onClick={handleExportPerformanceCsv}
-            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
             title="Ekspor Data Kinerja Mahasiswa (CSV/Excel)"
           >
-            <Download size={14} className="text-emerald-400" />
+            <Download size={14} className="text-slate-500" />
             <span>Ekspor CSV</span>
           </button>
-
           <button
             onClick={handlePrintOfficialReport}
-            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
             title="Cetak Rekapitulasi Nilai & Evaluasi Resmi untuk LPPM/DLH"
           >
             <Printer size={14} />
             <span>Cetak Rekap LPPM</span>
           </button>
-
           <button
             onClick={loadDashboardData}
-            className="p-2.5 bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700 hover:text-white transition flex items-center gap-1.5 text-xs font-semibold border border-slate-700 cursor-pointer"
-            title="Refresh Data"
+            className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl border border-slate-200 transition cursor-pointer"
+            title="Muat Ulang Data"
           >
             <RefreshCw size={14} />
           </button>
-          {alerts && alerts.pendingApprovalsCount > 0 && (
-            <button
-              onClick={() => setActiveTab("APPROVAL")}
-              className="bg-amber-500/20 border border-amber-500/40 text-amber-300 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-amber-500/30 transition cursor-pointer"
-            >
-              <AlertTriangle size={16} className="animate-pulse" />
-              <span>{alerts.pendingApprovalsCount} Izin Pending</span>
-            </button>
-          )}
         </div>
       </div>
 
-      {/* === Tab Navigation Bar === */}
-      <div className="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-none">
+      {/* Modern Segmented Navigation Tabs */}
+      <div className="bg-slate-100/90 p-1.5 rounded-xl border border-slate-200/80 flex items-center gap-1 overflow-x-auto scrollbar-none">
         {(
           [
-            { key: "OVERVIEW", label: "Ringkasan" },
-            { key: "KELOMPOK", label: "Kelompok" },
-            { key: "MAHASISWA", label: "Mahasiswa" },
-            { key: "APPROVAL", label: "Izin & Sakit", badge: alerts?.pendingApprovalsCount },
-            { key: "MAP", label: "Peta Wilayah" },
-            { key: "INOVASI", label: "Ide Kreatif" },
-          ] as { key: TabType; label: string; badge?: number }[]
-        ).map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setActiveTab(t.key)}
-            className={`relative shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              activeTab === t.key
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "bg-white text-slate-600 border border-slate-200 hover:border-emerald-400 hover:text-emerald-700"
-            }`}
-          >
-            {t.label}
-            {t.badge && t.badge > 0 ? (
-              <span className="bg-amber-400 text-slate-900 text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
-                {t.badge}
-              </span>
-            ) : null}
-          </button>
-        ))}
+            { key: "OVERVIEW", label: "Ringkasan Eksekutif", icon: LayoutDashboard },
+            { key: "KELOMPOK", label: "Kelompok Binaan", icon: Users },
+            { key: "MAHASISWA", label: "Mahasiswa & Nilai", icon: GraduationCap },
+            { key: "APPROVAL", label: "Validasi Izin", icon: FileCheck, badge: alerts?.pendingApprovalsCount },
+            { key: "MAP", label: "Peta Wilayah", icon: MapPin },
+            { key: "INOVASI", label: "Inovasi & Hasil", icon: Sprout },
+          ] as { key: TabType; label: string; icon: any; badge?: number }[]
+        ).map((t) => {
+          const Icon = t.icon;
+          const isActive = activeTab === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+                isActive
+                  ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+              }`}
+            >
+              <Icon size={14} className={isActive ? "text-emerald-600" : "text-slate-400"} />
+              <span>{t.label}</span>
+              {t.badge && t.badge > 0 ? (
+                <span className="bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full leading-none">
+                  {t.badge}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
       </div>
 
-      {/* === Search & Filter Controls Bar === */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3.5">
-        <div className="flex items-center gap-2.5 w-full sm:max-w-xl">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input
-              type="text"
-              placeholder="Cari kelompok, mahasiswa, NIM, kelurahan..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all font-medium"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-
-          <select
-            value={selectedGroupFilter}
-            onChange={(e) => setSelectedGroupFilter(e.target.value)}
-            className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer"
-          >
-            <option value="">Semua Kelompok</option>
-            {groups.map((g) => (
-              <option key={g.id} value={g.name}>
-                {g.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Read-Only Attendance Duration Display (Configured by Super User) */}
-        <div className="flex items-center gap-2 bg-emerald-50 px-3.5 py-2 rounded-xl border border-emerald-200/80 shadow-2xs">
-          <Clock size={16} className="text-emerald-600 shrink-0" />
-          <span className="text-xs font-extrabold text-emerald-950 whitespace-nowrap">
-            Durasi Minimal Absensi: <span className="text-emerald-700 font-black">{minAttendanceHours} Jam</span> <span className="text-[10px] text-emerald-600 font-bold">(Diatur SU)</span>
-          </span>
-        </div>
-      </div>
-
-
-      {/* Ringkasan Ekosistem KKN */}
-      <div>
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Ringkasan Wilayah & Tim KKN</h4>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-            <p className="text-[10px] text-slate-400 font-bold uppercase">Total Kecamatan</p>
-            <h3 className="text-base font-extrabold text-slate-900 mt-1">
-              {groups.length > 0 ? 1 : 0} <span className="text-[10px] font-normal text-slate-500">{groups.length > 0 ? "(Coblong)" : ""}</span>
-            </h3>
-          </div>
-
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-            <p className="text-[10px] text-slate-400 font-bold uppercase">Total Kelurahan</p>
-            <h3 className="text-base font-extrabold text-slate-900 mt-1">
-              {new Set(groups.map((g) => g.kelurahan).filter(Boolean)).size}
-            </h3>
-          </div>
-
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-            <p className="text-[10px] text-slate-400 font-bold uppercase">Total Mahasiswa</p>
-            <h3 className="text-base font-extrabold text-emerald-700 mt-1">
-              {students.length > 0 ? students.length : totalAllStudents} Orang
-            </h3>
-          </div>
-
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-            <p className="text-[10px] text-slate-400 font-bold uppercase">Kelompok KKN</p>
-            <h3 className="text-base font-extrabold text-blue-700 mt-1">{groups.length} Kelompok</h3>
-          </div>
-
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-            <p className="text-[10px] text-slate-400 font-bold uppercase">Tempat Sampah Teraktivasi</p>
-            <h3 className="text-base font-extrabold text-emerald-700 mt-1">
-              {mapCoverage?.bins?.length ?? groups.reduce((acc, g) => acc + (g.activatedBinsCount || 0), 0)} Unit
-            </h3>
-          </div>
-        </div>
-      </div>
-
-      {/* Metrik Agregat Kehadiran & Pie Chart Sebaran Mahasiswa */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Left: Metrik Kehadiran Kelompok Binaan */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-4">
-          <div>
-            <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1">Presensi Lapangan</h4>
-            <h3 className="text-base font-extrabold text-slate-900">Tingkat Kehadiran Mahasiswa Binaan</h3>
-            <p className="text-xs text-slate-500 mt-1">Persentase rata-rata kehadiran mahasiswa pada kegiatan KKN di kelompok bimbingan Anda.</p>
-          </div>
-
-          <div className="flex items-center gap-4 bg-emerald-50/70 border border-emerald-200/80 p-4 rounded-xl">
-            <div className="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-extrabold shadow-sm">
-              <CalendarCheck size={24} />
-            </div>
-            <div>
-              <span className="text-2xl font-black text-emerald-900">
-                {groups.length > 0 ? avgOverallAttendance : 0}%
-              </span>
-              <p className="text-[11px] text-emerald-700 font-bold">Rata-Rata Kehadiran Kelompok Binaan</p>
-            </div>
-          </div>
-
-          <div className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-center justify-between font-medium">
-            <span>Cakupan Bimbingan:</span>
-            <span className="font-bold text-slate-800">{groups.length} Kelompok KKN</span>
-          </div>
-        </div>
-
-        {/* Right: Pie Chart Sebaran Mahasiswa per Kelompok KKN / Kelurahan */}
-        <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-            <div>
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Sebaran Lapangan</h4>
-              <h3 className="text-base font-extrabold text-slate-900">
-                {chartGroupMode === "KELURAHAN" ? "Sebaran Mahasiswa per Kelurahan" : "Sebaran Mahasiswa per Kelompok KKN"}
-              </h3>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex bg-slate-100 p-0.5 rounded-lg text-xs font-bold">
-                <button
-                  onClick={() => setChartGroupMode("KELURAHAN")}
-                  className={`px-2.5 py-1 rounded-md transition cursor-pointer whitespace-nowrap ${
-                    chartGroupMode === "KELURAHAN"
-                      ? "bg-white text-slate-900 shadow-xs"
-                      : "text-slate-500 hover:text-slate-800"
-                  }`}
-                >
-                  Per Kelurahan
-                </button>
-                <button
-                  onClick={() => setChartGroupMode("KELOMPOK")}
-                  className={`px-2.5 py-1 rounded-md transition cursor-pointer whitespace-nowrap ${
-                    chartGroupMode === "KELOMPOK"
-                      ? "bg-white text-slate-900 shadow-xs"
-                      : "text-slate-500 hover:text-slate-800"
-                  }`}
-                >
-                  Per Kelompok ({groups.length})
-                </button>
-              </div>
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full whitespace-nowrap">
-                Total {students.length > 0 ? students.length : totalAllStudents} Mahasiswa
-              </span>
-            </div>
-          </div>
-
-          <div className="h-[210px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartGroupMode === "KELURAHAN" ? kelurahanChartData : kelompokChartData}
-                  cx="35%"
-                  cy="50%"
-                  innerRadius={48}
-                  outerRadius={75}
-                  paddingAngle={3}
-                  dataKey="value"
-                >
-                  {(chartGroupMode === "KELURAHAN" ? kelurahanChartData : kelompokChartData).map((entry, idx) => (
-                    <Cell key={`cell-${idx}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <RechartsTooltip
-                  contentStyle={{ backgroundColor: "#0f172a", borderRadius: "10px", color: "#fff", fontSize: "12px", border: "none" }}
-                  formatter={(val: any, name: any, item: any) => [
-                    `${val} Mahasiswa ${item.payload?.groupCount ? `(${item.payload.groupCount} Kelompok)` : ""}`,
-                    `${name}`
-                  ]}
-                />
-                <Legend
-                  verticalAlign="middle"
-                  align="right"
-                  layout="vertical"
-                  iconType="circle"
-                  wrapperStyle={{
-                    maxHeight: "180px",
-                    overflowY: "auto",
-                    fontSize: "11px",
-                    fontWeight: "600",
-                    color: "#334155",
-                    paddingRight: "6px",
-                    width: "55%",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
 
       {/* VIEW 1: OVERVIEW */}
       {activeTab === "OVERVIEW" && (
         <div className="space-y-6">
+          {/* Ringkasan Ekosistem KKN */}
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Ringkasan Wilayah & Tim KKN</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+              <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <p className="text-[10px] text-slate-400 font-bold uppercase">Total Kecamatan</p>
+                <h3 className="text-base font-extrabold text-slate-900 mt-1">
+                  {groups.length > 0 ? 1 : 0} <span className="text-[10px] font-normal text-slate-500">{groups.length > 0 ? "(Coblong)" : ""}</span>
+                </h3>
+              </div>
+
+              <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <p className="text-[10px] text-slate-400 font-bold uppercase">Total Kelurahan</p>
+                <h3 className="text-base font-extrabold text-slate-900 mt-1">
+                  {new Set(groups.map((g) => g.kelurahan).filter(Boolean)).size}
+                </h3>
+              </div>
+
+              <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <p className="text-[10px] text-slate-400 font-bold uppercase">Total Mahasiswa</p>
+                <h3 className="text-base font-extrabold text-emerald-700 mt-1">
+                  {students.length > 0 ? students.length : totalAllStudents} Orang
+                </h3>
+              </div>
+
+              <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <p className="text-[10px] text-slate-400 font-bold uppercase">Kelompok KKN</p>
+                <h3 className="text-base font-extrabold text-blue-700 mt-1">{groups.length} Kelompok</h3>
+              </div>
+
+              <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <p className="text-[10px] text-slate-400 font-bold uppercase">Tempat Sampah Teraktivasi</p>
+                <h3 className="text-base font-extrabold text-emerald-700 mt-1">
+                  {mapCoverage?.bins?.length ?? groups.reduce((acc, g) => acc + (g.activatedBinsCount || 0), 0)} Unit
+                </h3>
+              </div>
+            </div>
+          </div>
+
+          {/* Metrik Agregat Kehadiran & Pie Chart Sebaran Mahasiswa */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Left: Metrik Kehadiran Kelompok Binaan */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between space-y-4">
+              <div>
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1">Presensi Lapangan</h4>
+                <h3 className="text-base font-extrabold text-slate-900">Tingkat Kehadiran Mahasiswa Binaan</h3>
+                <p className="text-xs text-slate-500 mt-1">Persentase rata-rata kehadiran mahasiswa pada kegiatan KKN di kelompok bimbingan Anda.</p>
+              </div>
+
+              <div className="flex items-center gap-4 bg-emerald-50/70 border border-emerald-200 p-4 rounded-xl">
+                <div className="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-extrabold shadow-sm shrink-0">
+                  <CalendarCheck size={24} />
+                </div>
+                <div>
+                  <span className="text-2xl font-black text-emerald-900">
+                    {groups.length > 0 ? avgOverallAttendance : 0}%
+                  </span>
+                  <p className="text-[11px] text-emerald-700 font-bold">Rata-Rata Kehadiran Kelompok Binaan</p>
+                </div>
+              </div>
+
+              <div className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-center justify-between font-medium">
+                <span>Cakupan Bimbingan:</span>
+                <span className="font-bold text-slate-800">{groups.length} Kelompok KKN</span>
+              </div>
+            </div>
+
+            {/* Right: Matriks Evaluasi Nilai Akademik & Presensi Binaan */}
+            <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                    Evaluasi Akademik & Presensi Binaan
+                  </span>
+                  <h3 className="text-base font-extrabold text-slate-900 mt-0.5">
+                    Progres Penilaian DPL & Kedisiplinan Mahasiswa
+                  </h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
+                    {gradeDistribution.assessedCount} / {gradeDistribution.totalStudents} Mahasiswa Terasesmen ({gradeDistribution.percentAssessed}%)
+                  </span>
+                </div>
+              </div>
+
+              {/* Progress Bar Penilaian */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-slate-600">Progres Penilaian Akhir DPL</span>
+                  <span className="text-emerald-700">{gradeDistribution.percentAssessed}% Selesai</span>
+                </div>
+                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
+                  <div
+                    className="h-full bg-emerald-600 rounded-full transition-all duration-500"
+                    style={{ width: `${gradeDistribution.percentAssessed}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Grade Distribution Badges */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
+                <div className="bg-emerald-50/70 border border-emerald-200 p-2.5 rounded-xl text-center">
+                  <span className="text-[10px] font-bold text-emerald-800 block">Nilai A (≥85)</span>
+                  <span className="text-lg font-black text-emerald-900">{gradeDistribution.countA}</span>
+                  <span className="text-[10px] text-emerald-600 block font-medium">Mahasiswa</span>
+                </div>
+                <div className="bg-blue-50/70 border border-blue-200 p-2.5 rounded-xl text-center">
+                  <span className="text-[10px] font-bold text-blue-800 block">Nilai B (75-84)</span>
+                  <span className="text-lg font-black text-blue-900">{gradeDistribution.countB}</span>
+                  <span className="text-[10px] text-blue-600 block font-medium">Mahasiswa</span>
+                </div>
+                <div className="bg-amber-50/70 border border-amber-200 p-2.5 rounded-xl text-center">
+                  <span className="text-[10px] font-bold text-amber-800 block">Nilai C (65-74)</span>
+                  <span className="text-lg font-black text-amber-900">{gradeDistribution.countC}</span>
+                  <span className="text-[10px] text-amber-600 block font-medium">Mahasiswa</span>
+                </div>
+                <div className="bg-orange-50/70 border border-orange-200 p-2.5 rounded-xl text-center">
+                  <span className="text-[10px] font-bold text-orange-800 block">Nilai D (&lt;65)</span>
+                  <span className="text-lg font-black text-orange-900">{gradeDistribution.countD}</span>
+                  <span className="text-[10px] text-orange-600 block font-medium">Mahasiswa</span>
+                </div>
+                <div className="bg-slate-100 border border-slate-200 p-2.5 rounded-xl text-center col-span-2 sm:col-span-1">
+                  <span className="text-[10px] font-bold text-slate-600 block">Belum Dinilai</span>
+                  <span className="text-lg font-black text-slate-800">{gradeDistribution.countUnassessed}</span>
+                  <span className="text-[10px] text-slate-500 block font-medium">Mahasiswa</span>
+                </div>
+              </div>
+
+              {/* Presensi Sesi Aggregates */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-slate-500 font-semibold">Total Presensi Sesi:</span>
+                  <span className="font-bold text-emerald-700 bg-white border border-slate-200 px-2 py-0.5 rounded">
+                    {gradeDistribution.totalHadir} Hadir
+                  </span>
+                  <span className="font-bold text-blue-700 bg-white border border-slate-200 px-2 py-0.5 rounded">
+                    {gradeDistribution.totalSakit} Sakit
+                  </span>
+                  <span className="font-bold text-purple-700 bg-white border border-slate-200 px-2 py-0.5 rounded">
+                    {gradeDistribution.totalIzin} Izin
+                  </span>
+                  <span className="font-bold text-rose-700 bg-white border border-slate-200 px-2 py-0.5 rounded">
+                    {gradeDistribution.totalAlpha} Alpha
+                  </span>
+                </div>
+                <button
+                  onClick={() => setActiveTab("MAHASISWA")}
+                  className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 cursor-pointer ml-auto"
+                >
+                  <span>Buka Form Penilaian</span>
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Action Callout if pending approvals exist */}
           {alerts?.pendingRequests && alerts.pendingRequests.length > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
@@ -982,8 +1029,32 @@ export const DplDashboardPage: React.FC = () => {
       {/* VIEW 2: KELOMPOK BIMBINGAN */}
       {activeTab === "KELOMPOK" && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
-            <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200/60 w-full sm:w-80 text-xs">
+          {/* Summary Stat Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+              <span className="text-slate-500 text-[11px] font-semibold block">Total Kelompok Binaan</span>
+              <span className="text-xl font-extrabold text-slate-900 mt-0.5 block">{groups.length} Kelompok</span>
+            </div>
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+              <span className="text-slate-500 text-[11px] font-semibold block">Total Mahasiswa Binaan</span>
+              <span className="text-xl font-extrabold text-slate-900 mt-0.5 block">{students.length} Orang</span>
+            </div>
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+              <span className="text-slate-500 text-[11px] font-semibold block">Tempat Sampah Aktif</span>
+              <span className="text-xl font-extrabold text-blue-600 mt-0.5 block">
+                {groups.reduce((acc, g) => acc + (g.activatedBinsCount || 0), 0)} Bin
+              </span>
+            </div>
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+              <span className="text-slate-500 text-[11px] font-semibold block">Rata-rata Presensi</span>
+              <span className="text-xl font-extrabold text-emerald-600 mt-0.5 block">
+                {groups.length > 0 ? Math.round(groups.reduce((acc, g) => acc + (g.avgAttendanceRate || 0), 0) / groups.length) : 0}%
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+            <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 w-full sm:w-80 text-xs">
               <Search size={16} className="text-slate-400" />
               <input
                 type="text"
@@ -1002,86 +1073,149 @@ export const DplDashboardPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {paginatedKelompok.map((grp) => (
-              <div key={grp.id} className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4 hover:border-emerald-500/50 transition">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                      {grp.kelurahan}
-                    </span>
-                    <h3 className="text-base font-bold text-slate-900 mt-2">{grp.name}</h3>
-                  </div>
-                  <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded">
-                    RW: {formatCakupanRw(grp.cakupanRw)}
-                  </span>
-                </div>
+          {/* Table Rekap Kelompok */}
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs whitespace-nowrap">
+                <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-[10.5px]">
+                  <tr>
+                    <th className="px-4 py-3.5 text-center w-12">No</th>
+                    <th className="px-4 py-3.5">Nama Kelompok</th>
+                    <th className="px-4 py-3.5">Kelurahan & Wilayah RW</th>
+                    <th className="px-4 py-3.5 text-center">Jumlah Mahasiswa</th>
+                    <th className="px-4 py-3.5 text-center">Tempat Sampah Aktif</th>
+                    <th className="px-4 py-3.5 text-center">Rata Presensi (%)</th>
+                    <th className="px-4 py-3.5 text-center">Total Poin</th>
+                    <th className="px-4 py-3.5 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedKelompok.map((grp, idx) => (
+                    <tr key={grp.id} className="hover:bg-slate-50/80 transition">
+                      <td className="px-4 py-3.5 text-center font-bold text-slate-400">
+                        {(kelompokPage - 1) * ITEMS_PER_PAGE + idx + 1}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className="font-bold text-slate-900 block text-sm">{grp.name}</span>
+                        <span className="text-[11px] text-slate-400 font-mono">ID: {grp.id.slice(0, 8)}</span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-md text-[11px] inline-block mb-1">
+                          {grp.kelurahan || "Coblong"}
+                        </span>
+                        <p className="text-[11px] text-slate-500 font-mono">
+                          RW: {formatCakupanRw(grp.cakupanRw)}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3.5 text-center font-bold text-slate-800">
+                        <span className="bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 inline-block min-w-[36px]">
+                          {grp.studentCount} Orang
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-center font-bold text-blue-700">
+                        <span className="bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 inline-block min-w-[36px]">
+                          {grp.activatedBinsCount} Tempat Sampah
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
+                        <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg inline-block">
+                          {grp.avgAttendanceRate}%
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-center font-bold text-purple-700">
+                        <span className="bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200 inline-block">
+                          {grp.totalGroupPoints} Pts
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
+                        <button
+                          onClick={() => {
+                            setSelectedGroupFilter(grp.name);
+                            setActiveTab("MAHASISWA");
+                          }}
+                          className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-bold rounded-lg transition inline-flex items-center gap-1.5 border border-emerald-200 cursor-pointer shadow-2xs"
+                        >
+                          <Eye size={13} />
+                          <span>Detail Mahasiswa</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
 
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                    <p className="text-slate-400 text-[10px]">Jumlah Anggota</p>
-                    <p className="font-bold text-slate-800">{grp.studentCount} Mahasiswa</p>
-                  </div>
-                  <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                    <p className="text-slate-400 text-[10px]">Aktivasi Tempat Sampah</p>
-                    <p className="font-bold text-blue-600">{grp.activatedBinsCount} Tempat Sampah</p>
-                  </div>
-                  <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                    <p className="text-slate-400 text-[10px]">Rata Kehadiran</p>
-                    <p className="font-bold text-emerald-600">{grp.avgAttendanceRate}%</p>
-                  </div>
-                  <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                    <p className="text-slate-400 text-[10px]">Total Poin</p>
-                    <p className="font-bold text-purple-600">{grp.totalGroupPoints} Pts</p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => {
-                    setSelectedGroupFilter(grp.name);
-                    setActiveTab("MAHASISWA");
-                  }}
-                  className="w-full py-2 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg hover:bg-emerald-100 transition flex items-center justify-center gap-1 border border-emerald-200/60"
-                >
-                  <Eye size={14} /> lihat Anggota Mahasiswa
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Pagination Controls */}
-          {totalKelompokPages > 1 && (
-            <div className="flex items-center justify-between bg-white px-4 py-3 rounded-xl border border-slate-200/80 text-xs">
-              <span className="text-slate-500">
-                Halaman {kelompokPage} dari {totalKelompokPages}
-              </span>
-              <div className="flex gap-2">
-                <button
-                  disabled={kelompokPage === 1}
-                  onClick={() => setKelompokPage((p) => Math.max(1, p - 1))}
-                  className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-200 transition"
-                >
-                  Sebelumnya
-                </button>
-                <button
-                  disabled={kelompokPage === totalKelompokPages}
-                  onClick={() => setKelompokPage((p) => Math.min(totalKelompokPages, p + 1))}
-                  className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-200 transition"
-                >
-                  Selanjutnya
-                </button>
-              </div>
+                  {paginatedKelompok.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="p-8 text-center text-slate-400 italic">
+                        Tidak ada kelompok bimbingan yang sesuai kriteria pencarian.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
-          )}
+
+            {/* Pagination Controls */}
+            {totalKelompokPages > 1 && (
+              <div className="flex items-center justify-between bg-slate-50 px-4 py-3 border-t border-slate-200 text-xs">
+                <span className="text-slate-500 font-medium">
+                  Halaman {kelompokPage} dari {totalKelompokPages}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    disabled={kelompokPage === 1}
+                    onClick={() => setKelompokPage((p) => Math.max(1, p - 1))}
+                    className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 transition"
+                  >
+                    Sebelumnya
+                  </button>
+                  <button
+                    disabled={kelompokPage === totalKelompokPages}
+                    onClick={() => setKelompokPage((p) => Math.min(totalKelompokPages, p + 1))}
+                    className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 transition"
+                  >
+                    Selanjutnya
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {/* VIEW 3: MAHASISWA & PORTOFOLIO */}
       {activeTab === "MAHASISWA" && (
         <div className="space-y-4">
+          {/* Summary Stat Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+              <span className="text-slate-500 text-[11px] font-semibold block">Total Mahasiswa</span>
+              <span className="text-xl font-extrabold text-slate-900 mt-0.5 block">{students.length} Mahasiswa</span>
+            </div>
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+              <span className="text-slate-500 text-[11px] font-semibold block">Sudah Terasesmen</span>
+              <span className="text-xl font-extrabold text-emerald-700 mt-0.5 block">
+                {students.filter(s => s.assessmentScore !== null && s.assessmentScore !== undefined).length} Mahasiswa
+              </span>
+            </div>
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+              <span className="text-slate-500 text-[11px] font-semibold block">Belum Terasesmen</span>
+              <span className="text-xl font-extrabold text-amber-600 mt-0.5 block">
+                {students.filter(s => s.assessmentScore === null || s.assessmentScore === undefined).length} Mahasiswa
+              </span>
+            </div>
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+              <span className="text-slate-500 text-[11px] font-semibold block">Rata-rata Skor DPL</span>
+              <span className="text-xl font-extrabold text-blue-700 mt-0.5 block">
+                {(() => {
+                  const assessed = students.filter(s => s.assessmentScore !== null && s.assessmentScore !== undefined);
+                  return assessed.length > 0 ? (assessed.reduce((acc, s) => acc + (s.assessmentScore || 0), 0) / assessed.length).toFixed(1) : "-";
+                })()}
+              </span>
+            </div>
+          </div>
+
           {/* Controls Filter & Search */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
-            <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200/60 w-full sm:w-80 text-xs">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+            <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 w-full sm:w-80 text-xs">
               <Search size={16} className="text-slate-400" />
               <input
                 type="text"
@@ -1096,7 +1230,7 @@ export const DplDashboardPage: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-              <span className="bg-emerald-50 text-emerald-800 text-xs font-bold px-3 py-2 rounded-lg border border-emerald-200/80 flex items-center gap-1.5 whitespace-nowrap">
+              <span className="bg-emerald-50 text-emerald-800 text-xs font-bold px-3 py-2 rounded-lg border border-emerald-200 flex items-center gap-1.5 whitespace-nowrap">
                 <Users size={14} className="text-emerald-600" />
                 {groups.length} Kelompok KKN
               </span>
@@ -1120,7 +1254,7 @@ export const DplDashboardPage: React.FC = () => {
               </div>
               <button
                 onClick={handleExportPerformanceCsv}
-                className="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                className="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
                 title="Ekspor CSV Data Mahasiswa"
               >
                 <Download size={13} className="text-emerald-600" />
@@ -1129,102 +1263,132 @@ export const DplDashboardPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Table Mahasiswa */}
-          <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-xs">
+          {/* Table Rekap Mahasiswa */}
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200/80">
+              <table className="w-full text-left text-xs whitespace-nowrap">
+                <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-[10.5px]">
                   <tr>
-                    <th className="p-3.5">Mahasiswa</th>
-                    <th className="p-3.5">Kelompok KKN</th>
-                    <th className="p-3.5">Kehadiran (%)</th>
-                    <th className="p-3.5 text-center">Hadir (H)</th>
-                    <th className="p-3.5 text-center">Sakit (S)</th>
-                    <th className="p-3.5 text-center">Izin (I)</th>
-                    <th className="p-3.5 text-center">Alpha (A)</th>
-                    <th className="p-3.5 text-center">Skor DPL</th>
-                    <th className="p-3.5 text-center">Aksi / Portofolio</th>
+                    <th className="px-3 py-3.5 text-center w-12">No</th>
+                    <th className="px-4 py-3.5">NIM</th>
+                    <th className="px-4 py-3.5 min-w-[200px]">Nama Mahasiswa</th>
+                    <th className="px-4 py-3.5 min-w-[170px]">Program Studi / Fakultas</th>
+                    <th className="px-4 py-3.5 min-w-[130px]">Kelompok KKN</th>
+                    <th className="px-4 py-3.5 text-center min-w-[170px]">Presensi (H / S / I / A)</th>
+                    <th className="px-4 py-3.5 text-center min-w-[90px]">Poin</th>
+                    <th className="px-4 py-3.5 text-center min-w-[130px]">Nilai Asesmen DPL</th>
+                    <th className="px-4 py-3.5 text-center min-w-[120px]">Status</th>
+                    <th className="px-4 py-3.5 text-center min-w-[180px]">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {paginatedStudents.map((st) => (
-                    <tr key={st.id} className="hover:bg-slate-50/80 transition">
-                      <td className="p-3.5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs border border-emerald-200">
-                            {st.name.substring(0, 2).toUpperCase()}
+                  {paginatedStudents.map((st, idx) => {
+                    const grade = getGradeBadge(st.assessmentScore);
+                    const hasScore = st.assessmentScore !== null && st.assessmentScore !== undefined && st.assessmentScore > 0;
+                    return (
+                      <tr key={st.id} className="hover:bg-slate-50/80 transition">
+                        <td className="px-3 py-3.5 text-center font-bold text-slate-400">
+                          {(mahasiswaPage - 1) * ITEMS_PER_PAGE + idx + 1}
+                        </td>
+                        <td className="px-4 py-3.5 font-mono font-bold text-slate-700">
+                          {st.nim || "-"}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black flex items-center justify-center text-xs border border-emerald-200 shrink-0 shadow-2xs">
+                              {st.name.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                                <span>{st.name}</span>
+                                {st.isKetua && (
+                                  <span className="bg-amber-100 text-amber-900 text-[9px] px-1.5 py-0.2 rounded font-extrabold border border-amber-200">
+                                    Ketua
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-bold text-slate-900 flex items-center gap-1.5">
-                              {st.name}
-                              {st.isKetua && (
-                                <span className="bg-amber-100 text-amber-800 text-[9px] px-1.5 py-0.2 rounded font-bold">
-                                  Ketua Kelompok
-                                </span>
-                              )}
-                            </p>
-                            <p className="text-[11px] text-slate-500">
-                              {st.jurusan} • NIM {st.nim}
-                            </p>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <span className="font-semibold text-slate-800 block">{st.jurusan || "-"}</span>
+                          {st.fakultas && <span className="text-[10px] text-slate-400 block">{st.fakultas}</span>}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 font-bold text-[11px] border border-slate-200">
+                            {st.kelompokName}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5 text-center">
+                          <div className="inline-flex items-center gap-2">
+                            <span className={`font-extrabold px-2 py-0.5 rounded text-xs border ${
+                              st.attendanceRate >= 80
+                                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                : st.attendanceRate >= 60
+                                ? "bg-amber-50 text-amber-800 border-amber-200"
+                                : "bg-rose-50 text-rose-800 border-rose-200"
+                            }`}>
+                              {st.attendanceRate}%
+                            </span>
+                            <span className="text-[11px] text-slate-500 font-mono font-medium">
+                              ({st.attendedCount}H / {st.sickCount}S / {st.izinCount}I / {st.alphaCount}A)
+                            </span>
                           </div>
-                        </div>
-                      </td>
-                      <td className="p-3.5 font-medium text-slate-700">{st.kelompokName}</td>
-                      <td className="p-3.5">
-                        <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                          {st.attendanceRate}%
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-center font-bold">
-                        <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 inline-block min-w-[28px]">
-                          {st.attendedCount}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-center font-bold">
-                        <span className="text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/60 inline-block min-w-[28px]">
-                          {st.sickCount}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-center font-bold">
-                        <span className="text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200/60 inline-block min-w-[28px]">
-                          {st.izinCount}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-center font-bold">
-                        <span className={`px-2 py-0.5 rounded border inline-block min-w-[28px] ${st.alphaCount > 0 ? "text-red-700 bg-red-100 border-red-200" : "text-slate-600 bg-slate-100 border-slate-200/60"}`}>
-                          {st.alphaCount}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-center font-bold">
-                        <span className="text-emerald-800 bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs inline-block">
-                          {st.assessmentScore ?? 0}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => handleOpenAssessModal(st)}
-                            className="px-2.5 py-1.5 bg-blue-50 text-blue-700 font-semibold rounded-lg hover:bg-blue-100 transition flex items-center gap-1 text-[11px] border border-blue-200/60 cursor-pointer"
-                            title="Beri / Edit Skor Penilaian DPL"
-                          >
-                            <FileCheck size={13} /> Penilaian
-                          </button>
-                          <button
-                            onClick={() => handleOpenCitizensDrilldown(st)}
-                            className="px-2.5 py-1.5 bg-emerald-50 text-emerald-700 font-semibold rounded-lg hover:bg-emerald-100 transition flex items-center gap-1 text-[11px] border border-emerald-200/60 cursor-pointer"
-                            title="Detail Aktivitas Pendampingan Warga"
-                          >
-                            <QrCode size={13} /> Portofolio
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-4 py-3.5 text-center">
+                          <span className="font-extrabold text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-lg text-xs inline-block">
+                            {st.individualPoints ?? 0} Pts
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5 text-center">
+                          {hasScore ? (
+                            <div className="inline-flex items-center gap-1.5">
+                              <span className="font-black text-slate-900 text-sm">{st.assessmentScore}</span>
+                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${grade.bg}`}>
+                                {grade.letter}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 font-medium text-xs">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3.5 text-center">
+                          {hasScore ? (
+                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full text-[11px] font-bold">
+                              <CheckCircle size={12} className="text-emerald-600" /> Sudah Dinilai
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full text-[11px] font-bold">
+                              <AlertTriangle size={12} className="text-amber-600" /> Belum Dinilai
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3.5 text-center">
+                          <div className="inline-flex items-center gap-2">
+                            <button
+                              onClick={() => handleOpenAssessModal(st)}
+                              className="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold rounded-lg transition flex items-center gap-1.5 text-xs border border-blue-200 cursor-pointer shadow-2xs"
+                              title="Beri / Edit Skor Penilaian DPL"
+                            >
+                              <FileCheck size={13} /> <span>Penilaian</span>
+                            </button>
+                            <button
+                              onClick={() => handleOpenCitizensDrilldown(st)}
+                              className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold rounded-lg transition flex items-center gap-1.5 text-xs border border-emerald-200 cursor-pointer shadow-2xs"
+                              title="Detail Portofolio Pendampingan Warga"
+                            >
+                              <QrCode size={13} /> <span>Portofolio</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
 
                   {paginatedStudents.length === 0 && (
                     <tr>
-                      <td colSpan={9} className="p-6 text-center text-slate-400 italic text-xs">
-                        Tidak ada data mahasiswa bimbingan yang cocok.
+                      <td colSpan={10} className="p-8 text-center text-slate-400 italic text-xs">
+                        Tidak ada data mahasiswa bimbingan yang cocok dengan kriteria filter.
                       </td>
                     </tr>
                   )}
@@ -1234,7 +1398,7 @@ export const DplDashboardPage: React.FC = () => {
 
             {/* Pagination Controls */}
             {totalStudentPages > 1 && (
-              <div className="flex items-center justify-between bg-slate-50 px-4 py-3 border-t border-slate-200/80 text-xs">
+              <div className="flex items-center justify-between bg-slate-50 px-4 py-3 border-t border-slate-200 text-xs">
                 <span className="text-slate-500 font-medium">
                   Mahasiswa {(mahasiswaPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(mahasiswaPage * ITEMS_PER_PAGE, filteredStudents.length)} dari {filteredStudents.length}
                 </span>
@@ -1351,33 +1515,41 @@ export const DplDashboardPage: React.FC = () => {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200/80">
+              <table className="w-full text-left text-xs whitespace-nowrap">
+                <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-[10.5px]">
                   <tr>
-                    <th className="p-3">Nama Mahasiswa</th>
-                    <th className="p-3">Jenis Izin</th>
-                    <th className="p-3">Alasan / Catatan</th>
-                    <th className="p-3">Status Decision</th>
-                    <th className="p-3">Waktu Review</th>
+                    <th className="px-4 py-3.5">Nama Mahasiswa</th>
+                    <th className="px-4 py-3.5">Jenis Izin</th>
+                    <th className="px-4 py-3.5 min-w-[240px]">Alasan / Catatan</th>
+                    <th className="px-4 py-3.5 text-center">Status Keputusan</th>
+                    <th className="px-4 py-3.5">Waktu Review</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {paginatedApprovalHistory.map((log) => (
-                    <tr key={log.id}>
-                      <td className="p-3 font-bold text-slate-900">{log.studentName}</td>
-                      <td className="p-3 font-semibold">{log.type}</td>
-                      <td className="p-3 text-slate-600 max-w-xs truncate">{log.reason}</td>
-                      <td className="p-3">
-                        <span
-                          className={`px-2 py-0.5 rounded font-bold text-[11px] ${log.status === "APPROVED"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-red-100 text-red-800"
-                            }`}
-                        >
-                          {log.status}
+                    <tr key={log.id} className="hover:bg-slate-50/80 transition">
+                      <td className="px-4 py-3.5 font-bold text-slate-900">{log.studentName}</td>
+                      <td className="px-4 py-3.5">
+                        <span className={`px-2 py-0.5 rounded font-bold text-[11px] border ${
+                          log.type === "SAKIT" ? "bg-red-50 text-red-700 border-red-200" : "bg-purple-50 text-purple-700 border-purple-200"
+                        }`}>
+                          {log.type}
                         </span>
                       </td>
-                      <td className="p-3 text-slate-400">
+                      <td className="px-4 py-3.5 text-slate-600 max-w-xs truncate">{log.reason}</td>
+                      <td className="px-4 py-3.5 text-center">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${
+                            log.status === "APPROVED"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : "bg-red-50 text-red-700 border-red-200"
+                          }`}
+                        >
+                          {log.status === "APPROVED" ? <CheckCircle size={12} /> : <XCircle size={12} />}
+                          {log.status === "APPROVED" ? "Disetujui" : "Ditolak"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-slate-500 font-mono text-[11px]">
                         {log.reviewedAt ? new Date(log.reviewedAt).toLocaleString("id-ID") : "-"}
                       </td>
                     </tr>
@@ -1501,6 +1673,57 @@ export const DplDashboardPage: React.FC = () => {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
 
+              {/* RENDER KELURAHAN BOUNDARY POLYGONS (ZONA PER DAERAH KECAMATAN COBLONG) */}
+              {Object.values(KELURAHAN_GEODATA).map((kelGeo) => {
+                const isSelected = selectedKelurahanMap
+                  ? kelGeo.name.toLowerCase() === selectedKelurahanMap.toLowerCase()
+                  : false;
+                const isDplZone = groups.some((g) => g.kelurahan && g.kelurahan.toLowerCase().includes(kelGeo.name.toLowerCase()));
+
+                return (
+                  <Polygon
+                    key={`poly-kel-${kelGeo.id}`}
+                    positions={kelGeo.bounds}
+                    pathOptions={{
+                      color: kelGeo.color || "#10b981",
+                      fillColor: kelGeo.color || "#10b981",
+                      fillOpacity: isSelected ? 0.35 : isDplZone ? 0.22 : 0.10,
+                      weight: isSelected ? 3 : isDplZone ? 2.5 : 1.5,
+                      dashArray: isDplZone ? undefined : "4, 4",
+                    }}
+                    eventHandlers={{
+                      click: () => setSelectedKelurahanMap(kelGeo.name),
+                    }}
+                  >
+                    <Popup>
+                      <div className="text-xs p-1 text-center font-sans space-y-1">
+                        <strong className="text-sm font-bold block text-slate-900">
+                          Kelurahan {kelGeo.name}
+                        </strong>
+                        <p className="text-slate-600">
+                          {isDplZone ? (
+                            <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block">
+                              ✓ Wilayah Bimbingan DPL
+                            </span>
+                          ) : (
+                            <span className="text-slate-500 text-[11px]">Kecamatan Coblong</span>
+                          )}
+                        </p>
+                        <p className="text-[11px] text-slate-600">
+                          Total Cakupan: <strong>{kelGeo.rwCount} RW</strong>
+                        </p>
+                        <button
+                          onClick={() => setSelectedKelurahanMap(kelGeo.name)}
+                          className="w-full bg-emerald-600 text-white font-bold text-[11px] py-1.5 px-3 rounded-lg hover:bg-emerald-700 transition mt-1 cursor-pointer"
+                        >
+                          Buka Detail Titik Tempat Sampah →
+                        </button>
+                      </div>
+                    </Popup>
+                  </Polygon>
+                );
+              })}
+
               {/* LEVEL 1: RENDER ONLY KELURAHAN OVERVIEW MARKERS WHEN NO KELURAHAN SELECTED */}
               {!selectedKelurahanMap &&
                 kelurahanCentroids.map((kel) => {
@@ -1508,27 +1731,35 @@ export const DplDashboardPage: React.FC = () => {
                     r.kelurahan.toLowerCase().includes(kel.name.toLowerCase()) ||
                     r.name.toLowerCase().includes(kel.name.toLowerCase())
                   );
+                  const isDplZone = groups.some((g) => g.kelurahan && g.kelurahan.toLowerCase().includes(kel.name.toLowerCase()));
+                  const countToDisplay = isDplZone && rwsInKel.length > 0 ? rwsInKel.length : kel.rwCount;
 
                   return (
                     <Marker
                       key={`kel-pin-${kel.name}`}
                       position={[kel.lat, kel.lng]}
-                      icon={createKelurahanPinIcon(kel.name, rwsInKel.length)}
+                      icon={createKelurahanPinIcon(kel.name, countToDisplay, isDplZone)}
                       eventHandlers={{
                         click: () => setSelectedKelurahanMap(kel.name),
                       }}
                     >
                       <Popup>
-                        <div className="text-xs p-1 text-center font-sans">
-                          <strong className="text-sm font-bold block text-slate-900 mb-1">
+                        <div className="text-xs p-1 text-center font-sans space-y-1">
+                          <strong className="text-sm font-bold block text-slate-900">
                             Kelurahan {kel.name}
                           </strong>
-                          <p className="text-slate-600 mb-2">
-                            Total Wilayah: <strong>{rwsInKel.length} RW</strong>
+                          <p className="text-slate-600">
+                            {isDplZone ? (
+                              <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block">
+                                ✓ Wilayah Bimbingan ({rwsInKel.length} RW Aktif)
+                              </span>
+                            ) : (
+                              <span className="text-slate-500 text-[11px]">{kel.rwCount} RW (Kec. Coblong)</span>
+                            )}
                           </p>
                           <button
                             onClick={() => setSelectedKelurahanMap(kel.name)}
-                            className="w-full bg-emerald-600 text-white font-bold text-[11px] py-1.5 px-3 rounded-lg hover:bg-emerald-700 transition"
+                            className="w-full bg-emerald-600 text-white font-bold text-[11px] py-1.5 px-3 rounded-lg hover:bg-emerald-700 transition cursor-pointer mt-1"
                           >
                             Buka Detail Titik Tempat Sampah →
                           </button>
@@ -1684,23 +1915,43 @@ export const DplDashboardPage: React.FC = () => {
 
       {/* MODAL DRILL-DOWN WARGA DIBANTU */}
 
-      {/* VIEW 6: IDE KREATIF MAHASISWA */}
+      {/* VIEW 6: IDE KREATIF & INOVASI MAHASISWA */}
       {activeTab === "INOVASI" && (
         <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          {/* Summary Stat Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+              <span className="text-slate-500 text-[11px] font-semibold block">Total Ide Diajukan</span>
+              <span className="text-xl font-extrabold text-slate-900 mt-0.5 block">{ideList.length} Karya</span>
+            </div>
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+              <span className="text-slate-500 text-[11px] font-semibold block">Disetujui / Diimplementasikan</span>
+              <span className="text-xl font-extrabold text-emerald-600 mt-0.5 block">
+                {ideList.filter((i: any) => i.status === "APPROVED" || i.status === "DISETUJUI").length} Karya
+              </span>
+            </div>
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+              <span className="text-slate-500 text-[11px] font-semibold block">Menunggu Evaluasi</span>
+              <span className="text-xl font-extrabold text-amber-600 mt-0.5 block">
+                {ideList.filter((i: any) => !i.status || i.status === "PENDING" || i.status === "MENUNGGU").length} Karya
+              </span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+            <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
                 <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                   <Sparkles size={18} className="text-amber-500" />
-                  Ide Kreatif Mahasiswa KKN
+                  Tabel Rekapitulasi Karya & Inovasi Sampah Kelompok
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Usulan ide daur ulang yang diajukan mahasiswa bimbingan Anda.
+                  Rekapitulasi seluruh usulan daur ulang, fasilitas pengolahan, dan karya inovasi mahasiswa bimbingan.
                 </p>
               </div>
               <button
                 onClick={fetchIdeKreatif}
-                className="px-3 py-1.5 text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-100 transition flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-1.5 text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-100 transition flex items-center gap-1.5 cursor-pointer shrink-0"
               >
                 <RefreshCw size={13} className={ideLoading ? "animate-spin" : ""} />
                 Muat Ulang
@@ -1713,52 +1964,78 @@ export const DplDashboardPage: React.FC = () => {
                 Memuat ide kreatif mahasiswa...
               </div>
             ) : ideList.length === 0 ? (
-              <div className="text-center py-12 text-slate-400 text-xs font-semibold border border-dashed border-slate-200 rounded-xl bg-slate-50">
-                Belum ada ide kreatif dari mahasiswa bimbingan Anda.
-                <p className="mt-1 text-[11px] text-slate-400">Klik &quot;Muat Ulang&quot; untuk mengambil data terbaru.</p>
+              <div className="text-center py-12 text-slate-400 text-xs font-semibold p-6 bg-slate-50">
+                Belum ada ide kreatif dari kelompok mahasiswa bimbingan Anda.
+                <p className="mt-1 text-[11px] text-slate-400">Klik &quot;Muat Ulang&quot; untuk mengambil data terbaru dari database.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {ideList.map((ide: any) => {
-                  const statusColor =
-                    ide.status === "APPROVED" || ide.status === "DISETUJUI"
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : ide.status === "REJECTED" || ide.status === "DITOLAK"
-                      ? "bg-rose-50 text-rose-700 border-rose-200"
-                      : "bg-amber-50 text-amber-700 border-amber-200";
-                  const statusLabel =
-                    ide.status === "APPROVED" || ide.status === "DISETUJUI"
-                      ? "Disetujui"
-                      : ide.status === "REJECTED" || ide.status === "DITOLAK"
-                      ? "Ditolak"
-                      : "Menunggu";
-                  return (
-                    <div
-                      key={ide.id}
-                      className="bg-white border border-slate-200 rounded-xl p-4 space-y-2.5 hover:border-amber-300 hover:shadow-sm transition"
-                    >
-                      {ide.foto && (
-                        <img
-                          src={ide.foto}
-                          alt={ide.judul || "Ide"}
-                          className="w-full h-32 object-cover rounded-lg"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                        />
-                      )}
-                      <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-extrabold text-sm text-slate-900 leading-snug">{ide.judul || ide.title || "Tanpa Judul"}</h4>
-                        <span className={`shrink-0 text-[10px] font-black px-2 py-0.5 rounded-full border ${statusColor}`}>
-                          {statusLabel}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">{ide.deskripsi || ide.description || "-"}</p>
-                      <div className="flex items-center justify-between text-[11px] text-slate-400 font-semibold pt-1 border-t border-slate-100">
-                        <span>Oleh: <span className="text-slate-700 font-bold">{ide.user?.name || ide.userName || "Mahasiswa"}</span></span>
-                        <span>{ide.createdAt ? new Date(ide.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "-"}</span>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs whitespace-nowrap">
+                  <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-[10.5px]">
+                    <tr>
+                      <th className="px-4 py-3.5 text-center w-12">No</th>
+                      <th className="px-4 py-3.5">Tanggal Usulan</th>
+                      <th className="px-4 py-3.5 min-w-[180px]">Pengusul & Kelompok</th>
+                      <th className="px-4 py-3.5 min-w-[200px]">Judul Inovasi</th>
+                      <th className="px-4 py-3.5 min-w-[260px] whitespace-normal">Deskripsi Inovasi</th>
+                      <th className="px-4 py-3.5 text-center">Status Evaluasi</th>
+                      <th className="px-4 py-3.5 text-center">Dokumentasi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {ideList.map((ide: any, idx: number) => {
+                      const isApproved = ide.status === "APPROVED" || ide.status === "DISETUJUI";
+                      const isRejected = ide.status === "REJECTED" || ide.status === "DITOLAK";
+                      return (
+                        <tr key={ide.id || idx} className="hover:bg-slate-50/80 transition">
+                          <td className="px-4 py-3.5 text-center font-bold text-slate-400">{idx + 1}</td>
+                          <td className="px-4 py-3.5 text-slate-500 font-mono text-[11px]">
+                            {ide.createdAt ? new Date(ide.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "-"}
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <span className="font-bold text-slate-900 block">{ide.user?.name || ide.userName || "Mahasiswa KKN"}</span>
+                            <span className="text-[11px] text-emerald-700 font-semibold">{ide.kelompokName || "Kelompok KKN Coblong"}</span>
+                          </td>
+                          <td className="px-4 py-3.5 font-bold text-slate-900">
+                            {ide.judul || ide.title || "Tanpa Judul"}
+                          </td>
+                          <td className="px-4 py-3.5 text-slate-600 whitespace-normal max-w-[320px]">
+                            <p className="line-clamp-2">{ide.deskripsi || ide.description || "-"}</p>
+                          </td>
+                          <td className="px-4 py-3.5 text-center">
+                            {isApproved ? (
+                              <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
+                                <CheckCircle size={12} /> Disetujui
+                              </span>
+                            ) : isRejected ? (
+                              <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
+                                <XCircle size={12} /> Ditolak
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
+                                <AlertTriangle size={12} /> Menunggu Evaluasi
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3.5 text-center">
+                            {ide.foto ? (
+                              <a
+                                href={ide.foto}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs"
+                              >
+                                <span>Lihat Foto</span>
+                              </a>
+                            ) : (
+                              <span className="text-slate-400 text-xs italic">Tidak ada foto</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
