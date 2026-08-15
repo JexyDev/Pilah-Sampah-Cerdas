@@ -160,6 +160,7 @@ model User {
   provinsi              String?              @map("provinsi")
   kabupaten             String?              @map("kabupaten")
   jumlahAnggotaKeluarga Int?                 @map("jumlah_anggota_keluarga")
+  defaultPetugasId      String?              @map("id_petugas_tetap")
   bankSampahLedger      BankSampahLedger?
   aiRequestLogs         AiRequestLog[]
   picBatches            QrBatch[]            @relation("PicBatches")
@@ -175,6 +176,7 @@ model User {
   recordedViolations    Violation[]          @relation("RecordedViolations")
   requestedResets       BinResetRequest[]    @relation("RequestedResets")
   reviewedResets        BinResetRequest[]    @relation("ReviewedResets")
+  assignedResets        BinResetRequest[]    @relation("ResetRequestPetugas")
   role                  Role                 @relation(fields: [roleId], references: [id])
   rw                    Rw?                  @relation(fields: [rwId], references: [id])
   rt                    Rt?                  @relation(fields: [rtId], references: [id])
@@ -712,6 +714,8 @@ model BinResetRequest {
   id               String   @id @default(uuid())
   binId            String   @map("id_tempat_sampah")
   userId           String   @map("id_pengguna")
+  petugasId        String?  @map("id_petugas_tujuan")
+  jenisSampah      String?  @map("jenis_sampah")
   evidencePhotoUrl String   @map("url_foto_bukti")
   status           String   @default("PENDING")
   reviewedById     String?  @map("id_pereview")
@@ -719,6 +723,7 @@ model BinResetRequest {
   updatedAt        DateTime @updatedAt @map("diperbarui_pada")
   user             User     @relation("RequestedResets", fields: [userId], references: [id])
   reviewedBy       User?    @relation("ReviewedResets", fields: [reviewedById], references: [id])
+  petugas          User?    @relation("ResetRequestPetugas", fields: [petugasId], references: [id])
   bin              Bin      @relation(fields: [binId], references: [id])
 
   @@map("pengajuan_aktivasi_tempat_sampah")

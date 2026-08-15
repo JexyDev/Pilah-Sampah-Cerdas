@@ -1065,7 +1065,107 @@ export class BinService {
   /**
    * Create bin reset request and notify area petugas
    */
-  async createResetRequest(binId: string, userId: string, evidencePhotoUrl: string) {
+  /**
+   * Cek status petugas tetap (default) warga yang sedang login.
+   * @param userId - ID user warga
+   * @returns { hasDefaultPetugas: boolean, petugas: {...} | null }
+   */
+  async getPetugasStatusForWarga(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        defaultPetugasId: true,
+        rwId: true,
+      },
+    });
+    if (!user) throw new Error("RESOURCE_NOT_FOUND");
+
+    if (!user.defaultPetugasId) {
+      return { hasDefaultPetugas: false, petugas: null };
+    }
+
+    const petugas = await prisma.user.findUnique({
+      where: { id: user.defaultPetugasId },
+      select: { id: true, name: true, fotoProfil: true, rwId: true },
+    });
+
+    // Reset jika petugas sudah tidak di wilayah yang sama (warga pindah)
+    if (!petugas || petugas.rwId !== user.rwId) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { defaultPetugasId: null },
+      });
+      return { hasDefaultPetugas: false, petugas: null };
+    }
+
+    return {
+      hasDefaultPetugas: true,
+      petugas: {
+        id: petugas.id,
+        nama: petugas.name,
+        foto: petugas.fotoProfil,
+      },
+    };
+  }
+
+  /**
+   * Ambil daftar petugas residu yang bertugas di RW yang sama dengan warga.
+   * Sumber kebenaran wilayah dari profil server, bukan input frontend.
+   * @param userId - ID user warga (untuk resolve rwId)
+   * @returns Array petugas aktif di wilayah warga
+   */
+  async getPetugasByRw(userId: string) {
+    const warga = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { rwId: true },
+    });
+    if (!warga?.rwId) return [];
+
+    return prisma.user.findMany({
+      where: {
+        rwId: warga.rwId,
+        role: { name: "PETUGAS_RESIDU" },
+        status: "Aktif",
+      },
+      select: { id: true, name: true, fotoProfil: true },
+    });
+  }
+
+  /**
+   * Simpan petugas tetap (default) untuk warga.
+   * Validasi: petugas wajib bertugas di RW yang sama dengan warga.
+   * @param userId - ID user warga
+   * @param petugasId - ID user petugas yang dipilih
+   */
+  async setDefaultPetugas(userId: string, petugasId: string) {
+    const [warga, petugas] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId }, select: { rwId: true } }),
+      prisma.user.findUnique({
+        where: { id: petugasId },
+        select: { rwId: true, role: { select: { name: true } } },
+      }),
+    ]);
+
+    if (!warga) throw new Error("RESOURCE_NOT_FOUND");
+    if (!petugas) throw new Error("PETUGAS_NOT_FOUND");
+    if (petugas.role.name !== "PETUGAS_RESIDU") throw new Error("NOT_PETUGAS");
+    if (petugas.rwId !== warga.rwId) throw new Error("WILAYAH_MISMATCH");
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { defaultPetugasId: petugasId },
+    });
+
+    return { success: true, petugasId };
+  }
+
+  async createResetRequest(
+    binId: string,
+    userId: string,
+    evidencePhotoUrl: string,
+    petugasId?: string | null,
+    jenisSampah?: string | null
+  ) {
     // 1. check if bin exists in DB
     const bin = await prisma.bin.findUnique({
       where: { id: binId },
@@ -1093,33 +1193,62 @@ export class BinService {
       throw new Error("DUPLICATE_REQUEST");
     }
 
-    const request = await binRepository.createResetRequest(binId, userId, evidencePhotoUrl);
+    // 4. Resolve petugasId dari defaultPetugasId warga jika tidak dikirim
+    let resolvedPetugasId = petugasId ?? null;
+    if (!resolvedPetugasId) {
+      const warga = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { defaultPetugasId: true },
+      });
+      resolvedPetugasId = warga?.defaultPetugasId ?? null;
+    }
 
-    // Notify local RW & Petugas staff
-    const staffList = await getStaffForBin(request.bin?.rwId || null);
+    const request = await binRepository.createResetRequest(
+      binId,
+      userId,
+      evidencePhotoUrl,
+      resolvedPetugasId,
+      jenisSampah
+    );
+
     const citizenName = request.user?.name || "Warga";
-    const binQr = request.bin?.qrCode || "Tong";
+    const binQr = request.bin?.qrCode || "Tempat Sampah";
     const areaName = request.bin?.rw?.name || "Wilayah";
 
-    for (const staff of staffList) {
+    // Notifikasi spesifik ke petugas tujuan (jika ada)
+    if (resolvedPetugasId) {
       await prisma.notification
         .create({
           data: {
-            userId: staff.id,
+            userId: resolvedPetugasId,
             title: "Pengajuan Pengosongan Baru",
-            message: `Warga (${citizenName}) mengajukan pengosongan tempat sampah ${binQr} di ${areaName}.`,
+            message: `${citizenName} mengajukan pengosongan tempat sampah (${binQr}) di ${areaName}. Ketuk untuk melihat detail.`,
           },
         })
         .catch(() => {});
+    } else {
+      // Fallback: notif ke semua staff RW jika belum ada petugas tetap
+      const staffList = await getStaffForBin(request.bin?.rwId || null);
+      for (const staff of staffList) {
+        await prisma.notification
+          .create({
+            data: {
+              userId: staff.id,
+              title: "Pengajuan Pengosongan Baru",
+              message: `${citizenName} mengajukan pengosongan tempat sampah (${binQr}) di ${areaName}.`,
+            },
+          })
+          .catch(() => {});
+      }
     }
 
-    // Notify citizen
+    // Notifikasi konfirmasi ke warga
     await prisma.notification
       .create({
         data: {
           userId,
           title: "Pengajuan Pengosongan Dikirim",
-          message: `Pengajuan pengosongan tempat sampah ${binQr} berhasil dikirim ke petugas RT/RW.`,
+          message: `Pengajuan pengosongan tempat sampah ${binQr} berhasil dikirim. Status: PENDING.`,
         },
       })
       .catch(() => {});

@@ -350,12 +350,83 @@ router.post(
 
 router.get("/reset-request/status", authMiddleware, binController.getResetRequestStatus);
 router.get("/reset/my-requests", authMiddleware, binController.getResetRequestStatus);
+
+/**
+ * @swagger
+ * /api/v1/bins/reset/petugas-status:
+ *   get:
+ *     summary: Cek status petugas tetap warga (Mobile Spec)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Status petugas tetap warga
+ */
+router.get(
+  "/reset/petugas-status",
+  authMiddleware,
+  roleMiddleware(["WARGA"]),
+  binController.getPetugasStatus
+);
+
+/**
+ * @swagger
+ * /api/v1/bins/reset/petugas-wilayah:
+ *   get:
+ *     summary: Daftar petugas di wilayah RW warga (Mobile Spec)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Daftar petugas residu di wilayah warga
+ */
+router.get(
+  "/reset/petugas-wilayah",
+  authMiddleware,
+  roleMiddleware(["WARGA"]),
+  binController.getPetugasByWilayah
+);
+
+/**
+ * @swagger
+ * /api/v1/bins/reset/set-default-petugas:
+ *   post:
+ *     summary: Simpan petugas tetap untuk warga (Mobile Spec)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [petugasId]
+ *             properties:
+ *               petugasId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Petugas tetap berhasil disimpan
+ *       403:
+ *         description: Petugas tidak bertugas di wilayah warga
+ */
+router.post(
+  "/reset/set-default-petugas",
+  authMiddleware,
+  roleMiddleware(["WARGA"]),
+  binController.setDefaultPetugas
+);
+
 router.post(
   "/reset-request",
   authMiddleware,
   roleMiddleware(["WARGA"]),
   binController.createResetRequest
 );
+
 router.get("/reset-request/:id", authMiddleware, binController.getResetRequest);
 router.put(
   "/reset-request/:id/review",

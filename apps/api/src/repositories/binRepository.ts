@@ -549,12 +549,20 @@ export class BinRepository {
     });
   }
 
-  async createResetRequest(binId: string, userId: string, evidencePhotoUrl: string) {
+  async createResetRequest(
+    binId: string,
+    userId: string,
+    evidencePhotoUrl: string,
+    petugasId?: string | null,
+    jenisSampah?: string | null
+  ) {
     return prisma.binResetRequest.create({
       data: {
         binId,
         userId,
         evidencePhotoUrl,
+        petugasId: petugasId ?? null,
+        jenisSampah: jenisSampah ?? null,
         status: "PENDING",
       },
       include: {

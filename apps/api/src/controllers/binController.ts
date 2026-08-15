@@ -654,12 +654,74 @@ export class BinController {
   }
 
   /**
+   * Cek status petugas tetap warga yang sedang login.
+   * Response: { hasDefaultPetugas: bool, petugas: { id, nama, foto } | null }
+   */
+  async getPetugasStatus(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.userId;
+      const result = await binService.getPetugasStatusForWarga(userId);
+      res.status(200).json({ success: true, data: result });
+    } catch (error: any) {
+      console.error("[BinController] getPetugasStatus error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil status petugas" });
+    }
+  }
+
+  /**
+   * Daftar petugas residu yang bertugas di wilayah RW yang sama dengan warga.
+   * Sumber wilayah dari profil server, bukan query param frontend.
+   */
+  async getPetugasByWilayah(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.userId;
+      const result = await binService.getPetugasByRw(userId);
+      res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      console.error("[BinController] getPetugasByWilayah error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil daftar petugas" });
+    }
+  }
+
+  /**
+   * Simpan petugas tetap untuk warga.
+   * Body: { petugasId: string }
+   * Validasi wilayah dilakukan di service layer.
+   */
+  async setDefaultPetugas(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.userId;
+      const { petugasId } = req.body;
+      if (!petugasId) {
+        res.status(400).json({ error: "BAD_REQUEST", message: "petugasId wajib diisi" });
+        return;
+      }
+      const result = await binService.setDefaultPetugas(userId, petugasId);
+      res.status(200).json({ success: true, data: result });
+    } catch (error: any) {
+      console.error("[BinController] setDefaultPetugas error:", error);
+      if (error.message === "PETUGAS_NOT_FOUND") {
+        res.status(404).json({ error: "PETUGAS_NOT_FOUND", message: "Petugas tidak ditemukan" });
+      } else if (error.message === "NOT_PETUGAS") {
+        res.status(400).json({ error: "NOT_PETUGAS", message: "User bukan Petugas Residu" });
+      } else if (error.message === "WILAYAH_MISMATCH") {
+        res.status(403).json({
+          error: "WILAYAH_MISMATCH",
+          message: "Petugas tidak bertugas di wilayah Anda",
+        });
+      } else {
+        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal menyimpan petugas tetap" });
+      }
+    }
+  }
+
+  /**
    * Create a new bin reset request (Warga)
    */
   async createResetRequest(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.user!.userId;
-      const { binId, evidencePhotoUrl } = req.body;
+      const { binId, evidencePhotoUrl, petugasId, jenisSampah } = req.body;
       if (!binId || !evidencePhotoUrl) {
         res
           .status(400)
@@ -667,7 +729,13 @@ export class BinController {
         return;
       }
 
-      const result = await binService.createResetRequest(binId, userId, evidencePhotoUrl);
+      const result = await binService.createResetRequest(
+        binId,
+        userId,
+        evidencePhotoUrl,
+        petugasId ?? null,
+        jenisSampah ?? null
+      );
       res.status(201).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[BinController] createResetRequest error:", error);
@@ -680,7 +748,7 @@ export class BinController {
       } else if (error.message === "DUPLICATE_REQUEST") {
         res.status(400).json({
           error: "DUPLICATE_REQUEST",
-          message: "Sudah ada pengajuan pengosongan aktif untuk tong ini",
+          message: "Sudah ada pengajuan pengosongan aktif untuk tempat sampah ini",
         });
       } else {
         res
@@ -1017,7 +1085,7 @@ export class BinController {
   async createResetRequestMobile(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.user!.userId;
-      const { binId } = req.body;
+      const { binId, petugasId, jenisSampah } = req.body;
       if (!req.file) {
         res.status(400).json({ error: "BAD_REQUEST", message: "File evidence tidak ditemukan" });
         return;
@@ -1029,13 +1097,21 @@ export class BinController {
       const host = req.get("host");
       const protocol = req.protocol;
       const evidencePhotoUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
-      const result = await binService.createResetRequest(binId, userId, evidencePhotoUrl);
+      const result = await binService.createResetRequest(
+        binId,
+        userId,
+        evidencePhotoUrl,
+        petugasId ?? null,
+        jenisSampah ?? null
+      );
       res.status(201).json({
         success: true,
         data: {
           id: result.id,
           binId: result.binId,
           userId: result.userId,
+          petugasId: result.petugasId,
+          jenisSampah: result.jenisSampah,
           status: result.status,
           evidencePhotoUrl: result.evidencePhotoUrl,
           createdAt: result.createdAt,
@@ -1052,7 +1128,7 @@ export class BinController {
       } else if (error.message === "DUPLICATE_REQUEST") {
         res.status(400).json({
           error: "DUPLICATE_REQUEST",
-          message: "Sudah ada pengajuan pengosongan aktif untuk tong ini",
+          message: "Sudah ada pengajuan pengosongan aktif untuk tempat sampah ini",
         });
       } else {
         res
