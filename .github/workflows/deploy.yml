@@ -76,6 +76,8 @@ jobs:
             npx prisma migrate resolve --applied "20260723040353_sync_db"               2>/dev/null || true
             npx prisma migrate resolve --applied "20260812083011_add_survei_kkn_tables" 2>/dev/null || true
             npx prisma migrate resolve --applied "20260812100524_add_evaluasi_dampak_kkn" 2>/dev/null || true
+            # Reset status jika migrasi sempat gagal sebelumnya agar dapat diaplikasikan ulang
+            npx prisma migrate resolve --rolled-back "20260815_add_petugas_tetap_jenis_sampah" 2>/dev/null || true
             echo "==> Baseline selesai. Menjalankan migrate deploy..."
 
             npx prisma migrate deploy
