@@ -58,8 +58,27 @@ jobs:
             echo "=== 2. Updating Backend (apps/api) ==="
             cd apps/api
             npm install --silent
-            npx prisma migrate deploy
             npx prisma generate
+
+            # Baseline migration lama agar prisma migrate deploy tidak error P3005.
+            # migrate resolve --applied hanya mencatat nama ke tabel _prisma_migrations,
+            # tidak menjalankan SQL apapun. Aman diulang (idempotent).
+            echo "==> Baseline migration lama ke _prisma_migrations..."
+            npx prisma migrate resolve --applied "20260711142358_init_all"              2>/dev/null || true
+            npx prisma migrate resolve --applied "20260711143430_bin_coordinates"       2>/dev/null || true
+            npx prisma migrate resolve --applied "20260721071914_add_violations"        2>/dev/null || true
+            npx prisma migrate resolve --applied "20260721130000_extend_schema_for_8_roles" 2>/dev/null || true
+            npx prisma migrate resolve --applied "20260721140000_refactor_bin_ownerships"   2>/dev/null || true
+            npx prisma migrate resolve --applied "20260721150000_extend_schema_for_batch_2" 2>/dev/null || true
+            npx prisma migrate resolve --applied "20260721160000_add_peternakan_and_maggot_distributions" 2>/dev/null || true
+            npx prisma migrate resolve --applied "20260722045006_rw_portal_fields"      2>/dev/null || true
+            npx prisma migrate resolve --applied "20260723034830_rename_tables_to_indonesian" 2>/dev/null || true
+            npx prisma migrate resolve --applied "20260723040353_sync_db"               2>/dev/null || true
+            npx prisma migrate resolve --applied "20260812083011_add_survei_kkn_tables" 2>/dev/null || true
+            npx prisma migrate resolve --applied "20260812100524_add_evaluasi_dampak_kkn" 2>/dev/null || true
+            echo "==> Baseline selesai. Menjalankan migrate deploy..."
+
+            npx prisma migrate deploy
             npm run build
 
             echo "=== 3. Restarting PM2 Backend ==="
