@@ -28,8 +28,6 @@ import {
   LosedaIcon,
   TempatSampahOrganikIcon,
   TempatSampahNonOrganikIcon,
-  TongOrganikIcon,
-  TongNonOrganikIcon,
 } from "../components/CustomIcons";
 
 // Ekspor semua icons (Standard Lucide + Custom) secara terpusat.
@@ -60,6 +58,4 @@ export {
   LosedaIcon,
   TempatSampahOrganikIcon,
   TempatSampahNonOrganikIcon,
-  TongOrganikIcon,
-  TongNonOrganikIcon,
 };

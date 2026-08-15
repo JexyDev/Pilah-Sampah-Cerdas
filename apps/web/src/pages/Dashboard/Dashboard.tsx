@@ -1643,9 +1643,9 @@ const Dashboard: React.FC = () => {
           },
           tempatSampahAktif: {
             value: (kpi.tempatSampahAktif ?? 0).toLocaleString("id-ID"),
-            trend: (kpi.alertTempatSampahPenuh ?? kpi.alertTongPenuh ?? 0) > 0 ? `${kpi.alertTempatSampahPenuh ?? kpi.alertTongPenuh} Penuh` : "Kondisi Aman",
+            trend: (kpi.alertTempatSampahPenuh ?? 0) > 0 ? `${kpi.alertTempatSampahPenuh} Penuh` : "Kondisi Aman",
             trendLabel: "Status Operasional",
-            trendUp: (kpi.alertTempatSampahPenuh ?? kpi.alertTongPenuh ?? 0) === 0,
+            trendUp: (kpi.alertTempatSampahPenuh ?? 0) === 0,
           },
           lokasiTerdaftar: {
             value: (kpi.lokasiTerdaftar ?? 0).toLocaleString("id-ID"),

@@ -119,6 +119,3 @@ export const TempatSampahNonOrganikIcon = (props: LucideProps) => (
     <path d="M10.5 14h3v2h-3z" />
   </svg>
 );
-
-export const TongOrganikIcon = TempatSampahOrganikIcon;
-export const TongNonOrganikIcon = TempatSampahNonOrganikIcon;

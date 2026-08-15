@@ -531,16 +531,16 @@ const Notifikasi: React.FC = () => {
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
   const criticalCount = notifications.filter(
-    (n) => n.category === "CRITICAL" || n.type === "TONG_PENUH" || n.type === "JADWAL_JEMPUT"
+    (n) => n.category === "CRITICAL" || n.type === "TEMPAT_SAMPAH_PENUH" || n.type === "TONG_PENUH" || n.type === "JADWAL_JEMPUT"
   ).length;
   const infoCount = notifications.length - criticalCount;
 
   const filteredNotifications = notifications.filter((n) => {
     if (filterTab === "CRITICAL") {
-      return n.category === "CRITICAL" || n.type === "TONG_PENUH" || n.type === "JADWAL_JEMPUT";
+      return n.category === "CRITICAL" || n.type === "TEMPAT_SAMPAH_PENUH" || n.type === "TONG_PENUH" || n.type === "JADWAL_JEMPUT";
     }
     if (filterTab === "INFO") {
-      return n.category !== "CRITICAL" && n.type !== "TONG_PENUH" && n.type !== "JADWAL_JEMPUT";
+      return n.category !== "CRITICAL" && n.type !== "TEMPAT_SAMPAH_PENUH" && n.type !== "TONG_PENUH" && n.type !== "JADWAL_JEMPUT";
     }
     return true;
   });

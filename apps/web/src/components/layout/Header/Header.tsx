@@ -337,7 +337,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
                   </div>
                 ) : (
                   notifications.map((n) => {
-                    const isCritical = n.title?.toLowerCase().includes("kritis") || n.title?.toLowerCase().includes("penuh") || n.type === "TONG_PENUH";
+                    const isCritical = n.title?.toLowerCase().includes("kritis") || n.title?.toLowerCase().includes("penuh") || n.type === "TEMPAT_SAMPAH_PENUH" || n.type === "TONG_PENUH";
                     const isSuccess = n.title?.toLowerCase().includes("sukses") || n.title?.toLowerCase().includes("setuju") || n.type === "POIN_BERTAMBAH";
 
                     return (
