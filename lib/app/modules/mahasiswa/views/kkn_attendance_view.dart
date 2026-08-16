@@ -31,6 +31,9 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
           _selectedKelurahan = user.kelurahan;
         }
       }
+      if (!ref.read(kknLocationProvider).isTracking) {
+        ref.read(kknLocationProvider.notifier).startTracking(context);
+      }
     });
   }
   
@@ -59,11 +62,31 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
           icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+            tooltip: 'Perbarui Lokasi GPS',
+            onPressed: () async {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Memperbarui koordinat GPS & zonasi...'),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+              await locationNotifier.forceLocationUpdate(context);
+            },
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(AppDimensions.md),
-        child: SingleChildScrollView(
-          child: _buildAttendanceDetail(locationState, locationNotifier),
+      body: RefreshIndicator(
+        onRefresh: () => locationNotifier.forceLocationUpdate(context),
+        color: AppColors.primaryGreen,
+        child: Padding(
+          padding: const EdgeInsets.all(AppDimensions.md),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: _buildAttendanceDetail(locationState, locationNotifier),
+          ),
         ),
       ),
     );
@@ -103,6 +126,8 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
               _buildPopupRow('NIM', user.nim),
               const SizedBox(height: 8),
               _buildPopupRow('Kelompok', kelompokName),
+              const SizedBox(height: 8),
+              _buildPopupRow('DPL', kelompokState.kelompok?.dosenPembimbing ?? '-'),
               const SizedBox(height: 16),
               const Text('Apakah Anda yakin ingin melakukan absensi sekarang?', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
             ],
@@ -153,6 +178,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
     final isGpsActive = state.isTracking;
 
     final durasiMenit = state.inZoneDurationSeconds ~/ 60;
+    final durasiDetik = state.inZoneDurationSeconds % 60;
     final targetMenit = state.targetDurationMinutes;
     final remainingMenit = targetMenit - durasiMenit;
     
@@ -172,10 +198,27 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
             decoration: BoxDecoration(
               color: AppColors.dangerRed.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.dangerRed.withValues(alpha: 0.3)),
             ),
-            child: Text(
-              state.error!,
-              style: const TextStyle(color: AppColors.dangerRed, fontSize: 12, fontWeight: FontWeight.bold),
+            child: Row(
+              children: [
+                const Icon(Icons.error_outline_rounded, color: AppColors.dangerRed, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    state.error!,
+                    style: const TextStyle(color: AppColors.dangerRed, fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => notifier.forceLocationUpdate(context),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  child: const Text('Coba Lagi', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.dangerRed)),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 12),
@@ -313,7 +356,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                     ],
                   ),
                   Text(
-                    '$durasiMenit / $targetMenit Menit',
+                    '$durasiMenit mnt $durasiDetik dtk / $targetMenit mnt',
                     style: const TextStyle(
                       color: AppColors.warningOrange,
                       fontWeight: FontWeight.bold,

@@ -228,13 +228,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           setState(() => _localLoading = false);
         }
       }
-    }
+    } // End if (PlatformUtils.isMobile)
 
-    final List<String> serials = [];
-    if (_qrOrganik.isNotEmpty) serials.add(_qrOrganik);
-    if (_qrAnorganik.isNotEmpty) serials.add(_qrAnorganik);
-
-    if (serials.isEmpty) {
+    if (_qrOrganik.isEmpty && _qrAnorganik.isEmpty) {
       _showErrorSnackBar('Tidak ada QR Code yang di-scan.');
       return;
     }
@@ -242,7 +238,8 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     await ref
         .read(aktivasiBinProvider.notifier)
         .aktivasiBatch(
-          qrSerials: serials,
+          qrOrganik: _qrOrganik.isNotEmpty ? _qrOrganik : null,
+          qrAnorganik: _qrAnorganik.isNotEmpty ? _qrAnorganik : null,
           userId: user?.id ?? '',
           householdId: user?.householdId ?? '',
           latitude: lat,
@@ -318,7 +315,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     }
 
     if (aktivasiState.isSuccess) {
+      final int count = (_qrOrganik.isNotEmpty && _qrAnorganik.isNotEmpty) ? 2 : 1;
       return _SuccessScreen(
+        binCount: count,
         onBack: () {
           ref.read(aktivasiBinProvider.notifier).reset();
           Navigator.of(context).pop();
@@ -651,8 +650,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
 // ─── Success Screen ──────────────────────────────────────────────────────────
 
 class _SuccessScreen extends StatelessWidget {
-  const _SuccessScreen({required this.onBack});
+  const _SuccessScreen({required this.onBack, this.binCount = 2});
   final VoidCallback onBack;
+  final int binCount;
 
   @override
   Widget build(BuildContext context) {
@@ -689,9 +689,11 @@ class _SuccessScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
-                'Kedua Tempat Sampah Berhasil Diaktivasi!',
-                style: TextStyle(
+              Text(
+                binCount > 1 
+                  ? 'Kedua Tempat Sampah Berhasil Diaktivasi!' 
+                  : 'Tempat Sampah Berhasil Diaktivasi!',
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                   color: AppColors.primaryGreen,
@@ -699,9 +701,11 @@ class _SuccessScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Kedua tempat sampah Anda telah terhubung\ndengan akun rumah tangga.',
-                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              Text(
+                binCount > 1 
+                  ? 'Kedua tempat sampah Anda telah terhubung\ndengan akun rumah tangga.'
+                  : 'Tempat sampah Anda telah terhubung\ndengan akun rumah tangga.',
+                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),

@@ -48,12 +48,16 @@ class QrScannerWidgetState extends State<QrScannerWidget>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (_controller == null) return;
     if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
-      _controller?.stop();
+      if (!_isRequestingPermission) {
+        _controller?.stop();
+      }
     } else if (state == AppLifecycleState.resumed) {
       if (_state == _QrState.ready && !_scanned) {
         _controller?.start();
+      } else if (_state == _QrState.loading && !_scanned) {
+        _isRequestingPermission = false;
+        _requestPermissionAndStart();
       }
     }
   }
@@ -64,16 +68,15 @@ class QrScannerWidgetState extends State<QrScannerWidget>
     _isRequestingPermission = true;
 
     try {
-      // Request permission kamera runtime
-      final PermissionStatus status = await Permission.camera.request();
+      var status = await Permission.camera.status;
+      if (!status.isGranted) {
+        status = await Permission.camera.request();
+      }
 
       if (!mounted) return;
 
       if (status.isGranted) {
-        // Beri waktu sejenak bagi OS melepaskan resource kamera ke aplikasi
-        await Future.delayed(const Duration(milliseconds: 300));
-        if (!mounted) return;
-        _startScanner();
+        await _startScanner();
       } else if (status.isPermanentlyDenied) {
         setState(() => _state = _QrState.permDenied);
       } else {
@@ -84,12 +87,24 @@ class QrScannerWidgetState extends State<QrScannerWidget>
     }
   }
 
-  void _startScanner() {
-    _controller?.dispose();
+  Future<void> _startScanner() async {
+    try {
+      if (_controller != null) {
+        await _controller!.dispose();
+        _controller = null;
+      }
+    } catch (_) {}
+    
+    // Beri sedikit jeda agar native camera benar-benar dirilis (khusus Android)
+    await Future.delayed(const Duration(milliseconds: 300));
+    
+    if (!mounted) return;
+
     _controller = MobileScannerController(
       facing: CameraFacing.back,
       autoStart: true,
       detectionSpeed: DetectionSpeed.noDuplicates,
+      returnImage: false,
     );
     if (mounted) setState(() => _state = _QrState.ready);
   }
@@ -149,6 +164,7 @@ class QrScannerWidgetState extends State<QrScannerWidget>
   // ─── Scanner aktif ────────────────────────────────────────────────────────
 
   Widget _buildScanner() {
+    if (_controller == null) return _buildLoading();
     final Color frameColor = widget.overlayColor ?? AppColors.primaryGreen;
 
     if (widget.isFullScreen) {

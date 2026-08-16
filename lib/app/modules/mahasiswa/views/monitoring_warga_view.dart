@@ -165,15 +165,32 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
 
     final rawAktivasiList = aktivasiState?.wargaList ?? [];
 
-    final userKelDisplay = userKel.toLowerCase().startsWith('kel') ? userKel : 'Kel. $userKel';
+    final userName = user?.name ?? '';
+
     final allWargaList = isAktivasiBinMode 
         ? _getFilteredWargaAktivasi(rawAktivasiList, userKec, userKel, userRw)
-        : state.wargaList.map((w) {
+        : state.wargaList.where((w) {
+            // Filter QC: HANYA tampilkan warga si mahasiswa tersebut dan sesuai dengan RW mahasiswa.
+            final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
+            final cleanUserRw = userRw.trim().replaceFirst(RegExp(r'^0+'), '');
+            final isMyCitizen = w.pendampingName.trim().toLowerCase() == userName.trim().toLowerCase();
+            final isMyRw = cleanUserRw.isEmpty || cleanWargaRw == cleanUserRw;
+            return isMyCitizen && isMyRw;
+        }).map((w) {
+            final targetKel = w.kelurahan.isNotEmpty ? w.kelurahan : userKel;
+            final targetRw = w.rw.isNotEmpty ? w.rw : userRw;
+            final targetKec = w.kecamatan.isNotEmpty ? w.kecamatan : userKec;
+            final kelDisplay = targetKel.toLowerCase().startsWith('kel') ? targetKel : 'Kel. $targetKel';
+            
             final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RW')
                 ? w.address
-                : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $userRw, $userKelDisplay, Kec. $userKec';
+                : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $targetRw, $kelDisplay, Kec. $targetKec';
             return WargaDampingan(
-              wargaId: w.wargaId, binId: w.binId, wargaName: w.wargaName, address: displayAddr, kelurahan: userKel, rw: userRw, kecamatan: userKec, mahasiswaId: w.mahasiswaId, recentLogs: w.recentLogs, isActivated: w.isActivated, role: w.role, totalPoints: w.totalPoints, apiCorrectPercentage: w.apiCorrectPercentage,
+              wargaId: w.wargaId, binId: w.binId, wargaName: w.wargaName, address: displayAddr, 
+              kelurahan: targetKel, rw: targetRw, kecamatan: targetKec, 
+              mahasiswaId: w.mahasiswaId, recentLogs: w.recentLogs, isActivated: w.isActivated, 
+              role: w.role, totalPoints: w.totalPoints, apiCorrectPercentage: w.apiCorrectPercentage,
+              pendampingName: w.pendampingName,
             );
           }).toList();
 
@@ -306,82 +323,49 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                isAktivasiBinMode
-                    ? Row(
-                        children: [
-                          Expanded(
-                            child: InputDecorator(
-                              key: ValueKey('kel_$userKel'),
-                              decoration: InputDecoration(
-                                labelText: 'Kelurahan Dampingan',
-                                prefixIcon: const Icon(Icons.location_city_rounded, size: 18, color: AppColors.primaryGreen),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                filled: true,
-                                fillColor: const Color(0xFFF5F7FA),
-                                isDense: true,
-                              ),
-                              child: Text(
-                                userKel.isNotEmpty ? (userKel.toLowerCase().startsWith('kel') ? userKel : 'Kel. $userKel') : '-',
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: InputDecorator(
-                              key: ValueKey('rtrw_$userRw'),
-                              decoration: InputDecoration(
-                                labelText: 'RW Dampingan',
-                                prefixIcon: const Icon(Icons.maps_home_work_outlined, size: 18, color: AppColors.primaryGreen),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                filled: true,
-                                fillColor: const Color(0xFFF5F7FA),
-                                isDense: true,
-                              ),
-                              child: Text(
-                                userRw.isNotEmpty ? (userRw.startsWith('RW') ? userRw : 'RW $userRw') : 'RW 02',
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              initialValue: _selectedKelurahan,
-                              decoration: const InputDecoration(labelText: 'Kelurahan', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12)),
-                              items: kelurahanList.map((k) => DropdownMenuItem(value: k, child: Text(k, style: const TextStyle(fontSize: 13)))).toList(),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() {
-                                    _selectedKelurahan = val;
-                                    _selectedRtRw = 'Semua';
-                                  });
-                                }
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              initialValue: _selectedRtRw,
-                              decoration: const InputDecoration(labelText: 'RW', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12)),
-                              items: rtRwList.map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 13)))).toList(),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() => _selectedRtRw = val);
-                                }
-                              },
-                            ),
-                          ),
-                        ],
+                Row(
+                  children: [
+                    Expanded(
+                      child: InputDecorator(
+                        key: ValueKey('kel_$userKel'),
+                        decoration: InputDecoration(
+                          labelText: 'Kelurahan Dampingan',
+                          prefixIcon: const Icon(Icons.location_city_rounded, size: 18, color: AppColors.primaryGreen),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          filled: true,
+                          fillColor: const Color(0xFFF5F7FA),
+                          isDense: true,
+                        ),
+                        child: Text(
+                          userKel.isNotEmpty ? (userKel.toLowerCase().startsWith('kel') ? userKel : 'Kel. $userKel') : '-',
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: InputDecorator(
+                        key: ValueKey('rtrw_$userRw'),
+                        decoration: InputDecoration(
+                          labelText: 'RW Dampingan',
+                          prefixIcon: const Icon(Icons.maps_home_work_outlined, size: 18, color: AppColors.primaryGreen),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          filled: true,
+                          fillColor: const Color(0xFFF5F7FA),
+                          isDense: true,
+                        ),
+                        child: Text(
+                          userRw.isNotEmpty ? (userRw.startsWith('RW') ? userRw : 'RW $userRw') : 'RW 02',
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -656,8 +640,8 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
       return _ChartDataPoint(firstName, score);
     }).toList();
 
-    // Hitung max value untuk skala Y (kelipatan 50 terdekat)
-    double maxY = 100.0;
+    // Hitung max value untuk skala Y yang dinamis
+    double maxY = 50.0; // Default yang lebih rendah jika poin 0
     if (chartData.isNotEmpty) {
       final highest = chartData.map((e) => e.value).reduce((a, b) => a > b ? a : b);
       if (highest > 0) {

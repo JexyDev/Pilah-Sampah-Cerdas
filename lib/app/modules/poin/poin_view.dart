@@ -31,8 +31,7 @@ class PoinView extends ConsumerWidget {
           slivers: [
             // ─── Header biru besar ─────────────────────────────────────
             SliverToBoxAdapter(
-              child: totalAsync.when(
-                data: (total) => _buildHeader(context, ref, total),
+              child: totalAsync.when(skipLoadingOnReload: true, data: (total) => _buildHeader(context, ref, total),
                 loading: () => _buildHeaderSkeleton(context),
                 error: (_, __) => _buildHeaderSkeleton(context),
               ),
@@ -60,8 +59,7 @@ class PoinView extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  historyAsync.when(
-                    data: (history) => history.isEmpty
+                  historyAsync.when(skipLoadingOnReload: true, data: (history) => history.isEmpty
                         ? const EmptyState(
                             message: 'Belum ada riwayat poin.',
                             icon: Icons.monetization_on_outlined,
@@ -306,8 +304,7 @@ class PoinView extends ConsumerWidget {
                       size: 16,
                     ),
                     const SizedBox(width: 4),
-                    rankAsync.when(
-                      data: (rank) => Text(
+                    rankAsync.when(skipLoadingOnReload: true, data: (rank) => Text(
                         rank,
                         style: const TextStyle(
                           color: AppColors.primaryGreen,
@@ -531,7 +528,9 @@ class _PoinHistoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isPunishment = item.points < 0 || item.description.toLowerCase().contains('penalti');
+    final bool isAktivasi = item.description.toLowerCase().contains('aktivasi');
+    final bool isPunishment = item.points < 0 || item.description.toLowerCase().contains('penalti') || item.description.toLowerCase().contains('punishment');
+    final bool isSetorSampah = !isPunishment && !isAktivasi && !item.description.toLowerCase().contains('redeem') && !item.description.toLowerCase().contains('tukar');
     final bool isOrganic = item.wasteType == WasteType.organic;
     final Color color = isPunishment
         ? AppColors.dangerRed
@@ -539,7 +538,7 @@ class _PoinHistoryItem extends StatelessWidget {
     final IconData iconData = isPunishment ? Icons.warning_rounded : Icons.delete_rounded;
 
     String title = isOrganic ? 'Setor Sampah Organik' : 'Setor Sampah Anorganik';
-    if (item.description.toLowerCase().contains('aktivasi')) {
+    if (isAktivasi) {
       title = 'Aktivasi Tempat Sampah Berhasil';
     } else if (isPunishment) {
       title = 'Punishment Pengurangan Poin';
@@ -608,8 +607,11 @@ class _PoinHistoryItem extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              _buildScheduleBadge(item.createdAt.toLocal()),
+              // HANYA transaksi Setor Sampah yang mendapatkan badge FULL POIN / SEBAGIAN
+              if (isSetorSampah && item.points > 0) ...[
+                const SizedBox(height: 4),
+                _buildScheduleBadge(item.createdAt.toLocal()),
+              ],
             ],
           ),
         ],
@@ -619,38 +621,42 @@ class _PoinHistoryItem extends StatelessWidget {
 
   Widget _buildScheduleBadge(DateTime date) {
     final hour = date.hour;
-    // Window Pagi: 07-08, Sore: 16-17. Tolerance until 08:59 and 17:59
-    final isFullPoin = (hour >= 7 && hour < 9) || (hour >= 16 && hour < 18);
+    // Window Pagi: 06:00-08:59, Window Sore: 15:00-17:59
+    final isFullPoin = (hour >= 6 && hour < 9) || (hour >= 15 && hour < 18);
     
     if (isFullPoin) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
         decoration: BoxDecoration(
           color: AppColors.primaryGreen.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.35), width: 0.5),
         ),
         child: const Text(
           'FULL POIN',
           style: TextStyle(
             fontSize: 8,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             color: AppColors.primaryGreen,
+            letterSpacing: 0.2,
           ),
         ),
       );
     } else {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
         decoration: BoxDecoration(
           color: AppColors.warningYellow.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.35), width: 0.5),
         ),
         child: const Text(
           'SEBAGIAN',
           style: TextStyle(
             fontSize: 8,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             color: AppColors.warningYellow,
+            letterSpacing: 0.2,
           ),
         ),
       );

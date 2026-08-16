@@ -397,6 +397,19 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
+  Future<List<dynamic>> getPengajuanIzin() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.kknPengajuanIzin);
+      if (response.statusCode == 200) {
+        return response.data['data'] as List<dynamic>? ?? [];
+      }
+      throw Exception('Gagal memuat riwayat izin');
+    } catch (e) {
+      throw Exception('Terjadi kesalahan jaringan: $e');
+    }
+  }
+
+  @override
   Future<DampakKelurahanData> getDampakKelurahan() async {
     try {
       dynamic response;

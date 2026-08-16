@@ -62,7 +62,7 @@ class ApiBinRepository implements BinRepository {
 
         final List<BinEntity> parsedBins = data.map((json) {
           final bin = _mapMyBin(json as Map<String, dynamic>);
-          if (pendingBinIds.contains(bin.id)) {
+          if (pendingBinIds.contains(bin.id) && bin.currentVolumeL >= (bin.maxCapacityL * 0.90)) {
             return bin.copyWith(isResetPending: true);
           }
           return bin;
@@ -80,8 +80,7 @@ class ApiBinRepository implements BinRepository {
                   orElse: () => parsedBins.first,
                 ),
               );
-              if (matchingBin.currentVolumeL < matchingBin.maxCapacityL &&
-                  req.status != BinResetStatus.pending) {
+              if (matchingBin.currentVolumeL < (matchingBin.maxCapacityL * 0.90)) {
                 await apiClient.secureStorage.delete(key: entry.key);
               }
             } catch (e) {
@@ -370,7 +369,7 @@ class ApiBinRepository implements BinRepository {
         throw BinException(
           'LOCATION_OUT_OF_RANGE',
           serverMsg ??
-              'Anda terlalu jauh dari tempat sampah (> 10m). Harap mendekat.',
+              'Anda berada lebih dari 50 meter dari tempat sampah. Harap mendekat ke lokasi tempat sampah.',
         );
       }
       if (errorCode == 'RESOURCE_NOT_FOUND' ||

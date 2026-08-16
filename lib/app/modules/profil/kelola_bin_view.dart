@@ -36,8 +36,7 @@ class KelolaBinView extends ConsumerWidget {
         ),
       ),
       backgroundColor: AppColors.backgroundCanvas,
-      body: binsAsync.when(
-        data: (bins) {
+      body: binsAsync.when(skipLoadingOnReload: true, data: (bins) {
           if (bins.isEmpty) {
             return const Center(
               child: Column(

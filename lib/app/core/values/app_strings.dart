@@ -97,7 +97,7 @@ class AppStrings {
       'Foto tempat sampah penuh sebagai bukti pengajuan reset';
   static const String resetButton = 'Ajukan Reset';
   static const String resetSuccess = 'Pengajuan pengosongan terkirim!';
-  static const String resetPending = 'Menunggu persetujuan petugas RT';
+  static const String resetPending = 'Menunggu persetujuan Petugas Pemilah';
 
   // --- Offline ---
   static const String offlineBannerMessage =

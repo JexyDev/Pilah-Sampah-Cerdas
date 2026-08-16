@@ -119,8 +119,7 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
                 await Future.delayed(const Duration(milliseconds: 500));
               },
               color: AppColors.primaryGreen,
-              child: logsAsync.when(
-                data: (logs) {
+              child: logsAsync.when(skipLoadingOnReload: true, data: (logs) {
                   final filtered = _applyFilter(logs);
                   return filtered.isEmpty
                       ? _buildEmpty()
@@ -517,8 +516,10 @@ class _RiwayatItem extends ConsumerWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 6),
-              _buildScheduleBadge(log.createdAt.toLocal()),
+              if (log.pointsAwarded > 0) ...[
+                const SizedBox(height: 6),
+                _buildScheduleBadge(log.createdAt.toLocal()),
+              ],
             ],
           ),
         ],
@@ -528,38 +529,42 @@ class _RiwayatItem extends ConsumerWidget {
 
   Widget _buildScheduleBadge(DateTime date) {
     final hour = date.hour;
-    // Window Pagi: 07-08, Sore: 16-17. Tolerance until 08:59 and 17:59
-    final isFullPoin = (hour >= 7 && hour < 9) || (hour >= 16 && hour < 18);
+    // Window Pagi: 06:00-08:59, Window Sore: 15:00-17:59
+    final isFullPoin = (hour >= 6 && hour < 9) || (hour >= 15 && hour < 18);
     
     if (isFullPoin) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
           color: AppColors.primaryGreen.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.35), width: 0.5),
         ),
         child: const Text(
           'FULL POIN',
           style: TextStyle(
             fontSize: 9,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             color: AppColors.primaryGreen,
+            letterSpacing: 0.2,
           ),
         ),
       );
     } else {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
           color: AppColors.warningYellow.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.35), width: 0.5),
         ),
         child: const Text(
           'SEBAGIAN',
           style: TextStyle(
             fontSize: 9,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             color: AppColors.warningYellow,
+            letterSpacing: 0.2,
           ),
         ),
       );

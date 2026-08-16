@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dio/dio.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../data/services/location_service.dart';
 import '../../../data/services/firebase_notification_service.dart';
@@ -151,11 +150,29 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         final repo = ref.read(kknRepositoryProvider);
         final activeZone = await repo.getActiveZone();
         if (activeZone.isNotEmpty) {
-          _currentTargetScheduleId = activeZone['id']?.toString() ?? activeZone['scheduleId']?.toString();
+          if (activeZone.containsKey('id') || activeZone.containsKey('scheduleId')) {
+            _currentTargetScheduleId = activeZone['id']?.toString() ?? activeZone['scheduleId']?.toString();
+            await _fetchTargetLocation();
+          } else {
+            // It's a generic active zone (e.g. RW / Kelurahan) without a specific schedule ID
+            final duration = int.tryParse(activeZone['targetDurationMinutes']?.toString() ?? '120') ?? 120;
+            state = state.copyWith(
+              activeActivity: {
+                'address': activeZone['zoneName'] ?? activeZone['kelurahan'] ?? 'Zona Dampingan',
+                'radius': activeZone['radiusMeter'] ?? 100,
+                'latitude': activeZone['latitude'],
+                'longitude': activeZone['longitude'],
+                'namaKegiatan': activeZone['zoneName'] ?? 'Penugasan KKN',
+                ...activeZone,
+              },
+              targetDurationMinutes: duration,
+            );
+          }
         }
       } catch (_) {}
+    } else {
+      await _fetchTargetLocation();
     }
-    await _fetchTargetLocation();
 
     // Initial check
     await _performLocationUpdate();
@@ -175,6 +192,16 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     _zoneDurationTimer = null;
     NotificationEngine().cancelOngoingKKNNotification();
     state = state.copyWith(isTracking: false);
+  }
+
+  /// Force immediate location & target refresh on demand (Pull-to-refresh / Button)
+  Future<void> forceLocationUpdate([BuildContext? context]) async {
+    // If not tracking, startTracking will do everything.
+    // If tracking, we temporarily stop it and restart it to fetch the latest zone info
+    if (state.isTracking) {
+      stopTracking();
+    }
+    await startTracking(context);
   }
 
   /// Set the active schedule target to calculate geofencing
@@ -541,9 +568,6 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         ref.invalidate(mahasiswaNotificationsProvider);
         return true;
       }
-    } on DioException catch (e) {
-      final msg = e.response?.data?['message']?.toString() ?? 'Gagal absensi kegiatan.';
-      state = state.copyWith(error: msg);
     } catch (e) {
       state = state.copyWith(error: NetworkExceptionHelper.getErrorMessage(e));
     }

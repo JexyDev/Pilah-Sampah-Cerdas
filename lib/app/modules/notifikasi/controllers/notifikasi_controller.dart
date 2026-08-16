@@ -1,4 +1,4 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/notification_entity.dart';
 import '../../../data/repositories/notification_repository.dart';
 import '../../../data/providers/repository_providers.dart';
@@ -31,8 +31,6 @@ bool _isWargaNotification(NotificationEntity notif) {
       type.contains('PRESENSI') ||
       type.contains('PEMANFAATAN') ||
       type.contains('TIMBANGAN_PEMILAHAN') ||
-      type.contains('VIOLATION') ||
-      type.contains('PELANGGARAN') ||
       type.contains('WHITELIST') ||
       title.contains('JEMPUT') ||
       title.contains('PENGANGKUTAN') ||
@@ -51,12 +49,36 @@ bool _isWargaNotification(NotificationEntity notif) {
 
   if (isForbidden) return false;
 
+  // Warga HANYA menerima:
+  // 1. Pengajuan Pengosongan (Status disetujui / ditolak dll)
+  // 2. Notifikasi Kepenuhan Tong (90%)
+  // 3. Poin reward
+  // 4. Penalti, Peringatan, Jadwal
+  final isWargaTopic = type.contains('TONG_PENUH') ||
+      type.contains('PENGAJUAN') ||
+      type.contains('POIN') ||
+      title.contains('PENUH') ||
+      title.contains('TONG') ||
+      title.contains('SAMPAH') ||
+      title.contains('PENGAJUAN') ||
+      title.contains('POIN') ||
+      title.contains('PENALTI') ||
+      title.contains('PERINGATAN') ||
+      title.contains('JADWAL') ||
+      desc.contains('SAMPAH') ||
+      desc.contains('PENUH') ||
+      desc.contains('PENALTI') ||
+      desc.contains('JADWAL') ||
+      desc.contains('POIN');
+
+  if (isForbidden) return false;
+
   // Hapus seed notifikasi palsu / dummy lama (seperti seed ORG004520)
   if (notif.id == 'seed-notif-1' || desc.contains('ORG004520')) {
     return false;
   }
 
-  return true;
+  return isWargaTopic;
 }
 
 /// Reset cache notifikasi lokal saat logout
@@ -64,7 +86,7 @@ void clearNotificationCache() {
   _shownNotifIds.clear();
 }
 
-// â”€â”€â”€ Notifications List Provider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Notifications List Provider ──────────────────────────────────────────────
 
 /// Provider daftar notifikasi user yang login.
 /// Memanggil GET /api/v1/notifications dari backend.
@@ -74,7 +96,31 @@ final notificationsProvider =
   // Pastikan user sudah login
   final user = ref.watch(authProvider).user;
   if (user == null) return [];
-  final list = await repo.getNotifications();
+  List<NotificationEntity> list = [];
+  try {
+    list = await repo.getNotifications();
+  } catch (_) {
+    list = [];
+  }
+
+  // Tambahkan riwayat poin (PointHistory) agar tampil di Notification Page
+  try {
+    final pointRepo = ref.read(wasteLogRepositoryProvider);
+    final pointHistory = await pointRepo.getPointHistoryByUser(user.id);
+    for (final ph in pointHistory) {
+      if (ph.points > 0) {
+        list.add(NotificationEntity(
+          id: 'point_${ph.id}',
+          type: 'POIN',
+          title: 'Poin Bertambah!',
+          desc: ph.description.isNotEmpty ? ph.description : 'Anda mendapatkan +${ph.points} poin.',
+          isRead: false,
+          time: ph.createdAt.toIso8601String().substring(0, 16).replaceAll('T', ' '),
+          icon: 'star',
+        ));
+      }
+    }
+  } catch (_) {}
 
   // Otomatis tampilkan notifikasi belum dibaca dari backend di system notification tray (luar aplikasi / background)
   // Dikunci presisi per ID Mahasiswa & membuang notifikasi Warga jika role adalah Mahasiswa KKN.
@@ -117,14 +163,13 @@ final notificationsProvider =
 /// Provider jumlah notifikasi yang belum dibaca (badge count).
 final unreadNotificationCountProvider = Provider<int>((ref) {
   final notifAsync = ref.watch(notificationsProvider);
-  return notifAsync.when(
-    data: (list) => list.where((n) => !n.isRead).length,
+  return notifAsync.when(skipLoadingOnReload: true, data: (list) => list.where((n) => !n.isRead).length,
     loading: () => 0,
     error: (_, __) => 0,
   );
 });
 
-// â”€â”€â”€ Mark As Read (Single) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Mark As Read (Single) ────────────────────────────────────────────────────
 
 class MarkReadState {
   const MarkReadState({
@@ -192,14 +237,14 @@ final markReadProvider =
   return MarkReadNotifier(ref.watch(notificationRepositoryProvider), ref);
 });
 
-// â”€â”€â”€ Register Device Token â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Register Device Token ────────────────────────────────────────────────────
 
 /// Kirim FCM token ke backend (fire-and-forget, tidak perlu watch di UI).
 Future<void> registerFcmToken(NotificationRepository repo, String token) async {
   try {
     await repo.registerDeviceToken(token);
   } catch (_) {
-    // Non-critical â€” abaikan error, jangan crash app
+    // Non-critical — abaikan error, jangan crash app
   }
 }
 

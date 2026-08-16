@@ -178,7 +178,6 @@ class ApiAuthRepository implements AuthRepository {
   // â”€â”€â”€ Register â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   @override
-  @override
   Future<UserEntity> register({
     required String role,
     required Map<String, dynamic> data,
@@ -473,12 +472,15 @@ class ApiAuthRepository implements AuthRepository {
           String rw = '';
           String kelurahan = '';
           
-          if (hh['rw'] is Map) {
-            final rtRwMap = hh['rw'] as Map<String, dynamic>;
+          final rtRwObj = hh['rtRw'] ?? hh['rw'];
+          if (rtRwObj is Map) {
+            final rtRwMap = Map<String, dynamic>.from(rtRwObj);
             rw = rtRwMap['name']?.toString() ?? '';
             if (rtRwMap['kelurahan'] is Map) {
-              final kelMap = rtRwMap['kelurahan'] as Map<String, dynamic>;
+              final kelMap = Map<String, dynamic>.from(rtRwMap['kelurahan']);
               kelurahan = kelMap['name']?.toString() ?? '';
+            } else if (rtRwMap['kelurahan'] != null) {
+              kelurahan = rtRwMap['kelurahan'].toString();
             }
           }
 
@@ -505,10 +507,10 @@ class ApiAuthRepository implements AuthRepository {
 
             return user.copyWith(
               householdId: householdId,
-              rw: rw,
+              rw: rw.isNotEmpty ? rw : user.rw,
               kecamatan: user.kecamatan,
-              kelurahan: kelurahan,
-              pendampingName: pendampingName.isNotEmpty ? pendampingName : null,
+              kelurahan: kelurahan.isNotEmpty ? kelurahan : user.kelurahan,
+              pendampingName: pendampingName.isNotEmpty ? pendampingName : user.pendampingName,
               familySize: hhFamilySize ?? user.familySize,
             );
           }
@@ -812,38 +814,79 @@ class ApiAuthRepository implements AuthRepository {
       return 'WARGA';
     }
 
-    // 6. Extract nested territories from rw object (if backend supports it)
-    // Backend returns 'kabupaten' or 'kota' for city-level territory
     String provinsi = userMap['provinsi']?.toString() ?? '';
     String kota = userMap['kota']?.toString() ?? userMap['kabupaten']?.toString() ?? '';
     String fetchedKecamatan = userMap['kecamatan']?.toString() ?? '';
+    String fullAddress = userMap['address']?.toString() ?? '';
 
+    // 6. Untuk Petugas Pemilahan: baca rw penugasan dari field khusus
+    final String penugasanRw = userMap['penugasanRw']?.toString() ?? '';
+    final String penugasanKelurahan = userMap['penugasanKelurahan']?.toString() ?? '';
+    // Jika kelurahan/rw kosong, fallback ke penugasan petugas
+    if (kelurahan.isEmpty && penugasanKelurahan.isNotEmpty) {
+      kelurahan = penugasanKelurahan;
+    }
+    if (rw.isEmpty && penugasanRw.isNotEmpty) {
+      rw = penugasanRw;
+    }
+
+    // 7. Coba extract dari nested rw object (sudah include kota & provinsi dari backend baru)
     if (userMap['rw'] is Map) {
       final rwObj = userMap['rw'] as Map<String, dynamic>;
       if (rwObj['kelurahan'] is Map) {
         final kelObj = rwObj['kelurahan'] as Map<String, dynamic>;
-        if (fetchedKecamatan.isEmpty && kelObj['kecamatan'] is Map) {
+        if (kelObj['kecamatan'] is Map) {
           final kecObj = kelObj['kecamatan'] as Map<String, dynamic>;
-          fetchedKecamatan = kecObj['name']?.toString() ?? fetchedKecamatan;
-          
-          if (kota.isEmpty && kecObj['kota'] is Map) {
-             final kotaObj = kecObj['kota'] as Map<String, dynamic>;
-             kota = kotaObj['name']?.toString() ?? kota;
-
-             if (provinsi.isEmpty && kotaObj['provinsi'] is Map) {
-                final provObj = kotaObj['provinsi'] as Map<String, dynamic>;
-                provinsi = provObj['name']?.toString() ?? provinsi;
-             }
+          if (fetchedKecamatan.isEmpty) {
+            fetchedKecamatan = kecObj['name']?.toString() ?? fetchedKecamatan;
+          }
+          if (kecObj['kota'] is Map) {
+            final kotaObj = kecObj['kota'] as Map<String, dynamic>;
+            if (kota.isEmpty) kota = kotaObj['name']?.toString() ?? kota;
+            if (kotaObj['provinsi'] is Map) {
+              final provObj = kotaObj['provinsi'] as Map<String, dynamic>;
+              if (provinsi.isEmpty) provinsi = provObj['name']?.toString() ?? provinsi;
+            }
           }
         }
       }
+    }
+
+    // 8. Fallback: parse alamat hanya jika field wilayah MASIH kosong setelah cek DB
+    if ((provinsi.isEmpty || kota.isEmpty) && fullAddress.isNotEmpty && fullAddress.contains(',')) {
+      final parts = fullAddress.split(',').map((e) => e.trim()).toList();
+      if (parts.length >= 3) {
+        if (provinsi.isEmpty) provinsi = parts.last;
+        if (kota.isEmpty) kota = parts[parts.length - 2];
+        if (fetchedKecamatan.isEmpty && parts.length >= 4) {
+          fetchedKecamatan = parts[parts.length - 3]
+              .replaceAll(RegExp(r'^Kec\.\s*', caseSensitive: false), '');
+        }
+      }
+    }
+
+    // 9. Bersihkan string RW sesuai request (Hapus nama kelurahan di dalam kurung dan prefix "RW")
+    rw = rw.replaceAll(RegExp(r'\s*\(.*?\)'), '').replaceAll(RegExp(r'^RW\s*', caseSensitive: false), '').trim();
+
+    // 10. Bersihkan fullAddress agar tidak mengulang nama Kelurahan, Kecamatan, Kota, dan Provinsi
+    if (fullAddress.isNotEmpty && fullAddress.contains(',')) {
+      final parts = fullAddress.split(',').map((e) => e.trim()).toList();
+      final filteredParts = parts.where((part) {
+        final lowerPart = part.toLowerCase();
+        if (kelurahan.isNotEmpty && lowerPart.contains(kelurahan.toLowerCase())) return false;
+        if (fetchedKecamatan.isNotEmpty && lowerPart.contains(fetchedKecamatan.toLowerCase())) return false;
+        if (kota.isNotEmpty && lowerPart.contains(kota.toLowerCase())) return false;
+        if (provinsi.isNotEmpty && lowerPart.contains(provinsi.toLowerCase())) return false;
+        return true;
+      }).toList();
+      fullAddress = filteredParts.join(', ');
     }
 
     return UserEntity(
       id: userMap['id']?.toString() ?? '',
       name: userMap['name']?.toString() ?? '',
       phone: userMap['phone']?.toString() ?? '',
-      address: userMap['address']?.toString() ?? '',
+      address: fullAddress,
       email: userMap['email']?.toString(),
       role: UserRoleExtension.fromApi(extractRawRole()),
       fotoProfil: userMap['fotoProfil']?.toString(),
@@ -1052,8 +1095,9 @@ class ApiAuthRepository implements AuthRepository {
       if (kelResp.statusCode == 200 && kelResp.data != null) {
         final list = kelResp.data is List ? kelResp.data as List : (kelResp.data['data'] as List? ?? []);
         for (final item in list) {
-          if (item is Map<String, dynamic>) {
-            kelurahanListRaw.add(item);
+          if (item is Map) {
+            final itemMap = Map<String, dynamic>.from(item);
+            kelurahanListRaw.add(itemMap);
           }
           final clean = _cleanName(item);
           if (clean.isNotEmpty && !clean.contains('{') && !kelurahans.contains(clean)) {
@@ -1069,14 +1113,33 @@ class ApiAuthRepository implements AuthRepository {
       if (rtRwResp.statusCode == 200 && rtRwResp.data != null) {
         final list = rtRwResp.data is List ? rtRwResp.data as List : (rtRwResp.data['data'] as List? ?? []);
         for (final item in list) {
-          if (item is Map<String, dynamic>) {
-            final name = _cleanName(item['name']);
-            final kel = _cleanName(item['kelurahan']);
+          if (item is Map) {
+            final itemMap = Map<String, dynamic>.from(item);
+            final name = _cleanName(itemMap['name']);
+            var kel = _cleanName(itemMap['kelurahan']);
+            
+            // Fallback cari kelurahan via kelurahanId jika kelurahan berupa ID saja
+            if (kel.isEmpty && itemMap['kelurahanId'] != null) {
+              final kelId = itemMap['kelurahanId'];
+              final matchedKel = kelurahanListRaw.firstWhere(
+                (k) => k['id'] == kelId || k['id']?.toString() == kelId.toString(),
+                orElse: () => <String, dynamic>{},
+              );
+              if (matchedKel.isNotEmpty) {
+                kel = _cleanName(matchedKel['name']);
+              }
+            }
+
             if (name.isNotEmpty && !name.contains('{') && !rtRws.contains(name)) rtRws.add(name);
             if (kel.isNotEmpty && !kel.contains('{') && !kelurahans.contains(kel)) {
               kelurahans.add(kel);
             }
-            rtRwListRaw.add(item);
+            rtRwListRaw.add({
+              ...itemMap,
+              'id': itemMap['id'],
+              'name': name,
+              'kelurahan': kel,
+            });
           } else if (item is String) {
             final clean = _cleanName(item);
             if (clean.isNotEmpty && !clean.contains('{') && !rtRws.contains(clean)) rtRws.add(clean);

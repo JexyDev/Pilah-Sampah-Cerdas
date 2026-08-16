@@ -1,6 +1,4 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 import '../../../data/models/bin_entity.dart';
 import '../../../data/models/ai_detection_entity.dart';
 import '../../../data/models/bin_reset_entity.dart';
@@ -129,46 +127,9 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
 
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      // 1. Ambil data tempat sampah dari cache/server untuk client-side geofencing
-      final bin = await _binRepository.getBinByQrSerial(qrCode);
-      if (bin != null) {
-        // Hitung jarak Haversine (client-side)
-        final distance = Geolocator.distanceBetween(
-          userLat,
-          userLng,
-          bin.lat,
-          bin.lng,
-        );
-
-        const maxDistance = kDebugMode ? 500.0 : 10.0;
-        // Jika userLat == 0.0, itu adalah fallback dari error GPS, jadi skip geofencing
-        if (userLat != 0.0 && distance > maxDistance) {
-          throw BinException(
-            'LOCATION_OUT_OF_RANGE',
-            'Anda terlalu jauh dari tempat sampah (> ${maxDistance.toInt()}m).',
-          );
-        }
-
-        // Cek kapasitas
-        final double projectedVol =
-            bin.currentVolumeL + state.aiResult!.volumeEstimate;
-        if (bin.currentVolumeL >= bin.maxCapacityL) {
-          throw const BinException(
-            'BIN_OVERFLOW',
-            'Tempat sampah ini sudah penuh (100%)! Silakan ajukan pengosongan.',
-          );
-        } else if (projectedVol > bin.maxCapacityL) {
-          final sisa = (bin.maxCapacityL - bin.currentVolumeL).clamp(
-            0.0,
-            999.0,
-          );
-          throw BinException(
-            'BIN_OVERFLOW',
-            'Kapasitas tempat sampah tersisa ${sisa.toStringAsFixed(1)}L, tidak muat untuk sampah sekitar ${state.aiResult!.volumeEstimate.toStringAsFixed(1)}L.',
-          );
-        }
-      }
-
+      // Langsung kirim ke backend — backend melakukan validasi geofencing 50m secara akurat.
+      // Client-side geofencing dihapus karena GPS Android tidak konsisten antar-request
+      // dan menyebabkan false rejection meski pengguna diam di tempat yang sama.
       final result = await _binRepository.scanAndCommit(
         qrCode: qrCode,
         userId: _userId,
@@ -259,7 +220,8 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
   }
 
   Future<void> aktivasiBatch({
-    required List<String> qrSerials,
+    String? qrOrganik,
+    String? qrAnorganik,
     required String userId,
     required String householdId,
     double? latitude,
@@ -269,6 +231,10 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
   }) async {
     state = const AktivasiBinState(isLoading: true);
     try {
+      final List<String> qrSerials = [];
+      if (qrOrganik != null && qrOrganik.isNotEmpty) qrSerials.add(qrOrganik);
+      if (qrAnorganik != null && qrAnorganik.isNotEmpty) qrSerials.add(qrAnorganik);
+
       final results = await _binRepository.activateBinsBatch(
         qrSerials: qrSerials,
         userId: userId,
@@ -277,16 +243,20 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
         longitude: longitude,
       );
 
-      // Panggil measureBin sesuai jenis QR Code secara berurutan
-      for (final qr in qrSerials) {
-        final isOrganik =
-            !qr.toUpperCase().contains('NON') &&
-            !qr.toUpperCase().contains('ANORG') &&
-            !qr.toUpperCase().startsWith('ANO');
+      // Panggil measureBin sesuai parameter tanpa menebak string
+      if (qrOrganik != null && qrOrganik.isNotEmpty) {
         await _binRepository.measureBin(
-          qrCode: qr,
-          binType: isOrganik ? WasteType.organic : WasteType.nonOrganic,
-          maxCapacityLiter: isOrganik ? orgCapacity : anorgCapacity,
+          qrCode: qrOrganik,
+          binType: WasteType.organic,
+          maxCapacityLiter: orgCapacity,
+        );
+      }
+      
+      if (qrAnorganik != null && qrAnorganik.isNotEmpty) {
+        await _binRepository.measureBin(
+          qrCode: qrAnorganik,
+          binType: WasteType.nonOrganic,
+          maxCapacityLiter: anorgCapacity,
         );
       }
       state = AktivasiBinState(

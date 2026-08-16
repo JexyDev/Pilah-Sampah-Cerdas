@@ -1,4 +1,4 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/notification_entity.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -109,8 +109,7 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
 /// Provider jumlah notifikasi belum dibaca untuk Warga
 final wargaUnreadNotificationCountProvider = Provider<int>((ref) {
   final notifAsync = ref.watch(wargaNotificationsProvider);
-  return notifAsync.when(
-    data: (list) => list.where((n) => !n.isRead).length,
+  return notifAsync.when(skipLoadingOnReload: true, data: (list) => list.where((n) => !n.isRead).length,
     loading: () => 0,
     error: (_, __) => 0,
   );

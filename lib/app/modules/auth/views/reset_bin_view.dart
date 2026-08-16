@@ -106,7 +106,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
             NotificationEngine().showResetPendingNotification();
             ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Pengajuan pengosongan berhasil dikirim. Menunggu proses persetujuan RW (PENDING).'),
+                content: Text('Pengajuan pengosongan berhasil dikirim. Menunggu proses persetujuan Petugas Pemilah (PENDING).'),
                 backgroundColor: AppColors.warningYellow,
                 behavior: SnackBarBehavior.floating,
                 duration: Duration(seconds: 4),
@@ -152,8 +152,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
     }
 
     final bool hasPendingRequest = resetState.result != null && resetState.result!.status == BinResetStatus.pending;
-    return binsAsync.when(
-      data: (bins) {
+    return binsAsync.when(skipLoadingOnReload: true, data: (bins) {
         return _buildForm(bins, userId, isPending: hasPendingRequest);
       },
       loading: () => const AppLoading(),

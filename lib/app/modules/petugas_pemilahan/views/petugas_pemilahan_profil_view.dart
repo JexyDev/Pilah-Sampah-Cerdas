@@ -8,7 +8,7 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
-import '../controllers/petugas_pemilahan_controller.dart';
+
 
 class PetugasPemilahanProfilView extends ConsumerStatefulWidget {
   const PetugasPemilahanProfilView({super.key});
@@ -136,8 +136,6 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
-    final state = ref.watch(petugasPemilahanControllerProvider);
-    final dashboard = state.dashboard;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -232,54 +230,49 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
               child: Column(
                 children: [
                   _infoTile(
-                    Icons.badge_outlined,
-                    'ID Petugas',
-                    dashboard?.petugasId ?? (user != null && user.id.length >= 8 ? user.id.substring(0, 8).toUpperCase() : '-'),
+                    Icons.phone_iphone_rounded,
+                    'No. Telepon',
+                    user != null && user.phone.toString() != 'null' && user.phone.toString().isNotEmpty ? user.phone : '-',
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(
                     Icons.map_rounded,
                     'Provinsi',
-                    user?.provinsi.isNotEmpty == true ? user!.provinsi : '-',
+                    user != null && user.provinsi.toString() != 'null' && user.provinsi.toString().isNotEmpty ? user.provinsi : '-',
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(
                     Icons.location_city_rounded,
                     'Kota/Kabupaten',
-                    user?.kota.isNotEmpty == true ? user!.kota : '-',
+                    user != null && user.kota.toString() != 'null' && user.kota.toString().isNotEmpty ? user.kota : '-',
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(
                     Icons.map_rounded,
                     'Kecamatan',
-                    user?.kecamatan.isNotEmpty == true ? user!.kecamatan : '-',
+                    user != null && user.kecamatan.toString() != 'null' && user.kecamatan.toString().isNotEmpty ? user.kecamatan : '-',
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(
                     Icons.map_outlined,
                     'Kelurahan',
-                    user?.kelurahan.isNotEmpty == true ? user!.kelurahan : '-',
+                    user != null && user.kelurahan.toString() != 'null' && user.kelurahan.toString().isNotEmpty ? user.kelurahan : '-',
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(
                     Icons.location_city_rounded,
                     'RW Penugasan',
-                    user?.rw.isNotEmpty == true ? user!.rw : '-',
+                    user != null && user.rw.toString() != 'null' && user.rw.toString().isNotEmpty ? user.rw : '-',
                     bold: true,
-                  ),
-                  const Divider(height: 1, indent: 56),
-                  _infoTile(
-                    Icons.phone_iphone_rounded,
-                    'No. Telepon',
-                    user?.phone.isNotEmpty == true ? user!.phone : '-',
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(
                     Icons.home_outlined,
                     'Alamat Lengkap',
-                    user?.address.isNotEmpty == true ? user!.address : '-',
+                    user != null && user.address.toString() != 'null' && user.address.toString().isNotEmpty ? user.address : '-',
                   ),
                 ],
+
               ),
             ),
             const SizedBox(height: AppDimensions.lg),

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
@@ -17,8 +17,7 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
   final List<String> _filters = [
     'Semua',
     'Input Timbangan',
-    'Pelanggaran & Anomali',
-    'Status Whitelist',
+    'Notif Pengangkutan & Punishment',
   ];
 
   @override
@@ -56,7 +55,7 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
       ),
       body: Column(
         children: [
-          // â”€â”€â”€ Filter Chips Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          // ─── Filter Chips Bar ──────────────────────────────────────────────
           Container(
             color: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -90,25 +89,34 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
           ),
           const Divider(height: 1),
 
-          // â”€â”€â”€ Body List Notifikasi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          // ─── Body List Notifikasi ──────────────────────────────────────────
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async => ref.invalidate(petugasPemilahanNotificationsProvider),
-              child: notifAsync.when(
-                data: (list) {
+              child: notifAsync.when(skipLoadingOnReload: true, data: (list) {
                   final filteredList = list.where((n) {
                     if (_selectedFilter == 'Semua') return true;
                     final typeUpper = n.type.toUpperCase();
                     final titleLower = n.title.toLowerCase();
 
                     if (_selectedFilter == 'Input Timbangan') {
-                      return typeUpper.contains('TIMBANGAN') || typeUpper.contains('PEMILAHAN') || titleLower.contains('timbangan') || titleLower.contains('pemilahan') || titleLower.contains('log');
+                      return typeUpper.contains('TIMBANGAN') || typeUpper.contains('PEMILAHAN') || titleLower.contains('timbangan') || titleLower.contains('pemilahan') || titleLower.contains('log') || typeUpper.contains('POIN');
                     }
-                    if (_selectedFilter == 'Pelanggaran & Anomali') {
-                      return typeUpper.contains('VIOLATION') || typeUpper.contains('PELANGGARAN') || titleLower.contains('pelanggaran') || titleLower.contains('anomali');
-                    }
-                    if (_selectedFilter == 'Status Whitelist') {
-                      return typeUpper.contains('WHITELIST') || typeUpper.contains('VERIFIKASI') || titleLower.contains('whitelist') || titleLower.contains('akun') || titleLower.contains('tugas');
+                    if (_selectedFilter == 'Notif Pengangkutan & Punishment') {
+                      return typeUpper.contains('VIOLATION') ||
+                          typeUpper.contains('PENGANGKUTAN') ||
+                          titleLower.contains('pelanggaran') ||
+                          titleLower.contains('anomali') ||
+                          titleLower.contains('penalti') ||
+                          titleLower.contains('kpi') ||
+                          titleLower.contains('kinerja') ||
+                          titleLower.contains('pengangkutan') ||
+                          titleLower.contains('jadwal') ||
+                          typeUpper.contains('WHITELIST') ||
+                          typeUpper.contains('VERIFIKASI') ||
+                          titleLower.contains('whitelist') ||
+                          titleLower.contains('akun') ||
+                          titleLower.contains('tugas');
                     }
                     return true;
                   }).toList();

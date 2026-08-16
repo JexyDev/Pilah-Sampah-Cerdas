@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../data/providers/repository_providers.dart';
+import 'mahasiswa_controller.dart';
 import '../../../core/utils/platform_utils.dart';
 import '../../../core/utils/network_exception_helper.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -227,6 +229,8 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
 
       if (isSuccess) {
         await refresh(); // Refresh list after success
+        // MUST refresh the home dashboard to update points and citizens list!
+        ref.read(mahasiswaControllerProvider.notifier).refresh();
         return true;
       } else {
         state = state.copyWith(

@@ -9,6 +9,7 @@ import '../../core/values/app_colors.dart';
 import '../../core/values/app_dimensions.dart';
 import '../../data/services/location_service.dart';
 import '../shared/controllers/connectivity_controller.dart';
+import '../shared/widgets/feature_rating_dialog.dart';
 import 'controllers/petugas_pemilahan_controller.dart';
 
 class TimbanganPemilahanView extends ConsumerStatefulWidget {
@@ -185,6 +186,15 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
     if (success && mounted) {
       await _showSuccessDialog(weight);
       if (mounted) {
+        // Rating dialog 1-5 bintang (hanya muncul 1x saat pertama kali berhasil input timbangan)
+        await showFeatureRatingOnceIfNeeded(
+          context: context,
+          featureKey: 'petugas_input_timbangan',
+          featureTitle: 'Input Timbangan Berhasil! ⭐',
+          featureSubtitle: 'Bagaimana kepuasan dan kemudahan Anda saat pertama kali melakukan input manual timbangan pemilahan?',
+          roleTag: 'Petugas Pemilahan',
+        );
+
         _clearDraft();
         _weightController.clear();
         setState(() {
@@ -193,6 +203,7 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
           _estimatedPoints = 0;
         });
 
+        if (!mounted) return;
         if (Navigator.of(context).canPop()) {
           Navigator.of(context).pop();
         }

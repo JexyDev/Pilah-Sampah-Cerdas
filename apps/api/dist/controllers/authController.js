@@ -51,7 +51,8 @@ const registerWargaSchema = z.object({
     qrCode: z.string().optional(),
     wargaSubtype: z.enum(["UTAMA", "TAMBAHAN"]).optional(),
     rtRwId: z.number().int().optional(),
-    rtRw: z.string().optional(), // string "01/02" from mobile
+    rtRw: z.string().optional(), // string "01/02" or "RW 01" from mobile
+    rw: z.string().optional(), // alias for rw from mobile
     kelurahan: z.string().optional(), // kelurahan name from mobile
     latitude: z.number().optional(),
     longitude: z.number().optional(),
@@ -68,6 +69,10 @@ const registerKknSchema = registerStaffSchema.extend({
         .string()
         .refine((val) => !isNaN(Date.parse(val)), "Format tanggal selesai tidak valid"),
     assignedPolygonId: z.number().int().optional(),
+    rtRwId: z.number().int().optional(),
+    rtRw: z.string().optional(),
+    rw: z.string().optional(),
+    kelurahan: z.string().optional(),
 });
 const registerPetugasSchema = registerStaffSchema.extend({
     noWa: z.string().min(1, "WhatsApp diperlukan"),
@@ -523,13 +528,14 @@ export class AuthController {
                     .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
                 return;
             }
-            const { qrCode, wargaSubtype, rtRwId, rtRw, kelurahan, latitude, longitude, nama: _nama, noWa: _noWa, ...userData } = parsed.data;
+            const { qrCode, wargaSubtype, rtRwId, rtRw, rw, kelurahan, latitude, longitude, nama: _nama, noWa: _noWa, ...userData } = parsed.data;
             void _nama;
             void _noWa;
             // Resolve rtRwId from string if needed
             let resolvedRtRwId = rtRwId;
-            if (!resolvedRtRwId) {
-                resolvedRtRwId = await authService.resolveRtRwId(rtRw, kelurahan);
+            const targetRw = rtRw || rw;
+            if (!resolvedRtRwId && (targetRw || kelurahan)) {
+                resolvedRtRwId = await authService.resolveRtRwId(targetRw, kelurahan);
             }
             const householdData = {
                 address: userData.address || "",
@@ -587,7 +593,12 @@ export class AuthController {
                     .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
                 return;
             }
-            const { nim, jurusan, fakultas, noWa, startDate, endDate, assignedPolygonId, ...userData } = parsed.data;
+            const { nim, jurusan, fakultas, noWa, startDate, endDate, assignedPolygonId, rtRwId, rtRw, rw, kelurahan, ...userData } = parsed.data;
+            let resolvedRtRwId = assignedPolygonId || rtRwId;
+            const targetRw = rtRw || rw;
+            if (!resolvedRtRwId && (targetRw || kelurahan)) {
+                resolvedRtRwId = await authService.resolveRtRwId(targetRw, kelurahan);
+            }
             const kknData = {
                 nim,
                 jurusan,
@@ -595,9 +606,9 @@ export class AuthController {
                 noWa,
                 startDate: new Date(startDate),
                 endDate: new Date(endDate),
-                assignedPolygonId,
+                assignedPolygonId: resolvedRtRwId,
             };
-            const result = await authService.registerKkn(userData, kknData);
+            const result = await authService.registerKkn({ ...userData, rtRwId: resolvedRtRwId }, kknData);
             res.status(201).json({
                 success: true,
                 data: { id: result.user.id, name: result.user.name, status: result.user.status },

@@ -1,5 +1,9 @@
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  exclude:
+    - web-b/**
+
 linter:
   rules:
     - always_declare_return_types

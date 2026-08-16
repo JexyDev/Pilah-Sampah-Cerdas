@@ -154,7 +154,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
             : (dashboard != null && dashboard.jurusan.isNotEmpty ? dashboard.jurusan : '-'));
     final kelurahan = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : '-';
     final rw = user?.rw.isNotEmpty == true ? user!.rw : '-';
-    final jenjang = user?.jenjangPendidikan.isNotEmpty == true ? user!.jenjangPendidikan : 'S1';
+    final jenjang = user?.jenjangPendidikan.isNotEmpty == true ? user!.jenjangPendidikan : '-';
     final fotoUrl = user?.fotoProfil;
 
     return SliverAppBar(
@@ -370,14 +370,20 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
   Widget _buildSummaryCards(MahasiswaState state) {
     final d = state.dashboard;
     final user = ref.watch(authProvider).user;
-    final userId = user?.id ?? '';
-    final userNim = user?.nim ?? '';
+    final userName = user?.name ?? '';
+    final userRw = user?.rw ?? '-';
 
-    // Total Warga Dampingan Mahasiswa ini: HANYA warga yang mahasiswaId-nya terikat pada mahasiswa ini
+    // Total Warga Dampingan Mahasiswa ini
     final myWargaList = state.wargaList.where((w) {
       if (w.role != 'WARGA') return false;
-      if (w.mahasiswaId.isEmpty) return false;
-      return w.mahasiswaId == userId || (userNim.isNotEmpty && w.mahasiswaId == userNim);
+      
+      final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
+      final cleanUserRw = userRw.trim().replaceFirst(RegExp(r'^0+'), '');
+      
+      final isMyCitizen = w.pendampingName.trim().toLowerCase() == userName.trim().toLowerCase();
+      final isMyRw = cleanUserRw.isEmpty || cleanWargaRw == cleanUserRw;
+
+      return isMyCitizen && isMyRw;
     }).toList();
 
     final totalWarga = myWargaList.length;
@@ -553,9 +559,9 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.location_on_rounded,
-                title: 'Absensi GPS KKN',
+                title: 'Presensi GPS KKN',
                 subtitle: 'Presensi ${kknState.targetDurationMinutes % 60 == 0 ? '${kknState.targetDurationMinutes ~/ 60} jam' : '${kknState.targetDurationMinutes} menit'} zona KKN',
-                gradientColors: const [Color(0xFF38BDF8), AppColors.primaryBlue],
+                gradientColors: const [AppColors.primaryBlueLight, AppColors.primaryBlue],
                 onTap: () => Navigator.pushNamed(context, AppRoutes.kknAttendance),
               ),
             ),
@@ -565,7 +571,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                 icon: Icons.recycling_rounded,
                 title: 'Kegiatan Mahasiswa',
                 subtitle: 'Individu & Pemanfaatan',
-                gradientColors: const [Color(0xFF0284C7), Color(0xFF0C4A6E)],
+                gradientColors: const [AppColors.primaryBlue, AppColors.primaryBlueDark],
                 onTap: () => Navigator.pushNamed(context, AppRoutes.pemanfaatanSampah),
               ),
             ),
@@ -576,16 +582,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
           children: [
             Expanded(
               child: _MenuTileCard(
-                icon: Icons.history_rounded,
-                title: 'Riwayat KKN',
-                subtitle: 'Log aktivitas & GPS',
-                gradientColors: const [Color(0xFF6366F1), Color(0xFF4F46E5)],
-                onTap: () => Navigator.pushNamed(context, AppRoutes.riwayatKkn),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MenuTileCard(
                 icon: Icons.rule_rounded,
                 title: 'Pengajuan Izin',
                 subtitle: 'Izin/Sakit DPL',
@@ -593,6 +589,8 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                 onTap: () => Navigator.pushNamed(context, AppRoutes.pengajuanIzin),
               ),
             ),
+            const SizedBox(width: 12),
+            const Spacer(),
           ],
         ),
       ],
@@ -605,22 +603,23 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
 
   Widget _buildWargaSection(MahasiswaState state) {
     final user = ref.watch(authProvider).user;
-    final userId = user?.id ?? '';
-    final userNim = user?.nim ?? '';
     final userKel = user?.kelurahan ?? '-';
     final userRw = user?.rw ?? '-';
 
-    // HANYA tampilkan Warga Dampingan yang sudah di-aktivasi/dibantu aktivasi oleh mahasiswa ini
+    final userName = user?.name ?? '';
+
+    // Filter QC: Tampilkan HANYA warga si mahasiswa tersebut (berdasarkan nama)
+    // dan pastikan sesuai dengan RW penugasan mahasiswa.
     final list = state.wargaList.where((w) {
       if (!w.isActivated) return false;
-
-      final mhsId = w.mahasiswaId.trim();
-      if (mhsId.isEmpty || mhsId.toLowerCase() == 'null' || mhsId.toLowerCase() == 'undefined') {
-        return false;
-      }
       
-      final matchesUser = (userId.isNotEmpty && mhsId == userId) || (userNim.isNotEmpty && mhsId == userNim);
-      return matchesUser;
+      final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
+      final cleanUserRw = userRw.trim().replaceFirst(RegExp(r'^0+'), '');
+      
+      final isMyCitizen = w.pendampingName.trim().toLowerCase() == userName.trim().toLowerCase();
+      final isMyRw = cleanUserRw.isEmpty || cleanWargaRw == cleanUserRw;
+
+      return isMyCitizen && isMyRw;
     }).map((w) {
       final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RW')
           ? w.address

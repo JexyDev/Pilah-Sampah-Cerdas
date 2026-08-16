@@ -32,6 +32,8 @@ class ApiEndpoints {
   static const String binsActivate = '/bins/activate';
   static const String binsMeasure = '/bins/measure';
   static const String binsReset = '/bins/reset';
+  static const String binsResetRequests = '/bins/reset-requests';
+  static String binsApproveReset(String id) => '/bins/reset/$id/approve';
   static const String aiDetect = '/ai/detect';
   static const String wasteDetect = '/waste/detect';
 

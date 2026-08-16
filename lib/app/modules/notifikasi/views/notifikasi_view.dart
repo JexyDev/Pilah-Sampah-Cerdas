@@ -111,9 +111,7 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
             child: RefreshIndicator(
               onRefresh: () async => ref.invalidate(wargaNotificationsProvider),
               color: AppColors.primaryGreen,
-              child: notifAsync.when(
-                skipLoadingOnReload: true,
-                loading: () => const AppLoading(message: 'Memuat notifikasi...'),
+              child: notifAsync.when(skipLoadingOnReload: true, loading: () => const AppLoading(message: 'Memuat notifikasi...'),
                 error: (e, _) => Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,

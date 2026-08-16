@@ -70,8 +70,7 @@ class _PemilahanMonitoringDashboardViewState
                   borderRadius: BorderRadius.circular(12),
                   side: const BorderSide(color: Color(0xFFE2E8F0)),
                 ),
-                child: logsAsync.when(
-                  data: (logs) {
+                child: logsAsync.when(skipLoadingOnReload: true, data: (logs) {
                     final filtered = _applyFilters(logs);
                     final paginated = _applyPagination(filtered);
 

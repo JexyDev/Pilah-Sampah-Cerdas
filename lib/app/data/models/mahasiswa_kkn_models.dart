@@ -194,6 +194,7 @@ class WargaDampingan extends Equatable {
         json['studentName'],
         json['didaftarkanOlehNama'],
         json['registeredByStudentName'],
+        json['registeredByStudent'],
       ];
       for (final c in candidates) {
         if (c != null) {
@@ -209,14 +210,36 @@ class WargaDampingan extends Equatable {
     final rawStatus = json['status']?.toString() ?? json['statusPendamping']?.toString() ?? json['status_pendamping']?.toString() ?? '';
     final extractedWargaId = json['wargaId']?.toString() ?? json['id']?.toString() ?? '';
 
+    String parsedKecamatan = json['kecamatan']?.toString() ?? '';
+    String parsedKelurahan = json['kelurahan']?.toString() ?? '';
+    String parsedRw = json['rw']?.toString() ?? json['rt_rw']?.toString() ?? json['rtRw']?.toString() ?? '';
+    String rawAddr = json['address']?.toString() ?? json['alamat']?.toString() ?? 'Alamat tidak diketahui';
+
+    // Fallback parsing from address string: "RW 01, Sadang Serang" or "Jl. A, RW 05, Kel. B"
+    if (parsedRw.isEmpty && rawAddr.contains('RW')) {
+      final rwMatch = RegExp(r'RW\s*(\d+)').firstMatch(rawAddr);
+      if (rwMatch != null) parsedRw = rwMatch.group(1) ?? '';
+    }
+    if (parsedKelurahan.isEmpty) {
+      if (rawAddr.toLowerCase().contains('sadang serang')) {
+        parsedKelurahan = 'Sadang Serang';
+      } else if (rawAddr.toLowerCase().contains('lebak gede')) {
+        parsedKelurahan = 'Lebak Gede';
+      } else if (rawAddr.toLowerCase().contains('sekeloa')) {
+        parsedKelurahan = 'Sekeloa';
+      } else if (rawAddr.toLowerCase().contains('coblong')) {
+        parsedKelurahan = 'Coblong';
+      }
+    }
+
     return WargaDampingan(
       wargaId: extractedWargaId,
       binId: extractedBinId,
       wargaName: json['wargaName']?.toString() ?? json['name']?.toString() ?? json['warga_name']?.toString() ?? 'Warga',
-      address: json['address']?.toString() ?? json['alamat']?.toString() ?? 'Alamat tidak diketahui',
-      kecamatan: json['kecamatan']?.toString() ?? '',
-      kelurahan: json['kelurahan']?.toString() ?? '',
-      rw: json['rw']?.toString() ?? json['rt_rw']?.toString() ?? json['rtRw']?.toString() ?? '',
+      address: rawAddr,
+      kecamatan: parsedKecamatan,
+      kelurahan: parsedKelurahan,
+      rw: parsedRw,
       mahasiswaId: extractMhsId(),
       pendampingName: extractPendampingName(),
       status: rawStatus.isEmpty ? 'Aktif' : rawStatus,

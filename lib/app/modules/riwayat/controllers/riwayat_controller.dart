@@ -56,12 +56,12 @@ final dailyPointsProvider = FutureProvider<int>((ref) async {
   final history = await ref.watch(pointHistoryProvider.future);
   final today = DateTime.now();
   return history
-      .where(
-        (h) =>
-            h.createdAt.year == today.year &&
-            h.createdAt.month == today.month &&
-            h.createdAt.day == today.day,
-      )
+      .where((h) {
+        final localDate = h.createdAt.toLocal();
+        return localDate.year == today.year &&
+            localDate.month == today.month &&
+            localDate.day == today.day;
+      })
       .fold<int>(0, (sum, h) => sum + h.points);
 });
 final totalPointsProvider = FutureProvider<int>((ref) async {

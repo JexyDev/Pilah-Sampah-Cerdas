@@ -1,4 +1,4 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import '../models/notification_entity.dart';
 
 /// Service untuk menyimpan dan mengelola riwayat notifikasi lokal per user/role.

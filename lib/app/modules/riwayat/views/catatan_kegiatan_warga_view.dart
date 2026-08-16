@@ -30,8 +30,7 @@ class CatatanKegiatanWargaView extends ConsumerWidget {
           ),
         ],
       ),
-      body: logsAsync.when(
-        data: (logs) {
+      body: logsAsync.when(skipLoadingOnReload: true, data: (logs) {
           if (logs.isEmpty) {
             return const EmptyState(
               message: 'Belum ada catatan kegiatan warga.',

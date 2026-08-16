@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../data/providers/repository_providers.dart';
@@ -66,9 +65,6 @@ class PemanfaatanSampahNotifier extends StateNotifier<PemanfaatanSampahState> {
         ref.invalidate(mahasiswaNotificationsProvider);
         return true;
       }
-    } on DioException catch (e) {
-      final msg = e.response?.data?['message']?.toString() ?? 'Gagal mengirim laporan pemanfaatan sampah.';
-      state = state.copyWith(isLoading: false, error: msg);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: NetworkExceptionHelper.getErrorMessage(e));
     }

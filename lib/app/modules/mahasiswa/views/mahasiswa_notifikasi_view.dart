@@ -95,8 +95,7 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
             child: RefreshIndicator(
               onRefresh: () async => ref.invalidate(mahasiswaNotificationsProvider),
               color: AppColors.primaryGreen,
-              child: notifAsync.when(
-                data: (list) {
+              child: notifAsync.when(skipLoadingOnReload: true, data: (list) {
                   // Filter berdasarkan kategori tab chip yang dipilih
                   final filteredList = list.where((n) {
                     if (_selectedFilter == 'Semua') return true;

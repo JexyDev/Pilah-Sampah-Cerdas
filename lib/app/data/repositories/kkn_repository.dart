@@ -76,6 +76,10 @@ abstract class KknRepository {
     required String fotoPath,
   });
 
+  /// Mengambil riwayat pengajuan izin/sakit
+  /// GET /api/v1/kkn/pengajuan-izin
+  Future<List<dynamic>> getPengajuanIzin();
+
   /// Mengambil data statistik dampak kelurahan (GET /api/v1/kkn/dampak-kelurahan)
   Future<DampakKelurahanData> getDampakKelurahan();
 }

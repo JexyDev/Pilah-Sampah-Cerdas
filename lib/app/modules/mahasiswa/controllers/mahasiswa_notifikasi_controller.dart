@@ -1,4 +1,4 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/notification_entity.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -15,7 +15,6 @@ bool _isMahasiswaNotification(NotificationEntity notif) {
 
   // Keyword & Tipe yang DILARANG untuk Mahasiswa KKN (Milik Warga / Petugas)
   final isForbidden = type.contains('TIMBANGAN_PEMILAHAN') ||
-      type.contains('VIOLATION') ||
       type.contains('JADWAL') ||
       type.contains('JEMPUT') ||
       type.contains('PENGANGKUTAN') ||
@@ -56,7 +55,12 @@ bool _isMahasiswaNotification(NotificationEntity notif) {
       title.contains('IZIN') ||
       title.contains('DPL') ||
       title.contains('POIN') ||
-      title.contains('KKN');
+      title.contains('KKN') ||
+      title.contains('PELANGGARAN') ||
+      title.contains('GEOFENCE') ||
+      title.contains('PENALTI') ||
+      desc.contains('PELANGGARAN') ||
+      desc.contains('GEOFENCE');
 
   if (!isMahasiswaTopic) return false;
 
@@ -81,6 +85,49 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
   } catch (_) {
     list = [];
   }
+
+  // Tambahkan riwayat poin (PointHistory) agar tampil di Notification Page
+  try {
+    final pointRepo = ref.read(wasteLogRepositoryProvider);
+    final pointHistory = await pointRepo.getPointHistoryByUser(userId);
+    for (final ph in pointHistory) {
+      if (ph.points > 0) {
+        list.add(NotificationEntity(
+          id: 'point_${ph.id}',
+          type: 'POIN_KKN',
+          title: 'Poin KKN Bertambah!',
+          desc: ph.description.isNotEmpty ? ph.description : 'Anda mendapatkan +${ph.points} poin.',
+          isRead: false,
+          time: ph.createdAt.toIso8601String().substring(0, 16).replaceAll('T', ' '),
+          icon: 'star',
+        ));
+      }
+    }
+  } catch (_) {}
+
+  // Tambahkan notifikasi persetujuan/penolakan Izin dari DPL
+  try {
+    final kknRepo = ref.read(kknRepositoryProvider);
+    final izinList = await kknRepo.getPengajuanIzin();
+    for (final izin in izinList) {
+      final status = izin['status']?.toString().toUpperCase();
+      if (status == 'APPROVED' || status == 'REJECTED') {
+        final isApproved = status == 'APPROVED';
+        final kategori = izin['kategori']?.toString() ?? 'Izin';
+        final timestamp = izin['reviewedAt']?.toString() ?? izin['createdAt']?.toString() ?? DateTime.now().toIso8601String();
+        
+        list.add(NotificationEntity(
+          id: 'izin_${izin['id']}',
+          type: 'IZIN',
+          title: isApproved ? 'Pengajuan $kategori Disetujui' : 'Pengajuan $kategori Ditolak',
+          desc: isApproved ? 'DPL telah menyetujui pengajuan Anda.' : 'DPL menolak pengajuan Anda. ${izin['rejectionReason'] ?? ''}',
+          isRead: false,
+          time: timestamp.substring(0, 16).replaceAll('T', ' '),
+          icon: isApproved ? 'check_circle' : 'cancel',
+        ));
+      }
+    }
+  } catch (_) {}
 
   final List<NotificationEntity> result = [];
 
@@ -119,8 +166,7 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
 /// Provider jumlah notifikasi belum dibaca untuk Mahasiswa KKN
 final mahasiswaUnreadNotificationCountProvider = Provider<int>((ref) {
   final notifAsync = ref.watch(mahasiswaNotificationsProvider);
-  return notifAsync.when(
-    data: (list) => list.where((n) => !n.isRead).length,
+  return notifAsync.when(skipLoadingOnReload: true, data: (list) => list.where((n) => !n.isRead).length,
     loading: () => 0,
     error: (_, __) => 0,
   );

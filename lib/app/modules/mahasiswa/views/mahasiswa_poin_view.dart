@@ -3,9 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/models/point_history_entity.dart';
+import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
 import '../../riwayat/controllers/riwayat_controller.dart';
+
+final pengajuanIzinCountProvider = FutureProvider.autoDispose<int>((ref) async {
+  try {
+    final repo = ref.read(kknRepositoryProvider);
+    final list = await repo.getPengajuanIzin();
+    return list.length;
+  } catch (e) {
+    return 0;
+  }
+});
 
 /// Halaman Poin KKN Mahasiswa — Mengikuti gaya visual Page Poin Warga:
 /// Header Putih Bersih, Total Poin KKN + Status Ranking, Stats 3 Kolom,
@@ -42,7 +53,7 @@ class MahasiswaPoinView extends ConsumerWidget {
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   // ── 2. Stats 3 Kolom ──────────────────────────────
-                  _buildStatsRow(mhsState, user != null ? ref.watch(pointHistoryProvider) : const AsyncValue.loading()),
+                  _buildStatsRow(mhsState, ref),
                   const SizedBox(height: 16),
 
                   // ── 3. Info Banner Poin KKN ─────────────────────────
@@ -150,17 +161,35 @@ class MahasiswaPoinView extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsRow(MahasiswaState mhsState, AsyncValue<List<PointHistoryEntity>> asyncHistory) {
-    final wargaCount = mhsState.wargaList.where((w) => w.isActivated).length;
+  Widget _buildStatsRow(MahasiswaState mhsState, WidgetRef ref) {
+    final user = ref.watch(authProvider).user;
+    final userName = user?.name ?? '';
+    final userRw = user?.rw ?? '-';
+
+    // Warga dampingan mahasiswa ini
+    final myWargaList = mhsState.wargaList.where((w) {
+      if (w.role != 'WARGA') return false;
+      
+      final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
+      final cleanUserRw = userRw.trim().replaceFirst(RegExp(r'^0+'), '');
+      
+      final isMyCitizen = w.pendampingName.trim().toLowerCase() == userName.trim().toLowerCase();
+      final isMyRw = cleanUserRw.isEmpty || cleanWargaRw == cleanUserRw;
+
+      return isMyCitizen && isMyRw;
+    }).toList();
+
+    final wargaCount = myWargaList.where((w) => w.isActivated).length;
     final points = mhsState.dashboard?.contributionPoints ?? 0;
     
+    final asyncHistory = ref.watch(pointHistoryProvider);
     int laporanCount = 0;
-    int izinCount = 0;
     if (asyncHistory.value != null) {
       final list = asyncHistory.value!;
       laporanCount = list.where((h) => h.description.toLowerCase().contains('pemanfaatan')).length;
-      izinCount = list.where((h) => h.description.toLowerCase().contains('izin') || h.description.toLowerCase().contains('sakit')).length;
     }
+
+    final izinCount = ref.watch(pengajuanIzinCountProvider).value ?? 0;
 
     // Total Input = Laporan Pemanfaatan Sampah + Warga Binaan yang Diaktivasi
     final totalInputCount = laporanCount + wargaCount;
@@ -311,8 +340,7 @@ class MahasiswaPoinView extends ConsumerWidget {
   }
 
   Widget _buildPoinHistoryList(AsyncValue<List<PointHistoryEntity>> asyncHistory) {
-    return asyncHistory.when(
-      loading: () => const Padding(
+    return asyncHistory.when(skipLoadingOnReload: true, loading: () => const Padding(
         padding: EdgeInsets.all(32),
         child: Center(
           child: CircularProgressIndicator(color: AppColors.primaryGreen),

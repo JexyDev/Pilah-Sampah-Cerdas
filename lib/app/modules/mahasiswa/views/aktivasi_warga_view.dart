@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../core/values/app_colors.dart';
 import '../../shared/widgets/qr_scanner_widget.dart';
+import '../../shared/widgets/feature_rating_dialog.dart';
 import '../controllers/aktivasi_warga_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
@@ -384,7 +385,18 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
           );
 
           if (mounted) {
-            Navigator.pop(context);
+            // Rating dialog 1-5 bintang (hanya muncul 1x saat pertama kali berhasil aktivasi warga binaan)
+            await showFeatureRatingOnceIfNeeded(
+              context: context,
+              featureKey: 'mahasiswa_aktivasi_warga',
+              featureTitle: 'Aktivasi Warga Berhasil! ⭐',
+              featureSubtitle: 'Bagaimana pengalaman Anda saat pertama kali membantu proses aktivasi tempat sampah warga binaan?',
+              roleTag: 'Mahasiswa KKN',
+            );
+
+            if (mounted) {
+              Navigator.pop(context);
+            }
           }
         }
       } else if (mounted) {
