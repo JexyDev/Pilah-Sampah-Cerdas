@@ -99,7 +99,25 @@ export const userController = {
         res.status(403).json({
           success: false,
           error: "FORBIDDEN",
-          message: "Hanya Admin yang dapat membuat akun Admin DLH, Camat, atau Lurah",
+          message: "Hanya Super User/Developer yang dapat membuat akun role ini",
+        });
+      } else if (error.message === "PHONE_CONFLICT" || error.code === "P2002") {
+        res.status(409).json({
+          success: false,
+          error: "CONFLICT",
+          message: "Nomor telepon (+62) sudah terdaftar di sistem TrashCare",
+        });
+      } else if (error.message === "PHONE_REQUIRED") {
+        res.status(400).json({
+          success: false,
+          error: "VALIDATION_ERROR",
+          message: "Nomor telepon wajib diisi",
+        });
+      } else if (error.message === "RW_ALREADY_HAS_PETUGAS_RESIDU") {
+        res.status(409).json({
+          success: false,
+          error: "CONFLICT",
+          message: "Wilayah RW ini sudah memiliki Petugas Pemilah yang terdaftar",
         });
       } else if (error.message === "ROLE_NOT_FOUND") {
         res.status(400).json({
@@ -115,7 +133,7 @@ export const userController = {
         res.status(500).json({
           success: false,
           error: "INTERNAL_SERVER_ERROR",
-          message: "Gagal membuat pengguna",
+          message: error.message ? `Gagal membuat pengguna: ${error.message}` : "Gagal membuat pengguna",
         });
       }
     }
