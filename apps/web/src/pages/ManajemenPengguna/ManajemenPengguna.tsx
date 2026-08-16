@@ -2145,9 +2145,9 @@ const ManajemenPengguna: React.FC = () => {
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                             >
                               {(() => {
-                                const activeKelList = filteredKelurahanList.length > 0 ? filteredKelurahanList : kelurahanList;
+                                const activeKelList = filteredKelurahanList;
                                 return activeKelList.length === 0 ? (
-                                  <option value="">-- Belum ada Kelurahan di Master Data --</option>
+                                  <option value="">-- Belum ada Kelurahan untuk Kecamatan ini --</option>
                                 ) : (
                                   activeKelList.map((kl: any) => {
                                     const kName = getCleanKelName(kl.name || kl.nama);
@@ -2280,9 +2280,9 @@ const ManajemenPengguna: React.FC = () => {
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                             >
                               {(() => {
-                                const activeKelList = filteredKelurahanList.length > 0 ? filteredKelurahanList : kelurahanList;
+                                const activeKelList = filteredKelurahanList;
                                 return activeKelList.length === 0 ? (
-                                  <option value="">-- Belum ada Kelurahan di Master Data --</option>
+                                  <option value="">-- Belum ada Kelurahan untuk Kecamatan ini --</option>
                                 ) : (
                                   activeKelList.map((kl: any) => {
                                     const kName = getCleanKelName(kl.name || kl.nama);

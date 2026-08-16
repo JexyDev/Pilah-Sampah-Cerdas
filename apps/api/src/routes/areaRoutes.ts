@@ -267,7 +267,7 @@ router.get("/kecamatan", async (req, res) => {
     const where: any = {};
     if (kId) where.kabupatenId = Number(kId);
 
-    let data = await prisma.kecamatan.findMany({
+    const data = await prisma.kecamatan.findMany({
       where,
       include: {
         kabupaten: {
@@ -283,47 +283,6 @@ router.get("/kecamatan", async (req, res) => {
       orderBy: { name: "asc" },
     });
 
-    if (data.length === 0 && !kId) {
-      let jabar = await prisma.provinsi.findFirst({
-        where: { name: { equals: "Jawa Barat", mode: "insensitive" } },
-      });
-      if (!jabar) {
-        jabar = await prisma.provinsi.create({ data: { name: "Jawa Barat" } });
-      }
-
-      let bandung = await prisma.kabupaten.findFirst({
-        where: {
-          provinsiId: jabar.id,
-          name: { equals: "Kota Bandung", mode: "insensitive" },
-        },
-      });
-      if (!bandung) {
-        bandung = await prisma.kabupaten.create({
-          data: { name: "Kota Bandung", provinsiId: jabar.id },
-        });
-      }
-
-      await prisma.kecamatan.create({
-        data: { name: "Kecamatan Coblong", kabupatenId: bandung.id },
-      });
-
-      data = await prisma.kecamatan.findMany({
-        where,
-        include: {
-          kabupaten: {
-            include: {
-              provinsi: { select: { id: true, name: true } },
-            },
-          },
-          kelurahans: {
-            select: { id: true, name: true },
-            orderBy: { name: "asc" },
-          },
-        },
-        orderBy: { name: "asc" },
-      });
-    }
-
     // Normalize: ensure every kecamatan name starts with "Kecamatan "
     const normalizeKecName = (n: string) => {
       if (!n) return "Kecamatan Coblong";
@@ -333,7 +292,18 @@ router.get("/kecamatan", async (req, res) => {
       const clean = trimmed.replace(/^kec\.?\s+/i, "").trim();
       return `Kecamatan ${clean.charAt(0).toUpperCase()}${clean.slice(1)}`;
     };
-    const normalized = data.map((d: any) => ({ ...d, name: normalizeKecName(d.name) }));
+
+    const normalized = data.map((d: any) => {
+      const kelCount = d.kelurahans?.length || 0;
+      return {
+        ...d,
+        name: normalizeKecName(d.name),
+        totalKelurahan: kelCount,
+        isConfigured: kelCount > 0,
+        status: kelCount > 0 ? "CONFIGURED" : "BELUM_DIISI",
+        statusLabel: kelCount > 0 ? "Aktif" : "Belum Ditambahkan",
+      };
+    });
 
     res.json({ success: true, data: normalized });
   } catch (err: any) {
@@ -456,7 +426,7 @@ router.get("/kelurahan", async (req, res) => {
     if (id) {
       where.kecamatanId = Number(id);
     }
-    let data = await prisma.kelurahan.findMany({
+    const data = await prisma.kelurahan.findMany({
       where,
       include: {
         kecamatan: {
@@ -470,62 +440,39 @@ router.get("/kelurahan", async (req, res) => {
       orderBy: { name: "asc" },
     });
 
-    if (data.length === 0 && !id) {
-      let jabar = await prisma.provinsi.findFirst({
-        where: { name: { equals: "Jawa Barat", mode: "insensitive" } },
-      });
-      if (!jabar) {
-        jabar = await prisma.provinsi.create({ data: { name: "Jawa Barat" } });
-      }
-
-      let bandung = await prisma.kabupaten.findFirst({
-        where: { name: { equals: "Kota Bandung", mode: "insensitive" } },
-      });
-      if (!bandung) {
-        bandung = await prisma.kabupaten.create({
-          data: { name: "Kota Bandung", provinsiId: jabar.id },
-        });
-      }
-
-      let coblong = await prisma.kecamatan.findFirst({
-        where: {
-          OR: [
-            { name: { equals: "Kecamatan Coblong", mode: "insensitive" } },
-            { name: { equals: "Coblong", mode: "insensitive" } },
-          ],
-        },
-      });
-      if (!coblong) {
-        coblong = await prisma.kecamatan.create({
-          data: { name: "Kecamatan Coblong", kabupatenId: bandung.id },
-        });
-      }
-
-      const defaultKelurahans = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
-      for (const kelName of defaultKelurahans) {
-        const exist = await prisma.kelurahan.findFirst({
-          where: { name: { equals: kelName, mode: "insensitive" } },
-        });
-        if (!exist) {
-          await prisma.kelurahan.create({
-            data: { name: kelName, kecamatanId: coblong.id },
-          });
-        }
-      }
-
-      data = await prisma.kelurahan.findMany({
-        where,
+    // If filtered by kecamatanId and empty, check if kecamatan exists and return explicit status
+    if (id) {
+      const kec = await prisma.kecamatan.findUnique({
+        where: { id: Number(id) },
         include: {
-          kecamatan: {
+          kabupaten: {
             include: {
-              kabupaten: {
-                include: { provinsi: { select: { id: true, name: true } } },
-              },
+              provinsi: { select: { id: true, name: true } },
             },
           },
         },
-        orderBy: { name: "asc" },
       });
+
+      if (!kec) {
+        return res.status(404).json({
+          success: false,
+          message: `Kecamatan dengan ID ${id} tidak ditemukan`,
+        });
+      }
+
+      if (data.length === 0) {
+        return res.json({
+          success: true,
+          data: [],
+          meta: {
+            kecamatanId: Number(id),
+            kecamatanName: kec.name,
+            totalKelurahan: 0,
+            status: "BELUM_DIISI",
+            message: "Data kelurahan belum ditambahkan untuk kecamatan ini",
+          },
+        });
+      }
     }
 
     // Normalize kecamatan names inside kelurahan response
@@ -689,7 +636,7 @@ router.get("/rw", async (req, res) => {
     } else if (name) {
       where.kelurahan = { name: { contains: String(name), mode: "insensitive" } };
     }
-    let data = await prisma.rw.findMany({
+    const data = await prisma.rw.findMany({
       where,
       include: {
         kelurahan: {
@@ -709,38 +656,30 @@ router.get("/rw", async (req, res) => {
       orderBy: { name: "asc" },
     });
 
-    // Auto-seed default RW 01..06 if empty
-    if (data.length === 0 && !id && !name) {
-      const kelurahans = await prisma.kelurahan.findMany();
-      if (kelurahans.length > 0) {
-        for (const kel of kelurahans) {
-          for (let i = 1; i <= 6; i++) {
-            const rwName = `RW ${String(i).padStart(2, "0")}`;
-            await prisma.rw.upsert({
-              where: { kelurahanId_name: { kelurahanId: kel.id, name: rwName } },
-              create: { name: rwName, kelurahanId: kel.id },
-              update: {},
-            });
-          }
-        }
-        data = await prisma.rw.findMany({
-          where,
-          include: {
-            kelurahan: {
-              include: {
-                kecamatan: {
-                  include: {
-                    kabupaten: {
-                      include: {
-                        provinsi: { select: { id: true, name: true } },
-                      },
-                    },
-                  },
-                },
-              },
-            },
+    if (id) {
+      const kel = await prisma.kelurahan.findUnique({
+        where: { id: String(id) },
+        include: { kecamatan: true },
+      });
+
+      if (!kel) {
+        return res.status(404).json({
+          success: false,
+          message: `Kelurahan dengan ID ${id} tidak ditemukan`,
+        });
+      }
+
+      if (data.length === 0) {
+        return res.json({
+          success: true,
+          data: [],
+          meta: {
+            kelurahanId: String(id),
+            kelurahanName: kel.name,
+            totalRw: 0,
+            status: "BELUM_DIISI",
+            message: "Data RW belum ditambahkan untuk kelurahan ini",
           },
-          orderBy: { name: "asc" },
         });
       }
     }

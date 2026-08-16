@@ -43,22 +43,7 @@ const MasterWilayah: React.FC = () => {
       setError("");
       try {
         const response = await api.get(`/areas/${activeTab}`);
-        let fetchedData = response.data.data || [];
-        
-        // Integrasi data kelurahan untuk tab kecamatan jika deploy belum mengembalikan relasinya
-        if (activeTab === "kecamatan") {
-          try {
-            const kelResponse = await api.get('/areas/kelurahan');
-            const kelData = kelResponse.data.data || [];
-            fetchedData = fetchedData.map((k: any) => ({
-              ...k,
-              kelurahans: k.kelurahans?.length > 0 ? k.kelurahans : kelData
-            }));
-          } catch (e) {
-            console.error("Gagal sinkronisasi data kelurahan:", e);
-          }
-        }
-        
+        const fetchedData = response.data?.data || [];
         setData(fetchedData);
       } catch (err) {
         console.error(`Gagal memuat master wilayah (${activeTab}):`, err);
@@ -303,9 +288,15 @@ const MasterWilayah: React.FC = () => {
                     )}
 
                     <td className="py-3.5 px-4 text-center">
-                      <span className="inline-flex items-center justify-center px-2 py-1 bg-emerald-50 text-emerald-600 rounded-md font-black text-[10px] tracking-wide uppercase border border-emerald-100/50">
-                        Aktif
-                      </span>
+                      {activeTab === "kecamatan" && (item.kelurahans?.length || item.totalKelurahan || 0) === 0 ? (
+                        <span className="inline-flex items-center justify-center px-2 py-1 bg-amber-50 text-amber-700 rounded-md font-black text-[10px] tracking-wide uppercase border border-amber-200/80 shadow-2xs">
+                          Belum Ditambahkan
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center justify-center px-2 py-1 bg-emerald-50 text-emerald-600 rounded-md font-black text-[10px] tracking-wide uppercase border border-emerald-100/50">
+                          Aktif
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))

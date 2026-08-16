@@ -54,21 +54,31 @@ async function main() {
   }
 
   const kelurahanSpecs = [
-    { name: "Cipaganti", lurahName: "Ida, A.KS.", rwCount: 7, phone: "+6281210000001" },
-    { name: "Dago", lurahName: "Jusni Giri Susilowati, S.Sos., M.Si.", rwCount: 13, phone: "+6281210000002" },
-    { name: "Lebakgede", lurahName: "Usman Adireja, S.Sos.", rwCount: 13, phone: "+6281210000003" },
-    { name: "Lebaksiliwangi", lurahName: "Budi Rukmana, S.Sos., M.Si.", rwCount: 6, phone: "+6281210000004" },
-    { name: "Sadangserang", lurahName: "Leny Mariana, S.Sos., M.AP.", rwCount: 21, phone: "+6281210000005" },
-    { name: "Sekeloa", lurahName: "Tirta Gumelar, S.STP.", rwCount: 16, phone: "+6281210000006" },
+    { name: "Cipaganti", altName: "Cipaganti", lurahName: "Ida, A.KS.", rwCount: 7, phone: "+6281210000001" },
+    { name: "Dago", altName: "Dago", lurahName: "Jusni Giri Susilowati, S.Sos., M.Si.", rwCount: 13, phone: "+6281210000002" },
+    { name: "Lebak Gede", altName: "Lebakgede", lurahName: "Usman Adireja, S.Sos.", rwCount: 13, phone: "+6281210000003" },
+    { name: "Lebak Siliwangi", altName: "Lebaksiliwangi", lurahName: "Budi Rukmana, S.Sos., M.Si.", rwCount: 6, phone: "+6281210000004" },
+    { name: "Sadang Serang", altName: "Sadangserang", lurahName: "Leny Mariana, S.Sos., M.AP.", rwCount: 21, phone: "+6281210000005" },
+    { name: "Sekeloa", altName: "Sekeloa", lurahName: "Tirta Gumelar, S.STP.", rwCount: 16, phone: "+6281210000006" },
   ];
 
   for (const spec of kelurahanSpecs) {
     let kel = await prisma.kelurahan.findFirst({
-      where: { name: { equals: spec.name, mode: "insensitive" }, kecamatanId: kecamatan.id },
+      where: {
+        OR: [
+          { name: { equals: spec.name, mode: "insensitive" } },
+          { name: { equals: spec.altName, mode: "insensitive" } },
+        ],
+      },
     });
     if (!kel) {
       kel = await prisma.kelurahan.create({
         data: { name: spec.name, kecamatanId: kecamatan.id },
+      });
+    } else if (kel.kecamatanId !== kecamatan.id) {
+      kel = await prisma.kelurahan.update({
+        where: { id: kel.id },
+        data: { kecamatanId: kecamatan.id },
       });
     }
 

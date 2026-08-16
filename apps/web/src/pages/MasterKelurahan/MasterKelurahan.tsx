@@ -138,8 +138,8 @@ const MasterKelurahan: React.FC = () => {
       const kels: KelurahanItem[] = (resKel.data?.data || []).map((kl: any) => ({
         id: String(kl.id),
         nama: kl.name || kl.nama || "Dago",
-        kecamatanId: Number(kl.kecamatanId || kl.kecamatan?.id || 1),
-        kecamatanNama: formatKecName(kl.kecamatan?.name || kl.kecamatan?.nama || "Kecamatan Coblong"),
+        kecamatanId: Number(kl.kecamatanId || kl.kecamatan?.id || 0),
+        kecamatanNama: formatKecName(kl.kecamatan?.name || kl.kecamatan?.nama || ""),
         kabupatenNama: kl.kecamatan?.kabupaten?.name || kl.kecamatan?.kabupaten?.nama || "Kota Bandung",
         provinsiNama: kl.kecamatan?.kabupaten?.provinsi?.name || kl.kecamatan?.kabupaten?.provinsi?.nama || "Jawa Barat",
       }));
@@ -492,7 +492,9 @@ const MasterKelurahan: React.FC = () => {
                       <td className="py-3.5 px-4">
                         <div className="flex flex-wrap items-center gap-1.5 max-w-2xl">
                           {group.items.length === 0 ? (
-                            <span className="text-slate-400 text-[11px] italic font-semibold">Belum ada kelurahan</span>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 text-amber-700 border border-amber-200/80 text-[11px] font-bold shadow-2xs">
+                              Belum ditambahkan
+                            </span>
                           ) : (
                             group.items.map((kel) => (
                               <div
