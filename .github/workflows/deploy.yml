@@ -57,6 +57,11 @@ jobs:
 
             echo "=== 2. Updating Backend (apps/api) ==="
             cd apps/api
+
+            # Hentikan backend sementara agar pool koneksi database PostgreSQL bebas (menghindari error: too many clients)
+            $PM2_BIN delete psc-backend 2>/dev/null || true
+            echo "$VPS_PASS" | sudo -S -u postgres psql -d psc_db -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE pid <> pg_backend_pid();" 2>/dev/null || true
+
             npm install --silent
             npx prisma generate
 
