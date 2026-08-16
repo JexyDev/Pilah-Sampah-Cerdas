@@ -542,45 +542,36 @@ const Notifikasi: React.FC = () => {
   });
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto animate-fade-in">
-      {/* 1. GLASSMORPHISM HEADER BANNER */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-[#009966] to-emerald-950 text-white p-6 sm:p-8 shadow-xl shadow-emerald-900/10 border border-emerald-500/20">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-400/20 border border-emerald-300/30 text-emerald-200 text-xs font-black backdrop-blur-md">
-                <Bell size={13} /> Pusat Notifikasi
-              </div>
-              {unreadCount > 0 && (
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-rose-500/80 text-white text-xs font-black backdrop-blur-md border border-rose-400/40">
-                  {unreadCount} Belum Dibaca
-                </span>
-              )}
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              Pusat Notifikasi &amp; Aktivitas
-            </h1>
-
-            <p className="text-emerald-100/90 text-xs sm:text-sm max-w-2xl font-medium leading-relaxed">
-              Daftar pemberitahuan terkini mengenai pemantauan tempat sampah, jadwal penjemputan residu, dan aktivitas KKN wilayah Coblong.
-            </p>
+    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
+      {/* 1. CLEAN FLAT HEADER */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Pusat Notifikasi</h1>
+            {unreadCount > 0 && (
+              <span className="px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
+                {unreadCount} Belum Dibaca
+              </span>
+            )}
           </div>
+          <p className="text-slate-500 text-sm mt-1">
+            Daftar pemberitahuan terkini pemantauan tempat sampah, jadwal penjemputan residu, dan aktivitas KKN.
+          </p>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <button
-              onClick={handleMarkAllRead}
-              className="px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-black flex items-center gap-2 backdrop-blur-md transition-all cursor-pointer"
-            >
-              <CheckCheck size={16} /> Tandai Dibaca Semua
-            </button>
-            <button
-              onClick={handleClearAll}
-              className="px-4 py-2.5 rounded-2xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/30 text-rose-200 text-xs font-black flex items-center gap-2 backdrop-blur-md transition-all cursor-pointer"
-            >
-              <Trash2 size={16} /> Hapus Semua
-            </button>
-          </div>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={handleMarkAllRead}
+            className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-2 shadow-2xs transition-all cursor-pointer"
+          >
+            <CheckCheck size={15} /> Tandai Dibaca Semua
+          </button>
+          <button
+            onClick={handleClearAll}
+            className="px-4 py-2.5 rounded-xl bg-white border border-rose-200 hover:bg-rose-50 text-rose-700 text-xs font-bold flex items-center gap-2 shadow-2xs transition-all cursor-pointer"
+          >
+            <Trash2 size={15} /> Hapus Semua
+          </button>
         </div>
       </div>
 

@@ -269,10 +269,10 @@ const Pengaturan: React.FC = () => {
   ];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1500px] mx-auto animate-fade-in text-slate-800">
-      <div className="space-y-1 bg-transparent pb-2">
-        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Pengaturan Profil</h1>
-        <p className="text-xs sm:text-sm font-medium text-slate-500 max-w-4xl leading-relaxed">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
+      <div>
+        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Pengaturan Profil</h1>
+        <p className="text-slate-500 text-sm mt-1">
           Kelola profil pengguna, keamanan akun, peranan wilayah, serta preferensi sistem.
         </p>
       </div>

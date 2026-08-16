@@ -110,16 +110,12 @@ export const RekapNilaiKknPage: React.FC = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-on-surface">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-emerald-800 via-teal-700 to-indigo-800 rounded-3xl p-6 sm:p-8 text-white shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
+      {/* Clean Flat Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold mb-3">
-            <GraduationCap size={14} />
-            Submenu Penilaian KKN (3 / 3)
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Rekapitulasi & Lembar Nilai Akhir KKN</h1>
-          <p className="text-emerald-100 text-sm mt-1 max-w-2xl">
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Rekapitulasi & Lembar Nilai Akhir KKN</h1>
+          <p className="text-slate-500 text-sm mt-1">
             Kompilasi perhitungan nilai akhir kumulatif (40% Individu, 30% Output Proker, 30% Presensi) siap cetak dan ekspor resmi.
           </p>
         </div>
@@ -127,16 +123,16 @@ export const RekapNilaiKknPage: React.FC = () => {
         <div className="flex items-center gap-2.5">
           <button
             onClick={handleExportCsv}
-            className="flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white px-4 py-2.5 rounded-2xl font-bold text-xs backdrop-blur-md transition-all cursor-pointer"
+            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2.5 rounded-xl font-bold text-xs shadow-2xs transition-all cursor-pointer"
           >
-            <Download size={16} />
+            <Download size={15} />
             Export Nilai (CSV)
           </button>
           <button
             onClick={handlePrint}
-            className="flex items-center gap-2 bg-white text-emerald-900 hover:bg-emerald-50 px-4 py-2.5 rounded-2xl font-bold text-xs shadow-sm transition-all cursor-pointer"
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-all cursor-pointer"
           >
-            <Printer size={16} />
+            <Printer size={15} />
             Cetak Lembar Nilai
           </button>
         </div>

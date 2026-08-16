@@ -6,7 +6,6 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Award,
   UserCheck,
   Search,
   Save,
@@ -96,23 +95,19 @@ export const PenilaianMahasiswaPage: React.FC = () => {
   });
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-on-surface">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-teal-700 rounded-3xl p-6 sm:p-8 text-white shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
+      {/* Clean Flat Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold mb-3">
-            <Award size={14} />
-            Submenu Penilaian KKN (1 / 3)
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Penilaian Kinerja Mahasiswa</h1>
-          <p className="text-indigo-100 text-sm mt-1 max-w-2xl">
-            Form penilaian performa, inisiatif lapangan, dan keaktifan individu mahasiswa KKN bimbingan DPL.
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Penilaian Mahasiswa KKN</h1>
+          <p className="text-slate-500 text-sm mt-1">
+            Form evaluasi performa, inisiatif lapangan, dan keaktifan individu mahasiswa KKN bimbingan DPL.
           </p>
         </div>
 
-        <div className="bg-white/15 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-center min-w-[160px]">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-100">Total Mahasiswa</span>
-          <p className="text-2xl font-black text-white mt-0.5">{students.length}</p>
+        <div className="bg-white border border-slate-200/80 px-4 py-2.5 rounded-xl text-center shadow-2xs">
+          <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Total Mahasiswa</span>
+          <span className="text-lg font-extrabold text-slate-800">{students.length} Mahasiswa</span>
         </div>
       </div>
 
@@ -123,7 +118,7 @@ export const PenilaianMahasiswaPage: React.FC = () => {
           <select
             value={selectedKelompokId}
             onChange={(e) => setSelectedKelompokId(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-indigo-500"
+            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500"
           >
             <option value="ALL">Semua Kelompok Binaan</option>
             {kelompokList.map((k) => (
@@ -141,7 +136,7 @@ export const PenilaianMahasiswaPage: React.FC = () => {
             placeholder="Cari nama, NIM, jurusan..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-indigo-500"
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
           />
         </div>
       </div>

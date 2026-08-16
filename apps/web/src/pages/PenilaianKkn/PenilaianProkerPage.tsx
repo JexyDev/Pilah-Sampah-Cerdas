@@ -10,8 +10,7 @@ import {
   Save,
   Search,
   Loader2,
-  Building,
-  Award
+  Building
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { dplService, type ProgramKerjaItem } from "../../services/dplService";
@@ -93,23 +92,19 @@ export const PenilaianProkerPage: React.FC = () => {
   });
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-on-surface">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-teal-700 via-emerald-600 to-teal-800 rounded-3xl p-6 sm:p-8 text-white shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
+      {/* Clean Flat Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold mb-3">
-            <Award size={14} />
-            Submenu Penilaian KKN (2 / 3)
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Penilaian Output Program Kerja</h1>
-          <p className="text-emerald-100 text-sm mt-1 max-w-2xl">
-            Evaluasi capaian riil, kebermanfaatan, serta akuntabilitas program kerja kelompok mahasiswa KKN di lapangan.
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Penilaian Program Kerja KKN</h1>
+          <p className="text-slate-500 text-sm mt-1">
+            Evaluasi capaian output, dampak kebermanfaatan, serta akuntabilitas program kerja mahasiswa di lapangan.
           </p>
         </div>
 
-        <div className="bg-white/15 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-center min-w-[160px]">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-100">Total Program Kerja</span>
-          <p className="text-2xl font-black text-white mt-0.5">{prokerList.length}</p>
+        <div className="bg-white border border-slate-200/80 px-4 py-2.5 rounded-xl text-center shadow-2xs">
+          <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Total Program Kerja</span>
+          <span className="text-lg font-extrabold text-slate-800">{prokerList.length} Proker</span>
         </div>
       </div>
 
