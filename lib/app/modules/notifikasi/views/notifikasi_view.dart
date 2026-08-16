@@ -202,31 +202,11 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                             ref.invalidate(wargaNotificationsProvider);
                           }
 
-                          final type = item.type.toLowerCase();
-                          final title = item.title.toLowerCase();
-
-                          if (type.contains('penuh') || 
-                              type.contains('setuju') || 
-                              type.contains('tolak') || 
-                              title.contains('penuh') || 
-                              title.contains('pengajuan') ||
-                              title.contains('kritis')) {
-                            Navigator.pushNamed(context, '/reset-bin');
-                          } else if (type.contains('poin') || 
-                                     type.contains('punishment') ||
-                                     type.contains('penalti') ||
-                                     type.contains('pengurangan') ||
-                                     title.contains('poin') || 
-                                     title.contains('penalti') ||
-                                     title.contains('punishment') ||
-                                     title.contains('berkurang') ||
-                                     title.contains('potong') ||
-                                     title.contains('berhasil') ||
-                                     title.contains('sukses') ||
-                                     title.contains('setor') ||
-                                     title.contains('sampah')) {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const PoinView()));
-                          }
+                          Navigator.pushNamed(
+                            context,
+                            '/detail-notifikasi',
+                            arguments: item,
+                          );
                         },
                       );
                     },

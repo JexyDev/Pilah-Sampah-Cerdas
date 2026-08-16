@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
@@ -151,6 +151,9 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
                     if (!notif.isRead) {
                       await ref.read(markReadProvider.notifier).markRead(notif.id);
                       ref.invalidate(petugasPemilahanNotificationsProvider);
+                    }
+                    if (context.mounted) {
+                      Navigator.pushNamed(context, '/detail-notifikasi', arguments: notif);
                     }
                   },
                   borderRadius: BorderRadius.circular(12),

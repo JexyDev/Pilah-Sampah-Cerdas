@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../modules/notifikasi/views/detail_notifikasi_view.dart';
 import '../modules/splash/splash_view.dart';
 import '../modules/auth/views/login_view.dart';
 import '../modules/auth/views/register_view.dart';
@@ -64,6 +65,8 @@ class AppPages {
         return _buildRoute(const ResetBinView(), settings);
       case AppRoutes.notifikasi:
         return _buildRoute(const NotifikasiView(), settings);
+      case AppRoutes.detailNotifikasi:
+        return _buildRoute(const DetailNotifikasiView(), settings);
       case AppRoutes.mahasiswaNotifikasi:
         return _buildRoute(const MahasiswaNotifikasiView(), settings);
       case AppRoutes.petugasNotifikasi:

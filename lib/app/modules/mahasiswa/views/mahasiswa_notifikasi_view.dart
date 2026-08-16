@@ -160,6 +160,9 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
                             await ref.read(markReadProvider.notifier).markRead(item.id);
                             ref.invalidate(mahasiswaNotificationsProvider);
                           }
+                          if (context.mounted) {
+                            Navigator.pushNamed(context, '/detail-notifikasi', arguments: item);
+                          }
                         },
                       );
                     },

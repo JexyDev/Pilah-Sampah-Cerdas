@@ -16,6 +16,7 @@ class AppRoutes {
   static const String resetBin = '/reset-bin';
   static const String poin = '/poin';
   static const String notifikasi = '/notifikasi';
+  static const String detailNotifikasi = '/detail-notifikasi';
   static const String timbanganPemilahan = '/timbangan-pemilahan';
   static const String tentang = '/tentang';
   static const String kknAttendance = '/kkn-attendance';
