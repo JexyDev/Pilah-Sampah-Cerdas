@@ -228,8 +228,8 @@ export default function RekapSetoran() {
         icon={Receipt}
         category="Audit Transaksi Pemilahan"
         scope="Kecamatan Coblong"
-        title="Rekapitulasi Setoran Sampah"
-        description="Laporan rekapitulasi audit transaksi penyetoran sampah terpilah warga di tingkat Rukun Warga secara terpadu dan akuntabel."
+        title="Pemantauan & Rekapitulasi"
+        description="Laporan pemantauan dan rekapitulasi transaksi penyetoran sampah terpilah warga di tingkat Rukun Warga secara terpadu dan akuntabel."
         actions={
           <>
             <button

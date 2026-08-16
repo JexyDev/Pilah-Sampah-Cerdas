@@ -373,7 +373,7 @@ export const PemanfaatanSampah: React.FC = () => {
         icon={Sparkles}
         category="Tata Kelola Daur Ulang Hilir"
         scope="Kecamatan Coblong"
-        title="Pengelolaan Sampah"
+        title="Pengolahan & Inovasi"
         description="Pencatatan operasional, sirkulasi bahan baku, dan monitoring konversi hasil panen daur ulang lingkungan (Buruan Sae, Maggot BSF, POC, Bank Sampah)."
         actions={
           canSubmitRecap ? (

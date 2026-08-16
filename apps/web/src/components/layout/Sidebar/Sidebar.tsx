@@ -24,6 +24,10 @@ import {
   Tags,
   Recycle,
   ShieldCheck,
+  Truck,
+  ClipboardList,
+  Lightbulb,
+  TrendingUp,
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -310,26 +314,40 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       header: "TATA KELOLA SAMPAH",
       items: [
         {
-          type: "group",
-          label: "Tempat Sampah & Penyetoran",
+          to: "/master-data/manajemen-tempat-sampah",
           icon: Trash2,
-          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"] as UserRole[],
-          children: [
-            { to: "/master-data/manajemen-tempat-sampah", label: "Manajemen Tempat Sampah", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "RW", "MAHASISWA_KKN"] as UserRole[] },
-            { to: "/penyetoran-sampah", label: "Pemilahan Sampah", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"] as UserRole[] },
-            { to: "/pengangkutan-residu", label: "Pengumpulan & Pengangkutan", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "PETUGAS_RESIDU"] as UserRole[] },
-          ],
+          label: "Manajemen Tempat Sampah",
+          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN"] as UserRole[],
         },
         {
-          type: "group",
-          label: "Pengolahan & Hasil",
-          icon: Sprout,
-          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PANITIA_TASKFORCE"] as UserRole[],
-          children: [
-            { to: "/pemantauan-rekapitulasi", label: "Pemantauan & Rekapitulasi", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PANITIA_TASKFORCE"] as UserRole[] },
-            { to: "/pengelolaan-sampah", label: "Pengolahan & Inovasi", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "RW"] as UserRole[] },
-            { to: "/hasil-pemanfaatan", label: "Pemanfaatan & Hasil", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "RW"] as UserRole[] },
-          ],
+          to: "/penyetoran-sampah",
+          icon: Recycle,
+          label: "Pemilahan Sampah",
+          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"] as UserRole[],
+        },
+        {
+          to: "/pengangkutan-residu",
+          icon: Truck,
+          label: "Pengumpulan & Pengangkutan",
+          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[],
+        },
+        {
+          to: "/pemantauan-rekapitulasi",
+          icon: ClipboardList,
+          label: "Pemantauan & Rekapitulasi",
+          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PANITIA_TASKFORCE", "PEMIMPIN", "PETUGAS_RESIDU", "MAHASISWA_KKN", "DPL"] as UserRole[],
+        },
+        {
+          to: "/pengelolaan-sampah",
+          icon: Lightbulb,
+          label: "Pengolahan & Inovasi",
+          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PEMIMPIN", "PANITIA_TASKFORCE", "MAHASISWA_KKN", "DPL", "WARGA"] as UserRole[],
+        },
+        {
+          to: "/hasil-pemanfaatan",
+          icon: TrendingUp,
+          label: "Pemanfaatan & Hasil",
+          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PEMIMPIN", "PANITIA_TASKFORCE", "MAHASISWA_KKN", "DPL", "WARGA"] as UserRole[],
         },
       ],
     },

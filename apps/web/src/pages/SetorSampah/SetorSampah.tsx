@@ -296,8 +296,8 @@ export default function SetorSampah() {
         icon={ScanLine}
         category="Monitoring Real-Time Penyetoran"
         scope={isLurah ? `Kelurahan ${userKelurahan || "Cipaganti"}` : "Kecamatan Coblong"}
-        title="Penyetoran Sampah Terpilah"
-        description="Pemantauan real-time transaksi penyetoran sampah warga, inferensi model AI, dan bukti telemetri foto lapangan secara terpadu."
+        title="Pemilahan Sampah"
+        description="Pemantauan real-time transaksi penyetoran sampah terpilah warga, inferensi model AI, dan bukti telemetri foto lapangan secara terpadu."
         actions={
           <button
             onClick={() => fetchLogs(false)}

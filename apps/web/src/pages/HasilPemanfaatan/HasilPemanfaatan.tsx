@@ -331,7 +331,7 @@ export const HasilPemanfaatan: React.FC = () => {
         icon={Sparkles}
         category="Suara Warga & Evaluasi Daur Ulang"
         scope="Kecamatan Coblong"
-        title="Hasil Pemanfaatan & Ulasan Warga"
+        title="Pemanfaatan & Hasil"
         description="Pusat aspirasi, masukan, dan evaluasi hasil daur ulang serta pemanfaatan sampah di kelurahan secara transparan dan akuntabel."
         actions={
           <button
