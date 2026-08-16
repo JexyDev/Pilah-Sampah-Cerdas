@@ -134,7 +134,7 @@ export const PemanfaatanSampah: React.FC = () => {
 
   const displayAreas = useMemo(() => {
     if (!isDpl || !dplKelurahan) return areas;
-    const cleanDplKel = dplKelurahan.toLowerCase().replace(/^kel\.\s*/i, "").trim();
+    const cleanDplKel = (dplKelurahan || "").toLowerCase().replace(/^kel\.\s*/i, "").trim();
     return areas.filter((a) => {
       const aKel = (a.kelurahan?.name || "").toLowerCase().replace(/^kel\.\s*/i, "").trim();
       return aKel.includes(cleanDplKel) || cleanDplKel.includes(aKel);
@@ -144,34 +144,34 @@ export const PemanfaatanSampah: React.FC = () => {
   // Filtered Items Logic
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      const q = searchQuery.toLowerCase().trim();
-      const rwName = item.rw?.name || `RW ${item.rwId}`;
-      const kelName = item.rw?.kelurahan?.name || "";
+      const q = (searchQuery || "").toLowerCase().trim();
+      const rwName = item?.rw?.name || (item?.rwId ? `RW ${item.rwId}` : "");
+      const kelName = item?.rw?.kelurahan?.name || "";
 
       const matchesSearch =
         !q ||
-        item.program.toLowerCase().includes(q) ||
-        (item.teknologi && item.teknologi.toLowerCase().includes(q)) ||
-        (item.bahanBaku && item.bahanBaku.toLowerCase().includes(q)) ||
+        (item?.program || "").toLowerCase().includes(q) ||
+        (item?.teknologi && item.teknologi.toLowerCase().includes(q)) ||
+        (item?.bahanBaku && item.bahanBaku.toLowerCase().includes(q)) ||
         rwName.toLowerCase().includes(q) ||
         kelName.toLowerCase().includes(q) ||
-        item.nomorCaraPemanfaatan.toLowerCase().includes(q);
+        (item?.nomorCaraPemanfaatan || "").toLowerCase().includes(q);
 
       const matchesProgram =
         selectedProgramFilter === "ALL"
           ? true
-          : item.program.toUpperCase().includes(selectedProgramFilter);
+          : (item?.program || "").toUpperCase().includes(selectedProgramFilter);
 
       const matchesBahan =
         selectedBahanFilter === "ALL"
           ? true
-          : (item.bahanBaku || "").toUpperCase().includes(selectedBahanFilter);
+          : (item?.bahanBaku || "").toUpperCase().includes(selectedBahanFilter);
 
       const matchesRw =
-        selectedRwFilter === "ALL" ? true : item.rwId.toString() === selectedRwFilter;
+        selectedRwFilter === "ALL" ? true : item?.rwId?.toString() === selectedRwFilter;
 
       const matchesDplKelurahan =
-        !isDpl || !dplKelurahan || kelName.toLowerCase().includes(dplKelurahan.toLowerCase());
+        !isDpl || !dplKelurahan || kelName.toLowerCase().includes((dplKelurahan || "").toLowerCase());
 
       return matchesSearch && matchesProgram && matchesBahan && matchesRw && matchesDplKelurahan;
     });

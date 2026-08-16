@@ -173,27 +173,27 @@ export const HasilPemanfaatan: React.FC = () => {
   // Filtered feedback calculation
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      const q = searchQuery.toLowerCase().trim();
-      const rwName = item.rw?.name || (item.rwId ? `RW ${item.rwId}` : "");
-      const kelName = item.rw?.kelurahan?.name || "";
+      const q = (searchQuery || "").toLowerCase().trim();
+      const rwName = item?.rw?.name || (item?.rwId ? `RW ${item.rwId}` : "");
+      const kelName = item?.rw?.kelurahan?.name || "";
 
       const matchesSearch =
         !q ||
-        item.wargaNama.toLowerCase().includes(q) ||
-        item.judul.toLowerCase().includes(q) ||
-        item.isiKritikSaran.toLowerCase().includes(q) ||
-        item.kategori.toLowerCase().includes(q) ||
+        (item?.wargaNama || "").toLowerCase().includes(q) ||
+        (item?.judul || "").toLowerCase().includes(q) ||
+        (item?.isiKritikSaran || "").toLowerCase().includes(q) ||
+        (item?.kategori || "").toLowerCase().includes(q) ||
         rwName.toLowerCase().includes(q) ||
         kelName.toLowerCase().includes(q);
 
       const matchesStatus =
-        statusFilter === "ALL" ? true : item.status === statusFilter;
+        statusFilter === "ALL" ? true : item?.status === statusFilter;
 
       const matchesKategori =
-        kategoriFilter === "ALL" ? true : item.kategori === kategoriFilter;
+        kategoriFilter === "ALL" ? true : (item?.kategori || "").toLowerCase() === (kategoriFilter || "").toLowerCase();
 
       const matchesDplKelurahan =
-        !isDpl || !dplKelurahan || kelName.toLowerCase().includes(dplKelurahan.toLowerCase());
+        !isDpl || !dplKelurahan || kelName.toLowerCase().includes((dplKelurahan || "").toLowerCase());
 
       return matchesSearch && matchesStatus && matchesKategori && matchesDplKelurahan;
     });
@@ -202,23 +202,23 @@ export const HasilPemanfaatan: React.FC = () => {
   // Filtered programs calculation
   const filteredPrograms = useMemo(() => {
     return programs.filter((p) => {
-      const q = searchQuery.toLowerCase().trim();
-      const rwName = p.rw?.name || `RW ${p.rwId}`;
-      const kelName = p.rw?.kelurahan?.name || "";
+      const q = (searchQuery || "").toLowerCase().trim();
+      const rwName = p?.rw?.name || (p?.rwId ? `RW ${p.rwId}` : "");
+      const kelName = p?.rw?.kelurahan?.name || "";
       const matchesSearch =
         !q ||
-        p.namaProgram.toLowerCase().includes(q) ||
-        p.jenisProgram.toLowerCase().includes(q) ||
-        (p.lokasiFasilitas || "").toLowerCase().includes(q) ||
-        (p.targetPenerimaManfaat || "").toLowerCase().includes(q) ||
+        (p?.namaProgram || "").toLowerCase().includes(q) ||
+        (p?.jenisProgram || "").toLowerCase().includes(q) ||
+        (p?.lokasiFasilitas || "").toLowerCase().includes(q) ||
+        (p?.targetPenerimaManfaat || "").toLowerCase().includes(q) ||
         rwName.toLowerCase().includes(q) ||
         kelName.toLowerCase().includes(q);
 
       const matchesKategori =
-        kategoriFilter === "ALL" ? true : p.jenisProgram.toLowerCase().includes(kategoriFilter.toLowerCase());
+        kategoriFilter === "ALL" ? true : (p?.jenisProgram || "").toLowerCase().includes((kategoriFilter || "").toLowerCase());
 
       const matchesDplKelurahan =
-        !isDpl || !dplKelurahan || kelName.toLowerCase().includes(dplKelurahan.toLowerCase());
+        !isDpl || !dplKelurahan || kelName.toLowerCase().includes((dplKelurahan || "").toLowerCase());
 
       return matchesSearch && matchesKategori && matchesDplKelurahan;
     });
@@ -830,23 +830,23 @@ export const HasilPemanfaatan: React.FC = () => {
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#009966] font-extrabold flex items-center justify-center border border-emerald-100 text-sm">
-                        {item.wargaNama.charAt(0).toUpperCase()}
+                        {(item.wargaNama || "W").charAt(0).toUpperCase()}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="font-extrabold text-slate-900 text-sm">{item.wargaNama}</h4>
+                          <h4 className="font-extrabold text-slate-900 text-sm">{item.wargaNama || "Warga"}</h4>
                           <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
                             {item.rw?.name || (item.rwId ? `RW ${item.rwId}` : "Warga Coblong")}
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                          {new Date(item.createdAt).toLocaleDateString("id-ID", {
+                          {item.createdAt ? new Date(item.createdAt).toLocaleDateString("id-ID", {
                             day: "numeric",
                             month: "long",
                             year: "numeric",
                             hour: "2-digit",
                             minute: "2-digit",
-                          })}
+                          }) : "-"}
                         </p>
                       </div>
                     </div>
