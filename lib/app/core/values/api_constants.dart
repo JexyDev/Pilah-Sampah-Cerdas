@@ -37,6 +37,8 @@ class ApiEndpoints {
   static const String binsResetPetugasStatus = '/bins/reset/petugas-status';
   static const String binsResetPetugasWilayah = '/bins/reset/petugas-wilayah';
   static const String binsResetSetDefaultPetugas = '/bins/reset/set-default-petugas';
+  static const String binsResetRequests = '/bins/reset-requests';
+  static String binsApproveReset(String id) => '/bins/reset/$id/approve';
   static const String aiDetect = '/ai/detect';
   static const String wasteDetect = '/waste/detect';
 
