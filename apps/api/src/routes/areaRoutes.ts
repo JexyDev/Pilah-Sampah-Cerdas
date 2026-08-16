@@ -10,6 +10,7 @@
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import { binController } from "../controllers/binController.js";
+import { optionalAuthMiddleware } from "../middlewares/authMiddleware.js";
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -894,6 +895,6 @@ router.get("/rt", async (req, res) => {
  *       200:
  *         description: Ringkasan data lokasi RT/RW
  */
-router.get("/rt-rw", binController.getAreas);
+router.get("/rt-rw", optionalAuthMiddleware, binController.getAreas);
 
 export default router;

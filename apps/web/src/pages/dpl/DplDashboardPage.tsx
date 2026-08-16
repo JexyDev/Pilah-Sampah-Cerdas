@@ -590,7 +590,7 @@ export const DplDashboardPage: React.FC = () => {
         </table>
 
         <div style="margin-bottom: 10px; font-size: 8.5pt; color: #334155; background: #f8fafc; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-          <strong>Ringkasan Eksekutif:</strong> Rata-rata Presensi: <strong>${avgAttendance}%</strong> | Rata-rata Skor DPL: <strong>${avgScore}</strong> | Mahasiswa Terasesmen: <strong>${assessedStudents.length} / ${students.length} Mahasiswa</strong>
+          <strong>Ringkasan Eksekutif:</strong> Rerata Presensi: <strong>${avgAttendance}%</strong> | Rerata Skor DPL: <strong>${avgScore}</strong> | Mahasiswa Terasesmen: <strong>${assessedStudents.length} / ${students.length} Mahasiswa</strong>
         </div>
 
         <table class="data">
@@ -754,10 +754,10 @@ export const DplDashboardPage: React.FC = () => {
           <button
             onClick={handlePrintOfficialReport}
             className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-            title="Cetak Rekapitulasi Nilai & Evaluasi Resmi untuk LPPM/DLH"
+            title="Cetak Rekapitulasi Nilai & Evaluasi Resmi KKN untuk LPPM UNIKOM"
           >
             <Printer size={14} />
-            <span>Cetak Rekap LPPM</span>
+            <span>Cetak Rekap LPPM UNIKOM</span>
           </button>
           <button
             onClick={loadDashboardData}
@@ -855,7 +855,7 @@ export const DplDashboardPage: React.FC = () => {
               <div>
                 <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1">Presensi Lapangan</h4>
                 <h3 className="text-base font-extrabold text-slate-900">Tingkat Kehadiran Mahasiswa Binaan</h3>
-                <p className="text-xs text-slate-500 mt-1">Persentase rata-rata kehadiran mahasiswa pada kegiatan KKN di kelompok bimbingan Anda.</p>
+                <p className="text-xs text-slate-500 mt-1">Persentase rerata kehadiran mahasiswa pada kegiatan KKN di kelompok bimbingan Anda.</p>
               </div>
 
               <div className="flex items-center gap-4 bg-emerald-50/70 border border-emerald-200 p-4 rounded-xl">
@@ -866,7 +866,7 @@ export const DplDashboardPage: React.FC = () => {
                   <span className="text-2xl font-black text-emerald-900">
                     {groups.length > 0 ? avgOverallAttendance : 0}%
                   </span>
-                  <p className="text-[11px] text-emerald-700 font-bold">Rata-Rata Kehadiran Kelompok Binaan</p>
+                  <p className="text-[11px] text-emerald-700 font-bold">Rerata Kehadiran Kelompok Binaan</p>
                 </div>
               </div>
 
@@ -1071,7 +1071,7 @@ export const DplDashboardPage: React.FC = () => {
               </span>
             </div>
             <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
-              <span className="text-slate-500 text-[11px] font-semibold block">Rata-rata Presensi</span>
+              <span className="text-slate-500 text-[11px] font-semibold block">Rerata Presensi</span>
               <span className="text-xl font-extrabold text-emerald-600 mt-0.5 block">
                 {groups.length > 0 ? Math.round(groups.reduce((acc, g) => acc + (g.avgAttendanceRate || 0), 0) / groups.length) : 0}%
               </span>
@@ -1109,7 +1109,7 @@ export const DplDashboardPage: React.FC = () => {
                     <th className="px-4 py-3.5">Kelurahan & Wilayah RW</th>
                     <th className="px-4 py-3.5 text-center">Jumlah Mahasiswa</th>
                     <th className="px-4 py-3.5 text-center">Tempat Sampah Aktif</th>
-                    <th className="px-4 py-3.5 text-center">Rata Presensi (%)</th>
+                    <th className="px-4 py-3.5 text-center">Rerata Presensi (%)</th>
                     <th className="px-4 py-3.5 text-center">Total Poin</th>
                     <th className="px-4 py-3.5 text-center">Aksi</th>
                   </tr>
@@ -1228,7 +1228,7 @@ export const DplDashboardPage: React.FC = () => {
               </span>
             </div>
             <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
-              <span className="text-slate-500 text-[11px] font-semibold block">Rata-rata Skor DPL</span>
+              <span className="text-slate-500 text-[11px] font-semibold block">Rerata Skor DPL</span>
               <span className="text-xl font-extrabold text-blue-700 mt-0.5 block">
                 {(() => {
                   const assessed = students.filter(s => s.assessmentScore !== null && s.assessmentScore !== undefined);

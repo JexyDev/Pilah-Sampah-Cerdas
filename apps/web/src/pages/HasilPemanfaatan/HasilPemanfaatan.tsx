@@ -1,13 +1,3 @@
-/**
- * Project: TrashCare
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * 
- * Component: Hasil Pemanfaatan & Ulasan Warga (Kritik, Saran & Evaluasi Daur Ulang)
- * - 100% End-to-End API Integration dengan Backend PostgreSQL (`/api/v1/pemanfaatan/feedback`)
- * - Fitur Lengkap: CRUD Kritik & Saran, Beri Tanggapan Resmi (Admin/RW/DLH), Filter Status & Kategori, Rating Bintang, Lightbox Foto, Pagination Standar TrashCare.
- */
-
 import React, { useEffect, useState, useMemo } from "react";
 import {
   MessageSquare,
@@ -25,6 +15,11 @@ import {
   MessageCircle,
   Trash2,
   Building2,
+  PackageCheck,
+  Leaf,
+  Boxes,
+  TrendingUp,
+  MapPin,
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
@@ -62,10 +57,42 @@ interface FeedbackItem {
   } | null;
 }
 
+interface PemanfaatanProgram {
+  id: string;
+  namaProgram: string;
+  jenisProgram: string;
+  kategoriBahan: "ORGANIK" | "ANORGANIK" | string;
+  jumlahBahanMasukKg: number;
+  jumlahHasilKg: number;
+  unitHasil: string;
+  lokasiFasilitas?: string | null;
+  penanggungJawab?: string | null;
+  targetPenerimaManfaat?: string | null;
+  nilaiEkonomiRp?: number | null;
+  tanggalPencatatan: string;
+  status: "TERENCANA" | "PROSES" | "PANEN" | "DISTRIBUSI" | string;
+  fotoDokumentasiUrl?: string | null;
+  rwId: number;
+  rw?: {
+    id: number;
+    name: string;
+    kelurahan?: {
+      name: string;
+    };
+  };
+}
+
 export const HasilPemanfaatan: React.FC = () => {
   const { user } = useAuthStore();
+  const [activeSectionTab, setActiveSectionTab] = useState<"HASIL" | "FEEDBACK">("HASIL");
+
+  // Feedback State
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Program / Product Outputs State
+  const [programs, setPrograms] = useState<PemanfaatanProgram[]>([]);
+  const [loadingPrograms, setLoadingPrograms] = useState(true);
 
   // Search & Filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -111,14 +138,33 @@ export const HasilPemanfaatan: React.FC = () => {
     } catch (e: any) {
       console.warn("[HasilPemanfaatan] Gagal memuat feedback:", e?.message || e);
       setItems([]);
-      showToast.error(e?.response?.data?.message || "Gagal memuat data kritik & saran pemanfaatan");
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchProgramList = async () => {
+    try {
+      setLoadingPrograms(true);
+      const res = await api.get("/pemanfaatan");
+      if (res.data && res.data.success) {
+        setPrograms(Array.isArray(res.data.data) ? res.data.data : []);
+      } else if (Array.isArray(res.data)) {
+        setPrograms(res.data);
+      } else {
+        setPrograms([]);
+      }
+    } catch (e: any) {
+      console.warn("[HasilPemanfaatan] Gagal memuat program:", e?.message || e);
+      setPrograms([]);
+    } finally {
+      setLoadingPrograms(false);
+    }
+  };
+
   useEffect(() => {
     fetchFeedbackList();
+    fetchProgramList();
   }, []);
 
   const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
@@ -153,21 +199,53 @@ export const HasilPemanfaatan: React.FC = () => {
     });
   }, [items, searchQuery, statusFilter, kategoriFilter, isDpl, dplKelurahan]);
 
+  // Filtered programs calculation
+  const filteredPrograms = useMemo(() => {
+    return programs.filter((p) => {
+      const q = searchQuery.toLowerCase().trim();
+      const rwName = p.rw?.name || `RW ${p.rwId}`;
+      const kelName = p.rw?.kelurahan?.name || "";
+      const matchesSearch =
+        !q ||
+        p.namaProgram.toLowerCase().includes(q) ||
+        p.jenisProgram.toLowerCase().includes(q) ||
+        (p.lokasiFasilitas || "").toLowerCase().includes(q) ||
+        (p.targetPenerimaManfaat || "").toLowerCase().includes(q) ||
+        rwName.toLowerCase().includes(q) ||
+        kelName.toLowerCase().includes(q);
+
+      const matchesKategori =
+        kategoriFilter === "ALL" ? true : p.jenisProgram.toLowerCase().includes(kategoriFilter.toLowerCase());
+
+      const matchesDplKelurahan =
+        !isDpl || !dplKelurahan || kelName.toLowerCase().includes(dplKelurahan.toLowerCase());
+
+      return matchesSearch && matchesKategori && matchesDplKelurahan;
+    });
+  }, [programs, searchQuery, kategoriFilter, isDpl, dplKelurahan]);
+
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter, kategoriFilter, itemsPerPage]);
+  }, [searchQuery, statusFilter, kategoriFilter, itemsPerPage, activeSectionTab]);
+
+  const activeDatasetLength = activeSectionTab === "HASIL" ? filteredPrograms.length : filteredItems.length;
 
   const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
-  }, [filteredItems.length, itemsPerPage]);
+    return Math.max(1, Math.ceil(activeDatasetLength / itemsPerPage));
+  }, [activeDatasetLength, itemsPerPage]);
 
   const paginatedItems = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredItems.slice(start, start + itemsPerPage);
   }, [filteredItems, currentPage, itemsPerPage]);
 
-  // Metrics summary
+  const paginatedPrograms = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredPrograms.slice(start, start + itemsPerPage);
+  }, [filteredPrograms, currentPage, itemsPerPage]);
+
+  // Metrics summary - Feedback
   const totalCount = items.length;
   const pendingCount = items.filter((i) => i.status === "MENUNGGU").length;
   const inProgressCount = items.filter((i) => i.status === "DALAM_PROSES").length;
@@ -177,6 +255,19 @@ export const HasilPemanfaatan: React.FC = () => {
     const sum = items.reduce((acc, curr) => acc + (curr.rating || 5), 0);
     return (sum / items.length).toFixed(1);
   }, [items]);
+
+  // Metrics summary - Products
+  const totalPanenKg = useMemo(() => {
+    return programs.reduce((acc, curr) => acc + (curr.jumlahHasilKg || 0), 0);
+  }, [programs]);
+
+  const totalNilaiEkonomi = useMemo(() => {
+    return programs.reduce((acc, curr) => acc + (curr.nilaiEkonomiRp || 0), 0);
+  }, [programs]);
+
+  const totalBahanMasukKg = useMemo(() => {
+    return programs.reduce((acc, curr) => acc + (curr.jumlahBahanMasukKg || 0), 0);
+  }, [programs]);
 
   // Handlers - Submit New Feedback
   const handleAddSubmit = async (e: React.FormEvent) => {
@@ -283,15 +374,18 @@ export const HasilPemanfaatan: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "SELESAI":
+      case "DISTRIBUSI":
+      case "PANEN":
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <CheckCircle2 size={13} /> Selesai Ditindaklanjuti
+            <CheckCircle2 size={13} /> {status === "DISTRIBUSI" ? "Telah Didistribusikan" : status === "PANEN" ? "Siap Panen/Terkonversi" : "Selesai Ditindaklanjuti"}
           </span>
         );
       case "DALAM_PROSES":
+      case "PROSES":
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-sky-50 text-sky-700 border border-sky-200">
-            <Clock size={13} /> Dalam Proses
+            <Clock size={13} /> {status === "PROSES" ? "Dalam Pengolahan" : "Dalam Proses"}
           </span>
         );
       case "DITOLAK":
@@ -303,7 +397,7 @@ export const HasilPemanfaatan: React.FC = () => {
       default:
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-700 border border-amber-200">
-            <AlertCircle size={13} /> Menunggu Tanggapan
+            <AlertCircle size={13} /> {status === "TERENCANA" ? "Terjadwal" : "Menunggu Tanggapan"}
           </span>
         );
     }
@@ -329,7 +423,7 @@ export const HasilPemanfaatan: React.FC = () => {
       {/* Clean Enterprise Page Header */}
       <PageHeader
         icon={Sparkles}
-        category="Suara Warga & Evaluasi Daur Ulang"
+        category="Tata Kelola Hilir & Hasil Olahan"
         scope={
           user?.peran === "DPL" || user?.peran === "DOSEN_PEMBIMBING"
             ? user?.wilayah || (user?.kelurahan ? `Kel. ${user.kelurahan}` : "Wilayah Dampingan KKN")
@@ -340,308 +434,529 @@ export const HasilPemanfaatan: React.FC = () => {
             : "Kecamatan Coblong"
         }
         title="Pemanfaatan & Hasil"
-        description="Pusat aspirasi, masukan, dan evaluasi hasil daur ulang serta pemanfaatan sampah di kelurahan secara transparan dan akuntabel."
+        description="Pusat pemantauan konversi produk hasil daur ulang (Kompos, Maggot BSF, Pupuk POC, Saldo Bank Sampah) dan evaluasi kepuasan pemanfaatan warga."
         actions={
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-          >
-            <Plus size={15} /> <span>Sampaikan Kritik & Saran</span>
-          </button>
+          activeSectionTab === "FEEDBACK" ? (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Plus size={15} /> <span>Sampaikan Kritik & Saran</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                fetchProgramList();
+                fetchFeedbackList();
+              }}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <RefreshCw size={14} className={loadingPrograms ? "animate-spin" : ""} /> <span>Sinkron Data</span>
+            </button>
+          )
         }
       />
 
-      {/* KPI Metric Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
-        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-          <div className="p-3 bg-slate-100 text-slate-700 rounded-2xl shrink-0">
-            <MessageSquare className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Total Aspirasi</p>
-            <p className="text-lg font-black text-slate-900 mt-0.5">{totalCount}</p>
-          </div>
-        </div>
-
-        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl shrink-0 border border-amber-100">
-            <AlertCircle className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Menunggu</p>
-            <p className="text-lg font-black text-amber-600 mt-0.5">{pendingCount}</p>
-          </div>
-        </div>
-
-        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-          <div className="p-3 bg-sky-50 text-sky-600 rounded-2xl shrink-0 border border-sky-100">
-            <Clock className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Dalam Proses</p>
-            <p className="text-lg font-black text-sky-600 mt-0.5">{inProgressCount}</p>
-          </div>
-        </div>
-
-        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl shrink-0 border border-emerald-100">
-            <CheckCircle2 className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Ditindaklanjuti</p>
-            <p className="text-lg font-black text-emerald-700 mt-0.5">{resolvedCount}</p>
-          </div>
-        </div>
-
-        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5 col-span-2 lg:col-span-1">
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl shrink-0 border border-purple-100">
-            <Star className="w-5 h-5 fill-purple-600" />
-          </div>
-          <div>
-            <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Kepuasan Warga</p>
-            <p className="text-lg font-black text-purple-700 mt-0.5">{avgRating} <span className="text-xs font-semibold text-slate-400">/ 5.0</span></p>
-          </div>
-        </div>
+      {/* Segmented Top Navigation Sub-Tabs */}
+      <div className="bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 flex items-center gap-1.5">
+        <button
+          onClick={() => {
+            setActiveSectionTab("HASIL");
+            setSearchQuery("");
+            setKategoriFilter("ALL");
+          }}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            activeSectionTab === "HASIL"
+              ? "bg-white text-emerald-700 shadow-xs border border-slate-200/60"
+              : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+          }`}
+        >
+          <PackageCheck size={16} />
+          <span>Rekapitulasi Produk & Hasil Olahan ({programs.length})</span>
+        </button>
+        <button
+          onClick={() => {
+            setActiveSectionTab("FEEDBACK");
+            setSearchQuery("");
+            setKategoriFilter("ALL");
+          }}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            activeSectionTab === "FEEDBACK"
+              ? "bg-white text-emerald-700 shadow-xs border border-slate-200/60"
+              : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+          }`}
+        >
+          <MessageSquare size={16} />
+          <span>Aspirasi & Evaluasi Warga ({items.length})</span>
+        </button>
       </div>
 
-      {/* Interactive Controls & Filters Bar */}
-      <div className="bg-white p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-        {/* Top Controls Row */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          {/* Search Input */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input
-              type="text"
-              placeholder="Cari berdasarkan nama warga, judul, isi kritik, atau wilayah RW..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-2xl text-xs font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#009966] focus:bg-white transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-              >
-                <X size={14} />
-              </button>
+      {/* VIEW TAB 1: REKAPITULASI PRODUK & HASIL OLAHAN */}
+      {activeSectionTab === "HASIL" && (
+        <>
+          {/* KPI Metric Summary Cards - Hasil Produk */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+            <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl shrink-0 border border-emerald-100">
+                <Leaf className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Hasil Panen Olahan</p>
+                <p className="text-lg font-black text-emerald-700 mt-0.5">{totalPanenKg.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-400">Kg/L</span></p>
+              </div>
+            </div>
+
+            <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl shrink-0 border border-amber-100">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Nilai Ekonomi Daur Ulang</p>
+                <p className="text-lg font-black text-amber-600 mt-0.5">Rp {totalNilaiEkonomi.toLocaleString("id-ID")}</p>
+              </div>
+            </div>
+
+            <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-sky-50 text-sky-600 rounded-2xl shrink-0 border border-sky-100">
+                <Boxes className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Total Bahan Terolah</p>
+                <p className="text-lg font-black text-sky-600 mt-0.5">{totalBahanMasukKg.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-400">Kg</span></p>
+              </div>
+            </div>
+
+            <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl shrink-0 border border-purple-100">
+                <Building2 className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Program & Fasilitas</p>
+                <p className="text-lg font-black text-purple-700 mt-0.5">{programs.length} <span className="text-xs font-semibold text-slate-400">Titik Olahan</span></p>
+              </div>
+            </div>
+          </div>
+
+          {/* Search & Filter Bar - Hasil Produk */}
+          <div className="bg-white p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input
+                  type="text"
+                  placeholder="Cari nama program, jenis olahan, lokasi fasilitas, atau penerima manfaat..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-2xl text-xs font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#009966] focus:bg-white transition-all"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <select
+                  value={kategoriFilter}
+                  onChange={(e) => setKategoriFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-[#009966] transition-all cursor-pointer"
+                >
+                  <option value="ALL">Semua Jenis Pengolahan</option>
+                  <option value="Kompos">Kompos Organik (Buruan Sae)</option>
+                  <option value="Maggot">Maggot BSF</option>
+                  <option value="POC">Pupuk Organik Cair (POC)</option>
+                  <option value="Bank Sampah">Bank Sampah Anorganik</option>
+                </select>
+
+                <button
+                  onClick={fetchProgramList}
+                  title="Sinkronkan data dari database"
+                  className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                >
+                  <RefreshCw size={14} className={loadingPrograms ? "animate-spin" : ""} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Table Hasil Olahan & Distribusi */}
+          <div className="bg-white rounded-3xl border border-slate-200/90 shadow-2xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs whitespace-nowrap">
+                <thead className="bg-slate-50 text-slate-700 font-extrabold border-b border-slate-200/80 uppercase tracking-wider text-[10.5px]">
+                  <tr>
+                    <th className="px-4 py-3.5 text-center w-12">No</th>
+                    <th className="px-4 py-3.5">Nama Program & Fasilitas</th>
+                    <th className="px-4 py-3.5">Jenis Olahan</th>
+                    <th className="px-4 py-3.5">Wilayah RW</th>
+                    <th className="px-4 py-3.5 text-center">Bahan Masuk</th>
+                    <th className="px-4 py-3.5 text-center">Hasil Panen</th>
+                    <th className="px-4 py-3.5 text-center">Nilai Ekonomi</th>
+                    <th className="px-4 py-3.5">Penerima Manfaat</th>
+                    <th className="px-4 py-3.5 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedPrograms.map((p, idx) => (
+                    <tr key={p.id} className="hover:bg-slate-50/80 transition">
+                      <td className="px-4 py-3.5 text-center font-bold text-slate-400">
+                        {(currentPage - 1) * itemsPerPage + idx + 1}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className="font-extrabold text-slate-900 block text-sm">{p.namaProgram}</span>
+                        <span className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5 font-medium">
+                          <MapPin size={12} /> {p.lokasiFasilitas || "Fasilitas Komunal"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                          {p.jenisProgram}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-md text-[11px] inline-block">
+                          {p.rw?.name || `RW ${p.rwId}`} ({p.rw?.kelurahan?.name || "Coblong"})
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-center font-bold text-slate-700">
+                        {p.jumlahBahanMasukKg} Kg
+                      </td>
+                      <td className="px-4 py-3.5 text-center font-extrabold text-emerald-700">
+                        {p.jumlahHasilKg} {p.unitHasil || "Kg"}
+                      </td>
+                      <td className="px-4 py-3.5 text-center font-extrabold text-amber-600">
+                        {p.nilaiEkonomiRp ? `Rp ${p.nilaiEkonomiRp.toLocaleString("id-ID")}` : "-"}
+                      </td>
+                      <td className="px-4 py-3.5 font-medium text-slate-600">
+                        {p.targetPenerimaManfaat || "Warga Sekitar RW"}
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
+                        {getStatusBadge(p.status)}
+                      </td>
+                    </tr>
+                  ))}
+
+                  {paginatedPrograms.length === 0 && (
+                    <tr>
+                      <td colSpan={9} className="p-12 text-center text-slate-400 italic">
+                        Belum ada data produk hasil pemanfaatan sampah yang terdaftar.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="p-4 border-t border-slate-100">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  itemsPerPage={itemsPerPage}
+                  onItemsPerPageChange={setItemsPerPage}
+                  totalItems={activeDatasetLength}
+                />
+              </div>
             )}
           </div>
+        </>
+      )}
 
-          {/* Kategori Dropdown Filter */}
-          <div className="flex items-center gap-2">
-            <div className="relative w-full sm:w-56">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-              <select
-                value={kategoriFilter}
-                onChange={(e) => setKategoriFilter(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 pl-9 pr-3 py-2.5 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-[#009966] transition-all cursor-pointer"
-              >
-                <option value="ALL">Semua Kategori</option>
-                <option value="Pengolahan Kompos">Pengolahan Kompos</option>
-                <option value="Bank Sampah">Bank Sampah</option>
-                <option value="Rumah Maggot BSF">Rumah Maggot BSF</option>
-                <option value="Pupuk Organik Cair (POC)">Pupuk Organik Cair (POC)</option>
-                <option value="Kualitas Layanan & Fasilitas">Kualitas Layanan &amp; Fasilitas</option>
-              </select>
+      {/* VIEW TAB 2: ASPIRASI & EVALUASI WARGA */}
+      {activeSectionTab === "FEEDBACK" && (
+        <>
+          {/* KPI Metric Summary Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
+            <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-slate-100 text-slate-700 rounded-2xl shrink-0">
+                <MessageSquare className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Total Aspirasi</p>
+                <p className="text-lg font-black text-slate-900 mt-0.5">{totalCount}</p>
+              </div>
             </div>
 
-            <button
-              onClick={fetchFeedbackList}
-              title="Sinkronkan data dari database"
-              className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
-            >
-              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-            </button>
-          </div>
-        </div>
-
-        {/* Filter Status Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none border-t border-slate-100 pt-3">
-          {[
-            { id: "ALL", label: "Semua Status" },
-            { id: "MENUNGGU", label: "Menunggu Tanggapan" },
-            { id: "DALAM_PROSES", label: "Dalam Proses" },
-            { id: "SELESAI", label: "Selesai Ditindaklanjuti" },
-            { id: "DITOLAK", label: "Ditolak" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setStatusFilter(tab.id)}
-              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
-                statusFilter === tab.id
-                  ? "bg-[#009966] text-white shadow-xs"
-                  : "bg-slate-50 text-slate-600 hover:bg-slate-100"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Main Feedback List Section */}
-      {loading ? (
-        <div className="bg-white p-12 rounded-3xl border border-slate-200/90 shadow-2xs text-center flex flex-col items-center justify-center gap-3">
-          <RefreshCw size={28} className="animate-spin text-[#009966]" />
-          <p className="text-xs font-bold text-slate-500">Memuat data kritik &amp; saran dari database...</p>
-        </div>
-      ) : paginatedItems.length === 0 ? (
-        <div className="bg-white p-12 rounded-3xl border border-slate-200/90 shadow-2xs text-center flex flex-col items-center justify-center gap-3">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-[#009966] flex items-center justify-center border border-emerald-100">
-            <MessageSquare size={28} />
-          </div>
-          <div>
-            <h4 className="font-extrabold text-slate-800 text-sm">Tidak Ada Kritik &amp; Saran</h4>
-            <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 font-medium">
-              Belum ada entri kritik &amp; saran pemanfaatan sampah yang sesuai kriteria pencarian saat ini.
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              setSearchQuery("");
-              setStatusFilter("ALL");
-              setKategoriFilter("ALL");
-            }}
-            className="mt-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
-          >
-            Reset Filter
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {paginatedItems.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-2xs hover:border-slate-300 transition-all space-y-4"
-            >
-              {/* Header: Citizen Info & Status Badge */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                  {/* Avatar */}
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 font-extrabold flex items-center justify-center border border-emerald-200 text-sm shrink-0">
-                    {item.wargaNama ? item.wargaNama.charAt(0).toUpperCase() : "W"}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-extrabold text-sm text-slate-900">{item.wargaNama}</h4>
-                      <span className="text-[11px] font-bold text-slate-400">•</span>
-                      <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
-                        {item.rw?.name ? `${item.rw.name} (${item.rw.kelurahan?.name || "Coblong"})` : item.rwId ? `RW ${item.rwId}` : "Warga Kelurahan"}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                      {new Date(item.createdAt).toLocaleDateString("id-ID", {
-                        weekday: "long",
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  {getStatusBadge(item.status)}
-                </div>
+            <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl shrink-0 border border-amber-100">
+                <AlertCircle className="w-5 h-5" />
               </div>
+              <div>
+                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Menunggu</p>
+                <p className="text-lg font-black text-amber-600 mt-0.5">{pendingCount}</p>
+              </div>
+            </div>
 
-              {/* Title, Category & Stars */}
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-black uppercase tracking-wider">
-                      {item.kategori}
-                    </span>
-                  </div>
-                  {renderStars(item.rating || 5)}
-                </div>
+            <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-sky-50 text-sky-600 rounded-2xl shrink-0 border border-sky-100">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Dalam Proses</p>
+                <p className="text-lg font-black text-sky-600 mt-0.5">{inProgressCount}</p>
+              </div>
+            </div>
 
-                <h3 className="font-extrabold text-base text-slate-900 leading-snug">
-                  {item.judul}
-                </h3>
-                <p className="text-xs text-slate-600 font-medium leading-relaxed whitespace-pre-line">
-                  {item.isiKritikSaran}
-                </p>
+            <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl shrink-0 border border-emerald-100">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Ditindaklanjuti</p>
+                <p className="text-lg font-black text-emerald-700 mt-0.5">{resolvedCount}</p>
+              </div>
+            </div>
 
-                {/* Evidence Photo thumbnail */}
-                {item.fotoBuktiUrl && (
-                  <div className="pt-2">
-                    <button
-                      onClick={() => setPreviewPhotoUrl(item.fotoBuktiUrl || null)}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 cursor-pointer"
-                    >
-                      📷 Lihat Foto Lampiran Bukti
-                    </button>
-                  </div>
+            <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5 col-span-2 lg:col-span-1">
+              <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl shrink-0 border border-purple-100">
+                <Star className="w-5 h-5 fill-purple-600" />
+              </div>
+              <div>
+                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Kepuasan Warga</p>
+                <p className="text-lg font-black text-purple-700 mt-0.5">{avgRating} <span className="text-xs font-semibold text-slate-400">/ 5.0</span></p>
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Controls & Filters Bar */}
+          <div className="bg-white p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
+            {/* Top Controls Row */}
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+              {/* Search Input */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input
+                  type="text"
+                  placeholder="Cari berdasarkan nama warga, judul, isi kritik, atau wilayah RW..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-2xl text-xs font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#009966] focus:bg-white transition-all"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <X size={14} />
+                  </button>
                 )}
               </div>
 
-              {/* Official Response Box */}
-              {item.tanggapan ? (
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-extrabold text-slate-800 flex items-center gap-1.5">
-                      <Building2 size={14} className="text-[#009966]" /> Tanggapan Resmi:{" "}
-                      <span className="text-[#009966]">{item.ditanggapiOleh || "Pengelola TrashCare"}</span>
-                    </span>
-                    {item.ditanggapiPada && (
-                      <span className="text-[11px] text-slate-400 font-medium">
-                        {new Date(item.ditanggapiPada).toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
+              {/* Kategori Dropdown Filter */}
+              <div className="flex items-center gap-2">
+                <div className="relative w-full sm:w-56">
+                  <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                  <select
+                    value={kategoriFilter}
+                    onChange={(e) => setKategoriFilter(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 pl-9 pr-3 py-2.5 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-[#009966] transition-all cursor-pointer"
+                  >
+                    <option value="ALL">Semua Kategori</option>
+                    <option value="Pengolahan Kompos">Pengolahan Kompos</option>
+                    <option value="Bank Sampah">Bank Sampah</option>
+                    <option value="Rumah Maggot BSF">Rumah Maggot BSF</option>
+                    <option value="Pupuk Organik Cair (POC)">Pupuk Organik Cair (POC)</option>
+                    <option value="Kualitas Layanan & Fasilitas">Kualitas Layanan &amp; Fasilitas</option>
+                  </select>
+                </div>
+
+                <button
+                  onClick={fetchFeedbackList}
+                  title="Sinkronkan data dari database"
+                  className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                >
+                  <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+                </button>
+              </div>
+            </div>
+
+            {/* Filter Status Tabs */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none border-t border-slate-100 pt-3">
+              {[
+                { id: "ALL", label: "Semua Status" },
+                { id: "MENUNGGU", label: "Menunggu Tanggapan" },
+                { id: "DALAM_PROSES", label: "Dalam Proses" },
+                { id: "SELESAI", label: "Selesai Ditindaklanjuti" },
+                { id: "DITOLAK", label: "Ditolak" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setStatusFilter(tab.id)}
+                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+                    statusFilter === tab.id
+                      ? "bg-[#009966] text-white shadow-xs"
+                      : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Main Feedback List Section */}
+          {loading ? (
+            <div className="bg-white p-12 rounded-3xl border border-slate-200/90 shadow-2xs text-center flex flex-col items-center justify-center gap-3">
+              <RefreshCw size={28} className="animate-spin text-[#009966]" />
+              <p className="text-xs font-bold text-slate-500">Memuat data kritik &amp; saran dari database...</p>
+            </div>
+          ) : paginatedItems.length === 0 ? (
+            <div className="bg-white p-12 rounded-3xl border border-slate-200/90 shadow-2xs text-center flex flex-col items-center justify-center gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-[#009966] flex items-center justify-center border border-emerald-100">
+                <MessageSquare size={28} />
+              </div>
+              <div>
+                <h4 className="font-extrabold text-slate-800 text-sm">Tidak Ada Kritik &amp; Saran</h4>
+                <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 font-medium">
+                  Belum ada entri kritik &amp; saran pemanfaatan sampah yang sesuai kriteria pencarian saat ini.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setStatusFilter("ALL");
+                  setKategoriFilter("ALL");
+                }}
+                className="mt-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
+              >
+                Reset Filter
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {paginatedItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-2xs hover:border-slate-300 transition-all space-y-4"
+                >
+                  {/* Header: Citizen Info & Status Badge */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#009966] font-extrabold flex items-center justify-center border border-emerald-100 text-sm">
+                        {item.wargaNama.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-extrabold text-slate-900 text-sm">{item.wargaNama}</h4>
+                          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                            {item.rw?.name || (item.rwId ? `RW ${item.rwId}` : "Warga Coblong")}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                          {new Date(item.createdAt).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      {renderStars(item.rating)}
+                      {getStatusBadge(item.status)}
+                    </div>
+                  </div>
+
+                  {/* Body: Title & Content */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10.5px] font-black text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200 uppercase tracking-wider">
+                        {item.kategori}
                       </span>
+                      <h3 className="font-extrabold text-slate-900 text-base">{item.judul}</h3>
+                    </div>
+                    <p className="text-xs text-slate-600 leading-relaxed font-medium whitespace-pre-line">
+                      {item.isiKritikSaran}
+                    </p>
+
+                    {item.fotoBuktiUrl && (
+                      <div className="pt-2">
+                        <button
+                          onClick={() => setPreviewPhotoUrl(item.fotoBuktiUrl || null)}
+                          className="group relative rounded-2xl overflow-hidden border border-slate-200 w-36 h-24 block cursor-pointer"
+                        >
+                          <img
+                            src={item.fotoBuktiUrl}
+                            alt="Bukti"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
+                          <span className="absolute inset-0 bg-black/40 text-white text-[10px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            Lihat Foto
+                          </span>
+                        </button>
+                      </div>
                     )}
                   </div>
-                  <p className="text-xs text-slate-700 font-medium leading-relaxed italic pl-5 border-l-2 border-[#009966]">
-                    "{item.tanggapan}"
-                  </p>
+
+                  {/* Official Response Section (If Available) */}
+                  {item.tanggapan ? (
+                    <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-emerald-800 text-xs font-black">
+                          <MessageCircle size={14} />
+                          <span>Tanggapan Resmi Pengelola / RW:</span>
+                        </div>
+                        {item.ditanggapiPada && (
+                          <span className="text-[10px] text-emerald-600 font-bold">
+                            {new Date(item.ditanggapiPada).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-700 font-medium leading-relaxed whitespace-pre-line">
+                        {item.tanggapan}
+                      </p>
+                      {item.ditanggapiOleh && (
+                        <p className="text-[10.5px] text-emerald-700 font-bold italic">
+                          Oleh: {item.ditanggapiOleh}
+                        </p>
+                      )}
+                    </div>
+                  ) : null}
+
+                  {/* Action Buttons for Management Roles */}
+                  {isManagementRole && (
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                      <button
+                        onClick={() => openRespondModal(item)}
+                        className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-[#009966] text-xs font-bold rounded-xl border border-emerald-200 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <MessageCircle size={13} />
+                        <span>{item.tanggapan ? "Perbarui Tanggapan" : "Beri Tanggapan Resmi"}</span>
+                      </button>
+
+                      {["DEVELOPER", "SUPER_USER"].includes(user?.peran || "") && (
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer"
+                          title="Hapus Kritik/Saran"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="bg-amber-50/60 p-3 rounded-2xl border border-amber-200/60 text-xs text-amber-800 font-medium flex items-center gap-2">
-                  <AlertCircle size={15} className="text-amber-600 shrink-0" />
-                  <span>Belum ada tanggapan resmi dari pengelola wilayah / DLH.</span>
+              ))}
+
+              {totalPages > 1 && (
+                <div className="p-4 bg-white rounded-3xl border border-slate-200/90 shadow-2xs">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    itemsPerPage={itemsPerPage}
+                    onItemsPerPageChange={setItemsPerPage}
+                    totalItems={activeDatasetLength}
+                  />
                 </div>
               )}
-
-              {/* Management Action Buttons */}
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                {isManagementRole && (
-                  <button
-                    onClick={() => openRespondModal(item)}
-                    className="px-3.5 py-1.5 bg-[#009966] hover:bg-[#008855] text-white text-xs font-extrabold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                  >
-                    <MessageCircle size={14} /> Beri Tanggapan / Update Status
-                  </button>
-                )}
-
-                {(isManagementRole || item.userId === user?.id) && (
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-extrabold rounded-xl transition flex items-center gap-1 cursor-pointer border border-rose-200"
-                  >
-                    <Trash2 size={14} /> Hapus
-                  </button>
-                )}
-              </div>
             </div>
-          ))}
-
-          {/* Standardized TrashCare Pagination */}
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredItems.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
-            itemsPerPageOptions={[10, 25, 50, 100]}
-          />
-        </div>
+          )}
+        </>
       )}
 
       {/* Modal 1: Form Sampaikan Kritik & Saran Baru */}

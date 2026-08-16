@@ -110,3 +110,39 @@ export const authMiddleware = async (
       .json({ error: "UNAUTHORIZED", message: "Token tidak valid atau sudah kadaluarsa" });
   }
 };
+
+export const optionalAuthMiddleware = async (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    let token = "";
+    if (req.cookies && req.cookies.accessToken) {
+      token = req.cookies.accessToken;
+    } else if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+      token = req.headers.authorization.split(" ")[1];
+    }
+
+    if (!token) {
+      return next();
+    }
+
+    if (process.env.NODE_ENV === "development" && token === "MOCK_TOKEN_ADMIN") {
+      const superUserUser = await prisma.user.findFirst({
+        where: { role: { name: "SUPER_USER" } },
+        select: { id: true },
+      });
+      req.user = { userId: superUserUser?.id || "mock-admin-id", role: "SUPER_USER" };
+      return next();
+    }
+
+    const decoded = verifyAccessToken(token);
+    req.user = decoded;
+    next();
+  } catch {
+    // If token invalid, proceed without req.user
+    next();
+  }
+};
+

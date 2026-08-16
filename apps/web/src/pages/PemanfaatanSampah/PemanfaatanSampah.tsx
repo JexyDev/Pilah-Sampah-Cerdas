@@ -132,6 +132,15 @@ export const PemanfaatanSampah: React.FC = () => {
     fetchAreas();
   }, []);
 
+  const displayAreas = useMemo(() => {
+    if (!isDpl || !dplKelurahan) return areas;
+    const cleanDplKel = dplKelurahan.toLowerCase().replace(/^kel\.\s*/i, "").trim();
+    return areas.filter((a) => {
+      const aKel = (a.kelurahan?.name || "").toLowerCase().replace(/^kel\.\s*/i, "").trim();
+      return aKel.includes(cleanDplKel) || cleanDplKel.includes(aKel);
+    });
+  }, [areas, isDpl, dplKelurahan]);
+
   // Filtered Items Logic
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
@@ -504,7 +513,7 @@ export const PemanfaatanSampah: React.FC = () => {
             className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-[#009966] transition-all cursor-pointer max-w-[180px]"
           >
             <option value="ALL">Semua Wilayah RW</option>
-            {areas.map((a) => (
+            {displayAreas.map((a) => (
               <option key={a.id} value={a.id.toString()}>
                 {a.name} (Kel. {a.kelurahan?.name || "Coblong"})
               </option>
