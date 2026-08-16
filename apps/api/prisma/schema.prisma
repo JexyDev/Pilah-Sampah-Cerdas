@@ -198,6 +198,7 @@ model User {
   validasiBaseline      SurveiKelurahan[]    @relation("DplBaselineValidasi")
   validasiEndline       EndlineSurveiKelurahan[] @relation("DplEndlineValidasi")
   kritikSaran           KritikSaranPemanfaatan[] @relation("UserKritikSaran")
+  reviewedProkers       ProgramKerjaKkn[]    @relation("DplReviewedProker")
 
   @@map("pengguna")
 }
@@ -327,32 +328,54 @@ model StudentKkn {
   assignedRwId      Int?         @map("id_rw_ditugaskan")
   whitelistStatus   String       @default("PENDING") @map("status_whitelist")
   createdAt         DateTime     @default(now()) @map("dibuat_pada")
-  updatedAt         DateTime     @updatedAt @map("diperbarui_pada")
-  kelompokId        String?      @map("id_kelompok")
-  assessmentScore   Decimal?     @default(0.0) @map("skor_penilaian_dpl") @db.Decimal(5, 2)
-  isKetua           Boolean      @default(false) @map("is_ketua")
-  jenjangPendidikan String?      @map("jenjang_pendidikan")
-  kelompok          KelompokKkn? @relation(fields: [kelompokId], references: [id])
-  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  assignedRw        Rw?          @relation(fields: [assignedRwId], references: [id])
+  updatedAt         DateTime          @updatedAt @map("diperbarui_pada")
+  kelompokId        String?           @map("id_kelompok")
+  assessmentScore   Decimal?          @default(0.0) @map("skor_penilaian_dpl") @db.Decimal(5, 2)
+  assessmentNote    String?           @map("catatan_penilaian_dpl")
+  isKetua           Boolean           @default(false) @map("is_ketua")
+  jenjangPendidikan String?           @map("jenjang_pendidikan")
+  kelompok          KelompokKkn?      @relation(fields: [kelompokId], references: [id])
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedRw        Rw?               @relation(fields: [assignedRwId], references: [id])
 
   @@map("mahasiswa_kkn")
 }
 
 model KelompokKkn {
-  id            String       @id @default(uuid())
-  name          String       @unique @map("nama")
-  kelurahan     String?      @map("kelurahan")
-  cakupanRw     Json?        @map("cakupan_rw")
-  dplNamaMentah String?      @map("dpl_nama_mentah")
-  dplId         String?      @map("id_dpl")
-  createdAt     DateTime     @default(now()) @map("dibuat_pada")
-  updatedAt     DateTime     @updatedAt @map("diperbarui_pada")
-  dpl           User?        @relation("DplKelompok", fields: [dplId], references: [id])
+  id            String            @id @default(uuid())
+  name          String            @unique @map("nama")
+  kelurahan     String?           @map("kelurahan")
+  cakupanRw     Json?             @map("cakupan_rw")
+  dplNamaMentah String?           @map("dpl_nama_mentah")
+  dplId         String?           @map("id_dpl")
+  createdAt     DateTime          @default(now()) @map("dibuat_pada")
+  updatedAt     DateTime          @updatedAt @map("diperbarui_pada")
+  dpl           User?             @relation("DplKelompok", fields: [dplId], references: [id])
   students      StudentKkn[]
   schedules     Schedule[]
+  programKerja  ProgramKerjaKkn[]
 
   @@map("kelompok_kkn")
+}
+
+model ProgramKerjaKkn {
+  id             String       @id @default(uuid())
+  kelompokId     String       @map("id_kelompok")
+  nomor          Int?         @map("nomor")
+  deskripsi      String       @map("deskripsi")
+  kebutuhanBiaya Decimal      @default(0.00) @map("kebutuhan_biaya") @db.Decimal(12, 2)
+  status         StatusProker @default(BELUM_DISETUJUI) @map("status")
+  catatanDpl     String?      @map("catatan_dpl")
+  reviewedById   String?      @map("id_pereview")
+  reviewedAt     DateTime?    @map("direview_pada")
+  skorPenilaian  Decimal?     @map("skor_penilaian") @db.Decimal(5, 2)
+  evaluasiDpl    String?      @map("evaluasi_dpl")
+  createdAt      DateTime     @default(now()) @map("dibuat_pada")
+  updatedAt      DateTime     @updatedAt @map("diperbarui_pada")
+  kelompok       KelompokKkn  @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
+  reviewedBy     User?        @relation("DplReviewedProker", fields: [reviewedById], references: [id])
+
+  @@map("program_kerja_kkn")
 }
 
 model KknHandoverHistory {
@@ -1078,4 +1101,10 @@ enum ImportStatus {
   SUCCESS
   FAILED
   PARTIAL
+}
+
+enum StatusProker {
+  BELUM_DISETUJUI
+  DITERIMA
+  DITOLAK
 }

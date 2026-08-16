@@ -24,6 +24,7 @@ import {
   Tags,
   Recycle,
   ShieldCheck,
+  Award,
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -456,26 +457,38 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       items: [
         {
           type: "group",
-          label: "Manajemen & Dampingan KKN",
+          label: "Manajemen Dampingan",
           icon: GraduationCap,
           allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[],
           children: [
             { to: "/dashboard-dpl", label: "Dasbor DPL", allowed: ["DEVELOPER", "DPL", "DOSEN_PEMBIMBING"] as UserRole[] },
             { to: "/dashboard-kkn", label: "Dasbor KKN Taskforce", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "PEMIMPIN", "MAHASISWA_KKN"] as UserRole[] },
-            { to: "/manajemen-ekosistem-kkn", label: "Ekosistem Dampingan", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
-            { to: "/monitoring-absen", label: "Presensi Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
+            { to: "/manajemen-ekosistem-kkn", label: "Kelompok Dampingan", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
+            { to: "/monitoring-absen", label: "Validasi Absensi", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
+            { to: "/program-kerja-kkn", label: "Program Kerja KKN", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "MAHASISWA_KKN"] as UserRole[] },
           ],
         },
         {
           type: "group",
-          label: "Survei & Evaluasi KKN",
+          label: "Penilaian KKN",
+          icon: Award,
+          allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[],
+          children: [
+            { to: "/penilaian-kkn/mahasiswa", label: "Penilaian Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
+            { to: "/penilaian-kkn/program-kerja", label: "Penilaian Program Kerja", allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
+            { to: "/penilaian-kkn/rekap", label: "Rekap & Lembar Nilai", allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
+          ],
+        },
+        {
+          type: "group",
+          label: "Survei KKN",
           icon: FileText,
           allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[],
           children: [
             { to: "/superUser/data-survei-baseline", label: "Data Survei Baseline", allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
             { to: "/superUser/data-survei-endline", label: "Data Survei Endline", allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
+            { to: "/evaluasi-dampak-kkn", label: "Komparasi Dampak", allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
             { to: "/superUser/import-survei-kkn", label: "Impor Survei KKN", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"] as UserRole[] },
-            { to: "/evaluasi-dampak-kkn", label: "Evaluasi Dampak KKN", allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
           ],
         },
       ],
@@ -595,17 +608,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       ],
     },
     {
-      header: "PENGATURAN SISTEM",
+      header: "PENGATURAN & PANDUAN",
       items: [
         {
           type: "group",
-          label: "Konfigurasi & Notifikasi",
+          label: "Pengaturan & Akun",
           icon: Settings,
           allowed: ALL_ROLES,
           children: [
-            { to: "/master-data/rule-engine", label: "Rule Engine & Bobot", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[] },
+            { to: "/pengaturan", label: "Pengaturan Profil", allowed: ALL_ROLES },
             { to: "/notifikasi", label: "Notifikasi", allowed: ALL_ROLES },
-            { to: "/pengaturan", label: "Pengaturan Akun & Sistem", allowed: ALL_ROLES },
+            { to: "/master-data/rule-engine", label: "Rule Engine & Bobot", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[] },
           ],
         },
         {
@@ -614,7 +627,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           icon: Info,
           allowed: ALL_ROLES,
           children: [
-            { to: "/informasi", label: "Panduan & Informasi", allowed: ALL_ROLES },
+            { to: "/panduan", label: "Buku Panduan (PDF)", allowed: ALL_ROLES },
           ],
         },
       ],

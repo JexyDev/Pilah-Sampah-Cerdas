@@ -21,7 +21,6 @@ import {
   Printer,
   GraduationCap,
   LayoutDashboard,
-  Sprout,
   Calendar,
   X,
 } from "lucide-react";
@@ -754,10 +753,10 @@ export const DplDashboardPage: React.FC = () => {
           <button
             onClick={handlePrintOfficialReport}
             className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-            title="Cetak Rekapitulasi Nilai & Evaluasi Resmi KKN untuk LPPM UNIKOM"
+            title="Cetak Rekapitulasi Nilai & Evaluasi Resmi KKN"
           >
             <Printer size={14} />
-            <span>Cetak Rekap LPPM UNIKOM</span>
+            <span>Cetak Lembar Laporan</span>
           </button>
           <button
             onClick={loadDashboardData}
@@ -778,7 +777,6 @@ export const DplDashboardPage: React.FC = () => {
             { key: "MAHASISWA", label: "Mahasiswa & Nilai", icon: GraduationCap },
             { key: "APPROVAL", label: "Validasi Izin", icon: FileCheck, badge: alerts?.pendingApprovalsCount },
             ...(isDeveloper ? [{ key: "MAP" as TabType, label: "Peta Wilayah (Dev)", icon: MapPin }] : []),
-            { key: "INOVASI", label: "Inovasi & Hasil", icon: Sprout },
           ] as { key: TabType; label: string; icon: any; badge?: number }[]
         ).map((t) => {
           const Icon = t.icon;
@@ -811,32 +809,34 @@ export const DplDashboardPage: React.FC = () => {
         <div className="space-y-6">
           {/* Ringkasan Ekosistem KKN */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Ringkasan Wilayah & Tim KKN</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Ringkasan Wilayah & Aktivitas KKN</h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
               <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
-                <p className="text-[10px] text-slate-400 font-bold uppercase">Total Kecamatan</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase">Total Wilayah</p>
                 <h3 className="text-base font-extrabold text-slate-900 mt-1">
-                  {groups.length > 0 ? 1 : 0} <span className="text-[10px] font-normal text-slate-500">{groups.length > 0 ? "(Coblong)" : ""}</span>
+                  1 <span className="text-[10px] font-normal text-slate-500">(Kec. Coblong)</span>
                 </h3>
               </div>
 
               <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
                 <p className="text-[10px] text-slate-400 font-bold uppercase">Total Kelurahan</p>
                 <h3 className="text-base font-extrabold text-slate-900 mt-1">
-                  {new Set(groups.map((g) => g.kelurahan).filter(Boolean)).size}
+                  {new Set(groups.map((g) => g.kelurahan).filter(Boolean)).size || 6}
                 </h3>
               </div>
 
               <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
-                <p className="text-[10px] text-slate-400 font-bold uppercase">Total Mahasiswa</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase">Mahasiswa Aktif Hari Ini</p>
                 <h3 className="text-base font-extrabold text-emerald-700 mt-1">
-                  {students.length > 0 ? students.length : totalAllStudents} Orang
+                  {groups.reduce((acc, g) => acc + ((g as any).activeTodayCount || 0), 0)} / {totalAllStudents} Orang
                 </h3>
               </div>
 
               <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
-                <p className="text-[10px] text-slate-400 font-bold uppercase">Kelompok KKN</p>
-                <h3 className="text-base font-extrabold text-blue-700 mt-1">{groups.length} Kelompok</h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase">Capaian Jam Kegiatan</p>
+                <h3 className="text-base font-extrabold text-indigo-700 mt-1">
+                  {groups.reduce((acc, g) => acc + ((g as any).actualHours || 0), 0).toFixed(1)} / {groups[0]?.targetHours || 100} Jam
+                </h3>
               </div>
 
               <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
@@ -848,13 +848,13 @@ export const DplDashboardPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Metrik Agregat Kehadiran & Pie Chart Sebaran Mahasiswa */}
+          {/* Metrik Agregat Kehadiran & Program Kerja yang Diusulkan */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Left: Metrik Kehadiran Kelompok Binaan */}
+            {/* Left: Metrik Kehadiran Mahasiswa */}
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between space-y-4">
               <div>
                 <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1">Presensi Lapangan</h4>
-                <h3 className="text-base font-extrabold text-slate-900">Tingkat Kehadiran Mahasiswa Binaan</h3>
+                <h3 className="text-base font-extrabold text-slate-900">Tingkat Kehadiran Mahasiswa</h3>
                 <p className="text-xs text-slate-500 mt-1">Persentase rerata kehadiran mahasiswa pada kegiatan KKN di kelompok bimbingan Anda.</p>
               </div>
 
@@ -866,101 +866,87 @@ export const DplDashboardPage: React.FC = () => {
                   <span className="text-2xl font-black text-emerald-900">
                     {groups.length > 0 ? avgOverallAttendance : 0}%
                   </span>
-                  <p className="text-[11px] text-emerald-700 font-bold">Rerata Kehadiran Kelompok Binaan</p>
-                </div>
-              </div>
-
-              <div className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-center justify-between font-medium">
-                <span>Cakupan Bimbingan:</span>
-                <span className="font-bold text-slate-800">{groups.length} Kelompok KKN</span>
-              </div>
-            </div>
-
-            {/* Right: Matriks Evaluasi Nilai Akademik & Presensi Binaan */}
-            <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
-                    Evaluasi Akademik & Presensi Binaan
-                  </span>
-                  <h3 className="text-base font-extrabold text-slate-900 mt-0.5">
-                    Progres Penilaian DPL & Kedisiplinan Mahasiswa
-                  </h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
-                    {gradeDistribution.assessedCount} / {gradeDistribution.totalStudents} Mahasiswa Terasesmen ({gradeDistribution.percentAssessed}%)
-                  </span>
-                </div>
-              </div>
-
-              {/* Progress Bar Penilaian */}
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-bold">
-                  <span className="text-slate-600">Progres Penilaian Akhir DPL</span>
-                  <span className="text-emerald-700">{gradeDistribution.percentAssessed}% Selesai</span>
-                </div>
-                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
-                  <div
-                    className="h-full bg-emerald-600 rounded-full transition-all duration-500"
-                    style={{ width: `${gradeDistribution.percentAssessed}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              {/* Grade Distribution Badges */}
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
-                <div className="bg-emerald-50/70 border border-emerald-200 p-2.5 rounded-xl text-center">
-                  <span className="text-[10px] font-bold text-emerald-800 block">Nilai A (≥85)</span>
-                  <span className="text-lg font-black text-emerald-900">{gradeDistribution.countA}</span>
-                  <span className="text-[10px] text-emerald-600 block font-medium">Mahasiswa</span>
-                </div>
-                <div className="bg-blue-50/70 border border-blue-200 p-2.5 rounded-xl text-center">
-                  <span className="text-[10px] font-bold text-blue-800 block">Nilai B (75-84)</span>
-                  <span className="text-lg font-black text-blue-900">{gradeDistribution.countB}</span>
-                  <span className="text-[10px] text-blue-600 block font-medium">Mahasiswa</span>
-                </div>
-                <div className="bg-amber-50/70 border border-amber-200 p-2.5 rounded-xl text-center">
-                  <span className="text-[10px] font-bold text-amber-800 block">Nilai C (65-74)</span>
-                  <span className="text-lg font-black text-amber-900">{gradeDistribution.countC}</span>
-                  <span className="text-[10px] text-amber-600 block font-medium">Mahasiswa</span>
-                </div>
-                <div className="bg-orange-50/70 border border-orange-200 p-2.5 rounded-xl text-center">
-                  <span className="text-[10px] font-bold text-orange-800 block">Nilai D (&lt;65)</span>
-                  <span className="text-lg font-black text-orange-900">{gradeDistribution.countD}</span>
-                  <span className="text-[10px] text-orange-600 block font-medium">Mahasiswa</span>
-                </div>
-                <div className="bg-slate-100 border border-slate-200 p-2.5 rounded-xl text-center col-span-2 sm:col-span-1">
-                  <span className="text-[10px] font-bold text-slate-600 block">Belum Dinilai</span>
-                  <span className="text-lg font-black text-slate-800">{gradeDistribution.countUnassessed}</span>
-                  <span className="text-[10px] text-slate-500 block font-medium">Mahasiswa</span>
+                  <p className="text-[11px] text-emerald-700 font-bold">Rerata Kehadiran</p>
                 </div>
               </div>
 
               {/* Presensi Sesi Aggregates */}
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-xs">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-slate-500 font-semibold">Total Presensi Sesi:</span>
-                  <span className="font-bold text-emerald-700 bg-white border border-slate-200 px-2 py-0.5 rounded">
-                    {gradeDistribution.totalHadir} Hadir
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-1 text-xs font-medium">
+                <span className="text-emerald-700 font-bold">{gradeDistribution.totalHadir} Hadir</span>
+                <span className="text-slate-300">•</span>
+                <span className="text-blue-700 font-bold">{gradeDistribution.totalSakit} Sakit</span>
+                <span className="text-slate-300">•</span>
+                <span className="text-purple-700 font-bold">{gradeDistribution.totalIzin} Izin</span>
+                <span className="text-slate-300">•</span>
+                <span className="text-rose-700 font-bold">{gradeDistribution.totalAlpha} Alpha</span>
+              </div>
+            </div>
+
+            {/* Right: Program Kerja yang Diusulkan Widget */}
+            <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                    Rencana & Eksekusi Lapangan
                   </span>
-                  <span className="font-bold text-blue-700 bg-white border border-slate-200 px-2 py-0.5 rounded">
-                    {gradeDistribution.totalSakit} Sakit
-                  </span>
-                  <span className="font-bold text-purple-700 bg-white border border-slate-200 px-2 py-0.5 rounded">
-                    {gradeDistribution.totalIzin} Izin
-                  </span>
-                  <span className="font-bold text-rose-700 bg-white border border-slate-200 px-2 py-0.5 rounded">
-                    {gradeDistribution.totalAlpha} Alpha
-                  </span>
+                  <h3 className="text-base font-extrabold text-slate-900 mt-0.5">
+                    Program Kerja yang Diusulkan
+                  </h3>
                 </div>
-                <button
-                  onClick={() => setActiveTab("MAHASISWA")}
-                  className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 cursor-pointer ml-auto"
+                <a
+                  href="/program-kerja-kkn"
+                  className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1"
                 >
-                  <span>Buka Form Penilaian</span>
+                  <span>Lihat Semua Proker</span>
                   <ChevronRight size={14} />
-                </button>
+                </a>
+              </div>
+
+              {/* List of Prokers */}
+              <div className="space-y-2.5">
+                {groups.flatMap((g: any) => g.programKerja || []).length === 0 ? (
+                  <div className="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-xs">
+                    Belum ada program kerja yang diusulkan oleh mahasiswa di kelompok dampingan.
+                  </div>
+                ) : (
+                  groups.flatMap((g: any) => g.programKerja || []).slice(0, 4).map((p: any) => (
+                    <div
+                      key={p.id}
+                      className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/80 flex items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-900 truncate">{p.deskripsi}</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Kebutuhan: Rp {Number(p.kebutuhanBiaya || 0).toLocaleString("id-ID")}
+                        </p>
+                      </div>
+                      <div className="shrink-0">
+                        {p.status === "DITERIMA" && (
+                          <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-bold text-[10px]">
+                            Disepakati
+                          </span>
+                        )}
+                        {p.status === "DITOLAK" && (
+                          <span className="px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full font-bold text-[10px]">
+                            Ditolak
+                          </span>
+                        )}
+                        {p.status === "BELUM_DISETUJUI" && (
+                          <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-bold text-[10px]">
+                            Menunggu Review
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span>Total Rencana Proker: <strong className="text-slate-800">{groups.flatMap((g: any) => g.programKerja || []).length} Kegiatan</strong></span>
+                <span className="text-emerald-700 font-semibold">
+                  Disetujui: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "DITERIMA").length}
+                </span>
               </div>
             </div>
           </div>
@@ -1148,8 +1134,8 @@ export const DplDashboardPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-center font-bold text-purple-700">
-                        <span className="bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200 inline-block">
-                          {grp.totalGroupPoints} Pts
+                        <span className="font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                          {grp.totalGroupPoints}
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-center">
@@ -1361,8 +1347,8 @@ export const DplDashboardPage: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-4 py-3.5 text-center">
-                          <span className="font-extrabold text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-lg text-xs inline-block">
-                            {st.individualPoints ?? 0} Pts
+                          <span className="font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg text-xs inline-block">
+                            {st.individualPoints ?? 0}
                           </span>
                         </td>
                         <td className="px-4 py-3.5 text-center">

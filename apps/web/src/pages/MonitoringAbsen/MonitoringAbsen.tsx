@@ -1060,7 +1060,7 @@ const MonitoringAbsen: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
             <h2 className="text-xs font-black text-slate-800 uppercase tracking-wider">
-              {activeSchedule ? `Kegiatan: ${activeSchedule.title}` : "Monitoring Presensi KKN"}
+              {activeSchedule ? `Validasi Absensi: ${activeSchedule.title}` : "Validasi Absensi & Logbook Mahasiswa"}
             </h2>
             {activeSchedule && (
               <span className="text-[10px] font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-200">
@@ -1353,8 +1353,15 @@ const MonitoringAbsen: React.FC = () => {
                           className="flex items-center gap-1.5 bg-emerald-50 text-emerald-900 px-2.5 py-0.5 rounded-full border border-emerald-300 text-[10px] font-black"
                           title="Target durasi kegiatan ditentukan dan diedit langsung melalui form Jadwal Kegiatan"
                         >
-                          <span>⏱️ Target Kegiatan:</span>
+                          <span>⏱️ Target Sesi:</span>
                           <span className="font-extrabold text-emerald-950">{scheduleTargetHours} Jam</span>
+                        </div>
+                        <div
+                          className="flex items-center gap-1.5 bg-indigo-50 text-indigo-900 px-2.5 py-0.5 rounded-full border border-indigo-200 text-[10px] font-black"
+                          title="Target kumulatif total jam dan kegiatan KKN Kecamatan Coblong"
+                        >
+                          <span>🎯 Target Total:</span>
+                          <span className="font-extrabold text-indigo-950">100 Jam / 2.000 Kegiatan</span>
                         </div>
                       </div>
                       <p className="text-[11px] text-slate-400 font-semibold mt-0.5">
@@ -1449,7 +1456,7 @@ const MonitoringAbsen: React.FC = () => {
                         title="Unduh Laporan Rekap Presensi (CSV)"
                       >
                         <Download size={13} />
-                        <span>CSV</span>
+                        <span className="hidden sm:inline">CSV</span>
                       </button>
                       <button
                         onClick={handlePrintAttendanceReport}
@@ -1457,21 +1464,31 @@ const MonitoringAbsen: React.FC = () => {
                         title="Cetak Berita Acara Presensi Resmi (PDF/Print)"
                       >
                         <Printer size={13} />
-                        <span>PDF</span>
+                        <span className="hidden sm:inline">Cetak</span>
+                      </button>
+                      <button
+                        onClick={() => fetchAttendanceAndLocations(selectedScheduleId)}
+                        className={`p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer ${
+                          refreshing ? "animate-spin text-emerald-600" : ""
+                        }`}
+                        title="Refresh Data Presensi"
+                      >
+                        <RefreshCw size={13} />
                       </button>
                     </div>
-
-                    {/* Refresh Button */}
-                    <button
-                      onClick={() => fetchAttendanceAndLocations(selectedScheduleId)}
-                      className={`p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors cursor-pointer ${
-                        refreshing ? "animate-spin text-emerald-600" : "text-slate-500"
-                      }`}
-                      title="Refresh Data Presensi"
-                    >
-                      <RefreshCw size={14} />
-                    </button>
                   </div>
+                </div>
+
+                {/* Legenda Arti Singkatan Presensi */}
+                <div className="flex flex-wrap items-center gap-3 px-3 py-1.5 bg-slate-50 border border-slate-200/80 rounded-xl text-[10.5px] font-semibold text-slate-600 shrink-0">
+                  <span className="font-bold text-slate-800 text-[10px] uppercase">Legenda:</span>
+                  <span className="inline-flex items-center gap-1"><strong className="text-emerald-700 font-black">H:</strong> Hadir</span>
+                  <span className="inline-flex items-center gap-1"><strong className="text-blue-700 font-black">S:</strong> Sakit</span>
+                  <span className="inline-flex items-center gap-1"><strong className="text-purple-700 font-black">I:</strong> Izin</span>
+                  <span className="inline-flex items-center gap-1"><strong className="text-rose-700 font-black">A:</strong> Alpa</span>
+                  <span className="text-slate-300">•</span>
+                  <span className="inline-flex items-center gap-1"><strong className="text-emerald-700 font-black">DR:</strong> Dalam Radius</span>
+                  <span className="inline-flex items-center gap-1"><strong className="text-amber-700 font-black">LR:</strong> Luar Radius</span>
                 </div>
 
                 {/* Konten Data Mahasiswa (Tabel Pro vs Grid Kartu) */}

@@ -5,8 +5,7 @@
  */
 
 import React from "react";
-import { Link } from "react-router-dom";
-import { HelpCircle, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 export const Footer: React.FC = () => {
   return (
@@ -21,15 +20,7 @@ export const Footer: React.FC = () => {
         </span>
       </div>
 
-      <div className="flex items-center gap-3.5 text-slate-600 font-bold">
-        <Link
-          to="/tentang"
-          className="hover:text-emerald-600 transition-colors flex items-center gap-1.5 px-2.5 py-1 rounded-xl hover:bg-emerald-50 text-slate-600 font-semibold"
-        >
-          <HelpCircle size={14} className="text-emerald-600" />
-          <span>Tentang Aplikasi</span>
-        </Link>
-        <span className="text-slate-200">|</span>
+      <div className="flex items-center gap-2 text-slate-600 font-bold">
         <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-200/80 shadow-2xs">
           <ShieldCheck size={13} className="text-emerald-600" />
           <span>v1.0.0</span>

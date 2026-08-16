@@ -6,14 +6,12 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   Bell,
   BellOff,
   CheckCheck,
   Trash2,
-  Settings,
   AlertTriangle,
   AlertCircle,
   Info,
@@ -27,7 +25,6 @@ import {
   ImageOff,
   RefreshCcw,
   Truck,
-  Sparkles,
   ChevronRight
 } from "lucide-react";
 import api from "../../services/api";
@@ -374,7 +371,6 @@ const NotificationModal = ({
 };
 
 const Notifikasi: React.FC = () => {
-  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -553,7 +549,7 @@ const Notifikasi: React.FC = () => {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-400/20 border border-emerald-300/30 text-emerald-200 text-xs font-black backdrop-blur-md">
-                <Sparkles size={13} className="animate-pulse" /> Live Telemetry Log
+                <Bell size={13} /> Pusat Notifikasi
               </div>
               {unreadCount > 0 && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-rose-500/80 text-white text-xs font-black backdrop-blur-md border border-rose-400/40">
@@ -563,11 +559,11 @@ const Notifikasi: React.FC = () => {
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              Log Notifikasi &amp; Peristiwa Sistem
+              Pusat Notifikasi &amp; Aktivitas
             </h1>
 
             <p className="text-emerald-100/90 text-xs sm:text-sm max-w-2xl font-medium leading-relaxed">
-              Memantau riwayat aktivitas tempat sampah real-time, permintaan pengosongan residu warga, insentif poin kebersihan, serta jadwal pengangkutan wilayah.
+              Daftar pemberitahuan terkini mengenai pemantauan tempat sampah, jadwal penjemputan residu, dan aktivitas KKN wilayah Coblong.
             </p>
           </div>
 
@@ -584,13 +580,6 @@ const Notifikasi: React.FC = () => {
             >
               <Trash2 size={16} /> Hapus Semua
             </button>
-            <button
-              onClick={() => navigate("/pengaturan")}
-              className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white backdrop-blur-md transition-all cursor-pointer"
-              title="Pengaturan Notifikasi & Akun"
-            >
-              <Settings size={18} />
-            </button>
           </div>
         </div>
       </div>
@@ -603,8 +592,8 @@ const Notifikasi: React.FC = () => {
           </div>
           <div>
             <p className="text-[10.5px] font-black uppercase text-slate-400 tracking-wider">Total Notifikasi</p>
-            <h3 className="text-2xl font-black text-slate-800">{notifications.length} Log</h3>
-            <p className="text-[10px] font-bold text-emerald-600 mt-0.5">Tercatat di Database</p>
+            <h3 className="text-2xl font-black text-slate-800">{notifications.length}</h3>
+            <p className="text-[10px] font-bold text-emerald-600 mt-0.5">Tercatat di Sistem</p>
           </div>
         </div>
 
@@ -614,8 +603,8 @@ const Notifikasi: React.FC = () => {
           </div>
           <div>
             <p className="text-[10.5px] font-black uppercase text-slate-400 tracking-wider">Belum Dibaca</p>
-            <h3 className="text-2xl font-black text-slate-800">{unreadCount} Item</h3>
-            <p className="text-[10px] font-bold text-sky-600 mt-0.5">Memerlukan Peninjauan</p>
+            <h3 className="text-2xl font-black text-slate-800">{unreadCount}</h3>
+            <p className="text-[10px] font-bold text-sky-600 mt-0.5">Perlu Ditinjau</p>
           </div>
         </div>
 
@@ -625,7 +614,7 @@ const Notifikasi: React.FC = () => {
           </div>
           <div>
             <p className="text-[10.5px] font-black uppercase text-slate-400 tracking-wider">Peristiwa Kritis</p>
-            <h3 className="text-2xl font-black text-slate-800">{criticalCount} Event</h3>
+            <h3 className="text-2xl font-black text-slate-800">{criticalCount}</h3>
             <p className="text-[10px] font-bold text-rose-600 mt-0.5">Kapasitas Tempat Sampah &gt;90%</p>
           </div>
         </div>
@@ -635,9 +624,9 @@ const Notifikasi: React.FC = () => {
             <Truck size={24} />
           </div>
           <div>
-            <p className="text-[10.5px] font-black uppercase text-slate-400 tracking-wider">Log Informasi System</p>
-            <h3 className="text-2xl font-black text-slate-800">{infoCount} Log</h3>
-            <p className="text-[10px] font-bold text-indigo-600 mt-0.5">Shift &amp; Poin Insentif</p>
+            <p className="text-[10.5px] font-black uppercase text-slate-400 tracking-wider">Informasi Layanan</p>
+            <h3 className="text-2xl font-black text-slate-800">{infoCount}</h3>
+            <p className="text-[10px] font-bold text-indigo-600 mt-0.5">Jadwal &amp; Poin Insentif</p>
           </div>
         </div>
       </div>

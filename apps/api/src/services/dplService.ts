@@ -52,8 +52,15 @@ export const dplService = {
       return [];
     }
 
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const configTargets = await dplService.getConfigTargets();
+
     const groupSummaries = await Promise.all(
-      groups.map(async (grp, idx) => {
+      groups.map(async (grp) => {
         const studentUserIds = grp.students.map((s) => s.userId);
         const studentCount = grp.students.length;
 
@@ -83,6 +90,38 @@ export const dplService = {
               : { id: "impossible-id" },
         });
 
+        const activeTodayCount =
+          studentUserIds.length > 0
+            ? (
+                await prisma.activityAttendance.groupBy({
+                  by: ["studentId"],
+                  where: {
+                    studentId: { in: studentUserIds },
+                    attendedAt: { gte: todayStart, lte: todayEnd },
+                  },
+                })
+              ).length
+            : 0;
+
+        const attendancesWithDuration =
+          studentUserIds.length > 0
+            ? await prisma.activityAttendance.findMany({
+                where: { studentId: { in: studentUserIds } },
+                select: { attendedAt: true, checkOutAt: true },
+              })
+            : [];
+
+        let actualHours = 0;
+        for (const a of attendancesWithDuration) {
+          if (a.checkOutAt && a.attendedAt) {
+            const diff = (a.checkOutAt.getTime() - a.attendedAt.getTime()) / (1000 * 60 * 60);
+            actualHours += Math.max(0.5, Math.min(8, diff));
+          } else {
+            actualHours += configTargets.targetHarianJam || 4.0;
+          }
+        }
+        actualHours = Math.round(actualHours * 100) / 100;
+
         const totalSchedules = await prisma.schedule.count();
         const expectedAttendances = studentCount * totalSchedules;
         const avgAttendanceRate =
@@ -98,15 +137,33 @@ export const dplService = {
           _sum: { points: true },
         });
 
+        const prokerList = await prisma.programKerjaKkn.findMany({
+          where: { kelompokId: grp.id },
+          orderBy: { createdAt: "desc" },
+          take: 5,
+        });
+
         return {
           id: grp.id,
           name: grp.name,
           kelurahan: grp.kelurahan || null,
           cakupanRw: grp.cakupanRw || [],
           studentCount,
+          activeTodayCount,
+          actualHours,
+          targetHours: configTargets.targetTotalJam || 100,
+          targetTotalKegiatan: configTargets.targetTotalKegiatan || 2000,
           activatedBinsCount,
           avgAttendanceRate,
           totalGroupPoints: pointSum._sum.points || 0,
+          programKerja: prokerList.map((p) => ({
+            id: p.id,
+            nomor: p.nomor || 1,
+            deskripsi: p.deskripsi,
+            kebutuhanBiaya: Number(p.kebutuhanBiaya || 0),
+            status: p.status,
+            skorPenilaian: p.skorPenilaian !== null ? Number(p.skorPenilaian) : null,
+          })),
         };
       })
     );
@@ -623,5 +680,351 @@ export const dplService = {
     }
 
     return updated;
+  },
+
+  /**
+   * 8. Program Kerja KKN - Get List
+   */
+  getProgramKerja: async (dplUserId: string, groupId?: string, role?: any) => {
+    const whereGroup: any = getKelompokWhere(dplUserId, role);
+    if (groupId) whereGroup.id = groupId;
+
+    const groups = await prisma.kelompokKkn.findMany({
+      where: whereGroup,
+      select: { id: true, name: true, kelurahan: true, cakupanRw: true },
+    });
+
+    if (groups.length === 0) {
+      return [];
+    }
+
+    const groupIds = groups.map((g) => g.id);
+    const groupMap = new Map(groups.map((g) => [g.id, g]));
+
+    const prokers = await prisma.programKerjaKkn.findMany({
+      where: { kelompokId: { in: groupIds } },
+      include: {
+        reviewedBy: { select: { id: true, name: true } },
+      },
+      orderBy: [{ kelompokId: "asc" }, { nomor: "asc" }, { createdAt: "asc" }],
+    });
+
+    return prokers.map((p) => ({
+      id: p.id,
+      kelompokId: p.kelompokId,
+      kelompokName: groupMap.get(p.kelompokId)?.name || "-",
+      kelurahan: groupMap.get(p.kelompokId)?.kelurahan || "-",
+      nomor: p.nomor || 1,
+      deskripsi: p.deskripsi,
+      kebutuhanBiaya: Number(p.kebutuhanBiaya || 0),
+      status: p.status,
+      catatanDpl: p.catatanDpl,
+      reviewedByName: p.reviewedBy?.name || null,
+      reviewedAt: p.reviewedAt,
+      skorPenilaian: p.skorPenilaian !== null ? Number(p.skorPenilaian) : null,
+      evaluasiDpl: p.evaluasiDpl,
+      createdAt: p.createdAt,
+    }));
+  },
+
+  /**
+   * 9. Program Kerja KKN - Create
+   */
+  createProgramKerja: async (
+    dplUserId: string,
+    data: {
+      kelompokId: string;
+      nomor?: number;
+      deskripsi: string;
+      kebutuhanBiaya?: number;
+    }
+  ) => {
+    const proker = await prisma.programKerjaKkn.create({
+      data: {
+        kelompokId: data.kelompokId,
+        nomor: data.nomor || 1,
+        deskripsi: data.deskripsi,
+        kebutuhanBiaya: data.kebutuhanBiaya || 0,
+        status: "BELUM_DISETUJUI",
+      },
+    });
+    return proker;
+  },
+
+  /**
+   * 10. Program Kerja KKN - Update
+   */
+  updateProgramKerja: async (
+    id: string,
+    data: {
+      nomor?: number;
+      deskripsi?: string;
+      kebutuhanBiaya?: number;
+      status?: "BELUM_DISETUJUI" | "DITERIMA" | "DITOLAK";
+      catatanDpl?: string;
+    }
+  ) => {
+    const updateData: any = {};
+    if (data.nomor !== undefined) updateData.nomor = data.nomor;
+    if (data.deskripsi !== undefined) updateData.deskripsi = data.deskripsi;
+    if (data.kebutuhanBiaya !== undefined) updateData.kebutuhanBiaya = data.kebutuhanBiaya;
+    if (data.status !== undefined) updateData.status = data.status;
+    if (data.catatanDpl !== undefined) updateData.catatanDpl = data.catatanDpl;
+
+    const proker = await prisma.programKerjaKkn.update({
+      where: { id },
+      data: updateData,
+    });
+    return proker;
+  },
+
+  /**
+   * 11. Program Kerja KKN - Delete
+   */
+  deleteProgramKerja: async (id: string) => {
+    return await prisma.programKerjaKkn.delete({
+      where: { id },
+    });
+  },
+
+  /**
+   * 12. Program Kerja KKN - Decision (Accept / Reject)
+   */
+  decideProgramKerja: async (
+    dplUserId: string,
+    id: string,
+    status: "DITERIMA" | "DITOLAK",
+    catatanDpl?: string
+  ) => {
+    const proker = await prisma.programKerjaKkn.update({
+      where: { id },
+      data: {
+        status,
+        catatanDpl: catatanDpl || null,
+        reviewedById: dplUserId,
+        reviewedAt: new Date(),
+      },
+    });
+    return proker;
+  },
+
+  /**
+   * 13. Program Kerja KKN - Penilaian / Evaluasi Output Proker
+   */
+  assessProgramKerja: async (
+    dplUserId: string,
+    id: string,
+    skorPenilaian: number,
+    evaluasiDpl?: string
+  ) => {
+    if (skorPenilaian < 0 || skorPenilaian > 100) {
+      throw new Error("Skor penilaian harus berada di rentang 0-100");
+    }
+    const proker = await prisma.programKerjaKkn.update({
+      where: { id },
+      data: {
+        skorPenilaian,
+        evaluasiDpl: evaluasiDpl || null,
+        reviewedById: dplUserId,
+        reviewedAt: new Date(),
+      },
+    });
+    return proker;
+  },
+
+  /**
+   * 14. Rekap Nilai Akhir & Lembar Penilaian KKN (Submenu 3)
+   */
+  getRekapNilaiAkhir: async (dplUserId: string, groupId?: string, role?: any) => {
+    const whereGroup: any = getKelompokWhere(dplUserId, role);
+    if (groupId) whereGroup.id = groupId;
+
+    const groups = await prisma.kelompokKkn.findMany({
+      where: whereGroup,
+      include: {
+        students: {
+          include: {
+            user: { select: { id: true, name: true, phone: true } },
+          },
+        },
+        programKerja: true,
+      },
+    });
+
+    if (groups.length === 0) {
+      return { groups: [], students: [], stats: { totalStudents: 0, rerataNilai: 0, rerataKehadiran: 0 } };
+    }
+
+    const allStudentsList: any[] = [];
+    let totalScoreSum = 0;
+    let totalAttRateSum = 0;
+
+    const totalSchedules = await prisma.schedule.count();
+
+    for (const grp of groups) {
+      const prokerCount = grp.programKerja.length;
+      const prokerAccepted = grp.programKerja.filter((p) => p.status === "DITERIMA").length;
+      const prokerAvgScore =
+        prokerCount > 0
+          ? grp.programKerja.reduce((acc, p) => acc + Number(p.skorPenilaian || 0), 0) / prokerCount
+          : 0;
+
+      for (const st of grp.students) {
+        const attendancesCount = await prisma.activityAttendance.count({
+          where: { studentId: st.userId },
+        });
+
+        const points = await prisma.pointHistory.aggregate({
+          where: { userId: st.userId },
+          _sum: { points: true },
+        });
+
+        const attRate =
+          totalSchedules > 0
+            ? Math.min(100, Math.round((attendancesCount / totalSchedules) * 100))
+            : 0;
+
+        const indivScore = Number(st.assessmentScore || 0);
+        // Formula nilai akhir: 40% Kinerja Individu + 30% Output Proker Kelompok + 30% Disiplin & Presensi
+        const finalScore =
+          indivScore > 0 || prokerAvgScore > 0 || attRate > 0
+            ? Math.round((indivScore * 0.4 + prokerAvgScore * 0.3 + attRate * 0.3) * 100) / 100
+            : 0;
+
+        let gradeLetter = "E";
+        if (finalScore >= 85) gradeLetter = "A";
+        else if (finalScore >= 75) gradeLetter = "B";
+        else if (finalScore >= 65) gradeLetter = "C";
+        else if (finalScore >= 55) gradeLetter = "D";
+
+        totalScoreSum += finalScore;
+        totalAttRateSum += attRate;
+
+        allStudentsList.push({
+          id: st.id,
+          userId: st.userId,
+          name: st.user?.name || "Mahasiswa",
+          nim: st.nim || "-",
+          jurusan: st.jurusan || "-",
+          fakultas: st.fakultas || "-",
+          kelompokId: grp.id,
+          kelompokName: grp.name,
+          kelurahan: grp.kelurahan || "-",
+          isKetua: Boolean(st.isKetua),
+          skorIndividu: indivScore,
+          catatanIndividu: st.assessmentNote || "",
+          skorProkerKelompok: Math.round(prokerAvgScore * 100) / 100,
+          tingkatKehadiran: attRate,
+          poinDampingan: points._sum.points || 0,
+          nilaiAkhir: finalScore,
+          hurufMutu: gradeLetter,
+          statusLulus: finalScore >= 65 ? "LULUS" : "BELUM LULUS",
+        });
+      }
+    }
+
+    const totalStudents = allStudentsList.length;
+    const rerataNilai =
+      totalStudents > 0 ? Math.round((totalScoreSum / totalStudents) * 100) / 100 : 0;
+    const rerataKehadiran =
+      totalStudents > 0 ? Math.round((totalAttRateSum / totalStudents) * 100) / 100 : 0;
+
+    return {
+      groups: groups.map((g) => ({
+        id: g.id,
+        name: g.name,
+        kelurahan: g.kelurahan || null,
+        totalProker: g.programKerja.length,
+        prokerDisetujui: g.programKerja.filter((p) => p.status === "DITERIMA").length,
+      })),
+      students: allStudentsList,
+      stats: {
+        totalStudents,
+        rerataNilai,
+        rerataKehadiran,
+      },
+    };
+  },
+
+  /**
+   * 15. Target & Konfigurasi KKN (Fetch & Update Real DB SystemConfig)
+   */
+  getConfigTargets: async () => {
+    const keys = [
+      "kkn_target_total_kegiatan",
+      "kkn_target_total_jam",
+      "kkn_target_harian_jam",
+      "kkn_target_harian_kegiatan",
+    ];
+
+    const configs = await prisma.systemConfig.findMany({
+      where: { key: { in: keys } },
+    });
+
+    const configMap = new Map(configs.map((c) => [c.key, c.value]));
+
+    return {
+      targetTotalKegiatan: Number(configMap.get("kkn_target_total_kegiatan") || 2000),
+      targetTotalJam: Number(configMap.get("kkn_target_total_jam") || 100),
+      targetHarianJam: Number(configMap.get("kkn_target_harian_jam") || 4),
+      targetHarianKegiatan: Number(configMap.get("kkn_target_harian_kegiatan") || 5),
+    };
+  },
+
+  updateConfigTargets: async (data: {
+    targetTotalKegiatan?: number;
+    targetTotalJam?: number;
+    targetHarianJam?: number;
+    targetHarianKegiatan?: number;
+    updatedBy?: string;
+  }) => {
+    const updates: { key: string; value: string; desc: string }[] = [];
+    if (data.targetTotalKegiatan !== undefined) {
+      updates.push({
+        key: "kkn_target_total_kegiatan",
+        value: String(data.targetTotalKegiatan),
+        desc: "Target total seluruh kegiatan KKN",
+      });
+    }
+    if (data.targetTotalJam !== undefined) {
+      updates.push({
+        key: "kkn_target_total_jam",
+        value: String(data.targetTotalJam),
+        desc: "Target total jam kegiatan mahasiswa KKN",
+      });
+    }
+    if (data.targetHarianJam !== undefined) {
+      updates.push({
+        key: "kkn_target_harian_jam",
+        value: String(data.targetHarianJam),
+        desc: "Target minimum jam per hari mahasiswa KKN",
+      });
+    }
+    if (data.targetHarianKegiatan !== undefined) {
+      updates.push({
+        key: "kkn_target_harian_kegiatan",
+        value: String(data.targetHarianKegiatan),
+        desc: "Target minimum kegiatan per hari mahasiswa KKN",
+      });
+    }
+
+    for (const u of updates) {
+      await prisma.systemConfig.upsert({
+        where: { key: u.key },
+        create: {
+          key: u.key,
+          value: u.value,
+          tipe: "NUMBER",
+          deskripsi: u.desc,
+          updatedBy: data.updatedBy || "SYSTEM",
+        },
+        update: {
+          value: u.value,
+          updatedBy: data.updatedBy || "SYSTEM",
+        },
+      });
+    }
+
+    return await dplService.getConfigTargets();
   },
 };

@@ -6,9 +6,14 @@ export interface GroupSummary {
   kelurahan: string;
   cakupanRw: number[] | string[] | string;
   studentCount: number;
+  activeTodayCount?: number;
+  actualHours?: number;
+  targetHours?: number;
+  targetTotalKegiatan?: number;
   activatedBinsCount: number;
   avgAttendanceRate: number;
   totalGroupPoints: number;
+  programKerja?: any[];
 }
 
 export interface StudentDetail {
@@ -103,6 +108,67 @@ export interface ApprovalHistoryLog {
   rejectionReason?: string;
 }
 
+export interface ProgramKerjaItem {
+  id: string;
+  kelompokId: string;
+  kelompokName: string;
+  kelurahan: string;
+  nomor: number;
+  deskripsi: string;
+  kebutuhanBiaya: number;
+  status: "BELUM_DISETUJUI" | "DITERIMA" | "DITOLAK";
+  catatanDpl?: string | null;
+  reviewedByName?: string | null;
+  reviewedAt?: string | null;
+  skorPenilaian?: number | null;
+  evaluasiDpl?: string | null;
+  createdAt: string;
+}
+
+export interface RekapNilaiStudent {
+  id: string;
+  userId: string;
+  name: string;
+  nim: string;
+  jurusan: string;
+  fakultas: string;
+  kelompokId: string;
+  kelompokName: string;
+  kelurahan: string;
+  isKetua: boolean;
+  skorIndividu: number;
+  catatanIndividu: string;
+  skorProkerKelompok: number;
+  tingkatKehadiran: number;
+  poinDampingan: number;
+  nilaiAkhir: number;
+  hurufMutu: string;
+  statusLulus: string;
+}
+
+export interface RekapNilaiResponse {
+  groups: Array<{
+    id: string;
+    name: string;
+    kelurahan: string | null;
+    totalProker: number;
+    prokerDisetujui: number;
+  }>;
+  students: RekapNilaiStudent[];
+  stats: {
+    totalStudents: number;
+    rerataNilai: number;
+    rerataKehadiran: number;
+  };
+}
+
+export interface ConfigTargets {
+  targetTotalKegiatan: number;
+  targetTotalJam: number;
+  targetHarianJam: number;
+  targetHarianKegiatan: number;
+}
+
 export const dplService = {
   getGroupSummary: async (): Promise<GroupSummary[]> => {
     try {
@@ -182,6 +248,85 @@ export const dplService = {
     note?: string
   ) => {
     const res = await api.post(`/dpl/approvals/${requestId}/decide`, { status, note });
+    return res.data;
+  },
+
+  getProgramKerja: async (groupId?: string): Promise<ProgramKerjaItem[]> => {
+    try {
+      const res = await api.get("/dpl/program-kerja", { params: { groupId } });
+      if (res.data.success && Array.isArray(res.data.data)) return res.data.data;
+      return [];
+    } catch {
+      return [];
+    }
+  },
+
+  createProgramKerja: async (data: {
+    kelompokId: string;
+    nomor?: number;
+    deskripsi: string;
+    kebutuhanBiaya?: number;
+  }) => {
+    const res = await api.post("/dpl/program-kerja", data);
+    return res.data;
+  },
+
+  updateProgramKerja: async (
+    id: string,
+    data: {
+      nomor?: number;
+      deskripsi?: string;
+      kebutuhanBiaya?: number;
+      status?: "BELUM_DISETUJUI" | "DITERIMA" | "DITOLAK";
+      catatanDpl?: string;
+    }
+  ) => {
+    const res = await api.put(`/dpl/program-kerja/${id}`, data);
+    return res.data;
+  },
+
+  deleteProgramKerja: async (id: string) => {
+    const res = await api.delete(`/dpl/program-kerja/${id}`);
+    return res.data;
+  },
+
+  decideProgramKerja: async (id: string, status: "DITERIMA" | "DITOLAK", catatanDpl?: string) => {
+    const res = await api.patch(`/dpl/program-kerja/${id}/decision`, { status, catatanDpl });
+    return res.data;
+  },
+
+  assessProgramKerja: async (id: string, skorPenilaian: number, evaluasiDpl?: string) => {
+    const res = await api.patch(`/dpl/program-kerja/${id}/penilaian`, { skorPenilaian, evaluasiDpl });
+    return res.data;
+  },
+
+  getRekapNilaiAkhir: async (groupId?: string): Promise<RekapNilaiResponse> => {
+    try {
+      const res = await api.get("/dpl/penilaian/rekap", { params: { groupId } });
+      if (res.data.success && res.data.data) return res.data.data;
+    } catch {}
+    return {
+      groups: [],
+      students: [],
+      stats: { totalStudents: 0, rerataNilai: 0, rerataKehadiran: 0 },
+    };
+  },
+
+  getConfigTargets: async (): Promise<ConfigTargets> => {
+    try {
+      const res = await api.get("/dpl/config-targets");
+      if (res.data.success && res.data.data) return res.data.data;
+    } catch {}
+    return {
+      targetTotalKegiatan: 2000,
+      targetTotalJam: 100,
+      targetHarianJam: 4,
+      targetHarianKegiatan: 5,
+    };
+  },
+
+  updateConfigTargets: async (data: Partial<ConfigTargets>) => {
+    const res = await api.put("/dpl/config-targets", data);
     return res.data;
   },
 };

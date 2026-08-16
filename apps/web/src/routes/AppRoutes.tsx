@@ -75,6 +75,10 @@ import ResiduDashboard from "../pages/ResiduDashboard/ResiduDashboard";
 import DownloadPage from "../pages/Download/DownloadPage";
 import EvaluasiDampakKkn from "../pages/EvaluasiDampak/EvaluasiDampakKkn";
 import PemantauanDanRekapitulasi from "../pages/PemantauanDanRekapitulasi/PemantauanDanRekapitulasi";
+import ProgramKerjaKkn from "../pages/ProgramKerjaKkn/ProgramKerjaKkn";
+import PenilaianMahasiswaPage from "../pages/PenilaianKkn/PenilaianMahasiswaPage";
+import PenilaianProkerPage from "../pages/PenilaianKkn/PenilaianProkerPage";
+import RekapNilaiKknPage from "../pages/PenilaianKkn/RekapNilaiKknPage";
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
@@ -451,11 +455,46 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/manajemen-ekosistem-kkn"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
               <ManajemenEkosistemKkn />
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/program-kerja-kkn"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN"]}>
+              <ProgramKerjaKkn />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/penilaian-kkn/mahasiswa"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
+              <PenilaianMahasiswaPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/penilaian-kkn/program-kerja"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
+              <PenilaianProkerPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/penilaian-kkn/rekap"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
+              <RekapNilaiKknPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/validasi-absensi" element={<Navigate to="/monitoring-absen" replace />} />
+        <Route path="/penilaian-kkn" element={<Navigate to="/penilaian-kkn/mahasiswa" replace />} />
+        <Route path="/program-kerja" element={<Navigate to="/program-kerja-kkn" replace />} />
         <Route
           path="/pengelolaan-sampah"
           element={
