@@ -192,7 +192,10 @@ export class SurveiKknController {
         return;
       }
 
-      const survey = await surveiKknService.getSurveyById(kelurahanId);
+      const role = (req as any).user?.role;
+      const userId = (req as any).user?.userId || (req as any).user?.id;
+
+      const survey = await surveiKknService.getSurveyById(kelurahanId, role, userId);
 
       if (!survey) {
         res.status(404).json({
@@ -209,6 +212,14 @@ export class SurveiKknController {
       });
     } catch (error: any) {
       console.error("[surveiKknController] getSurveyById error:", error);
+      if (error.message === "FORBIDDEN_SCOPE") {
+        res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Anda tidak memiliki hak akses untuk melihat data survei kelurahan di luar wilayah binaan Anda",
+        });
+        return;
+      }
       res.status(500).json({
         success: false,
         error: "INTERNAL_SERVER_ERROR",

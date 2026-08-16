@@ -41,6 +41,21 @@ export const evaluasiDampakService = {
     status: "VALID" | "REVISI",
     catatan?: string
   ) => {
+    const survey = await prisma.surveiKelurahan.findUnique({
+      where: { kelurahanId },
+      select: { namaKelurahan: true },
+    });
+    if (!survey) throw new Error("SURVEI_NOT_FOUND");
+
+    const kelompokDpl = await prisma.kelompokKkn.findMany({
+      where: { dplId: dplUserId },
+      select: { kelurahan: true },
+    });
+    const kelurahanNames = kelompokDpl.map((k) => k.kelurahan?.toLowerCase()).filter(Boolean);
+    if (kelurahanNames.length > 0 && !kelurahanNames.includes(survey.namaKelurahan.toLowerCase())) {
+      throw new Error("FORBIDDEN_SCOPE");
+    }
+
     const updated = await prisma.surveiKelurahan.update({
       where: { kelurahanId },
       data: {
@@ -83,6 +98,21 @@ export const evaluasiDampakService = {
     status: "VALID" | "REVISI",
     catatan?: string
   ) => {
+    const endline = await prisma.endlineSurveiKelurahan.findUnique({
+      where: { kelurahanId },
+      select: { namaKelurahan: true },
+    });
+    if (!endline) throw new Error("SURVEI_NOT_FOUND");
+
+    const kelompokDpl = await prisma.kelompokKkn.findMany({
+      where: { dplId: dplUserId },
+      select: { kelurahan: true },
+    });
+    const kelurahanNames = kelompokDpl.map((k) => k.kelurahan?.toLowerCase()).filter(Boolean);
+    if (kelurahanNames.length > 0 && !kelurahanNames.includes(endline.namaKelurahan.toLowerCase())) {
+      throw new Error("FORBIDDEN_SCOPE");
+    }
+
     const updated = await prisma.endlineSurveiKelurahan.update({
       where: { kelurahanId },
       data: {

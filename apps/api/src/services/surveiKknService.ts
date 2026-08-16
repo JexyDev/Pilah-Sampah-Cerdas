@@ -547,8 +547,8 @@ export async function getAllSurveys(
 /**
  * Ambil detail komprehensif survei berdasarkan kelurahanId
  */
-export async function getSurveyById(kelurahanId: number) {
-  return prisma.surveiKelurahan.findUnique({
+export async function getSurveyById(kelurahanId: number, role?: string, userId?: string) {
+  const survey = await prisma.surveiKelurahan.findUnique({
     where: { kelurahanId },
     include: {
       karakteristikWilayah: true,
@@ -559,6 +559,24 @@ export async function getSurveyById(kelurahanId: number) {
       catatanKesimpulan: true, // fixed relation name
     },
   });
+
+  if (!survey) return null;
+
+  if (role === "DPL" && userId) {
+    const kelompokKkn = await prisma.kelompokKkn.findMany({
+      where: { dplId: userId },
+      select: { kelurahan: true },
+    });
+    const kelurahanList = kelompokKkn
+      .map((k) => k.kelurahan?.toLowerCase())
+      .filter((k) => !!k) as string[];
+
+    if (kelurahanList.length > 0 && !kelurahanList.includes(survey.namaKelurahan.toLowerCase())) {
+      throw new Error("FORBIDDEN_SCOPE");
+    }
+  }
+
+  return survey;
 }
 
 /**

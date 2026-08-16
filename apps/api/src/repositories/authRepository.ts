@@ -81,8 +81,16 @@ export class AuthRepository {
               kelompok: true,
             },
           },
+          dplKelompok: {
+            select: {
+              id: true,
+              name: true,
+              kelurahan: true,
+              cakupanRw: true,
+            },
+          },
         },
-      })) as (User & { role: Role; rw?: any; studentProfile?: any }) | null;
+      })) as (User & { role: Role; rw?: any; studentProfile?: any; dplKelompok?: any }) | null;
 
       return user;
     } catch (error: any) {
@@ -194,6 +202,14 @@ export class AuthRepository {
               },
             },
             kelompok: true,
+          },
+        },
+        dplKelompok: {
+          select: {
+            id: true,
+            name: true,
+            kelurahan: true,
+            cakupanRw: true,
           },
         },
       },

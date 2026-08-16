@@ -10,6 +10,7 @@ import { z } from "zod";
 import { authService } from "../services/authService.js";
 import { PrismaClient } from "@prisma/client";
 import { clearLoginAttempts } from "../middlewares/rateLimiter.js";
+import { strongPasswordSchema } from "../utils/passwordValidator.js";
 
 const prisma = new PrismaClient();
 
@@ -27,7 +28,7 @@ function normalizePhone(phone: string): string {
 // Validation Schemas
 const loginSchema = z.object({
   phone: z.string().min(1, "Nomor HP atau NIM diperlukan"),
-  password: z.string().min(6, "Password minimal 6 karakter"),
+  password: z.string().min(1, "Password diperlukan"),
 });
 
 const refreshSchema = z.object({
@@ -46,13 +47,13 @@ const updateProfileSchema = z.object({
 });
 
 const updatePasswordSchema = z.object({
-  currentPassword: z.string().min(6, "Password lama diperlukan"),
-  newPassword: z.string().min(6, "Password baru minimal 6 karakter"),
+  currentPassword: z.string().min(1, "Password lama diperlukan"),
+  newPassword: strongPasswordSchema,
 });
 
 const registerStaffSchema = z.object({
   name: z.string().min(1, "Nama diperlukan"),
-  password: z.string().min(6, "Password minimal 6 karakter"),
+  password: strongPasswordSchema,
   phone: z.string().min(1, "No. Telfon diperlukan"),
   address: z.string().optional(),
 });
@@ -60,7 +61,7 @@ const registerStaffSchema = z.object({
 const registerWargaSchema = z.object({
   name: z.string().min(1, "Nama diperlukan").optional(),
   nama: z.string().min(1).optional(), // alias for name (mobile compat)
-  password: z.string().min(6, "Password minimal 6 karakter"),
+  password: strongPasswordSchema,
   phone: z.string().min(1, "No. Telfon diperlukan"),
   noWa: z.string().optional(), // alias for phone whatsapp
   address: z.string().optional(),

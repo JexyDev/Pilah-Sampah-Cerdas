@@ -103,7 +103,7 @@ const Pengaturan: React.FC = () => {
         const u = response.user;
         const roleUpper = (u.role || "").toUpperCase();
         let resolvedKel = u.kelurahan || "";
-        if (!resolvedKel || resolvedKel === "Dago") {
+        if (!resolvedKel) {
           const combined = `${u.name || ""} ${u.address || ""}`.toLowerCase();
           if (combined.includes("cipaganti")) resolvedKel = "Cipaganti";
           else if (combined.includes("sekeloa")) resolvedKel = "Sekeloa";
@@ -111,7 +111,7 @@ const Pengaturan: React.FC = () => {
           else if (combined.includes("lebak siliwangi")) resolvedKel = "Lebak Siliwangi";
           else if (combined.includes("sadang serang")) resolvedKel = "Sadang Serang";
           else if (combined.includes("dago")) resolvedKel = "Dago";
-          else resolvedKel = u.kelurahan || "Cipaganti";
+          else resolvedKel = "-";
         }
 
         let resolvedRw = u.rw || "";
@@ -148,32 +148,30 @@ const Pengaturan: React.FC = () => {
       setLoadingVps(true);
       const res = await api.get("/system/vps-health");
       if (res.data?.success) setVpsHealth(res.data.data);
-    } catch (err) {
-      console.warn("Gagal memuat status telemetri:", err);
+    } catch {
+      // ignore
     } finally {
       setLoadingVps(false);
     }
   };
 
-  // PENANGANAN FORM (Dengan error handling yang aman)
+  // HANDLERS
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profileData.name.trim()) return toast.error("Nama lengkap wajib diisi");
-
     try {
       setIsSavingProfile(true);
-      const payload = {
-        name: profileData.name, phone: profileData.phone, address: profileData.address,
-        fotoProfil: profileData.fotoProfil || undefined,
+      await authService.updateProfile({
+        name: profileData.name,
+        phone: profileData.phone,
+        address: profileData.address,
+        fotoProfil: profileData.fotoProfil,
         jumlahAnggotaKeluarga: profileData.jumlahAnggotaKeluarga ? parseInt(profileData.jumlahAnggotaKeluarga, 10) : undefined,
-      };
-
-      await authService.updateProfile(payload);
-      updateStoreUser(payload);
+      });
       toast.success("Profil berhasil diperbarui!");
+      updateStoreUser({ name: profileData.name, phone: profileData.phone, address: profileData.address, fotoProfil: profileData.fotoProfil });
     } catch (error: unknown) {
       const errMsg = axios.isAxiosError(error) ? error.response?.data?.message : "Gagal memperbarui profil";
-      toast.error(errMsg || "Terjadi kesalahan pada server");
+      toast.error(errMsg || "Terjadi kesalahan");
     } finally {
       setIsSavingProfile(false);
     }
@@ -182,7 +180,9 @@ const Pengaturan: React.FC = () => {
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!passwordData.currentPassword) return toast.error("Kata sandi saat ini wajib diisi");
-    if (passwordData.newPassword.length < 6) return toast.error("Kata sandi baru minimal 6 karakter");
+    if (passwordData.newPassword.length < 8) return toast.error("Kata sandi baru minimal 8 karakter");
+    if (!/[A-Za-z]/.test(passwordData.newPassword)) return toast.error("Kata sandi baru harus mengandung minimal 1 huruf");
+    if (!/[0-9]/.test(passwordData.newPassword)) return toast.error("Kata sandi baru harus mengandung minimal 1 angka");
     if (passwordData.newPassword !== passwordData.confirmPassword) return toast.error("Konfirmasi kata sandi tidak cocok");
 
     try {

@@ -250,13 +250,13 @@ export const EvaluasiDampakKkn: React.FC = () => {
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold w-fit mb-2 border border-indigo-100">
-            <BarChart3 size={14} /> Evaluasi Dampak KKN
+            <BarChart3 size={14} /> Perubahan Dampak KKN
           </div>
           <h1 className="text-2xl font-extrabold text-slate-800">
-            Evaluasi Dampak Program KKN
+            Perubahan Dampak Program KKN
           </h1>
           <p className="text-slate-500 text-sm mt-1">
-            Validasi data survei kelurahan (Baseline vs Endline) dan pantau perbandingan capaian dampak lingkungan.
+            Validasi data survei kelurahan (Baseline vs Endline) dan pantau evaluasi perubahan capaian dampak lingkungan.
           </p>
         </div>
         <div className="flex items-center gap-2.5 flex-wrap">
@@ -308,7 +308,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                 : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
             }`}
           >
-            Komparasi Dampak
+            Perubahan Dampak
           </button>
         </div>
 

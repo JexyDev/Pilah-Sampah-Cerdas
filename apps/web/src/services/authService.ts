@@ -19,6 +19,7 @@ export const authService = {
     phone?: string;
     address?: string;
     fotoProfil?: string;
+    jumlahAnggotaKeluarga?: number;
   }) => {
     const res = await api.put("/auth/profile", data);
     return res.data;

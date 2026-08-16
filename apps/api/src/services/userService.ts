@@ -549,6 +549,15 @@ export class UserService {
       }
     }
 
+    if (!password) {
+      throw new Error("PASSWORD_REQUIRED");
+    }
+    const { isPasswordValid } = await import("../utils/passwordValidator.js");
+    const passCheck = isPasswordValid(password);
+    if (!passCheck.ok) {
+      throw new Error("INVALID_PASSWORD: " + passCheck.reason);
+    }
+
     const passwordHash = await hashPassword(password);
 
     const newUser = await prisma.$transaction(async (tx) => {
@@ -773,6 +782,11 @@ export class UserService {
       updateData.phone = formattedPhone;
     }
     if (password) {
+      const { isPasswordValid } = await import("../utils/passwordValidator.js");
+      const passCheck = isPasswordValid(password);
+      if (!passCheck.ok) {
+        throw new Error("INVALID_PASSWORD: " + passCheck.reason);
+      }
       updateData.password = await hashPassword(password);
     }
     if (status !== undefined) {

@@ -319,6 +319,15 @@ export class AuthService {
     }
 
     const roleName = user.role.name;
+    const isDpl = roleName === "DPL" || roleName === "DOSEN_PEMBIMBING";
+
+    let dplKelurahanNames: string[] = [];
+    if (user.dplKelompok && Array.isArray(user.dplKelompok) && user.dplKelompok.length > 0) {
+      dplKelurahanNames = Array.from(
+        new Set(user.dplKelompok.map((k: any) => k.kelurahan).filter(Boolean))
+      ) as string[];
+    }
+
     const knownKelurahans = ["Dago", "Sadang Serang", "Sekeloa", "Lebak Gede", "Lebak Siliwangi", "Cipaganti"];
     let matchedKelurahan = "";
     if (user.address || user.name) {
@@ -328,6 +337,7 @@ export class AuthService {
     }
 
     let kelurahanName =
+      (isDpl && dplKelurahanNames.length > 0 ? dplKelurahanNames.join(", ") : "") ||
       user.rw?.kelurahan?.name ||
       user.studentProfile?.assignedRw?.kelurahan?.name ||
       user.studentProfile?.kelompok?.kelurahan ||
@@ -337,13 +347,16 @@ export class AuthService {
     let rwName = user.rw?.name || user.studentProfile?.assignedRw?.name || "";
     if (roleName === "LURAH") {
       rwName = "Seluruh RW";
-      if (!kelurahanName) kelurahanName = "Cipaganti";
     } else if (roleName === "CAMAT") {
       rwName = "Seluruh Kecamatan";
       kelurahanName = "Seluruh Kelurahan";
     } else if (["ADMIN_DLH", "SUPER_USER", "DEVELOPER"].includes(roleName)) {
       rwName = "Seluruh Kota";
       kelurahanName = "Kota Bandung";
+    } else if (isDpl) {
+      rwName = user.dplKelompok && user.dplKelompok.length > 0
+        ? user.dplKelompok.map((k: any) => k.name).join(", ")
+        : "Kelompok Dampingan KKN";
     }
 
     const kecamatanName =
@@ -366,6 +379,7 @@ export class AuthService {
       kecamatan: kecamatanName,
       kelurahan: kelurahanName,
       rw: rwName,
+      dplKelompok: user.dplKelompok || [],
       streakInfo,
     };
   }
@@ -378,13 +392,19 @@ export class AuthService {
       throw new Error("INVALID_INPUT");
     }
 
+    const { isPasswordValid } = await import("../utils/passwordValidator.js");
+    const check = isPasswordValid(newPassword);
+    if (!check.ok) {
+      throw new Error("INVALID_PASSWORD: " + check.reason);
+    }
+
     const user = await authRepository.findUserById(userId);
     if (!user) {
       throw new Error("USER_NOT_FOUND");
     }
 
-    const isPasswordValid = await comparePassword(currentPassword, user.password);
-    if (!isPasswordValid) {
+    const isPasswordMatch = await comparePassword(currentPassword, user.password);
+    if (!isPasswordMatch) {
       throw new Error("INVALID_CREDENTIALS");
     }
 
@@ -673,6 +693,12 @@ export class AuthService {
 
     if (!user) throw new Error("USER_NOT_FOUND");
 
+    const { isPasswordValid } = await import("../utils/passwordValidator.js");
+    const check = isPasswordValid(newPassword);
+    if (!check.ok) {
+      throw new Error("INVALID_PASSWORD: " + check.reason);
+    }
+
     const hashedPassword = await hashPassword(newPassword);
     await prisma.user.update({
       where: { id: user.id },
@@ -691,6 +717,12 @@ export class AuthService {
     const isMatch = await comparePassword(oldPasswordInput, user.password);
     if (!isMatch) {
       throw new Error("WRONG_OLD_PASSWORD");
+    }
+
+    const { isPasswordValid } = await import("../utils/passwordValidator.js");
+    const check = isPasswordValid(newPasswordInput);
+    if (!check.ok) {
+      throw new Error("INVALID_PASSWORD: " + check.reason);
     }
 
     const hashedPassword = await hashPassword(newPasswordInput);
