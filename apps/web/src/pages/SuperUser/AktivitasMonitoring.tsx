@@ -24,6 +24,7 @@ import {
 } from "recharts";
 import {
   Activity,
+  Receipt,
   RefreshCw,
   Search,
   CheckCircle2,
@@ -143,11 +144,11 @@ export const AktivitasMonitoring: React.FC = () => {
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 font-sans">
       {/* Clean Enterprise Page Header */}
       <PageHeader
-        icon={Activity}
-        category="Live Audit & Pemilahan Wilayah"
-        scope={selectedKelurahan === "ALL" ? "Kecamatan Coblong" : `Kelurahan ${selectedKelurahan}`}
-        title="Monitoring Pemilahan Sampah"
-        description="Pemantauan real-time komposisi pemilahan sampah harian, evaluasi kepatuhan warga per kelurahan/RW, serta insentif poin terintegrasi."
+        icon={Receipt}
+        category="Audit Transaksi Pemilahan"
+        scope="Kecamatan Coblong"
+        title="Pemantauan & Rekapitulasi"
+        description="Monitoring analitik volume sampah terpilah warga Coblong, riwayat log fisik, dan skor kepatuhan lingkungan terpadu."
         actions={
           <div className="flex flex-wrap items-center gap-2.5">
             {/* Period Filter Dropdown */}
