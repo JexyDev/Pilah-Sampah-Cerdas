@@ -602,7 +602,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
           <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mt-6">
              <div className="p-4 border-b border-slate-100 bg-slate-50/50">
                <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
-                 Tabel 3 Metrik Delta (Δ) Perubahan
+                 Tabel Komparasi Metrik Dampak KKN
                </h3>
              </div>
              <div className="overflow-x-auto">
@@ -611,9 +611,9 @@ export const EvaluasiDampakKkn: React.FC = () => {
                     <tr className="bg-slate-50 border-b border-slate-200 text-[11px] text-slate-500 uppercase tracking-wider font-bold">
                       <th className="px-4 py-3">Kelurahan</th>
                       <th className="px-4 py-3">Status Data</th>
-                      <th className="px-4 py-3">Δ Kepatuhan Pemilahan</th>
-                      <th className="px-4 py-3">Δ Volume Sampah</th>
-                      <th className="px-4 py-3">Δ Kegiatan Pemanfaatan</th>
+                      <th className="px-4 py-3">Metrik Kepatuhan Pemilahan</th>
+                      <th className="px-4 py-3">Metrik Volume Sampah</th>
+                      <th className="px-4 py-3">Metrik Kegiatan Pemanfaatan</th>
                     </tr>
                   </thead>
                   <tbody className="text-sm divide-y divide-slate-100">

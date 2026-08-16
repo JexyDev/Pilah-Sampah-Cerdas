@@ -147,4 +147,25 @@ router.post("/students/:studentId/assess", dplScopeMiddleware, dplController.ass
  */
 router.post("/approvals/:requestId/decide", dplScopeMiddleware, dplController.decideLeaveRequest);
 
+// ─────────────────────────────────────────────
+// PROGRAM KERJA KKN
+// ─────────────────────────────────────────────
+router.get("/program-kerja", dplScopeMiddleware, dplController.getProgramKerja);
+router.post("/program-kerja", dplScopeMiddleware, dplController.createProgramKerja);
+router.put("/program-kerja/:id", dplScopeMiddleware, dplController.updateProgramKerja);
+router.delete("/program-kerja/:id", dplScopeMiddleware, dplController.deleteProgramKerja);
+router.patch("/program-kerja/:id/decision", dplScopeMiddleware, dplController.decideProgramKerja);
+router.patch("/program-kerja/:id/penilaian", dplScopeMiddleware, dplController.assessProgramKerja);
+
+// ─────────────────────────────────────────────
+// PENILAIAN KKN & REKAP LEMBAR NILAI
+// ─────────────────────────────────────────────
+router.get("/penilaian/rekap", dplScopeMiddleware, dplController.getRekapNilaiAkhir);
+
+// ─────────────────────────────────────────────
+// TARGET & KONFIGURASI KKN
+// ─────────────────────────────────────────────
+router.get("/config-targets", dplController.getConfigTargets);
+router.put("/config-targets", roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE"]), dplController.updateConfigTargets);
+
 export default router;

@@ -261,7 +261,7 @@ const Pengaturan: React.FC = () => {
   const initials = profileData.name ? profileData.name.trim()[0].toUpperCase() : "P";
 
   const menuItems = [
-    { id: "profil" as TabType, label: "Profil & Keamanan", icon: User },
+    { id: "profil" as TabType, label: "Pengaturan Profil", icon: User },
     ...(isDeveloper ? [
       { id: "telemetri" as TabType, label: "Telemetri & Basis Data", icon: Server },
       { id: "rbac" as TabType, label: "Hak Akses (RBAC)", icon: ShieldCheck },
@@ -271,15 +271,15 @@ const Pengaturan: React.FC = () => {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1500px] mx-auto animate-fade-in text-slate-800">
       <div className="space-y-1 bg-transparent pb-2">
-        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Pengaturan Sistem</h1>
+        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Pengaturan Profil</h1>
         <p className="text-xs sm:text-sm font-medium text-slate-500 max-w-4xl leading-relaxed">
-          Kelola profil pribadi, telemetri server, serta hak akses pengguna.
+          Kelola profil pengguna, keamanan akun, peranan wilayah, serta preferensi sistem.
         </p>
       </div>
 
       <div className="flex flex-col lg:flex-row items-start gap-6">
         {/* NAVIGASI KIRI */}
-        <div className="w-full lg:w-72 shrink-0 space-y-2.5">
+        <div className="w-full lg:w-72 shrink-0 space-y-4">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -300,26 +300,108 @@ const Pengaturan: React.FC = () => {
               </button>
             );
           })}
+
+          {/* Info Peran & Domisili di Kolom Kiri */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 space-y-3 shadow-2xs">
+            <div className="flex items-center gap-2 text-xs font-black text-slate-800 pb-2 border-b border-slate-100">
+              <ShieldCheck size={16} className="text-[#009966]" />
+              <span>Peran & Domisili</span>
+            </div>
+            <div className="space-y-2 text-xs">
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
+                <span className="text-[10px] font-black uppercase text-slate-400 block">Tingkat Akses / Role</span>
+                <p className="font-black text-[#009966] uppercase mt-0.5">{profileData.role}</p>
+              </div>
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
+                <span className="text-[10px] font-black uppercase text-slate-400 block">Wilayah Tugas</span>
+                <p className="font-bold text-slate-800 mt-0.5">Kel. {profileData.kelurahan}</p>
+                <p className="text-[11px] text-slate-500">Kec. {profileData.kecamatan} • {profileData.rw}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Keamanan & Sandi di Kolom Kiri */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 space-y-3 shadow-2xs">
+            <div className="flex items-center gap-2 text-xs font-black text-slate-800 pb-2 border-b border-slate-100">
+              <Lock size={16} className="text-amber-600" />
+              <span>Keamanan Kata Sandi</span>
+            </div>
+            <form onSubmit={handlePasswordSubmit} className="space-y-2.5 text-xs font-bold text-slate-700">
+              <div className="space-y-1">
+                <label className="block text-[11px] font-black">Kata Sandi Saat Ini</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-amber-500 text-xs font-mono"
+                  value={passwordData.currentPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-[11px] font-black">Kata Sandi Baru</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Min. 8 karakter"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-amber-500 text-xs font-mono"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-[11px] font-black">Konfirmasi Sandi Baru</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Ketik ulang sandi"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-amber-500 text-xs font-mono"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                />
+              </div>
+
+              {/* Aturan Password */}
+              <div className="p-2.5 bg-amber-50/60 border border-amber-200/80 rounded-xl text-[10.5px] text-amber-900 space-y-0.5">
+                <p className="font-bold">Ketentuan Kata Sandi:</p>
+                <ul className="list-disc pl-3 text-[10px] text-amber-800 space-y-0.5 font-medium">
+                  <li>Minimal 8 karakter</li>
+                  <li>Kombinasi huruf & angka/simbol</li>
+                </ul>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSavingPassword}
+                className="w-full py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {isSavingPassword ? <Loader2 size={14} className="animate-spin" /> : <KeyRound size={14} />}
+                Perbarui Kata Sandi
+              </button>
+            </form>
+          </div>
         </div>
 
-        {/* PANEL KONTEN */}
+        {/* PANEL KONTEN KANAN */}
         <div className="flex-1 w-full bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6 sm:p-8 min-h-[600px] space-y-6">
 
           {/* TAB 1: PROFIL */}
           {activeTab === "profil" && (
-            <div className="space-y-8 animate-fade-in">
+            <div className="space-y-6 animate-fade-in">
               <div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Profil & Keamanan Akun</h2>
-                <p className="text-xs text-slate-500 font-medium mt-1">Kelola identitas, domisili, dan pembaruan kata sandi.</p>
+                <h2 className="text-xl font-black text-slate-900 tracking-tight">Informasi Profil Akun</h2>
+                <p className="text-xs text-slate-500 font-medium mt-1">Perbarui data profil, kontak WhatsApp, dan foto resmi pengguna.</p>
               </div>
 
-              {/* Form Profil */}
+              {/* Form Profil Utama */}
               <div className="bg-[#f8fafc] rounded-2xl border border-slate-200/80 p-5 sm:p-6 space-y-6">
                 <div className="flex items-center gap-2.5 text-slate-800 pb-3 border-b border-slate-200/80">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-[#009966] flex items-center justify-center font-bold"><User size={18} /></div>
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-[#009966] flex items-center justify-center font-bold">
+                    <User size={18} />
+                  </div>
                   <div>
                     <h3 className="text-sm font-black text-slate-900 tracking-tight">Profil Utama</h3>
-                    <p className="text-[11.5px] font-medium text-slate-500">Pembaruan pasfoto dan kontak</p>
+                    <p className="text-[11.5px] font-medium text-slate-500">Pembaruan foto dan informasi kontak</p>
                   </div>
                 </div>
 
@@ -331,7 +413,7 @@ const Pengaturan: React.FC = () => {
                   <form onSubmit={handleProfileSubmit} className="space-y-6">
                     <div className="flex flex-col sm:flex-row gap-6 items-start">
                       {/* Upload Foto */}
-                      <div className="flex flex-col items-center gap-3 shrink-0">
+                      <div className="flex flex-col items-center gap-2 shrink-0">
                         <div
                           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                           onDragLeave={() => setDragOver(false)}
@@ -352,11 +434,12 @@ const Pengaturan: React.FC = () => {
                             <span className="text-3xl font-black text-[#009966]">{initials}</span>
                           )}
                         </div>
-                        <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={(e) => e.target.files?.[0] && handleFileChange(e.target.files[0])} />
+                        <input type="file" accept="image/png, image/jpeg, image/webp" className="hidden" ref={fileInputRef} onChange={(e) => e.target.files?.[0] && handleFileChange(e.target.files[0])} />
+                        <span className="text-[10px] text-slate-400 text-center font-medium">Format JPG, PNG, WebP (Maks. 2MB)</span>
                         <div className="flex items-center gap-2 text-xs">
-                          <button type="button" onClick={() => fileInputRef.current?.click()} className="font-black text-[#009966] hover:underline">Unggah</button>
+                          <button type="button" onClick={() => fileInputRef.current?.click()} className="font-black text-[#009966] hover:underline cursor-pointer">Unggah</button>
                           {profileData.fotoProfil && (
-                            <><span className="text-slate-300">•</span><button type="button" onClick={handleDeletePhoto} className="font-black text-rose-600 hover:underline">Hapus</button></>
+                            <><span className="text-slate-300">•</span><button type="button" onClick={handleDeletePhoto} className="font-black text-rose-600 hover:underline cursor-pointer">Hapus</button></>
                           )}
                         </div>
                       </div>
@@ -372,94 +455,47 @@ const Pengaturan: React.FC = () => {
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="block text-xs font-black">Nomor WhatsApp</label>
+                          <label className="block text-xs font-black">Nomor WhatsApp (+62)</label>
                           <div className="relative">
                             <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input type="tel" className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-[#009966] transition-all" placeholder="+628xxx" value={profileData.phone} onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })} />
+                            <input type="tel" className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-[#009966] transition-all font-mono" placeholder="+628xxx" value={profileData.phone} onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })} />
                           </div>
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="block text-xs font-black">Jumlah Anggota Keluarga</label>
-                          <div className="relative">
-                            <Users size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input type="number" min={1} max={20} className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-[#009966] transition-all" value={profileData.jumlahAnggotaKeluarga} onChange={(e) => setProfileData({ ...profileData, jumlahAnggotaKeluarga: e.target.value })} />
-                          </div>
+                          <label className="block text-xs font-black">Peran / Hak Akses</label>
+                          <input type="text" disabled className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 font-extrabold uppercase cursor-not-allowed" value={profileData.role} />
                         </div>
 
-                        <div className="space-y-1.5 sm:col-span-2">
-                          <label className="block text-xs font-black">Alamat Lengkap</label>
-                          <div className="relative">
-                            <Home size={16} className="absolute left-3.5 top-3 text-slate-400" />
-                            <textarea rows={2} className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:border-[#009966] transition-all" value={profileData.address} onChange={(e) => setProfileData({ ...profileData, address: e.target.value })} />
-                          </div>
-                        </div>
+                        {profileData.role === "WARGA" && (
+                          <>
+                            <div className="space-y-1.5 sm:col-span-2">
+                              <label className="block text-xs font-black">Jumlah Anggota Keluarga</label>
+                              <div className="relative">
+                                <Users size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input type="number" min={1} max={20} className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-[#009966] transition-all" value={profileData.jumlahAnggotaKeluarga} onChange={(e) => setProfileData({ ...profileData, jumlahAnggotaKeluarga: e.target.value })} />
+                              </div>
+                            </div>
+
+                            <div className="space-y-1.5 sm:col-span-2">
+                              <label className="block text-xs font-black">Alamat Lengkap Domisili</label>
+                              <div className="relative">
+                                <Home size={16} className="absolute left-3.5 top-3 text-slate-400" />
+                                <textarea rows={2} className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:border-[#009966] transition-all" value={profileData.address} onChange={(e) => setProfileData({ ...profileData, address: e.target.value })} />
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
-                    <div className="flex justify-end pt-2">
-                      <button type="submit" disabled={isSavingProfile} className="px-6 py-2.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white font-extrabold text-xs flex items-center gap-2 cursor-pointer disabled:opacity-50">
+
+                    <div className="flex justify-end pt-2 border-t border-slate-200/60">
+                      <button type="submit" disabled={isSavingProfile} className="px-6 py-2.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white font-extrabold text-xs flex items-center gap-2 cursor-pointer disabled:opacity-50 shadow-xs transition-colors">
                         {isSavingProfile ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Simpan Profil
                       </button>
                     </div>
                   </form>
                 )}
-              </div>
-
-              {/* Info Peran */}
-              <div className="bg-[#f8fafc] rounded-2xl border border-slate-200/80 p-5 sm:p-6 space-y-4">
-                <div className="flex items-center gap-2 text-xs font-black text-slate-800">
-                  <ShieldCheck size={18} className="text-[#009966]" /> <span>Peran & Domisili</span>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-1">
-                    <span className="text-[10px] font-black uppercase text-slate-400">Tingkat Akses</span>
-                    <p className="font-black text-[#009966] uppercase">{profileData.role}</p>
-                  </div>
-                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-1">
-                    <span className="text-[10px] font-black uppercase text-slate-400">Rukun Warga</span>
-                    <p className="font-bold text-slate-800">{profileData.rw}</p>
-                  </div>
-                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-1">
-                    <span className="text-[10px] font-black uppercase text-slate-400">Kelurahan</span>
-                    <p className="font-bold text-slate-800">Kel. {profileData.kelurahan}</p>
-                    <p className="text-[11px] font-semibold text-slate-500">Kec. {profileData.kecamatan}</p>
-                  </div>
-                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-1">
-                    <span className="text-[10px] font-black uppercase text-slate-400">Kota</span>
-                    <p className="font-bold text-slate-800">{profileData.kabupaten}</p>
-                    <p className="text-[11px] font-semibold text-slate-500">{profileData.provinsi}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Keamanan */}
-              <div className="bg-[#f8fafc] rounded-2xl border border-slate-200/80 p-5 sm:p-6 space-y-6">
-                <div className="flex items-center gap-2.5 text-slate-800 pb-3 border-b border-slate-200/80">
-                  <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold"><Lock size={18} /></div>
-                  <div>
-                    <h3 className="text-sm font-black text-slate-900 tracking-tight">Keamanan Akun</h3>
-                    <p className="text-[11.5px] font-medium text-slate-500">Perbarui kata sandi secara berkala</p>
-                  </div>
-                </div>
-                <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-lg text-xs font-bold text-slate-700">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-black">Kata Sandi Saat Ini</label>
-                    <input type="password" required className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-amber-500" value={passwordData.currentPassword} onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-black">Kata Sandi Baru</label>
-                    <input type="password" required className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-amber-500" value={passwordData.newPassword} onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-black">Konfirmasi Kata Sandi</label>
-                    <input type="password" required className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-amber-500" value={passwordData.confirmPassword} onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })} />
-                  </div>
-                  <div className="pt-2 flex justify-end">
-                    <button type="submit" disabled={isSavingPassword} className="px-6 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs flex items-center gap-2 disabled:opacity-50">
-                      {isSavingPassword ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />} Perbarui Sandi
-                    </button>
-                  </div>
-                </form>
               </div>
             </div>
           )}

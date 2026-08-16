@@ -147,4 +147,147 @@ export const dplController = {
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   },
+
+  getProgramKerja: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const dplUserId = getUserId(req);
+      const userRole = (req.user as any)?.role;
+      const groupId = req.query.groupId as string | undefined;
+      const data = await dplService.getProgramKerja(dplUserId, groupId, userRole);
+      res.json({ success: true, data });
+    } catch (error: any) {
+      console.error("[dplController.getProgramKerja] error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  },
+
+  createProgramKerja: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const dplUserId = getUserId(req);
+      const { kelompokId, nomor, deskripsi, kebutuhanBiaya } = req.body;
+      if (!kelompokId || !deskripsi) {
+        res.status(400).json({ error: "BAD_REQUEST", message: "kelompokId dan deskripsi wajib diisi" });
+        return;
+      }
+      const data = await dplService.createProgramKerja(dplUserId, {
+        kelompokId,
+        nomor: nomor ? Number(nomor) : undefined,
+        deskripsi,
+        kebutuhanBiaya: kebutuhanBiaya !== undefined ? Number(kebutuhanBiaya) : 0,
+      });
+      res.status(201).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[dplController.createProgramKerja] error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  },
+
+  updateProgramKerja: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const id = req.params.id;
+      const { nomor, deskripsi, kebutuhanBiaya, status, catatanDpl } = req.body;
+      const data = await dplService.updateProgramKerja(id, {
+        nomor: nomor !== undefined ? Number(nomor) : undefined,
+        deskripsi,
+        kebutuhanBiaya: kebutuhanBiaya !== undefined ? Number(kebutuhanBiaya) : undefined,
+        status,
+        catatanDpl,
+      });
+      res.json({ success: true, data });
+    } catch (error: any) {
+      console.error("[dplController.updateProgramKerja] error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  },
+
+  deleteProgramKerja: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const id = req.params.id;
+      await dplService.deleteProgramKerja(id);
+      res.json({ success: true, message: "Program kerja berhasil dihapus" });
+    } catch (error: any) {
+      console.error("[dplController.deleteProgramKerja] error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  },
+
+  decideProgramKerja: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const dplUserId = getUserId(req);
+      const id = req.params.id;
+      const { status, catatanDpl } = req.body;
+      if (!["DITERIMA", "DITOLAK"].includes(status)) {
+        res.status(400).json({ error: "BAD_REQUEST", message: "Status harus DITERIMA atau DITOLAK" });
+        return;
+      }
+      const data = await dplService.decideProgramKerja(dplUserId, id, status, catatanDpl);
+      res.json({ success: true, data });
+    } catch (error: any) {
+      console.error("[dplController.decideProgramKerja] error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  },
+
+  assessProgramKerja: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const dplUserId = getUserId(req);
+      const id = req.params.id;
+      const { skorPenilaian, evaluasiDpl } = req.body;
+      if (skorPenilaian === undefined || isNaN(Number(skorPenilaian))) {
+        res.status(400).json({ error: "BAD_REQUEST", message: "skorPenilaian (angka 0-100) wajib diisi" });
+        return;
+      }
+      const data = await dplService.assessProgramKerja(
+        dplUserId,
+        id,
+        Number(skorPenilaian),
+        evaluasiDpl
+      );
+      res.json({ success: true, data });
+    } catch (error: any) {
+      console.error("[dplController.assessProgramKerja] error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  },
+
+  getRekapNilaiAkhir: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const dplUserId = getUserId(req);
+      const userRole = (req.user as any)?.role;
+      const groupId = req.query.groupId as string | undefined;
+      const data = await dplService.getRekapNilaiAkhir(dplUserId, groupId, userRole);
+      res.json({ success: true, data });
+    } catch (error: any) {
+      console.error("[dplController.getRekapNilaiAkhir] error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  },
+
+  getConfigTargets: async (_req: Request, res: Response): Promise<void> => {
+    try {
+      const data = await dplService.getConfigTargets();
+      res.json({ success: true, data });
+    } catch (error: any) {
+      console.error("[dplController.getConfigTargets] error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  },
+
+  updateConfigTargets: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const user = req.user as any;
+      const { targetTotalKegiatan, targetTotalJam, targetHarianJam, targetHarianKegiatan } = req.body;
+      const data = await dplService.updateConfigTargets({
+        targetTotalKegiatan: targetTotalKegiatan !== undefined ? Number(targetTotalKegiatan) : undefined,
+        targetTotalJam: targetTotalJam !== undefined ? Number(targetTotalJam) : undefined,
+        targetHarianJam: targetHarianJam !== undefined ? Number(targetHarianJam) : undefined,
+        targetHarianKegiatan: targetHarianKegiatan !== undefined ? Number(targetHarianKegiatan) : undefined,
+        updatedBy: user?.name || user?.userId || "DPL",
+      });
+      res.json({ success: true, data });
+    } catch (error: any) {
+      console.error("[dplController.updateConfigTargets] error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  },
 };
