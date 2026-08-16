@@ -566,6 +566,8 @@ class ApiBinRepository implements BinRepository {
     required String userId,
     required String evidencePhotoPath,
     String? wargaName,
+    String? petugasId,
+    String? jenisSampah,
   }) async {
     try {
       // Auto-compress evidence photo before upload (Target < 5MB, max 1920x1080)
@@ -580,6 +582,8 @@ class ApiBinRepository implements BinRepository {
         'binId': binId,
         'userId': userId,
         if (wargaName != null && wargaName.isNotEmpty) 'wargaName': wargaName,
+        if (petugasId != null && petugasId.isNotEmpty) 'petugasId': petugasId,
+        if (jenisSampah != null && jenisSampah.isNotEmpty) 'jenisSampah': jenisSampah,
         'evidence': await MultipartFile.fromFile(
           compressedEvidencePath,
           filename: 'evidence_${DateTime.now().millisecondsSinceEpoch}.jpg',
@@ -675,6 +679,46 @@ class ApiBinRepository implements BinRepository {
       debugPrint('Silenced error: $e');
     }
     return null;
+  }
+
+  @override
+  Future<PetugasStatusResponse> getPetugasStatus() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.binsResetPetugasStatus);
+      return PetugasStatusResponse.fromJson(response.data['data'] as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw BinException('NETWORK_ERROR', 'Gagal memuat status petugas: ${e.message}');
+    } catch (e) {
+      throw BinException('UNKNOWN_ERROR', 'Terjadi kesalahan sistem: $e');
+    }
+  }
+
+  @override
+  Future<List<PetugasEntity>> getPetugasWilayah() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.binsResetPetugasWilayah);
+      final List data = response.data['data'] as List? ?? [];
+      return data.map((e) => PetugasEntity.fromJson(e as Map<String, dynamic>)).toList();
+    } on DioException catch (e) {
+      throw BinException('NETWORK_ERROR', 'Gagal memuat daftar petugas: ${e.message}');
+    } catch (e) {
+      throw BinException('UNKNOWN_ERROR', 'Terjadi kesalahan sistem: $e');
+    }
+  }
+
+  @override
+  Future<String> setDefaultPetugas(String petugasId) async {
+    try {
+      final response = await apiClient.dio.post(
+        ApiEndpoints.binsResetSetDefaultPetugas,
+        data: {'petugasId': petugasId},
+      );
+      return response.data['data']['petugasId']?.toString() ?? petugasId;
+    } on DioException catch (e) {
+      throw BinException('NETWORK_ERROR', 'Gagal menyimpan petugas pilihan: ${e.message}');
+    } catch (e) {
+      throw BinException('UNKNOWN_ERROR', 'Terjadi kesalahan sistem: $e');
+    }
   }
 
   // ─── Measure Bin ──────────────────────────────────────────────────────────

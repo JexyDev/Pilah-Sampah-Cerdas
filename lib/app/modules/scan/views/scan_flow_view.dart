@@ -1074,7 +1074,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
         },
         onCancel: () {
           Navigator.of(context).pop(); // Tutup dialog
-          Navigator.of(context).pop(); // Keluar dari halaman Scan
+          Navigator.maybePop(context); // Keluar dari halaman Scan
         },
       ),
     );

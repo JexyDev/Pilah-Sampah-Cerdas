@@ -321,7 +321,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
       return _SuccessScreen(
         onBack: () {
           ref.read(aktivasiBinProvider.notifier).reset();
-          Navigator.of(context).pop();
+          Navigator.maybePop(context);
         },
       );
     }
@@ -331,7 +331,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         backgroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.maybePop(context),
         ),
         title: const Text(
           'Aktivasi Tempat Sampah',
