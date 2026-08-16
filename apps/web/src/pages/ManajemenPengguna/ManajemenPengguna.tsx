@@ -299,22 +299,15 @@ const ManajemenPengguna: React.FC = () => {
     handleSubmit(e);
   };
   const filteredRwsByKelurahan = useMemo(() => {
-    let targetClean = getCleanKelName(modalKelurahan).toLowerCase();
+    const targetClean = getCleanKelName(modalKelurahan).toLowerCase();
     if (!targetClean || targetClean === "unassigned") {
-      targetClean = "cipaganti";
+      return [];
     }
 
-    let list = areasList.filter((a: any) => {
+    const list = areasList.filter((a: any) => {
       const areaKel = (a.kelurahan?.name || "").toLowerCase().replace(/^kel\.\s*/i, "").trim();
-      return areaKel.includes(targetClean) || targetClean.includes(areaKel);
+      return areaKel === targetClean || areaKel.includes(targetClean) || targetClean.includes(areaKel);
     });
-
-    if (list.length === 0 && areasList.length > 0) {
-      list = areasList.filter((a: any) => {
-        const areaKel = (a.kelurahan?.name || "").toLowerCase().replace(/^kel\.\s*/i, "").trim();
-        return areaKel.includes("cipaganti");
-      });
-    }
 
     // Deduplicate list by numeric RW identifier to prevent duplicate RW buttons in modal
     const seen = new Set<string>();
@@ -354,7 +347,7 @@ const ManajemenPengguna: React.FC = () => {
     return kabupatenList.filter((kb: any) => {
       const pId = kb.provinsiId || kb.provinsi?.id;
       const pName = (kb.provinsi?.name || kb.provinsi?.nama || "").toLowerCase();
-      return pId === selectedProv.id || (pName && pName === formData.provinsi.toLowerCase());
+      return Number(pId) === Number(selectedProv.id) || (pName && pName === formData.provinsi.toLowerCase());
     });
   }, [provinsiList, kabupatenList, formData.provinsi]);
 
@@ -368,84 +361,61 @@ const ManajemenPengguna: React.FC = () => {
     return kecamatanList.filter((kc: any) => {
       const kId = kc.kabupatenId || kc.kabupaten?.id;
       const kName = (kc.kabupaten?.name || kc.kabupaten?.nama || "").toLowerCase();
-      return kId === selectedKab.id || (kName && kName === formData.kabupaten.toLowerCase());
+      return Number(kId) === Number(selectedKab.id) || (kName && kName === formData.kabupaten.toLowerCase());
     });
   }, [kabupatenList, kecamatanList, formData.kabupaten]);
 
-  // Dynamically filter Kelurahan by selected Kecamatan
+  // Dynamically filter Kelurahan by selected Kecamatan (STRICT FK ID SCOPE)
   const filteredKelurahanList = useMemo(() => {
-    const curKecRaw = formData.kecamatan || "Kecamatan Coblong";
+    if (!formData.kecamatan || kelurahanList.length === 0) return [];
+    const curKecRaw = formData.kecamatan;
     const curKecNorm = normalizeKecamatan(curKecRaw);
-    if (kelurahanList.length === 0) return [];
 
     const selectedKec = kecamatanList.find((kc: any) => {
       const kNameNorm = normalizeKecamatan(kc.name || kc.nama);
       return kNameNorm === curKecNorm || (kc.name || kc.nama || "").toLowerCase() === curKecRaw.toLowerCase();
     });
 
-    const list = kelurahanList.filter((kl: any) => {
-      const kecId = kl.kecamatanId || kl.kecamatan?.id;
-      const kecName = (kl.kecamatan?.name || kl.kecamatan?.nama || kl.kecamatanNama || "");
-      const kecNameNorm = normalizeKecamatan(kecName);
-      if (selectedKec && (Number(kecId) === Number(selectedKec.id))) return true;
-      if (kecNameNorm && (kecNameNorm === curKecNorm || curKecNorm.includes(kecNameNorm) || kecNameNorm.includes(curKecNorm))) return true;
-      if (curKecNorm === "coblong") {
-        const kelClean = getCleanKelName(kl.name || kl.nama);
-        if (["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"].includes(kelClean)) {
-          return true;
-        }
-      }
-      return false;
-    });
+    if (!selectedKec) return [];
 
-    return list.length > 0
-      ? list
-      : kelurahanList.filter((kl: any) => {
-          const kelClean = getCleanKelName(kl.name || kl.nama);
-          return ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"].includes(kelClean);
-        });
+    return kelurahanList.filter((kl: any) => {
+      const kecId = kl.kecamatanId || kl.kecamatan?.id;
+      return Number(kecId) === Number(selectedKec.id);
+    });
   }, [kecamatanList, kelurahanList, formData.kecamatan]);
 
   const handleProvinsiSelect = (newProv: string) => {
     const selectedProvObj = provinsiList.find(
       (p: any) => (p.name || p.nama || "").toLowerCase() === newProv.toLowerCase()
     );
-    const kabsForProv = kabupatenList.filter((kb: any) => {
-      const pId = kb.provinsiId || kb.provinsi?.id;
-      const pName = (kb.provinsi?.name || kb.provinsi?.nama || "").toLowerCase();
-      return (selectedProvObj && pId === selectedProvObj.id) || (pName && pName === newProv.toLowerCase());
-    });
-    const defaultKab = kabsForProv.length > 0 ? (kabsForProv[0].name || kabsForProv[0].nama) : "Kota Bandung";
+    const kabsForProv = selectedProvObj
+      ? kabupatenList.filter((kb: any) => Number(kb.provinsiId || kb.provinsi?.id) === Number(selectedProvObj.id))
+      : [];
+    const defaultKab = kabsForProv.length > 0 ? (kabsForProv[0].name || kabsForProv[0].nama) : "";
 
-    let defaultKec = "Kecamatan Coblong";
-    let defaultKel = "Cipaganti";
+    let defaultKec = "";
+    let defaultKel = "";
     if (defaultKab) {
       const selectedKabObj = kabupatenList.find(
         (kb: any) => (kb.name || kb.nama || "").toLowerCase() === defaultKab.toLowerCase()
       );
-      const kecsForKab = kecamatanList.filter((kc: any) => {
-        const kId = kc.kabupatenId || kc.kabupaten?.id;
-        const kName = (kc.kabupaten?.name || kc.kabupaten?.nama || "").toLowerCase();
-        return (selectedKabObj && kId === selectedKabObj.id) || (kName && kName === defaultKab.toLowerCase());
-      });
-      defaultKec = kecsForKab.length > 0 ? (kecsForKab[0].name || kecsForKab[0].nama) : "Kecamatan Coblong";
+      const kecsForKab = selectedKabObj
+        ? kecamatanList.filter((kc: any) => Number(kc.kabupatenId || kc.kabupaten?.id) === Number(selectedKabObj.id))
+        : [];
+      defaultKec = kecsForKab.length > 0 ? (kecsForKab[0].name || kecsForKab[0].nama) : "";
 
       if (defaultKec) {
         const selectedKecObj = kecamatanList.find(
           (kc: any) => (kc.name || kc.nama || "").toLowerCase() === defaultKec.toLowerCase()
         );
-        const kelsForKec = kelurahanList.filter((kl: any) => {
-          const kecId = kl.kecamatanId || kl.kecamatan?.id;
-          const kecName = (kl.kecamatan?.name || kl.kecamatan?.nama || kl.kecamatanNama || "").toLowerCase();
-          return (selectedKecObj && Number(kecId) === Number(selectedKecObj.id)) || (kecName && kecName === defaultKec.toLowerCase());
-        });
-        defaultKel = kelsForKec.length > 0 ? (kelsForKec[0].name || kelsForKec[0].nama) : "Cipaganti";
+        const kelsForKec = selectedKecObj
+          ? kelurahanList.filter((kl: any) => Number(kl.kecamatanId || kl.kecamatan?.id) === Number(selectedKecObj.id))
+          : [];
+        defaultKel = kelsForKec.length > 0 ? (kelsForKec[0].name || kelsForKec[0].nama) : "";
       }
     }
 
-    if (defaultKel) {
-      setModalKelurahan(getCleanKelName(defaultKel));
-    }
+    setModalKelurahan(defaultKel ? getCleanKelName(defaultKel) : "");
 
     setFormData((prev) => ({
       ...prev,
@@ -453,6 +423,8 @@ const ManajemenPengguna: React.FC = () => {
       kabupaten: defaultKab,
       wilayah: defaultKab,
       kecamatan: defaultKec,
+      rtRwId: "",
+      rw: "",
     }));
   };
 
@@ -460,59 +432,61 @@ const ManajemenPengguna: React.FC = () => {
     const selectedKabObj = kabupatenList.find(
       (kb: any) => (kb.name || kb.nama || "").toLowerCase() === newKab.toLowerCase()
     );
-    const kecsForKab = kecamatanList.filter((kc: any) => {
-      const kId = kc.kabupatenId || kc.kabupaten?.id;
-      const kName = (kc.kabupaten?.name || kc.kabupaten?.nama || "").toLowerCase();
-      return (selectedKabObj && kId === selectedKabObj.id) || (kName && kName === newKab.toLowerCase());
-    });
-    const defaultKec = kecsForKab.length > 0 ? (kecsForKab[0].name || kecsForKab[0].nama) : "Kecamatan Coblong";
+    const kecsForKab = selectedKabObj
+      ? kecamatanList.filter((kc: any) => Number(kc.kabupatenId || kc.kabupaten?.id) === Number(selectedKabObj.id))
+      : [];
+    const defaultKec = kecsForKab.length > 0 ? (kecsForKab[0].name || kecsForKab[0].nama) : "";
 
-    let defaultKel = "Cipaganti";
+    let defaultKel = "";
     if (defaultKec) {
       const selectedKecObj = kecamatanList.find(
         (kc: any) => (kc.name || kc.nama || "").toLowerCase() === defaultKec.toLowerCase()
       );
-      const kelsForKec = kelurahanList.filter((kl: any) => {
-        const kecId = kl.kecamatanId || kl.kecamatan?.id;
-        const kecName = (kl.kecamatan?.name || kl.kecamatan?.nama || kl.kecamatanNama || "").toLowerCase();
-        return (selectedKecObj && Number(kecId) === Number(selectedKecObj.id)) || (kecName && kecName === defaultKec.toLowerCase());
-      });
-      defaultKel = kelsForKec.length > 0 ? (kelsForKec[0].name || kelsForKec[0].nama) : "Cipaganti";
+      const kelsForKec = selectedKecObj
+        ? kelurahanList.filter((kl: any) => Number(kl.kecamatanId || kl.kecamatan?.id) === Number(selectedKecObj.id))
+        : [];
+      defaultKel = kelsForKec.length > 0 ? (kelsForKec[0].name || kelsForKec[0].nama) : "";
     }
 
-    if (defaultKel) {
-      setModalKelurahan(getCleanKelName(defaultKel));
-    }
+    setModalKelurahan(defaultKel ? getCleanKelName(defaultKel) : "");
 
     setFormData((prev) => ({
       ...prev,
       kabupaten: newKab,
       wilayah: newKab,
       kecamatan: defaultKec,
+      rtRwId: "",
+      rw: "",
     }));
   };
 
   const handleKecamatanSelect = (newKec: string) => {
     const newKecNorm = normalizeKecamatan(newKec);
     const selectedKecObj = kecamatanList.find(
-      (kc: any) => normalizeKecamatan(kc.name || kc.nama) === newKecNorm
+      (kc: any) => normalizeKecamatan(kc.name || kc.nama) === newKecNorm || (kc.name || kc.nama || "").toLowerCase() === newKec.toLowerCase()
     );
-    const kelsForKec = kelurahanList.filter((kl: any) => {
-      const kecId = kl.kecamatanId || kl.kecamatan?.id;
-      const kecName = (kl.kecamatan?.name || kl.kecamatan?.nama || kl.kecamatanNama || "");
-      const kecNameNorm = normalizeKecamatan(kecName);
-      return (selectedKecObj && Number(kecId) === Number(selectedKecObj.id)) || (kecNameNorm && kecNameNorm === newKecNorm);
+    const kelsForKec = selectedKecObj
+      ? kelurahanList.filter((kl: any) => Number(kl.kecamatanId || kl.kecamatan?.id) === Number(selectedKecObj.id))
+      : [];
+    const defaultKel = kelsForKec.length > 0 ? (kelsForKec[0].name || kelsForKec[0].nama) : "";
+
+    setModalKelurahan(defaultKel ? getCleanKelName(defaultKel) : "");
+
+    setFormData((prev) => {
+      let newWilayah = prev.wilayah;
+      if (prev.roleName === "LURAH") {
+        newWilayah = defaultKel ? `Kel. ${defaultKel}` : newKec;
+      } else if (["PETUGAS_RESIDU", "RW", "WARGA"].includes(prev.roleName)) {
+        newWilayah = defaultKel ? `${newKec}, Kel. ${defaultKel}` : newKec;
+      }
+      return {
+        ...prev,
+        kecamatan: newKec,
+        wilayah: newWilayah,
+        rtRwId: "",
+        rw: "",
+      };
     });
-    const defaultKel = kelsForKec.length > 0 ? (kelsForKec[0].name || kelsForKec[0].nama) : "Cipaganti";
-
-    if (defaultKel) {
-      setModalKelurahan(getCleanKelName(defaultKel));
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      kecamatan: newKec,
-    }));
   };
 
   const getRwListForKelurahan = (rawKel?: string) => {
@@ -2143,20 +2117,24 @@ const ManajemenPengguna: React.FC = () => {
                                 });
                               }}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                              disabled={filteredKelurahanList.length === 0}
                             >
                               {(() => {
                                 const activeKelList = filteredKelurahanList;
                                 return activeKelList.length === 0 ? (
                                   <option value="">-- Belum ada Kelurahan untuk Kecamatan ini --</option>
                                 ) : (
-                                  activeKelList.map((kl: any) => {
-                                    const kName = getCleanKelName(kl.name || kl.nama);
-                                    return (
-                                      <option key={kl.id} value={kName}>
-                                        Kel. {kName}
-                                      </option>
-                                    );
-                                  })
+                                  <>
+                                    <option value="">-- Pilih Kelurahan --</option>
+                                    {activeKelList.map((kl: any) => {
+                                      const kName = getCleanKelName(kl.name || kl.nama);
+                                      return (
+                                        <option key={kl.id} value={kName}>
+                                          Kel. {kName}
+                                        </option>
+                                      );
+                                    })}
+                                  </>
                                 );
                               })()}
                             </select>
@@ -2189,13 +2167,20 @@ const ManajemenPengguna: React.FC = () => {
                                   });
                                 }}
                                 className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                                disabled={filteredRwsByKelurahan.length === 0}
                               >
-                                <option value="">-- Pilih RW (Kel. {getCleanKelName(modalKelurahan)}) --</option>
-                                {filteredRwsByKelurahan.map((a: any) => (
-                                  <option key={a.id} value={a.id}>
-                                    {a.name} (Kel. {a.kelurahan?.name || getCleanKelName(modalKelurahan)})
-                                  </option>
-                                ))}
+                                {filteredRwsByKelurahan.length === 0 ? (
+                                  <option value="">-- Belum ada RW untuk Kelurahan ini --</option>
+                                ) : (
+                                  <>
+                                    <option value="">-- Pilih RW (Kel. {getCleanKelName(modalKelurahan)}) --</option>
+                                    {filteredRwsByKelurahan.map((a: any) => (
+                                      <option key={a.id} value={a.id}>
+                                        {a.name} (Kel. {a.kelurahan?.name || getCleanKelName(modalKelurahan)})
+                                      </option>
+                                    ))}
+                                  </>
+                                )}
                               </select>
                             </div>
                           )}
@@ -2248,14 +2233,11 @@ const ManajemenPengguna: React.FC = () => {
                         <div>
                           <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Jumlah Anggota Keluarga</label>
                           <input
-                            type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            value={formData.jumlahAnggotaKeluarga}
-                            onChange={(e) => {
-                              const val = e.target.value.replace(/\D/g, "");
-                              setFormData({ ...formData, jumlahAnggotaKeluarga: val });
-                            }}
+                            type="number"
+                            min="1"
+                            max="30"
+                            value={formData.jumlahAnggotaKeluarga || ""}
+                            onChange={(e) => setFormData({ ...formData, jumlahAnggotaKeluarga: e.target.value })}
                             placeholder="Contoh: 4"
                             className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-semibold transition-all outline-none"
                           />
@@ -2268,7 +2250,7 @@ const ManajemenPengguna: React.FC = () => {
                           <div>
                             <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kelurahan Penugasan *</label>
                             <select
-                              value={getCleanKelName(modalKelurahan) || (filteredKelurahanList[0] ? getCleanKelName(filteredKelurahanList[0].name || filteredKelurahanList[0].nama) : "Cipaganti")}
+                              value={getCleanKelName(modalKelurahan)}
                               onChange={(e) => {
                                 const selectedKel = e.target.value;
                                 setModalKelurahan(selectedKel);
@@ -2278,20 +2260,24 @@ const ManajemenPengguna: React.FC = () => {
                                 }));
                               }}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                              disabled={filteredKelurahanList.length === 0}
                             >
                               {(() => {
                                 const activeKelList = filteredKelurahanList;
                                 return activeKelList.length === 0 ? (
                                   <option value="">-- Belum ada Kelurahan untuk Kecamatan ini --</option>
                                 ) : (
-                                  activeKelList.map((kl: any) => {
-                                    const kName = getCleanKelName(kl.name || kl.nama);
-                                    return (
-                                      <option key={kl.id} value={kName}>
-                                        Kel. {kName}
-                                      </option>
-                                    );
-                                  })
+                                  <>
+                                    <option value="">-- Pilih Kelurahan --</option>
+                                    {activeKelList.map((kl: any) => {
+                                      const kName = getCleanKelName(kl.name || kl.nama);
+                                      return (
+                                        <option key={kl.id} value={kName}>
+                                          Kel. {kName}
+                                        </option>
+                                      );
+                                    })}
+                                  </>
                                 );
                               })()}
                             </select>
@@ -2301,21 +2287,27 @@ const ManajemenPengguna: React.FC = () => {
                             <div className="flex items-center justify-between mb-2">
                               <label className="block text-[11px] font-bold text-slate-600">Wilayah Penugasan (RW)</label>
                               <span className="text-[10px] font-extrabold text-[#009966] bg-[#009966]/10 px-2.5 py-0.5 rounded-full border border-[#009966]/20">
-                                Kel. {getCleanKelName(modalKelurahan) || "Cipaganti"}
+                                Kel. {getCleanKelName(modalKelurahan) || "-"}
                               </span>
                             </div>
                             <div className="grid grid-cols-5 gap-1.5 p-3 rounded-xl bg-slate-50/50 border border-slate-200 max-h-36 overflow-y-auto">
-                              {filteredRwsByKelurahan.map((area: any) => {
-                                const rwNum = area.name.replace(/\D/g, "").padStart(2, "0");
-                                const rwCleanName = area.cleanName || (area.name.split("(")[0].trim().startsWith("RW") ? area.name.split("(")[0].trim() : `RW ${rwNum}`);
-                                const isChecked = formData.selectedRws.includes(rwNum) || formData.selectedRws.includes(rwCleanName);
-                                return (
-                                  <label key={area.id || rwNum} className={`flex items-center justify-center gap-1 py-1.5 rounded-lg border text-[10px] font-bold cursor-pointer transition-all ${isChecked ? "bg-[#009966]/10 text-[#009966] border-[#009966]/30 shadow-2xs" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}`}>
-                                    <input type="checkbox" checked={isChecked} onChange={() => handleRwToggle(rwNum)} className="sr-only" />
-                                    {rwCleanName}
-                                  </label>
-                                );
-                              })}
+                              {filteredRwsByKelurahan.length === 0 ? (
+                                <div className="col-span-5 text-center text-slate-400 text-xs py-4">
+                                  Belum ada data RW untuk kelurahan ini.
+                                </div>
+                              ) : (
+                                filteredRwsByKelurahan.map((area: any) => {
+                                  const rwNum = area.name.replace(/\D/g, "").padStart(2, "0");
+                                  const rwCleanName = area.cleanName || (area.name.split("(")[0].trim().startsWith("RW") ? area.name.split("(")[0].trim() : `RW ${rwNum}`);
+                                  const isChecked = formData.selectedRws.includes(rwNum) || formData.selectedRws.includes(rwCleanName);
+                                  return (
+                                    <label key={area.id || rwNum} className={`flex items-center justify-center gap-1 py-1.5 rounded-lg border text-[10px] font-bold cursor-pointer transition-all ${isChecked ? "bg-[#009966]/10 text-[#009966] border-[#009966]/30 shadow-2xs" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}`}>
+                                      <input type="checkbox" checked={isChecked} onChange={() => handleRwToggle(rwNum)} className="sr-only" />
+                                      {rwCleanName}
+                                    </label>
+                                  );
+                                })
+                              )}
                             </div>
                           </div>
                         </div>
