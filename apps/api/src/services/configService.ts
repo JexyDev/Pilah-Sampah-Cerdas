@@ -68,6 +68,10 @@ export class ConfigService {
       "attendance_min_duration_minutes",
       "attendance_min_duration_seconds",
       "attendance_out_of_zone_tolerance_minutes",
+      "kkn_start_date",
+      "kkn_end_date",
+      "kkn_auto_holiday_weekends",
+      "kkn_holidays",
     ];
 
     const records = await prisma.systemConfig.findMany({
@@ -78,6 +82,15 @@ export class ConfigService {
     records.forEach((r) => {
       map[r.key] = r.value;
     });
+
+    let holidaysParsed: Array<{ date: string; description: string }> = [];
+    try {
+      if (map["kkn_holidays"]) {
+        holidaysParsed = JSON.parse(map["kkn_holidays"]);
+      }
+    } catch {
+      holidaysParsed = [];
+    }
 
     return {
       // Rule 1: Jadwal Pemilahan Sampah Warga
@@ -96,7 +109,46 @@ export class ConfigService {
       attendanceMinDurationMinutes: parseInt(map["attendance_min_duration_minutes"] || "0", 10),
       attendanceMinDurationSeconds: parseInt(map["attendance_min_duration_seconds"] || "0", 10),
       attendanceOutOfZoneToleranceMinutes: parseInt(map["attendance_out_of_zone_tolerance_minutes"] || "15", 10),
+
+      // Rule 4: Kalender KKN & Hari Libur Absensi
+      kknStartDate: map["kkn_start_date"] || "2026-08-20",
+      kknEndDate: map["kkn_end_date"] || "2026-10-20",
+      kknAutoHolidayWeekends: map["kkn_auto_holiday_weekends"] !== "false",
+      kknHolidays: holidaysParsed,
     };
+  }
+
+  /**
+   * Helper to check if a specific Date is a KKN holiday or non-effective attendance day
+   */
+  async isDateKknHoliday(targetDate: Date): Promise<{ isHoliday: boolean; reason?: string }> {
+    const configs = await this.getRuleEngineConfigs();
+    const targetDateStr = targetDate.toISOString().slice(0, 10);
+
+    // 1. Check if prior to KKN start date
+    if (configs.kknStartDate && targetDateStr < configs.kknStartDate) {
+      return { isHoliday: true, reason: "Sebelum Periode Resmi KKN Dimulai" };
+    }
+
+    // 2. Check if past KKN end date
+    if (configs.kknEndDate && targetDateStr > configs.kknEndDate) {
+      return { isHoliday: true, reason: "Setelah Periode KKN Berakhir" };
+    }
+
+    // 3. Check weekend (0: Sunday, 6: Saturday)
+    if (configs.kknAutoHolidayWeekends) {
+      const day = targetDate.getDay();
+      if (day === 0) return { isHoliday: true, reason: "Hari Minggu (Libur Akhir Pekan)" };
+      if (day === 6) return { isHoliday: true, reason: "Hari Sabtu (Libur Akhir Pekan)" };
+    }
+
+    // 4. Check custom holidays list
+    const foundHoliday = configs.kknHolidays.find((h) => h.date === targetDateStr);
+    if (foundHoliday) {
+      return { isHoliday: true, reason: foundHoliday.description || "Hari Libur Khusus / Nasional" };
+    }
+
+    return { isHoliday: false };
   }
 
   /**
@@ -115,6 +167,13 @@ export class ConfigService {
       { key: "attendance_min_duration_minutes", value: String(data.attendanceMinDurationMinutes ?? 0) },
       { key: "attendance_min_duration_seconds", value: String(data.attendanceMinDurationSeconds ?? 0) },
       { key: "attendance_out_of_zone_tolerance_minutes", value: String(data.attendanceOutOfZoneToleranceMinutes ?? 15) },
+      { key: "kkn_start_date", value: String(data.kknStartDate ?? "2026-08-20") },
+      { key: "kkn_end_date", value: String(data.kknEndDate ?? "2026-10-20") },
+      { key: "kkn_auto_holiday_weekends", value: String(data.kknAutoHolidayWeekends ?? true) },
+      {
+        key: "kkn_holidays",
+        value: typeof data.kknHolidays === "string" ? data.kknHolidays : JSON.stringify(data.kknHolidays ?? []),
+      },
     ];
 
     for (const item of pairs) {

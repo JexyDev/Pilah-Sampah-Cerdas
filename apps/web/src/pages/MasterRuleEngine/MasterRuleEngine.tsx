@@ -37,6 +37,10 @@ export interface RuleEngineConfig {
   attendanceMinDurationMinutes: number;
   attendanceMinDurationSeconds: number;
   attendanceOutOfZoneToleranceMinutes: number;
+  kknStartDate: string;
+  kknEndDate: string;
+  kknAutoHolidayWeekends: boolean;
+  kknHolidays: Array<{ date: string; description: string }>;
 }
 
 const DEFAULT_CONFIG: RuleEngineConfig = {
@@ -51,6 +55,12 @@ const DEFAULT_CONFIG: RuleEngineConfig = {
   attendanceMinDurationMinutes: 0,
   attendanceMinDurationSeconds: 0,
   attendanceOutOfZoneToleranceMinutes: 15,
+  kknStartDate: "2026-08-20",
+  kknEndDate: "2026-10-20",
+  kknAutoHolidayWeekends: true,
+  kknHolidays: [
+    { date: "2026-08-17", description: "HUT Kemerdekaan RI Ke-81" }
+  ],
 };
 
 const MasterRuleEngine: React.FC = () => {
@@ -555,6 +565,171 @@ const MasterRuleEngine: React.FC = () => {
                 <div className="pt-3 border-t border-slate-200/60 flex items-center gap-2 text-[11px] text-slate-500 font-bold">
                   <Info size={14} className="text-blue-600 shrink-0" />
                   <span>Geofence menghitung lokasi secara otomatis sejak mahasiswa pertama kali check-in</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ========================================== */}
+          {/* RULE 4: KALENDER KKN & PENGATURAN HARI LIBUR ABSENSI (FULL WIDTH) */}
+          {/* ========================================== */}
+          <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200/80 p-6 space-y-5 shadow-2xs">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-200/60 shrink-0">
+                  <Calendar size={20} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-slate-900">4. Kalender Periode KKN &amp; Hari Libur Absensi</h2>
+                  <p className="text-[11px] font-semibold text-slate-500">
+                    Kontrol Periode Aktif KKN &amp; Pengecualian Hari Libur Nasional / Weekend dari Perhitungan Alfa
+                  </p>
+                </div>
+              </div>
+              <span className="bg-purple-100 text-purple-800 border border-purple-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase shrink-0">
+                Kalender &amp; Libur
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed font-medium">
+              Atur tanggal resmi mulai dan berakhirnya KKN serta daftar hari libur. Mahasiswa <strong>TIDAK AKAN</strong> dikenakan Alfa sebelum tanggal mulai KKN atau pada hari libur yang terdaftar.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left Column: Periode Tanggal KKN & Toggle Weekend */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-4">
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Calendar size={16} className="text-purple-600" /> Rentang Tanggal Resmi KKN
+                </span>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">
+                      Tanggal Mulai KKN
+                    </label>
+                    <input
+                      type="date"
+                      value={config.kknStartDate || "2026-08-20"}
+                      onChange={(e) => handleChange("kknStartDate", e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">
+                      Tanggal Selesai KKN
+                    </label>
+                    <input
+                      type="date"
+                      value={config.kknEndDate || "2026-10-20"}
+                      onChange={(e) => handleChange("kknEndDate", e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Weekend Auto-Holiday Toggle */}
+                <div className="pt-2 border-t border-slate-200/60">
+                  <label className="flex items-center justify-between cursor-pointer p-3 bg-white rounded-xl border border-slate-200 hover:border-purple-300 transition">
+                    <div>
+                      <span className="text-xs font-black text-slate-800 block">Libur Otomatis Akhir Pekan (Sabtu &amp; Minggu)</span>
+                      <span className="text-[10.5px] text-slate-500 font-medium">Sabtu &amp; Minggu tidak dihitung kewajiban presensi mahasiswa</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={config.kknAutoHolidayWeekends}
+                      onChange={(e) => handleChange("kknAutoHolidayWeekends", e.target.checked)}
+                      className="w-4 h-4 accent-purple-600 cursor-pointer rounded"
+                    />
+                  </label>
+                </div>
+
+                {/* Quick Action: Mark Today as Holiday */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={handleMarkTodayHoliday}
+                    className="w-full py-2.5 px-4 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                  >
+                    <Calendar size={14} />
+                    <span>Tandai Hari Ini ({new Date().toISOString().slice(0, 10)}) Sebagai Libur Massal</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column: Daftar Hari Libur Khusus / Nasional */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <AlertTriangle size={16} className="text-purple-600" /> Daftar Hari Libur Khusus &amp; Nasional
+                    </span>
+                    <span className="text-xs font-black text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md">
+                      {(config.kknHolidays || []).length} Hari Libur
+                    </span>
+                  </div>
+
+                  {/* Add New Holiday Form */}
+                  <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-2">
+                    <span className="text-[10.5px] font-black text-slate-700 block">Tambah Tanggal Libur Baru:</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <input
+                        type="date"
+                        value={newHolidayDate}
+                        onChange={(e) => setNewHolidayDate(e.target.value)}
+                        className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-purple-500"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Keterangan (misal: HUT RI)"
+                        value={newHolidayDesc}
+                        onChange={(e) => setNewHolidayDesc(e.target.value)}
+                        className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-purple-500"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddHoliday}
+                      className="w-full py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <Plus size={14} /> <span>Tambah ke Daftar Libur</span>
+                    </button>
+                  </div>
+
+                  {/* Holiday Items List */}
+                  <div className="max-h-44 overflow-y-auto space-y-1.5 pr-1">
+                    {(config.kknHolidays || []).map((h) => (
+                      <div
+                        key={h.date}
+                        className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-200/80 text-xs hover:border-purple-300 transition"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-black text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 text-[11px]">
+                            {h.date}
+                          </span>
+                          <span className="font-bold text-slate-700">{h.description}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveHoliday(h.date)}
+                          className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                          title="Hapus hari libur"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+
+                    {(config.kknHolidays || []).length === 0 && (
+                      <p className="text-center py-4 text-xs text-slate-400 italic">
+                        Belum ada tanggal libur khusus yang didaftarkan.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-200/60 flex items-center gap-2 text-[11px] text-slate-500 font-bold">
+                  <ShieldCheck size={14} className="text-purple-600 shrink-0" />
+                  <span>Jadwal pada hari libur tidak akan memotong persentase presensi mahasiswa KKN</span>
                 </div>
               </div>
             </div>

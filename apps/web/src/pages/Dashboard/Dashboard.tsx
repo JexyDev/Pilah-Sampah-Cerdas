@@ -2755,7 +2755,7 @@ const Dashboard: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
                       <span className="text-slate-500 font-medium block">Total Berat Real</span>
-                      <strong className="text-slate-900 font-bold font-mono">{stats?.komposisiSampah?.organikKg || 0} Kg</strong>
+                      <strong className="text-slate-900 font-bold font-mono">{Math.round(Number(stats?.komposisiSampah?.organikKg || 0)).toLocaleString("id-ID")} Kg</strong>
                     </div>
                     <div>
                       <span className="text-slate-500 font-medium block">Metode Pengolahan</span>
@@ -2772,7 +2772,7 @@ const Dashboard: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
                       <span className="text-slate-500 font-medium block">Total Berat Real</span>
-                      <strong className="text-slate-900 font-bold font-mono">{stats?.komposisiSampah?.anorganikKg || 0} Kg</strong>
+                      <strong className="text-slate-900 font-bold font-mono">{Math.round(Number(stats?.komposisiSampah?.anorganikKg || 0)).toLocaleString("id-ID")} Kg</strong>
                     </div>
                     <div>
                       <span className="text-slate-500 font-medium block">Metode Daur Ulang</span>
@@ -2789,7 +2789,7 @@ const Dashboard: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
                       <span className="text-slate-500 font-medium block">Total Berat Hilir</span>
-                      <strong className="text-slate-900 font-bold font-mono">{stats?.komposisiSampah?.residuKg || 0} Kg</strong>
+                      <strong className="text-slate-900 font-bold font-mono">{Math.round(Number(stats?.komposisiSampah?.residuKg || 0)).toLocaleString("id-ID")} Kg</strong>
                     </div>
                     <div>
                       <span className="text-slate-500 font-medium block">Tujuan Akhir</span>

@@ -1,6 +1,53 @@
 import { PrismaClient } from "@prisma/client";
+import { configService } from "./configService.js";
 
 const prisma = new PrismaClient();
+
+async function getEligiblePastSchedulesCount(groupId?: string): Promise<number> {
+  try {
+    const configs = await configService.getRuleEngineConfigs();
+    const now = new Date();
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+    // If today is prior to KKN start date, no schedules are expected yet!
+    if (configs.kknStartDate) {
+      const kknStart = new Date(configs.kknStartDate);
+      if (now < kknStart) {
+        return 0;
+      }
+    }
+
+    const whereSchedule: any = {
+      date: {
+        lte: todayEnd,
+      },
+    };
+    if (configs.kknStartDate) {
+      whereSchedule.date.gte = new Date(configs.kknStartDate);
+    }
+    if (groupId) {
+      whereSchedule.OR = [{ kelompokId: groupId }, { kelompokId: null }];
+    }
+
+    const pastSchedules = await prisma.schedule.findMany({
+      where: whereSchedule,
+      select: { date: true },
+    });
+
+    let eligibleCount = 0;
+    for (const s of pastSchedules) {
+      const check = await configService.isDateKknHoliday(s.date);
+      if (!check.isHoliday) {
+        eligibleCount++;
+      }
+    }
+
+    return eligibleCount;
+  } catch (err) {
+    console.warn("[dplService] Error calculating eligible schedules:", err);
+    return 0;
+  }
+}
 
 function getRoleString(role: any): string {
   if (!role) return "";
@@ -122,10 +169,12 @@ export const dplService = {
         }
         actualHours = Math.round(actualHours * 100) / 100;
 
-        const totalSchedules = await prisma.schedule.count();
+        const totalSchedules = await getEligiblePastSchedulesCount(grp.id);
         const expectedAttendances = studentCount * totalSchedules;
         const avgAttendanceRate =
-          expectedAttendances > 0 && totalAttendances > 0
+          totalSchedules === 0
+            ? 100
+            : expectedAttendances > 0 && totalAttendances > 0
             ? Math.min(100, Math.round((totalAttendances / expectedAttendances) * 100))
             : 0;
 
@@ -227,7 +276,7 @@ export const dplService = {
           (r) => r.type === "IZIN" && r.status === "APPROVED"
         ).length;
 
-        const totalSchedules = await prisma.schedule.count();
+        const totalSchedules = await getEligiblePastSchedulesCount(st.kelompokId || undefined);
         const attendedCount = attendances.length;
         const alphaCount =
           totalSchedules > 0
@@ -253,8 +302,10 @@ export const dplService = {
           assessmentScore: Number(st.assessmentScore || 0),
           individualPoints: points._sum.points || 0,
           attendanceRate:
-            totalSchedules > 0 && attendedCount > 0
-              ? Math.round((attendedCount / totalSchedules) * 100)
+            totalSchedules === 0
+              ? 100
+              : attendedCount > 0
+              ? Math.min(100, Math.round((attendedCount / totalSchedules) * 100))
               : 0,
           attendedCount,
           sickCount,
@@ -859,9 +910,8 @@ export const dplService = {
     let totalScoreSum = 0;
     let totalAttRateSum = 0;
 
-    const totalSchedules = await prisma.schedule.count();
-
     for (const grp of groups) {
+      const totalSchedules = await getEligiblePastSchedulesCount(grp.id);
       const prokerCount = grp.programKerja.length;
       const prokerAccepted = grp.programKerja.filter((p) => p.status === "DITERIMA").length;
       const prokerAvgScore =
@@ -880,9 +930,9 @@ export const dplService = {
         });
 
         const attRate =
-          totalSchedules > 0
-            ? Math.min(100, Math.round((attendancesCount / totalSchedules) * 100))
-            : 0;
+          totalSchedules === 0
+            ? 100
+            : Math.min(100, Math.round((attendancesCount / totalSchedules) * 100));
 
         const indivScore = Number(st.assessmentScore || 0);
         // Formula nilai akhir: 40% Kinerja Individu + 30% Output Proker Kelompok + 30% Disiplin & Presensi

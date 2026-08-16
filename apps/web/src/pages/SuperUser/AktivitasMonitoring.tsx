@@ -83,9 +83,9 @@ export const AktivitasMonitoring: React.FC = () => {
         const data = kpiRes.data.data;
         const komposisi = data.komposisiSampah || { organikKg: 0, anorganikKg: 0, residuKg: 0 };
         setCompositionStats([
-          { name: "Organik", total: Number(komposisi.organikKg || 0), fill: "#009966" },
-          { name: "Anorganik", total: Number(komposisi.anorganikKg || 0), fill: "#f59e0b" },
-          { name: "Residu", total: Number(komposisi.residuKg || 0), fill: "#f43f5e" },
+          { name: "Organik", total: Math.round(Number(komposisi.organikKg || 0)), fill: "#009966" },
+          { name: "Anorganik", total: Math.round(Number(komposisi.anorganikKg || 0)), fill: "#f59e0b" },
+          { name: "Residu", total: Math.round(Number(komposisi.residuKg || 0)), fill: "#f43f5e" },
         ]);
       }
 
@@ -105,11 +105,11 @@ export const AktivitasMonitoring: React.FC = () => {
     fetchMonitoringData();
   }, [period, selectedKelurahan]);
 
-  // Derived KPI values (Strictly calculated from DB response, ZERO hardcoded numbers)
-  const totalOrganik = compositionStats.find((c) => c.name === "Organik")?.total || 0;
-  const totalAnorganik = compositionStats.find((c) => c.name === "Anorganik")?.total || 0;
-  const totalResidu = compositionStats.find((c) => c.name === "Residu")?.total || 0;
-  const grandTotalKg = totalOrganik + totalAnorganik + totalResidu;
+  // Derived KPI values (Strictly calculated from DB response, integer rounded, ZERO hardcoded numbers)
+  const totalOrganik = Math.round(compositionStats.find((c) => c.name === "Organik")?.total || 0);
+  const totalAnorganik = Math.round(compositionStats.find((c) => c.name === "Anorganik")?.total || 0);
+  const totalResidu = Math.round(compositionStats.find((c) => c.name === "Residu")?.total || 0);
+  const grandTotalKg = Math.round(totalOrganik + totalAnorganik + totalResidu);
 
   const complianceRate = useMemo(() => {
     if (grandTotalKg === 0) return 0;
@@ -117,7 +117,7 @@ export const AktivitasMonitoring: React.FC = () => {
     return Math.min(100, Math.round((terpilah / grandTotalKg) * 100));
   }, [grandTotalKg, totalOrganik, totalAnorganik]);
 
-  // Donut Pie Data (Derived 100% from PostgreSQL)
+  // Donut Pie Data (Derived 100% from PostgreSQL, clean integer values)
   const pieData = useMemo(() => {
     return [
       { name: "Organik", value: totalOrganik, color: "#009966" },
@@ -361,7 +361,7 @@ export const AktivitasMonitoring: React.FC = () => {
               <div className="absolute flex flex-col items-center justify-center pointer-events-none">
                 <span className="text-[10px] text-slate-500 font-black uppercase">Total</span>
                 <span className="text-base font-black text-slate-900">
-                  {grandTotalKg >= 1000 ? `${(grandTotalKg / 1000).toFixed(1)} Ton` : `${grandTotalKg} Kg`}
+                  {grandTotalKg >= 1000 ? `${Math.round(grandTotalKg / 1000).toLocaleString("id-ID")} Ton` : `${Math.round(grandTotalKg).toLocaleString("id-ID")} Kg`}
                 </span>
               </div>
             )}
@@ -371,15 +371,15 @@ export const AktivitasMonitoring: React.FC = () => {
           <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center">
             <div className="p-2 bg-emerald-50 rounded-2xl border border-emerald-100">
               <span className="text-[10px] font-black text-emerald-800 block">Organik</span>
-              <span className="text-xs font-black text-emerald-700">{totalOrganik} Kg</span>
+              <span className="text-xs font-black text-emerald-700">{Math.round(totalOrganik).toLocaleString("id-ID")} Kg</span>
             </div>
             <div className="p-2 bg-amber-50 rounded-2xl border border-amber-100">
               <span className="text-[10px] font-black text-amber-800 block">Anorganik</span>
-              <span className="text-xs font-black text-amber-700">{totalAnorganik} Kg</span>
+              <span className="text-xs font-black text-amber-700">{Math.round(totalAnorganik).toLocaleString("id-ID")} Kg</span>
             </div>
             <div className="p-2 bg-rose-50 rounded-2xl border border-rose-100">
               <span className="text-[10px] font-black text-rose-800 block">Residu</span>
-              <span className="text-xs font-black text-rose-700">{totalResidu} Kg</span>
+              <span className="text-xs font-black text-rose-700">{Math.round(totalResidu).toLocaleString("id-ID")} Kg</span>
             </div>
           </div>
         </div>

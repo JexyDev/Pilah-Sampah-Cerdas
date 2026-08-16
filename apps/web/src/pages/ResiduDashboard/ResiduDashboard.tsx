@@ -395,7 +395,7 @@ const ResiduDashboard: React.FC = () => {
                       style={{ height: "100%" }}
                     ></div>
                     <div className="absolute top-[-20px] left-0 right-0 text-center font-bold text-[9px] text-red-700">
-                      {t.weightKg}kg
+                      {Math.round(Number(t.weightKg || 0))} Kg
                     </div>
                   </div>
                   <span className="text-[10px] font-bold text-on-surface-variant">{t.date}</span>
