@@ -40,6 +40,12 @@ class QrScannerWidgetState extends State<QrScannerWidget>
   @override
   void initState() {
     super.initState();
+    _controller = MobileScannerController(
+      facing: CameraFacing.back,
+      autoStart: false,
+      detectionSpeed: DetectionSpeed.noDuplicates,
+      returnImage: false,
+    );
     WidgetsBinding.instance.addObserver(this);
     if (PlatformUtils.supportsNativeQrScanner) {
       _requestPermissionAndStart();
@@ -88,24 +94,12 @@ class QrScannerWidgetState extends State<QrScannerWidget>
   }
 
   Future<void> _startScanner() async {
-    try {
-      if (_controller != null) {
-        await _controller!.dispose();
-        _controller = null;
-      }
-    } catch (_) {}
-    
-    // Beri sedikit jeda agar native camera benar-benar dirilis (khusus Android)
-    await Future.delayed(const Duration(milliseconds: 300));
-    
     if (!mounted) return;
-
-    _controller = MobileScannerController(
-      facing: CameraFacing.back,
-      autoStart: true,
-      detectionSpeed: DetectionSpeed.noDuplicates,
-      returnImage: false,
-    );
+    try {
+      await _controller?.start();
+    } catch (e) {
+      debugPrint('Camera start error: $e');
+    }
     if (mounted) setState(() => _state = _QrState.ready);
   }
 

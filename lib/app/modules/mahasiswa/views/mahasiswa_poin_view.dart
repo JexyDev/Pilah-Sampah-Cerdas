@@ -165,22 +165,16 @@ class MahasiswaPoinView extends ConsumerWidget {
   Widget _buildStatsRow(MahasiswaState mhsState, WidgetRef ref) {
     final user = ref.watch(authProvider).user;
     final userName = user?.name ?? '';
-    final userRw = user?.rw ?? '-';
 
     // Warga dampingan mahasiswa ini
     final myWargaList = mhsState.wargaList.where((w) {
       if (w.role != 'WARGA') return false;
-      
-      final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
-      final cleanUserRw = userRw.trim().replaceFirst(RegExp(r'^0+'), '');
-      
       final isMyCitizen = w.pendampingName.trim().toLowerCase() == userName.trim().toLowerCase();
-      final isMyRw = cleanUserRw.isEmpty || cleanWargaRw == cleanUserRw;
-
-      return isMyCitizen && isMyRw;
+      return isMyCitizen;
     }).toList();
 
-    final wargaCount = myWargaList.where((w) => w.isActivated).length;
+    // Warga dampingan mahasiswa ini yang tempat sampahnya sudah aktif
+    final wargaCount = myWargaList.where((w) => w.binId.isNotEmpty && w.binId != 'Belum Ada Tempat Sampah').length;
     final points = mhsState.dashboard?.contributionPoints ?? 0;
     
     final asyncHistory = ref.watch(pointHistoryProvider);

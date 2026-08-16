@@ -60,10 +60,22 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
     if (!isWargaReminder && isForbidden) continue;
     if (notif.id == 'seed-notif-1' || desc.contains('ORG004520')) continue;
 
-    result.add(notif);
+    // Deduplikasi
+    if (result.any((n) => n.id == notif.id || (n.title == notif.title && n.desc == notif.desc && n.type == notif.type))) continue;
 
-    final notifKey = 'warga_${userId}_${notif.id}';
-    if (!notif.isRead && !_wargaShownNotifIds.contains(notifKey)) {
+    // Konversi UTC ke Lokal
+    NotificationEntity finalNotif = notif;
+    if (notif.time.endsWith('Z')) {
+      final dt = DateTime.tryParse(notif.time);
+      if (dt != null) {
+        finalNotif = notif.copyWith(time: dt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '));
+      }
+    }
+
+    result.add(finalNotif);
+
+    final notifKey = 'warga_${userId}_${finalNotif.id}';
+    if (!finalNotif.isRead && !_wargaShownNotifIds.contains(notifKey)) {
       _wargaShownNotifIds.add(notifKey);
     }
   }
@@ -81,7 +93,7 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
       continue;
     }
 
-    if (!result.any((n) => n.id == localItem.id)) {
+    if (!result.any((n) => n.id == localItem.id || (n.title == localItem.title && n.desc == localItem.desc && n.type == localItem.type))) {
       result.insert(0, localItem);
     }
   }
@@ -98,7 +110,7 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
       continue;
     }
 
-    if (!result.any((n) => n.id == fbItem.id)) {
+    if (!result.any((n) => n.id == fbItem.id || (n.title == fbItem.title && n.desc == fbItem.desc && n.type == fbItem.type))) {
       result.insert(0, fbItem);
     }
   }

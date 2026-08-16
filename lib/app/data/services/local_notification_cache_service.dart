@@ -61,9 +61,60 @@ class LocalNotificationCacheService {
     return List.unmodifiable(_cache[key] ?? []);
   }
 
+  final Map<String, Set<String>> _readStatusCache = {};
+
+  /// Tandai semua notifikasi lokal user sebagai dibaca
+  void markAllAsRead(String userId, String role) {
+    final key = _getCacheKey(userId, role);
+    final list = _cache[key];
+    
+    // Simpan penanda "semua dibaca pada waktu X" atau tandai per item
+    if (list != null) {
+      _cache[key] = list.map((n) {
+        _readStatusCache.putIfAbsent(key, () => {}).add(n.id);
+        return n.copyWith(isRead: true);
+      }).toList();
+    }
+    
+    // Spesial flag untuk mark all read global
+    _readStatusCache.putIfAbsent(key, () => {}).add('ALL_READ_TIMESTAMP_${DateTime.now().millisecondsSinceEpoch}');
+  }
+
+  /// Cek apakah suatu ID notifikasi (seperti point_xxx) sudah ditandai dibaca
+  bool isRead(String userId, String role, String notifId, [DateTime? notifTime]) {
+    final key = _getCacheKey(userId, role);
+    final readSet = _readStatusCache[key];
+    if (readSet != null) {
+      if (readSet.contains(notifId)) return true;
+      
+      if (notifTime != null) {
+        for (final r in readSet) {
+          if (r.startsWith('ALL_READ_TIMESTAMP_')) {
+            final ts = int.tryParse(r.substring(19));
+            if (ts != null && ts >= notifTime.millisecondsSinceEpoch) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    
+    // Cek juga list utamanya jika ada
+    final list = _cache[key];
+    if (list != null) {
+      final item = list.firstWhere((n) => n.id == notifId, orElse: () => const NotificationEntity(id: '', type: '', title: '', desc: '', time: '', isRead: false, icon: ''));
+      if (item.id.isNotEmpty && item.isRead) return true;
+    }
+    return false;
+  }
+
   /// Tandai notifikasi lokal sebagai dibaca
   void markAsRead(String userId, String role, String notifId) {
     final key = _getCacheKey(userId, role);
+    
+    // Simpan ke set read status (untuk notif dinamis seperti point_xxx)
+    _readStatusCache.putIfAbsent(key, () => {}).add(notifId);
+
     final list = _cache[key];
     if (list == null) return;
 
@@ -75,18 +126,10 @@ class LocalNotificationCacheService {
     }).toList();
   }
 
-  /// Tandai semua notifikasi lokal user sebagai dibaca
-  void markAllAsRead(String userId, String role) {
-    final key = _getCacheKey(userId, role);
-    final list = _cache[key];
-    if (list == null) return;
-
-    _cache[key] = list.map((n) => n.copyWith(isRead: true)).toList();
-  }
-
   /// Reset cache saat logout
   void clear() {
     _cache.clear();
+    _readStatusCache.clear();
   }
 
   String _resolveDefaultIcon(String type) {

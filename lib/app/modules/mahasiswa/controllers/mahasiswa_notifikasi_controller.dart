@@ -97,8 +97,8 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
           type: 'POIN_KKN',
           title: 'Poin KKN Bertambah!',
           desc: ph.description.isNotEmpty ? ph.description : 'Anda mendapatkan +${ph.points} poin.',
-          isRead: false,
-          time: ph.createdAt.toIso8601String().substring(0, 16).replaceAll('T', ' '),
+          isRead: LocalNotificationCacheService().isRead(userId, role, 'point_${ph.id}', ph.createdAt),
+          time: ph.createdAt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
           icon: 'star',
         ));
       }
@@ -115,14 +115,15 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
         final isApproved = status == 'APPROVED';
         final kategori = izin['kategori']?.toString() ?? 'Izin';
         final timestamp = izin['reviewedAt']?.toString() ?? izin['createdAt']?.toString() ?? DateTime.now().toIso8601String();
+        final dt = DateTime.tryParse(timestamp) ?? DateTime.now();
         
         list.add(NotificationEntity(
           id: 'izin_${izin['id']}',
           type: 'IZIN',
           title: isApproved ? 'Pengajuan $kategori Disetujui' : 'Pengajuan $kategori Ditolak',
           desc: isApproved ? 'DPL telah menyetujui pengajuan Anda.' : 'DPL menolak pengajuan Anda. ${izin['rejectionReason'] ?? ''}',
-          isRead: false,
-          time: timestamp.substring(0, 16).replaceAll('T', ' '),
+          isRead: LocalNotificationCacheService().isRead(userId, role, 'izin_${izin['id']}', dt),
+          time: dt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
           icon: isApproved ? 'check_circle' : 'cancel',
         ));
       }
@@ -133,10 +134,23 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
 
   for (final notif in list) {
     if (!_isMahasiswaNotification(notif)) continue;
-    result.add(notif);
+    
+    // Deduplikasi berdasar ID atau kesamaan persis (Title + Desc + Type)
+    if (result.any((n) => n.id == notif.id || (n.title == notif.title && n.desc == notif.desc && n.type == notif.type))) continue;
 
-    final notifKey = 'mhs_${userId}_${notif.id}';
-    if (!notif.isRead && !_mhsShownNotifIds.contains(notifKey)) {
+    // Pastikan konversi waktu ke lokal jika formatnya UTC (ada 'Z')
+    NotificationEntity finalNotif = notif;
+    if (notif.time.endsWith('Z')) {
+      final dt = DateTime.tryParse(notif.time);
+      if (dt != null) {
+        finalNotif = notif.copyWith(time: dt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '));
+      }
+    }
+
+    result.add(finalNotif);
+
+    final notifKey = 'mhs_${userId}_${finalNotif.id}';
+    if (!finalNotif.isRead && !_mhsShownNotifIds.contains(notifKey)) {
       _mhsShownNotifIds.add(notifKey);
     }
   }
@@ -146,7 +160,7 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
   for (final localItem in localNotifs) {
     if (!_isMahasiswaNotification(localItem)) continue;
 
-    if (!result.any((n) => n.id == localItem.id)) {
+    if (!result.any((n) => n.id == localItem.id || (n.title == localItem.title && n.desc == localItem.desc && n.type == localItem.type))) {
       result.insert(0, localItem);
     }
   }
@@ -155,7 +169,7 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
   for (final fbItem in firebaseNotifs) {
     if (!_isMahasiswaNotification(fbItem)) continue;
 
-    if (!result.any((n) => n.id == fbItem.id)) {
+    if (!result.any((n) => n.id == fbItem.id || (n.title == fbItem.title && n.desc == fbItem.desc && n.type == fbItem.type))) {
       result.insert(0, fbItem);
     }
   }

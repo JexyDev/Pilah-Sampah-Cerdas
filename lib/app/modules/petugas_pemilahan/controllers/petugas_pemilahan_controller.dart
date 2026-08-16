@@ -155,7 +155,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
         // Simpan notifikasi aksi ke cache lokal agar muncul di halaman Notifikasi
         final user = _ref.read(authProvider).user;
         if (user != null) {
-          final poin = actualWeightKg.round() + 2; // 1 poin/kg + 2 bonus foto
+          final poin = (actualWeightKg.round() * 2) + 10; // 2 poin/kg + 10 bonus foto
           final now = DateTime.now();
           final timeStr =
               '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year} '

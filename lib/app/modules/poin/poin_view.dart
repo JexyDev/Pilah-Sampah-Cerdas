@@ -371,13 +371,14 @@ class PoinView extends ConsumerWidget {
     int monthPts = 0;
 
     for (final h in history) {
-      if (!h.createdAt.isBefore(todayStart)) {
+      final localCreatedAt = h.createdAt.toLocal();
+      if (!localCreatedAt.isBefore(todayStart)) {
         todayPts += h.points;
       }
-      if (!h.createdAt.isBefore(weekStart)) {
+      if (!localCreatedAt.isBefore(weekStart)) {
         weekPts += h.points;
       }
-      if (!h.createdAt.isBefore(monthStart)) {
+      if (!localCreatedAt.isBefore(monthStart)) {
         monthPts += h.points;
       }
     }

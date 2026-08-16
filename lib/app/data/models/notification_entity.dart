@@ -28,14 +28,14 @@ class NotificationEntity extends Equatable {
   /// Nama icon Material (star, warning, delete_sweep, check_circle, info).
   final String icon;
 
-  NotificationEntity copyWith({bool? isRead}) {
+  NotificationEntity copyWith({bool? isRead, String? time}) {
     return NotificationEntity(
       id: id,
       type: type,
       title: title,
       desc: desc,
       isRead: isRead ?? this.isRead,
-      time: time,
+      time: time ?? this.time,
       icon: icon,
     );
   }
