@@ -655,8 +655,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         {/* Render Collapsed Mini Sidebar */}
         {isCollapsed ? (
           <div className="flex flex-col h-full items-center justify-between py-3">
-            {/* Top Brand Logo */}
-            <div className="flex flex-col items-center w-full border-b border-slate-100 pb-3 mb-2">
+            {/* Top Brand Logo & Clock */}
+            <div className="flex flex-col items-center w-full border-b border-slate-100 pb-2 mb-1 gap-2 shrink-0">
               <div
                 title="TrashCare"
                 className="w-12 h-12 rounded-2xl bg-[#e5f7ed] border border-[#009966]/20 flex items-center justify-center p-1.5 shadow-sm hover:scale-105 transition-all cursor-pointer"
@@ -667,10 +667,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                   className="w-full h-full object-contain"
                 />
               </div>
+
+              {/* Collapsed Clock Button */}
+              <div
+                title={timeStr ? `${dateStr} - ${timeStr}` : "Jam Sistem"}
+                className="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-200/80 text-slate-600 flex items-center justify-center relative group cursor-pointer hover:bg-slate-100 transition-all"
+              >
+                <Clock size={17} className="text-[#009966]" />
+                <span className="absolute left-16 bg-slate-900 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[60]">
+                  {dateStr ? `${dateStr} • ${timeStr}` : timeStr || "Jam Sistem"}
+                </span>
+              </div>
             </div>
 
             {/* Centered Icons Navigation List */}
-            <nav className="flex-1 overflow-y-auto w-full px-2 py-2 space-y-1 flex flex-col items-center max-h-[calc(100vh-170px)] scrollbar-thin scrollbar-thumb-slate-200">
+            <nav className="flex-1 overflow-y-auto w-full px-2 py-2 space-y-1 flex flex-col items-center scrollbar-thin scrollbar-thumb-slate-200">
               {menuSections.map((sec, idx) => {
                 const visibleItems = sec.items.filter((item) => hasAccess(item.allowed));
                 if (visibleItems.length === 0) return null;
@@ -700,52 +711,55 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             </nav>
 
             {/* Bottom Actions for Collapsed Mode */}
-            <div className="flex flex-col items-center gap-2 pt-3 border-t border-slate-100 w-full px-2 shrink-0">
-              <div
-                title={timeStr ? `${dateStr} - ${timeStr}` : "Jam Sistem"}
-                className="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-200/80 text-slate-600 flex items-center justify-center relative group cursor-pointer hover:bg-slate-100 transition-all"
-              >
-                <Clock size={19} />
-                <span className="absolute left-16 bg-slate-900 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[60]">
-                  {timeStr || "Jam Sistem"}
-                </span>
-              </div>
-
+            <div className="flex flex-col items-center pt-2 border-t border-slate-100 w-full px-2 shrink-0">
               <button
                 onClick={handleLogout}
                 title="Keluar Sistem"
-                className="w-11 h-11 rounded-2xl text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-all relative group cursor-pointer"
+                className="w-10 h-10 rounded-2xl text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-all relative group cursor-pointer"
               >
-                <LogOut size={19} />
+                <LogOut size={18} />
               </button>
             </div>
           </div>
         ) : (
           /* Render Full Sidebar */
           <div className="flex flex-col h-full justify-between overflow-hidden">
-            {/* Top Brand Logo Header Section (1:1 Exact Match with Background Animations) */}
-            <div className="py-5 px-4 border-b border-slate-100/80 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-emerald-50/20 via-transparent to-transparent shrink-0 group">
+            {/* Top Brand Logo Header Section with Real-Time Clock */}
+            <div className="pt-4 pb-3 px-3.5 border-b border-slate-100/80 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-emerald-50/20 via-transparent to-transparent shrink-0 group">
               {/* Four Animated Eco Background Watermarks */}
-              <Sprout size={18} className="absolute top-4 left-5 text-[#009966]/40 animate-pulse [animation-duration:2.5s] transition-transform group-hover:scale-110" />
-              <Tags size={18} className="absolute top-4 right-5 text-[#009966]/40 animate-pulse [animation-duration:3s] transition-transform group-hover:scale-110" />
-              <Recycle size={18} className="absolute bottom-4 left-5 text-[#009966]/40 animate-spin [animation-duration:12s] transition-transform group-hover:scale-110" />
-              <Trash2 size={18} className="absolute bottom-4 right-5 text-[#0284c7]/40 animate-pulse [animation-duration:2.8s] transition-transform group-hover:scale-110" />
+              <Sprout size={16} className="absolute top-3 left-4 text-[#009966]/40 animate-pulse [animation-duration:2.5s] transition-transform group-hover:scale-110" />
+              <Tags size={16} className="absolute top-3 right-4 text-[#009966]/40 animate-pulse [animation-duration:3s] transition-transform group-hover:scale-110" />
+              <Recycle size={16} className="absolute bottom-3 left-4 text-[#009966]/40 animate-spin [animation-duration:12s] transition-transform group-hover:scale-110" />
+              <Trash2 size={16} className="absolute bottom-3 right-4 text-[#0284c7]/40 animate-pulse [animation-duration:2.8s] transition-transform group-hover:scale-110" />
 
-              <Link to="/dasbor" className="flex flex-col items-center group cursor-pointer relative z-10">
+              <Link to="/dasbor" className="flex flex-col items-center group cursor-pointer relative z-10 mb-3">
                 <img
                   src="/image/trashcare-icon.png"
                   alt="TrashCare Icon"
-                  className="h-16 w-auto object-contain transition-transform duration-300 group-hover:scale-105 mb-1"
+                  className="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105 mb-1"
                 />
-                <span className="text-xl font-black tracking-tight leading-none">
+                <span className="text-lg font-black tracking-tight leading-none">
                   <span className="text-[#0284c7]">Trash</span>
                   <span className="text-[#009966]">Care</span>
                 </span>
               </Link>
+
+              {/* Real-time System Clock Card (Placed at top) */}
+              <div className="w-full bg-slate-50/90 hover:bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs text-center space-y-0.5 transition-all relative z-10">
+                <div className="flex items-center justify-center gap-1.5 text-slate-500 mb-0.5">
+                  <Clock size={12} className="text-[#009966]" />
+                  <p className="text-[10.5px] font-black text-slate-500 truncate">
+                    {dateStr || "Jumat, 14 Agustus 2026"}
+                  </p>
+                </div>
+                <p className="text-sm font-black text-slate-900 tracking-wider font-mono">
+                  {timeStr || "02.59.16 WIB"}
+                </p>
+              </div>
             </div>
 
             {/* Scrollable Navigation Sections */}
-            <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-1 max-h-[calc(100vh-210px)] scrollbar-thin scrollbar-thumb-slate-200">
+            <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1 scrollbar-thin scrollbar-thumb-slate-200">
               {menuSections.map((sec) => {
                 const visibleItems = sec.items.filter((item) => hasAccess(item.allowed));
                 if (visibleItems.length === 0) return null;
@@ -787,25 +801,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               })}
             </nav>
 
-            {/* Bottom Section: Clock Card & Logout Link (1:1 Matching Screenshot) */}
-            <div className="p-3 border-t border-slate-100 bg-white space-y-2.5 shrink-0">
-              {/* Real-time System Clock Card */}
-              <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs text-center space-y-0.5">
-                <p className="text-[11px] font-black text-slate-500">
-                  {dateStr || "Jumat, 14 Agustus 2026"}
-                </p>
-                <p className="text-base font-black text-slate-900 tracking-wider font-mono">
-                  {timeStr || "02.59.16 WIB"}
-                </p>
-              </div>
-
-              {/* Logout Link */}
+            {/* Bottom Section: Logout Link */}
+            <div className="p-3 border-t border-slate-100 bg-white shrink-0">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center justify-start gap-3 px-4 py-2 rounded-2xl hover:bg-rose-50 text-rose-600 transition-all cursor-pointer group"
+                className="w-full flex items-center justify-start gap-3 px-4 py-2.5 rounded-2xl hover:bg-rose-50 text-rose-600 transition-all cursor-pointer group font-semibold text-[13px]"
               >
-                <LogOut size={19} className="text-rose-500 shrink-0" />
-                <span className="text-rose-600 font-black text-xs">Keluar Sistem</span>
+                <LogOut size={18} className="text-rose-500 shrink-0 group-hover:-translate-x-0.5 transition-transform" />
+                <span className="text-rose-600 font-bold text-xs">Keluar Sistem</span>
               </button>
             </div>
           </div>

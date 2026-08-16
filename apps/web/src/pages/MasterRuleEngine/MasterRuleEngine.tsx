@@ -20,7 +20,9 @@ import {
   GraduationCap,
   CheckCircle2,
   ShieldCheck,
-  Info
+  Info,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
@@ -68,6 +70,53 @@ const MasterRuleEngine: React.FC = () => {
   const [saving, setSaving] = useState<boolean>(false);
   const [config, setConfig] = useState<RuleEngineConfig>(DEFAULT_CONFIG);
   const [hasChanges, setHasChanges] = useState<boolean>(false);
+
+  // Holiday helper state
+  const [newHolidayDate, setNewHolidayDate] = useState("");
+  const [newHolidayDesc, setNewHolidayDesc] = useState("");
+
+  const handleAddHoliday = () => {
+    if (!newHolidayDate) {
+      showToast.error("Pilih tanggal hari libur terlebih dahulu");
+      return;
+    }
+    const exists = (config.kknHolidays || []).some((h) => h.date === newHolidayDate);
+    if (exists) {
+      showToast.error("Tanggal libur ini sudah ada di daftar");
+      return;
+    }
+    const updated = [
+      ...(config.kknHolidays || []),
+      { date: newHolidayDate, description: newHolidayDesc || "Hari Libur Khusus / Nasional" },
+    ].sort((a, b) => a.date.localeCompare(b.date));
+
+    handleChange("kknHolidays", updated);
+    setNewHolidayDate("");
+    setNewHolidayDesc("");
+    showToast.success("Hari libur berhasil ditambahkan ke daftar");
+  };
+
+  const handleRemoveHoliday = (dateToRemove: string) => {
+    const updated = (config.kknHolidays || []).filter((h) => h.date !== dateToRemove);
+    handleChange("kknHolidays", updated);
+    showToast.info("Hari libur dihapus dari daftar");
+  };
+
+  const handleMarkTodayHoliday = () => {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const exists = (config.kknHolidays || []).some((h) => h.date === todayStr);
+    if (exists) {
+      showToast.info("Hari ini sudah tercatat sebagai hari libur");
+      return;
+    }
+    const updated = [
+      ...(config.kknHolidays || []),
+      { date: todayStr, description: "Dispensasi Libur Massal (Developer)" },
+    ].sort((a, b) => a.date.localeCompare(b.date));
+
+    handleChange("kknHolidays", updated);
+    showToast.success("Hari ini berhasil ditandai sebagai Hari Libur Massal");
+  };
 
   const fetchRuleEngine = async () => {
     try {
