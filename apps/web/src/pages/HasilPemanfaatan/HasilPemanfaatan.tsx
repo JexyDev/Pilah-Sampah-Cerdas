@@ -330,7 +330,15 @@ export const HasilPemanfaatan: React.FC = () => {
       <PageHeader
         icon={Sparkles}
         category="Suara Warga & Evaluasi Daur Ulang"
-        scope="Kecamatan Coblong"
+        scope={
+          user?.peran === "DPL" || user?.peran === "DOSEN_PEMBIMBING"
+            ? user?.wilayah || (user?.kelurahan ? `Kel. ${user.kelurahan}` : "Wilayah Dampingan KKN")
+            : user?.peran === "RW"
+            ? `RW ${user?.rw || user?.rtRwId || ""}`
+            : user?.peran === "LURAH"
+            ? `Kelurahan ${user?.kelurahan || ""}`
+            : "Kecamatan Coblong"
+        }
         title="Pemanfaatan & Hasil"
         description="Pusat aspirasi, masukan, dan evaluasi hasil daur ulang serta pemanfaatan sampah di kelurahan secara transparan dan akuntabel."
         actions={

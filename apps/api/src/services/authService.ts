@@ -70,9 +70,23 @@ export class AuthService {
       "";
 
     let rwName = anyUser.rw?.name || anyUser.studentProfile?.assignedRw?.name || "";
+    let dplAssignment = "";
+
     if (userRoleName === "LURAH") {
       rwName = "Seluruh RW";
       if (!kelurahanName) kelurahanName = "Cipaganti";
+    } else if (userRoleName === "DPL" || userRoleName === "DOSEN_PEMBIMBING") {
+      const dplGroup = await prisma.kelompokKkn.findFirst({
+        where: { dplId: user.id },
+      });
+      if (dplGroup) {
+        kelurahanName = dplGroup.kelurahan || kelurahanName;
+        const rwList = Array.isArray(dplGroup.cakupanRw)
+          ? (dplGroup.cakupanRw as string[]).join(", ")
+          : "";
+        rwName = rwList || "Wilayah Dampingan KKN";
+        dplAssignment = `${dplGroup.name} (${kelurahanName ? `Kel. ${kelurahanName}` : ""}${rwList ? ` - ${rwList}` : ""})`;
+      }
     }
 
     // Prepare payload
@@ -106,6 +120,7 @@ export class AuthService {
         fotoProfil: user.fotoProfil,
         kelurahan: kelurahanName,
         rw: rwName,
+        wilayah: dplAssignment || undefined,
         provinsi: user.provinsi || "Jawa Barat",
         kabupaten: user.kabupaten || "Kota Bandung",
         kecamatan: "Coblong",

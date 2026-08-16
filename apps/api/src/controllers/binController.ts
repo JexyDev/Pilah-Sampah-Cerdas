@@ -200,7 +200,7 @@ export class BinController {
 
   async getAreas(req: Request, res: Response): Promise<void> {
     try {
-      const areas = await binService.getAreas();
+      const areas = await binService.getAreas(req.user);
       res.status(200).json({
         success: true,
         data: areas,

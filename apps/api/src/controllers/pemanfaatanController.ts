@@ -82,7 +82,7 @@ export class PemanfaatanController {
 
   async getAll(req: Request, res: Response): Promise<void> {
     try {
-      const result = await pemanfaatanService.getAll();
+      const result = await pemanfaatanService.getAll(req.user);
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
