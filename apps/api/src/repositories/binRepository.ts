@@ -466,6 +466,15 @@ export class BinRepository {
   }
 
   async createBin(data: any) {
+    if (data.rwId && !data.kelurahanId) {
+      const rw = await prisma.rw.findUnique({
+        where: { id: Number(data.rwId) },
+        select: { kelurahanId: true },
+      });
+      if (rw?.kelurahanId) {
+        data.kelurahanId = rw.kelurahanId;
+      }
+    }
     return prisma.bin.create({
       data,
     });
@@ -479,6 +488,17 @@ export class BinRepository {
     });
     if (!existing) {
       throw new Error("BIN_NOT_FOUND");
+    }
+
+    if ((data.rwId || existing.rwId) && !data.kelurahanId) {
+      const targetRwId = data.rwId || existing.rwId;
+      const rw = await prisma.rw.findUnique({
+        where: { id: Number(targetRwId) },
+        select: { kelurahanId: true },
+      });
+      if (rw?.kelurahanId) {
+        data.kelurahanId = rw.kelurahanId;
+      }
     }
 
     return prisma.bin.update({
