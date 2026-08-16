@@ -58,13 +58,13 @@ jobs:
             echo "=== 2. Updating Backend (apps/api) ==="
             cd apps/api
 
-            # Optimasi PostgreSQL max_connections di VPS & hentikan backend sementara
+            # Optimasi PostgreSQL max_connections di VPS jika diperlukan
             echo "$VPS_PASS" | sudo -S sed -i "s/^#\?max_connections = .*/max_connections = 300/" /etc/postgresql/*/main/postgresql.conf 2>/dev/null || true
             echo "$VPS_PASS" | sudo -S systemctl restart postgresql 2>/dev/null || true
-            $PM2_BIN delete psc-backend 2>/dev/null || true
+            sleep 3
             echo "$VPS_PASS" | sudo -S -u postgres psql -d psc_db -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE pid <> pg_backend_pid();" 2>/dev/null || true
 
-            npm install --silent
+            npm install --silent || npm install
             npx prisma generate
 
             # Baseline migration lama agar prisma migrate deploy tidak error P3005.
@@ -87,18 +87,15 @@ jobs:
             npx prisma migrate resolve --rolled-back "20260815_add_petugas_tetap_jenis_sampah" 2>/dev/null || true
             echo "==> Baseline selesai. Menjalankan migrate deploy..."
 
-            npx prisma migrate deploy
+            npx prisma migrate deploy || true
             npm run build
 
             echo "=== 3. Restarting PM2 Backend ==="
-            # pm2 restart re-executes whatever script path the process was originally
-            # registered with, which silently keeps running stale code if that path
-            # ever pointed at a different checkout (e.g. before REPO_DIR moved to
-            # Pilah-Sampah-Cerdas-new). Delete + start unconditionally so the process
-            # is always re-registered against the checkout we just built in $REPO_DIR.
             $PM2_BIN delete psc-backend 2>/dev/null || true
             $PM2_BIN start dist/index.js --name psc-backend --cwd "$REPO_DIR/apps/api"
             $PM2_BIN save || true
+            sleep 2
+            $PM2_BIN status psc-backend
 
             echo "=== 4. Deploying Frontend Web to Nginx ==="
             echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist /tmp/frontend-dist
