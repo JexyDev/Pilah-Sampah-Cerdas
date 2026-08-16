@@ -589,7 +589,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[],
           children: [
             { to: "/superUser/discrepancies", label: "Review Diskrepansi AI", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[] },
-            { to: "/superUser/master-qr", label: "Master Batch QR Code", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
+            { to: "/superUser/master-qr", label: "Master Batch QR Code", allowed: ["DEVELOPER"] as UserRole[] },
           ],
         },
       ],

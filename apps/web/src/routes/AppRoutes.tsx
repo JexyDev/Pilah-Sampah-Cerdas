@@ -600,7 +600,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/superUser/qr-master"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
               <MasterQrManager />
             </ProtectedRoute>
           }
@@ -608,7 +608,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/superUser/master-qr"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
               <MasterQrManager />
             </ProtectedRoute>
           }
