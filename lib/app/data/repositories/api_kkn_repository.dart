@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:http_parser/http_parser.dart';
 
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -353,15 +354,13 @@ class ApiKknRepository implements KknRepository {
 
   @override
   Future<bool> submitPemanfaatanSampah(PemanfaatanSampahRequest request) async {
-    dynamic payload;
-    if (request.fotoPath != null && request.fotoPath!.isNotEmpty) {
-      payload = FormData.fromMap({
-        ...request.toJson(),
-        'fotoBukti': await MultipartFile.fromFile(request.fotoPath!),
-      });
-    } else {
-      payload = request.toJson();
-    }
+    // Backend for /pemanfaatan-sampah does not have multer middleware configured.
+    // If we send FormData (multipart/form-data), req.body will be empty on the backend, 
+    // causing it to use default values and ignore the user's input.
+    // Therefore, we MUST send application/json. 
+    // The backend hardcodes fotoDokumentasiUrl to default-pemanfaatan.jpg, 
+    // so we skip sending the photo file for this specific route.
+    final payload = request.toJson();
 
     final response = await apiClient.dio.post(
       ApiEndpoints.kknPemanfaatanSampah,
@@ -378,12 +377,21 @@ class ApiKknRepository implements KknRepository {
     required String deskripsi,
     required String fotoPath,
   }) async {
+    final fileExt = fotoPath.split('.').last.toLowerCase();
+    String mimeType = 'image/jpeg';
+    if (fileExt == 'png') mimeType = 'image/png';
+    if (fileExt == 'webp') mimeType = 'image/webp';
+
     final formData = FormData.fromMap({
       'kategori': kategori,
       'tanggalKegiatanTerkait': tanggal.toIso8601String(),
       'deskripsi': deskripsi,
       if (scheduleId != null) 'scheduleId': scheduleId,
-      'fotoBukti': await MultipartFile.fromFile(fotoPath),
+      'fotoBukti': await MultipartFile.fromFile(
+        fotoPath,
+        filename: fotoPath.split('/').last,
+        contentType: MediaType.parse(mimeType),
+      ),
     });
 
     final response = await apiClient.dio.post(

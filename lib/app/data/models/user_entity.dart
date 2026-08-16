@@ -23,7 +23,7 @@ class UserEntity extends Equatable {
     this.kecamatan = '',
     this.provinsi = '',
     this.kota = '',
-    this.jenjangPendidikan = '',
+    this.jenjangPendidikan = 'S1',
     this.pendampingName,
     this.familySize = 1,
   });

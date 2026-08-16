@@ -41,9 +41,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     super.didChangeDependencies();
     final user = ref.read(authProvider).user;
 
-    final isAktivasiBinMode =
-        ModalRoute.of(context)?.settings.arguments == 'aktivasi_bin';
-    if (isAktivasiBinMode && !_hasFetchedAktivasi) {
+    if (!_hasFetchedAktivasi) {
       _hasFetchedAktivasi = true;
       final kelurahan = user?.kelurahan ?? '';
       final rw = user?.rw ?? '';
@@ -160,39 +158,38 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
 
     final isAktivasiBinMode = ModalRoute.of(context)?.settings.arguments == 'aktivasi_bin';
     
-    // For aktivasi mode, we need to watch the aktivasi controller too
-    final aktivasiState = isAktivasiBinMode ? ref.watch(aktivasiWargaProvider) : null;
+    // For ALL modes, we need to watch the aktivasi controller to get ALL warga matching the RW.
+    final aktivasiState = ref.watch(aktivasiWargaProvider);
 
-    final rawAktivasiList = aktivasiState?.wargaList ?? [];
+    // Fetch list of ALL warga from aktivasiState (which hits /kkn/warga)
+    // regardless of whether we are in aktivasi_bin mode or monitoring mode.
+    // Dashboard still uses state.wargaList to show ONLY Warga Dampingan.
+    List<WargaDampingan> allWargaList = aktivasiState.wargaList.isNotEmpty
+        ? _getFilteredWargaAktivasi(aktivasiState.wargaList, userKec, userKel, userRw)
+        : (isAktivasiBinMode ? [] : state.wargaList.map((w) {
+              final targetKel = w.kelurahan.isNotEmpty ? w.kelurahan : userKel;
+              final targetRw = w.rw.isNotEmpty ? w.rw : userRw;
+              final targetKec = w.kecamatan.isNotEmpty ? w.kecamatan : userKec;
+              final kelDisplay = targetKel.toLowerCase().startsWith('kel') ? targetKel : 'Kel. $targetKel';
+              
+              final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RW')
+                  ? w.address
+                  : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $targetRw, $kelDisplay, Kec. $targetKec';
+              return WargaDampingan(
+                wargaId: w.wargaId, binId: w.binId, wargaName: w.wargaName, address: displayAddr, 
+                kelurahan: targetKel, rw: targetRw, kecamatan: targetKec, 
+                mahasiswaId: w.mahasiswaId, recentLogs: w.recentLogs, isActivated: w.isActivated, 
+                role: w.role, totalPoints: w.totalPoints, apiCorrectPercentage: w.apiCorrectPercentage,
+                pendampingName: w.pendampingName,
+              );
+            }).toList());
 
-    final userName = user?.name ?? '';
-
-    final allWargaList = isAktivasiBinMode 
-        ? _getFilteredWargaAktivasi(rawAktivasiList, userKec, userKel, userRw)
-        : state.wargaList.where((w) {
-            // Filter QC: HANYA tampilkan warga si mahasiswa tersebut dan sesuai dengan RW mahasiswa.
-            final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
-            final cleanUserRw = userRw.trim().replaceFirst(RegExp(r'^0+'), '');
-            final isMyCitizen = w.pendampingName.trim().toLowerCase() == userName.trim().toLowerCase();
-            final isMyRw = cleanUserRw.isEmpty || cleanWargaRw == cleanUserRw;
-            return isMyCitizen && isMyRw;
-        }).map((w) {
-            final targetKel = w.kelurahan.isNotEmpty ? w.kelurahan : userKel;
-            final targetRw = w.rw.isNotEmpty ? w.rw : userRw;
-            final targetKec = w.kecamatan.isNotEmpty ? w.kecamatan : userKec;
-            final kelDisplay = targetKel.toLowerCase().startsWith('kel') ? targetKel : 'Kel. $targetKel';
-            
-            final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RW')
-                ? w.address
-                : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $targetRw, $kelDisplay, Kec. $targetKec';
-            return WargaDampingan(
-              wargaId: w.wargaId, binId: w.binId, wargaName: w.wargaName, address: displayAddr, 
-              kelurahan: targetKel, rw: targetRw, kecamatan: targetKec, 
-              mahasiswaId: w.mahasiswaId, recentLogs: w.recentLogs, isActivated: w.isActivated, 
-              role: w.role, totalPoints: w.totalPoints, apiCorrectPercentage: w.apiCorrectPercentage,
-              pendampingName: w.pendampingName,
-            );
-          }).toList();
+    // Remove duplicates
+    final uniqueMap = <String, WargaDampingan>{};
+    for (final w in allWargaList) {
+      uniqueMap[w.wargaId] = w;
+    }
+    allWargaList = uniqueMap.values.toList();
 
     List<String> kelurahanList = [];
     List<String> rtRwList = [];

@@ -14,7 +14,7 @@ class KknAttendanceView extends ConsumerStatefulWidget {
   ConsumerState<KknAttendanceView> createState() => _KknAttendanceViewState();
 }
 
-class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
+class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with WidgetsBindingObserver {
   
   final TextEditingController _rtRwCtrl = TextEditingController();
   final TextEditingController _kodeZonaCtrl = TextEditingController(text: '');
@@ -23,6 +23,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = ref.read(authProvider).user;
       if (user != null) {
@@ -38,7 +39,15 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
   }
   
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.read(kknLocationProvider.notifier).forceLocationUpdate(context);
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _rtRwCtrl.dispose();
     _kodeZonaCtrl.dispose();
     super.dispose();
@@ -296,6 +305,10 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
                 _buildInfoRow('Target Lokasi:', state.activeActivity != null ? (state.activeActivity!['address'] ?? '-') : '-'),
                 const SizedBox(height: 8),
                 _buildInfoRow('Radius Toleransi:', state.activeActivity != null ? '${state.activeActivity!['radius'] ?? '-'} Meter' : '-'),
+                const SizedBox(height: 8),
+                _buildInfoRow('Nama Kegiatan:', state.activeActivity != null ? (state.activeActivity!['namaKegiatan'] ?? '-') : '-'),
+                const SizedBox(height: 8),
+                _buildInfoRow('Waktu Kegiatan:', state.activeActivity != null ? '${state.targetDurationMinutes} Menit' : '-'),
               ],
             ),
           ),
@@ -306,22 +319,22 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: state.isInsideRadius ? Colors.lightBlue.withValues(alpha: 0.1) : AppColors.dangerRed.withValues(alpha: 0.1),
-            border: Border.all(color: state.isInsideRadius ? Colors.lightBlue : AppColors.dangerRed),
+            color: state.isInsideRadius ? AppColors.primaryGreen.withValues(alpha: 0.1) : AppColors.dangerRed.withValues(alpha: 0.1),
+            border: Border.all(color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.dangerRed),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             children: [
               Icon(
                 state.isInsideRadius ? Icons.verified_rounded : Icons.cancel_rounded,
-                color: state.isInsideRadius ? Colors.lightBlue : AppColors.dangerRed,
+                color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.dangerRed,
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  state.isInsideRadius ? 'Kamu berada di dalam radius lokasi' : 'Kamu berada di luar radius lokasi',
+                  state.isInsideRadius ? 'Kamu berada di dalam radius lokasi' : 'Kamu berada di luar radius lokasi (freeze)',
                   style: TextStyle(
-                    color: state.isInsideRadius ? Colors.lightBlue[800] : AppColors.dangerRed,
+                    color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.dangerRed,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -344,17 +357,23 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.timer_rounded, color: AppColors.warningOrange, size: 20),
-                      SizedBox(width: 8),
-                      Text(
-                        'Durasi Terdeteksi di Zona:',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                    ],
+                  const Expanded(
+                    child: Row(
+                      children: [
+                        Icon(Icons.timer_rounded, color: AppColors.warningOrange, size: 20),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Durasi Terdeteksi di Zona:',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
                     '$durasiMenit mnt $durasiDetik dtk / $targetMenit mnt',
                     style: const TextStyle(

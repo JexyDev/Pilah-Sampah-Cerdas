@@ -143,26 +143,26 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.warningYellow,
+                color: AppColors.warningOrange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.warningYellow),
+                border: Border.all(color: AppColors.warningOrange.withValues(alpha: 0.3)),
               ),
               child: const Column(
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.access_time_rounded, color: AppColors.warningYellow, size: 20),
+                      Icon(Icons.access_time_rounded, color: AppColors.warningOrange, size: 20),
                       SizedBox(width: 8),
                       Text(
                         'Status: Menunggu Verifikasi',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.warningYellow),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.warningOrange),
                       ),
                     ],
                   ),
                   SizedBox(height: 8),
                   Text(
                     'Pengajuan izin/sakit Anda telah dikirimkan ke DPL (Dosen Pembimbing Lapangan) untuk diverifikasi. Anda akan mendapat notifikasi setelah diproses.',
-                    style: TextStyle(fontSize: 12, color: Colors.black87),
+                    style: TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.4),
                   ),
                 ],
               ),

@@ -160,7 +160,7 @@ class _BinCardLarge extends StatelessWidget {
                 Row(
                   children: [
                     const Text(
-                      'Status Backend: ',
+                      'Status: ',
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12,

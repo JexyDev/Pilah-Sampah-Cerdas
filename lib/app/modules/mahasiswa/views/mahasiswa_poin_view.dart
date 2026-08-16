@@ -38,6 +38,7 @@ class MahasiswaPoinView extends ConsumerWidget {
           await ref.read(mahasiswaControllerProvider.notifier).fetchAll();
           if (user != null) {
             ref.invalidate(pointHistoryProvider);
+            ref.invalidate(pengajuanIzinCountProvider);
           }
         },
         color: AppColors.primaryGreen,

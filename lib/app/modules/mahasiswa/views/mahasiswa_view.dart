@@ -24,16 +24,32 @@ class MahasiswaView extends ConsumerStatefulWidget {
   ConsumerState<MahasiswaView> createState() => _MahasiswaViewState();
 }
 
-class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
+class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(mahasiswaControllerProvider.notifier).fetchAll();
       ref.read(locationPingControllerProvider.notifier).startTracking();
       final kknNotifier = ref.read(kknLocationProvider.notifier);
       kknNotifier.startTracking(context);
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Auto-refresh location when app is resumed
+      ref.read(kknLocationProvider.notifier).forceLocationUpdate(context);
+      ref.read(mahasiswaControllerProvider.notifier).refresh();
+    }
   }
 
   @override
@@ -370,17 +386,15 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
   Widget _buildSummaryCards(MahasiswaState state) {
     final d = state.dashboard;
     final user = ref.watch(authProvider).user;
-    final userName = user?.name ?? '';
-    final userRw = user?.rw ?? '-';
-
+    final cleanUserRw = user?.rw.trim().replaceFirst(RegExp(r'^0+'), '') ?? '';
+    
     // Total Warga Dampingan Mahasiswa ini
     final myWargaList = state.wargaList.where((w) {
       if (w.role != 'WARGA') return false;
       
       final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
-      final cleanUserRw = userRw.trim().replaceFirst(RegExp(r'^0+'), '');
       
-      final isMyCitizen = w.pendampingName.trim().toLowerCase() == userName.trim().toLowerCase();
+      final isMyCitizen = w.pendampingName.trim().toLowerCase() == (user?.name ?? '').trim().toLowerCase();
       final isMyRw = cleanUserRw.isEmpty || cleanWargaRw == cleanUserRw;
 
       return isMyCitizen && isMyRw;
@@ -429,11 +443,41 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildLocationStatus(LocationPingState locationState, KknLocationState kknState) {
-    final bool isGpsOk = locationState.gpsEnabled && locationState.permissionGranted && locationState.errorMessage == null;
+    final bool isInitializing = kknState.isTracking && kknState.currentPosition == null && kknState.error == null;
     final bool isInsideZone = kknState.isInsideRadius;
-    final bool isOn = locationState.isTracking && isGpsOk && isInsideZone;
-    final lastPing = locationState.lastPingTime;
+    final bool isOn = kknState.isTracking && kknState.error == null && isInsideZone;
     final durationMins = (kknState.inZoneDurationSeconds / 60).floor();
+    final lastPing = locationState.lastPingTime;
+
+    Color boxColor;
+    Color borderColor;
+    IconData iconData;
+    String statusTitle;
+    String statusDesc;
+    Color textColor;
+
+    if (isInitializing) {
+      boxColor = AppColors.primaryBlueLight.withValues(alpha: 0.1);
+      borderColor = AppColors.primaryBlue.withValues(alpha: 0.3);
+      iconData = Icons.satellite_alt_rounded;
+      statusTitle = 'Memeriksa Lokasi...';
+      statusDesc = 'Sedang mencari kordinat GPS Anda.';
+      textColor = AppColors.primaryBlueDark;
+    } else if (isOn) {
+      boxColor = AppColors.success.withValues(alpha: 0.1);
+      borderColor = AppColors.success.withValues(alpha: 0.3);
+      iconData = Icons.location_on_rounded;
+      statusTitle = 'Status: Aktif Memantau';
+      statusDesc = 'Anda terdeteksi di dalam zona KKN ($durationMins / ${kknState.targetDurationMinutes} Menit).';
+      textColor = AppColors.successDark;
+    } else {
+      boxColor = AppColors.dangerRed.withValues(alpha: 0.1);
+      borderColor = AppColors.dangerRed.withValues(alpha: 0.3);
+      iconData = Icons.location_off_rounded;
+      statusTitle = 'Status: Di Luar Zona';
+      statusDesc = kknState.error ?? 'Anda berada di luar zona geofence KKN. Durasi tidak bertambah.';
+      textColor = AppColors.dangerRed;
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -441,44 +485,36 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
         vertical: 16,
       ),
       decoration: BoxDecoration(
-        color: isOn
-            ? AppColors.success.withValues(alpha: 0.1)
-            : AppColors.dangerRed.withValues(alpha: 0.1),
+        color: boxColor,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-        border: Border.all(
-          color: isOn
-              ? AppColors.success.withValues(alpha: 0.3)
-              : AppColors.dangerRed.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: borderColor),
       ),
       child: Row(
         children: [
           Icon(
-            isOn ? Icons.location_on_rounded : Icons.location_off_rounded,
-            color: isOn ? AppColors.success : AppColors.dangerRed,
-            size: 20,
+            iconData,
+            color: textColor,
+            size: 28,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppDimensions.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isOn ? 'Status: ZONA AKTIF' : 'Status: ZONA TIDAK AKTIF',
+                  statusTitle,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
-                    color: isOn ? AppColors.successDark : AppColors.dangerRed,
+                    color: textColor,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  isOn 
-                      ? 'Anda terdeteksi di dalam zona KKN ($durationMins / 120 Menit).' 
-                      : 'Anda berada di luar zona geofence KKN. Durasi tidak bertambah.',
+                  statusDesc,
                   style: TextStyle(
                     fontSize: 11,
-                    color: isOn ? AppColors.successDark : AppColors.dangerRed,
+                    color: textColor,
                   ),
                 ),
                 if (lastPing != null) ...[
@@ -498,8 +534,8 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
             ),
           ),
           Icon(
-            isOn ? Icons.my_location_rounded : Icons.location_off_rounded,
-            color: isOn ? AppColors.success : AppColors.dangerRed,
+            iconData,
+            color: textColor.withValues(alpha: 0.7),
             size: 24,
           )
         ],
@@ -559,7 +595,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.location_on_rounded,
-                title: 'Presensi GPS KKN',
+                title: 'Presensi',
                 subtitle: 'Presensi ${kknState.targetDurationMinutes % 60 == 0 ? '${kknState.targetDurationMinutes ~/ 60} jam' : '${kknState.targetDurationMinutes} menit'} zona KKN',
                 gradientColors: const [AppColors.primaryBlueLight, AppColors.primaryBlue],
                 onTap: () => Navigator.pushNamed(context, AppRoutes.kknAttendance),
@@ -585,7 +621,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                 icon: Icons.rule_rounded,
                 title: 'Pengajuan Izin',
                 subtitle: 'Izin/Sakit DPL',
-                gradientColors: const [Color(0xFFF59E0B), Color(0xFFD97706)],
+                gradientColors: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)], 
                 onTap: () => Navigator.pushNamed(context, AppRoutes.pengajuanIzin),
               ),
             ),
@@ -606,20 +642,17 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
     final userKel = user?.kelurahan ?? '-';
     final userRw = user?.rw ?? '-';
 
-    final userName = user?.name ?? '';
-
-    // Filter QC: Tampilkan HANYA warga si mahasiswa tersebut (berdasarkan nama)
-    // dan pastikan sesuai dengan RW penugasan mahasiswa.
+    // Tampilkan warga berdasarkan RW penugasan mahasiswa.
     final list = state.wargaList.where((w) {
       if (!w.isActivated) return false;
       
       final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
       final cleanUserRw = userRw.trim().replaceFirst(RegExp(r'^0+'), '');
       
-      final isMyCitizen = w.pendampingName.trim().toLowerCase() == userName.trim().toLowerCase();
       final isMyRw = cleanUserRw.isEmpty || cleanWargaRw == cleanUserRw;
+      final isMyCitizen = w.pendampingName == user?.name;
 
-      return isMyCitizen && isMyRw;
+      return isMyRw && isMyCitizen;
     }).map((w) {
       final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RW')
           ? w.address
@@ -639,6 +672,14 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
         apiCorrectPercentage: w.apiCorrectPercentage,
       );
     }).toList();
+
+    // Remove duplicates based on wargaId
+    final uniqueMap = <String, WargaDampingan>{};
+    for (final w in list) {
+      uniqueMap[w.wargaId] = w;
+    }
+    final uniqueList = uniqueMap.values.toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -653,7 +694,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
                 color: AppColors.textPrimary,
               ),
             ),
-            if (list.length > 5)
+            if (uniqueList.length > 5)
               GestureDetector(
                 onTap: () => Navigator.pushNamed(context, AppRoutes.daftarWarga),
                 child: const Text(
@@ -668,7 +709,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
           ],
         ),
         const SizedBox(height: AppDimensions.sm),
-        if (list.isEmpty)
+        if (uniqueList.isEmpty)
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(AppDimensions.xl),
@@ -689,7 +730,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> {
             ),
           )
         else
-          ...list.take(5).map((w) => _WargaCard(
+          ...uniqueList.take(5).map((w) => _WargaCard(
                 warga: w,
                 currentUserName: user?.name ?? '',
                 onTap: () => Navigator.pushNamed(

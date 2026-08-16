@@ -12,6 +12,7 @@ import 'mahasiswa_controller.dart';
 import 'mahasiswa_notifikasi_controller.dart';
 import '../../../data/services/notification_engine.dart';
 import '../../../core/utils/network_exception_helper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class KknLocationState {
   final Position? currentPosition;
@@ -118,6 +119,45 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   Timer? _zoneDurationTimer;
   String? _currentTargetScheduleId;
   int _accumulatedSeconds = 0;
+  DateTime? _zoneEntryTime;
+
+  static const _prefKeyAccumulated = 'kkn_accumulated_seconds';
+  static const _prefKeyDate = 'kkn_accumulated_date';
+  static const _prefKeyTarget = 'kkn_accumulated_target';
+
+  Future<void> _loadPersistentTimer() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedDate = prefs.getString(_prefKeyDate);
+    final today = DateTime.now().toLocal().toString().substring(0, 10); // YYYY-MM-DD
+    
+    // Reset jika beda hari atau beda target zona
+    if (savedDate != today) {
+      _accumulatedSeconds = 0;
+      await _savePersistentTimer();
+    } else {
+      _accumulatedSeconds = prefs.getInt(_prefKeyAccumulated) ?? 0;
+    }
+  }
+
+  Future<void> _savePersistentTimer() async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = DateTime.now().toLocal().toString().substring(0, 10);
+    await prefs.setString(_prefKeyDate, today);
+    await prefs.setInt(_prefKeyAccumulated, _accumulatedSeconds);
+    if (_currentTargetScheduleId != null) {
+      await prefs.setString(_prefKeyTarget, _currentTargetScheduleId!);
+    }
+  }
+
+  Future<void> _savePersistentTimerTempValue(int tempSeconds) async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = DateTime.now().toLocal().toString().substring(0, 10);
+    await prefs.setString(_prefKeyDate, today);
+    await prefs.setInt(_prefKeyAccumulated, tempSeconds);
+    if (_currentTargetScheduleId != null) {
+      await prefs.setString(_prefKeyTarget, _currentTargetScheduleId!);
+    }
+  }
 
   /// Start tracking GPS locations and sync with backend
   Future<void> startTracking([BuildContext? context]) async {
@@ -143,30 +183,80 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       return;
     }
 
+    // LOAD PERSISTENT TIMER
+    await _loadPersistentTimer();
+
     state = state.copyWith(isTracking: true, error: null, clearError: true);
 
     if (_currentTargetScheduleId == null || _currentTargetScheduleId == 'SCH-TODAY') {
       try {
         final repo = ref.read(kknRepositoryProvider);
-        final activeZone = await repo.getActiveZone();
-        if (activeZone.isNotEmpty) {
-          if (activeZone.containsKey('id') || activeZone.containsKey('scheduleId')) {
-            _currentTargetScheduleId = activeZone['id']?.toString() ?? activeZone['scheduleId']?.toString();
-            await _fetchTargetLocation();
-          } else {
-            // It's a generic active zone (e.g. RW / Kelurahan) without a specific schedule ID
-            final duration = int.tryParse(activeZone['targetDurationMinutes']?.toString() ?? '120') ?? 120;
-            state = state.copyWith(
-              activeActivity: {
-                'address': activeZone['zoneName'] ?? activeZone['kelurahan'] ?? 'Zona Dampingan',
-                'radius': activeZone['radiusMeter'] ?? 100,
-                'latitude': activeZone['latitude'],
-                'longitude': activeZone['longitude'],
-                'namaKegiatan': activeZone['zoneName'] ?? 'Penugasan KKN',
-                ...activeZone,
-              },
-              targetDurationMinutes: duration,
-            );
+        
+        // 1. Coba ambil dari jadwal hari ini dulu (dari web)
+        bool scheduleFound = false;
+        try {
+          final user = ref.read(authProvider).user;
+          final schedules = await repo.getSchedules();
+          final now = DateTime.now();
+          final todayStr = now.toIso8601String().substring(0, 10);
+          
+          for (final sch in schedules) {
+            final dateStr = sch['date']?.toString() ?? '';
+            if (dateStr.startsWith(todayStr)) {
+              // Verifikasi apakah jadwal ini milik kelurahan/RW mahasiswa tersebut
+              bool isMatch = false;
+              if (user != null) {
+                final schKel = sch['kelompok']?['kelurahan']?.toString().toLowerCase() ?? '';
+                final schLoc = sch['location']?.toString().toLowerCase() ?? '';
+                final schTitle = sch['title']?.toString().toLowerCase() ?? '';
+                
+                final uKel = user.kelurahan.toLowerCase();
+                final uRw = user.rw.toLowerCase();
+                
+                // Jika jadwal memiliki referensi spesifik ke kelurahan atau RW mahasiswa
+                if (
+                  (uKel.isNotEmpty && (schKel.contains(uKel) || schLoc.contains(uKel) || schTitle.contains(uKel))) ||
+                  (uRw.isNotEmpty && (schLoc.contains(uRw) || schTitle.contains(uRw))) ||
+                  (schKel.isEmpty && schLoc.isEmpty) // Fallback jika jadwal umum (tidak di-set lokasinya)
+                ) {
+                  isMatch = true;
+                }
+              } else {
+                isMatch = true;
+              }
+
+              if (isMatch) {
+                _currentTargetScheduleId = sch['id']?.toString();
+                await _fetchTargetLocation(sch);
+                scheduleFound = true;
+                break;
+              }
+            }
+          }
+        } catch (_) {}
+
+        // 2. Jika tidak ada jadwal hari ini, fallback ke active zone (default KKN)
+        if (!scheduleFound) {
+          final activeZone = await repo.getActiveZone();
+          if (activeZone.isNotEmpty) {
+            if (activeZone.containsKey('id') || activeZone.containsKey('scheduleId')) {
+              _currentTargetScheduleId = activeZone['id']?.toString() ?? activeZone['scheduleId']?.toString();
+              await _fetchTargetLocation();
+            } else {
+              // It's a generic active zone (e.g. RW / Kelurahan) without a specific schedule ID
+              final duration = int.tryParse(activeZone['targetDurationMinutes']?.toString() ?? '120') ?? 120;
+              state = state.copyWith(
+                activeActivity: {
+                  'address': activeZone['zoneName'] ?? activeZone['kelurahan'] ?? 'Zona Dampingan',
+                  'radius': activeZone['radiusMeter'] ?? 100,
+                  'latitude': activeZone['latitude'],
+                  'longitude': activeZone['longitude'],
+                  'namaKegiatan': activeZone['zoneName'] ?? 'Penugasan KKN',
+                  ...activeZone,
+                },
+                targetDurationMinutes: duration,
+              );
+            }
           }
         }
       } catch (_) {}
@@ -194,14 +284,15 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     state = state.copyWith(isTracking: false);
   }
 
-  /// Force immediate location & target refresh on demand (Pull-to-refresh / Button)
+  /// Force immediate location & target refresh on demand (Pull-to-refresh / Button / App Resume)
   Future<void> forceLocationUpdate([BuildContext? context]) async {
-    // If not tracking, startTracking will do everything.
-    // If tracking, we temporarily stop it and restart it to fetch the latest zone info
-    if (state.isTracking) {
-      stopTracking();
+    if (!state.isTracking) {
+      await startTracking(context);
+    } else {
+      // Just fetch latest target and perform immediate location update without stopping timers
+      await _fetchTargetLocation(state.activeActivity);
+      await _performLocationUpdate();
     }
-    await startTracking(context);
   }
 
   /// Set the active schedule target to calculate geofencing
@@ -247,21 +338,49 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   }
 
   /// Fetch schedule coordinates from backend
-  Future<void> _fetchTargetLocation() async {
+  Future<void> _fetchTargetLocation([Map<String, dynamic>? initialData]) async {
     if (_currentTargetScheduleId == null) return;
     try {
       final repo = ref.read(kknRepositoryProvider);
       final locationData = await repo.getTargetLocation(_currentTargetScheduleId!);
       
+      // Merge locationData with initialData (schedule details)
+      final mergedData = {
+        ...?initialData,
+        ...locationData,
+      };
+
+      // Ensure address and namaKegiatan are set so UI displays them
+      mergedData['address'] ??= mergedData['location'] ?? mergedData['kelurahan'] ?? 'Zona Dampingan';
+      mergedData['namaKegiatan'] ??= mergedData['title'] ?? 'Penugasan KKN';
+      mergedData['radius'] ??= 100;
+      
       int duration = 120;
-      if (locationData['targetDurationMinutes'] != null) {
-        duration = int.tryParse(locationData['targetDurationMinutes'].toString()) ?? 120;
-      } else if (locationData['durationMinutes'] != null) {
-        duration = int.tryParse(locationData['durationMinutes'].toString()) ?? 120;
+      if (mergedData['targetDurationMinutes'] != null) {
+        duration = int.tryParse(mergedData['targetDurationMinutes'].toString()) ?? 120;
+      } else if (mergedData['durationMinutes'] != null) {
+        duration = int.tryParse(mergedData['durationMinutes'].toString()) ?? 120;
+      } else if (mergedData['time'] != null) {
+        // Parse "time" field. e.g. "1" -> 60 minutes, "60" -> 60 minutes
+        final timeStr = mergedData['time'].toString().toLowerCase().trim();
+        if (timeStr == '1') {
+          duration = 60;
+        } else if (timeStr == '2') {
+          duration = 120;
+        } else if (timeStr == '3') {
+          duration = 180;
+        } else {
+          final t = int.tryParse(timeStr);
+          if (t != null && t > 10) { // e.g. "60", "120"
+            duration = t;
+          } else if (timeStr.contains('-')) { // e.g. "08:00 - 10:00"
+            duration = 120; // fallback default for range
+          }
+        }
       }
       
       state = state.copyWith(
-        activeActivity: locationData, 
+        activeActivity: mergedData, 
         targetDurationMinutes: duration
       );
     } catch (e) {
@@ -270,7 +389,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   }
 
   DateTime? _lastTimerDate;
-  DateTime? _zoneEntryTime;
+  int _lastSavedSeconds = -1;
 
   /// Start 1-second ticker for in-zone duration
   void _startZoneTimer() {
@@ -356,6 +475,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         final currentSessionSeconds = now.difference(_zoneEntryTime!).inSeconds;
         final totalElapsed = _accumulatedSeconds + currentSessionSeconds;
         
+        // Simpan setiap 5 detik agar persisten jika aplikasi tertutup tiba-tiba
+        if (totalElapsed > 0 && totalElapsed % 5 == 0 && _lastSavedSeconds != totalElapsed) {
+          _lastSavedSeconds = totalElapsed;
+          _savePersistentTimerTempValue(totalElapsed);
+        }
+
         // Syarat Absen MUTLAK: Harus berada di zona sesuai target durasi
         final bool durationMet = totalElapsed >= (state.targetDurationMinutes * 60);
         final bool eligible = isWithinWebWindow && durationMet;
@@ -385,6 +510,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     if (resetCompletely) {
       _accumulatedSeconds = 0;
     }
+    
+    _savePersistentTimer();
 
     NotificationEngine().cancelOngoingKKNNotification();
     state = state.copyWith(
