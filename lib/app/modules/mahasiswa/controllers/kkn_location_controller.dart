@@ -63,7 +63,7 @@ class KknLocationState {
     this.zoneResetWarning,
     this.checkInTime,
     this.checkOutTime,
-    this.targetDurationMinutes = 120,
+    this.targetDurationMinutes = 60,
     this.attendanceId,
     this.alpaDurationMinutes,
   });
@@ -320,11 +320,11 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       mergedData['namaKegiatan'] ??= mergedData['title'] ?? 'Penugasan KKN';
       mergedData['radius'] ??= 100;
       
-      int duration = 120;
+      int duration = 60;
       if (mergedData['targetDurationMinutes'] != null) {
-        duration = int.tryParse(mergedData['targetDurationMinutes'].toString()) ?? 120;
+        duration = int.tryParse(mergedData['targetDurationMinutes'].toString()) ?? 60;
       } else if (mergedData['durationMinutes'] != null) {
-        duration = int.tryParse(mergedData['durationMinutes'].toString()) ?? 120;
+        duration = int.tryParse(mergedData['durationMinutes'].toString()) ?? 60;
       } else if (mergedData['time'] != null) {
         // Parse "time" field. e.g. "1" -> 60 minutes, "60" -> 60 minutes
         final timeStr = mergedData['time'].toString().toLowerCase().trim();
@@ -353,15 +353,15 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
                 final endTime = DateTime(now.year, now.month, now.day, int.parse(endParts[0]), int.parse(endParts[1]));
                 
                 duration = endTime.difference(startTime).inMinutes;
-                if (duration <= 0) duration = 120;
+                if (duration <= 0) duration = 60;
                 
                 mergedData['startTime'] = startTime.toIso8601String();
                 mergedData['endTime'] = endTime.toIso8601String();
               } else {
-                duration = 120;
+                duration = 60;
               }
             } catch (_) {
-              duration = 120;
+              duration = 60;
             }
           }
         }

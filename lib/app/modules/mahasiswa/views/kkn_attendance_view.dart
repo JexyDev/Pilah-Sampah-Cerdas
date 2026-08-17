@@ -464,21 +464,21 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
                 _buildIconDetailRow(
                   icon: Icons.location_on_rounded,
                   title: 'Target Lokasi',
-                  value: state.activeActivity != null ? (state.activeActivity!['address'] ?? '-') : '-',
+                  value: state.activeActivity != null ? (state.activeActivity!['address'] ?? state.activeActivity!['targetLokasi'] ?? state.activeActivity!['location'] ?? '-') : '-',
                 ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(child: _buildBoxDetail(Icons.radar, 'Radius Toleransi', state.activeActivity != null ? '${state.activeActivity!['radius'] ?? '-'} Meter' : '-')),
+                    Expanded(child: _buildBoxDetail(Icons.radar, 'Radius Toleransi', state.activeActivity != null ? '${state.activeActivity!['radius'] ?? state.activeActivity!['radiusMeter'] ?? 100} Meter' : '-')),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildBoxDetail(Icons.access_time_rounded, 'Jam Kegiatan', (timeLabel != null && timeLabel.isNotEmpty) ? timeLabel.toUpperCase() : '-')),
+                    Expanded(child: _buildBoxDetail(Icons.access_time_rounded, 'Jam Kegiatan', (timeLabel != null && timeLabel.isNotEmpty) ? timeLabel.toUpperCase() : (state.activeActivity != null ? (state.activeActivity!['jamKegiatan'] ?? state.activeActivity!['time'] ?? '08:00 - 16:00') : '-'))),
                   ],
                 ),
                 _buildDashedDivider(),
                 _buildIconDetailRow(
                   icon: Icons.groups_rounded,
                   title: 'Nama Kegiatan',
-                  value: state.activeActivity != null ? (state.activeActivity!['namaKegiatan'] ?? '-') : '-',
+                  value: state.activeActivity != null ? (state.activeActivity!['namaKegiatan'] ?? state.activeActivity!['zoneName'] ?? state.activeActivity!['title'] ?? '-') : '-',
                 ),
                 _buildDashedDivider(),
                 _buildIconDetailRow(
