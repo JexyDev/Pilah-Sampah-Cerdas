@@ -455,11 +455,11 @@ export const penilaianKknService = {
     } else if (evaluatorRole === "LURAH" && evaluatorId) {
       const userLurah = await prisma.user.findUnique({
         where: { id: evaluatorId },
-        select: { kelurahanId: true },
+        include: { rw: true },
       });
-      if (userLurah?.kelurahanId) {
+      if (userLurah?.rw?.kelurahanId) {
         whereCondition.studentProfile = {
-          assignedRw: { kelurahanId: userLurah.kelurahanId },
+          assignedRw: { kelurahanId: userLurah.rw.kelurahanId },
         };
       }
     }
