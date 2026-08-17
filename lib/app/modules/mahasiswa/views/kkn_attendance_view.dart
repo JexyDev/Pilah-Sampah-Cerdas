@@ -197,6 +197,36 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
     final bool isAlpa = state.zoneResetWarning != null && state.zoneResetWarning!.toLowerCase().contains('berakhir') && !state.isSuccessAttendance;
     final bool isSuccess = state.isSuccessAttendance;
 
+    final bool isLibur = state.activeActivity != null && 
+        (state.activeActivity!['hasActiveZone'] == false || state.activeActivity!['status'] == 'libur');
+
+    if (isLibur) {
+      return Card(
+        color: Colors.white,
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: const Padding(
+          padding: EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              Icon(Icons.event_busy_rounded, color: Colors.grey, size: 56),
+              SizedBox(height: 12),
+              Text(
+                'Tidak Ada Kegiatan Aktif (Libur)',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Hari ini tidak ada kegiatan KKN aktif atau kegiatan belum diaktifkan oleh Dosen Pembimbing Lapangan (DPL).',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     Widget content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -332,7 +362,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  state.isInsideRadius ? 'Kamu berada di dalam radius lokasi' : 'Kamu berada di luar radius lokasi (freeze)',
+                  state.isInsideRadius ? 'Presensi Waktu Aktif' : 'Anda Tidak berada di zona kelompok KKN anda',
                   style: TextStyle(
                     color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.dangerRed,
                     fontWeight: FontWeight.bold,

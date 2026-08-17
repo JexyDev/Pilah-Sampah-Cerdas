@@ -190,73 +190,29 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
     if (_currentTargetScheduleId == null || _currentTargetScheduleId == 'SCH-TODAY') {
       try {
+        final pos = await LocationService.instance.getCurrentLocation();
         final repo = ref.read(kknRepositoryProvider);
-        
-        // 1. Coba ambil dari jadwal hari ini dulu (dari web)
-        bool scheduleFound = false;
-        try {
-          final user = ref.read(authProvider).user;
-          final schedules = await repo.getSchedules();
-          final now = DateTime.now();
-          final todayStr = now.toIso8601String().substring(0, 10);
-          
-          for (final sch in schedules) {
-            final dateStr = sch['date']?.toString() ?? '';
-            if (dateStr.startsWith(todayStr)) {
-              // Verifikasi apakah jadwal ini milik kelurahan/RW mahasiswa tersebut
-              bool isMatch = false;
-              if (user != null) {
-                final schKel = sch['kelompok']?['kelurahan']?.toString().toLowerCase() ?? '';
-                final schLoc = sch['location']?.toString().toLowerCase() ?? '';
-                final schTitle = sch['title']?.toString().toLowerCase() ?? '';
-                
-                final uKel = user.kelurahan.toLowerCase();
-                final uRw = user.rw.toLowerCase();
-                
-                // Jika jadwal memiliki referensi spesifik ke kelurahan atau RW mahasiswa
-                if (
-                  (uKel.isNotEmpty && (schKel.contains(uKel) || schLoc.contains(uKel) || schTitle.contains(uKel))) ||
-                  (uRw.isNotEmpty && (schLoc.contains(uRw) || schTitle.contains(uRw))) ||
-                  (schKel.isEmpty && schLoc.isEmpty) // Fallback jika jadwal umum (tidak di-set lokasinya)
-                ) {
-                  isMatch = true;
-                }
-              } else {
-                isMatch = true;
-              }
-
-              if (isMatch) {
-                _currentTargetScheduleId = sch['id']?.toString();
-                await _fetchTargetLocation(sch);
-                scheduleFound = true;
-                break;
-              }
-            }
+        final activeZone = await repo.getActiveZone(
+          latitude: pos?.latitude,
+          longitude: pos?.longitude,
+        );
+        if (activeZone.isNotEmpty) {
+          _currentTargetScheduleId = activeZone['id']?.toString() ?? activeZone['scheduleId']?.toString();
+          final status = (activeZone['attendanceStatus'] ?? activeZone['status'])?.toString().toLowerCase();
+          if (status == 'izin' || status == 'sakit') {
+            state = state.copyWith(
+              zoneResetWarning: 'Anda tercatat ${status?.toUpperCase()} pada jadwal kegiatan ini.',
+            );
+          } else if (status == 'alpa') {
+            state = state.copyWith(
+              zoneResetWarning: 'Waktu kegiatan telah berakhir. Anda tercatat ALPA.',
+            );
           }
-        } catch (_) {}
-
-        // 2. Jika tidak ada jadwal hari ini, fallback ke active zone (default KKN)
-        if (!scheduleFound) {
-          final activeZone = await repo.getActiveZone();
-          if (activeZone.isNotEmpty) {
-            if (activeZone.containsKey('id') || activeZone.containsKey('scheduleId')) {
-              _currentTargetScheduleId = activeZone['id']?.toString() ?? activeZone['scheduleId']?.toString();
-              await _fetchTargetLocation();
-            } else {
-              // It's a generic active zone (e.g. RW / Kelurahan) without a specific schedule ID
-              final duration = int.tryParse(activeZone['targetDurationMinutes']?.toString() ?? '120') ?? 120;
-              state = state.copyWith(
-                activeActivity: {
-                  'address': activeZone['zoneName'] ?? activeZone['kelurahan'] ?? 'Zona Dampingan',
-                  'radius': activeZone['radiusMeter'] ?? 100,
-                  'latitude': activeZone['latitude'],
-                  'longitude': activeZone['longitude'],
-                  'namaKegiatan': activeZone['zoneName'] ?? 'Penugasan KKN',
-                  ...activeZone,
-                },
-                targetDurationMinutes: duration,
-              );
-            }
+          if (activeZone['latitude'] != null && activeZone['longitude'] != null) {
+            state = state.copyWith(
+              activeActivity: activeZone,
+              targetDurationMinutes: activeZone['targetDurationMinutes'] ?? 60,
+            );
           }
         }
       } catch (_) {}

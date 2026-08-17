@@ -26,6 +26,8 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
   String? _evidencePhotoPath;
   double _compressedKB = 0;
   final Set<String> _selectedBinIds = {};
+  final Set<String> _selectedJenisSampah = {};
+  String? _selectedPetugasId;
 
   String _mapError(String code, String? message) {
     switch (code) {
@@ -72,6 +74,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
       final user = ref.read(authProvider).user;
       if (user != null) {
         ref.read(resetBinProvider.notifier).checkActiveRequest(user.id);
+        ref.read(petugasPengosonganProvider.notifier).checkStatus();
       }
     });
   }
@@ -79,6 +82,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
   @override
   Widget build(BuildContext context) {
     final resetState = ref.watch(resetBinProvider);
+    final petugasState = ref.watch(petugasPengosonganProvider);
     final binsAsync = ref.watch(binsProvider);
     final user = ref.watch(authProvider).user;
     final String userId = user?.id ?? '';
@@ -100,6 +104,8 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
           if (mounted) {
             setState(() {
               _selectedBinIds.clear();
+              _selectedJenisSampah.clear();
+              _selectedPetugasId = null;
             });
             ref.invalidate(binsProvider);
             ref.invalidate(notificationsProvider);
@@ -131,7 +137,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(AppDimensions.md),
-            child: _buildBody(resetState, binsAsync, userId),
+            child: _buildBody(resetState, petugasState, binsAsync, userId),
           ),
         ),
       ),
@@ -140,6 +146,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
 
   Widget _buildBody(
     ResetBinState resetState,
+    PetugasPengosonganState petugasState,
     AsyncValue<List<BinEntity>> binsAsync,
     String userId,
   ) {
@@ -152,8 +159,10 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
     }
 
     final bool hasPendingRequest = resetState.result != null && resetState.result!.status == BinResetStatus.pending;
-    return binsAsync.when(skipLoadingOnReload: true, data: (bins) {
-        return _buildForm(bins, userId, isPending: hasPendingRequest);
+    return binsAsync.when(
+      skipLoadingOnReload: true,
+      data: (bins) {
+        return _buildForm(bins, userId, petugasState, isPending: hasPendingRequest);
       },
       loading: () => const AppLoading(),
       error: (_, __) => const Center(child: Text(AppStrings.errorGeneric)),
@@ -162,7 +171,8 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
 
   Widget _buildForm(
     List<BinEntity> bins,
-    String userId, {
+    String userId,
+    PetugasPengosonganState petugasState, {
     bool isPending = false,
   }) {
     if (bins.isEmpty) {
@@ -400,6 +410,54 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
         ),
         
         const SizedBox(height: AppDimensions.md),
+
+        if (!isPending) ...[
+          _buildPetugasSelection(petugasState),
+          
+          const Text('Jenis Sampah yang Dikosongkan', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+          const SizedBox(height: AppDimensions.sm),
+          Row(
+            children: [
+              Expanded(
+                child: CheckboxListTile(
+                  title: const Text('Organik', style: TextStyle(fontSize: 14)),
+                  value: _selectedJenisSampah.contains('organik'),
+                  onChanged: (bool? value) {
+                    setState(() {
+                      if (value == true) {
+                        _selectedJenisSampah.add('organik');
+                      } else {
+                        _selectedJenisSampah.remove('organik');
+                      }
+                    });
+                  },
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  activeColor: AppColors.organicColor,
+                ),
+              ),
+              Expanded(
+                child: CheckboxListTile(
+                  title: const Text('Anorganik', style: TextStyle(fontSize: 14)),
+                  value: _selectedJenisSampah.contains('anorganik'),
+                  onChanged: (bool? value) {
+                    setState(() {
+                      if (value == true) {
+                        _selectedJenisSampah.add('anorganik');
+                      } else {
+                        _selectedJenisSampah.remove('anorganik');
+                      }
+                    });
+                  },
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  activeColor: AppColors.nonOrganicColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.md),
+        ],
         
         // Upload Bukti
         if (!isPending) ...[
@@ -452,6 +510,11 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
             final b = bins.firstWhere((element) => element.id == id);
             return b.capacityPercent < 0.70;
           });
+          
+          final bool isJenisSampahEmpty = _selectedJenisSampah.isEmpty;
+          final bool isPetugasInvalid = _selectedPetugasId == 'CHANGE_REQUESTED';
+          
+          final bool canSubmit = _evidencePhotoPath != null && _selectedBinIds.isNotEmpty && !isJenisSampahEmpty && !isPetugasInvalid;
 
           return SizedBox(
             width: double.infinity,
@@ -478,24 +541,48 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                             ),
                           );
                         }
-                      : (_evidencePhotoPath != null && _selectedBinIds.isNotEmpty)
+                      : isJenisSampahEmpty
                           ? () {
-                              final binIds = _selectedBinIds.toList();
-                              ref.read(resetBinProvider.notifier).submitReset(
-                                      binIds: binIds,
-                                      userId: userId,
-                                      evidencePhotoPath: _evidencePhotoPath!,
-                                      wargaName: ref.read(authProvider).user?.name,
-                                    );
+                              ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Pilih minimal satu jenis sampah yang ingin dikosongkan.'),
+                                  backgroundColor: AppColors.dangerRed,
+                                  behavior: SnackBarBehavior.floating,
+                                  duration: Duration(seconds: 3),
+                                ),
+                              );
                             }
-                          : null,
+                          : isPetugasInvalid
+                              ? () {
+                                  ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Pilih petugas tujuan terlebih dahulu.'),
+                                      backgroundColor: AppColors.dangerRed,
+                                      behavior: SnackBarBehavior.floating,
+                                      duration: Duration(seconds: 3),
+                                    ),
+                                  );
+                                }
+                              : canSubmit
+                                  ? () {
+                                      final binIds = _selectedBinIds.toList();
+                                      ref.read(resetBinProvider.notifier).submitReset(
+                                              binIds: binIds,
+                                              userId: userId,
+                                              evidencePhotoPath: _evidencePhotoPath!,
+                                              wargaName: ref.read(authProvider).user?.name,
+                                              petugasId: _selectedPetugasId,
+                                              jenisSampah: _selectedJenisSampah.join(','),
+                                            );
+                                    }
+                                  : null,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 backgroundColor: isPending
                     ? AppColors.warningYellow
-                    : hasInvalidSelectedBin
+                    : hasInvalidSelectedBin || isJenisSampahEmpty || isPetugasInvalid
                         ? AppColors.dangerRed
-                        : (_selectedBinIds.isNotEmpty ? AppColors.primaryGreen : Colors.grey.shade400),
+                        : (canSubmit ? AppColors.primaryGreen : Colors.grey.shade400),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: Text(
@@ -503,13 +590,19 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                     ? 'Sedang Mengajukan (PENDING)'
                     : hasInvalidSelectedBin
                         ? 'Tempat Sampah Belum 70%'
-                        : (_selectedBinIds.isEmpty
-                            ? 'Pilih Tempat Sampah Terlebih Dahulu'
-                            : 'Ajukan Pengosongan (${_selectedBinIds.length} Tempat Sampah)'),
+                        : isJenisSampahEmpty
+                            ? 'Pilih Jenis Sampah'
+                            : isPetugasInvalid
+                                ? 'Pilih Petugas Tujuan'
+                                : (_selectedBinIds.isEmpty
+                                    ? 'Pilih Tempat Sampah'
+                                    : _evidencePhotoPath == null 
+                                        ? 'Upload Foto Bukti'
+                                        : 'Ajukan Pengosongan (${_selectedBinIds.length} Tempat Sampah)'),
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: isPending || hasInvalidSelectedBin || _selectedBinIds.isNotEmpty ? Colors.white : Colors.grey.shade700,
+                  color: isPending || hasInvalidSelectedBin || isJenisSampahEmpty || isPetugasInvalid || canSubmit ? Colors.white : Colors.grey.shade700,
                 ),
               ),
             ),
@@ -582,12 +675,150 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
               ref.invalidate(binsProvider);
               ref.invalidate(notificationsProvider);
               ref.read(resetBinProvider.notifier).reset();
-              Navigator.of(context).pop();
+              Navigator.maybePop(context);
             },
             child: const Text('Kembali'),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPetugasSelection(PetugasPengosonganState state) {
+    if (state.isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(child: CircularProgressIndicator(color: AppColors.primaryGreen)),
+      );
+    }
+
+    if (state.error != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Text('Gagal memuat info petugas: ${state.error}', style: const TextStyle(color: AppColors.dangerRed)),
+      );
+    }
+
+    final hasDefault = state.statusResponse?.hasDefaultPetugas ?? false;
+    final defaultPetugas = state.statusResponse?.petugas;
+
+    if (hasDefault && defaultPetugas != null && _selectedPetugasId == null) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: AppDimensions.md),
+        padding: const EdgeInsets.all(AppDimensions.md),
+        decoration: BoxDecoration(
+          color: AppColors.primaryGreen.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.2),
+              backgroundImage: defaultPetugas.fotoProfil != null ? NetworkImage(defaultPetugas.fotoProfil!) : null,
+              child: defaultPetugas.fotoProfil == null ? const Icon(Icons.person, color: AppColors.primaryGreen) : null,
+            ),
+            const SizedBox(width: AppDimensions.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Petugas Tujuan', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  Text(defaultPetugas.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _selectedPetugasId = 'CHANGE_REQUESTED';
+                });
+                ref.read(petugasPengosonganProvider.notifier).fetchPetugasWilayah();
+              },
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text('Ganti', style: TextStyle(fontSize: 12, color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Tampilkan daftar petugas untuk dipilih
+    final petugasList = state.petugasWilayah;
+    
+    if (petugasList.isEmpty && !hasDefault && state.statusResponse != null) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: AppDimensions.md),
+        padding: const EdgeInsets.all(AppDimensions.md),
+        decoration: BoxDecoration(
+          color: AppColors.warningYellow.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.warningYellow),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.info_outline, color: AppColors.warningYellow),
+            SizedBox(width: AppDimensions.sm),
+            Expanded(
+              child: Text(
+                'Belum ada petugas pemilah terdaftar di wilayah Anda. Pengajuan akan diteruskan ke Admin RW untuk diproses manual.',
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (petugasList.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Pilih Petugas Pemilah', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+        const SizedBox(height: AppDimensions.sm),
+        ...petugasList.map((petugas) {
+          final isSelected = _selectedPetugasId == petugas.id || (_selectedPetugasId == 'CHANGE_REQUESTED' && petugas.id == defaultPetugas?.id);
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: InkWell(
+              onTap: () {
+                setState(() => _selectedPetugasId = petugas.id);
+                // Call set default if they are changing or setting for first time
+                ref.read(petugasPengosonganProvider.notifier).setDefaultPetugas(petugas.id);
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primaryGreen.withValues(alpha: 0.1) : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: isSelected ? AppColors.primaryGreen : AppColors.border),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: Colors.grey.shade200,
+                      backgroundImage: petugas.fotoProfil != null ? NetworkImage(petugas.fotoProfil!) : null,
+                      child: petugas.fotoProfil == null ? const Icon(Icons.person, color: Colors.grey) : null,
+                    ),
+                    const SizedBox(width: AppDimensions.md),
+                    Expanded(
+                      child: Text(petugas.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                    ),
+                    if (isSelected) const Icon(Icons.check_circle, color: AppColors.primaryGreen),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
+        const SizedBox(height: AppDimensions.md),
+      ],
     );
   }
 }

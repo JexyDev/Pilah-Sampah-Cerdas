@@ -160,6 +160,9 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
                       await ref.read(markReadProvider.notifier).markRead(notif.id);
                       ref.invalidate(petugasPemilahanNotificationsProvider);
                     }
+                    if (context.mounted) {
+                      Navigator.pushNamed(context, '/detail-notifikasi', arguments: notif);
+                    }
                   },
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
