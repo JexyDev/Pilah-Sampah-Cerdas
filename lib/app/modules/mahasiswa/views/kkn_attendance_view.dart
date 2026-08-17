@@ -263,22 +263,22 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: state.isInsideRadius ? Colors.lightBlue.withValues(alpha: 0.1) : AppColors.dangerRed.withValues(alpha: 0.1),
-            border: Border.all(color: state.isInsideRadius ? Colors.lightBlue : AppColors.dangerRed),
+            color: state.isInsideRadius ? AppColors.primaryGreen.withValues(alpha: 0.1) : AppColors.dangerRed.withValues(alpha: 0.1),
+            border: Border.all(color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.dangerRed),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             children: [
               Icon(
                 state.isInsideRadius ? Icons.verified_rounded : Icons.cancel_rounded,
-                color: state.isInsideRadius ? Colors.lightBlue : AppColors.dangerRed,
+                color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.dangerRed,
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  state.isInsideRadius ? 'Kamu berada di dalam radius lokasi' : 'Kamu berada di luar radius lokasi',
+                  state.isInsideRadius ? 'Presensi Waktu Aktif' : 'Anda Tidak berada di zona kelompok KKN anda',
                   style: TextStyle(
-                    color: state.isInsideRadius ? Colors.lightBlue[800] : AppColors.dangerRed,
+                    color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.dangerRed,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
