@@ -88,6 +88,9 @@ describe("E2E & Security Validation for All 8 Roles", () => {
     await prisma.refreshToken.deleteMany({
       where: { userId: { in: userIds } },
     });
+    await prisma.notification.deleteMany({
+      where: { userId: { in: userIds } },
+    });
     await prisma.user.deleteMany({
       where: { phone: { in: testPhones } },
     });

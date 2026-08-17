@@ -1300,6 +1300,7 @@ export class KknService {
     const student = await prisma.studentKkn.findUnique({
       where: { userId },
       include: {
+        kelompok: true,
         assignedRw: {
           include: { kelurahan: true },
         },
@@ -1327,6 +1328,9 @@ export class KknService {
     // Check student's attendance today
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
     const attendanceToday = await prisma.activityAttendance.findFirst({
       where: {
         studentId: userId,
@@ -1342,7 +1346,30 @@ export class KknService {
       attendanceStatus = attendanceToday.status === "ALPA" ? "alpa" : "hadir";
     }
 
-    if (!activeArea) {
+    // 🎯 Filter jadwal aktif khusus untuk kelompok KKN mahasiswa ybs
+    let activeSchedule: any = null;
+    if (student?.kelompokId) {
+      activeSchedule = await prisma.schedule.findFirst({
+        where: {
+          kelompokId: student.kelompokId,
+          date: { gte: todayStart, lte: todayEnd },
+        },
+        orderBy: { date: "asc" },
+      });
+    }
+
+    // Fallback: Jadwal umum tanpa kelompokId
+    if (!activeSchedule) {
+      activeSchedule = await prisma.schedule.findFirst({
+        where: {
+          kelompokId: null,
+          date: { gte: todayStart, lte: todayEnd },
+        },
+        orderBy: { date: "asc" },
+      });
+    }
+
+    if (!activeSchedule && !activeArea) {
       return {
         hasActiveZone: false,
         message: "Wilayah penugasan KKN belum ditentukan oleh Admin.",
@@ -1359,16 +1386,43 @@ export class KknService {
       };
     }
 
-    const lat = activeArea.latitude ? Number(activeArea.latitude) : null;
-    const lng = activeArea.longitude ? Number(activeArea.longitude) : null;
+    // Jika ada jadwal kegiatan spesifik untuk kelompoknya, gunakan data & koordinat jadwal tersebut!
+    if (activeSchedule) {
+      const schedLat = activeSchedule.latitude ? Number(activeSchedule.latitude) : (activeArea?.latitude ? Number(activeArea.latitude) : null);
+      const schedLng = activeSchedule.longitude ? Number(activeSchedule.longitude) : (activeArea?.longitude ? Number(activeArea.longitude) : null);
+
+      return {
+        hasActiveZone: true,
+        id: activeSchedule.id,
+        scheduleId: activeSchedule.id,
+        zoneName: activeSchedule.title || "Kegiatan KKN",
+        kelurahan: activeArea?.kelurahan?.name || "Coblong",
+        latitude: schedLat,
+        longitude: schedLng,
+        radiusMeter: activeSchedule.radius || 100,
+        radius: activeSchedule.radius || 100,
+        targetDurationMinutes: 60,
+        attendanceStatus,
+        status: attendanceStatus,
+        kehadiran: attendanceStatus,
+        polygonPoints: activeSchedule.polygon && Array.isArray(activeSchedule.polygon) ? activeSchedule.polygon : [],
+      };
+    }
+
+    // Fallback posko RW jika belum ada jadwal kegiatan khusus hari ini
+    const lat = activeArea?.latitude ? Number(activeArea.latitude) : null;
+    const lng = activeArea?.longitude ? Number(activeArea.longitude) : null;
 
     return {
       hasActiveZone: true,
-      zoneName: activeArea.name || "Wilayah Dampingan KKN",
-      kelurahan: activeArea.kelurahan?.name || "Coblong",
+      id: "kkn-main-posko",
+      scheduleId: "kkn-main-posko",
+      zoneName: activeArea?.name || "Wilayah Dampingan KKN",
+      kelurahan: activeArea?.kelurahan?.name || "Coblong",
       latitude: lat,
       longitude: lng,
       radiusMeter: 100,
+      radius: 100,
       targetDurationMinutes: 60,
       attendanceStatus,
       status: attendanceStatus,
