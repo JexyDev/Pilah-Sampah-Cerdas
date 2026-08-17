@@ -1,4 +1,4 @@
-import { Loader2, Check, X, Trash2, Map, Plus, Search, AlertTriangle, Pencil, Tags, QrCode, CheckCircle, XCircle, ChevronDown, ChevronUp, Phone, ShieldCheck, Download, Maximize2, Minimize2, RefreshCw, Layers, User, Box } from "lucide-react";
+import { Loader2, Check, X, Trash2, Map, Plus, Search, AlertTriangle, Pencil, Tags, QrCode, CheckCircle, XCircle, ChevronDown, ChevronUp, Phone, ShieldCheck, Download, Maximize2, Minimize2, Layers, User, Box } from "lucide-react";
 
 /**
  * Project: TrashCare
@@ -703,20 +703,6 @@ const ManajemenTempatSampah: React.FC = () => {
 
                 {/* Right Primary Action Controls */}
                 <div className="flex items-center gap-2 shrink-0">
-                  {/* Refresh Button */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      fetchBins();
-                      setLastSyncTime(new Date());
-                      toast.success("Data sebaran map berhasil disinkronkan!");
-                    }}
-                    className="p-2 bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer shadow-2xs"
-                    title="Muat Ulang Data Realtime"
-                  >
-                    <RefreshCw size={15} />
-                  </button>
-
                   {/* Fullscreen Toggle Button */}
                   <button
                     type="button"

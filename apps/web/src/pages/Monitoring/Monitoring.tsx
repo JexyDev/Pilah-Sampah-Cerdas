@@ -16,7 +16,6 @@ import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useMonitoringStore } from "../../store/useMonitoringStore";
 import { 
-  RefreshCw, 
   Map, 
   Search, 
   X, 
@@ -340,17 +339,6 @@ const Monitoring: React.FC = () => {
             </p>
           </div>
         </div>
-
-        <button
-          onClick={() => {
-            loadData(false);
-            showToast.success("Data sebaran map berhasil disinkronkan!");
-          }}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl transition-all text-xs shadow-2xs cursor-pointer"
-        >
-          <RefreshCw size={15} className="text-[#009966]" />
-          <span>Sinkronkan Peta</span>
-        </button>
       </div>
 
       {/* 2. Monitoring Container matching ManajemenTempatSampah */}
@@ -441,18 +429,6 @@ const Monitoring: React.FC = () => {
 
               {/* Right Primary Action Controls */}
               <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    loadData(false);
-                    showToast.success("Data sebaran map berhasil disinkronkan!");
-                  }}
-                  className="p-2 bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer shadow-2xs"
-                  title="Muat Ulang Data Realtime"
-                >
-                  <RefreshCw size={15} />
-                </button>
-
                 <button
                   type="button"
                   onClick={() => setIsMapFullscreen(!isMapFullscreen)}

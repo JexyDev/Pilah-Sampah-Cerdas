@@ -25,7 +25,6 @@ import {
   Clock,
   MapPin,
   Search,
-  RefreshCw,
   Plus,
   Trash2,
   Power,
@@ -1237,20 +1236,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           >
             <Download size={14} className="text-emerald-600" />
             <span>Ekspor CSV</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              fetchAttendanceAndLocations(selectedScheduleId);
-              fetchConfigTargets();
-            }}
-            className={`p-2 rounded-xl bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 transition cursor-pointer ${
-              refreshing ? "animate-spin text-emerald-600" : ""
-            }`}
-            title="Muat Ulang Data Presensi"
-          >
-            <RefreshCw size={15} />
           </button>
 
           {isSuperUserOrDev && (
