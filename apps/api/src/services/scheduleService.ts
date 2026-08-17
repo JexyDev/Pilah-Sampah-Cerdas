@@ -11,31 +11,49 @@ const prisma = new PrismaClient();
 
 export const scheduleService = {
   getAllSchedules: async (dplUserId?: string) => {
-    let kelompokIds: string[] | null = null;
-    if (dplUserId) {
-      const kelompokBinaan = await prisma.kelompokKkn.findMany({
-        where: { dplId: dplUserId },
-        select: { id: true },
-      });
-      kelompokIds = kelompokBinaan.map((k) => k.id);
-    }
+    try {
+      let kelompokIds: string[] | null = null;
+      if (dplUserId) {
+        const kelompokBinaan = await prisma.kelompokKkn.findMany({
+          where: {
+            OR: [
+              { dplId: dplUserId },
+              { dpl: { id: dplUserId } },
+            ],
+          },
+          select: { id: true },
+        });
+        kelompokIds = kelompokBinaan.map((k) => k.id);
+      }
 
-    const whereClause: any =
-      kelompokIds !== null
-        ? {
-            OR: [{ kelompokId: { in: kelompokIds } }, { kelompokId: null }],
-          }
-        : {};
+      const whereClause: any =
+        kelompokIds !== null && kelompokIds.length > 0
+          ? {
+              OR: [{ kelompokId: { in: kelompokIds } }, { kelompokId: null }],
+            }
+          : {};
 
-    return prisma.schedule.findMany({
-      where: whereClause,
-      include: {
-        kelompok: {
-          select: { id: true, name: true, kelurahan: true },
+      return await prisma.schedule.findMany({
+        where: whereClause,
+        include: {
+          kelompok: {
+            select: { id: true, name: true, kelurahan: true },
+          },
         },
-      },
-      orderBy: { date: "asc" },
-    });
+        orderBy: { date: "asc" },
+      });
+    } catch (err: any) {
+      console.error("[scheduleService.getAllSchedules] Error querying schedules with relation:", err);
+      // Fallback query without include
+      try {
+        return await prisma.schedule.findMany({
+          orderBy: { date: "asc" },
+        });
+      } catch (fallbackErr) {
+        console.error("[scheduleService.getAllSchedules] Fallback error:", fallbackErr);
+        return [];
+      }
+    }
   },
 
   createSchedule: async (data: {

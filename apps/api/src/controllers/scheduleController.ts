@@ -12,16 +12,16 @@ export const scheduleController = {
   getAllSchedules: async (req: Request, res: Response) => {
     try {
       const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(String(req.user?.role || "").toUpperCase());
-      const dplUserId = isDpl ? req.user!.userId : undefined;
+      const dplUserId = isDpl ? (req.user?.userId || (req.user as any)?.id) : undefined;
 
       const schedules = await scheduleService.getAllSchedules(dplUserId);
       res.status(200).json({
         success: true,
         data: schedules,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("[ScheduleController] getAllSchedules error:", error);
-      res.status(500).json({ success: false, message: "Internal server error" });
+      res.status(500).json({ success: false, message: error?.message || "Internal server error" });
     }
   },
 
