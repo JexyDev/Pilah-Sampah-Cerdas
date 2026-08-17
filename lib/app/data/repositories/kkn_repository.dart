@@ -21,8 +21,8 @@ abstract class KknRepository {
   Future<List<dynamic>?> getCachedActivityLog();
   Future<List<dynamic>> getActivityLog();
 
-  /// Mengirim ping lokasi (latitude, longitude) ke backend dan mengembalikan nama posko/wilayah zona.
-  Future<String?> sendLocationPing(double latitude, double longitude);
+  /// Mengirim ping lokasi (latitude, longitude) ke backend dan mengembalikan seluruh response (termasuk autoAttendanceTriggered).
+  Future<Map<String, dynamic>> sendLocationPing(double latitude, double longitude);
 
   /// Mengambil daftar jadwal kegiatan KKN.
   Future<List<dynamic>> getSchedules();
@@ -33,8 +33,8 @@ abstract class KknRepository {
   /// Mengambil target lokasi kegiatan KKN.
   Future<Map<String, dynamic>> getTargetLocation(String scheduleId);
 
-  /// Mencatat absensi (radius KKN) dengan payload lengkap.
-  Future<bool> recordAttendance({
+  /// Mencatat absensi (radius KKN) dengan payload lengkap. Mengembalikan response dari server.
+  Future<Map<String, dynamic>> recordAttendance({
     required String scheduleId,
     required double latitude,
     required double longitude,

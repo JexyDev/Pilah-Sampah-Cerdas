@@ -144,7 +144,7 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<String?> sendLocationPing(double latitude, double longitude) async {
+  Future<Map<String, dynamic>> sendLocationPing(double latitude, double longitude) async {
     final response = await apiClient.dio.post(
       ApiEndpoints.kknLocationPing,
       data: {
@@ -153,10 +153,9 @@ class ApiKknRepository implements KknRepository {
       },
     );
     if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
-      final data = response.data['data'] as Map<String, dynamic>?;
-      return data?['poskoArea']?.toString() ?? data?['kelurahan']?.toString();
+      return response.data as Map<String, dynamic>;
     }
-    return null;
+    return {};
   }
 
   @override
@@ -199,7 +198,7 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<bool> recordAttendance({
+  Future<Map<String, dynamic>> recordAttendance({
     required String scheduleId,
     required double latitude,
     required double longitude,
@@ -230,14 +229,24 @@ class ApiKknRepository implements KknRepository {
       // Coba endpoint spesifik jadwal dahulu, jika gagal coba fallback /kkn/attendance/check-in
       try {
         final res = await apiClient.dio.post(ApiEndpoints.kegiatanAbsen(scheduleId), data: payload);
-        if (res.statusCode == 200 || res.statusCode == 201) return true;
+        if (res.statusCode == 200 || res.statusCode == 201) {
+          if (res.data is Map<String, dynamic>) {
+            return res.data['data'] as Map<String, dynamic>? ?? res.data as Map<String, dynamic>;
+          }
+          return {'success': true};
+        }
       } catch (_) {
         final res = await apiClient.dio.post(ApiEndpoints.kknCheckIn, data: payload);
-        return res.statusCode == 200 || res.statusCode == 201;
+        if (res.statusCode == 200 || res.statusCode == 201) {
+          if (res.data is Map<String, dynamic>) {
+            return res.data['data'] as Map<String, dynamic>? ?? res.data as Map<String, dynamic>;
+          }
+          return {'success': true};
+        }
       }
-      return false;
+      return {};
     } catch (_) {
-      return false;
+      return {};
     }
   }
 

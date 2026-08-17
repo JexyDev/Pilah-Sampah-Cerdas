@@ -288,7 +288,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
     final bool isDisabled = state.zoneResetWarning != null && 
         (state.zoneResetWarning!.toLowerCase().contains('izin') || state.zoneResetWarning!.toLowerCase().contains('sakit'));
     
-    final bool isAlpa = state.zoneResetWarning != null && state.zoneResetWarning!.toLowerCase().contains('berakhir') && !state.isSuccessAttendance;
+    final bool isAlpa = state.zoneResetWarning != null && state.zoneResetWarning!.toLowerCase().contains('alpa') && !state.isSuccessAttendance;
     final bool isSuccess = state.isSuccessAttendance;
 
     final bool isLibur = state.activeActivity != null && 
@@ -653,13 +653,13 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
         ),
         const SizedBox(height: 8),
         if (!state.isEligibleForAttendance && !isSuccess && !isAlpa)
-          Text(
-            targetMenit >= 60 
-                ? 'Tombol absen dinonaktifkan hingga Anda berada di dalam zona selama ${targetMenit ~/ 60} jam berturut-turut.'
-                : 'Tombol absen dinonaktifkan hingga durasi zona mencapai $targetMenit menit.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 11, color: AppColors.dangerRed),
-          ),
+            Text(
+              targetMenit >= 60
+                ? 'Presensi baru dapat dilakukan setelah Anda berada di lokasi kegiatan selama ${targetMenit ~/ 60} jam tanpa putus.'
+                : 'Presensi baru dapat dilakukan setelah durasi kehadiran mencapai minimum $targetMenit menit.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 11, color: AppColors.dangerRed),
+            ),
       ],
     );
 

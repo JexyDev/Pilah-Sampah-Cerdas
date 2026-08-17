@@ -64,7 +64,12 @@ class KknLocationState {
     this.checkInTime,
     this.checkOutTime,
     this.targetDurationMinutes = 120,
+    this.attendanceId,
+    this.alpaDurationMinutes,
   });
+
+  final String? attendanceId;
+  final int? alpaDurationMinutes;
 
   KknLocationState copyWith({
     Position? currentPosition,
@@ -81,6 +86,8 @@ class KknLocationState {
     DateTime? checkInTime,
     DateTime? checkOutTime,
     int? targetDurationMinutes,
+    String? attendanceId,
+    int? alpaDurationMinutes,
     bool clearError = false,
     bool clearActivity = false,
     bool clearWarning = false,
@@ -100,6 +107,8 @@ class KknLocationState {
       checkInTime: checkInTime ?? this.checkInTime,
       checkOutTime: checkOutTime ?? this.checkOutTime,
       targetDurationMinutes: targetDurationMinutes ?? this.targetDurationMinutes,
+      attendanceId: attendanceId ?? this.attendanceId,
+      alpaDurationMinutes: alpaDurationMinutes ?? this.alpaDurationMinutes,
     );
   }
 }
@@ -506,16 +515,38 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     final user = ref.read(authProvider).user;
     if (user == null || _currentTargetScheduleId == null) return;
     
+    final int durationMinutes = (_accumulatedSeconds / 60).ceil();
+    
     try {
       final repo = ref.read(kknRepositoryProvider);
-      await repo.recordAttendance(
+      final response = await repo.recordAttendance(
         scheduleId: _currentTargetScheduleId!,
         latitude: state.currentPosition?.latitude ?? 0.0,
         longitude: state.currentPosition?.longitude ?? 0.0,
         method: 'ALPA_AUTO',
         nim: user.nim,
         namaMahasiswa: user.name,
+        durationMinutes: durationMinutes,
       );
+      
+      final bool isSuccess = response.containsKey('success') ? (response['success'] == true) : response.isNotEmpty;
+      
+      if (isSuccess) {
+        state = state.copyWith(
+          isSuccessAttendance: false,
+          alpaDurationMinutes: durationMinutes,
+          zoneResetWarning: 'Anda dinyatakan ALPA. Tercatat $durationMinutes menit dari target ${state.targetDurationMinutes} menit.',
+          clearWarning: false,
+        );
+
+        LocalNotificationCacheService().addNotification(
+          userId: user.id,
+          role: user.role.name,
+          title: 'Waktu KKN Berakhir ⌛',
+          desc: 'Anda tidak memenuhi waktu minimal. Status: ALPA.',
+          type: 'PRESENSI_KKN_ALPA',
+        );
+      }
     } catch (e) {
       debugPrint('Gagal mengirim auto alpa: $e');
     }
@@ -548,7 +579,21 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     // Send update to backend
     try {
       final repo = ref.read(kknRepositoryProvider);
-      await repo.sendLocationPing(pos.latitude, pos.longitude);
+      final pingResponse = await repo.sendLocationPing(pos.latitude, pos.longitude);
+      
+      // Jika backend me-trigger auto attendance (karena durasi cukup dll)
+      if (pingResponse.containsKey('autoAttendanceTriggered') && pingResponse['autoAttendanceTriggered'] != null) {
+        final autoAtt = pingResponse['autoAttendanceTriggered'] as List;
+        if (autoAtt.isNotEmpty) {
+           // Asumsikan data pertama adalah attendance kita
+           final attData = autoAtt.first;
+           state = state.copyWith(
+             isSuccessAttendance: true,
+             attendanceTime: attData['attendedAt']?.toString() ?? DateTime.now().toLocal().toString().split('.')[0],
+             attendanceId: attData['id']?.toString(),
+           );
+        }
+      }
     } catch (_) {
       // Fail silently for background GPS updates
     }
@@ -692,7 +737,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     final user = ref.read(authProvider).user;
     final nim = ref.read(mahasiswaControllerProvider).dashboard?.nim ?? user?.phone ?? '';
     final namaMahasiswa = user?.name ?? '-';
-    const durationMinutes = 120; // Default or fetched
+    
+    // Gunakan durasi aktual yang tercatat jika ada, minimal 0
+    final int durationMinutes = (_accumulatedSeconds / 60).ceil();
 
     try {
       const LocationSettings locationSettings = LocationSettings(
@@ -701,7 +748,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       );
       final pos = await Geolocator.getCurrentPosition(locationSettings: locationSettings);
       final repo = ref.read(kknRepositoryProvider);
-      final isSuccess = await repo.recordAttendance(
+      final response = await repo.recordAttendance(
         scheduleId: _currentTargetScheduleId!,
         latitude: pos.latitude,
         longitude: pos.longitude,
@@ -712,16 +759,19 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         rw: rw,
         kecamatan: user?.kecamatan,
         kelurahan: kelurahan,
-        durationMinutes: durationMinutes,
+        durationMinutes: durationMinutes > 0 ? durationMinutes : 0,
         timestamp: DateTime.now().toUtc().toIso8601String(),
       );
+
+      final isSuccess = response.containsKey('success') ? (response['success'] == true) : response.isNotEmpty;
 
       if (isSuccess) {
         _accumulatedSeconds = 0;
         _zoneEntryTime = DateTime.now();
         state = state.copyWith(
           isSuccessAttendance: true,
-          attendanceTime: DateTime.now().toLocal().toString().split('.')[0],
+          attendanceTime: response['attendedAt']?.toString() ?? DateTime.now().toLocal().toString().split('.')[0],
+          attendanceId: response['id']?.toString(),
           isInsideRadius: true,
           inZoneDurationSeconds: 0,
         );

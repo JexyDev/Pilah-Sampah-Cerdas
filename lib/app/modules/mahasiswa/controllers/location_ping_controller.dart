@@ -140,7 +140,9 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
       );
 
       final repo = _ref.read(kknRepositoryProvider);
-      final poskoArea = await repo.sendLocationPing(position.latitude, position.longitude);
+      final pingResponse = await repo.sendLocationPing(position.latitude, position.longitude);
+      final data = pingResponse['data'] as Map<String, dynamic>?;
+      final poskoArea = data?['poskoArea']?.toString() ?? data?['kelurahan']?.toString();
 
       if (mounted) {
         state = state.copyWith(
