@@ -29,7 +29,6 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   String _qrAnorganik = '';
   bool _bothBinsDetected = false;
   bool _localLoading = false;
-  int _scanAttempt = 0;
 
   bool _argsLoaded = false;
   bool _hasOrganic = false;
@@ -164,9 +163,6 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     final error = _validateBinQr(detected, _step);
     if (error != null) {
       _showErrorSnackBar(error);
-      setState(() {
-        _scanAttempt++;
-      });
       return false;
     }
 
@@ -376,7 +372,6 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                               _step = _hasOrganic ? 2 : 1;
                               _qrOrganik = '';
                               _qrAnorganik = '';
-                              _scanAttempt++;
                             }),
                             icon: const Icon(
                               Icons.refresh_rounded,
@@ -396,7 +391,6 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: QrScannerWidget(
-                        key: ValueKey('$_step-$_scanAttempt'),
                         hint: _step == 1 ? 'BIN-ORG-EF2072F0' : 'BIN-NON-EF2072F1',
                         overlayColor: _step == 1 ? AppColors.organicColor : AppColors.nonOrganicColor,
                         onQrDetected: _onQrDetected,
@@ -480,7 +474,6 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                 _qrOrganik = '';
                 _qrAnorganik = '';
                 _bothBinsDetected = false;
-                _scanAttempt++;
               });
             },
             icon: const Icon(Icons.refresh_rounded, color: AppColors.dangerRed),
@@ -533,7 +526,6 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                 _step = _hasOrganic ? 2 : 1;
                 _qrOrganik = '';
                 _qrAnorganik = '';
-                _scanAttempt++;
               }),
               child: const Icon(
                 Icons.close_rounded,

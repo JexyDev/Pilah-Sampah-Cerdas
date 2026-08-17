@@ -23,7 +23,6 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
   String _binOrganikId = '';
   String _binAnorganikId = '';
   bool _isProcessing = false;
-  int _scanAttempt = 0;
 
   /// Memvalidasi format & kategori QR Code tempat sampah
   String? _validateBinQr(String qr, int step) {
@@ -124,11 +123,6 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         ),
       );
       _isProcessing = false;
-      if (mounted) {
-        setState(() {
-          _scanAttempt++;
-        });
-      }
       return;
     }
 
@@ -194,10 +188,6 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
           _binOrganikId = cleanQr;
           _step = 2;
         });
-      } else if (mounted) {
-        setState(() {
-          _scanAttempt++;
-        });
       }
       _isProcessing = false;
     } else {
@@ -253,11 +243,6 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
 
       if (processConfirm != true) {
         _isProcessing = false;
-        if (mounted) {
-          setState(() {
-            _scanAttempt++;
-          });
-        }
         return;
       }
 
@@ -424,7 +409,6 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         );
         setState(() {
           _binAnorganikId = '';
-          _scanAttempt++;
         });
       }
       _isProcessing = false;
@@ -455,7 +439,6 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         children: [
           // ─── Full Camera Screen QR Scanner Widget ──────────────────────────
           QrScannerWidget(
-            key: ValueKey('$_step-$_scanAttempt'),
             isFullScreen: true,
             hint: _step == 1 ? 'Scan QR Tempat Sampah Organik' : 'Scan QR Tempat Sampah Anorganik',
             overlayColor: _step == 1 ? const Color(0xFF10B981) : const Color(0xFFFFB800),

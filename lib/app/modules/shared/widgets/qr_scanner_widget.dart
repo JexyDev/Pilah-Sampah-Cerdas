@@ -116,7 +116,20 @@ class QrScannerWidgetState extends State<QrScannerWidget>
       if (!mounted) return;
       
       // Panggil callback
-      await widget.onQrDetected(code);
+      final success = await widget.onQrDetected(code);
+      if (mounted && !success) {
+        resetScanner();
+      }
+    }
+  }
+
+  @override
+  void didUpdateWidget(QrScannerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.hint != oldWidget.hint || widget.overlayColor != oldWidget.overlayColor) {
+      if (_scanned) {
+        resetScanner();
+      }
     }
   }
   
