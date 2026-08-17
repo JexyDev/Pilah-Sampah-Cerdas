@@ -222,7 +222,6 @@ class ApiKknRepository implements KknRepository {
         if (rw != null && rw.isNotEmpty) 'rw': rw,
         if (kelurahan != null && kelurahan.isNotEmpty) 'kelurahan': kelurahan,
         if (kecamatan != null && kecamatan.isNotEmpty) 'kecamatan': kecamatan,
-        if (durationMinutes != null) 'durationMinutes': durationMinutes,
         'timestamp': timestamp ?? DateTime.now().toUtc().toIso8601String(),
       };
 
