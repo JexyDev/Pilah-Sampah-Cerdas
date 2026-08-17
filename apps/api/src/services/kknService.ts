@@ -252,6 +252,7 @@ export class KknService {
         category: b.category?.name || "Organik",
         totalKg: Math.round(totalKg * 10) / 10,
         totalPoin,
+        totalPoints: totalPoin,
         isActivated: true,
         recentLogs,
         rwId: u.rwId,
@@ -476,6 +477,7 @@ export class KknService {
         households: { include: { rw: { include: { kelurahan: true } } } },
         binOwnerships: { include: { bin: { include: { category: true, qrBatch: true } } } },
         setoranOtomatis: { take: 5, orderBy: { createdAt: "desc" } },
+        pointHistory: true,
       },
       orderBy: { createdAt: "desc" },
     });
@@ -485,6 +487,10 @@ export class KknService {
       const kelName =
         w.rw?.kelurahan?.name || household?.rw?.kelurahan?.name || filters.kelurahan || "";
       const rtRwName = w.rw?.name || household?.rw?.name || filters.rw || "";
+
+      const setoranLogs = w.setoranOtomatis || [];
+      const totalKg = setoranLogs.reduce((acc: number, curr: any) => acc + Number(curr.berat || 0), 0);
+      const totalPoin = w.pointHistory?.reduce((acc: number, curr: any) => acc + Number(curr.points || 0), 0) || Math.round(totalKg * 10);
 
       const binOrganik = w.binOwnerships?.find(
         (bo: any) =>
@@ -552,6 +558,9 @@ export class KknService {
         longitude: lng,
         lat: lat,
         lng: lng,
+        totalKg: Math.round(totalKg * 10) / 10,
+        totalPoin,
+        totalPoints: totalPoin,
         isActivated,
         mahasiswaId: registeredStudentId,
         binOrganikId:
