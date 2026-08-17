@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/bin_entity.dart';
 import '../../../data/models/ai_detection_entity.dart';
 import '../../../data/models/bin_reset_entity.dart';
+import '../../../data/models/petugas_entity.dart';
+import '../../../data/models/petugas_status_response.dart';
 import '../../../data/repositories/bin_repository.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/models/user_entity.dart';
@@ -303,6 +305,8 @@ class ResetBinNotifier extends StateNotifier<ResetBinState> {
     required String userId,
     required String evidencePhotoPath,
     String? wargaName,
+    String? petugasId,
+    String? jenisSampah,
   }) async {
     state = const ResetBinState(isLoading: true);
     try {
@@ -313,6 +317,8 @@ class ResetBinNotifier extends StateNotifier<ResetBinState> {
           userId: userId,
           evidencePhotoPath: evidencePhotoPath,
           wargaName: wargaName,
+          petugasId: petugasId,
+          jenisSampah: jenisSampah,
         );
       }
       state = ResetBinState(result: lastResult);
@@ -343,3 +349,76 @@ final resetBinProvider = StateNotifierProvider<ResetBinNotifier, ResetBinState>(
     return ResetBinNotifier(ref.watch(binRepositoryProvider));
   },
 );
+
+// ─── Petugas Pengosongan Provider ──────────────────────────────────────────
+
+class PetugasPengosonganState {
+  const PetugasPengosonganState({
+    this.isLoading = false,
+    this.statusResponse,
+    this.petugasWilayah = const [],
+    this.error,
+  });
+
+  final bool isLoading;
+  final PetugasStatusResponse? statusResponse;
+  final List<PetugasEntity> petugasWilayah;
+  final String? error;
+
+  PetugasPengosonganState copyWith({
+    bool? isLoading,
+    PetugasStatusResponse? statusResponse,
+    List<PetugasEntity>? petugasWilayah,
+    String? error,
+  }) {
+    return PetugasPengosonganState(
+      isLoading: isLoading ?? this.isLoading,
+      statusResponse: statusResponse ?? this.statusResponse,
+      petugasWilayah: petugasWilayah ?? this.petugasWilayah,
+      error: error, // Can be null to clear
+    );
+  }
+}
+
+class PetugasPengosonganNotifier extends StateNotifier<PetugasPengosonganState> {
+  PetugasPengosonganNotifier(this._repository) : super(const PetugasPengosonganState());
+
+  final BinRepository _repository;
+
+  Future<void> checkStatus() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final status = await _repository.getPetugasStatus();
+      state = state.copyWith(isLoading: false, statusResponse: status);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<void> fetchPetugasWilayah() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final list = await _repository.getPetugasWilayah();
+      state = state.copyWith(isLoading: false, petugasWilayah: list);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<bool> setDefaultPetugas(String petugasId) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      await _repository.setDefaultPetugas(petugasId);
+      await checkStatus(); // Reload status after setting default
+      return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return false;
+    }
+  }
+}
+
+final petugasPengosonganProvider = StateNotifierProvider<PetugasPengosonganNotifier, PetugasPengosonganState>((ref) {
+  return PetugasPengosonganNotifier(ref.watch(binRepositoryProvider));
+});
+
