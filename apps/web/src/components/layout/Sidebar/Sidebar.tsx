@@ -462,11 +462,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           icon: GraduationCap,
           allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[],
           children: [
-            { to: "/dashboard-dpl", label: "Dasbor DPL", allowed: ["DEVELOPER", "DPL", "DOSEN_PEMBIMBING"] as UserRole[] },
-            { to: "/dashboard-kkn", label: "Dasbor KKN Taskforce", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "PEMIMPIN", "MAHASISWA_KKN"] as UserRole[] },
-            { to: "/manajemen-ekosistem-kkn", label: "Kelompok Dampingan", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
-            { to: "/monitoring-absen", label: "Validasi Presensi", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
-            { to: "/program-kerja-kkn", label: "Program Kerja KKN", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "MAHASISWA_KKN"] as UserRole[] },
+            { to: "/jadwal-kegiatan", label: "Time Line", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "MAHASISWA_KKN", "PEMIMPIN"] as UserRole[] },
+            { to: "/manajemen-ekosistem-kkn", label: "Kelompok", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
+            { to: "/program-kerja-kkn", label: "Program Kerja", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "MAHASISWA_KKN"] as UserRole[] },
+            { to: "/monitoring-absen", label: "Presensi & Absensi", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
           ],
         },
         {

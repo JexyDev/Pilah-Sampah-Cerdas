@@ -767,6 +767,10 @@ export const dplService = {
       kelurahan: groupMap.get(p.kelompokId)?.kelurahan || "-",
       nomor: p.nomor || 1,
       deskripsi: p.deskripsi,
+      kategori: p.kategori || "LAINNYA",
+      sumber: p.sumber || "MAHASISWA",
+      waktuPelaksanaan: p.waktuPelaksanaan || null,
+      linkGoogleDrive: p.linkGoogleDrive || null,
       kebutuhanBiaya: Number(p.kebutuhanBiaya || 0),
       status: p.status,
       catatanDpl: p.catatanDpl,
@@ -787,6 +791,10 @@ export const dplService = {
       kelompokId: string;
       nomor?: number;
       deskripsi: string;
+      kategori?: string;
+      sumber?: string;
+      waktuPelaksanaan?: string;
+      linkGoogleDrive?: string;
       kebutuhanBiaya?: number;
     }
   ) => {
@@ -795,6 +803,10 @@ export const dplService = {
         kelompokId: data.kelompokId,
         nomor: data.nomor || 1,
         deskripsi: data.deskripsi,
+        kategori: data.kategori || "LAINNYA",
+        sumber: data.sumber || "MAHASISWA",
+        waktuPelaksanaan: data.waktuPelaksanaan || null,
+        linkGoogleDrive: data.linkGoogleDrive || null,
         kebutuhanBiaya: data.kebutuhanBiaya || 0,
         status: "BELUM_DISETUJUI",
       },
@@ -810,6 +822,10 @@ export const dplService = {
     data: {
       nomor?: number;
       deskripsi?: string;
+      kategori?: string;
+      sumber?: string;
+      waktuPelaksanaan?: string;
+      linkGoogleDrive?: string;
       kebutuhanBiaya?: number;
       status?: "BELUM_DISETUJUI" | "DITERIMA" | "DITOLAK" | "SEDANG_BERJALAN" | "SELESAI";
       catatanDpl?: string;
@@ -818,6 +834,10 @@ export const dplService = {
     const updateData: any = {};
     if (data.nomor !== undefined) updateData.nomor = data.nomor;
     if (data.deskripsi !== undefined) updateData.deskripsi = data.deskripsi;
+    if (data.kategori !== undefined) updateData.kategori = data.kategori;
+    if (data.sumber !== undefined) updateData.sumber = data.sumber;
+    if (data.waktuPelaksanaan !== undefined) updateData.waktuPelaksanaan = data.waktuPelaksanaan;
+    if (data.linkGoogleDrive !== undefined) updateData.linkGoogleDrive = data.linkGoogleDrive;
     if (data.kebutuhanBiaya !== undefined) updateData.kebutuhanBiaya = data.kebutuhanBiaya;
     if (data.status !== undefined) updateData.status = data.status;
     if (data.catatanDpl !== undefined) updateData.catatanDpl = data.catatanDpl;

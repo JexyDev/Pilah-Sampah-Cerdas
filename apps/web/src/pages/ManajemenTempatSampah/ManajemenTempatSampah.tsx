@@ -244,9 +244,8 @@ const ManajemenTempatSampah: React.FC = () => {
   // Kategori Add Modal Trigger Signal
   const [openKategoriAddSignal, setOpenKategoriAddSignal] = useState(0);
 
-  // Form Modal state
+  // Form Modal state (Edit data tempat sampah fisik)
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<"add" | "edit">("add");
   const [formData, setFormData] = useState<{
     qrCode: string;
     categoryId: string;
@@ -255,7 +254,6 @@ const ManajemenTempatSampah: React.FC = () => {
     longitude: string;
     maxCapacityLiter: number;
     userId: string;
-    generateCount?: number;
     status?: string;
   }>({
     qrCode: "",
@@ -265,7 +263,6 @@ const ManajemenTempatSampah: React.FC = () => {
     longitude: "",
     maxCapacityLiter: 25,
     userId: "",
-    generateCount: 5,
     status: "ACTIVE_BOUND",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -363,6 +360,7 @@ const ManajemenTempatSampah: React.FC = () => {
         .then((res) => setWargas(res.data?.data || []))
         .catch((err) => console.log("Non-admin or error fetching wargas:", err));
       void wargas;
+      void areas;
     } catch (err) {
       console.error("Failed to load form options:", err);
     }
@@ -384,36 +382,6 @@ const ManajemenTempatSampah: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [searchInput]);
 
-  const fetchNextQrCode = async (catId: string) => {
-    if (!catId) return;
-    try {
-      const response = await api.get(`/bins/next-qr?categoryId=${catId}`);
-      if (response.data?.success) {
-        setFormData((prev) => ({ ...prev, qrCode: response.data.data.qrCode }));
-      }
-    } catch (err) {
-      console.error("Gagal mendapatkan kode QR otomatis:", err);
-    }
-  };
-
-  const handleOpenAddModal = () => {
-    setModalType("add");
-    const defaultCategoryId = categories[0]?.id || "";
-    setFormData({
-      qrCode: "",
-      categoryId: defaultCategoryId,
-      rtRwId: areas[0]?.id || 1,
-      latitude: "",
-      longitude: "",
-      maxCapacityLiter: 25,
-      userId: "",
-    });
-    setIsFormModalOpen(true);
-    if (defaultCategoryId) {
-      fetchNextQrCode(defaultCategoryId);
-    }
-  };
-
   const handleOpenEditModal = (bin: any) => {
     const targetId = bin.id || bin.kode;
     setSelectedBin(targetId);
@@ -426,9 +394,7 @@ const ManajemenTempatSampah: React.FC = () => {
       maxCapacityLiter: bin.maxCapacityLiter || 25,
       userId: bin.userId || "",
       status: bin.realStatus || bin.status || "ACTIVE_BOUND",
-      generateCount: 1,
     });
-    setModalType("edit");
     setIsFormModalOpen(true);
   };
 
@@ -452,18 +418,8 @@ const ManajemenTempatSampah: React.FC = () => {
         longitude: formData.longitude ? parseFloat(formData.longitude) : null,
       };
 
-      if (modalType === "add") {
-        const count = parseInt(String(formData.generateCount || 5), 10);
-        await api.post("/bins", {
-          categoryId: formData.categoryId || "organik",
-          maxCapacityLiter: formData.maxCapacityLiter || 25,
-          count: count,
-        });
-        toast.success(`Berhasil meng-generate ${count} tempat sampah!`);
-      } else {
-        await api.put(`/bins/${selectedBin}`, payload);
-        toast.success("Data tempat sampah berhasil diperbarui!");
-      }
+      await api.put(`/bins/${selectedBin}`, payload);
+      toast.success("Data tempat sampah berhasil diperbarui!");
       closeFormModal();
       await fetchBins();
       await fetchHouseholds();
@@ -608,15 +564,6 @@ const ManajemenTempatSampah: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          {!isReadOnly && activeTab === "kodefikasi" && (
-            <button
-              type="button"
-              onClick={handleOpenAddModal}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#009966] hover:bg-[#008055] text-white font-extrabold rounded-xl transition-all text-xs shadow-xs cursor-pointer"
-            >
-              <Plus size={16} /> Tambah Tempat Sampah
-            </button>
-          )}
           {!isReadOnly && activeTab === "kategori" && (
             <button
               type="button"
@@ -1618,7 +1565,7 @@ const ManajemenTempatSampah: React.FC = () => {
                       <p className="text-xs text-slate-400 font-medium mt-1 max-w-sm mx-auto leading-relaxed">
                         {searchInput || statusFilter
                           ? `Tidak ditemukan data tempat sampah yang sesuai dengan kriteria filter.`
-                          : "Sistem belum memiliki tempat sampah fisik yang terdaftar. Klik tombol Tambah Tempat Sampah untuk generate QR Code baru."}
+                          : "Sistem belum memiliki tempat sampah fisik yang terdaftar. Pembuatan Master QR Code dilakukan oleh Developer / Super Admin di menu Master QR Code."}
                       </p>
                     </div>
                     {(searchInput || statusFilter) && (
@@ -1848,24 +1795,22 @@ const ManajemenTempatSampah: React.FC = () => {
         </div>
       )}
 
-      {/* Modal Tambah / Generate QR / Edit Form */}
+      {/* Modal Edit Tempat Sampah */}
       {isFormModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease-out]">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col border border-slate-100">
-            {/* Modal Header matching Screenshot */}
+            {/* Modal Header */}
             <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-start bg-white">
               <div className="flex items-start gap-3.5">
                 <div className="w-11 h-11 rounded-full bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20 shrink-0 mt-0.5">
-                  {modalType === "add" ? <QrCode size={22} /> : <Pencil size={22} />}
+                  <Pencil size={22} />
                 </div>
                 <div>
                   <h3 className="text-lg font-black text-slate-900 tracking-tight">
-                    {modalType === "add" ? "Generate QR Code Tempat Sampah" : "Ubah Data Tempat Sampah"}
+                    Ubah Data Tempat Sampah
                   </h3>
                   <p className="text-xs text-slate-500 font-medium mt-0.5">
-                    {modalType === "add"
-                      ? "Buat QR Code tempat sampah fisik baru yang siap di-scan & teraktivasi di Mobile."
-                      : "Perbarui informasi tempat sampah fisik."}
+                    Perbarui informasi tempat sampah fisik.
                   </p>
                 </div>
               </div>
@@ -1882,148 +1827,105 @@ const ManajemenTempatSampah: React.FC = () => {
               onSubmit={handleSubmit}
               className="p-6 flex flex-col gap-4 overflow-y-auto max-h-[75vh]"
             >
-              {modalType === "add" ? (
-                <>
-                  <div>
-                    <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
-                      Kategori Sampah <span className="text-rose-500">*</span>
-                    </label>
-                    <select
-                      required
-                      value={formData.categoryId}
-                      onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                      className="w-full h-12 px-4 rounded-2xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:border-[#009966] text-xs font-bold text-slate-800 outline-none transition-all"
-                    >
-                      <option value="">Pilih Kategori</option>
+              <div>
+                <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                  Kode Tempat Sampah
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  value={formData.qrCode || selectedBin || ""}
+                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 bg-slate-100/80 font-mono font-bold text-slate-700 text-xs outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                  Kategori Sampah <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  required
+                  value={formData.categoryId}
+                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:border-[#009966] text-xs font-bold text-slate-800 outline-none transition-all cursor-pointer"
+                >
+                  {categories.length > 0 ? (
+                    categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))
+                  ) : (
+                    <>
                       <option value="organik">Organik</option>
                       <option value="anorganik">Anorganik</option>
-                    </select>
-                  </div>
+                    </>
+                  )}
+                </select>
+              </div>
 
+              <div>
+                <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                  Kapasitas Maksimum (Liter) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={formData.maxCapacityLiter}
+                  onChange={(e) => setFormData({ ...formData, maxCapacityLiter: parseFloat(e.target.value) })}
+                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:border-[#009966] text-xs font-bold text-slate-800 outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                  Status Operasional (Sensor Real-time)
+                </label>
+
+                {/* Status Card 1 */}
+                <div className="p-4 bg-slate-50/60 border border-slate-200/80 rounded-2xl flex items-center justify-between gap-3">
                   <div>
-                    <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
-                      Kapasitas Maksimum (Liter) <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      min={5}
-                      max={200}
-                      value={formData.maxCapacityLiter}
-                      onChange={(e) => setFormData({ ...formData, maxCapacityLiter: parseFloat(e.target.value) })}
-                      className="w-full h-12 px-4 rounded-2xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:border-[#009966] text-xs font-bold text-slate-800 outline-none transition-all"
-                    />
+                    <span className="text-xs font-extrabold text-slate-800 block mb-0.5">
+                      Status Otomatis Lapangan
+                    </span>
+                    <span className="text-[11px] text-slate-500 font-medium leading-snug block max-w-[230px]">
+                      Dihitung otomatis dari persentase volume terisi dari sensor mobile.
+                    </span>
                   </div>
+                  <span className={`px-3 py-1.5 rounded-full text-[10.5px] font-extrabold uppercase tracking-wide border shrink-0 ${
+                    formData.status === "BROKEN" || formData.status === "Rusak"
+                      ? "bg-rose-50 text-rose-700 border-rose-200"
+                      : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                  }`}>
+                    {formData.status === "BROKEN" ? "Rusak" : "Aktif"}
+                  </span>
+                </div>
 
+                {/* Status Card 2 Checkbox */}
+                <label className="mt-3 flex items-start gap-3 p-4 rounded-2xl border border-amber-200/80 bg-amber-50/40 text-slate-700 cursor-pointer hover:bg-amber-50/80 transition-all">
+                  <input
+                    type="checkbox"
+                    checked={formData.status === "BROKEN" || formData.status === "Rusak"}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        status: e.target.checked ? "BROKEN" : "ACTIVE_BOUND",
+                      })
+                    }
+                    className="mt-0.5 w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500 cursor-pointer"
+                  />
                   <div>
-                    <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
-                      Jumlah Tempat Sampah <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      min={1}
-                      max={100}
-                      value={formData.generateCount || 5}
-                      onChange={(e) => setFormData({ ...formData, generateCount: parseInt(e.target.value, 10) || 1 })}
-                      placeholder="Masukkan jumlah tempat sampah (contoh: 5)"
-                      className="w-full h-12 px-4 rounded-2xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:border-[#009966] text-xs font-bold text-slate-800 outline-none transition-all"
-                    />
+                    <span className="text-xs font-extrabold text-slate-900 block mb-0.5">
+                      Tandai Fisik Tempat Sampah Rusak atau dalam Perbaikan
+                    </span>
+                    <span className="text-[11px] text-slate-500 font-medium leading-normal block">
+                      Centang jika fisik tempat sampah rusak atau sobek dan perlu penanganan petugas.
+                    </span>
                   </div>
-                </>
-              ) : (
-                <>
-                  <div>
-                    <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
-                      Kode Tempat Sampah
-                    </label>
-                    <input
-                      type="text"
-                      readOnly
-                      value={formData.qrCode || selectedBin || ""}
-                      className="w-full h-12 px-4 rounded-2xl border border-slate-200 bg-slate-100/80 font-mono font-bold text-slate-700 text-xs outline-none"
-                    />
-                  </div>
+                </label>
+              </div>
 
-                  <div>
-                    <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
-                      Kategori Sampah <span className="text-rose-500">*</span>
-                    </label>
-                    <select
-                      required
-                      value={formData.categoryId}
-                      onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                      className="w-full h-12 px-4 rounded-2xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:border-[#009966] text-xs font-bold text-slate-800 outline-none transition-all cursor-pointer"
-                    >
-                      <option value="organik">Organik</option>
-                      <option value="anorganik">Anorganik</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
-                      Kapasitas Maksimum (Liter) <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      value={formData.maxCapacityLiter}
-                      onChange={(e) => setFormData({ ...formData, maxCapacityLiter: parseFloat(e.target.value) })}
-                      className="w-full h-12 px-4 rounded-2xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:border-[#009966] text-xs font-bold text-slate-800 outline-none transition-all"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
-                      Status Operasional (Sensor Real-time)
-                    </label>
-
-                    {/* Status Card 1 */}
-                    <div className="p-4 bg-slate-50/60 border border-slate-200/80 rounded-2xl flex items-center justify-between gap-3">
-                      <div>
-                        <span className="text-xs font-extrabold text-slate-800 block mb-0.5">
-                          Status Otomatis Lapangan
-                        </span>
-                        <span className="text-[11px] text-slate-500 font-medium leading-snug block max-w-[230px]">
-                          Dihitung otomatis dari persentase volume terisi dari sensor mobile.
-                        </span>
-                      </div>
-                      <span className={`px-3 py-1.5 rounded-full text-[10.5px] font-extrabold uppercase tracking-wide border shrink-0 ${
-                        formData.status === "BROKEN" || formData.status === "Rusak"
-                          ? "bg-rose-50 text-rose-700 border-rose-200"
-                          : "bg-emerald-50 text-emerald-800 border-emerald-200"
-                      }`}>
-                        {formData.status === "BROKEN" ? "Rusak" : "Aktif"}
-                      </span>
-                    </div>
-
-                    {/* Status Card 2 Checkbox */}
-                    <label className="mt-3 flex items-start gap-3 p-4 rounded-2xl border border-amber-200/80 bg-amber-50/40 text-slate-700 cursor-pointer hover:bg-amber-50/80 transition-all">
-                      <input
-                        type="checkbox"
-                        checked={formData.status === "BROKEN" || formData.status === "Rusak"}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            status: e.target.checked ? "BROKEN" : "ACTIVE_BOUND",
-                          })
-                        }
-                        className="mt-0.5 w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500 cursor-pointer"
-                      />
-                      <div>
-                        <span className="text-xs font-extrabold text-slate-900 block mb-0.5">
-                          Tandai Fisik Tempat Sampah Rusak atau dalam Perbaikan
-                        </span>
-                        <span className="text-[11px] text-slate-500 font-medium leading-normal block">
-                          Centang jika fisik tempat sampah rusak atau sobek dan perlu penanganan petugas.
-                        </span>
-                      </div>
-                    </label>
-                  </div>
-                </>
-              )}
-
-              {/* Modal Footer Buttons matching Screenshot */}
+              {/* Modal Footer Buttons */}
               <div className="mt-4 flex justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
@@ -2038,7 +1940,7 @@ const ManajemenTempatSampah: React.FC = () => {
                   className="px-6 py-2.5 bg-[#009966] text-white rounded-full font-extrabold hover:bg-[#008055] text-xs shadow-md shadow-emerald-200 transition-all flex items-center gap-2 cursor-pointer"
                 >
                   {isSubmitting && <Loader2 className="animate-spin" size={16} />}
-                  {modalType === "add" ? `Generate ${formData.generateCount || 5} QR Code` : "Simpan Perubahan"}
+                  Simpan Perubahan
                 </button>
               </div>
             </form>

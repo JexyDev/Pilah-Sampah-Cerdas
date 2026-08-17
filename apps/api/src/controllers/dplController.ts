@@ -164,7 +164,7 @@ export const dplController = {
   createProgramKerja: async (req: Request, res: Response): Promise<void> => {
     try {
       const dplUserId = getUserId(req);
-      const { kelompokId, nomor, deskripsi, kebutuhanBiaya } = req.body;
+      const { kelompokId, nomor, deskripsi, kategori, sumber, waktuPelaksanaan, linkGoogleDrive, kebutuhanBiaya } = req.body;
       if (!kelompokId || !deskripsi) {
         res.status(400).json({ error: "BAD_REQUEST", message: "kelompokId dan deskripsi wajib diisi" });
         return;
@@ -173,6 +173,10 @@ export const dplController = {
         kelompokId,
         nomor: nomor ? Number(nomor) : undefined,
         deskripsi,
+        kategori,
+        sumber,
+        waktuPelaksanaan,
+        linkGoogleDrive,
         kebutuhanBiaya: kebutuhanBiaya !== undefined ? Number(kebutuhanBiaya) : 0,
       });
       res.status(201).json({ success: true, data });
@@ -185,10 +189,14 @@ export const dplController = {
   updateProgramKerja: async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
-      const { nomor, deskripsi, kebutuhanBiaya, status, catatanDpl } = req.body;
+      const { nomor, deskripsi, kategori, sumber, waktuPelaksanaan, linkGoogleDrive, kebutuhanBiaya, status, catatanDpl } = req.body;
       const data = await dplService.updateProgramKerja(id, {
         nomor: nomor !== undefined ? Number(nomor) : undefined,
         deskripsi,
+        kategori,
+        sumber,
+        waktuPelaksanaan,
+        linkGoogleDrive,
         kebutuhanBiaya: kebutuhanBiaya !== undefined ? Number(kebutuhanBiaya) : undefined,
         status,
         catatanDpl,

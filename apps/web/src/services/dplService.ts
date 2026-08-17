@@ -115,6 +115,10 @@ export interface ProgramKerjaItem {
   kelurahan: string;
   nomor: number;
   deskripsi: string;
+  kategori?: string;
+  sumber?: string;
+  waktuPelaksanaan?: string | null;
+  linkGoogleDrive?: string | null;
   kebutuhanBiaya: number;
   status: "BELUM_DISETUJUI" | "DITERIMA" | "DITOLAK" | "SEDANG_BERJALAN" | "SELESAI";
   catatanDpl?: string | null;
