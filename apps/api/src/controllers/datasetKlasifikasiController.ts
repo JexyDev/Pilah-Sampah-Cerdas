@@ -155,11 +155,12 @@ export class DatasetKlasifikasiController {
           ? "ANORGANIK"
           : "ORGANIK";
 
-        const confidence = Number(r.confidenceAi || 95.0);
+        const rawConf = Number(r.confidenceAi || 0.95);
+        const confidence = rawConf <= 1.0 ? Math.round(rawConf * 100) : Math.round(rawConf);
         const isOrganik = categoryFormatted === "ORGANIK";
         const organikPercent = isOrganik
-          ? Math.min(100, Math.max(55, Math.round(confidence)))
-          : Math.max(0, Math.min(45, Math.round(100 - confidence)));
+          ? Math.min(100, Math.max(0, confidence))
+          : Math.max(0, Math.min(100, 100 - confidence));
         const anorganikPercent = 100 - organikPercent;
 
         return {
