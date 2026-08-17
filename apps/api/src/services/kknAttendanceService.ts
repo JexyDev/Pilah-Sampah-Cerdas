@@ -627,6 +627,7 @@ export class KknAttendanceService {
 
       return {
         ...att,
+        completedAt: att.checkOutAt || (att as any).completedAt || null,
         currentStatus,
       };
     });

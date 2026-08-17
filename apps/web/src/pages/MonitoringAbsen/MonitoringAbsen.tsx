@@ -1811,8 +1811,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       const statusUpper = String(rec.status || "").toUpperCase();
                       const isSakit = statusUpper.includes("SAKIT");
                       const isIzin = statusUpper.includes("IZIN");
-                      const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN");
-                      const isHadir = isAttended;
+                      const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
+                      const isHadir = isAttended && !isTanpaKeterangan;
 
                       const durationHours = durationMins > 0 ? (durationMins / 60) : 0;
                       const formattedHours = durationHours > 0
@@ -1824,7 +1824,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       let poinDampingan = 0;
                       if (durationMins >= scheduleTargetHours * 60) {
                         poinDampingan = 10;
-                      } else if (durationMins > 0) {
+                      } else if (durationMins > 0 && !isTanpaKeterangan) {
                         poinDampingan = 8;
                       }
 
@@ -1880,15 +1880,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                 <Info size={13} className="text-blue-600" />
                                 Izin
                               </span>
-                            ) : isHadir ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                <CheckCircle2 size={13} className="text-emerald-600" />
-                                Hadir
-                              </span>
                             ) : isTanpaKeterangan ? (
                               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
                                 <XCircle size={13} className="text-rose-600" />
                                 Tanpa Keterangan
+                              </span>
+                            ) : isHadir ? (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <CheckCircle2 size={13} className="text-emerald-600" />
+                                Hadir
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
