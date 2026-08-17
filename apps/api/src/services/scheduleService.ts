@@ -49,6 +49,7 @@ export const scheduleService = {
     radius?: number;
     polygon?: any;
     kelompokId?: string;
+    isActive?: boolean;
   }) => {
     return prisma.schedule.create({
       data,
@@ -79,6 +80,7 @@ export const scheduleService = {
       radius?: number;
       polygon?: any;
       kelompokId?: string;
+      isActive?: boolean;
     }
   ) => {
     return prisma.schedule.update({

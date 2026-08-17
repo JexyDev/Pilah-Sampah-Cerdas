@@ -27,7 +27,7 @@ export const scheduleController = {
 
   createSchedule: async (req: Request, res: Response) => {
     try {
-      const { title, date, time, category, location, latitude, longitude, radius, polygon, kelompokId } =
+      const { title, date, time, category, location, latitude, longitude, radius, polygon, kelompokId, isActive } =
         req.body;
       if (!title || !date || !category) {
         res.status(400).json({
@@ -74,6 +74,7 @@ export const scheduleController = {
         radius: radius ? Number(radius) : undefined,
         polygon: polygon ? polygon : undefined,
         kelompokId: resolvedKelompokId,
+        isActive: isActive !== undefined ? Boolean(isActive) : true,
       });
       res.status(201).json({
         success: true,
@@ -102,7 +103,7 @@ export const scheduleController = {
   updateSchedule: async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { title, date, time, category, location, latitude, longitude, radius, polygon, kelompokId } =
+      const { title, date, time, category, location, latitude, longitude, radius, polygon, kelompokId, isActive } =
         req.body;
       let parsedDate;
       if (date) {
@@ -128,6 +129,7 @@ export const scheduleController = {
         radius: radius !== undefined ? Number(radius) : undefined,
         polygon: polygon !== undefined ? polygon : undefined,
         kelompokId: kelompokId !== undefined ? kelompokId : undefined,
+        isActive: isActive !== undefined ? Boolean(isActive) : undefined,
       });
 
       res.status(200).json({

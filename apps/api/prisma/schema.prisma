@@ -770,6 +770,7 @@ model Schedule {
   polygon     Json?
   radius      Int?                 @default(100)
   kelompokId  String?              @map("id_kelompok")
+  isActive    Boolean              @default(true) @map("is_aktif")
   kelompok    KelompokKkn?         @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
   attendances ActivityAttendance[]
 

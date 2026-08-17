@@ -1348,13 +1348,14 @@ export class KknService {
       attendanceStatus = attendanceToday.status === "ALPA" ? "alpa" : "hadir";
     }
 
-    // 🎯 Filter jadwal aktif khusus untuk kelompok KKN mahasiswa ybs
+    // 🎯 Filter jadwal aktif khusus untuk kelompok KKN mahasiswa ybs (isActive: true)
     let activeSchedules: any[] = [];
     if (student?.kelompokId) {
       activeSchedules = await prisma.schedule.findMany({
         where: {
           kelompokId: student.kelompokId,
           date: { gte: todayStart, lte: todayEnd },
+          isActive: true,
         },
         orderBy: { date: "asc" },
       });
@@ -1366,6 +1367,7 @@ export class KknService {
         where: {
           kelompokId: null,
           date: { gte: todayStart, lte: todayEnd },
+          isActive: true,
         },
         orderBy: { date: "asc" },
       });
@@ -1417,19 +1419,20 @@ export class KknService {
       }
     }
 
-    if (!activeSchedule && !activeArea) {
+    // Syarat Alur Presensi: Jika DPL tidak mengaktifkan kegiatan -> Otomatis Libur / Tidak ada kegiatan aktif
+    if (!activeSchedule) {
       return {
         hasActiveZone: false,
-        message: "Wilayah penugasan KKN belum ditentukan oleh Admin.",
-        zoneName: null,
-        kelurahan: null,
+        message: "Tidak Ada Kegiatan Aktif (Libur)",
+        zoneName: "Tidak ada kegiatan",
+        kelurahan: activeArea?.kelurahan?.name || "Coblong",
         latitude: null,
         longitude: null,
         radiusMeter: 100,
         targetDurationMinutes: 60,
-        attendanceStatus,
-        status: attendanceStatus,
-        kehadiran: attendanceStatus,
+        attendanceStatus: activeLeave ? attendanceStatus : "libur",
+        status: activeLeave ? attendanceStatus : "libur",
+        kehadiran: activeLeave ? attendanceStatus : "libur",
         polygonPoints: [],
       };
     }

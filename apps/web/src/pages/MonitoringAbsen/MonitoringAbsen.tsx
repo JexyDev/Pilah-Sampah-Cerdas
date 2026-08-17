@@ -28,6 +28,7 @@ import {
   RefreshCw,
   Plus,
   Trash2,
+  Power,
   X,
   Pencil,
   Download,
@@ -1119,6 +1120,19 @@ const MonitoringAbsen: React.FC = () => {
     }
   };
 
+  const handleToggleScheduleActive = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!activeSchedule) return;
+    try {
+      const newStatus = activeSchedule.isActive === false ? true : false;
+      await api.put(`/schedules/${activeSchedule.id}`, { isActive: newStatus });
+      toast.success(newStatus ? "Kegiatan berhasil DIAKTIFKAN!" : "Kegiatan berhasil DINONAKTIFKAN (Libur)!");
+      fetchSchedules();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal mengubah status kegiatan");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -1399,7 +1413,20 @@ const MonitoringAbsen: React.FC = () => {
             </div>
 
             {canManageSchedules && activeSchedule && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleToggleScheduleActive}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border shadow-2xs ${
+                    activeSchedule.isActive !== false
+                      ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
+                      : "bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100"
+                  }`}
+                  title="Klik untuk Mengaktifkan / Menonaktifkan Kegiatan (Toggle Libur)"
+                >
+                  <Power size={14} className={activeSchedule.isActive !== false ? "text-emerald-600" : "text-amber-600"} />
+                  <span>{activeSchedule.isActive !== false ? "Aktif" : "Libur (Nonaktif)"}</span>
+                </button>
                 <button
                   type="button"
                   onClick={(e) => handleOpenEditModal(e, activeSchedule)}
