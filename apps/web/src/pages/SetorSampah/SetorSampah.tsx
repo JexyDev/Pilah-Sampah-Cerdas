@@ -731,22 +731,29 @@ export default function SetorSampah() {
                 {(() => {
                   const jenisUpper = (selectedLogForDetail.jenis || "").toUpperCase();
                   const isOrg = jenisUpper.includes("ORGANIK") || jenisUpper.includes("ORGANIC");
-                  const confidence = formatConfidence(selectedLogForDetail);
+                  const conf = formatConfidence(selectedLogForDetail);
+                  const org = (selectedLogForDetail as any).organikPercent ?? (isOrg ? conf : 100 - conf);
+                  const inorg = (selectedLogForDetail as any).anorganikPercent ?? (100 - org);
                   return (
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs font-black">
-                        <span className={isOrg ? "text-emerald-700" : "text-amber-700"}>
-                          {isOrg ? "🌱 Terklasifikasi: Organik" : "📦 Terklasifikasi: Anorganik"}
-                        </span>
-                        <span className="text-slate-600">Confidence AI: {confidence}%</span>
+                        <span className="text-emerald-700">🌱 Organik: {org}%</span>
+                        <span className="text-amber-700">📦 Anorganik: {inorg}%</span>
                       </div>
-                      <div className="w-full h-3 rounded-full bg-slate-200 overflow-hidden border border-slate-300/60">
+                      <div className="w-full h-3 rounded-full bg-slate-200 flex overflow-hidden border border-slate-300/60 shadow-2xs">
                         <div
-                          className={`h-full transition-all duration-300 ${isOrg ? "bg-emerald-500" : "bg-amber-500"}`}
-                          style={{ width: `${confidence}%` }}
+                          className="bg-emerald-500 h-full transition-all duration-300"
+                          style={{ width: `${org}%` }}
+                          title={`Organik: ${org}%`}
+                        />
+                        <div
+                          className="bg-amber-500 h-full transition-all duration-300"
+                          style={{ width: `${inorg}%` }}
+                          title={`Anorganik: ${inorg}%`}
                         />
                       </div>
                       <div className="flex justify-between text-[11px] font-bold text-slate-400 pt-1">
+                        <span>Akurasi Confidence: {conf}%</span>
                         <span>Estimasi Berat: {selectedLogForDetail.berat} Kg</span>
                       </div>
                     </div>

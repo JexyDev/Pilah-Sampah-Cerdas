@@ -22,23 +22,31 @@ export const transactionController = {
           .trim();
         if (!wargaName) wargaName = "Warga Coblong";
 
+        const confVal = d.confidenceAi
+          ? Number(d.confidenceAi) <= 1
+            ? Math.round(Number(d.confidenceAi) * 100)
+            : Math.round(Number(d.confidenceAi))
+          : 90 + (Math.abs(d.id.charCodeAt(0) || 5) % 9);
+        const isOrg = (d.hasilKlasifikasiAi || "").toLowerCase() === "organik";
+        const organikPercent = isOrg
+          ? Math.min(100, Math.max(55, confVal))
+          : Math.max(0, Math.min(45, 100 - confVal));
+
         return {
           id: d.id,
           warga: wargaName,
           phone: d.warga?.phone || "-",
           rw: d.warga?.rw?.name || "RT 01 / RW 01",
           kelurahan: d.warga?.rw?.kelurahan?.name || "Coblong",
-          jenis: d.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
+          jenis: isOrg ? "Organik" : "Anorganik",
           berat: Number(d.berat),
           poin: Math.round(Number(d.poin)),
           waktu: d.createdAt,
           status: "Selesai",
           lokasi: `Tempat Sampah: ${d.bin?.qrCode || "QR-001"}`,
-          confidence: d.confidenceAi
-            ? Number(d.confidenceAi) <= 1
-              ? Math.round(Number(d.confidenceAi) * 100)
-              : Math.round(Number(d.confidenceAi))
-            : 90 + (Math.abs(d.id.charCodeAt(0) || 5) % 9),
+          confidence: confVal,
+          organikPercent,
+          anorganikPercent: 100 - organikPercent,
           fotoUrl: d.fotoSampahUrl || d.fotoUrl || null,
         };
       });
@@ -163,18 +171,26 @@ export const transactionController = {
         res.status(404).json({ success: false, message: "Setoran tidak ditemukan" });
         return;
       }
+      const confVal = Number(deposit.confidenceAi || 95);
+      const isOrg = (deposit.hasilKlasifikasiAi || "").toLowerCase() === "organik";
+      const organikPercent = isOrg
+        ? Math.min(100, Math.max(55, Math.round(confVal <= 1 ? confVal * 100 : confVal)))
+        : Math.max(0, Math.min(45, Math.round(100 - (confVal <= 1 ? confVal * 100 : confVal))));
+
       const mappedDeposit = {
         id: deposit.id,
         warga: deposit.warga?.name || "Unknown",
         phone: deposit.warga?.phone || "",
         rw: deposit.bin?.rw?.name || "",
-        jenis: deposit.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
+        jenis: isOrg ? "Organik" : "Anorganik",
         berat: Number(deposit.berat),
         poin: Number(deposit.poin),
         waktu: deposit.createdAt,
         status: "Selesai",
         lokasi: `Tempat Sampah: ${deposit.bin?.qrCode}`,
-        confidence: Number(deposit.confidenceAi),
+        confidence: confVal <= 1 ? Math.round(confVal * 100) : Math.round(confVal),
+        organikPercent,
+        anorganikPercent: 100 - organikPercent,
         gps: deposit.lokasiGps,
         fotoUrl: deposit.fotoSampahUrl,
       };
