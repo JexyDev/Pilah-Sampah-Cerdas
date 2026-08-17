@@ -10,12 +10,12 @@ import '../beranda/beranda_view.dart';
 import '../riwayat/views/riwayat_view.dart';
 import '../poin/poin_view.dart';
 import '../profil/profil_view.dart';
-import '../mahasiswa/views/monitoring_warga_view.dart';
 import '../mahasiswa/views/mahasiswa_view.dart';
 import '../auth/controllers/auth_controller.dart';
 import '../../data/models/user_entity.dart';
 import '../../core/utils/scan_guard.dart';
 import '../mahasiswa/views/mahasiswa_poin_view.dart';
+import '../mahasiswa/views/riwayat_kkn_view.dart';
 import '../petugas_pemilahan/views/petugas_pemilahan_dashboard_view.dart';
 import '../petugas_pemilahan/views/riwayat_petugas_pemilahan_view.dart';
 import '../petugas_pemilahan/views/petugas_pemilahan_poin_view.dart';
@@ -50,13 +50,13 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
             ? const PetugasPemilahanDashboardView() 
             : BerandaView(onNavigateToHistory: () => _onTabTap(1))),
     role == UserRole.mahasiswaKkn 
-        ? const MahasiswaPoinView() 
+        ? const RiwayatKknView() 
         : (role == UserRole.petugasPemilahan 
             ? const RiwayatPetugasPemilahanView() 
             : const RiwayatView()),
     const SizedBox.shrink(),
     role == UserRole.mahasiswaKkn 
-        ? const MonitoringWargaView() 
+        ? const MahasiswaPoinView() 
         : (role == UserRole.petugasPemilahan 
             ? const PetugasPemilahanPoinView() 
             : const PoinView()),
@@ -106,7 +106,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
 
   Widget _buildMobileShell(bool isOnline, UserRole role) {
     final screens = _getScreens(role);
-    final bool showFab = role == UserRole.warga || role == UserRole.petugasPemilahan;
+    final bool showFab = role == UserRole.warga || role == UserRole.petugasPemilahan || role == UserRole.mahasiswaKkn;
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       resizeToAvoidBottomInset: false,
@@ -150,6 +150,8 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
               ? () {
                   if (role == UserRole.petugasPemilahan) {
                     Navigator.pushNamed(context, AppRoutes.timbanganPemilahan);
+                  } else if (role == UserRole.mahasiswaKkn) {
+                    Navigator.pushNamed(context, AppRoutes.monitoringWarga, arguments: 'aktivasi_bin');
                   } else {
                     ScanGuard.handleScanNavigation(context, ref);
                   }
@@ -168,9 +170,12 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   BottomAppBar _buildBottomBar(UserRole role) {
     final bool isWarga = role == UserRole.warga;
     final bool isPetugas = role == UserRole.petugasPemilahan;
+    final bool isMahasiswa = role == UserRole.mahasiswaKkn;
+    final bool hasFab = isWarga || isPetugas || isMahasiswa;
+
     return BottomAppBar(
-      shape: (isWarga || isPetugas) ? const CircularNotchedRectangle() : null,
-      notchMargin: (isWarga || isPetugas) ? 8 : 0,
+      shape: hasFab ? const CircularNotchedRectangle() : null,
+      notchMargin: hasFab ? 8 : 0,
       color: Colors.white,
       elevation: 8,
       child: SizedBox(
@@ -190,26 +195,23 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                   ),
                   _navItem(
                     1,
-                    role == UserRole.mahasiswaKkn ? Icons.stars_rounded : Icons.history_rounded,
-                    role == UserRole.mahasiswaKkn ? Icons.stars_outlined : Icons.history_outlined,
-                    role == UserRole.mahasiswaKkn ? 'Poin KKN' : (role == UserRole.petugasPemilahan ? 'Riwayat' : 'History'),
+                    Icons.history_rounded,
+                    Icons.history_outlined,
+                    role == UserRole.petugasPemilahan ? 'Riwayat' : 'History',
                   ),
                 ],
               ),
             ),
-            if (isWarga || isPetugas) const SizedBox(width: 64), // Perfect FAB hole
+            if (hasFab) const SizedBox(width: 64), // Perfect FAB hole
             Expanded(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _navItem(
                     3,
-                    role == UserRole.mahasiswaKkn ? Icons.analytics_rounded : 
-                    (role == UserRole.petugasPemilahan ? Icons.monetization_on_rounded : Icons.stars_rounded),
-                    role == UserRole.mahasiswaKkn ? Icons.analytics_outlined : 
-                    (role == UserRole.petugasPemilahan ? Icons.monetization_on_outlined : Icons.stars_outlined),
-                    role == UserRole.mahasiswaKkn ? 'Monitoring' : 
-                    (role == UserRole.petugasPemilahan ? 'Poin' : 'Poin'),
+                    role == UserRole.petugasPemilahan ? Icons.monetization_on_rounded : Icons.stars_rounded,
+                    role == UserRole.petugasPemilahan ? Icons.monetization_on_outlined : Icons.stars_outlined,
+                    'Poin',
                   ),
                   _navItem(
                     4,

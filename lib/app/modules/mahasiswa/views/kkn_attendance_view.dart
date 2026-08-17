@@ -180,6 +180,100 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
     );
   }
 
+  Widget _buildDashedDivider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16.0),
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final boxWidth = constraints.constrainWidth();
+          const dashWidth = 4.0;
+          const dashHeight = 1.0;
+          final dashCount = (boxWidth / (2 * dashWidth)).floor();
+          return Flex(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            direction: Axis.horizontal,
+            children: List.generate(dashCount, (_) {
+              return SizedBox(
+                width: dashWidth,
+                height: dashHeight,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(color: Colors.grey.shade300),
+                ),
+              );
+            }),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildIconDetailRow({
+    required IconData icon,
+    required String title,
+    required String value,
+    Widget? trailing,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppColors.primaryGreen.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: AppColors.primaryGreen, size: 24),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              const SizedBox(height: 2),
+              Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+            ],
+          ),
+        ),
+        if (trailing != null) trailing,
+      ],
+    );
+  }
+
+  Widget _buildBoxDetail(IconData icon, String title, String value) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGreen.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: AppColors.primaryGreen, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                const SizedBox(height: 2),
+                Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildAttendanceDetail(KknLocationState state, KknLocationNotifier notifier) {
     final pos = state.currentPosition;
     final lat = pos?.latitude.toStringAsFixed(5) ?? '-';
@@ -310,42 +404,89 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Status GPS Tracking:',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.location_on_outlined, color: AppColors.primaryGreen, size: 24),
+                        ),
+                        const SizedBox(width: 12),
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('GPS Tracking', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text('Lokasi sedang dipantau', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          ],
+                        ),
+                      ],
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isGpsActive ? Colors.blue.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
+                        color: isGpsActive ? AppColors.primaryGreen.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Text(
-                        isGpsActive ? 'AKTIF' : 'TIDAK AKTIF',
-                        style: TextStyle(
-                          color: isGpsActive ? Colors.lightBlue : Colors.grey,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: isGpsActive ? AppColors.primaryGreen : Colors.grey,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            isGpsActive ? 'AKTIF' : 'NON-AKTIF',
+                            style: TextStyle(
+                              color: isGpsActive ? AppColors.primaryGreen : Colors.grey,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
+                _buildDashedDivider(),
+                _buildIconDetailRow(
+                  icon: Icons.my_location_rounded,
+                  title: 'Posisi Anda',
+                  value: pos != null ? '$lat, $lng' : '-',
+                ),
+                _buildDashedDivider(),
+                _buildIconDetailRow(
+                  icon: Icons.location_on_rounded,
+                  title: 'Target Lokasi',
+                  value: state.activeActivity != null ? (state.activeActivity!['address'] ?? '-') : '-',
+                ),
                 const SizedBox(height: 16),
-                _buildInfoRow('Posisi Anda:', pos != null ? '$lat, $lng' : '-'),
-                const SizedBox(height: 8),
-                _buildInfoRow('Target Lokasi:', state.activeActivity != null ? (state.activeActivity!['address'] ?? '-') : '-'),
-                const SizedBox(height: 8),
-                _buildInfoRow('Radius Toleransi:', state.activeActivity != null ? '${state.activeActivity!['radius'] ?? '-'} Meter' : '-'),
-                const SizedBox(height: 8),
-                _buildInfoRow('Nama Kegiatan:', state.activeActivity != null ? (state.activeActivity!['namaKegiatan'] ?? '-') : '-'),
-                const SizedBox(height: 8),
-                // Tampilkan jam kegiatan asli jika tersedia ("11:00 - 13:00 WIB")
-                if (timeLabel != null && timeLabel.isNotEmpty && timeLabel.contains(':')) ...[
-                  _buildInfoRow('Jam Kegiatan:', timeLabel.toUpperCase()),
-                  const SizedBox(height: 8),
-                ],
-                _buildInfoRow('Durasi Kegiatan:', state.activeActivity != null ? '$targetMenit Menit' : '-'),
+                Row(
+                  children: [
+                    Expanded(child: _buildBoxDetail(Icons.radar, 'Radius Toleransi', state.activeActivity != null ? '${state.activeActivity!['radius'] ?? '-'} Meter' : '-')),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildBoxDetail(Icons.access_time_rounded, 'Jam Kegiatan', (timeLabel != null && timeLabel.isNotEmpty) ? timeLabel.toUpperCase() : '-')),
+                  ],
+                ),
+                _buildDashedDivider(),
+                _buildIconDetailRow(
+                  icon: Icons.groups_rounded,
+                  title: 'Nama Kegiatan',
+                  value: state.activeActivity != null ? (state.activeActivity!['namaKegiatan'] ?? '-') : '-',
+                ),
+                _buildDashedDivider(),
+                _buildIconDetailRow(
+                  icon: Icons.timer_outlined,
+                  title: 'Durasi Kegiatan',
+                  value: state.activeActivity != null ? '$targetMenit Menit' : '-',
+                  trailing: const Icon(Icons.map_rounded, size: 48, color: AppColors.primaryGreen),
+                ),
               ],
             ),
           ),
@@ -357,23 +498,42 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: state.isInsideRadius ? AppColors.primaryGreen.withValues(alpha: 0.1) : AppColors.dangerRed.withValues(alpha: 0.1),
-            border: Border.all(color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.dangerRed),
+            border: Border.all(color: state.isInsideRadius ? AppColors.primaryGreen.withValues(alpha: 0.5) : AppColors.dangerRed.withValues(alpha: 0.5)),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             children: [
-              Icon(
-                state.isInsideRadius ? Icons.verified_rounded : Icons.cancel_rounded,
-                color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.dangerRed,
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.dangerRed,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  state.isInsideRadius ? Icons.check_rounded : Icons.close_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  state.isInsideRadius ? 'Presensi Waktu Aktif' : 'Anda Tidak berada di zona kelompok KKN anda',
-                  style: TextStyle(
-                    color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.dangerRed,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      state.isInsideRadius ? 'Kamu berada di dalam radius lokasi' : 'Kamu berada di luar radius lokasi',
+                      style: TextStyle(
+                        color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.dangerRed,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      state.isInsideRadius ? 'Sinyal GPS stabil dan lokasi terdeteksi.' : 'Pergerakan absensi dihentikan sementara.',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -385,46 +545,60 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: AppColors.warningOrange),
+            color: Colors.orange.withValues(alpha: 0.05),
+            border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Expanded(
-                    child: Row(
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Colors.orange,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.timer_rounded, color: Colors.white, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.timer_rounded, color: AppColors.warningOrange, size: 20),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Durasi Terdeteksi di Zona:',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
+                        const Text('Durasi Terdeteksi di Zona', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+                        const SizedBox(height: 4),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text('$durasiMenit mnt $durasiDetik dtk', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 18)),
+                            const SizedBox(width: 4),
+                            Text('/ $targetMenit mnt', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '$durasiMenit mnt $durasiDetik dtk / $targetMenit mnt',
-                    style: const TextStyle(
-                      color: AppColors.warningOrange,
-                      fontWeight: FontWeight.bold,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${targetMenit > 0 ? ((durasiMenit / targetMenit) * 100).toStringAsFixed(1) : 0}%',
+                      style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 11),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               LinearProgressIndicator(
                 value: targetMenit > 0 ? (durasiMenit / targetMenit).clamp(0.0, 1.0) : 0,
-                backgroundColor: Colors.grey[200],
-                color: AppColors.warningOrange,
+                backgroundColor: Colors.grey[300],
+                color: Colors.orange,
                 minHeight: 6,
                 borderRadius: BorderRadius.circular(3),
               ),
@@ -444,14 +618,28 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
         SizedBox(
           width: double.infinity,
           height: 52,
-          child: ElevatedButton(
+          child: ElevatedButton.icon(
             onPressed: (state.isEligibleForAttendance && !isSuccess && !isAlpa) ? () async {
               await _showAbsenDialog(state, notifier);
             } : null,
+            icon: Icon(
+              isSuccess ? Icons.check_circle_rounded : (isAlpa ? Icons.cancel_rounded : Icons.location_on_rounded), 
+              color: (state.isEligibleForAttendance || isSuccess || isAlpa) ? Colors.white : Colors.grey[500],
+              size: 20,
+            ),
+            label: Text(
+              isSuccess 
+                  ? 'Berhasil Absen' 
+                  : (isAlpa ? 'Alpa (Waktu Habis)' : 'Absen Sekarang'),
+              style: TextStyle(
+                fontWeight: FontWeight.bold, 
+                fontSize: 15, 
+                color: (state.isEligibleForAttendance || isSuccess || isAlpa) ? Colors.white : Colors.grey[500]
+              ),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: isSuccess ? AppColors.primaryGreen : (isAlpa ? AppColors.dangerRed : Colors.grey[300]),
-              disabledBackgroundColor: isSuccess ? AppColors.primaryGreen : (isAlpa ? AppColors.dangerRed : Colors.grey[300]),
-              disabledForegroundColor: isSuccess ? Colors.white : (isAlpa ? Colors.white : Colors.grey[500]),
+              disabledBackgroundColor: Colors.grey[300],
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ).copyWith(
               backgroundColor: WidgetStateProperty.resolveWith((states) {
@@ -460,27 +648,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
                 if (states.contains(WidgetState.disabled)) return Colors.grey[300];
                 return AppColors.primaryGreen; // Active color
               }),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  isSuccess ? Icons.check_circle_rounded : (isAlpa ? Icons.cancel_rounded : Icons.location_on_rounded), 
-                  size: 20, 
-                  color: (state.isEligibleForAttendance || isSuccess || isAlpa) ? Colors.white : Colors.grey[500]
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  isSuccess 
-                      ? 'Berhasil Absen' 
-                      : (isAlpa ? 'Alpa (Waktu Habis)' : 'Absen Sekarang'),
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold, 
-                    fontSize: 15, 
-                    color: (state.isEligibleForAttendance || isSuccess || isAlpa) ? Colors.white : Colors.grey[500]
-                  ),
-                ),
-              ],
             ),
           ),
         ),
@@ -491,7 +658,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
                 ? 'Tombol absen dinonaktifkan hingga Anda berada di dalam zona selama ${targetMenit ~/ 60} jam berturut-turut.'
                 : 'Tombol absen dinonaktifkan hingga durasi zona mencapai $targetMenit menit.',
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: AppColors.dangerRed),
+            style: const TextStyle(fontSize: 11, color: AppColors.dangerRed),
           ),
       ],
     );
@@ -514,30 +681,4 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
     return content;
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Label menggunakan Expanded agar memiliki proporsi lebar tetap (40%)
-        // sehingga tidak akan menabrak value di sebelahnya.
-        Expanded(
-          flex: 4,
-          child: Text(
-            label,
-            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-          ),
-        ),
-        const SizedBox(width: 12),
-        // Value menggunakan Expanded (60%) agar rapi membungkus ke baris baru
-        Expanded(
-          flex: 6,
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ],
-    );
-  }
 }

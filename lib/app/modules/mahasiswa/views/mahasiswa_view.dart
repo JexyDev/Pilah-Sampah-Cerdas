@@ -580,26 +580,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
             const SizedBox(width: 12),
             Expanded(
               child: _MenuTileCard(
-                icon: Icons.qr_code_scanner_rounded,
-                title: 'Aktivasi Tempat Sampah',
-                subtitle: 'Pindai barcode warga',
-                gradientColors: const [AppColors.primaryBlue, AppColors.primaryBlueDark],
-                onTap: () {
-                  Navigator.pushNamed(
-                    context, 
-                    AppRoutes.monitoringWarga, 
-                    arguments: 'aktivasi_bin',
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _MenuTileCard(
                 icon: Icons.location_on_rounded,
                 title: 'Presensi',
                 subtitle: 'Presensi ${kknState.targetDurationMinutes % 60 == 0 ? '${kknState.targetDurationMinutes ~/ 60} jam' : '${kknState.targetDurationMinutes} menit'} zona KKN',
@@ -607,7 +587,11 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
                 onTap: () => Navigator.pushNamed(context, AppRoutes.kknAttendance),
               ),
             ),
-            const SizedBox(width: 12),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.recycling_rounded,
@@ -617,11 +601,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
                 onTap: () => Navigator.pushNamed(context, AppRoutes.pemanfaatanSampah),
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
+            const SizedBox(width: 12),
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.rule_rounded,
@@ -631,8 +611,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
                 onTap: () => Navigator.pushNamed(context, AppRoutes.pengajuanIzin),
               ),
             ),
-            const SizedBox(width: 12),
-            const Spacer(),
           ],
         ),
       ],
