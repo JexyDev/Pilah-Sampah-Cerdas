@@ -95,12 +95,15 @@ class QrScannerWidgetState extends State<QrScannerWidget>
 
   Future<void> _startScanner() async {
     if (!mounted) return;
-    try {
-      await _controller?.start();
-    } catch (e) {
-      debugPrint('Camera start error: $e');
-    }
-    if (mounted) setState(() => _state = _QrState.ready);
+    setState(() => _state = _QrState.ready);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      try {
+        await _controller?.start();
+      } catch (e) {
+        debugPrint('Camera start error: $e');
+      }
+    });
   }
 
   void _onDetect(BarcodeCapture capture) async {
