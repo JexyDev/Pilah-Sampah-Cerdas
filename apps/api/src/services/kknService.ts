@@ -1327,20 +1327,21 @@ export class KknService {
 
     const activeArea = student?.assignedRw || student?.user?.rw;
 
-    // Check student's leave request status (izin / sakit)
-    const activeLeave = await (prisma as any).studentLeaveRequest.findFirst({
-      where: {
-        studentId: userId,
-        status: { in: ["APPROVED", "PENDING"] },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    // Check student's attendance today
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
+
+    // Check student's leave request status (izin / sakit) - must be APPROVED and active today
+    const activeLeave = await (prisma as any).studentLeaveRequest.findFirst({
+      where: {
+        studentId: userId,
+        status: "APPROVED",
+        startDate: { lte: todayEnd },
+        endDate: { gte: todayStart },
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
     // Fetch student's completed/attended schedule IDs today
     const completedAttendances = await prisma.activityAttendance.findMany({
