@@ -32,9 +32,10 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
           _selectedKelurahan = user.kelurahan;
         }
       }
-      if (!ref.read(kknLocationProvider).isTracking) {
-        ref.read(kknLocationProvider.notifier).startTracking(context);
-      }
+      // Hapus auto-start: User harus menekan tombol "Mulai Tracking" secara manual
+      // if (!ref.read(kknLocationProvider).isTracking) {
+      //   ref.read(kknLocationProvider.notifier).startTracking(context);
+      // }
     });
   }
   
@@ -323,6 +324,42 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
 
     // Ambil string waktu asli dari data jadwal (misal: "11:00 - 13:00 WIB")
     final String? timeLabel = state.activeActivity?['time']?.toString();
+    
+    // Tampilan jika belum mulai tracking
+    if (!state.isTracking && !isSuccess && !isAlpa && state.error == null && state.activeActivity != null) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 48),
+          const Icon(Icons.location_on_rounded, size: 80, color: AppColors.primaryGreen),
+          const SizedBox(height: 24),
+          const Text(
+            'Siap Memulai KKN?',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Tekan tombol di bawah untuk mulai memantau lokasi dan menghitung waktu kehadiran Anda di area KKN.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton.icon(
+            onPressed: () => notifier.startTracking(context),
+            icon: const Icon(Icons.play_arrow_rounded, color: Colors.white),
+            label: const Text('Mulai Tracking', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ],
+      );
+    }
+
     Widget content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

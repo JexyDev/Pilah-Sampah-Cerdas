@@ -33,6 +33,7 @@ dependencies:
 
   # GPS / Geolocation / Maps
   geolocator: ^13.0.4
+  flutter_foreground_task: ^8.13.3
   flutter_map: ^6.1.0
   latlong2: ^0.9.0
 

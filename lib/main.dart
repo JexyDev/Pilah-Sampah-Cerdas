@@ -19,6 +19,8 @@ import 'app/modules/notifikasi/controllers/notifikasi_controller.dart';
 import 'app/modules/riwayat/controllers/riwayat_controller.dart';
 import 'app/data/services/local_notification_service.dart';
 import 'app/data/services/notification_engine.dart';
+import 'app/modules/mahasiswa/services/kkn_background_task_handler.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import 'app/modules/notifikasi/controllers/warga_notifikasi_controller.dart';
 import 'app/modules/mahasiswa/controllers/mahasiswa_notifikasi_controller.dart';
@@ -78,6 +80,10 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 /// Platform support: Android, iOS, Web, Windows, macOS, Linux.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inisialisasi Foreground Task untuk background GPS tracking KKN
+  FlutterForegroundTask.initCommunicationPort();
+  initKknForegroundTask();
 
   // Mencegah "Red Screen of Death" tampil ke pengguna dan menggunakan Snackbar
   ErrorWidget.builder = (FlutterErrorDetails details) {

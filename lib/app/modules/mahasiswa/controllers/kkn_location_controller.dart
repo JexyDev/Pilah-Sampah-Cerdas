@@ -13,6 +13,8 @@ import 'mahasiswa_notifikasi_controller.dart';
 import '../../../data/services/notification_engine.dart';
 import '../../../core/utils/network_exception_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import '../services/kkn_background_task_handler.dart';
 
 class KknLocationState {
   final Position? currentPosition;
@@ -136,6 +138,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   String? _currentTargetScheduleId;
   int _accumulatedSeconds = 0;
   DateTime? _zoneEntryTime;
+  bool _backgroundServiceStarted = false;
 
   static const _prefKeyAccumulated = 'kkn_accumulated_seconds';
   static const _prefKeyDate = 'kkn_accumulated_date';
@@ -262,6 +265,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     _trackingTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
       await _performLocationUpdate();
     });
+
+    // ═════════════════════════════════════════════════════════════════
+    // START BACKGROUND FOREGROUND SERVICE
+    // Agar GPS tetap jalan meski layar mati / user pindah app
+    // ═════════════════════════════════════════════════════════════════
+    _startBackgroundService();
   }
 
   /// Stop the tracking timer
@@ -271,7 +280,160 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     _zoneDurationTimer?.cancel();
     _zoneDurationTimer = null;
     NotificationEngine().cancelOngoingKKNNotification();
+    _stopBackgroundService();
     state = state.copyWith(isTracking: false);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // BACKGROUND FOREGROUND SERVICE INTEGRATION
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// Mulai foreground service untuk background GPS tracking
+  Future<void> _startBackgroundService() async {
+    if (_backgroundServiceStarted) return;
+    
+    final target = state.activeActivity;
+    if (target == null) return;
+    
+    try {
+      // Ambil API config dari environment
+      final prefs = await SharedPreferences.getInstance();
+      final apiBaseUrl = prefs.getString('api_base_url');
+      final authToken = prefs.getString('auth_token');
+      
+      final result = await startKknForegroundService(
+        targetData: target,
+        apiBaseUrl: apiBaseUrl,
+        authToken: authToken,
+      );
+      
+      if (result is ServiceRequestSuccess) {
+        _backgroundServiceStarted = true;
+        debugPrint('[KKN-Controller] Background service started successfully');
+        
+        // Listen untuk update dari background service
+        FlutterForegroundTask.addTaskDataCallback(_onBackgroundData);
+      }
+    } catch (e) {
+      debugPrint('[KKN-Controller] Failed to start background service: $e');
+      // Tidak fatal — tracking tetap berjalan di foreground via Timer
+    }
+  }
+
+  /// Hentikan foreground service
+  Future<void> _stopBackgroundService() async {
+    if (!_backgroundServiceStarted) return;
+    
+    try {
+      // Kirim pesan STOP ke background isolate
+      FlutterForegroundTask.sendDataToTask({'type': 'STOP'});
+      await stopKknForegroundService();
+      FlutterForegroundTask.removeTaskDataCallback(_onBackgroundData);
+      _backgroundServiceStarted = false;
+      debugPrint('[KKN-Controller] Background service stopped');
+    } catch (e) {
+      debugPrint('[KKN-Controller] Failed to stop background service: $e');
+    }
+  }
+
+  /// Callback untuk data dari background service
+  void _onBackgroundData(Object data) {
+    if (!mounted) return;
+    if (data is! Map) return;
+    
+    final type = data['type']?.toString();
+    
+    switch (type) {
+      case 'DURATION_UPDATE':
+        final totalSeconds = (data['totalSeconds'] as num?)?.toInt() ?? 0;
+        final isEligible = data['isEligible'] == true;
+        final isInside = data['inside'] == true;
+        final distance = (data['distance'] as num?)?.toDouble() ?? 999999.0;
+        final lat = (data['lat'] as num?)?.toDouble();
+        final lng = (data['lng'] as num?)?.toDouble();
+        
+        // Update accumulated seconds dari background
+        _accumulatedSeconds = totalSeconds;
+        
+        state = state.copyWith(
+          inZoneDurationSeconds: totalSeconds,
+          isEligibleForAttendance: isEligible,
+          isInsideRadius: isInside,
+          distanceToTarget: distance,
+          currentPosition: (lat != null && lng != null) 
+              ? Position(
+                  latitude: lat, longitude: lng,
+                  timestamp: DateTime.now(),
+                  accuracy: 0, altitude: 0, altitudeAccuracy: 0,
+                  heading: 0, headingAccuracy: 0, speed: 0, speedAccuracy: 0,
+                )
+              : null,
+        );
+        break;
+        
+      case 'LOCATION_UPDATE':
+        final lat = (data['lat'] as num?)?.toDouble();
+        final lng = (data['lng'] as num?)?.toDouble();
+        final isInside = data['inside'] == true;
+        final distance = (data['distance'] as num?)?.toDouble() ?? 999999.0;
+        
+        state = state.copyWith(
+          isInsideRadius: isInside,
+          distanceToTarget: distance,
+          currentPosition: (lat != null && lng != null)
+              ? Position(
+                  latitude: lat, longitude: lng,
+                  timestamp: DateTime.now(),
+                  accuracy: 0, altitude: 0, altitudeAccuracy: 0,
+                  heading: 0, headingAccuracy: 0, speed: 0, speedAccuracy: 0,
+                )
+              : null,
+        );
+        break;
+        
+      case 'GEOFENCE_STATUS':
+        final message = data['message']?.toString();
+        if (message != null) {
+          state = state.copyWith(
+            zoneResetWarning: message,
+            clearWarning: false,
+          );
+        }
+        break;
+        
+      case 'AUTO_STOP':
+        final reason = data['reason']?.toString() ?? 'Service dihentikan';
+        final totalSeconds = (data['totalSeconds'] as num?)?.toInt() ?? 0;
+        _accumulatedSeconds = totalSeconds;
+        _backgroundServiceStarted = false;
+        FlutterForegroundTask.removeTaskDataCallback(_onBackgroundData);
+        
+        // Jika durasi tidak cukup, kirim auto alpa
+        if (!state.isSuccessAttendance && totalSeconds < (state.targetDurationMinutes * 60)) {
+          _sendAutoAlpa();
+        }
+        
+        state = state.copyWith(
+          zoneResetWarning: reason,
+          clearWarning: false,
+          isTracking: false,
+        );
+        break;
+        
+      case 'ERROR':
+        final message = data['message']?.toString();
+        if (message != null) {
+          state = state.copyWith(error: message);
+        }
+        break;
+    }
+  }
+
+  /// Kirim notifikasi ke background service bahwa presensi berhasil
+  void notifyAttendanceSuccess() {
+    if (_backgroundServiceStarted) {
+      FlutterForegroundTask.sendDataToTask({'type': 'ATTENDANCE_SUCCESS'});
+    }
   }
 
   /// Force immediate location & target refresh on demand (Pull-to-refresh / Button / App Resume)
@@ -920,6 +1082,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           );
         }
         ref.invalidate(mahasiswaNotificationsProvider);
+        // Auto-stop background service setelah presensi berhasil
+        notifyAttendanceSuccess();
         return true;
       }
     } catch (e) {
@@ -932,6 +1096,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   void dispose() {
     _trackingTimer?.cancel();
     _zoneDurationTimer?.cancel();
+    if (_backgroundServiceStarted) {
+      FlutterForegroundTask.removeTaskDataCallback(_onBackgroundData);
+    }
     super.dispose();
   }
 }
