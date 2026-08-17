@@ -36,7 +36,6 @@ import {
   Table as TableIcon,
   LayoutGrid,
   CheckCircle2,
-  Users,
   Map as MapIcon,
   ChevronDown,
   Sparkles,
@@ -48,9 +47,10 @@ import {
 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { useAuthStore } from "../../store/useAuthStore";
 import { dplService, type ConfigTargets } from "../../services/dplService";
-import { ConfirmModal } from "../../components/common/ConfirmModal";
 import {
   KELURAHAN_GEODATA,
   createKknMhsIcon as createStudentIcon,
@@ -1438,33 +1438,6 @@ const MonitoringAbsen: React.FC = () => {
           </div>
         </div>
 
-        {/* Catatan untuk DPL Box */}
-        <div className="bg-blue-50/70 border border-blue-200/80 p-4 rounded-2xl flex items-start gap-3">
-          <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-            <Info size={18} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between">
-              <h4 className="text-xs font-black text-blue-950">Catatan untuk DPL</h4>
-              {isSuperUserOrDev && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setConfigFormData(configTargets);
-                    setIsConfigModalOpen(true);
-                  }}
-                  className="text-[10.5px] font-bold text-blue-700 hover:text-blue-900 hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <Pencil size={11} />
-                  <span>Ubah Panduan</span>
-                </button>
-              )}
-            </div>
-            <p className="text-xs text-blue-800/90 font-medium mt-0.5 leading-relaxed">
-              {configTargets.catatanDpl || "Pastikan mahasiswa hadir minimal 4 jam per hari di lokasi kegiatan. Verifikasi lokasi melalui GPS dan unduh berita acara sebagai bukti validasi."}
-            </p>
-          </div>
-        </div>
       </div>
 
       {/* Peta Interaktif Geofence & Lokasi GPS Mahasiswa (Dapat Ditutup / Dibuka) */}
@@ -2049,21 +2022,15 @@ const MonitoringAbsen: React.FC = () => {
             </div>
           )
         ) : (
-          <div className="text-center py-12 text-slate-400 text-xs flex flex-col items-center gap-2 bg-slate-50/60 rounded-2xl border border-dashed border-slate-200">
-            <Users size={28} className="text-slate-300" />
-            <p className="font-bold text-slate-600">
-              Tidak ada data presensi yang cocok dengan kriteria pencarian
-            </p>
-            {studentSearch && (
-              <button
-                type="button"
-                onClick={() => setStudentSearch("")}
-                className="text-[11px] font-bold text-emerald-700 underline cursor-pointer"
-              >
-                Reset kata kunci pencarian
-              </button>
-            )}
-          </div>
+          <EmptyTableState
+            entityName="Presensi Mahasiswa"
+            isSearch={!!(studentSearch || attendanceFilterTab !== "ALL")}
+            searchQuery={studentSearch}
+            onResetSearch={() => {
+              setStudentSearch("");
+              setAttendanceFilterTab("ALL");
+            }}
+          />
         )}
       </div>
 

@@ -23,7 +23,6 @@ import {
   CartesianGrid,
 } from "recharts";
 import {
-  Activity,
   Receipt,
   RefreshCw,
   Search,
@@ -43,6 +42,7 @@ import {
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 import PageHeader from "../../components/common/PageHeader";
 
 interface TransactionItem {
@@ -471,10 +471,12 @@ export const AktivitasMonitoring: React.FC = () => {
         </div>
 
         {filteredTransactions.length === 0 ? (
-          <div className="text-center py-12 text-slate-400 border border-dashed border-slate-200 rounded-3xl">
-            <Activity size={32} className="mx-auto text-slate-300 mb-2" />
-            <p className="text-xs font-bold text-slate-600">Tidak ada riwayat penyetoran yang sesuai kriteria.</p>
-          </div>
+          <EmptyTableState
+            entityName="Log Penyetoran Sampah"
+            isSearch={!!searchQuery}
+            searchQuery={searchQuery}
+            onResetSearch={() => setSearchQuery("")}
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">

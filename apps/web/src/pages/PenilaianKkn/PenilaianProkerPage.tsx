@@ -6,7 +6,6 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  FileSpreadsheet,
   Save,
   Search,
   Loader2,
@@ -15,6 +14,8 @@ import {
 import toast from "react-hot-toast";
 import { dplService, type ProgramKerjaItem } from "../../services/dplService";
 import api from "../../services/api";
+import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 
 export const PenilaianProkerPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -22,6 +23,10 @@ export const PenilaianProkerPage: React.FC = () => {
   const [kelompokList, setKelompokList] = useState<any[]>([]);
   const [selectedKelompokId, setSelectedKelompokId] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
 
   const [scoreMap, setScoreMap] = useState<Record<string, number>>({});
   const [evalMap, setEvalMap] = useState<Record<string, string>>({});
@@ -91,6 +96,13 @@ export const PenilaianProkerPage: React.FC = () => {
     return matchesSearch;
   });
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedKelompokId]);
+
+  const totalPages = Math.ceil(filteredProkers.length / itemsPerPage) || 1;
+  const paginatedProkers = filteredProkers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
       {/* Clean Flat Header */}
@@ -146,11 +158,15 @@ export const PenilaianProkerPage: React.FC = () => {
             <span className="text-xs font-semibold">Memuat penilaian program kerja...</span>
           </div>
         ) : filteredProkers.length === 0 ? (
-          <div className="p-12 text-center text-slate-500">
-            <FileSpreadsheet className="mx-auto text-slate-300" size={48} />
-            <h3 className="text-sm font-bold text-slate-700 mt-2">Tidak Ada Data Program Kerja</h3>
-            <p className="text-xs text-slate-400">Belum ada program kerja yang terdaftar di kelompok ini.</p>
-          </div>
+          <EmptyTableState
+            entityName="Program Kerja KKN"
+            isSearch={!!(searchQuery || selectedKelompokId !== "ALL")}
+            searchQuery={searchQuery}
+            onResetSearch={() => {
+              setSearchQuery("");
+              setSelectedKelompokId("ALL");
+            }}
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700 border-collapse">
@@ -166,13 +182,13 @@ export const PenilaianProkerPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {filteredProkers.map((p, idx) => {
+                {paginatedProkers.map((p, idx) => {
                   const isSaving = savingId === p.id;
 
                   return (
                     <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4 text-center font-bold text-slate-500">
-                        {p.nomor || idx + 1}
+                        {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
                       <td className="py-3.5 px-4">
                         <div className="font-bold text-slate-900">{p.kelompokName}</div>
@@ -253,6 +269,17 @@ export const PenilaianProkerPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+        )}
+        {filteredProkers.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredProkers.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+            itemsPerPageOptions={[10, 25, 50]}
+          />
         )}
       </div>
     </div>

@@ -10,6 +10,7 @@ import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 
 interface KategoriSampahProps {
   openAddModalSignal?: number;
@@ -237,9 +238,10 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
           {error}
         </div>
       ) : categories.length === 0 ? (
-        <div className="p-12 text-center text-slate-400 font-bold bg-white rounded-2xl border border-slate-200/80 shadow-2xs text-xs">
-          Belum ada data kategori. Klik "Tambah Kategori" di header atas untuk membuat kategori baru.
-        </div>
+        <EmptyTableState
+          entityName="Kategori Tempat Sampah"
+          description="Sistem belum memiliki data kategori sampah. Silakan tambahkan kategori baru."
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {categories.map((cat) => {

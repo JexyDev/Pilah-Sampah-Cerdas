@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { Search, Loader2, ChevronLeft, ChevronRight, Eye, Edit3 } from "lucide-react";
+import { Search, Loader2, Eye, Edit3 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
 import EditSurveiModal from "./EditSurveiModal";
+import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 
 interface DataSurveiKknProps {
   type?: "BASELINE" | "ENDLINE";
@@ -86,36 +88,6 @@ export default function DataSurveiKkn({ type: propType }: DataSurveiKknProps) {
     navigate(`/superUser/data-survei-kkn/${kelurahanId}`);
   };
 
-
-  const renderPagination = () => {
-    if (!meta || meta.totalPages <= 1) return null;
-
-    return (
-      <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
-        <p className="text-sm text-slate-500 font-medium">
-          Menampilkan baris {(meta.page - 1) * limit + 1} -{" "}
-          {Math.min(meta.page * limit, meta.total)} dari {meta.total} data
-        </p>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="p-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(meta.totalPages, p + 1))}
-            disabled={currentPage === meta.totalPages}
-            className="p-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-slate-50/50 pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
@@ -185,15 +157,13 @@ export default function DataSurveiKkn({ type: propType }: DataSurveiKknProps) {
                     </td>
                   </tr>
                 ) : surveys.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
-                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Search className="text-slate-400" size={24} />
-                      </div>
-                      <span className="text-slate-500 font-medium text-lg">Tidak ada data ditemukan</span>
-                      <p className="text-slate-400 mt-1">Coba gunakan kata kunci pencarian yang lain.</p>
-                    </td>
-                  </tr>
+                  <EmptyTableState
+                    colSpan={7}
+                    entityName={isEndline ? "Survei Endline" : "Survei Baseline"}
+                    isSearch={!!searchQuery}
+                    searchQuery={searchQuery}
+                    onResetSearch={() => setSearchQuery("")}
+                  />
                 ) : (
                   surveys.map((survey, index) => (
                     <tr key={survey.kelurahanId} className="hover:bg-slate-50/50 transition-colors group">
@@ -253,7 +223,15 @@ export default function DataSurveiKkn({ type: propType }: DataSurveiKknProps) {
               </tbody>
             </table>
           </div>
-          {renderPagination()}
+          {meta && meta.total > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={meta.totalPages || 1}
+              totalItems={meta.total}
+              itemsPerPage={limit}
+              onPageChange={(page) => setCurrentPage(page)}
+            />
+          )}
         </div>
       </div>
 

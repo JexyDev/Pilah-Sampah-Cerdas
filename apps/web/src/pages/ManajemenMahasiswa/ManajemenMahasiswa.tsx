@@ -10,8 +10,6 @@ import {
   Trash2,
   Search,
   GraduationCap,
-  ChevronLeft,
-  ChevronRight,
   AlertTriangle,
   MapPin,
   Eye,
@@ -19,6 +17,8 @@ import {
   Download,
   Filter
 } from "lucide-react";
+import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 import Sidebar from "../../components/layout/Sidebar/Sidebar";
 
 const ManajemenMahasiswa: React.FC = () => {
@@ -53,7 +53,7 @@ const ManajemenMahasiswa: React.FC = () => {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, _setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -376,11 +376,17 @@ const ManajemenMahasiswa: React.FC = () => {
                     </td>
                   </tr>
                 ) : paginatedMahasiswas.length === 0 ? (
-                  <tr>
-                    <td colSpan={10} className="py-12 text-center text-slate-400 font-semibold">
-                      Tidak ada data mahasiswa yang cocok dengan kriteria pencarian.
-                    </td>
-                  </tr>
+                  <EmptyTableState
+                    colSpan={10}
+                    entityName="Mahasiswa KKN"
+                    isSearch={!!(searchTerm || statusFilter !== "Semua" || kelompokFilter !== "Semua")}
+                    searchQuery={searchTerm}
+                    onResetSearch={() => {
+                      setSearchTerm("");
+                      setStatusFilter("Semua");
+                      setKelompokFilter("Semua");
+                    }}
+                  />
                 ) : (
                   paginatedMahasiswas.map((mhs, idx) => (
                     <tr key={mhs.id} className="hover:bg-slate-50/80 transition-colors">
@@ -478,33 +484,17 @@ const ManajemenMahasiswa: React.FC = () => {
               </tbody>
             </table>
           </div>
-
-          {/* Pagination */}
-          {!loading && totalPages > 1 && (
-            <div className="p-4 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-xs font-bold text-slate-500">
-                Halaman <span className="text-slate-900 font-black">{currentPage}</span> dari{" "}
-                <span className="text-slate-900 font-black">{totalPages}</span>
-              </p>
-
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-                >
-                  <ChevronLeft size={14} /> Sebelum
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-                >
-                  Lanjut <ChevronRight size={14} />
-                </button>
-              </div>
-            </div>
+          {/* Standard TrashCare Pagination */}
+          {!loading && filteredMahasiswas.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages || 1}
+              totalItems={filteredMahasiswas.length}
+              itemsPerPage={rowsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={setRowsPerPage}
+              itemsPerPageOptions={[10, 25, 50, 100]}
+            />
           )}
         </div>
 

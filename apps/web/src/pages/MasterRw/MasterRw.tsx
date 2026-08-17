@@ -25,6 +25,7 @@ import {
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { useAuthStore } from "../../store/useAuthStore";
 
 export interface RwItem {
@@ -636,52 +637,30 @@ const MasterRw: React.FC = () => {
                   );
                 })
               ) : (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400 font-bold text-xs">
-                    Data Rukun Warga tidak ditemukan.
-                  </td>
-                </tr>
+                <EmptyTableState
+                  colSpan={7}
+                  entityName="Rukun Warga"
+                  isSearch={!!searchTerm}
+                  searchQuery={searchTerm}
+                  onResetSearch={() => setSearchTerm("")}
+                />
               )}
             </tbody>
           </table>
         </div>
 
         {/* 5. Pagination Footer */}
-        <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-bold text-slate-500">
-          <div className="flex items-center gap-2">
-            <span>Tampilkan</span>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-slate-800 font-bold focus:outline-none cursor-pointer"
-            >
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-            </select>
-            <span>data per halaman</span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <span>
-              Menampilkan{" "}
-              <strong className="text-slate-800">
-                {filteredGroups.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}-
-                {Math.min(currentPage * itemsPerPage, filteredGroups.length)}
-              </strong>{" "}
-              dari <strong className="text-[#009966]">{filteredGroups.length} data</strong>
-            </span>
-
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={(page) => setCurrentPage(page)}
-            />
-          </div>
-        </div>
+        {filteredGroups.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredGroups.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+            itemsPerPageOptions={[10, 25, 50]}
+          />
+        )}
       </div>
 
       {/* MODAL TAMBAH / EDIT RW */}

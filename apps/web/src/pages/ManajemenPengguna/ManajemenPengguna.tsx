@@ -14,6 +14,7 @@ import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
 
 import { useSearchParams } from "react-router-dom";
 import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 
 /** Pemetaan enum peran ke label bahasa Indonesia baku */
 const ROLE_LABEL_MAP: Record<string, string> = {
@@ -1625,11 +1626,17 @@ const ManajemenPengguna: React.FC = () => {
                   </tr>
                 ))
               ) : (
-                <tr>
-                  <td colSpan={10} className="px-6 py-8 text-center text-slate-400 font-medium">
-                    Tidak ada data pengguna.
-                  </td>
-                </tr>
+                <EmptyTableState
+                  colSpan={10}
+                  entityName="Pengguna"
+                  isSearch={!!(searchQuery || selectedRole !== "ALL" || selectedStatus !== "ALL")}
+                  searchQuery={searchQuery}
+                  onResetSearch={() => {
+                    setSearchQuery("");
+                    setSelectedRole("ALL");
+                    setSelectedStatus("ALL");
+                  }}
+                />
               )}
             </tbody>
           </table>

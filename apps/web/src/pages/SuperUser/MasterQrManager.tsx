@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
 import { Badge } from "../../components/common/Badge";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { QrCode, AlertTriangle, PlayCircle, Download, RefreshCw, Trash2, Plus, Search, Filter } from "lucide-react";
 
 import { useAuthStore } from "../../store/useAuthStore";
@@ -36,6 +38,10 @@ export const MasterQrManager: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
 
   // Approvals & Navigation states
   const [activeTab, setActiveTab] = useState<"qrs" | "pending_petugas">("qrs");
@@ -91,9 +97,16 @@ export const MasterQrManager: React.FC = () => {
   };
 
   useEffect(() => {
+    setCurrentPage(1);
     fetchQrData();
     fetchFormMetadata();
   }, [searchQuery, statusFilter]);
+
+  const totalPages = Math.ceil(qrs.length / itemsPerPage) || 1;
+  const paginatedQrs = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return qrs.slice(start, start + itemsPerPage);
+  }, [qrs, currentPage, itemsPerPage]);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -400,14 +413,19 @@ export const MasterQrManager: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {qrs.length === 0 ? (
-                  <tr>
-                    <td colSpan={isReadOnly ? 4 : 6} className="px-6 py-12 text-center text-slate-400 font-medium">
-                      Tidak ada QR Code ditemukan
-                    </td>
-                  </tr>
+                {paginatedQrs.length === 0 ? (
+                  <EmptyTableState
+                    colSpan={isReadOnly ? 4 : 6}
+                    entityName="QR Code Tempat Sampah"
+                    isSearch={!!(searchQuery || statusFilter)}
+                    searchQuery={searchQuery}
+                    onResetSearch={() => {
+                      setSearchQuery("");
+                      setStatusFilter("");
+                    }}
+                  />
                 ) : (
-                  qrs.map((q) => {
+                  paginatedQrs.map((q) => {
                     const isBroken = q.status === "BROKEN";
                     const isInactive = q.status === "INACTIVE";
 
@@ -504,6 +522,17 @@ export const MasterQrManager: React.FC = () => {
               </tbody>
             </table>
           </div>
+          {qrs.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={qrs.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={setItemsPerPage}
+              itemsPerPageOptions={[10, 25, 50, 100]}
+            />
+          )}
         </div>
       )}
 
@@ -515,7 +544,10 @@ export const MasterQrManager: React.FC = () => {
           </div>
           <div className="p-4 overflow-x-auto">
             {pendingPetugas.length === 0 ? (
-              <p className="text-slate-500 text-sm p-4 text-center">Tidak ada pengajuan petugas residu baru.</p>
+              <EmptyTableState
+                entityName="Pengajuan Petugas Residu"
+                description="Tidak ada pengajuan verifikasi akun petugas residu baru saat ini."
+              />
             ) : (
               <table className="min-w-full divide-y divide-slate-100 text-sm text-left">
                 <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider">

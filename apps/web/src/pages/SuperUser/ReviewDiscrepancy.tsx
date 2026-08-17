@@ -10,6 +10,7 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
 import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 
 interface DiscrepancyLog {
@@ -346,11 +347,12 @@ export const ReviewDiscrepancy: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-200 text-gray-700">
                 {filteredLogs.length === 0 && !loading ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-gray-400">
-                      Tidak ada data diskrepansi sesuai pencarian/filter.
-                    </td>
-                  </tr>
+                  <EmptyTableState
+                    colSpan={5}
+                    entityName="Diskrepansi AI"
+                    isSearch={filterStatus !== "Semua"}
+                    onResetSearch={() => setFilterStatus("Semua")}
+                  />
                 ) : (
                   paginatedLogs.map((log) => (
                     <tr

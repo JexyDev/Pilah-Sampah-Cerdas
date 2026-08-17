@@ -23,6 +23,7 @@ import {
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { useAuthStore } from "../../store/useAuthStore";
 
 export interface KelurahanItem {
@@ -549,46 +550,30 @@ const MasterKelurahan: React.FC = () => {
                   );
                 })
               ) : (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400 font-bold text-xs">
-                    Tidak ada data kelurahan yang ditemukan.
-                  </td>
-                </tr>
+                <EmptyTableState
+                  colSpan={6}
+                  entityName="Kelurahan"
+                  isSearch={!!searchTerm}
+                  searchQuery={searchTerm}
+                  onResetSearch={() => setSearchTerm("")}
+                />
               )}
             </tbody>
           </table>
         </div>
 
         {/* Table Footer Pagination */}
-        <div className="px-5 py-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/50">
-          <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-            <span>Tampilkan</span>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="bg-white border border-slate-200 rounded-lg px-2 py-1 font-bold text-slate-700 text-xs focus:outline-none"
-            >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-            </select>
-            <span>data per halaman</span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="text-xs text-slate-500 font-medium">
-              Menampilkan <span className="font-bold text-slate-800">{filteredGroups.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}–{Math.min(currentPage * itemsPerPage, filteredGroups.length)}</span> dari <span className="font-bold text-[#009966]">{filteredGroups.length} data</span>
-            </div>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={(page) => setCurrentPage(page)}
-            />
-          </div>
-        </div>
+        {filteredGroups.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredGroups.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+            itemsPerPageOptions={[5, 10, 25, 50]}
+          />
+        )}
       </div>
 
       {/* 5. Modal Tambah Kelurahan */}

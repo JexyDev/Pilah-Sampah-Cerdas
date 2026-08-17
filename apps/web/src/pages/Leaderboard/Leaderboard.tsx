@@ -41,6 +41,7 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { BarChartRace } from "../../components/BarChartRace";
 import { AnalyticsOverviewBoard } from "../../components/analytics/AnalyticsOverviewBoard";
 import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 
 type SystemType = "system1" | "system2";
 type System1Tab = "citizens" | "rtrw" | "pengangkut" | "kelurahan" | "overview";
@@ -725,11 +726,13 @@ const Leaderboard: React.FC = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                       {paginatedData.length === 0 ? (
-                        <tr>
-                          <td colSpan={extraInfoHeader ? 5 : 4} className="py-16 text-center text-slate-400 font-bold">
-                            Tidak ada data peringkat yang ditemukan sesuai kriteria pencarian.
-                          </td>
-                        </tr>
+                        <EmptyTableState
+                          colSpan={extraInfoHeader ? 5 : 4}
+                          entityName="Peringkat Leaderboard"
+                          isSearch={!!searchTerm}
+                          searchQuery={searchTerm}
+                          onResetSearch={() => setSearchTerm("")}
+                        />
                       ) : (
                         paginatedData.map((u) => {
                           const isSelected = selectedItem?.id === u.id;

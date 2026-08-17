@@ -19,10 +19,12 @@ import {
   Wallet,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { dplService, type ProgramKerjaItem } from "../../services/dplService";
-import api from "../../services/api";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 
 // Google Drive Official Logo Icon Component
 const GoogleDriveIcon = () => (
@@ -53,6 +55,10 @@ export const ProgramKerjaKkn: React.FC = () => {
   const [sourceFilter, setSourceFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
 
   // Modal State for Add / Edit
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -308,6 +314,16 @@ export const ProgramKerjaKkn: React.FC = () => {
       return matchesSearch && matchesCategory && matchesSource && matchesStatus;
     });
   }, [prokerList, searchQuery, categoryFilter, sourceFilter, statusFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedKelompokId, categoryFilter, sourceFilter, statusFilter]);
+
+  const totalPages = Math.ceil(filteredProkers.length / itemsPerPage) || 1;
+  const paginatedProkers = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredProkers.slice(start, start + itemsPerPage);
+  }, [filteredProkers, currentPage, itemsPerPage]);
 
   // Metric KPI Computations
   const totalCount = prokerList.length;
@@ -609,13 +625,18 @@ export const ProgramKerjaKkn: React.FC = () => {
             <span className="text-xs font-semibold">Memuat rencana program kerja...</span>
           </div>
         ) : filteredProkers.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 space-y-2">
-            <FileSpreadsheet className="mx-auto text-slate-300" size={48} />
-            <h3 className="text-sm font-bold text-slate-700">Belum Ada Program Kerja</h3>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              Belum ada program kerja yang cocok dengan kriteria filter. Silakan klik tombol Tambah.
-            </p>
-          </div>
+          <EmptyTableState
+            entityName="Program Kerja KKN"
+            isSearch={!!(searchQuery || selectedKelompokId !== "ALL" || categoryFilter !== "ALL" || sourceFilter !== "ALL" || statusFilter !== "ALL")}
+            searchQuery={searchQuery}
+            onResetSearch={() => {
+              setSearchQuery("");
+              setSelectedKelompokId("ALL");
+              setCategoryFilter("ALL");
+              setSourceFilter("ALL");
+              setStatusFilter("ALL");
+            }}
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700 border-collapse">
@@ -633,13 +654,13 @@ export const ProgramKerjaKkn: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {filteredProkers.map((p, idx) => {
+                {paginatedProkers.map((p, idx) => {
                   const driveUrl = p.linkGoogleDrive || "https://drive.google.com";
 
                   return (
                     <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4 text-center font-bold text-slate-400">
-                        {p.nomor || idx + 1}
+                        {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         {renderKategoriBadge(p.kategori)}
@@ -703,6 +724,17 @@ export const ProgramKerjaKkn: React.FC = () => {
               </tbody>
             </table>
           </div>
+        )}
+        {filteredProkers.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredProkers.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+            itemsPerPageOptions={[10, 25, 50, 100]}
+          />
         )}
       </div>
 

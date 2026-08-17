@@ -22,13 +22,13 @@ import {
   Lock,
   Phone,
   Smartphone,
-  ChevronLeft,
-  ChevronRight,
   CheckCheck
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
+import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 
 interface VpsHealthData {
   timestamp: string;
@@ -543,11 +543,17 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                   </td>
                 </tr>
               ) : paginatedDataset.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="py-12 text-center text-slate-400 font-bold">
-                    Tidak ada data hasil klasifikasi yang sesuai dengan kriteria filter.
-                  </td>
-                </tr>
+                <EmptyTableState
+                  colSpan={10}
+                  entityName="Dataset Klasifikasi AI"
+                  isSearch={!!(searchTerm || selectedCategory !== "SEMUA" || selectedRating !== "SEMUA")}
+                  searchQuery={searchTerm}
+                  onResetSearch={() => {
+                    setSearchTerm("");
+                    setSelectedCategory("SEMUA");
+                    setSelectedRating("SEMUA");
+                  }}
+                />
               ) : (
                 paginatedDataset.map((item, index) => (
                   <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
@@ -705,63 +711,18 @@ const MasterDatasetKlasifikasi: React.FC = () => {
           </table>
         </div>
 
-        {/* Pagination Footer (Exactly matching reference screenshot) */}
-        <div className="p-5 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-bold text-slate-500 bg-white">
-          <div className="flex items-center gap-2">
-            <span>Tampilkan</span>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
-            >
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-            </select>
-            <span>data per halaman</span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <span className="text-slate-500">
-              Menampilkan <span className="font-extrabold text-slate-800">{filteredDataset.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}–{Math.min(currentPage * itemsPerPage, filteredDataset.length)}</span> dari <span className="font-extrabold text-[#009966]">{filteredDataset.length} data</span>
-            </span>
-
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="w-8 h-8 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-bold disabled:opacity-30 cursor-pointer flex items-center justify-center"
-              >
-                <ChevronLeft size={16} />
-              </button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`w-8 h-8 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center cursor-pointer ${
-                    currentPage === page
-                      ? "bg-[#009966] text-white shadow-xs"
-                      : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="w-8 h-8 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-bold disabled:opacity-30 cursor-pointer flex items-center justify-center"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
+        {/* Standardized TrashCare Pagination Footer */}
+        {filteredDataset.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredDataset.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+            itemsPerPageOptions={[10, 25, 50, 100]}
+          />
+        )}
       </div>
 
       {/* INSPECTION DETAIL MODAL (READ-ONLY AUDIT) */}

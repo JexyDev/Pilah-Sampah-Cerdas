@@ -6,7 +6,6 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  UserCheck,
   Search,
   Save,
   Loader2,
@@ -16,6 +15,8 @@ import {
 import toast from "react-hot-toast";
 import { dplService, type StudentDetail } from "../../services/dplService";
 import api from "../../services/api";
+import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 
 export const PenilaianMahasiswaPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -24,6 +25,10 @@ export const PenilaianMahasiswaPage: React.FC = () => {
   const [selectedKelompokId, setSelectedKelompokId] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+
   // Local score & note state map
   const [scoreMap, setScoreMap] = useState<Record<string, number>>({});
   const [noteMap, setNoteMap] = useState<Record<string, string>>({});
@@ -94,6 +99,13 @@ export const PenilaianMahasiswaPage: React.FC = () => {
     return matchesSearch;
   });
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedKelompokId]);
+
+  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage) || 1;
+  const paginatedStudents = filteredStudents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
       {/* Clean Flat Header */}
@@ -149,11 +161,15 @@ export const PenilaianMahasiswaPage: React.FC = () => {
             <span className="text-xs font-semibold">Memuat daftar mahasiswa...</span>
           </div>
         ) : filteredStudents.length === 0 ? (
-          <div className="p-12 text-center text-slate-500">
-            <UserCheck className="mx-auto text-slate-300" size={48} />
-            <h3 className="text-sm font-bold text-slate-700 mt-2">Tidak Ada Data Mahasiswa</h3>
-            <p className="text-xs text-slate-400">Silakan sesuaikan kelompok bimbingan atau kata kunci pencarian.</p>
-          </div>
+          <EmptyTableState
+            entityName="Penilaian Mahasiswa"
+            isSearch={!!(searchQuery || selectedKelompokId !== "ALL")}
+            searchQuery={searchQuery}
+            onResetSearch={() => {
+              setSearchQuery("");
+              setSelectedKelompokId("ALL");
+            }}
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700 border-collapse">
@@ -169,13 +185,13 @@ export const PenilaianMahasiswaPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {filteredStudents.map((st, idx) => {
+                {paginatedStudents.map((st, idx) => {
                   const isSaving = savingStudentId === st.id;
 
                   return (
                     <tr key={st.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4 text-center font-bold text-slate-500">
-                        {idx + 1}
+                        {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
                       <td className="py-3.5 px-4">
                         <div className="font-bold text-slate-900 flex items-center gap-1.5">
@@ -255,6 +271,17 @@ export const PenilaianMahasiswaPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+        )}
+        {filteredStudents.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredStudents.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+            itemsPerPageOptions={[10, 25, 50]}
+          />
         )}
       </div>
     </div>

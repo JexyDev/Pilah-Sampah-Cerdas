@@ -13,6 +13,7 @@ import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import KategoriSampah from "../KategoriSampah/KategoriSampah";
 import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, Tooltip, useMap, useMapEvents } from "react-leaflet";
@@ -1550,39 +1551,16 @@ const ManajemenTempatSampah: React.FC = () => {
                 );
               })
             ) : (
-              <tr>
-                <td colSpan={9} className="px-6 py-16 text-center">
-                  <div className="flex flex-col items-center justify-center gap-3">
-                    <div className="w-16 h-16 rounded-3xl bg-slate-50 text-slate-300 flex items-center justify-center border border-slate-200/80 shadow-xs">
-                      <Trash2 size={32} className="stroke-[1.5]" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-extrabold text-slate-800">
-                        {searchInput || statusFilter
-                          ? "Tidak Ada Tempat Sampah Sesuai Filter"
-                          : "Belum Ada Data Tempat Sampah"}
-                      </h4>
-                      <p className="text-xs text-slate-400 font-medium mt-1 max-w-sm mx-auto leading-relaxed">
-                        {searchInput || statusFilter
-                          ? `Tidak ditemukan data tempat sampah yang sesuai dengan kriteria filter.`
-                          : "Sistem belum memiliki tempat sampah fisik yang terdaftar. Pembuatan Master QR Code dilakukan oleh Developer / Super Admin di menu Master QR Code."}
-                      </p>
-                    </div>
-                    {(searchInput || statusFilter) && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSearchInput("");
-                          setStatusFilter("");
-                        }}
-                        className="mt-2 px-4 py-2 bg-[#009966]/10 hover:bg-[#009966]/20 text-[#009966] font-extrabold rounded-xl text-xs border border-[#009966]/20 transition-all cursor-pointer"
-                      >
-                        Reset Pencarian & Filter
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
+              <EmptyTableState
+                colSpan={9}
+                entityName="Tempat Sampah"
+                isSearch={!!(searchInput || statusFilter)}
+                searchQuery={searchInput}
+                onResetSearch={() => {
+                  setSearchInput("");
+                  setStatusFilter("");
+                }}
+              />
             )}
           </tbody>
         </table>

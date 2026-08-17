@@ -9,6 +9,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
 import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 import {
   FileText,
   Search,
@@ -521,11 +522,13 @@ export const AuditTrailList: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                     {paginatedLogs.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="py-16 text-center text-slate-400 font-bold">
-                          Tidak ada catatan log aktivitas yang ditemukan sesuai kriteria penyaringan.
-                        </td>
-                      </tr>
+                      <EmptyTableState
+                        colSpan={5}
+                        entityName="Log Aktivitas"
+                        isSearch={!!(searchFilter || actionFilter || categoryTab !== "SEMUA")}
+                        searchQuery={searchFilter}
+                        onResetSearch={handleResetFilters}
+                      />
                     ) : (
                       paginatedLogs.map((l) => {
                         const meta = getActionMeta(l.action);

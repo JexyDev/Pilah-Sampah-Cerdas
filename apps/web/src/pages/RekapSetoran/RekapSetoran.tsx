@@ -30,6 +30,7 @@ import {
   Layers,
 } from "lucide-react";
 import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
@@ -380,20 +381,11 @@ export default function RekapSetoran() {
             <p className="text-xs font-bold">Memuat data rekapitulasi setoran...</p>
           </div>
         ) : currentItems.length === 0 ? (
-          <div className="text-center py-16 text-slate-400 border border-dashed border-slate-200 rounded-3xl space-y-3">
-            <Receipt size={36} className="mx-auto text-slate-300" />
-            <p className="text-xs font-bold text-slate-600">
-              Tidak ada data setoran yang cocok dengan pencarian / filter.
-            </p>
-            {(filterRw || filterKategori !== "ALL" || filterPeriode !== "ALL") && (
-              <button
-                onClick={resetFilters}
-                className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-bold border border-emerald-200 hover:bg-emerald-100 transition inline-flex items-center gap-1.5 cursor-pointer"
-              >
-                <RotateCcw size={13} /> Reset Filter
-              </button>
-            )}
-          </div>
+          <EmptyTableState
+            entityName="Setoran Sampah"
+            isSearch={!!(filterRw || filterKategori !== "ALL" || filterPeriode !== "ALL")}
+            onResetSearch={resetFilters}
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">

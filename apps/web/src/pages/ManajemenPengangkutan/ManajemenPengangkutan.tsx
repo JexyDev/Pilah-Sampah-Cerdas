@@ -15,6 +15,7 @@ import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import showToast from "../../utils/showToast";
 import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import PageHeader from "../../components/common/PageHeader";
 import SegmentedTabs from "../../components/common/SegmentedTabs";
@@ -634,20 +635,12 @@ export const ManajemenPengangkutan: React.FC = () => {
                 <p className="text-xs font-bold">Memuat tugas pengangkutan...</p>
               </div>
             ) : filteredTasks.length === 0 ? (
-              <div className="text-center py-16 text-slate-400 border border-dashed border-slate-200 rounded-3xl space-y-3">
-                <Truck size={36} className="mx-auto text-slate-300" />
-                <p className="text-xs font-bold text-slate-600">
-                  {searchQuery ? "Tidak ada tugas yang sesuai dengan pencarian." : "Belum ada tugas pengangkutan sampah residu."}
-                </p>
-                {(statusFilter || rwFilter || searchQuery) && (
-                  <button
-                    onClick={resetFilters}
-                    className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-bold border border-emerald-200 hover:bg-emerald-100 transition inline-flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <RotateCcw size={13} /> Reset Filter
-                  </button>
-                )}
-              </div>
+              <EmptyTableState
+                entityName="Penugasan Pengangkutan"
+                isSearch={!!(statusFilter || rwFilter || searchQuery)}
+                searchQuery={searchQuery}
+                onResetSearch={resetFilters}
+              />
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
@@ -799,12 +792,12 @@ export const ManajemenPengangkutan: React.FC = () => {
               <p className="text-xs font-bold">Memuat pengajuan pengosongan...</p>
             </div>
           ) : filteredRequests.length === 0 ? (
-            <div className="text-center py-16 text-slate-400 border border-dashed border-slate-200 rounded-3xl space-y-2">
-              <Truck size={36} className="mx-auto text-slate-300" />
-              <p className="text-xs font-bold text-slate-600">
-                {searchQuery ? "Tidak ada pengajuan yang sesuai pencarian." : "Belum ada pengajuan pengosongan tempat sampah dari warga."}
-              </p>
-            </div>
+            <EmptyTableState
+              entityName="Pengajuan Pengosongan Tempat Sampah"
+              isSearch={!!searchQuery}
+              searchQuery={searchQuery}
+              onResetSearch={() => setSearchQuery("")}
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">

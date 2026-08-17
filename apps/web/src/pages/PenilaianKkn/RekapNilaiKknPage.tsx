@@ -8,12 +8,13 @@ import React, { useState, useEffect } from "react";
 import {
   Download,
   Search,
-  Loader2,
-  GraduationCap
+  Loader2
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { dplService, type RekapNilaiResponse } from "../../services/dplService";
 import api from "../../services/api";
+import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 
 export const RekapNilaiKknPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -25,6 +26,10 @@ export const RekapNilaiKknPage: React.FC = () => {
   const [kelompokList, setKelompokList] = useState<any[]>([]);
   const [selectedKelompokId, setSelectedKelompokId] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
 
   const fetchData = async () => {
     setLoading(true);
@@ -57,6 +62,13 @@ export const RekapNilaiKknPage: React.FC = () => {
       (s.kelompokName || "").toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedKelompokId]);
+
+  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage) || 1;
+  const paginatedStudents = filteredStudents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
 
   const handleExportCsv = () => {
@@ -181,11 +193,15 @@ export const RekapNilaiKknPage: React.FC = () => {
             <span className="text-xs font-semibold">Menghitung rekapitulasi nilai akhir...</span>
           </div>
         ) : filteredStudents.length === 0 ? (
-          <div className="p-12 text-center text-slate-500">
-            <GraduationCap className="mx-auto text-slate-300" size={48} />
-            <h3 className="text-sm font-bold text-slate-700 mt-2">Tidak Ada Data Nilai</h3>
-            <p className="text-xs text-slate-400">Belum ada mahasiswa yang dinilai atau sesuai filter.</p>
-          </div>
+          <EmptyTableState
+            entityName="Rekapitulasi Nilai KKN"
+            isSearch={!!(searchQuery || selectedKelompokId !== "ALL")}
+            searchQuery={searchQuery}
+            onResetSearch={() => {
+              setSearchQuery("");
+              setSelectedKelompokId("ALL");
+            }}
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700 border-collapse">
@@ -204,7 +220,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {filteredStudents.map((st, idx) => {
+                {paginatedStudents.map((st, idx) => {
                   let letterColor = "text-slate-600 bg-slate-100";
                   if (st.hurufMutu === "A") letterColor = "text-emerald-700 bg-emerald-50 border border-emerald-200 font-black";
                   else if (st.hurufMutu === "B") letterColor = "text-blue-700 bg-blue-50 border border-blue-200 font-black";
@@ -214,7 +230,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                   return (
                     <tr key={st.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4 text-center font-bold text-slate-500">
-                        {idx + 1}
+                        {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
                       <td className="py-3.5 px-4">
                         <div className="font-bold text-slate-900 flex items-center gap-1.5">
@@ -269,6 +285,17 @@ export const RekapNilaiKknPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+        )}
+        {filteredStudents.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredStudents.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+            itemsPerPageOptions={[10, 25, 50]}
+          />
         )}
       </div>
     </div>

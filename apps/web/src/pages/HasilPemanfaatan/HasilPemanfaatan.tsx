@@ -25,6 +25,7 @@ import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import PageHeader from "../../components/common/PageHeader";
 
@@ -633,11 +634,11 @@ export const HasilPemanfaatan: React.FC = () => {
                   ))}
 
                   {paginatedPrograms.length === 0 && (
-                    <tr>
-                      <td colSpan={9} className="p-12 text-center text-slate-400 italic">
-                        Belum ada data produk hasil pemanfaatan sampah yang terdaftar.
-                      </td>
-                    </tr>
+                    <EmptyTableState
+                      colSpan={9}
+                      entityName="Produk Hasil Pemanfaatan"
+                      isSearch={false}
+                    />
                   )}
                 </tbody>
               </table>
@@ -798,27 +799,16 @@ export const HasilPemanfaatan: React.FC = () => {
               <p className="text-xs font-bold text-slate-500">Memuat data kritik &amp; saran dari database...</p>
             </div>
           ) : paginatedItems.length === 0 ? (
-            <div className="bg-white p-12 rounded-3xl border border-slate-200/90 shadow-2xs text-center flex flex-col items-center justify-center gap-3">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-[#009966] flex items-center justify-center border border-emerald-100">
-                <MessageSquare size={28} />
-              </div>
-              <div>
-                <h4 className="font-extrabold text-slate-800 text-sm">Tidak Ada Kritik &amp; Saran</h4>
-                <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 font-medium">
-                  Belum ada entri kritik &amp; saran pemanfaatan sampah yang sesuai kriteria pencarian saat ini.
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setStatusFilter("ALL");
-                  setKategoriFilter("ALL");
-                }}
-                className="mt-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
-              >
-                Reset Filter
-              </button>
-            </div>
+            <EmptyTableState
+              entityName="Aspirasi & Evaluasi Warga"
+              isSearch={!!(searchQuery || statusFilter !== "ALL" || kategoriFilter !== "ALL")}
+              searchQuery={searchQuery}
+              onResetSearch={() => {
+                setSearchQuery("");
+                setStatusFilter("ALL");
+                setKategoriFilter("ALL");
+              }}
+            />
           ) : (
             <div className="space-y-4">
               {paginatedItems.map((item) => (
