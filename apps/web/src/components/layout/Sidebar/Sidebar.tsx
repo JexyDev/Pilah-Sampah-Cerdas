@@ -472,11 +472,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           type: "group",
           label: "Penilaian KKN",
           icon: Award,
-          allowed: ["DEVELOPER"] as UserRole[],
+          allowed: ["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "RW", "SUPER_USER"] as UserRole[],
           children: [
-            { to: "/penilaian-kkn/mahasiswa", label: "Penilaian Mahasiswa", allowed: ["DEVELOPER"] as UserRole[] },
-            { to: "/penilaian-kkn/program-kerja", label: "Penilaian Program Kerja", allowed: ["DEVELOPER"] as UserRole[] },
-            { to: "/penilaian-kkn/rekap", label: "Rekap & Lembar Nilai", allowed: ["DEVELOPER"] as UserRole[] },
+            { to: "/penilaian-kkn/mahasiswa", label: "Penilaian Mahasiswa", allowed: ["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "RW", "SUPER_USER"] as UserRole[] },
+            { to: "/penilaian-kkn/program-kerja", label: "Penilaian Program Kerja", allowed: ["DEVELOPER", "DPL", "DOSEN_PEMBIMBING"] as UserRole[] },
+            { to: "/penilaian-kkn/rekap", label: "Rekap & Lembar Nilai", allowed: ["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "SUPER_USER"] as UserRole[] },
           ],
         },
         {

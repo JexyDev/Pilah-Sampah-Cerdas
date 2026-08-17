@@ -76,9 +76,9 @@ import DownloadPage from "../pages/Download/DownloadPage";
 import EvaluasiDampakKkn from "../pages/EvaluasiDampak/EvaluasiDampakKkn";
 import PemantauanDanRekapitulasi from "../pages/PemantauanDanRekapitulasi/PemantauanDanRekapitulasi";
 import ProgramKerjaKkn from "../pages/ProgramKerjaKkn/ProgramKerjaKkn";
-import PenilaianMahasiswaPage from "../pages/PenilaianKkn/PenilaianMahasiswaPage";
 import PenilaianProkerPage from "../pages/PenilaianKkn/PenilaianProkerPage";
 import RekapNilaiKknPage from "../pages/PenilaianKkn/RekapNilaiKknPage";
+import PenilaianKknMahasiswaPage from "../pages/PenilaianKkn/PenilaianKknMahasiswaPage";
 import MasterPanduanPage from "../pages/MasterData/MasterPanduanPage";
 import MasterKegiatanSampahPage from "../pages/MasterData/MasterKegiatanSampahPage";
 
@@ -473,8 +473,8 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/penilaian-kkn/mahasiswa"
           element={
-            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
-              <PenilaianMahasiswaPage />
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "RW"]}>
+              <PenilaianKknMahasiswaPage />
             </ProtectedRoute>
           }
         />

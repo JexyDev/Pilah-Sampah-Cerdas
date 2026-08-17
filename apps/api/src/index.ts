@@ -45,6 +45,7 @@ import evaluasiDampakRouter from "./routes/evaluasiDampakRoutes.js";
 import datasetKlasifikasiRouter from "./routes/datasetKlasifikasiRoutes.js";
 import panduanRouter from "./routes/panduanRoutes.js";
 import masterKegiatanRouter from "./routes/masterKegiatanRoutes.js";
+import penilaianKknRouter from "./routes/penilaianKknRoutes.js";
 
 import { setupSwagger } from "./swagger.js";
 import { readOnlyGuard } from "./middlewares/readOnlyGuard.js";
@@ -129,6 +130,7 @@ app.use("/api/v1/evaluasi-dampak", evaluasiDampakRouter);
 app.use("/api/v1", datasetKlasifikasiRouter);
 app.use("/api/v1/panduan", panduanRouter);
 app.use("/api/v1/master-kegiatan", masterKegiatanRouter);
+app.use("/api/v1/penilaian-kkn", penilaianKknRouter);
 
 
 // Master API Spec Alias Mounts (Compatibility for mobile client without /v1 prefix)
