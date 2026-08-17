@@ -8,6 +8,7 @@ import '../../../data/services/local_notification_cache_service.dart';
 import '../../mahasiswa/controllers/mahasiswa_notifikasi_controller.dart';
 import '../../petugas_pemilahan/controllers/petugas_pemilahan_notifikasi_controller.dart';
 import '../../../data/services/firebase_notification_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final Set<String> _shownNotifIds = {};
 
@@ -107,15 +108,26 @@ final notificationsProvider =
   try {
     final pointRepo = ref.read(wasteLogRepositoryProvider);
     final pointHistory = await pointRepo.getPointHistoryByUser(user.id);
+    
+    final prefs = await SharedPreferences.getInstance();
+    final readList = prefs.getStringList('read_notifs_${user.id}_${user.role.name}') ?? [];
+    final readSet = readList.toSet();
+    final markAllTimestamp = prefs.getInt('mark_all_notifs_${user.id}_${user.role.name}') ?? 0;
+    
     for (final ph in pointHistory) {
       if (ph.points > 0) {
+        final notifId = 'point_${ph.id}';
+        final isRead = readSet.contains(notifId) || 
+            ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
+            LocalNotificationCacheService().isRead(user.id, user.role.name, notifId);
+        
         list.add(NotificationEntity(
-          id: 'point_${ph.id}',
+          id: notifId,
           type: 'POIN',
           title: 'Poin Bertambah!',
           desc: ph.description.isNotEmpty ? ph.description : 'Anda mendapatkan +${ph.points} poin.',
-          isRead: false,
-          time: ph.createdAt.toIso8601String().substring(0, 16).replaceAll('T', ' '),
+          isRead: isRead,
+          time: ph.createdAt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
           icon: 'star',
         ));
       }
@@ -196,6 +208,14 @@ class MarkReadNotifier extends StateNotifier<MarkReadState> {
     if (user != null) {
       LocalNotificationCacheService().markAsRead(user.id, user.role.name, id);
       await FirebaseNotificationService().markAsRead(user.id, user.role.name, id);
+      
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'read_notifs_${user.id}_${user.role.name}';
+      final readList = prefs.getStringList(key) ?? [];
+      if (!readList.contains(id)) {
+        readList.add(id);
+        await prefs.setStringList(key, readList);
+      }
     }
     try {
       await _repo.markAsRead(id);
@@ -217,6 +237,10 @@ class MarkReadNotifier extends StateNotifier<MarkReadState> {
     if (user != null) {
       LocalNotificationCacheService().markAllAsRead(user.id, user.role.name);
       await FirebaseNotificationService().markAllAsRead(user.id, user.role.name);
+      
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'mark_all_notifs_${user.id}_${user.role.name}';
+      await prefs.setInt(key, DateTime.now().millisecondsSinceEpoch);
     }
     try {
       await _repo.markAllAsRead();

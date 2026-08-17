@@ -781,11 +781,14 @@ class ApiAuthRepository implements AuthRepository {
       }
     }
 
-    // 4. Coba dari kelompokKkn (struktur mahasiswa KKN)
-    if ((kelurahan.isEmpty || rw.isEmpty) && userMap['kelompokKkn'] is Map) {
-      final kkn = userMap['kelompokKkn'] as Map<String, dynamic>;
-      if (kelurahan.isEmpty) kelurahan = kkn['kelurahan']?.toString() ?? '';
-      if (rw.isEmpty) rw = kkn['rw']?.toString() ?? '';
+    // 4. Coba dari kelompokKkn / kelompok_kkn (struktur mahasiswa KKN)
+    if (kelurahan.isEmpty || rw.isEmpty) {
+      final kknMap = userMap['kelompokKkn'] ?? userMap['kelompok_kkn'];
+      if (kknMap is Map) {
+        final kkn = kknMap as Map<String, dynamic>;
+        if (kelurahan.isEmpty) kelurahan = kkn['kelurahan']?.toString() ?? '';
+        if (rw.isEmpty) rw = kkn['rw']?.toString() ?? '';
+      }
     }
 
     // 5. Coba dari profile nested
@@ -861,14 +864,23 @@ class ApiAuthRepository implements AuthRepository {
     }
 
     // 8. Fallback: parse alamat hanya jika field wilayah MASIH kosong setelah cek DB
-    if ((provinsi.isEmpty || kota.isEmpty) && fullAddress.isNotEmpty && fullAddress.contains(',')) {
-      final parts = fullAddress.split(',').map((e) => e.trim()).toList();
-      if (parts.length >= 3) {
-        if (provinsi.isEmpty) provinsi = parts.last;
-        if (kota.isEmpty) kota = parts[parts.length - 2];
-        if (fetchedKecamatan.isEmpty && parts.length >= 4) {
-          fetchedKecamatan = parts[parts.length - 3]
-              .replaceAll(RegExp(r'^Kec\.\s*', caseSensitive: false), '');
+    if (fullAddress.isNotEmpty) {
+      if (rw.isEmpty && fullAddress.toLowerCase().contains('rw')) {
+        final rwMatch = RegExp(r'rw\s*(\d+)', caseSensitive: false).firstMatch(fullAddress);
+        if (rwMatch != null) {
+          rw = rwMatch.group(1)!;
+        }
+      }
+      
+      if ((provinsi.isEmpty || kota.isEmpty) && fullAddress.contains(',')) {
+        final parts = fullAddress.split(',').map((e) => e.trim()).toList();
+        if (parts.length >= 3) {
+          if (provinsi.isEmpty) provinsi = parts.last;
+          if (kota.isEmpty) kota = parts[parts.length - 2];
+          if (fetchedKecamatan.isEmpty && parts.length >= 4) {
+            fetchedKecamatan = parts[parts.length - 3]
+                .replaceAll(RegExp(r'^Kec\.\s*', caseSensitive: false), '');
+          }
         }
       }
     }

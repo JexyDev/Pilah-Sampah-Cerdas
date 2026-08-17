@@ -163,7 +163,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
     final nim = (user?.nim != null && user!.nim.trim().isNotEmpty)
         ? user.nim
         : (dashboard != null && dashboard.nim.isNotEmpty ? dashboard.nim : '-');
-    final jurusan = (user?.jurusan != null && user!.jurusan.trim().isNotEmpty)
+    String jurusanRaw = (user?.jurusan != null && user!.jurusan.trim().isNotEmpty)
         ? user.jurusan
         : (user?.prodi != null && user!.prodi.trim().isNotEmpty
             ? user.prodi
@@ -171,6 +171,12 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
     final kelurahan = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : '-';
     final rw = user?.rw.isNotEmpty == true ? user!.rw : '-';
     final jenjang = user?.jenjangPendidikan.isNotEmpty == true ? user!.jenjangPendidikan : '-';
+    
+    // Hindari duplikasi S1 - S1 Sistem Informasi
+    if (jenjang != '-' && jurusanRaw.startsWith('$jenjang ')) {
+      jurusanRaw = jurusanRaw.substring(jenjang.length + 1).trim();
+    }
+    final jurusan = jurusanRaw;
     final fotoUrl = user?.fotoProfil;
 
     return SliverAppBar(
@@ -621,7 +627,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
                 icon: Icons.rule_rounded,
                 title: 'Pengajuan Izin',
                 subtitle: 'Izin/Sakit DPL',
-                gradientColors: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)], 
+                gradientColors: const [AppColors.primaryBlueLight, AppColors.primaryBlue],
                 onTap: () => Navigator.pushNamed(context, AppRoutes.pengajuanIzin),
               ),
             ),

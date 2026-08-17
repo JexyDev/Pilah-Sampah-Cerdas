@@ -5,6 +5,7 @@ import '../../auth/controllers/auth_controller.dart';
 
 import '../../../data/services/local_notification_cache_service.dart';
 import '../../../data/services/firebase_notification_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final Set<String> _mhsShownNotifIds = {};
 
@@ -86,18 +87,28 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     list = [];
   }
 
-  // Tambahkan riwayat poin (PointHistory) agar tampil di Notification Page
+  final prefs = await SharedPreferences.getInstance();
+  final readList = prefs.getStringList('read_notifs_${userId}_$role') ?? [];
+  final readSet = readList.toSet();
+  final markAllTimestamp = prefs.getInt('mark_all_notifs_${userId}_$role') ?? 0;
+
   try {
     final pointRepo = ref.read(wasteLogRepositoryProvider);
     final pointHistory = await pointRepo.getPointHistoryByUser(userId);
+    
     for (final ph in pointHistory) {
       if (ph.points > 0) {
+        final notifId = 'point_${ph.id}';
+        final isRead = readSet.contains(notifId) || 
+            ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
+            LocalNotificationCacheService().isRead(userId, role, notifId, ph.createdAt);
+            
         list.add(NotificationEntity(
-          id: 'point_${ph.id}',
+          id: notifId,
           type: 'POIN_KKN',
           title: 'Poin KKN Bertambah!',
           desc: ph.description.isNotEmpty ? ph.description : 'Anda mendapatkan +${ph.points} poin.',
-          isRead: LocalNotificationCacheService().isRead(userId, role, 'point_${ph.id}', ph.createdAt),
+          isRead: isRead,
           time: ph.createdAt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
           icon: 'star',
         ));
@@ -117,12 +128,17 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
         final timestamp = izin['reviewedAt']?.toString() ?? izin['createdAt']?.toString() ?? DateTime.now().toIso8601String();
         final dt = DateTime.tryParse(timestamp) ?? DateTime.now();
         
+        final notifId = 'izin_${izin['id']}';
+        final isRead = readSet.contains(notifId) || 
+            dt.millisecondsSinceEpoch <= markAllTimestamp ||
+            LocalNotificationCacheService().isRead(userId, role, notifId, dt);
+            
         list.add(NotificationEntity(
-          id: 'izin_${izin['id']}',
+          id: notifId,
           type: 'IZIN',
           title: isApproved ? 'Pengajuan $kategori Disetujui' : 'Pengajuan $kategori Ditolak',
           desc: isApproved ? 'DPL telah menyetujui pengajuan Anda.' : 'DPL menolak pengajuan Anda. ${izin['rejectionReason'] ?? ''}',
-          isRead: LocalNotificationCacheService().isRead(userId, role, 'izin_${izin['id']}', dt),
+          isRead: isRead,
           time: dt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
           icon: isApproved ? 'check_circle' : 'cancel',
         ));

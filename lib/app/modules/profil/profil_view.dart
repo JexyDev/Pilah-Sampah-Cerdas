@@ -242,7 +242,9 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                         _InfoTile(
                           Icons.map_rounded,
                           'Kecamatan',
-                          user?.kecamatan != null && user!.kecamatan.isNotEmpty ? user.kecamatan : '-',
+                          user?.kecamatan != null && user!.kecamatan.isNotEmpty 
+                              ? user.kecamatan.replaceAll(RegExp(r'^(?:Kec\.|Kecamatan)\s+', caseSensitive: false), '').trim()
+                              : '-',
                         ),
                         _divider(),
                         _InfoTile(
@@ -275,7 +277,9 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           _InfoTile(
                             Icons.home_outlined,
                             'Alamat Lengkap',
-                            user?.address != null && user!.address.isNotEmpty ? user.address : '-',
+                            user?.address != null && user!.address.isNotEmpty 
+                                ? user.address.replaceAll(RegExp(r',\s*(?:Kec\.|Kecamatan)\s+.*$', caseSensitive: false), '').trim()
+                                : '-',
                           ),
                         ],
                       ],
@@ -468,7 +472,7 @@ Widget _sectionLabel(String text) => Text(
 Widget _divider() => const Divider(height: 1, indent: 52);
 
 class _InfoTile extends StatelessWidget {
-  const _InfoTile(this.icon, this.label, this.value, {this.bold = false});
+  const _InfoTile(this.icon, this.label, this.value, {this.bold = true});
 
   final IconData icon;
   final String label;

@@ -76,7 +76,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
             icon: const Icon(Icons.refresh_rounded, color: Colors.white),
             tooltip: 'Perbarui Lokasi GPS',
             onPressed: () async {
-              ScaffoldMessenger.of(context).showSnackBar(
+              ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Memperbarui koordinat GPS & zonasi...'),
                   duration: Duration(seconds: 1),

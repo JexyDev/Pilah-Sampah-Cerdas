@@ -85,28 +85,8 @@ class ApiKknRepository implements KknRepository {
       rawList = [];
     }
 
-    // Fallback: Jika endpoint warga-dampingan kosong (bug backend), ambil dari seluruh warga yang sudah aktif
-    if (rawList.isEmpty) {
-      try {
-        final fallbackResponse = await apiClient.dio.get(ApiEndpoints.kknWarga);
-        if (fallbackResponse.statusCode == 200) {
-          List<dynamic> fallbackList = [];
-          if (fallbackResponse.data is Map<String, dynamic>) {
-            fallbackList = (fallbackResponse.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
-          } else if (fallbackResponse.data is List) {
-            fallbackList = fallbackResponse.data as List<dynamic>;
-          }
-          rawList = fallbackList.where((e) {
-            try {
-              final w = WargaDampingan.fromJson(e as Map<String, dynamic>);
-              return w.isActivated;
-            } catch (_) {
-              return false;
-            }
-          }).toList();
-        }
-      } catch (_) {}
-    }
+    // Fallback removed: Jika endpoint warga-dampingan kosong, itu berarti mahasiswa belum memiliki warga dampingan.
+    // Mengambil seluruh warga yang aktif dari /kkn/warga akan menyebabkan mahasiswa mengklaim warga milik mahasiswa lain.
     if (rawList.isNotEmpty) {
        final prefs = await SharedPreferences.getInstance();
        await prefs.setString(_cacheKeyWarga, jsonEncode(rawList));

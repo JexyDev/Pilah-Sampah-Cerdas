@@ -463,7 +463,7 @@ class _PoinHistoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(item.createdAt);
+    final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(item.createdAt.toLocal());
 
     return Container(
       padding: const EdgeInsets.all(14),

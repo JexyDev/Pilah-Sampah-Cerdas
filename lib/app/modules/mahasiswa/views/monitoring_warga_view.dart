@@ -141,6 +141,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
           role: w.role,
           totalPoints: w.totalPoints,
           apiCorrectPercentage: w.apiCorrectPercentage,
+          pendampingName: w.pendampingName,
         );
       }).toList();
     } catch (_) {
@@ -164,7 +165,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     // Fetch list of ALL warga from aktivasiState (which hits /kkn/warga)
     // regardless of whether we are in aktivasi_bin mode or monitoring mode.
     // Dashboard still uses state.wargaList to show ONLY Warga Dampingan.
-    List<WargaDampingan> allWargaList = aktivasiState.wargaList.isNotEmpty
+    List<WargaDampingan> allWargaList = isAktivasiBinMode
         ? _getFilteredWargaAktivasi(aktivasiState.wargaList, userKec, userKel, userRw)
         : (isAktivasiBinMode ? [] : state.wargaList.map((w) {
               final targetKel = w.kelurahan.isNotEmpty ? w.kelurahan : userKel;
@@ -444,24 +445,24 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFEBF5FF),
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(color: const Color(0xFF90CDF4)),
+                                          color: warga.pendampingName.isNotEmpty ? const Color(0xFFEBF5FF) : AppColors.primaryGreen.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: warga.pendampingName.isNotEmpty ? const Color(0xFF90CDF4) : AppColors.primaryGreen.withValues(alpha: 0.3)),
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            const Icon(Icons.verified_rounded, size: 11, color: AppColors.primaryBlueDark),
+                                            Icon(Icons.verified_rounded, size: 12, color: warga.pendampingName.isNotEmpty ? AppColors.primaryBlueDark : AppColors.primaryGreen),
                                             const SizedBox(width: 4),
                                             Flexible(
                                               child: Text(
                                                 warga.pendampingName.isNotEmpty
                                                     ? 'Diaktivasi oleh: ${warga.pendampingName}'
-                                                    : (currentUserName.isNotEmpty ? 'Diaktivasi oleh: $currentUserName' : 'Diaktivasi Mahasiswa'),
-                                                style: const TextStyle(
+                                                    : 'Aktivasi Mandiri',
+                                                style: TextStyle(
                                                   fontSize: 10,
                                                   fontWeight: FontWeight.bold,
-                                                  color: AppColors.primaryBlueDark,
+                                                  color: warga.pendampingName.isNotEmpty ? AppColors.primaryBlueDark : AppColors.primaryGreen,
                                                 ),
                                                 overflow: TextOverflow.ellipsis,
                                               ),
