@@ -505,6 +505,14 @@ export class UserService {
       throw new Error("FORBIDDEN_ROLE_CREATION");
     }
 
+    if (roleName === "DEVELOPER" && currentUser?.role !== "DEVELOPER") {
+      throw new Error("FORBIDDEN_DEVELOPER_MUTATION");
+    }
+
+    if (currentUser?.role === "PANITIA_TASKFORCE" && !["MAHASISWA_KKN", "DPL"].includes(roleName)) {
+      throw new Error("FORBIDDEN_ROLE_CREATION");
+    }
+
     const role = await userRepository.findRoleByName(roleName);
     if (!role) {
       throw new Error("ROLE_NOT_FOUND");
@@ -587,7 +595,16 @@ export class UserService {
       });
 
       if (roleName === "MAHASISWA_KKN") {
-        const targetNim = studentProfile?.nim || nim;
+        const rawNim = studentProfile?.nim || nim;
+        const targetNim = rawNim && String(rawNim).trim() !== "" && rawNim !== "-" ? String(rawNim).trim() : null;
+
+        if (targetNim) {
+          const existingNim = await tx.studentKkn.findUnique({ where: { nim: targetNim } });
+          if (existingNim) {
+            throw new Error("NIM_CONFLICT");
+          }
+        }
+
         let targetKelompokId = studentProfile?.kelompokId || data.kelompokId;
         const targetDplId = data.dplId || studentProfile?.dplId;
 
@@ -613,29 +630,27 @@ export class UserService {
           }
         }
 
-        if (targetNim || studentProfile || targetKelompokId) {
-          await tx.studentKkn.create({
-            data: {
-              userId: u.id,
-              nim: targetNim || "-",
-              jurusan: studentProfile?.jurusan || programStudi || "-",
-              fakultas: studentProfile?.fakultas || "-",
-              jenjangPendidikan: studentProfile?.jenjangPendidikan || jenjangPendidikan || null,
-              noWa: studentProfile?.noWa || u.phone || "",
-              startDate: studentProfile?.startDate
-                ? new Date(studentProfile.startDate)
-                : new Date(),
-              endDate: studentProfile?.endDate
-                ? new Date(studentProfile.endDate)
-                : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
-              assignedRwId: studentProfile?.assignedRwId
-                ? parseInt(studentProfile.assignedRwId)
-                : u.rwId,
-              kelompokId: targetKelompokId || null,
-              whitelistStatus: "APPROVED",
-            },
-          });
-        }
+        await tx.studentKkn.create({
+          data: {
+            userId: u.id,
+            nim: targetNim,
+            jurusan: studentProfile?.jurusan || programStudi || "Teknik Informatika",
+            fakultas: studentProfile?.fakultas || institusi || "UNIKOM",
+            jenjangPendidikan: studentProfile?.jenjangPendidikan || jenjangPendidikan || "S1",
+            noWa: studentProfile?.noWa || u.phone || "",
+            startDate: studentProfile?.startDate
+              ? new Date(studentProfile.startDate)
+              : new Date(),
+            endDate: studentProfile?.endDate
+              ? new Date(studentProfile.endDate)
+              : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+            assignedRwId: studentProfile?.assignedRwId
+              ? parseInt(studentProfile.assignedRwId)
+              : u.rwId,
+            kelompokId: targetKelompokId || null,
+            whitelistStatus: "APPROVED",
+          },
+        });
       }
 
       if (roleName === "DPL") {
@@ -729,6 +744,14 @@ export class UserService {
       ["ADMIN_DLH", "CAMAT", "LURAH"].includes(user.role.name) ||
       (roleName && ["ADMIN_DLH", "CAMAT", "LURAH"].includes(roleName));
     if (isRestrictedRole && !["SUPER_USER", "DEVELOPER"].includes(currentUser?.role || "")) {
+      throw new Error("FORBIDDEN_ROLE_UPDATE");
+    }
+
+    if ((user.role.name === "DEVELOPER" || roleName === "DEVELOPER") && currentUser?.role !== "DEVELOPER") {
+      throw new Error("FORBIDDEN_DEVELOPER_MUTATION");
+    }
+
+    if (currentUser?.role === "PANITIA_TASKFORCE" && !["MAHASISWA_KKN", "DPL"].includes(user.role.name)) {
       throw new Error("FORBIDDEN_ROLE_UPDATE");
     }
 
@@ -862,7 +885,22 @@ export class UserService {
       }
 
       if (roleName === "MAHASISWA_KKN" || u.role.name === "MAHASISWA_KKN") {
-        const targetNim = studentProfile?.nim || nim;
+        const rawNim = studentProfile?.nim !== undefined ? studentProfile.nim : nim;
+        const targetNim =
+          rawNim !== undefined
+            ? rawNim && String(rawNim).trim() !== "" && rawNim !== "-"
+              ? String(rawNim).trim()
+              : null
+            : undefined;
+
+        if (targetNim) {
+          const existingNim = await tx.studentKkn.findFirst({
+            where: { nim: targetNim, userId: { not: id } },
+          });
+          if (existingNim) {
+            throw new Error("NIM_CONFLICT");
+          }
+        }
 
         let targetKelompokId: string | null = null;
         if (data.kelompokId !== undefined) {
@@ -915,10 +953,10 @@ export class UserService {
           where: { userId: id },
           create: {
             userId: id,
-            nim: targetNim || "-",
-            jurusan: studentProfile?.jurusan || "-",
-            fakultas: studentProfile?.fakultas || "-",
-            jenjangPendidikan: studentProfile?.jenjangPendidikan || jenjangPendidikan || null,
+            nim: targetNim !== undefined ? targetNim : null,
+            jurusan: studentProfile?.jurusan || programStudi || "Teknik Informatika",
+            fakultas: studentProfile?.fakultas || institusi || "UNIKOM",
+            jenjangPendidikan: studentProfile?.jenjangPendidikan || jenjangPendidikan || "S1",
             noWa: studentProfile?.noWa || u.phone || "",
             startDate: studentProfile?.startDate ? new Date(studentProfile.startDate) : new Date(),
             endDate: studentProfile?.endDate
@@ -931,7 +969,7 @@ export class UserService {
             whitelistStatus: "APPROVED",
           },
           update: {
-            ...(targetNim && { nim: targetNim }),
+            ...(targetNim !== undefined && { nim: targetNim }),
             ...(studentProfile?.jurusan && { jurusan: studentProfile.jurusan }),
             ...(studentProfile?.fakultas && { fakultas: studentProfile.fakultas }),
             ...(studentProfile?.noWa && { noWa: studentProfile.noWa }),
@@ -1005,7 +1043,7 @@ export class UserService {
     };
   }
 
-  async deleteUser(id: string, currentUserId?: string) {
+  async deleteUser(id: string, currentUserId?: string, currentUserRole?: string) {
     const user = await userRepository.findById(id);
     if (!user) {
       throw new Error("USER_NOT_FOUND");
@@ -1013,6 +1051,14 @@ export class UserService {
 
     if (currentUserId === id) {
       throw new Error("DELETE_SELF");
+    }
+
+    if (user.role.name === "DEVELOPER" && currentUserRole !== "DEVELOPER") {
+      throw new Error("FORBIDDEN_DEVELOPER_MUTATION");
+    }
+
+    if (currentUserRole === "PANITIA_TASKFORCE" && !["MAHASISWA_KKN", "DPL"].includes(user.role.name)) {
+      throw new Error("FORBIDDEN_ROLE_DELETE");
     }
 
     await userRepository.delete(id);

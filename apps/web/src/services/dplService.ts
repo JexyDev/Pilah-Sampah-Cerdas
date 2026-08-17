@@ -269,6 +269,10 @@ export const dplService = {
     kelompokId: string;
     nomor?: number;
     deskripsi: string;
+    kategori?: string;
+    sumber?: string;
+    waktuPelaksanaan?: string;
+    linkGoogleDrive?: string;
     kebutuhanBiaya?: number;
   }) => {
     const res = await api.post("/dpl/program-kerja", data);
@@ -280,8 +284,12 @@ export const dplService = {
     data: {
       nomor?: number;
       deskripsi?: string;
+      kategori?: string;
+      sumber?: string;
+      waktuPelaksanaan?: string;
+      linkGoogleDrive?: string;
       kebutuhanBiaya?: number;
-      status?: "BELUM_DISETUJUI" | "DITERIMA" | "DITOLAK";
+      status?: "BELUM_DISETUJUI" | "DITERIMA" | "DITOLAK" | "SEDANG_BERJALAN" | "SELESAI";
       catatanDpl?: string;
     }
   ) => {

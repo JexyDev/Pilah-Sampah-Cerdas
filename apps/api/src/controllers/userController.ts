@@ -47,8 +47,9 @@ export const userController = {
     try {
       const { id } = req.params;
       const currentUserId = req.user?.userId;
+      const currentUserRole = req.user?.role;
 
-      await userService.deleteUser(id, currentUserId);
+      await userService.deleteUser(id, currentUserId, currentUserRole);
 
       res.status(200).json({ success: true, message: "Pengguna berhasil dihapus" });
     } catch (error: any) {
@@ -63,6 +64,18 @@ export const userController = {
           success: false,
           error: "BAD_REQUEST",
           message: "Tidak bisa menghapus akun sendiri",
+        });
+      } else if (error.message === "FORBIDDEN_DEVELOPER_MUTATION") {
+        res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Hanya Developer yang dapat mengelola atau menghapus akun Developer",
+        });
+      } else if (error.message === "FORBIDDEN_ROLE_DELETE") {
+        res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Anda tidak memiliki izin untuk menghapus akun dengan peran ini",
         });
       } else {
         res.status(500).json({
@@ -95,13 +108,25 @@ export const userController = {
     } catch (error: any) {
       console.error("[UserController] createUser error:", error);
 
-      if (error.message === "FORBIDDEN_ROLE_CREATION") {
+      if (error.message === "FORBIDDEN_DEVELOPER_MUTATION") {
         res.status(403).json({
           success: false,
           error: "FORBIDDEN",
-          message: "Hanya Super User/Developer yang dapat membuat akun role ini",
+          message: "Hanya akun Developer yang dapat membuat akun Developer",
         });
-      } else if (error.message === "PHONE_CONFLICT" || error.code === "P2002") {
+      } else if (error.message === "FORBIDDEN_ROLE_CREATION") {
+        res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Anda tidak memiliki izin untuk membuat akun dengan peran ini",
+        });
+      } else if (error.message === "NIM_CONFLICT" || (error.code === "P2002" && String(error.meta?.target || "").includes("nim"))) {
+        res.status(409).json({
+          success: false,
+          error: "CONFLICT",
+          message: "NIM (Nomor Induk Mahasiswa) sudah terdaftar di sistem TrashCare",
+        });
+      } else if (error.message === "PHONE_CONFLICT" || (error.code === "P2002" && (String(error.meta?.target || "").includes("phone") || String(error.meta?.target || "").includes("no_telepon")))) {
         res.status(409).json({
           success: false,
           error: "CONFLICT",
@@ -161,11 +186,17 @@ export const userController = {
           error: "BAD_REQUEST",
           message: "Anda tidak dapat menonaktifkan akun Anda sendiri yang sedang terhubung ke sistem.",
         });
+      } else if (error.message === "FORBIDDEN_DEVELOPER_MUTATION") {
+        res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Hanya akun Developer yang dapat memodifikasi akun Developer",
+        });
       } else if (error.message === "FORBIDDEN_ROLE_UPDATE") {
         res.status(403).json({
           success: false,
           error: "FORBIDDEN",
-          message: "Hanya Admin yang dapat memodifikasi akun Admin DLH, Camat, atau Lurah",
+          message: "Anda tidak memiliki izin untuk memodifikasi akun dengan peran ini",
         });
       } else if (error.message === "USER_NOT_FOUND") {
         res
@@ -177,7 +208,13 @@ export const userController = {
           error: "VALIDATION_ERROR",
           message: `Role '${req.body.roleName}' tidak ditemukan`,
         });
-      } else if (error.message === "PHONE_CONFLICT" || error.code === "P2002") {
+      } else if (error.message === "NIM_CONFLICT" || (error.code === "P2002" && String(error.meta?.target || "").includes("nim"))) {
+        res.status(409).json({
+          success: false,
+          error: "CONFLICT",
+          message: "NIM (Nomor Induk Mahasiswa) sudah terdaftar di sistem TrashCare",
+        });
+      } else if (error.message === "PHONE_CONFLICT" || (error.code === "P2002" && (String(error.meta?.target || "").includes("phone") || String(error.meta?.target || "").includes("no_telepon")))) {
         res.status(409).json({
           success: false,
           error: "CONFLICT",

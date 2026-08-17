@@ -520,6 +520,15 @@ const ManajemenPengguna: React.FC = () => {
   };
 
   const handleOpenAddModal = () => {
+    if (user?.peran === "SUPER_USER" && selectedRole === "DEVELOPER") {
+      showToast.error("Super User tidak memiliki izin membuat akun Developer");
+      return;
+    }
+    if (user?.peran === "PANITIA_TASKFORCE" && !["MAHASISWA_KKN", "DPL"].includes(selectedRole)) {
+      showToast.error("Panitia Task Force hanya dapat mengelola akun Mahasiswa KKN dan DPL");
+      return;
+    }
+
     setModalType("add");
     const defaultRole = selectedRole !== "Semua" ? selectedRole : "WARGA";
     setModalKelurahan("Cipaganti");
@@ -555,6 +564,16 @@ const ManajemenPengguna: React.FC = () => {
   };
 
   const handleOpenEditModal = (u: any) => {
+    const isDevTarget = (u.role || u.roleName || u.role?.name) === "DEVELOPER";
+    if (isDevTarget && user?.peran !== "DEVELOPER") {
+      showToast.error("Hanya Developer yang dapat mengedit akun Developer");
+      return;
+    }
+    if (user?.peran === "PANITIA_TASKFORCE" && !["MAHASISWA_KKN", "DPL"].includes(u.role || u.roleName)) {
+      showToast.error("Panitia Task Force hanya dapat mengedit akun Mahasiswa KKN dan DPL");
+      return;
+    }
+
     setModalType("edit");
     setSelectedUser(u);
     let matchedAreaId = u.rtRwId ? String(u.rtRwId) : "";
@@ -1551,17 +1570,37 @@ const ManajemenPengguna: React.FC = () => {
                     {!isReadOnly && (
                       <td className="py-3 px-4 text-center">
                         <div className="flex justify-center gap-1">
-                          {selectedRole.toUpperCase() !== "RW" && u.roleName !== "RW" && u.role !== "RW" && u.role?.name !== "RW" && (
-                            <button
-                              onClick={() => handleOpenEditModal(u)}
-                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
-                              title="Edit"
-                            >
-                              <Pencil size={15} />
-                            </button>
-                          )}
+                          {(() => {
+                            const isDevTarget = (u.role || u.roleName || u.role?.name) === "DEVELOPER";
+                            const canEdit =
+                              user?.peran === "DEVELOPER" ||
+                              (user?.peran === "SUPER_USER" && !isDevTarget) ||
+                              (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL"].includes(u.role || u.roleName));
+
+                            if (!canEdit) return null;
+                            if (selectedRole.toUpperCase() === "RW" || u.roleName === "RW" || u.role === "RW" || u.role?.name === "RW") return null;
+
+                            return (
+                              <button
+                                onClick={() => handleOpenEditModal(u)}
+                                className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                                title="Edit"
+                              >
+                                <Pencil size={15} />
+                              </button>
+                            );
+                          })()}
                           {(() => {
                             const isSelf = user && (u.id === user.id || (u.phone && user.phone && u.phone === user.phone));
+                            const isDevTarget = (u.role || u.roleName || u.role?.name) === "DEVELOPER";
+                            const canDelete =
+                              !isSelf &&
+                              (user?.peran === "DEVELOPER" ||
+                                (user?.peran === "SUPER_USER" && !isDevTarget) ||
+                                (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL"].includes(u.role || u.roleName)));
+
+                            if (!canDelete && !isSelf) return null;
+
                             return (
                               <button
                                 disabled={isSelf}

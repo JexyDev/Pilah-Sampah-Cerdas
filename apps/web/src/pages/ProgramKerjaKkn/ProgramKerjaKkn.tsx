@@ -4,27 +4,38 @@
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   FileSpreadsheet,
   Plus,
   Pencil,
   Trash2,
   CheckCircle2,
-  XCircle,
   Clock,
   Search,
   Download,
   Printer,
   Loader2,
   X,
-  Building
+  Wallet,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { dplService, type ProgramKerjaItem } from "../../services/dplService";
 import api from "../../services/api";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+
+// Google Drive Official Logo Icon Component
+const GoogleDriveIcon = () => (
+  <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 87.3 78" fill="none">
+    <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066da" />
+    <path d="M43.65 25 29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47" />
+    <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 10.1z" fill="#ea4335" />
+    <path d="M43.65 25 57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.4-4.5 1.2z" fill="#00832d" />
+    <path d="M59.8 53H87.3c0-1.55-.4-3.1-1.2-4.5l-19.9-34.5c-.8-1.4-1.95-2.5-3.3-3.3z" fill="#2684fc" />
+    <path d="m73.55 76.8-13.75-23.8H27.5l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.4 4.5-1.2z" fill="#ffba00" />
+  </svg>
+);
 
 export const ProgramKerjaKkn: React.FC = () => {
   const { user } = useAuthStore();
@@ -36,9 +47,13 @@ export const ProgramKerjaKkn: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [prokerList, setProkerList] = useState<ProgramKerjaItem[]>([]);
   const [kelompokList, setKelompokList] = useState<any[]>([]);
+
+  // 5 Filter States
   const [selectedKelompokId, setSelectedKelompokId] = useState<string>("ALL");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+  const [sourceFilter, setSourceFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Modal State for Add / Edit
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -48,24 +63,14 @@ export const ProgramKerjaKkn: React.FC = () => {
     kelompokId: "",
     nomor: 1,
     deskripsi: "",
+    kategori: "Pemilahan",
+    sumber: "Mahasiswa",
+    waktuPelaksanaan: "",
+    linkGoogleDrive: "",
     kebutuhanBiaya: 0,
+    status: "BELUM_DISETUJUI" as "BELUM_DISETUJUI" | "DITERIMA" | "DITOLAK" | "SEDANG_BERJALAN" | "SELESAI",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Modal Decision (DPL Accept / Reject)
-  const [decisionModal, setDecisionModal] = useState<{
-    isOpen: boolean;
-    prokerId: string;
-    action: "DITERIMA" | "DITOLAK";
-    prokerDeskripsi: string;
-    catatan: string;
-  }>({
-    isOpen: false,
-    prokerId: "",
-    action: "DITERIMA",
-    prokerDeskripsi: "",
-    catatan: "",
-  });
 
   // Modal Delete
   const [deleteModal, setDeleteModal] = useState<{
@@ -111,7 +116,12 @@ export const ProgramKerjaKkn: React.FC = () => {
       kelompokId: kelompokList[0]?.id || "",
       nomor: prokerList.length + 1,
       deskripsi: "",
+      kategori: "Pemilahan",
+      sumber: "Mahasiswa",
+      waktuPelaksanaan: "",
+      linkGoogleDrive: "",
       kebutuhanBiaya: 0,
+      status: "BELUM_DISETUJUI",
     });
     setIsFormModalOpen(true);
   };
@@ -123,7 +133,12 @@ export const ProgramKerjaKkn: React.FC = () => {
       kelompokId: item.kelompokId,
       nomor: item.nomor,
       deskripsi: item.deskripsi,
+      kategori: item.kategori || "Pemilahan",
+      sumber: item.sumber || "Mahasiswa",
+      waktuPelaksanaan: item.waktuPelaksanaan || "",
+      linkGoogleDrive: item.linkGoogleDrive || "",
       kebutuhanBiaya: item.kebutuhanBiaya,
+      status: item.status,
     });
     setIsFormModalOpen(true);
   };
@@ -142,6 +157,10 @@ export const ProgramKerjaKkn: React.FC = () => {
           kelompokId: formData.kelompokId,
           nomor: Number(formData.nomor),
           deskripsi: formData.deskripsi,
+          kategori: formData.kategori,
+          sumber: formData.sumber,
+          waktuPelaksanaan: formData.waktuPelaksanaan,
+          linkGoogleDrive: formData.linkGoogleDrive,
           kebutuhanBiaya: Number(formData.kebutuhanBiaya),
         });
         toast.success("Rencana program kerja berhasil ditambahkan");
@@ -149,35 +168,20 @@ export const ProgramKerjaKkn: React.FC = () => {
         await dplService.updateProgramKerja(editingId, {
           nomor: Number(formData.nomor),
           deskripsi: formData.deskripsi,
+          kategori: formData.kategori,
+          sumber: formData.sumber,
+          waktuPelaksanaan: formData.waktuPelaksanaan,
+          linkGoogleDrive: formData.linkGoogleDrive,
           kebutuhanBiaya: Number(formData.kebutuhanBiaya),
+          status: formData.status,
         });
-        toast.success("Rencana program kerja berhasil diperbarui");
+        toast.success("Program kerja berhasil diperbarui");
       }
       setIsFormModalOpen(false);
       fetchData();
     } catch (err: any) {
+      console.error("Gagal menyimpan program kerja:", err);
       toast.error(err.response?.data?.message || "Gagal menyimpan program kerja");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleConfirmDecision = async () => {
-    if (!decisionModal.prokerId) return;
-    setIsSubmitting(true);
-    try {
-      await dplService.decideProgramKerja(
-        decisionModal.prokerId,
-        decisionModal.action,
-        decisionModal.catatan
-      );
-      toast.success(
-        `Program kerja berhasil ${decisionModal.action === "DITERIMA" ? "Diterima / Disepakati" : "Ditolak"}`
-      );
-      setDecisionModal({ isOpen: false, prokerId: "", action: "DITERIMA", prokerDeskripsi: "", catatan: "" });
-      fetchData();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal memproses keputusan");
     } finally {
       setIsSubmitting(false);
     }
@@ -191,24 +195,51 @@ export const ProgramKerjaKkn: React.FC = () => {
       setDeleteModal({ isOpen: false, id: "", deskripsi: "" });
       fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal menghapus program kerja");
+      console.error("Gagal menghapus proker:", err);
+      toast.error("Gagal menghapus program kerja");
     }
   };
 
-  // Filtered List
-  const filteredProkers = prokerList.filter((item) => {
-    const matchesSearch =
-      item.deskripsi.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.kelompokName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.kelurahan.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === "ALL" || item.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Filtered proker data
+  const filteredProkers = useMemo(() => {
+    return prokerList.filter((item) => {
+      const matchesSearch =
+        item.deskripsi.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.kelompokName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.kelurahan.toLowerCase().includes(searchQuery.toLowerCase());
 
-  const totalBiaya = filteredProkers.reduce((acc, p) => acc + (p.kebutuhanBiaya || 0), 0);
-  const totalDiterima = filteredProkers.filter((p) => p.status === "DITERIMA").length;
-  const totalMenunggu = filteredProkers.filter((p) => p.status === "BELUM_DISETUJUI").length;
+      const matchesCategory =
+        categoryFilter === "ALL" ||
+        (item.kategori || "Pemilahan").toLowerCase() === categoryFilter.toLowerCase();
+
+      const matchesSource =
+        sourceFilter === "ALL" ||
+        (item.sumber || "Mahasiswa").toLowerCase() === sourceFilter.toLowerCase();
+
+      let matchesStatus = true;
+      if (statusFilter === "BELUM") {
+        matchesStatus = item.status === "BELUM_DISETUJUI" || item.status === "DITOLAK";
+      } else if (statusFilter === "SEDANG") {
+        matchesStatus = item.status === "SEDANG_BERJALAN" || item.status === "DITERIMA";
+      } else if (statusFilter === "SUDAH") {
+        matchesStatus = item.status === "SELESAI";
+      }
+
+      return matchesSearch && matchesCategory && matchesSource && matchesStatus;
+    });
+  }, [prokerList, searchQuery, categoryFilter, sourceFilter, statusFilter]);
+
+  // Metric KPI Computations
+  const totalCount = prokerList.length;
+  const diterimaCount = prokerList.filter(
+    (p) => p.status === "DITERIMA" || p.status === "SEDANG_BERJALAN" || p.status === "SELESAI"
+  ).length;
+  const diterimaPct = totalCount > 0 ? ((diterimaCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
+
+  const menungguCount = prokerList.filter((p) => p.status === "BELUM_DISETUJUI").length;
+  const menungguPct = totalCount > 0 ? ((menungguCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
+
+  const totalBiaya = prokerList.reduce((acc, p) => acc + (Number(p.kebutuhanBiaya) || 0), 0);
 
   const handlePrint = () => {
     window.print();
@@ -219,17 +250,28 @@ export const ProgramKerjaKkn: React.FC = () => {
       toast.error("Tidak ada data untuk diekspor");
       return;
     }
-    const headers = ["No", "Kelompok", "Kelurahan", "Deskripsi Rencana Kegiatan", "Kebutuhan Biaya (Rp)", "Status", "Catatan DPL"];
+    const headers = [
+      "No",
+      "Kategori",
+      "Sumber",
+      "Deskripsi",
+      "Waktu Pelaksanaan",
+      "Biaya (Rp)",
+      "Status",
+      "Bukti Google Drive",
+    ];
     const rows = filteredProkers.map((p, idx) => [
       p.nomor || idx + 1,
-      `"${p.kelompokName}"`,
-      `"${p.kelurahan}"`,
+      `"${p.kategori || "Pemilahan"}"`,
+      `"${p.sumber || "Mahasiswa"}"`,
       `"${p.deskripsi.replace(/"/g, '""')}"`,
+      `"${p.waktuPelaksanaan || "-"}"`,
       p.kebutuhanBiaya,
-      p.status,
-      `"${(p.catatanDpl || "").replace(/"/g, '""')}"`,
+      `"${p.status}"`,
+      `"${p.linkGoogleDrive || "-"}"`,
     ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const csvContent =
+      "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -240,130 +282,269 @@ export const ProgramKerjaKkn: React.FC = () => {
     toast.success("Data program kerja berhasil diekspor ke CSV!");
   };
 
+  // Helper Badge Renderers
+  const renderKategoriBadge = (kat?: string) => {
+    const k = (kat || "Pemilahan").toLowerCase();
+    if (k.includes("pemilahan")) {
+      return (
+        <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-bold text-[11px]">
+          Pemilahan
+        </span>
+      );
+    }
+    if (k.includes("pengangkutan")) {
+      return (
+        <span className="px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-bold text-[11px]">
+          Pengangkutan
+        </span>
+      );
+    }
+    if (k.includes("pengolahan")) {
+      return (
+        <span className="px-3 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded-full font-bold text-[11px]">
+          Pengolahan
+        </span>
+      );
+    }
+    if (k.includes("pemanfaatan")) {
+      return (
+        <span className="px-3 py-1 bg-teal-50 text-teal-700 border border-teal-200 rounded-full font-bold text-[11px]">
+          Pemanfaatan
+        </span>
+      );
+    }
+    return (
+      <span className="px-3 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded-full font-bold text-[11px]">
+        {kat || "Lainnya"}
+      </span>
+    );
+  };
+
+  const renderSumberBadge = (sumber?: string) => {
+    const s = (sumber || "Mahasiswa").toLowerCase();
+    if (s.includes("dpl")) {
+      return (
+        <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-[11px]">
+          DPL
+        </span>
+      );
+    }
+    return (
+      <span className="px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg font-bold text-[11px]">
+        Mahasiswa
+      </span>
+    );
+  };
+
+  const renderStatusPelaksanaanBadge = (status: string) => {
+    if (status === "SELESAI") {
+      return (
+        <span className="px-3.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-[11px]">
+          Sudah
+        </span>
+      );
+    }
+    if (status === "SEDANG_BERJALAN" || status === "DITERIMA") {
+      return (
+        <span className="px-3.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg font-bold text-[11px]">
+          Sedang
+        </span>
+      );
+    }
+    return (
+      <span className="px-3.5 py-1 bg-slate-100 text-slate-600 border border-slate-200 rounded-lg font-bold text-[11px]">
+        Belum
+      </span>
+    );
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
-      {/* Clean Flat Header */}
+      {/* Header Sesuai Gambar 4 */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Program Kerja KKN</h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Rencana program kegiatan mahasiswa KKN di wilayah dampingan yang disepakati dan divalidasi oleh Dosen Pembimbing Lapangan.
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Program Kerja KKN</h1>
+          <p className="text-slate-500 text-xs mt-1">
+            Menampilkan rencana dan pelaksanaan program kerja mahasiswa KKN yang divalidasi oleh Dosen Pembimbing Lapangan.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             onClick={handleExportCsv}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2.5 rounded-xl font-bold text-xs shadow-2xs transition-all cursor-pointer"
+            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-xl font-bold text-xs shadow-2xs transition-all cursor-pointer"
           >
-            <Download size={15} />
+            <Download size={14} className="text-emerald-600" />
             Export CSV
           </button>
           <button
             onClick={handlePrint}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2.5 rounded-xl font-bold text-xs shadow-2xs transition-all cursor-pointer"
+            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-xl font-bold text-xs shadow-2xs transition-all cursor-pointer"
           >
-            <Printer size={15} />
+            <Printer size={14} className="text-slate-600" />
             Cetak
           </button>
           {canModifyProker && (
             <button
               onClick={handleOpenAddModal}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-all cursor-pointer"
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95"
             >
-              <Plus size={16} />
+              <Plus size={15} />
               Tambah Rencana Kegiatan
             </button>
           )}
         </div>
       </div>
 
-      {/* KPI Cards Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
-          <span className="text-xs text-slate-500 font-semibold">Total Rencana Proker</span>
-          <p className="text-2xl font-black text-slate-900 mt-1">{filteredProkers.length}</p>
+      {/* 4 Stat Cards Sesuai Gambar 4 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Total Program Kerja */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100 shadow-2xs">
+            <FileSpreadsheet size={22} />
+          </div>
+          <div>
+            <span className="text-xs text-slate-500 font-bold block">Total Program Kerja</span>
+            <h3 className="text-2xl font-black text-slate-900 mt-0.5">{totalCount}</h3>
+            <span className="text-[10.5px] text-slate-400 font-medium">Semua rencana kegiatan</span>
+          </div>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
-          <span className="text-xs text-emerald-600 font-semibold">Proker Disepakati / Diterima</span>
-          <p className="text-2xl font-black text-emerald-700 mt-1">{totalDiterima}</p>
+
+        {/* Card 2: Disetujui / Diterima */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100 shadow-2xs">
+            <CheckCircle2 size={22} />
+          </div>
+          <div>
+            <span className="text-xs text-slate-500 font-bold block">Disetujui / Diterima</span>
+            <h3 className="text-2xl font-black text-slate-900 mt-0.5">{diterimaCount}</h3>
+            <span className="text-[10.5px] text-slate-400 font-medium">{diterimaPct}% dari total program</span>
+          </div>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
-          <span className="text-xs text-amber-600 font-semibold">Menunggu Review DPL</span>
-          <p className="text-2xl font-black text-amber-700 mt-1">{totalMenunggu}</p>
+
+        {/* Card 3: Menunggu Review DPL */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0 border border-amber-100 shadow-2xs">
+            <Clock size={22} />
+          </div>
+          <div>
+            <span className="text-xs text-slate-500 font-bold block">Menunggu Review DPL</span>
+            <h3 className="text-2xl font-black text-slate-900 mt-0.5">{menungguCount}</h3>
+            <span className="text-[10.5px] text-slate-400 font-medium">{menungguPct}% dari total program</span>
+          </div>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
-          <span className="text-xs text-slate-500 font-semibold">Total Kebutuhan Biaya</span>
-          <p className="text-xl font-black text-slate-900 mt-1 truncate">
-            Rp {totalBiaya.toLocaleString("id-ID")}
-          </p>
+
+        {/* Card 4: Total Kebutuhan Biaya */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100 shadow-2xs">
+            <Wallet size={22} />
+          </div>
+          <div className="min-w-0">
+            <span className="text-xs text-slate-500 font-bold block">Total Kebutuhan Biaya</span>
+            <h3 className="text-xl font-black text-slate-900 mt-0.5 truncate">
+              Rp {totalBiaya.toLocaleString("id-ID")}
+            </h3>
+            <span className="text-[10.5px] text-slate-400 font-medium">Estimasi seluruh program</span>
+          </div>
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          {/* Kelompok Filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-600">Kelompok:</span>
+      {/* Toolbar Filter 5 Parameter Sesuai Gambar 4 */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 flex-1 max-w-4xl">
+          {/* Filter 1: Kelompok */}
+          <div>
+            <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Kelompok</span>
             <select
               value={selectedKelompokId}
               onChange={(e) => setSelectedKelompokId(e.target.value)}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
             >
-              <option value="ALL">Semua Kelompok Binaan</option>
+              <option value="ALL">Semua Kelompok</option>
               {kelompokList.map((k) => (
                 <option key={k.id} value={k.id}>
-                  {k.name} ({k.kelurahan || "Coblong"})
+                  {k.name}
                 </option>
               ))}
             </select>
           </div>
 
-        {/* Status Filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-600">Status:</span>
+          {/* Filter 2: Kategori */}
+          <div>
+            <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Kategori</span>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+            >
+              <option value="ALL">Semua Kategori</option>
+              <option value="Pemilahan">Pemilahan</option>
+              <option value="Pengangkutan">Pengangkutan</option>
+              <option value="Pengolahan">Pengolahan</option>
+              <option value="Pemanfaatan">Pemanfaatan</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+          </div>
+
+          {/* Filter 3: Sumber */}
+          <div>
+            <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Sumber</span>
+            <select
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+            >
+              <option value="ALL">Semua Sumber</option>
+              <option value="Mahasiswa">Mahasiswa</option>
+              <option value="DPL">DPL</option>
+            </select>
+          </div>
+
+          {/* Filter 4: Status */}
+          <div>
+            <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Status</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
             >
               <option value="ALL">Semua Status</option>
-              <option value="DITERIMA">Disetujui DPL</option>
-              <option value="SEDANG_BERJALAN">Sedang Dikerjakan</option>
-              <option value="SELESAI">Sudah Selesai</option>
-              <option value="BELUM_DISETUJUI">Belum Disetujui</option>
-              <option value="DITOLAK">Ditolak</option>
+              <option value="BELUM">Belum</option>
+              <option value="SEDANG">Sedang</option>
+              <option value="SUDAH">Sudah</option>
             </select>
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative w-full md:w-72">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Cari rencana kegiatan..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500"
-          />
+        {/* Filter 5: Cari Program Kerja */}
+        <div className="w-full md:w-64">
+          <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Cari program kerja</span>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Cari deskripsi kegiatan..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-emerald-500 focus:bg-white transition font-medium"
+            />
+            <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          </div>
         </div>
       </div>
 
-      {/* Main Table */}
+      {/* Main Table Sesuai Gambar 4 */}
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
         {loading ? (
           <div className="p-12 flex flex-col items-center justify-center gap-3 text-slate-400">
             <Loader2 className="animate-spin text-emerald-600" size={32} />
-            <span className="text-xs font-semibold">Memuat rencana kerja mahasiswa...</span>
+            <span className="text-xs font-semibold">Memuat rencana program kerja...</span>
           </div>
         ) : filteredProkers.length === 0 ? (
           <div className="p-12 text-center text-slate-500 space-y-2">
             <FileSpreadsheet className="mx-auto text-slate-300" size={48} />
             <h3 className="text-sm font-bold text-slate-700">Belum Ada Program Kerja</h3>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              Rencana kerja mahasiswa KKN di kelompok ini belum diinput atau tidak cocok dengan filter pencarian.
+              Belum ada program kerja yang cocok dengan kriteria filter. Silakan klik tombol Tambah.
             </p>
           </div>
         ) : (
@@ -372,139 +553,81 @@ export const ProgramKerjaKkn: React.FC = () => {
               <thead>
                 <tr className="bg-slate-50/90 text-slate-500 border-b border-slate-200 text-[11px] uppercase tracking-wider font-bold">
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
-                  <th className="py-3.5 px-4 w-48">Kelompok & Wilayah</th>
-                  <th className="py-3.5 px-4 min-w-[280px]">Deskripsi Rencana Kegiatan</th>
-                  <th className="py-3.5 px-4 w-36 text-right">Kebutuhan Biaya</th>
-                  <th className="py-3.5 px-4 w-36 text-center">Status</th>
-                  <th className="py-3.5 px-4 w-44">Catatan DPL</th>
-                  <th className="py-3.5 px-4 w-36 text-center">Aksi</th>
+                  <th className="py-3.5 px-4 w-32 text-center">Kategori</th>
+                  <th className="py-3.5 px-4 w-36 text-center">Sumber (DPL/Mahasiswa)</th>
+                  <th className="py-3.5 px-4 min-w-[280px]">Deskripsi</th>
+                  <th className="py-3.5 px-4 w-44">Waktu Pelaksanaan</th>
+                  <th className="py-3.5 px-4 w-32 font-bold">Biaya</th>
+                  <th className="py-3.5 px-4 w-32 text-center">Status Pelaksanaan</th>
+                  <th className="py-3.5 px-4 w-36 text-center">Bukti Kegiatan</th>
+                  {canModifyProker && <th className="py-3.5 px-4 w-20 text-center">Aksi</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
                 {filteredProkers.map((p, idx) => {
-                  const isAccepted = p.status === "DITERIMA";
-                  const isRejected = p.status === "DITOLAK";
-                  const isPending = p.status === "BELUM_DISETUJUI";
-                  const isProgress = p.status === "SEDANG_BERJALAN";
-                  const isDone = p.status === "SELESAI";
+                  const driveUrl = p.linkGoogleDrive || "https://drive.google.com";
 
                   return (
                     <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3.5 px-4 text-center font-bold text-slate-500">
+                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
                         {p.nomor || idx + 1}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900">{p.kelompokName}</div>
-                        <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                          <Building size={12} className="text-slate-400" />
-                          <span>Kel. {p.kelurahan}</span>
-                        </div>
+                      <td className="py-3.5 px-4 text-center">
+                        {renderKategoriBadge(p.kategori)}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        {renderSumberBadge(p.sumber)}
                       </td>
                       <td className="py-3.5 px-4">
-                        <p className="text-slate-900 leading-relaxed font-normal whitespace-pre-wrap">
-                          {p.deskripsi}
-                        </p>
+                        <p className="text-slate-900 leading-relaxed font-normal">{p.deskripsi}</p>
                       </td>
-                      <td className="py-3.5 px-4 text-right font-bold text-slate-900">
+                      <td className="py-3.5 px-4 text-slate-600 font-medium">
+                        {p.waktuPelaksanaan || "-"}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900">
                         Rp {Number(p.kebutuhanBiaya || 0).toLocaleString("id-ID")}
                       </td>
                       <td className="py-3.5 px-4 text-center">
-                        {isAccepted && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-bold text-[10.5px]">
-                            <CheckCircle2 size={12} />
-                            Disetujui
-                          </span>
-                        )}
-                        {isProgress && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-bold text-[10.5px]">
-                            <Clock size={12} />
-                            Sedang Berjalan
-                          </span>
-                        )}
-                        {isDone && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full font-bold text-[10.5px]">
-                            <CheckCircle2 size={12} />
-                            Selesai
-                          </span>
-                        )}
-                        {isRejected && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full font-bold text-[10.5px]">
-                            <XCircle size={12} />
-                            Ditolak
-                          </span>
-                        )}
-                        {isPending && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-bold text-[10.5px]">
-                            <Clock size={12} />
-                            Belum Disetujui
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-500 text-[11px] italic">
-                        {p.catatanDpl || "-"}
+                        {renderStatusPelaksanaanBadge(p.status)}
                       </td>
                       <td className="py-3.5 px-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {isDpl && (
-                            <>
-                              <button
-                                onClick={() =>
-                                  setDecisionModal({
-                                    isOpen: true,
-                                    prokerId: p.id,
-                                    action: "DITERIMA",
-                                    prokerDeskripsi: p.deskripsi,
-                                    catatan: p.catatanDpl || "",
-                                  })
-                                }
-                                title="Terima Rencana Kerja"
-                                className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer"
-                              >
-                                <CheckCircle2 size={15} />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  setDecisionModal({
-                                    isOpen: true,
-                                    prokerId: p.id,
-                                    action: "DITOLAK",
-                                    prokerDeskripsi: p.deskripsi,
-                                    catatan: p.catatanDpl || "",
-                                  })
-                                }
-                                title="Tolak Rencana Kerja"
-                                className="p-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
-                              >
-                                <XCircle size={15} />
-                              </button>
-                            </>
-                          )}
-                          {canModifyProker && (
-                            <>
-                              <button
-                                onClick={() => handleOpenEditModal(p)}
-                                title="Edit Rencana Kerja"
-                                className="p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
-                              >
-                                <Pencil size={14} />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  setDeleteModal({
-                                    isOpen: true,
-                                    id: p.id,
-                                    deskripsi: p.deskripsi,
-                                  })
-                                }
-                                title="Hapus Rencana Kerja"
-                                className="p-1.5 rounded-lg bg-slate-100 text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </>
-                          )}
-                        </div>
+                        <a
+                          href={driveUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 text-emerald-700 bg-white hover:bg-emerald-50 transition-all font-bold text-xs shadow-2xs cursor-pointer active:scale-95"
+                          title="Buka Folder Bukti Google Drive"
+                        >
+                          <GoogleDriveIcon />
+                          <span>Lihat Bukti</span>
+                        </a>
                       </td>
+                      {canModifyProker && (
+                        <td className="py-3.5 px-4 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => handleOpenEditModal(p)}
+                              title="Edit Program Kerja"
+                              className="p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                            >
+                              <Pencil size={13} />
+                            </button>
+                            <button
+                              onClick={() =>
+                                setDeleteModal({
+                                  isOpen: true,
+                                  id: p.id,
+                                  deskripsi: p.deskripsi,
+                                })
+                              }
+                              title="Hapus Program Kerja"
+                              className="p-1.5 rounded-lg bg-slate-100 text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -513,7 +636,6 @@ export const ProgramKerjaKkn: React.FC = () => {
           </div>
         )}
       </div>
-
 
       {/* Modal Add / Edit Form */}
       {isFormModalOpen && (
@@ -535,7 +657,7 @@ export const ProgramKerjaKkn: React.FC = () => {
             <form onSubmit={handleSaveForm} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Kelompok KKN Binaan
+                  Kelompok KKN Binaan <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={formData.kelompokId}
@@ -555,13 +677,60 @@ export const ProgramKerjaKkn: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Nomor Urut
+                    Kategori Program
+                  </label>
+                  <select
+                    value={formData.kategori}
+                    onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="Pemilahan">Pemilahan</option>
+                    <option value="Pengangkutan">Pengangkutan</option>
+                    <option value="Pengolahan">Pengolahan</option>
+                    <option value="Pemanfaatan">Pemanfaatan</option>
+                    <option value="Lainnya">Lainnya</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Sumber Pengusul
+                  </label>
+                  <select
+                    value={formData.sumber}
+                    onChange={(e) => setFormData({ ...formData, sumber: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="Mahasiswa">Mahasiswa</option>
+                    <option value="DPL">DPL</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Deskripsi Rencana Kegiatan <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="Contoh: Sosialisasi dan pelatihan pemilahan sampah rumah tangga di 3 RT."
+                  value={formData.deskripsi}
+                  onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Waktu Pelaksanaan
                   </label>
                   <input
-                    type="number"
-                    min={1}
-                    value={formData.nomor}
-                    onChange={(e) => setFormData({ ...formData, nomor: Number(e.target.value) })}
+                    type="text"
+                    placeholder="Contoh: 03 – 05 Agustus 2026"
+                    value={formData.waktuPelaksanaan}
+                    onChange={(e) => setFormData({ ...formData, waktuPelaksanaan: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
@@ -582,107 +751,54 @@ export const ProgramKerjaKkn: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Deskripsi Rencana Kegiatan
+                  Tautan Bukti Google Drive (URL)
                 </label>
-                <textarea
-                  rows={4}
-                  required
-                  placeholder="Jelaskan deskripsi target dan langkah program kerja yang akan dilaksanakan..."
-                  value={formData.deskripsi}
-                  onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
+                <input
+                  type="url"
+                  placeholder="https://drive.google.com/drive/folders/..."
+                  value={formData.linkGoogleDrive}
+                  onChange={(e) => setFormData({ ...formData, linkGoogleDrive: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
+
+              {formMode === "edit" && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Status Pelaksanaan
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="BELUM_DISETUJUI">Belum (Belum Disetujui)</option>
+                    <option value="DITERIMA">Sedang (Disetujui / Persiapan)</option>
+                    <option value="SEDANG_BERJALAN">Sedang (Sedang Dikerjakan)</option>
+                    <option value="SELESAI">Sudah (Selesai)</option>
+                    <option value="DITOLAK">Ditolak</option>
+                  </select>
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsFormModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+                  className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   {isSubmitting && <Loader2 size={14} className="animate-spin" />}
-                  Simpan Rencana
+                  Simpan Program Kerja
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Decision DPL */}
-      {decisionModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
-                {decisionModal.action === "DITERIMA" ? (
-                  <CheckCircle2 className="text-emerald-600" size={20} />
-                ) : (
-                  <XCircle className="text-rose-600" size={20} />
-                )}
-                {decisionModal.action === "DITERIMA"
-                  ? "Persetujuan Rencana Kerja"
-                  : "Penolakan Rencana Kerja"}
-              </h3>
-              <button
-                onClick={() => setDecisionModal({ ...decisionModal, isOpen: false })}
-                className="p-1 rounded-full text-slate-400 hover:bg-slate-100"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 text-xs space-y-1">
-              <span className="text-[11px] font-bold text-slate-400 uppercase">Rencana Kerja</span>
-              <p className="text-slate-800 font-medium">{decisionModal.prokerDeskripsi}</p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Catatan DPL {decisionModal.action === "DITOLAK" && <span className="text-rose-500">*</span>}
-              </label>
-              <textarea
-                rows={3}
-                placeholder={
-                  decisionModal.action === "DITERIMA"
-                    ? "Berikan arahan atau catatan persetujuan (opsional)..."
-                    : "Berikan alasan penolakan dan saran perbaikan..."
-                }
-                value={decisionModal.catatan}
-                onChange={(e) => setDecisionModal({ ...decisionModal, catatan: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setDecisionModal({ ...decisionModal, isOpen: false })}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDecision}
-                disabled={isSubmitting}
-                className={`px-5 py-2 text-xs font-bold text-white rounded-xl shadow-xs transition-colors flex items-center gap-1.5 ${
-                  decisionModal.action === "DITERIMA"
-                    ? "bg-emerald-600 hover:bg-emerald-700"
-                    : "bg-rose-600 hover:bg-rose-700"
-                }`}
-              >
-                {isSubmitting && <Loader2 size={14} className="animate-spin" />}
-                Konfirmasi {decisionModal.action === "DITERIMA" ? "Terima" : "Tolak"}
-              </button>
-            </div>
           </div>
         </div>
       )}

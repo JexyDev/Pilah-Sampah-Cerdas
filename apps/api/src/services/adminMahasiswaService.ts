@@ -67,13 +67,27 @@ export const adminMahasiswaService = {
     const role = await prisma.role.findUnique({ where: { name: "MAHASISWA_KKN" } });
     if (!role) throw new Error("Role MAHASISWA_KKN not found");
 
+    const formattedPhone = formatPhoneNumber(data.no_telepon);
+    const existingPhone = await prisma.user.findUnique({ where: { phone: formattedPhone } });
+    if (existingPhone) {
+      throw new Error("Nomor telepon (+62) sudah terdaftar di sistem TrashCare");
+    }
+
+    const cleanNim = data.nim && data.nim.trim() !== "" && data.nim !== "-" ? data.nim.trim() : null;
+    if (cleanNim) {
+      const existingNim = await prisma.studentKkn.findUnique({ where: { nim: cleanNim } });
+      if (existingNim) {
+        throw new Error("NIM (Nomor Induk Mahasiswa) sudah terdaftar di sistem TrashCare");
+      }
+    }
+
     const passwordHash = await bcrypt.hash("password123", 10);
 
     return prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
           name: data.nama_lengkap,
-          phone: formatPhoneNumber(data.no_telepon),
+          phone: formattedPhone,
           password: passwordHash,
           roleId: role.id,
           status: data.status_aktif || "Aktif",
@@ -84,8 +98,8 @@ export const adminMahasiswaService = {
       const studentProfile = await tx.studentKkn.create({
         data: {
           userId: user.id,
-          nim: data.nim,
-          jurusan: "Umum",
+          nim: cleanNim,
+          jurusan: "Teknik Informatika",
           fakultas: data.universitas || "UNIKOM",
           noWa: data.no_telepon,
           startDate: new Date(),
@@ -113,12 +127,22 @@ export const adminMahasiswaService = {
       status_aktif?: string;
     }
   ) => {
+    const cleanNim = data.nim !== undefined ? (data.nim && data.nim.trim() !== "" && data.nim !== "-" ? data.nim.trim() : null) : undefined;
+    if (cleanNim) {
+      const existingNim = await prisma.studentKkn.findFirst({
+        where: { nim: cleanNim, userId: { not: id } },
+      });
+      if (existingNim) {
+        throw new Error("NIM (Nomor Induk Mahasiswa) sudah terdaftar di sistem TrashCare");
+      }
+    }
+
     return prisma.$transaction(async (tx) => {
       const user = await tx.user.update({
         where: { id },
         data: {
           ...(data.nama_lengkap && { name: data.nama_lengkap }),
-          ...(data.no_telepon && { phone: data.no_telepon }),
+          ...(data.no_telepon && { phone: formatPhoneNumber(data.no_telepon) }),
           ...(data.status_aktif && { status: data.status_aktif }),
           ...(data.area_tugas !== undefined && { rwId: data.area_tugas || null }),
         },
@@ -130,7 +154,7 @@ export const adminMahasiswaService = {
         updatedStudent = await tx.studentKkn.update({
           where: { userId: id },
           data: {
-            ...(data.nim && { nim: data.nim }),
+            ...(cleanNim !== undefined && { nim: cleanNim }),
             ...(data.universitas && { fakultas: data.universitas }),
             ...(data.no_telepon && { noWa: data.no_telepon }),
             ...(data.area_tugas !== undefined && { assignedRwId: data.area_tugas || null }),

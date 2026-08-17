@@ -227,6 +227,24 @@ export class UserRepository {
       await tx.violation.deleteMany({
         where: { OR: [{ userId: id }, { petugasUserId: id }] },
       });
+      await tx.programKerjaKkn.updateMany({
+        where: { reviewedById: id },
+        data: { reviewedById: null },
+      });
+      await tx.surveiKelurahan.updateMany({
+        where: { validasiDplId: id },
+        data: { validasiDplId: null },
+      });
+      await tx.endlineSurveiKelurahan.updateMany({
+        where: { validasiDplId: id },
+        data: { validasiDplId: null },
+      });
+      await tx.importLog.deleteMany({
+        where: { userId: id },
+      });
+      await tx.kritikSaranPemanfaatan.deleteMany({
+        where: { userId: id },
+      });
 
       // 3. Delete the user
       return tx.user.delete({

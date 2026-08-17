@@ -31,8 +31,8 @@ const MasterData: React.FC = () => {
   const fetchMahasiswas = async () => {
     setLoadingMahasiswa(true);
     try {
-      const response = await api.get(`/admin/mahasiswa?limit=500`);
-      setMahasiswas(response.data.users || []);
+      const response = await api.get(`/users?roleName=MAHASISWA_KKN`);
+      setMahasiswas(response.data.data || response.data.users || []);
     } catch (err: any) {
       console.error("Gagal memuat data mahasiswa:", err);
     } finally {
@@ -51,7 +51,7 @@ const MasterData: React.FC = () => {
     return mahasiswas.filter(
       (m) =>
         (m.name || "").toLowerCase().includes(q) ||
-        (m.studentProfile?.nim || "").toLowerCase().includes(q) ||
+        (m.studentProfile?.nim || m.nim || "").toLowerCase().includes(q) ||
         (m.phone || "").toLowerCase().includes(q) ||
         (m.studentProfile?.kelompok?.name || "").toLowerCase().includes(q)
     );
@@ -94,8 +94,8 @@ const MasterData: React.FC = () => {
         await deleteBin(id);
         toast.success(`Berhasil menghapus ${name}`);
       } else if (type === "mahasiswa") {
-        await api.delete(`/admin/mahasiswa/${id}`);
-        toast.success(`Mahasiswa ${name} berhasil dinonaktifkan`);
+        await api.delete(`/users/${id}`);
+        toast.success(`Mahasiswa ${name} berhasil dihapus`);
         fetchMahasiswas();
       }
       setDeleteModalConfig({ isOpen: false, id: "", name: "", type: "user" });
