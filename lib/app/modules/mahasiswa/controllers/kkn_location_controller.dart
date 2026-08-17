@@ -216,6 +216,10 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             state = state.copyWith(
               zoneResetWarning: 'Waktu kegiatan telah berakhir. Anda tercatat ALPA.',
             );
+          } else {
+            state = state.copyWith(
+              clearWarning: true,
+            );
           }
           if (activeZone['latitude'] != null && activeZone['longitude'] != null) {
             state = state.copyWith(
