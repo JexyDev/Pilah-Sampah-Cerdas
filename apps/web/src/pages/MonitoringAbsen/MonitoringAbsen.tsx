@@ -445,12 +445,15 @@ const MonitoringAbsen: React.FC = () => {
   }, [schedules, selectedScheduleId]);
 
   const scheduleTargetHours = useMemo(() => {
-    if (configTargets.targetHarianJam) return configTargets.targetHarianJam;
-    if (!activeSchedule?.time) return 4;
-    const parsed = parseTimeString(activeSchedule.time);
-    const diffMins = calculateHourDifference(parsed.start, parsed.end);
-    const hours = Math.round(diffMins / 60);
-    return hours > 0 ? hours : 4;
+    if (activeSchedule?.time) {
+      const parsed = parseTimeString(activeSchedule.time);
+      const diffMins = calculateHourDifference(parsed.start, parsed.end);
+      if (diffMins > 0) {
+        const hours = diffMins / 60;
+        return Number((hours % 1 === 0 ? hours : hours.toFixed(1)).toString());
+      }
+    }
+    return configTargets.targetHarianJam || 4;
   }, [activeSchedule, configTargets.targetHarianJam]);
 
   // Attendance metrics counts
