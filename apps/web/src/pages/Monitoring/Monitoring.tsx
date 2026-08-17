@@ -84,7 +84,9 @@ const Monitoring: React.FC = () => {
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
 
   const isLurah = (user?.role || user?.peran || "").toUpperCase() === "LURAH";
+  const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes((user?.role || user?.peran || "").toUpperCase());
   const userKelurahan = user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "Cipaganti");
+  const [dplKelurahans, setDplKelurahans] = useState<string[]>([]);
 
   // Filter & Search States (100% Identik ManajemenTempatSampah.tsx)
   const [selectedMapKelurahan, setSelectedMapKelurahan] = useState<string>(isLurah ? userKelurahan : "Semua Kelurahan");
@@ -105,12 +107,54 @@ const Monitoring: React.FC = () => {
   const apiFilterWilayah = useMemo(() => {
     if (user?.peran === "RW") return user?.wilayah || "RW 06 Dago";
     if (isLurah) return userKelurahan || "Cipaganti";
+    if (isDpl) {
+      if (selectedMapKelurahan !== "Semua Kelurahan" && selectedMapKelurahan !== "Semua Kelurahan Binaan") {
+        return selectedMapKelurahan;
+      }
+      return dplKelurahans.length > 0 ? dplKelurahans.join(",") : user?.kelurahan || "Dago";
+    }
     if (user?.peran === "CAMAT") return "Kecamatan Coblong";
     return undefined;
-  }, [user, isLurah, userKelurahan]);
+  }, [user, isLurah, isDpl, userKelurahan, selectedMapKelurahan, dplKelurahans]);
 
   useEffect(() => {
-    if (isLurah && userKelurahan) {
+    if (isDpl) {
+      let initialList: string[] = [];
+      if (user?.dplKelompok && Array.isArray(user.dplKelompok) && user.dplKelompok.length > 0) {
+        initialList = Array.from(new Set(user.dplKelompok.map((g: any) => g.kelurahan).filter(Boolean))) as string[];
+      } else if (user?.kelurahan && user.kelurahan !== "Kota Bandung" && user.kelurahan !== "Seluruh Kelurahan") {
+        initialList = user.kelurahan.split(",").map((s) => s.trim()).filter(Boolean);
+      }
+
+      if (initialList.length > 0) {
+        setDplKelurahans(initialList);
+        setSelectedMapKelurahan(initialList.length === 1 ? initialList[0] : initialList[0]);
+        const geoKey = initialList[0].toUpperCase().replace(/\s+/g, "_");
+        if (KELURAHAN_GEODATA[geoKey]) {
+          const geo = KELURAHAN_GEODATA[geoKey];
+          setFlyTarget({ center: geo.centroid, zoom: 16, timestamp: Date.now() });
+        }
+      }
+
+      api.get("/dpl/groups")
+        .then((res) => {
+          if (res.data?.success && Array.isArray(res.data.data)) {
+            const liveList = Array.from(
+              new Set(res.data.data.map((g: any) => g.kelurahan).filter(Boolean))
+            ) as string[];
+            if (liveList.length > 0) {
+              setDplKelurahans(liveList);
+              setSelectedMapKelurahan(liveList[0]);
+              const geoKey = liveList[0].toUpperCase().replace(/\s+/g, "_");
+              if (KELURAHAN_GEODATA[geoKey]) {
+                const geo = KELURAHAN_GEODATA[geoKey];
+                setFlyTarget({ center: geo.centroid, zoom: 16, timestamp: Date.now() });
+              }
+            }
+          }
+        })
+        .catch(() => {});
+    } else if (isLurah && userKelurahan) {
       setSelectedMapKelurahan(userKelurahan);
       const geoKey = userKelurahan.toUpperCase().replace(/\s+/g, "_");
       if (KELURAHAN_GEODATA[geoKey]) {
@@ -118,7 +162,7 @@ const Monitoring: React.FC = () => {
         setFlyTarget({ center: geo.centroid, zoom: 16, timestamp: Date.now() });
       }
     }
-  }, [isLurah, userKelurahan]);
+  }, [isDpl, isLurah, user, userKelurahan]);
 
   const loadData = async (silent = false) => {
     try {
@@ -427,12 +471,12 @@ const Monitoring: React.FC = () => {
                 {/* 1. Kelurahan Filter */}
                 <select
                   value={selectedMapKelurahan}
-                  disabled={isLurah}
+                  disabled={isLurah || (isDpl && dplKelurahans.length === 1)}
                   onChange={(e) => {
-                    if (isLurah) return;
+                    if (isLurah || (isDpl && dplKelurahans.length === 1)) return;
                     const val = e.target.value;
                     setSelectedMapKelurahan(val);
-                    if (val !== "Semua Kelurahan" && KELURAHAN_GEODATA[val.toUpperCase().replace(/\s+/g, "_")]) {
+                    if (val !== "Semua Kelurahan" && val !== "Semua Kelurahan Binaan" && KELURAHAN_GEODATA[val.toUpperCase().replace(/\s+/g, "_")]) {
                       const geo = KELURAHAN_GEODATA[val.toUpperCase().replace(/\s+/g, "_")];
                       setFlyTarget({ center: geo.centroid, zoom: 16, timestamp: Date.now() });
                     } else {
@@ -440,16 +484,33 @@ const Monitoring: React.FC = () => {
                     }
                   }}
                   className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold shadow-2xs transition-all focus:outline-none ${
-                    isLurah
+                    isLurah || (isDpl && dplKelurahans.length === 1)
                       ? "bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed opacity-90"
                       : "bg-slate-50 border-slate-200 text-slate-700 cursor-pointer hover:bg-slate-100"
                   }`}
                 >
-                  {!isLurah && <option value="Semua Kelurahan">Semua Kelurahan</option>}
-                  {isLurah ? (
+                  {isDpl ? (
+                    <>
+                      {dplKelurahans.length > 1 && (
+                        <option value="Semua Kelurahan Binaan">Semua Kelurahan Binaan</option>
+                      )}
+                      {dplKelurahans.length > 0 ? (
+                        dplKelurahans.map((kel) => (
+                          <option key={kel} value={kel}>
+                            Kel. {kel} {dplKelurahans.length === 1 ? "(Binaan DPL)" : ""}
+                          </option>
+                        ))
+                      ) : (
+                        <option value={user?.kelurahan || "Dago"}>
+                          Kel. {user?.kelurahan || "Dago"} (Binaan DPL)
+                        </option>
+                      )}
+                    </>
+                  ) : isLurah ? (
                     <option value={userKelurahan}>Kel. {userKelurahan} (Terkunci - Wilayah Tugas)</option>
                   ) : (
                     <>
+                      <option value="Semua Kelurahan">Semua Kelurahan</option>
                       <option value="Dago">Kel. Dago</option>
                       <option value="Sadang Serang">Kel. Sadang Serang</option>
                       <option value="Sekeloa">Kel. Sekeloa</option>

@@ -72,20 +72,26 @@ export class AuthService {
     let rwName = anyUser.rw?.name || anyUser.studentProfile?.assignedRw?.name || "";
     let dplAssignment = "";
 
+    let dplGroupsList: any[] = [];
     if (userRoleName === "LURAH") {
       rwName = "Seluruh RW";
       if (!kelurahanName) kelurahanName = "Cipaganti";
     } else if (userRoleName === "DPL" || userRoleName === "DOSEN_PEMBIMBING") {
-      const dplGroup = await prisma.kelompokKkn.findFirst({
+      dplGroupsList = await prisma.kelompokKkn.findMany({
         where: { dplId: user.id },
+        select: { id: true, name: true, kelurahan: true, cakupanRw: true },
       });
-      if (dplGroup) {
-        kelurahanName = dplGroup.kelurahan || kelurahanName;
-        const rwList = Array.isArray(dplGroup.cakupanRw)
-          ? (dplGroup.cakupanRw as string[]).join(", ")
-          : "";
-        rwName = rwList || "Wilayah Dampingan KKN";
-        dplAssignment = `${dplGroup.name} (${kelurahanName ? `Kel. ${kelurahanName}` : ""}${rwList ? ` - ${rwList}` : ""})`;
+      const dplKelurahanNames = Array.from(
+        new Set(dplGroupsList.map((g) => g.kelurahan).filter(Boolean))
+      ) as string[];
+      if (dplKelurahanNames.length > 0) {
+        kelurahanName = dplKelurahanNames.join(", ");
+      }
+      if (dplGroupsList.length > 0) {
+        rwName = dplGroupsList.map((g) => g.name).join(", ");
+        dplAssignment = dplGroupsList
+          .map((g) => `${g.name} (${g.kelurahan ? `Kel. ${g.kelurahan}` : ""})`)
+          .join("; ");
       }
     }
 
@@ -121,6 +127,7 @@ export class AuthService {
         kelurahan: kelurahanName,
         rw: rwName,
         wilayah: dplAssignment || undefined,
+        dplKelompok: dplGroupsList.length > 0 ? dplGroupsList : (anyUser as any).dplKelompok || [],
         provinsi: user.provinsi || "Jawa Barat",
         kabupaten: user.kabupaten || "Kota Bandung",
         kecamatan: "Coblong",

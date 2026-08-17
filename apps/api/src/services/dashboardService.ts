@@ -41,18 +41,25 @@ async function resolveAreaIds(wilayah?: string): Promise<number[]> {
   if (!isWilayahFiltered(wilayah)) return [];
 
   const cleanWilayah = wilayah!.trim();
-  const match = cleanWilayah.match(/(\d+)/);
-  const rwNum = match ? match[1].padStart(2, "0") : null;
-  const rawNum = match ? parseInt(match[1]).toString() : null;
+  const parts = cleanWilayah.split(",").map((p) => p.trim()).filter(Boolean);
+
+  const orConditions: any[] = [];
+  for (const part of parts) {
+    const match = part.match(/(\d+)/);
+    const rwNum = match ? match[1].padStart(2, "0") : null;
+    const rawNum = match ? parseInt(match[1]).toString() : null;
+
+    orConditions.push(
+      { name: { contains: part, mode: "insensitive" as const } },
+      { kelurahan: { name: { contains: part, mode: "insensitive" as const } } },
+      ...(rwNum ? [{ name: { contains: `RW ${rwNum}`, mode: "insensitive" as const } }] : []),
+      ...(rawNum ? [{ name: { contains: `RW ${rawNum}`, mode: "insensitive" as const } }] : [])
+    );
+  }
 
   const areas = await prisma.rw.findMany({
     where: {
-      OR: [
-        { name: { contains: cleanWilayah, mode: "insensitive" } },
-        { kelurahan: { name: { contains: cleanWilayah, mode: "insensitive" } } },
-        ...(rwNum ? [{ name: { contains: `RW ${rwNum}`, mode: "insensitive" as const } }] : []),
-        ...(rawNum ? [{ name: { contains: `RW ${rawNum}`, mode: "insensitive" as const } }] : []),
-      ],
+      OR: orConditions,
     },
     select: { id: true },
   });
@@ -445,15 +452,21 @@ export const dashboardService = {
 
   getRecentTransactions: async (wilayah?: string) => {
     const isFiltered = isWilayahFiltered(wilayah);
-    const transactions = await prisma.setoranOtomatis.findMany({
-      where: isFiltered
-        ? {
-            warga: {
-              rw: { name: { contains: wilayah, mode: "insensitive" } },
-            },
+    const areaIds = isFiltered ? await resolveAreaIds(wilayah) : [];
+    const rwFilter = isFiltered
+      ? areaIds.length > 0
+        ? { id: { in: areaIds } }
+        : {
+            OR: [
+              { name: { contains: wilayah, mode: "insensitive" as const } },
+              { kelurahan: { name: { contains: wilayah, mode: "insensitive" as const } } },
+            ],
           }
-        : undefined,
-      take: 5,
+      : undefined;
+
+    const transactions = await prisma.setoranOtomatis.findMany({
+      where: rwFilter ? { warga: { rw: rwFilter } } : undefined,
+      take: 10,
       orderBy: {
         createdAt: "desc",
       },

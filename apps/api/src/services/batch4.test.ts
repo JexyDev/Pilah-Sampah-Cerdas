@@ -11,6 +11,13 @@ import { systemService } from "./systemService.js";
 const mockCreate = vi.fn();
 const mockFindMany = vi.fn();
 
+vi.mock("./redisService.js", () => ({
+  redisService: {
+    checkAndUseQuota: vi.fn().mockResolvedValue(true),
+    enqueueAiTask: vi.fn().mockImplementation((task) => task()),
+  },
+}));
+
 vi.mock("@prisma/client", () => {
   const mPrisma = {
     auditTrail: {

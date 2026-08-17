@@ -44,6 +44,7 @@ import showToast from "../../utils/showToast";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import PageHeader from "../../components/common/PageHeader";
+import { useAuthStore } from "../../store/useAuthStore";
 
 interface TransactionItem {
   id: string;
@@ -55,10 +56,16 @@ interface TransactionItem {
 }
 
 export const AktivitasMonitoring: React.FC = () => {
+  const { user } = useAuthStore();
+  const role = (user?.role || user?.peran || "").toUpperCase();
+  const isDpl = role === "DPL" || role === "DOSEN_PEMBIMBING";
+  const isLurah = role === "LURAH";
+
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [period, setPeriod] = useState<string>("bulanan");
   const [selectedKelurahan, setSelectedKelurahan] = useState<string>("ALL");
+  const [dplKelurahans, setDplKelurahans] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Pagination states for table
@@ -69,6 +76,42 @@ export const AktivitasMonitoring: React.FC = () => {
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [compositionStats, setCompositionStats] = useState<any[]>([]);
 
+  // Load DPL Supervised Kelurahans
+  useEffect(() => {
+    if (isDpl) {
+      let initialList: string[] = [];
+      if (user?.dplKelompok && Array.isArray(user.dplKelompok) && user.dplKelompok.length > 0) {
+        initialList = Array.from(new Set(user.dplKelompok.map((g: any) => g.kelurahan).filter(Boolean))) as string[];
+      } else if (user?.kelurahan && user.kelurahan !== "Kota Bandung" && user.kelurahan !== "Seluruh Kelurahan") {
+        initialList = user.kelurahan.split(",").map((s) => s.trim()).filter(Boolean);
+      }
+
+      if (initialList.length > 0) {
+        setDplKelurahans(initialList);
+        setSelectedKelurahan(initialList.length === 1 ? initialList[0] : initialList.join(","));
+      }
+
+      // Fetch live group summary to guarantee latest assignments
+      api.get("/dpl/groups")
+        .then((res) => {
+          if (res.data?.success && Array.isArray(res.data.data)) {
+            const liveList = Array.from(
+              new Set(res.data.data.map((g: any) => g.kelurahan).filter(Boolean))
+            ) as string[];
+            if (liveList.length > 0) {
+              setDplKelurahans(liveList);
+              setSelectedKelurahan(liveList.length === 1 ? liveList[0] : liveList.join(","));
+            }
+          }
+        })
+        .catch((err) => {
+          console.warn("Gagal memuat kelompok DPL:", err);
+        });
+    } else if (isLurah && user?.kelurahan) {
+      setSelectedKelurahan(user.kelurahan);
+    }
+  }, [isDpl, isLurah, user]);
+
   const fetchMonitoringData = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
@@ -76,7 +119,7 @@ export const AktivitasMonitoring: React.FC = () => {
 
       const [kpiRes, transRes] = await Promise.all([
         api.get(`/dashboard/kpi?period=${period}&wilayah=${selectedKelurahan}`),
-        api.get("/dashboard/transactions"),
+        api.get(`/dashboard/transactions?wilayah=${selectedKelurahan}`),
       ]);
 
       if (kpiRes.data?.success && kpiRes.data.data) {
@@ -146,9 +189,23 @@ export const AktivitasMonitoring: React.FC = () => {
       <PageHeader
         icon={Receipt}
         category="Audit Transaksi Pemilahan"
-        scope="Kecamatan Coblong"
+        scope={
+          isDpl
+            ? dplKelurahans.length > 0
+              ? `Kelurahan Binaan (${dplKelurahans.map((k) => `Kel. ${k}`).join(", ")})`
+              : "Wilayah Binaan KKN"
+            : isLurah
+              ? `Kelurahan ${user?.kelurahan || "Cipaganti"}`
+              : "Kecamatan Coblong"
+        }
         title="Pemantauan & Rekapitulasi"
-        description="Monitoring analitik volume sampah terpilah warga Coblong, riwayat log fisik, dan skor kepatuhan lingkungan terpadu."
+        description={
+          isDpl
+            ? "Monitoring analitik volume sampah terpilah warga wilayah binaan KKN, riwayat log fisik, dan skor kepatuhan lingkungan terpadu."
+            : isLurah
+              ? `Monitoring analitik volume sampah terpilah warga Kelurahan ${user?.kelurahan || "Cipaganti"}, riwayat log fisik, dan skor kepatuhan lingkungan terpadu.`
+              : "Monitoring analitik volume sampah terpilah warga Coblong, riwayat log fisik, dan skor kepatuhan lingkungan terpadu."
+        }
         actions={
           <div className="flex flex-wrap items-center gap-2.5">
             {/* Period Filter Dropdown */}
@@ -168,19 +225,49 @@ export const AktivitasMonitoring: React.FC = () => {
               ))}
             </div>
 
-            {/* Kelurahan Select */}
+            {/* Kelurahan Select - Scoped to Binaan for DPL */}
             <select
               value={selectedKelurahan}
               onChange={(e) => setSelectedKelurahan(e.target.value)}
-              className="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-emerald-500 transition cursor-pointer shadow-xs"
+              disabled={isLurah || (isDpl && dplKelurahans.length === 1)}
+              className={`px-3.5 py-2 border rounded-xl text-xs font-bold outline-none transition shadow-xs ${
+                isLurah || (isDpl && dplKelurahans.length === 1)
+                  ? "bg-slate-100 border-slate-200 text-slate-600 cursor-not-allowed"
+                  : "bg-white border-slate-200 text-slate-700 focus:border-emerald-500 cursor-pointer"
+              }`}
             >
-              <option value="ALL">Semua Kelurahan</option>
-              <option value="Dago">Kel. Dago</option>
-              <option value="Lebak Gede">Kel. Lebak Gede</option>
-              <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
-              <option value="Sadang Serang">Kel. Sadang Serang</option>
-              <option value="Sekeloa">Kel. Sekeloa</option>
-              <option value="Cipaganti">Kel. Cipaganti</option>
+              {isDpl ? (
+                <>
+                  {dplKelurahans.length > 1 && (
+                    <option value={dplKelurahans.join(",")}>Semua Kelurahan Binaan</option>
+                  )}
+                  {dplKelurahans.length > 0 ? (
+                    dplKelurahans.map((kel) => (
+                      <option key={kel} value={kel}>
+                        Kel. {kel} {dplKelurahans.length === 1 ? "(Binaan DPL)" : ""}
+                      </option>
+                    ))
+                  ) : (
+                    <option value={user?.kelurahan || "Dago"}>
+                      Kel. {user?.kelurahan || "Dago"} (Binaan DPL)
+                    </option>
+                  )}
+                </>
+              ) : isLurah ? (
+                <option value={user?.kelurahan || "Cipaganti"}>
+                  Kel. {user?.kelurahan || "Cipaganti"} (Wilayah Tugas)
+                </option>
+              ) : (
+                <>
+                  <option value="ALL">Semua Kelurahan</option>
+                  <option value="Dago">Kel. Dago</option>
+                  <option value="Lebak Gede">Kel. Lebak Gede</option>
+                  <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
+                  <option value="Sadang Serang">Kel. Sadang Serang</option>
+                  <option value="Sekeloa">Kel. Sekeloa</option>
+                  <option value="Cipaganti">Kel. Cipaganti</option>
+                </>
+              )}
             </select>
 
             {/* Refresh Button */}

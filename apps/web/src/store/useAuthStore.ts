@@ -33,6 +33,12 @@ export interface User {
   kelurahan?: string;
   kecamatan?: string;
   rw?: string;
+  dplKelompok?: Array<{
+    id: string;
+    name: string;
+    kelurahan: string;
+    cakupanRw?: any;
+  }>;
   avatar: string;
   avatarBg: string;
   avatarColor: string;
@@ -233,7 +239,12 @@ export const useAuthStore = create<AuthState>((set) => ({
         name: backendUser.name,
         email: backendUser.email,
         peran: normalizedRole,
-        wilayah: getWilayahByRole(normalizedRole),
+        role: backendUser.role,
+        wilayah: backendUser.wilayah || getWilayahByRole(normalizedRole),
+        kelurahan: backendUser.kelurahan,
+        kecamatan: backendUser.kecamatan || "Coblong",
+        rw: backendUser.rw,
+        dplKelompok: backendUser.dplKelompok,
         avatar: computeAvatarInitials(backendUser.name),
         fotoProfil: backendUser.fotoProfil,
         phone: backendUser.phone,
@@ -297,7 +308,12 @@ export const useAuthStore = create<AuthState>((set) => ({
         name: backendUser.name,
         email: backendUser.email,
         peran: normalizedRole,
-        wilayah: getWilayahByRole(normalizedRole),
+        role: backendUser.role,
+        wilayah: backendUser.wilayah || getWilayahByRole(normalizedRole),
+        kelurahan: backendUser.kelurahan,
+        kecamatan: backendUser.kecamatan || "Coblong",
+        rw: backendUser.rw,
+        dplKelompok: backendUser.dplKelompok,
         avatar: computeAvatarInitials(backendUser.name),
         fotoProfil: backendUser.fotoProfil,
         phone: backendUser.phone,

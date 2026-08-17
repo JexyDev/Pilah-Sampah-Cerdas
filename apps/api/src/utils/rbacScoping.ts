@@ -39,11 +39,73 @@ export async function getScopingFilters(user: {
   };
   const role = normalizeRole(user.role);
 
-  // 1. DEVELOPER, SUPER_USER, ADMIN_DLH, PEMIMPIN, PANITIA_TASKFORCE, and DPL see all data
+  // 1. DEVELOPER, SUPER_USER, ADMIN_DLH, PEMIMPIN, and PANITIA_TASKFORCE see all data
   if (
-    ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL"].includes(role)
+    ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"].includes(role)
   ) {
     return {};
+  }
+
+  // 1b. DPL (Dosen Pembimbing Lapangan) is strictly scoped to their assigned Kelompok KKN Kelurahan
+  if (role === "DPL" || role === "DOSEN_PEMBIMBING") {
+    const dplGroups = await prisma.kelompokKkn.findMany({
+      where: { dplId: dbUser.id },
+      select: { kelurahan: true },
+    });
+    const dplKelurahans = Array.from(
+      new Set(dplGroups.map((g) => g.kelurahan).filter(Boolean))
+    ) as string[];
+
+    if (dplKelurahans.length === 0) {
+      // Fallback: check if user.rw has a kelurahan
+      const userKel = dbUser.rw?.kelurahan?.name;
+      if (userKel) dplKelurahans.push(userKel);
+    }
+
+    if (dplKelurahans.length === 0) {
+      return {
+        userFilter: { id: "none" },
+        binFilter: { id: "none" },
+        householdFilter: { id: "none" },
+        wasteLogFilter: { id: "none" },
+      };
+    }
+
+    const kelurahanRecords = await prisma.kelurahan.findMany({
+      where: {
+        name: { in: dplKelurahans, mode: "insensitive" },
+      },
+      select: { id: true, name: true },
+    });
+    const kelurahanIds = kelurahanRecords.map((k) => k.id);
+    const kelurahanNames = kelurahanRecords.map((k) => k.name);
+    const allKelurahanNames = Array.from(new Set([...dplKelurahans, ...kelurahanNames]));
+
+    return {
+      userFilter: {
+        OR: [
+          { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } }, role: { name: "WARGA" } },
+          { studentProfile: { kelompok: { dplId: dbUser.id } } },
+        ],
+      },
+      binFilter: {
+        OR: [
+          { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } },
+          { kelurahanId: { in: kelurahanIds } },
+          { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } },
+        ],
+      },
+      householdFilter: {
+        rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } },
+      },
+      wasteLogFilter: {
+        OR: [
+          { bin: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } },
+          { bin: { kelurahanId: { in: kelurahanIds } } },
+          { bin: { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } } },
+        ],
+      },
+    };
   }
 
   // 2. CAMAT is scoped by Kecamatan

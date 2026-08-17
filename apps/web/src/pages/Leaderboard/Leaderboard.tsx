@@ -17,7 +17,6 @@ import {
   MapPin,
   GraduationCap,
   Trophy,
-  RefreshCcw,
   Recycle,
   Activity,
   LayoutList,
@@ -373,16 +372,6 @@ const Leaderboard: React.FC = () => {
             </p>
           </div>
         </div>
-
-        <button
-          onClick={() => (system === "system1" ? fetchLeaderboard() : fetchLeaderboardKkn())}
-          disabled={isLoading}
-          className="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all cursor-pointer font-bold text-xs flex items-center gap-1.5 shadow-2xs"
-          title="Muat Ulang Data"
-        >
-          <RefreshCcw size={15} className={isLoading ? "animate-spin text-[#009966]" : ""} />
-          <span className="hidden sm:inline">Muat Ulang</span>
-        </button>
       </div>
 
       {/* 2. SYSTEM TOGGLE + SUB-TABS */}

@@ -14,7 +14,46 @@ export const dashboardController = {
       let { wilayah, period, startDate, endDate } = req.query;
       const user = req.user;
 
-      if (!wilayah && user && (user.role === "LURAH" || user.role === "CAMAT") && user.rwId) {
+      const isAllWilayah = (w: any) =>
+        !w ||
+        w === "ALL" ||
+        w === "Semua Kelurahan" ||
+        w === "Kecamatan Coblong" ||
+        w === "semua" ||
+        w === "all";
+
+      if (user && (user.role === "DPL" || user.role === "DOSEN_PEMBIMBING")) {
+        const { PrismaClient } = await import("@prisma/client");
+        const prisma = new PrismaClient();
+        const dplGroups = await prisma.kelompokKkn.findMany({
+          where: { dplId: user.userId || (user as any).id },
+          select: { kelurahan: true },
+        });
+        const dplKelurahans = Array.from(
+          new Set(dplGroups.map((g) => g.kelurahan).filter(Boolean))
+        ) as string[];
+
+        if (dplKelurahans.length === 0 && user.rwId) {
+          const userArea = await prisma.rw.findUnique({
+            where: { id: user.rwId },
+            include: { kelurahan: true },
+          });
+          if (userArea?.kelurahan?.name) dplKelurahans.push(userArea.kelurahan.name);
+        }
+
+        if (isAllWilayah(wilayah)) {
+          if (dplKelurahans.length > 0) {
+            wilayah = dplKelurahans.join(",");
+          }
+        } else if (dplKelurahans.length > 0) {
+          // If specific wilayah requested, ensure it's allowed for DPL
+          const reqStr = String(wilayah).toLowerCase();
+          const isAllowed = dplKelurahans.some((k) => reqStr.includes(k.toLowerCase()));
+          if (!isAllowed) {
+            wilayah = dplKelurahans.join(",");
+          }
+        }
+      } else if (!wilayah && user && (user.role === "LURAH" || user.role === "CAMAT") && user.rwId) {
         const { PrismaClient } = await import("@prisma/client");
         const prisma = new PrismaClient();
         const userArea = await prisma.rw.findUnique({
@@ -24,9 +63,6 @@ export const dashboardController = {
         if (user.role === "LURAH" && userArea?.kelurahan) {
           wilayah = userArea.kelurahan.name;
         } else if (user.role === "CAMAT" && userArea?.kelurahan?.kecamatan) {
-          // Kecamatan.name is already stored as "Kecamatan <nama>" (e.g. "Kecamatan Coblong"),
-          // which isWilayahFiltered() in dashboardService recognizes as a no-filter sentinel
-          // (see all data within that kecamatan) — do not re-prefix it here.
           wilayah = userArea.kelurahan.kecamatan.name;
         }
       }
@@ -49,7 +85,37 @@ export const dashboardController = {
 
   getTransactions: async (req: Request, res: Response) => {
     try {
-      const { wilayah } = req.query;
+      let { wilayah } = req.query;
+      const user = req.user;
+
+      if (user && (user.role === "DPL" || user.role === "DOSEN_PEMBIMBING")) {
+        const { PrismaClient } = await import("@prisma/client");
+        const prisma = new PrismaClient();
+        const dplGroups = await prisma.kelompokKkn.findMany({
+          where: { dplId: user.userId || (user as any).id },
+          select: { kelurahan: true },
+        });
+        const dplKelurahans = Array.from(
+          new Set(dplGroups.map((g) => g.kelurahan).filter(Boolean))
+        ) as string[];
+
+        if (!wilayah || wilayah === "ALL" || wilayah === "Semua Kelurahan" || wilayah === "Kecamatan Coblong") {
+          if (dplKelurahans.length > 0) {
+            wilayah = dplKelurahans.join(",");
+          }
+        }
+      } else if (!wilayah && user && user.role === "LURAH" && user.rwId) {
+        const { PrismaClient } = await import("@prisma/client");
+        const prisma = new PrismaClient();
+        const userArea = await prisma.rw.findUnique({
+          where: { id: user.rwId },
+          include: { kelurahan: true },
+        });
+        if (userArea?.kelurahan?.name) {
+          wilayah = userArea.kelurahan.name;
+        }
+      }
+
       const transactions = await dashboardService.getRecentTransactions(wilayah as string);
       res.status(200).json({
         success: true,
