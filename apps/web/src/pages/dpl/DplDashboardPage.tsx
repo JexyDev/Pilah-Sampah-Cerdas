@@ -834,13 +834,6 @@ export const DplDashboardPage: React.FC = () => {
                     Program Kerja yang Diusulkan
                   </h3>
                 </div>
-                <a
-                  href="/program-kerja-kkn"
-                  className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1"
-                >
-                  <span>Lihat Semua Proker</span>
-                  <ChevronRight size={14} />
-                </a>
               </div>
 
               {/* List of Prokers */}
