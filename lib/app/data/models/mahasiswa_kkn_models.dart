@@ -226,8 +226,7 @@ class WargaDampingan extends Equatable {
           (json['status']?.toString().toUpperCase() == 'ACTIVATED') ||
           (json['status'] == 'ACTIVE_BOUND') ||
           (json['binOrganikId'] != null && json['binOrganikId'].toString().trim().isNotEmpty),
-      role: json['role']?.toString().toUpperCase() ?? json['user']?['role']?.toString().toUpperCase() ?? 'WARGA',
-      totalPoints: (json['totalPoints'] as num?)?.toInt() ?? 0,
+      totalPoints: (json['totalPoints'] as num?)?.toInt() ?? (json['totalPoin'] as num?)?.toInt() ?? (json['poin'] as num?)?.toInt() ?? 0,
       apiCorrectPercentage: (json['complianceScore'] as num?)?.toDouble() ?? (json['correctPercentage'] as num?)?.toDouble(),
     );
   }
