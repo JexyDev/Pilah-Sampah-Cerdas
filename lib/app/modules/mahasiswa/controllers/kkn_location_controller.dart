@@ -156,6 +156,16 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         );
         if (activeZone.isNotEmpty) {
           _currentTargetScheduleId = activeZone['id']?.toString() ?? activeZone['scheduleId']?.toString();
+          final status = (activeZone['attendanceStatus'] ?? activeZone['status'])?.toString().toLowerCase();
+          if (status == 'izin' || status == 'sakit') {
+            state = state.copyWith(
+              zoneResetWarning: 'Anda tercatat ${status?.toUpperCase()} pada jadwal kegiatan ini.',
+            );
+          } else if (status == 'alpa') {
+            state = state.copyWith(
+              zoneResetWarning: 'Waktu kegiatan telah berakhir. Anda tercatat ALPA.',
+            );
+          }
           if (activeZone['latitude'] != null && activeZone['longitude'] != null) {
             state = state.copyWith(
               activeActivity: activeZone,
