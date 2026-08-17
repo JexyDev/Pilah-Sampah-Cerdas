@@ -29,8 +29,6 @@ import {
   Lock,
   ChevronDown,
   Loader2,
-  AlertCircle,
-  ShieldAlert,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
