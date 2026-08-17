@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import {
@@ -18,11 +18,12 @@ import {
   RefreshCw,
   Users,
   Download,
-  Printer,
   GraduationCap,
   LayoutDashboard,
   Calendar,
   X,
+  ClipboardCheck,
+  FileText,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup, Polygon, useMapEvents, useMap } from "react-leaflet";
 import { KELURAHAN_GEODATA } from "../../constants/coblongGeoData";
@@ -152,11 +153,11 @@ export const DplDashboardPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get("tab")?.toUpperCase() || "OVERVIEW";
 
-  // Normalize tab string alias
+  // Normalize tab string alias - non-developer always locked to OVERVIEW (anti-redundancy)
   const activeTab: TabType = useMemo(() => {
+    if (!isDeveloper) return "OVERVIEW";
     if (rawTab === "STUDENTS") return "MAHASISWA";
     if (rawTab === "APPROVALS") return "APPROVAL";
-    if (rawTab === "MAP" && !isDeveloper) return "OVERVIEW";
     if (["OVERVIEW", "KELOMPOK", "MAHASISWA", "APPROVAL", "INOVASI", "MAP"].includes(rawTab)) {
       return rawTab as TabType;
     }
@@ -164,7 +165,9 @@ export const DplDashboardPage: React.FC = () => {
   }, [rawTab, isDeveloper]);
 
   const setActiveTab = (newTab: TabType) => {
-    setSearchParams({ tab: newTab });
+    if (isDeveloper) {
+      setSearchParams({ tab: newTab });
+    }
   };
 
   const [loading, setLoading] = useState(true);
@@ -502,142 +505,6 @@ export const DplDashboardPage: React.FC = () => {
     toast.success("Rekapitulasi nilai & kinerja mahasiswa KKN berhasil diekspor!");
   };
 
-  const handlePrintOfficialReport = () => {
-    if (!students || students.length === 0) {
-      toast.error("Tidak ada data mahasiswa untuk dicetak");
-      return;
-    }
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) {
-      toast.error("Gagal membuka jendela cetak. Izinkan popup di browser Anda.");
-      return;
-    }
-
-    const todayStr = new Date().toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "long",
-      year: "numeric"
-    });
-
-    const dplName = user?.name || (groups.length > 0 ? groups[0].name : "Dosen Pembimbing Lapangan");
-
-    const studentRowsHtml = students.map((s, i) => {
-      const grade = getGradeBadge(s.assessmentScore);
-      return `
-      <tr>
-        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 6px;">${i + 1}</td>
-        <td style="border: 1px solid #cbd5e1; padding: 6px; font-family: monospace; font-size: 8.5pt;">${s.nim || "-"}</td>
-        <td style="border: 1px solid #cbd5e1; padding: 6px; font-weight: bold;">${s.name} ${s.isKetua ? '<span style="font-size:7.5pt; background:#fef3c7; color:#92400e; padding:1px 4px; border-radius:4px;">Ketua</span>' : ''}</td>
-        <td style="border: 1px solid #cbd5e1; padding: 6px; font-size: 8.5pt;">${s.jurusan || "-"}</td>
-        <td style="border: 1px solid #cbd5e1; padding: 6px; font-size: 8.5pt;">${s.kelompokName || "-"}</td>
-        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 6px;">${s.attendedCount || 0} Sesi</td>
-        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 6px; font-weight: bold; color: #047857;">${s.attendanceRate || 0}%</td>
-        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 6px; font-weight: bold; color: #1d4ed8;">${s.assessmentScore !== null && s.assessmentScore !== undefined ? s.assessmentScore : '<span style="color:#94a3b8;">-</span>'}</td>
-        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 6px; font-weight: 900;">${grade.letter}</td>
-      </tr>
-      `;
-    }).join("");
-
-    const avgAttendance = students.length > 0
-      ? (students.reduce((acc, curr) => acc + (curr.attendanceRate || 0), 0) / students.length).toFixed(1)
-      : "0";
-    
-    const assessedStudents = students.filter(s => s.assessmentScore !== null && s.assessmentScore !== undefined);
-    const avgScore = assessedStudents.length > 0
-      ? (assessedStudents.reduce((acc, curr) => acc + (curr.assessmentScore || 0), 0) / assessedStudents.length).toFixed(1)
-      : "-";
-
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html lang="id">
-      <head>
-        <meta charset="UTF-8">
-        <title>Rekapitulasi Pembimbingan & Nilai KKN DPL - ${todayStr}</title>
-        <style>
-          @page { size: A4 landscape; margin: 12mm; }
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 10pt; color: #0f172a; line-height: 1.4; padding: 10px; }
-          .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 15px; }
-          .header h2 { margin: 0; font-size: 13pt; text-transform: uppercase; letter-spacing: 0.5px; }
-          .header h3 { margin: 3px 0 0 0; font-size: 10pt; font-weight: normal; color: #334155; }
-          .meta-table { width: 100%; margin-bottom: 12px; font-size: 9.5pt; }
-          .meta-table td { padding: 2px 0; }
-          table.data { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 9pt; }
-          table.data th { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px; font-weight: bold; text-align: left; font-size: 8.5pt; }
-          .signature-section { margin-top: 30px; display: flex; justify-content: space-between; font-size: 9.5pt; page-break-inside: avoid; }
-          .sig-box { width: 240px; text-align: center; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h2>KECAMATAN COBLONG — KOTA BANDUNG & LPPM PERGURUAN TINGGI</h2>
-          <h3>REKAPITULASI RESMI PEMBIMBINGAN & EVALUASI NILAI AKADEMIK MAHASISWA KKN</h3>
-        </div>
-
-        <table class="meta-table">
-          <tr>
-            <td width="18%"><strong>Dosen Pembimbing (DPL)</strong></td>
-            <td width="42%">: ${dplName}</td>
-            <td width="18%"><strong>Tanggal Cetak</strong></td>
-            <td width="22%">: ${todayStr}</td>
-          </tr>
-          <tr>
-            <td><strong>Wilayah Dampingan</strong></td>
-            <td>: Kecamatan Coblong, Kota Bandung</td>
-            <td><strong>Total Mahasiswa</strong></td>
-            <td>: ${students.length} Mahasiswa Binaan</td>
-          </tr>
-        </table>
-
-        <div style="margin-bottom: 10px; font-size: 8.5pt; color: #334155; background: #f8fafc; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-          <strong>Ringkasan Eksekutif:</strong> Rerata Presensi: <strong>${avgAttendance}%</strong> | Rerata Skor DPL: <strong>${avgScore}</strong> | Mahasiswa Terasesmen: <strong>${assessedStudents.length} / ${students.length} Mahasiswa</strong>
-        </div>
-
-        <table class="data">
-          <thead>
-            <tr>
-              <th width="4%" style="text-align:center;">No</th>
-              <th width="13%">NIM</th>
-              <th width="23%">Nama Mahasiswa</th>
-              <th width="17%">Program Studi</th>
-              <th width="17%">Kelompok KKN</th>
-              <th width="8%" style="text-align:center;">Presensi</th>
-              <th width="7%" style="text-align:center;">Hadir %</th>
-              <th width="6%" style="text-align:center;">Skor DPL</th>
-              <th width="5%" style="text-align:center;">Mutu</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${studentRowsHtml}
-          </tbody>
-        </table>
-
-        <div class="signature-section">
-          <div class="sig-box">
-            <p>Mengetahui,<br><strong>Koordinator Panitia Taskforce KKN</strong></p>
-            <div style="height: 55px;"></div>
-            <p style="text-decoration: underline; font-weight: bold;">( Panitia Taskforce Coblong )</p>
-          </div>
-          <div class="sig-box">
-            <p>Kota Bandung, ${todayStr}<br><strong>Dosen Pembimbing Lapangan (DPL)</strong></p>
-            <div style="height: 55px;"></div>
-            <p style="text-decoration: underline; font-weight: bold;">( ${dplName} )</p>
-          </div>
-        </div>
-
-        <script>
-          window.onload = function() {
-            window.print();
-          };
-        </script>
-      </body>
-      </html>
-    `;
-
-    printWindow.document.open();
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
-  };
-
   // Filtered & Paginated Kelompok
   const filteredKelompok = useMemo(() => {
     return groups.filter((g) => {
@@ -734,13 +601,13 @@ export const DplDashboardPage: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2">
           {alerts && alerts.pendingApprovalsCount > 0 && (
-            <button
-              onClick={() => setActiveTab("APPROVAL")}
-              className="bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-amber-100 transition cursor-pointer"
+            <Link
+              to="/monitoring-absen"
+              className="bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-amber-100 transition cursor-pointer shadow-xs animate-pulse"
             >
               <AlertTriangle size={14} className="text-amber-600 shrink-0" />
               <span>{alerts.pendingApprovalsCount} Pengajuan Ketidakhadiran</span>
-            </button>
+            </Link>
           )}
           <button
             onClick={loadDashboardData}
@@ -753,40 +620,42 @@ export const DplDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modern Segmented Navigation Tabs */}
-      <div className="bg-slate-100/90 p-1.5 rounded-xl border border-slate-200/80 flex items-center gap-1 overflow-x-auto scrollbar-none">
-        {(
-          [
-            { key: "OVERVIEW", label: "Ringkasan Eksekutif", icon: LayoutDashboard },
-            { key: "KELOMPOK", label: "Kelompok Binaan", icon: Users },
-            { key: "MAHASISWA", label: "Mahasiswa & Nilai", icon: GraduationCap },
-            { key: "APPROVAL", label: "Validasi Ketidakhadiran", icon: FileCheck, badge: alerts?.pendingApprovalsCount },
-            ...(isDeveloper ? [{ key: "MAP" as TabType, label: "Peta Wilayah (Dev)", icon: MapPin }] : []),
-          ] as { key: TabType; label: string; icon: any; badge?: number }[]
-        ).map((t) => {
-          const Icon = t.icon;
-          const isActive = activeTab === t.key;
-          return (
-            <button
-              key={t.key}
-              onClick={() => setActiveTab(t.key)}
-              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer whitespace-nowrap ${
-                isActive
-                  ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
-              }`}
-            >
-              <Icon size={14} className={isActive ? "text-emerald-600" : "text-slate-400"} />
-              <span>{t.label}</span>
-              {t.badge && t.badge > 0 ? (
-                <span className="bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full leading-none">
-                  {t.badge}
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
+      {/* Modern Segmented Navigation Tabs (Hanya Muncul di Role Developer) */}
+      {isDeveloper && (
+        <div className="bg-slate-100/90 p-1.5 rounded-xl border border-slate-200/80 flex items-center gap-1 overflow-x-auto scrollbar-none">
+          {(
+            [
+              { key: "OVERVIEW", label: "Ringkasan Eksekutif", icon: LayoutDashboard },
+              { key: "KELOMPOK", label: "Kelompok (Dev)", icon: Users },
+              { key: "MAHASISWA", label: "Mahasiswa & Nilai (Dev)", icon: GraduationCap },
+              { key: "APPROVAL", label: "Validasi Izin (Dev)", icon: FileCheck, badge: alerts?.pendingApprovalsCount },
+              { key: "MAP" as TabType, label: "Peta Wilayah (Dev)", icon: MapPin },
+            ] as { key: TabType; label: string; icon: any; badge?: number }[]
+          ).map((t) => {
+            const Icon = t.icon;
+            const isActive = activeTab === t.key;
+            return (
+              <button
+                key={t.key}
+                onClick={() => setActiveTab(t.key)}
+                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+                  isActive
+                    ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                }`}
+              >
+                <Icon size={14} className={isActive ? "text-emerald-600" : "text-slate-400"} />
+                <span>{t.label}</span>
+                {t.badge && t.badge > 0 ? (
+                  <span className="bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full leading-none">
+                    {t.badge}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* VIEW 1: OVERVIEW */}
       {activeTab === "OVERVIEW" && (
@@ -975,11 +844,83 @@ export const DplDashboardPage: React.FC = () => {
             </div>
           </div>
 
+          {/* 4 Quick Action Navigation Cards (Pintu Tunggal Akses Operasional) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Link
+              to="/manajemen-ekosistem-kkn"
+              className="bg-white border border-slate-200/80 p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-teal-50 text-teal-700 rounded-xl group-hover:bg-teal-600 group-hover:text-white transition">
+                  <Users size={20} />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-xs text-slate-900">Kelompok & Mahasiswa</h4>
+                  <p className="text-[10.5px] text-slate-500">Kelola kelompok & profil anggota</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
+            </Link>
+
+            <Link
+              to="/monitoring-absen"
+              className="bg-white border border-slate-200/80 p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-amber-50 text-amber-700 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition relative">
+                  <ClipboardCheck size={20} />
+                  {alerts && alerts.pendingApprovalsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                      {alerts.pendingApprovalsCount}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-xs text-slate-900">Presensi & Validasi Izin</h4>
+                  <p className="text-[10.5px] text-slate-500">Validasi surat izin/sakit & log hadir</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
+            </Link>
+
+            <Link
+              to="/program-kerja-kkn"
+              className="bg-white border border-slate-200/80 p-4 rounded-2xl hover:border-blue-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-blue-50 text-blue-700 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition">
+                  <FileText size={20} />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-xs text-slate-900">Program Kerja KKN</h4>
+                  <p className="text-[10.5px] text-slate-500">Matriks usulan proker & biaya</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
+            </Link>
+
+            <Link
+              to="/jadwal-kegiatan"
+              className="bg-white border border-slate-200/80 p-4 rounded-2xl hover:border-purple-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-purple-50 text-purple-700 rounded-xl group-hover:bg-purple-600 group-hover:text-white transition">
+                  <Calendar size={20} />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-xs text-slate-900">Time Line Resmi KKN</h4>
+                  <p className="text-[10.5px] text-slate-500">18 tahapan timeline & kalender</p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
+            </Link>
+          </div>
+
           {/* Action Callout if pending approvals exist */}
           {alerts?.pendingRequests && alerts.pendingRequests.length > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-100 text-amber-800 rounded-lg">
+                <div className="p-2.5 bg-amber-100 text-amber-800 rounded-xl">
                   <AlertTriangle size={20} />
                 </div>
                 <div>
@@ -987,32 +928,33 @@ export const DplDashboardPage: React.FC = () => {
                     Membutuhkan Persetujuan ({alerts.pendingRequests.length} Pengajuan)
                   </h4>
                   <p className="text-xs text-amber-800">
-                    Beberapa mahasiswa mengajukan surat izin/sakit yang memerlukan validasi DPL.
+                    Beberapa mahasiswa mengajukan surat izin/sakit yang memerlukan validasi DPL di menu Presensi.
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setActiveTab("APPROVAL")}
-                className="px-4 py-2 bg-amber-600 text-white font-bold text-xs rounded-lg hover:bg-amber-700 transition"
+              <Link
+                to="/monitoring-absen"
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition shadow-xs whitespace-nowrap"
               >
-                Kelola Persetujuan
-              </button>
+                Validasi di Presensi
+              </Link>
             </div>
           )}
 
           {/* Quick Groups Grid */}
-          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold text-slate-900">Kelompok Bimbingan DPL</h3>
                 <p className="text-xs text-slate-500">Daftar kelompok KKN yang saat ini berada di bawah pengawasan Anda.</p>
               </div>
-              <button
-                onClick={() => setActiveTab("KELOMPOK")}
+              <Link
+                to="/manajemen-ekosistem-kkn"
                 className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
               >
-                Lihat Semua ({groups.length}) <ChevronRight size={14} />
-              </button>
+                <span>Kelola di Menu Kelompok ({groups.length})</span>
+                <ChevronRight size={14} />
+              </Link>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1037,7 +979,6 @@ export const DplDashboardPage: React.FC = () => {
                     <div className="bg-white p-2 rounded-lg border border-slate-100">
                       <span className="text-slate-400 block text-[10px]">Mahasiswa</span>
                       <span className="font-bold text-slate-800">{grp.studentCount ?? 0} Orang</span>
-
                     </div>
                     <div className="bg-white p-2 rounded-lg border border-slate-100">
                       <span className="text-slate-400 block text-[10px]">Kehadiran</span>
@@ -1045,15 +986,13 @@ export const DplDashboardPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      setSelectedGroupFilter(grp.name);
-                      setActiveTab("MAHASISWA");
-                    }}
-                    className="w-full py-1.5 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-100 transition flex items-center justify-center gap-1"
+                  <Link
+                    to={`/manajemen-ekosistem-kkn`}
+                    className="w-full py-2 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-100 transition flex items-center justify-center gap-1.5 shadow-2xs"
                   >
-                    <Eye size={12} /> Detail Mahasiswa
-                  </button>
+                    <span>Detail Anggota di Menu Kelompok</span>
+                    <ChevronRight size={13} />
+                  </Link>
                 </div>
               ))}
             </div>
@@ -1289,19 +1228,11 @@ export const DplDashboardPage: React.FC = () => {
               </div>
               <button
                 onClick={() => setIsExportModalOpen(true)}
-                className="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
                 title="Ekspor CSV Data Mahasiswa"
               >
-                <Download size={13} className="text-emerald-600" />
+                <Download size={13} className="text-white" />
                 <span>Ekspor CSV</span>
-              </button>
-              <button
-                onClick={handlePrintOfficialReport}
-                className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
-                title="Cetak Rekapitulasi Nilai & Evaluasi Resmi KKN"
-              >
-                <Printer size={13} />
-                <span>Cetak Laporan</span>
               </button>
             </div>
           </div>

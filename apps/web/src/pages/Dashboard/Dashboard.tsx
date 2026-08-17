@@ -1774,7 +1774,7 @@ const Dashboard: React.FC = () => {
   if (user?.peran === "PETUGAS_RESIDU") return <ResiduDashboard />;
   if (user?.peran === "DPL" || user?.peran === "DOSEN_PEMBIMBING") return <DplDashboardPage />;
 
-  if (user?.peran === "PANITIA_TASKFORCE") {
+  if (user?.peran === "PANITIA_TASKFORCE" || user?.peran === "PEMIMPIN") {
     return <TaskforceDashboardPage />;
   }
 

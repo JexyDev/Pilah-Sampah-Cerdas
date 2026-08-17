@@ -14,7 +14,6 @@ import {
   Clock,
   Search,
   Download,
-  Printer,
   Loader2,
   X,
   Wallet,
@@ -322,10 +321,6 @@ export const ProgramKerjaKkn: React.FC = () => {
 
   const totalBiaya = prokerList.reduce((acc, p) => acc + (Number(p.kebutuhanBiaya) || 0), 0);
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   const handleExportCsv = () => {
     if (filteredProkers.length === 0) {
       toast.error("Tidak ada data untuk diekspor");
@@ -456,14 +451,7 @@ export const ProgramKerjaKkn: React.FC = () => {
             className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-xl font-bold text-xs shadow-2xs transition-all cursor-pointer"
           >
             <Download size={14} className="text-emerald-600" />
-            Export CSV
-          </button>
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-xl font-bold text-xs shadow-2xs transition-all cursor-pointer"
-          >
-            <Printer size={14} className="text-slate-600" />
-            Cetak
+            Ekspor CSV
           </button>
           {canModifyProker && (
             <button

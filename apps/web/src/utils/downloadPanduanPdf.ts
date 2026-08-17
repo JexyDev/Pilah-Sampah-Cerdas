@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 export const downloadPanduanPdf = () => {
   const printWindow = window.open("", "_blank");
   if (!printWindow) {
-    toast.error("Gagal membuka jendela cetak. Mohon izinkan popup di browser Anda.");
+    toast.error("Gagal membuka jendela dokumen. Mohon izinkan popup di browser Anda.");
     return;
   }
 
@@ -58,16 +58,16 @@ export const downloadPanduanPdf = () => {
         .header-cover {
           border-bottom: 2.5px solid #059669;
           padding-bottom: 14px;
-          margin-bottom: 20px;
+          margin-bottom: 16px;
           display: flex;
-          align-items: center;
           justify-content: space-between;
+          align-items: flex-end;
         }
 
         .logo-title h1 {
-          margin: 0;
-          font-size: 22pt;
+          font-size: 24pt;
           font-weight: 900;
+          margin: 0;
           color: #0f172a;
           letter-spacing: -0.5px;
         }
@@ -77,137 +77,139 @@ export const downloadPanduanPdf = () => {
         }
 
         .logo-title p {
-          margin: 4px 0 0 0;
-          font-size: 9.5pt;
-          color: #475569;
+          margin: 3px 0 0 0;
+          color: #64748b;
+          font-size: 9pt;
           font-weight: 600;
         }
 
         .badge-doc {
           background: #ecfdf5;
           color: #047857;
-          border: 1px solid #6ee7b7;
-          padding: 6px 14px;
-          border-radius: 20px;
+          border: 1px solid #a7f3d0;
+          padding: 4px 10px;
+          border-radius: 6px;
+          font-weight: 700;
           font-size: 8pt;
-          font-weight: 800;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
         }
 
         .section-box {
-          margin-bottom: 22px;
-          page-break-inside: avoid;
+          margin-bottom: 16px;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 12px 14px;
+          background: #ffffff;
         }
 
         .section-title {
-          font-size: 12pt;
+          font-size: 11pt;
           font-weight: 800;
           color: #0f172a;
-          border-left: 4px solid #059669;
-          padding-left: 10px;
-          margin-bottom: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.3px;
+          border-bottom: 1.5px solid #f1f5f9;
+          padding-bottom: 5px;
+          margin-bottom: 8px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
         }
 
-        .flow-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 12px;
-          margin-top: 10px;
+        .step-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
         }
 
-        .flow-card {
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
-          border-radius: 10px;
-          padding: 12px 14px;
-          position: relative;
+        .step-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          font-size: 9pt;
         }
 
-        .flow-card-num {
-          display: inline-block;
+        .step-num {
+          background: #059669;
+          color: white;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           font-size: 7.5pt;
           font-weight: 800;
-          color: #047857;
-          background: #d1fae5;
-          padding: 2px 8px;
-          border-radius: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          margin-bottom: 4px;
+          flex-shrink: 0;
+          margin-top: 1px;
         }
 
-        .flow-card-title {
-          font-size: 10pt;
-          font-weight: 800;
-          color: #0f172a;
-          margin: 2px 0 4px 0;
+        .rule-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 8px;
+          margin-top: 6px;
         }
 
-        .flow-card-desc {
-          font-size: 8.5pt;
-          color: #475569;
-          line-height: 1.4;
-        }
-
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 10px;
-          font-size: 8.5pt;
-        }
-
-        th, td {
-          border: 1px solid #cbd5e1;
-          padding: 9px 11px;
-          text-align: left;
-          vertical-align: top;
-        }
-
-        th {
-          background: #f1f5f9;
-          color: #0f172a;
-          font-weight: 800;
-          text-transform: uppercase;
-          font-size: 8pt;
-          letter-spacing: 0.3px;
-        }
-
-        tr:nth-child(even) {
+        .rule-card {
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          padding: 8px 10px;
           background: #f8fafc;
         }
 
-        ul {
-          margin: 6px 0;
-          padding-left: 18px;
+        .rule-card strong {
+          display: block;
+          font-size: 8.5pt;
+          color: #0f172a;
+          margin-bottom: 2px;
         }
 
-        li {
-          margin-bottom: 4px;
+        .rule-card span {
+          font-size: 8pt;
+          color: #475569;
+        }
+
+        .role-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 8.5pt;
+          margin-top: 6px;
+        }
+
+        .role-table th {
+          background: #f8fafc;
+          border: 1px solid #cbd5e1;
+          padding: 5px 8px;
+          text-align: left;
+          font-weight: 700;
+          color: #334155;
+        }
+
+        .role-table td {
+          border: 1px solid #e2e8f0;
+          padding: 5px 8px;
           color: #334155;
         }
 
         .note-box {
-          background: #f0fdf4;
-          border: 1px solid #bbf7d0;
-          border-radius: 10px;
-          padding: 12px 16px;
-          font-size: 8.5pt;
-          color: #166534;
-          margin-top: 20px;
-          line-height: 1.5;
+          background: #eff6ff;
+          border: 1px solid #bfdbfe;
+          border-radius: 6px;
+          padding: 8px 12px;
+          font-size: 8pt;
+          color: #1e40af;
+          margin-top: 10px;
         }
 
         .footer {
-          margin-top: 30px;
-          border-top: 1px solid #e2e8f0;
-          padding-top: 12px;
           text-align: center;
-          font-size: 8pt;
-          color: #64748b;
-          font-weight: 600;
+          font-size: 7.5pt;
+          color: #94a3b8;
+          margin-top: 14px;
+          border-top: 1px solid #f1f5f9;
+          padding-top: 8px;
         }
 
         @media print {
@@ -226,9 +228,9 @@ export const downloadPanduanPdf = () => {
     <body>
 
       <div class="no-print" style="background: #0f172a; color: white; padding: 12px 20px; text-align: center; font-weight: 700; position: sticky; top: 0; z-index: 100; font-family: sans-serif;">
-        <span>Dokumen Buku Panduan PDF Siap Dicetak.</span>
+        <span>Dokumen Buku Panduan PDF Siap Diekspor.</span>
         <button onclick="window.print()" style="margin-left: 15px; background: #059669; color: white; border: none; padding: 7px 18px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 9pt;">
-          🖨️ Cetak / Simpan PDF
+          Simpan / Unduh PDF
         </button>
       </div>
 
@@ -369,7 +371,7 @@ export const downloadPanduanPdf = () => {
                 <td><strong>SUPER USER</strong></td>
                 <td>Kredensial SUPER USER</td>
                 <td>
-                  • Menggenerasi dan mencetak Master QR Code Tempat Sampah (<code>PRINTED</code>).<br>
+                  • Menggenerasi dan mengelola Master QR Code Tempat Sampah (<code>PRINTED</code>).<br>
                   • Mengelola <code>system_configs</code>, audit trail ledger, &amp; hak akses pengguna.
                 </td>
               </tr>

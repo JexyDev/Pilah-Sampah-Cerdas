@@ -5,7 +5,7 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import { LineChart, FileText, Grid, Download, TrendingUp, MoreVertical, Cpu, Network, ArrowUpDown } from "lucide-react";
+import { LineChart, Grid, Download, TrendingUp, MoreVertical, Cpu, Network, ArrowUpDown } from "lucide-react";
 
 import React, { useState, useEffect } from "react";
 import api from "../../services/api";
@@ -75,10 +75,6 @@ const LaporanAnalitik: React.FC = () => {
     }
   };
 
-  const handleExportPDF = () => {
-    window.print();
-  };
-
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
       {/* Header Banner */}
@@ -96,12 +92,6 @@ const LaporanAnalitik: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={handleExportPDF}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-xs border border-slate-200 cursor-pointer"
-          >
-            <FileText size={14} /> Ekspor PDF
-          </button>
           <button
             onClick={handleExportCSV}
             className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-xs border border-slate-200 cursor-pointer"
