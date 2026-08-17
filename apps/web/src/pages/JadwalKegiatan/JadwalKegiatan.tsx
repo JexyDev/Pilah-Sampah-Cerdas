@@ -202,12 +202,22 @@ const JadwalKegiatan: React.FC = () => {
 
     try {
       const isCircle = geofenceMode === "CIRCLE";
+      let calcLat = isCircle && formData.polygon.length >= 1 ? Number(formData.polygon[0][0]) : (formData.latitude ? Number(formData.latitude) : null);
+      let calcLng = isCircle && formData.polygon.length >= 1 ? Number(formData.polygon[0][1]) : (formData.longitude ? Number(formData.longitude) : null);
+
+      if (!isCircle && formData.polygon.length >= 3) {
+        const sumLat = formData.polygon.reduce((acc: number, p: any) => acc + Number(p[0]), 0);
+        const sumLng = formData.polygon.reduce((acc: number, p: any) => acc + Number(p[1]), 0);
+        calcLat = Number((sumLat / formData.polygon.length).toFixed(7));
+        calcLng = Number((sumLng / formData.polygon.length).toFixed(7));
+      }
+
       const payload = {
         ...formData,
         date: formattedIsoDate,
-        latitude: isCircle && formData.polygon.length >= 1 ? Number(formData.polygon[0][0]) : null,
-        longitude: isCircle && formData.polygon.length >= 1 ? Number(formData.polygon[0][1]) : null,
-        radius: isCircle && formData.radius !== "" ? parseInt(String(formData.radius), 10) : 100,
+        latitude: calcLat,
+        longitude: calcLng,
+        radius: formData.radius !== "" ? parseInt(String(formData.radius), 10) : 100,
         polygon: !isCircle && formData.polygon.length >= 3 ? formData.polygon : null,
       };
 

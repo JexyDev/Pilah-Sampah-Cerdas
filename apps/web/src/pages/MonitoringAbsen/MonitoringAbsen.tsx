@@ -1101,6 +1101,22 @@ const MonitoringAbsen: React.FC = () => {
         ? formData.kelompokId || groups[0].id
         : formData.kelompokId || undefined;
 
+    let calcLat =
+      geofenceMode === "CIRCLE" && selectedPos.length >= 1
+        ? Number(selectedPos[0][0])
+        : undefined;
+    let calcLng =
+      geofenceMode === "CIRCLE" && selectedPos.length >= 1
+        ? Number(selectedPos[0][1])
+        : undefined;
+
+    if (geofenceMode === "POLYGON" && selectedPos.length >= 3) {
+      const sumLat = selectedPos.reduce((acc: number, p: any) => acc + Number(p[0]), 0);
+      const sumLng = selectedPos.reduce((acc: number, p: any) => acc + Number(p[1]), 0);
+      calcLat = Number((sumLat / selectedPos.length).toFixed(7));
+      calcLng = Number((sumLng / selectedPos.length).toFixed(7));
+    }
+
     const payload = {
       title: (formData.title || "").trim(),
       category: finalCategory,
@@ -1108,18 +1124,9 @@ const MonitoringAbsen: React.FC = () => {
       time: timeFormatted,
       location: (formData.location || "").trim(),
       kelompokId: targetKelompokId,
-      radius:
-        geofenceMode === "CIRCLE"
-          ? Number(formData.radius) || 100
-          : undefined,
-      latitude:
-        geofenceMode === "CIRCLE" && selectedPos.length >= 1
-          ? Number(selectedPos[0][0])
-          : undefined,
-      longitude:
-        geofenceMode === "CIRCLE" && selectedPos.length >= 1
-          ? Number(selectedPos[0][1])
-          : undefined,
+      radius: Number(formData.radius) || 100,
+      latitude: calcLat,
+      longitude: calcLng,
       polygon:
         geofenceMode === "POLYGON" && selectedPos.length >= 3
           ? selectedPos
