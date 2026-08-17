@@ -28,7 +28,7 @@ abstract class KknRepository {
   Future<List<dynamic>> getSchedules();
 
   /// Mengambil data koordinat zona penugasan aktif (GET /kkn/active-zone)
-  Future<Map<String, dynamic>> getActiveZone();
+  Future<Map<String, dynamic>> getActiveZone({double? latitude, double? longitude});
 
   /// Mengambil target lokasi kegiatan KKN.
   Future<Map<String, dynamic>> getTargetLocation(String scheduleId);

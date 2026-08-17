@@ -197,9 +197,17 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> getActiveZone() async {
+  Future<Map<String, dynamic>> getActiveZone({double? latitude, double? longitude}) async {
     try {
-      final response = await apiClient.dio.get(ApiEndpoints.kknActiveZone);
+      final Map<String, dynamic> queryParams = {};
+      if (latitude != null && longitude != null) {
+        queryParams['latitude'] = latitude;
+        queryParams['longitude'] = longitude;
+      }
+      final response = await apiClient.dio.get(
+        ApiEndpoints.kknActiveZone,
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
       if (response.statusCode == 200 && response.data != null) {
         if (response.data is Map<String, dynamic>) {
           return response.data['data'] as Map<String, dynamic>? ?? {};

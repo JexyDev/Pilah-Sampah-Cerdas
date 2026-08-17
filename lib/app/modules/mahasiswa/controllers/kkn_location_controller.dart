@@ -148,10 +148,20 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
     if (_currentTargetScheduleId == null || _currentTargetScheduleId == 'SCH-TODAY') {
       try {
+        final pos = await LocationService.instance.getCurrentLocation();
         final repo = ref.read(kknRepositoryProvider);
-        final activeZone = await repo.getActiveZone();
+        final activeZone = await repo.getActiveZone(
+          latitude: pos?.latitude,
+          longitude: pos?.longitude,
+        );
         if (activeZone.isNotEmpty) {
           _currentTargetScheduleId = activeZone['id']?.toString() ?? activeZone['scheduleId']?.toString();
+          if (activeZone['latitude'] != null && activeZone['longitude'] != null) {
+            state = state.copyWith(
+              activeActivity: activeZone,
+              targetDurationMinutes: activeZone['targetDurationMinutes'] ?? 60,
+            );
+          }
         }
       } catch (_) {}
     }
