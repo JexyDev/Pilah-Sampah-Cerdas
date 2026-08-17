@@ -377,6 +377,20 @@ export const ProgramKerjaKkn: React.FC = () => {
   // Helper Badge Renderers
   const renderKategoriBadge = (kat?: string) => {
     const k = (kat || "Pemilahan").toLowerCase();
+    if (k.includes("minor")) {
+      return (
+        <span className="px-3 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded-full font-bold text-[11px]">
+          Minor (Tambahan)
+        </span>
+      );
+    }
+    if (k.includes("mayor") || k.includes("utama")) {
+      return (
+        <span className="px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full font-bold text-[11px]">
+          Mayor (Utama)
+        </span>
+      );
+    }
     if (k.includes("pemilahan")) {
       return (
         <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-bold text-[11px]">
@@ -563,6 +577,8 @@ export const ProgramKerjaKkn: React.FC = () => {
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
             >
               <option value="ALL">Semua Kategori</option>
+              <option value="Mayor (Utama)">Mayor (Utama)</option>
+              <option value="Minor (Tambahan)">Minor (Tambahan)</option>
               <option value="Pemilahan">Pemilahan</option>
               <option value="Pengangkutan">Pengangkutan</option>
               <option value="Pengolahan">Pengolahan</option>
@@ -785,6 +801,8 @@ export const ProgramKerjaKkn: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
                   >
+                    <option value="Mayor (Utama)">Mayor (Utama)</option>
+                    <option value="Minor (Tambahan)">Minor (Tambahan)</option>
                     <option value="Pemilahan">Pemilahan</option>
                     <option value="Pengangkutan">Pengangkutan</option>
                     <option value="Pengolahan">Pengolahan</option>

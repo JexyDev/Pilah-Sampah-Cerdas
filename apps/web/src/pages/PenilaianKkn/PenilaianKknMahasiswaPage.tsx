@@ -4,31 +4,27 @@
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
  * Modul Penilaian KKN Mahasiswa (Komposisi Mitra/PL 70% + DPL 30%)
- * Sesuai Acuan UI Resmi PT Makerindo (Gambar Penilaian KKN Mahasiswa)
+ * Sesuai Acuan UI Resmi PT Makerindo & Standar Penilaian Coblong
  * - 100% Real-time Database Integration
  * - Perhitungan Matematis Otomatis & Presisi
- * - Cetak Lembar Nilai Resmi PDF dengan Tanda Tangan DPL & Mitra
+ * - Pemisahan Kolom Mandiri (NIM, Nama, Jenjang, Prodi)
+ * - Form Penilaian Berdasarkan Role (DPL 30% / Mitra 70%)
+ * - Portofolio Aktivitas KKN Mahasiswa
+ * - Cetak Lembar Nilai Resmi PDF
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Printer,
   Save,
-  CheckCircle2,
-  User,
   Users,
   GraduationCap,
-  MapPin,
-  Calendar,
-  UserCheck,
-  CreditCard,
   ClipboardList,
-  Calculator,
-  MessageSquare,
-  Sparkles,
-  Lock,
-  ChevronDown,
+  Award,
+  Search,
+  Filter,
   Loader2,
+  Activity,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -37,12 +33,23 @@ import {
   type StudentInfo,
   type RequirementsInfo,
 } from "../../services/penilaianKknApiService";
+import { Pagination } from "../../components/common/Pagination";
 
-interface StudentOption {
-  id: string;
-  name: string;
+interface StudentRekapItem {
+  studentId: string;
+  nama: string;
   nim: string;
-  kelompokName: string;
+  jenjangPendidikan?: string;
+  jurusan?: string;
+  fakultas?: string;
+  kelompok: string;
+  kelurahan?: string;
+  rw?: string;
+  dplNama?: string;
+  subtotalMitra: number;
+  subtotalDpl: number;
+  nilaiAkhir: number;
+  kategori: string;
 }
 
 export const PenilaianKknMahasiswaPage: React.FC = () => {
@@ -55,8 +62,15 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
-  const [studentsList, setStudentsList] = useState<StudentOption[]>([]);
+  const [studentsRekap, setStudentsRekap] = useState<StudentRekapItem[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [filterKelompok, setFilterKelompok] = useState<string>("ALL");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 10;
+
+  // Active Tab for Student Detail: "FORM_NILAI" vs "PORTOFOLIO_KKN"
+  const [detailTab, setDetailTab] = useState<"FORM_NILAI" | "PORTOFOLIO_KKN">("FORM_NILAI");
 
   const [studentInfo, setStudentInfo] = useState<StudentInfo | null>(null);
   const [requirements, setRequirements] = useState<RequirementsInfo>({
@@ -69,7 +83,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     isEvidenceValid: false,
   });
 
-  // Pure Zero Initial State - 100% Real API data driven (Anti-Dummy)
+  // Pure State for Scores
   const [scores, setScores] = useState<{
     // Mitra 70%
     skorMitraKehadiran: number;
@@ -91,8 +105,6 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     namaMitraPenilai: string;
     catatanDpl: string;
     catatanMitra: string;
-    isFinalized: boolean;
-    status: "DRAFT" | "TERSIMPAN" | "FINAL";
   }>({
     skorMitraKehadiran: 0,
     skorMitraWargaBinaan: 0,
@@ -111,42 +123,51 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     namaMitraPenilai: "",
     catatanDpl: "",
     catatanMitra: "",
-    isFinalized: false,
-    status: "DRAFT",
   });
 
-  const canEditMitra = !scores.isFinalized && (isMitra || isSuper);
-  const canEditDpl = !scores.isFinalized && (isDpl || isSuper);
+  const canEditMitra = isMitra || isSuper;
+  const canEditDpl = isDpl || isSuper;
 
-  // Fetch Daftar Mahasiswa Binaan dari API Real (Role-Scoped)
-  useEffect(() => {
-    const loadStudents = async () => {
-      try {
-        const list = await penilaianKknApiService.getRekapPenilaian();
-        const formatted: StudentOption[] = (Array.isArray(list) ? list : []).map((s: any) => ({
-          id: s.studentId || s.id,
-          name: s.nama || s.name,
-          nim: s.nim || "-",
-          kelompokName: s.kelompok || "Kelompok KKN",
-        }));
-        setStudentsList(formatted);
-        if (formatted.length > 0) {
-          setSelectedStudentId(formatted[0].id);
-        } else {
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error("Gagal memuat daftar mahasiswa:", err);
-        setLoading(false);
+  // Load Rekap Mahasiswa
+  const fetchStudents = async () => {
+    setLoading(true);
+    try {
+      const list = await penilaianKknApiService.getRekapPenilaian();
+      const formatted: StudentRekapItem[] = (Array.isArray(list) ? list : []).map((s: any) => ({
+        studentId: s.studentId || s.id,
+        nama: s.nama || s.name,
+        nim: s.nim || "-",
+        jenjangPendidikan: s.jenjangPendidikan || "S1",
+        jurusan: s.jurusan || s.programStudi || "-",
+        fakultas: s.fakultas || "-",
+        kelompok: s.kelompok || "Kelompok KKN",
+        kelurahan: s.kelurahan || "-",
+        rw: s.rw || "-",
+        dplNama: s.dplNama || "-",
+        subtotalMitra: Number(s.subtotalMitra) || 0,
+        subtotalDpl: Number(s.subtotalDpl) || 0,
+        nilaiAkhir: Number(s.nilaiAkhir) || 0,
+        kategori: s.kategori || "Belum Dinilai",
+      }));
+      setStudentsRekap(formatted);
+      if (formatted.length > 0 && !selectedStudentId) {
+        setSelectedStudentId(formatted[0].studentId);
       }
-    };
-    loadStudents();
+    } catch (err) {
+      console.error("Gagal memuat daftar mahasiswa:", err);
+      toast.error("Gagal memuat rekapitulasi nilai mahasiswa");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStudents();
   }, []);
 
-  // Fetch Data Penilaian Mahasiswa Terpilih dari Database
+  // Fetch Detail Mahasiswa Terpilih
   const loadAssessment = useCallback(async () => {
     if (!selectedStudentId) return;
-    setLoading(true);
     try {
       const data = await penilaianKknApiService.getStudentPenilaian(selectedStudentId);
       setStudentInfo(data.student);
@@ -170,13 +191,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         namaMitraPenilai: a.namaMitraPenilai || data.student.namaMitraPenilai || "",
         catatanDpl: a.catatanDpl || "",
         catatanMitra: a.catatanMitra || "",
-        isFinalized: Boolean(a.isFinalized),
-        status: a.status || "DRAFT",
       });
     } catch (err: any) {
-      toast.error("Gagal memuat data penilaian mahasiswa: " + (err.message || "Error"));
-    } finally {
-      setLoading(false);
+      console.error("Gagal memuat detail nilai mahasiswa:", err);
     }
   }, [selectedStudentId]);
 
@@ -184,14 +201,14 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     loadAssessment();
   }, [loadAssessment]);
 
-  // Kalkulasi Matematis Aspek: (Skor / 4) * Bobot
+  // Kalkulasi Aspek: (Skor / 4) * Bobot
   const calcAspect = (skor: number, bobot: number) => {
     const safe = Math.max(0, Math.min(4, Number(skor) || 0));
     return Number(((safe / 4) * bobot).toFixed(2));
   };
 
   // Subtotal Mitra (Max 70)
-  const nilaiAspekMitra = {
+  const nilaiAspekMitra = useMemo(() => ({
     kehadiran: calcAspect(scores.skorMitraKehadiran, 10),
     wargaBinaan: calcAspect(scores.skorMitraWargaBinaan, 10),
     proker: calcAspect(scores.skorMitraProker, 10),
@@ -200,7 +217,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     buktiKegiatan: calcAspect(scores.skorMitraBuktiKegiatan, 7),
     dampak: calcAspect(scores.skorMitraDampak, 10),
     inisiatif: calcAspect(scores.skorMitraInisiatif, 7),
-  };
+  }), [scores]);
 
   const subtotalMitra = Number(
     Object.values(nilaiAspekMitra)
@@ -209,14 +226,14 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   );
 
   // Subtotal DPL (Max 30)
-  const nilaiAspekDpl = {
+  const nilaiAspekDpl = useMemo(() => ({
     perencanaan: calcAspect(scores.skorDplPerencanaan, 5),
     kontribusi: calcAspect(scores.skorDplKontribusi, 5),
     logbook: calcAspect(scores.skorDplLogbook, 5),
     analisis: calcAspect(scores.skorDplAnalisis, 5),
     output: calcAspect(scores.skorDplOutput, 5),
     laporanAkhir: calcAspect(scores.skorDplLaporanAkhir, 5),
-  };
+  }), [scores]);
 
   const subtotalDpl = Number(
     Object.values(nilaiAspekDpl)
@@ -229,27 +246,22 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
   // Kategori Skala Standar
   const getCategory = (score: number) => {
-    if (score >= 85) return { label: "Sangat Baik", color: "bg-emerald-100 text-emerald-800 border-emerald-300" };
-    if (score >= 75) return { label: "Baik", color: "bg-teal-100 text-teal-800 border-teal-300" };
-    if (score >= 65) return { label: "Cukup", color: "bg-amber-100 text-amber-800 border-amber-300" };
-    if (score >= 55) return { label: "Kurang", color: "bg-orange-100 text-orange-800 border-orange-300" };
-    if (score > 0) return { label: "Sangat Kurang", color: "bg-rose-100 text-rose-800 border-rose-300" };
-    return { label: "Belum Dinilai", color: "bg-slate-100 text-slate-600 border-slate-300" };
+    if (score >= 85) return { label: "Sangat Baik", letter: "A", color: "bg-emerald-100 text-emerald-800 border-emerald-300" };
+    if (score >= 75) return { label: "Baik", letter: "B", color: "bg-teal-100 text-teal-800 border-teal-300" };
+    if (score >= 65) return { label: "Cukup", letter: "C", color: "bg-amber-100 text-amber-800 border-amber-300" };
+    if (score >= 55) return { label: "Kurang", letter: "D", color: "bg-orange-100 text-orange-800 border-orange-300" };
+    if (score > 0) return { label: "Sangat Kurang", letter: "E", color: "bg-rose-100 text-rose-800 border-rose-300" };
+    return { label: "Belum Dinilai", letter: "-", color: "bg-slate-100 text-slate-600 border-slate-300" };
   };
 
   const currentCategory = getCategory(nilaiAkhir);
 
-  // Handle Score Change
   const handleScoreChange = (field: keyof typeof scores, value: number) => {
-    if (scores.isFinalized && !["SUPER_USER", "DEVELOPER"].includes(userRole)) {
-      toast.error("Penilaian telah difinalisasi dan dikunci resmi.");
-      return;
-    }
     setScores((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Simpan Penilaian
-  const handleSaveDraft = async () => {
+  // Simpan Penilaian (Fleksibel tanpa finalisasi kaku)
+  const handleSaveScore = async () => {
     if (!selectedStudentId) return;
     setSaving(true);
     try {
@@ -257,8 +269,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         studentId: selectedStudentId,
         ...scores,
       });
-      toast.success("Penilaian mahasiswa berhasil disimpan ke database!");
-      setScores((prev) => ({ ...prev, status: "TERSIMPAN" }));
+      toast.success("Penilaian mahasiswa berhasil disimpan!");
+      // Refresh rekap data
+      fetchStudents();
     } catch (err: any) {
       toast.error(err.message || "Gagal menyimpan penilaian");
     } finally {
@@ -266,26 +279,36 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     }
   };
 
-  // Finalisasi Penilaian
-  const handleFinalize = async () => {
-    if (!selectedStudentId) return;
-    const confirm = window.confirm(
-      "Apakah Anda yakin ingin memfinalisasi penilaian ini? Penilaian akan dikunci dan siap dicetak resmi."
-    );
-    if (!confirm) return;
+  // Filter kelompok options
+  const uniqueKelompokList = useMemo(() => {
+    const list = studentsRekap.map((s) => s.kelompok).filter(Boolean);
+    return Array.from(new Set(list));
+  }, [studentsRekap]);
 
-    setSaving(true);
-    try {
-      await penilaianKknApiService.finalizePenilaian({
-        studentId: selectedStudentId,
-        ...scores,
-      });
-      toast.success("Penilaian berhasil difinalisasi dan dikunci resmi!");
-      setScores((prev) => ({ ...prev, isFinalized: true, status: "FINAL" }));
-    } catch (err: any) {
-      toast.error(err.message || "Gagal memfinalisasi penilaian");
-    } finally {
-      setSaving(false);
+  const filteredStudents = useMemo(() => {
+    return studentsRekap.filter((s) => {
+      const matchSearch =
+        s.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.nim.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.jurusan || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.kelompok.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchKelompok = filterKelompok === "ALL" || s.kelompok === filterKelompok;
+      return matchSearch && matchKelompok;
+    });
+  }, [studentsRekap, searchQuery, filterKelompok]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / itemsPerPage));
+  const paginatedStudents = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredStudents.slice(start, start + itemsPerPage);
+  }, [filteredStudents, currentPage, itemsPerPage]);
+
+  const handleSelectStudentForAssessment = (studentId: string) => {
+    setSelectedStudentId(studentId);
+    // Smooth scroll down to assessment form if on mobile/desktop
+    const el = document.getElementById("form-penilaian-section");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
     }
   };
 
@@ -334,12 +357,12 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         <div class="meta-grid">
           <div class="meta-item"><span class="meta-label">Nama Mahasiswa:</span><span class="meta-value">${studentInfo?.nama || "-"}</span></div>
           <div class="meta-item"><span class="meta-label">NIM:</span><span class="meta-value">${studentInfo?.nim || "-"}</span></div>
+          <div class="meta-item"><span class="meta-label">Jenjang:</span><span class="meta-value">${studentInfo?.jenjangPendidikan || "S1"}</span></div>
           <div class="meta-item"><span class="meta-label">Program Studi:</span><span class="meta-value">${studentInfo?.programStudi || "-"}</span></div>
           <div class="meta-item"><span class="meta-label">Kelompok:</span><span class="meta-value">${studentInfo?.kelompok || "-"}</span></div>
           <div class="meta-item"><span class="meta-label">Wilayah Tugas:</span><span class="meta-value">${studentInfo?.rw || "-"}, Kel. ${studentInfo?.kelurahan || "-"}</span></div>
-          <div class="meta-item"><span class="meta-label">Periode KKN:</span><span class="meta-value">${studentInfo?.periodeKkn || "03 - 31 Agustus 2026"}</span></div>
-          <div class="meta-item"><span class="meta-label">Mitra / Pembimbing Lapangan:</span><span class="meta-value">${studentInfo?.namaMitraPenilai || scores.namaMitraPenilai || "Mitra Lapangan"}</span></div>
-          <div class="meta-item"><span class="meta-label">Dosen Pembimbing Lapangan:</span><span class="meta-value">${studentInfo?.dplNama || "-"}</span></div>
+          <div class="meta-item"><span class="meta-label">Dosen Pembimbing:</span><span class="meta-value">${studentInfo?.dplNama || "-"}</span></div>
+          <div class="meta-item"><span class="meta-label">Mitra / Pembimbing:</span><span class="meta-value">${studentInfo?.namaMitraPenilai || scores.namaMitraPenilai || "Mitra Lapangan"}</span></div>
         </div>
 
         <!-- Tabel Mitra (70%) -->
@@ -348,23 +371,22 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           <thead>
             <tr>
               <th width="5%" class="text-center">No</th>
-              <th width="35%">Aspek Penilaian</th>
-              <th width="30%">Indikator Acuan</th>
-              <th width="10%" class="text-center">Bobot</th>
-              <th width="10%" class="text-center">Skor (0-4)</th>
-              <th width="10%" class="text-right">Nilai</th>
+              <th width="40%">Aspek Penilaian</th>
+              <th width="15%" class="text-center">Bobot</th>
+              <th width="15%" class="text-center">Skor (0-4)</th>
+              <th width="25%" class="text-right">Nilai</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td class="text-center">1</td><td>Kehadiran dan Kedisiplinan</td><td>&ge; 80% kewajiban jam</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraKehadiran}</td><td class="text-right">${nilaiAspekMitra.kehadiran.toFixed(2)}</td></tr>
-            <tr><td class="text-center">2</td><td>Warga Binaan</td><td>minimal 6 rumah / warga aktif</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraWargaBinaan}</td><td class="text-right">${nilaiAspekMitra.wargaBinaan.toFixed(2)}</td></tr>
-            <tr><td class="text-center">3</td><td>Keterlibatan Program Kerja</td><td>minimal 1 program aktif</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraProker}</td><td class="text-right">${nilaiAspekMitra.proker.toFixed(2)}</td></tr>
-            <tr><td class="text-center">4</td><td>Komunikasi & Etika</td><td>baik dengan warga / mitra</td><td class="text-center">8%</td><td class="text-center">${scores.skorMitraKomunikasi}</td><td class="text-right">${nilaiAspekMitra.komunikasi.toFixed(2)}</td></tr>
-            <tr><td class="text-center">5</td><td>Tanggung Jawab & Kerja Sama</td><td>aktif dan bertanggung jawab</td><td class="text-center">8%</td><td class="text-center">${scores.skorMitraTanggungJawab}</td><td class="text-right">${nilaiAspekMitra.tanggungJawab.toFixed(2)}</td></tr>
-            <tr><td class="text-center">6</td><td>Bukti Kegiatan</td><td>valid dan terverifikasi</td><td class="text-center">7%</td><td class="text-center">${scores.skorMitraBuktiKegiatan}</td><td class="text-right">${nilaiAspekMitra.buktiKegiatan.toFixed(2)}</td></tr>
-            <tr><td class="text-center">7</td><td>Dampak kepada Masyarakat</td><td>ada perubahan / manfaat</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraDampak}</td><td class="text-right">${nilaiAspekMitra.dampak.toFixed(2)}</td></tr>
-            <tr><td class="text-center">8</td><td>Inisiatif & Problem Solving</td><td>aktif memberikan solusi</td><td class="text-center">7%</td><td class="text-center">${scores.skorMitraInisiatif}</td><td class="text-right">${nilaiAspekMitra.inisiatif.toFixed(2)}</td></tr>
-            <tr class="subtotal-row"><td colspan="5" style="text-align: right;">SUBTOTAL MITRA (70%):</td><td class="text-right">${subtotalMitra.toFixed(2)} / 70.00</td></tr>
+            <tr><td class="text-center">1</td><td>Kehadiran dan Kedisiplinan</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraKehadiran}</td><td class="text-right">${nilaiAspekMitra.kehadiran.toFixed(2)}</td></tr>
+            <tr><td class="text-center">2</td><td>Warga Binaan</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraWargaBinaan}</td><td class="text-right">${nilaiAspekMitra.wargaBinaan.toFixed(2)}</td></tr>
+            <tr><td class="text-center">3</td><td>Keterlibatan Program Kerja</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraProker}</td><td class="text-right">${nilaiAspekMitra.proker.toFixed(2)}</td></tr>
+            <tr><td class="text-center">4</td><td>Komunikasi & Etika</td><td class="text-center">8%</td><td class="text-center">${scores.skorMitraKomunikasi}</td><td class="text-right">${nilaiAspekMitra.komunikasi.toFixed(2)}</td></tr>
+            <tr><td class="text-center">5</td><td>Tanggung Jawab & Kerja Sama</td><td class="text-center">8%</td><td class="text-center">${scores.skorMitraTanggungJawab}</td><td class="text-right">${nilaiAspekMitra.tanggungJawab.toFixed(2)}</td></tr>
+            <tr><td class="text-center">6</td><td>Bukti Kegiatan</td><td class="text-center">7%</td><td class="text-center">${scores.skorMitraBuktiKegiatan}</td><td class="text-right">${nilaiAspekMitra.buktiKegiatan.toFixed(2)}</td></tr>
+            <tr><td class="text-center">7</td><td>Dampak kepada Masyarakat</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraDampak}</td><td class="text-right">${nilaiAspekMitra.dampak.toFixed(2)}</td></tr>
+            <tr><td class="text-center">8</td><td>Inisiatif & Problem Solving</td><td class="text-center">7%</td><td class="text-center">${scores.skorMitraInisiatif}</td><td class="text-right">${nilaiAspekMitra.inisiatif.toFixed(2)}</td></tr>
+            <tr class="subtotal-row"><td colspan="4" style="text-align: right;">SUBTOTAL MITRA (70%):</td><td class="text-right">${subtotalMitra.toFixed(2)} / 70.00</td></tr>
           </tbody>
         </table>
 
@@ -374,10 +396,10 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           <thead>
             <tr>
               <th width="5%" class="text-center">No</th>
-              <th width="65%">Aspek Penilaian</th>
-              <th width="10%" class="text-center">Bobot</th>
+              <th width="55%">Aspek Penilaian</th>
+              <th width="15%" class="text-center">Bobot</th>
               <th width="10%" class="text-center">Skor (0-4)</th>
-              <th width="10%" class="text-right">Nilai</th>
+              <th width="15%" class="text-right">Nilai</th>
             </tr>
           </thead>
           <tbody>
@@ -399,28 +421,16 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           </div>
           <div style="text-align: right;">
             <span class="final-score">${nilaiAkhir.toFixed(2)}</span>
-            <span style="font-weight: 800; font-size: 9pt; background: #059669; color: white; padding: 2px 8px; border-radius: 4px; margin-left: 6px;">${currentCategory.label}</span>
+            <span style="font-weight: 800; font-size: 9pt; background: #059669; color: white; padding: 2px 8px; border-radius: 4px; margin-left: 6px;">${currentCategory.label} (${currentCategory.letter})</span>
           </div>
         </div>
-
-        ${scores.catatanDpl ? `
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 10px; border-radius: 6px; font-size: 8pt; margin-bottom: 10px;">
-          <strong>Catatan DPL:</strong><br>
-          <em>${scores.catatanDpl}</em>
-        </div>` : ""}
-
-        ${scores.catatanMitra ? `
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 10px; border-radius: 6px; font-size: 8pt; margin-bottom: 10px;">
-          <strong>Catatan Mitra:</strong><br>
-          <em>${scores.catatanMitra}</em>
-        </div>` : ""}
 
         <div class="sig-section">
           <div class="sig-box">
             <p>Mitra / Pembimbing Lapangan,</p>
             <div class="sig-space"></div>
             <p style="text-decoration: underline; font-weight: bold; margin: 0;">${studentInfo?.namaMitraPenilai || scores.namaMitraPenilai || "Mitra Lapangan"}</p>
-            <p style="font-size: 7.5pt; color: #64748b; margin: 0;">Ketua RW / Mitra Lapangan</p>
+            <p style="font-size: 7.5pt; color: #64748b; margin: 0;">Mitra Pembimbing</p>
           </div>
           <div class="sig-box">
             <p>Dosen Pembimbing Lapangan,</p>
@@ -445,940 +455,897 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   return (
     <div className="min-h-[calc(100vh-64px)] bg-slate-50 p-4 md:p-6 space-y-6 text-slate-800">
       {/* Header Utama */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
-              Penilaian KKN Mahasiswa
-            </h1>
-            {scores.isFinalized ? (
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
-                <Lock size={12} /> FINAL RESMI
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-800 border border-amber-300">
-                <Sparkles size={12} /> MODE DRAFT
-              </span>
-            )}
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-emerald-50 text-emerald-700 rounded-xl">
+              <Award size={22} />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
+                Penilaian KKN Mahasiswa
+              </h1>
+              <p className="text-slate-500 text-xs mt-0.5">
+                Evaluasi performa lapangan (Mitra 70%) dan capaian akademik (DPL 30%) dengan kalkulasi otomatis.
+              </p>
+            </div>
           </div>
-          <p className="text-slate-500 text-xs md:text-sm mt-1">
-            DPL & Mitra Lapangan dapat menilai kinerja mahasiswa berdasarkan performa di lapangan, evaluasi akademik, bukti kegiatan, dan rekap nilai akhir.
-          </p>
         </div>
 
-        {/* 3 Tombol Aksi Header */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        {/* Action Header */}
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={handlePrintPdf}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition border border-slate-300 shadow-2xs cursor-pointer active:scale-95"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition border border-slate-200 shadow-2xs cursor-pointer"
             title="Cetak Dokumen Resmi PDF"
           >
-            <Printer size={15} className="text-slate-600" />
+            <Printer size={15} className="text-slate-500" />
             <span>Cetak PDF</span>
           </button>
 
-          {(canEditDpl || canEditMitra) && (
-            <button
-              type="button"
-              onClick={handleSaveDraft}
-              disabled={saving || (scores.isFinalized && !["SUPER_USER", "DEVELOPER"].includes(userRole))}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs font-bold transition border border-slate-300 shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50"
-              title="Simpan Skor Sebagai Draft"
-            >
-              {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-              <span>
-                {isDpl ? "Simpan Penilaian DPL" : isMitra ? "Simpan Penilaian Mitra" : "Simpan Penilaian"}
-              </span>
-            </button>
-          )}
-
-          {(isDpl || isSuper) && (
-            <button
-              type="button"
-              onClick={handleFinalize}
-              disabled={saving || (scores.isFinalized && !["SUPER_USER", "DEVELOPER"].includes(userRole))}
-              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
-              title="Kunci & Finalisasi Nilai Resmi"
-            >
-              <CheckCircle2 size={15} />
-              <span>Finalisasi Penilaian</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={handleSaveScore}
+            disabled={saving || !selectedStudentId}
+            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-50"
+            title="Simpan Skor Penilaian"
+          >
+            {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+            <span>Simpan Penilaian</span>
+          </button>
         </div>
       </div>
 
-      {/* Row 1: 4 Top KPI Cards */}
+      {/* KPI Cards Ringkasan Nilai Angkatan */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Komposisi Penilaian (Donut Chart) */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Komposisi Penilaian</h3>
-          <div className="flex items-center gap-4 mt-3">
-            {/* SVG Donut Chart */}
-            <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
-              <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
-                <path
-                  className="text-amber-400"
-                  strokeWidth="4"
-                  stroke="currentColor"
-                  fill="none"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                />
-                <path
-                  className="text-emerald-500"
-                  strokeDasharray="70, 100"
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                  stroke="currentColor"
-                  fill="none"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                />
-              </svg>
-              <span className="absolute font-black text-xs text-slate-900">70%</span>
-            </div>
-
-            {/* Legend */}
-            <div className="space-y-1.5 text-xs font-bold">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                  <span className="text-slate-600 text-[11px]">Mitra / Lapangan</span>
-                </div>
-                <span className="text-slate-900 font-extrabold text-[11px]">70%</span>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-                  <span className="text-slate-600 text-[11px]">DPL</span>
-                </div>
-                <span className="text-slate-900 font-extrabold text-[11px]">30%</span>
-              </div>
-            </div>
+        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-black shrink-0">
+            <Users size={20} />
+          </div>
+          <div>
+            <span className="text-[11px] text-slate-400 font-bold block uppercase">Total Mahasiswa</span>
+            <span className="text-xl font-black text-slate-900">{studentsRekap.length} Orang</span>
           </div>
         </div>
 
-        {/* Card 2: Persyaratan Minimum (Real Database Validation) */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Persyaratan Minimum</h3>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-              <CheckCircle2 size={15} className={requirements.isAttendanceValid ? "text-emerald-600" : "text-amber-500"} />
-              <span className="text-[11px]">Kehadiran &ge; 80% ({requirements.attendanceRate}%)</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-              <CheckCircle2 size={15} className={requirements.isWargaValid ? "text-emerald-600" : "text-amber-500"} />
-              <span className="text-[11px]">Warga Binaan &ge; 6 ({requirements.wargaBinaanCount})</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-              <CheckCircle2 size={15} className={requirements.isProkerValid ? "text-emerald-600" : "text-amber-500"} />
-              <span className="text-[11px]">Program Kerja &ge; 1 ({requirements.prokerCount})</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-              <CheckCircle2 size={15} className={requirements.isEvidenceValid ? "text-emerald-600" : "text-slate-400"} />
-              <span className="text-[11px]">Evidence Valid</span>
-            </div>
+        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-black shrink-0">
+            <GraduationCap size={20} />
           </div>
-        </div>
-
-        {/* Card 3: Skala Penilaian */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Skala Penilaian</h3>
-          <div className="flex items-center justify-between gap-1 mt-2 text-center">
-            <div>
-              <span className="w-6 h-6 mx-auto rounded-full bg-rose-100 text-rose-700 text-xs font-black flex items-center justify-center">
-                0
-              </span>
-              <span className="text-[9.5px] font-medium text-slate-500 block mt-1">Tidak Ada</span>
-            </div>
-            <div>
-              <span className="w-6 h-6 mx-auto rounded-full bg-orange-100 text-orange-700 text-xs font-black flex items-center justify-center">
-                1
-              </span>
-              <span className="text-[9.5px] font-medium text-slate-500 block mt-1">Kurang</span>
-            </div>
-            <div>
-              <span className="w-6 h-6 mx-auto rounded-full bg-amber-100 text-amber-700 text-xs font-black flex items-center justify-center">
-                2
-              </span>
-              <span className="text-[9.5px] font-medium text-slate-500 block mt-1">Cukup</span>
-            </div>
-            <div>
-              <span className="w-6 h-6 mx-auto rounded-full bg-teal-100 text-teal-700 text-xs font-black flex items-center justify-center">
-                3
-              </span>
-              <span className="text-[9.5px] font-medium text-slate-500 block mt-1">Baik</span>
-            </div>
-            <div>
-              <span className="w-6 h-6 mx-auto rounded-full bg-emerald-100 text-emerald-800 text-xs font-black flex items-center justify-center">
-                4
-              </span>
-              <span className="text-[9.5px] font-medium text-slate-500 block mt-1">Sgt Baik</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4: Nilai Akhir */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Nilai Akhir</h3>
-          <div className="flex items-center justify-between mt-2">
-            <h2 className="text-3xl md:text-4xl font-black text-emerald-700 tracking-tight">
-              {nilaiAkhir.toFixed(2).replace(".", ",")}
-            </h2>
-            <span className={`px-3 py-1 rounded-xl text-xs font-black border ${currentCategory.color}`}>
-              {currentCategory.label}
+          <div>
+            <span className="text-[11px] text-slate-400 font-bold block uppercase">Rerata Nilai DPL (30%)</span>
+            <span className="text-xl font-black text-amber-700">
+              {studentsRekap.length > 0
+                ? (studentsRekap.reduce((acc, s) => acc + (s.subtotalDpl || 0), 0) / studentsRekap.length).toFixed(1)
+                : "0"} / 30
             </span>
           </div>
-          <p className="text-[10.5px] text-slate-400 font-medium mt-1">
-            Kategori berdasarkan skala penilaian resmi
-          </p>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-black shrink-0">
+            <ClipboardList size={20} />
+          </div>
+          <div>
+            <span className="text-[11px] text-slate-400 font-bold block uppercase">Rerata Nilai Mitra (70%)</span>
+            <span className="text-xl font-black text-emerald-700">
+              {studentsRekap.length > 0
+                ? (studentsRekap.reduce((acc, s) => acc + (s.subtotalMitra || 0), 0) / studentsRekap.length).toFixed(1)
+                : "0"} / 70
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-black shrink-0">
+            <Award size={20} />
+          </div>
+          <div>
+            <span className="text-[11px] text-slate-400 font-bold block uppercase">Rerata Nilai Akhir</span>
+            <span className="text-xl font-black text-blue-700">
+              {studentsRekap.length > 0
+                ? (studentsRekap.reduce((acc, s) => acc + (s.nilaiAkhir || 0), 0) / studentsRekap.length).toFixed(1)
+                : "0"} / 100
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Row 2: Identitas Mahasiswa Card */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
+      {/* SECTION 1: TABEL REKAPITULASI MAHASISWA DENGAN KOLOM MANDIRI */}
+      <div className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-          <h2 className="text-sm font-black text-slate-900 flex items-center gap-2 uppercase tracking-wide">
-            <User size={16} className="text-emerald-600" />
-            <span>Identitas Mahasiswa</span>
-          </h2>
+          <div>
+            <h2 className="text-base font-black text-slate-900">
+              Daftar Mahasiswa & Nilai Akhir
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Pilih mahasiswa untuk membuka form penilaian aspek dan portofolio KKN. Kolom NIM, Jenjang, dan Program Studi dipisah secara mandiri.
+            </p>
+          </div>
 
-          {/* Student Picker Dropdown */}
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-bold text-slate-500 shrink-0">Pilih Mahasiswa:</label>
-            <div className="relative min-w-[260px]">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Filter Kelompok */}
+            <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs">
+              <Filter size={14} className="text-slate-400" />
               <select
-                value={selectedStudentId}
-                onChange={(e) => setSelectedStudentId(e.target.value)}
-                disabled={studentsList.length === 0}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs font-bold text-slate-800 appearance-none focus:outline-none focus:border-emerald-500 cursor-pointer disabled:opacity-50"
+                value={filterKelompok}
+                onChange={(e) => {
+                  setFilterKelompok(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="bg-transparent font-semibold text-slate-700 outline-none cursor-pointer"
               >
-                {studentsList.length === 0 ? (
-                  <option value="">Tidak ada mahasiswa terdaftar</option>
-                ) : (
-                  studentsList.map((st) => (
-                    <option key={st.id} value={st.id}>
-                      {st.name} ({st.nim}) - {st.kelompokName}
-                    </option>
-                  ))
-                )}
+                <option value="ALL">Semua Kelompok</option>
+                {uniqueKelompokList.map((k) => (
+                  <option key={k} value={k}>{k}</option>
+                ))}
               </select>
-              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            </div>
+
+            {/* Search Input */}
+            <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs w-56">
+              <Search size={14} className="text-slate-400" />
+              <input
+                type="text"
+                placeholder="Cari NIM, Nama, Prodi..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="bg-transparent outline-none w-full"
+              />
             </div>
           </div>
         </div>
 
-        {/* 8 Grid Metadata Identitas */}
+        {/* Tabel Mahasiswa dengan Kolom Terpisah */}
         {loading ? (
-          <div className="flex items-center justify-center py-6">
-            <Loader2 size={24} className="animate-spin text-emerald-600" />
+          <div className="flex items-center justify-center py-12">
+            <Loader2 size={28} className="animate-spin text-emerald-600" />
+          </div>
+        ) : filteredStudents.length === 0 ? (
+          <div className="text-center py-10 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl bg-slate-50">
+            Tidak ditemukan data mahasiswa yang sesuai.
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-            <div className="flex items-start gap-2.5">
-              <User size={16} className="text-slate-400 shrink-0 mt-0.5" />
-              <div>
-                <span className="text-slate-400 text-[11px] block font-medium">Nama Mahasiswa</span>
-                <span className="font-extrabold text-slate-900">{studentInfo?.nama || "-"}</span>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2.5">
-              <CreditCard size={16} className="text-slate-400 shrink-0 mt-0.5" />
-              <div>
-                <span className="text-slate-400 text-[11px] block font-medium">NIM</span>
-                <span className="font-extrabold text-slate-900">{studentInfo?.nim || "-"}</span>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2.5">
-              <GraduationCap size={16} className="text-slate-400 shrink-0 mt-0.5" />
-              <div>
-                <span className="text-slate-400 text-[11px] block font-medium">Program Studi</span>
-                <span className="font-extrabold text-slate-900">{studentInfo?.programStudi || "-"}</span>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2.5">
-              <Users size={16} className="text-slate-400 shrink-0 mt-0.5" />
-              <div>
-                <span className="text-slate-400 text-[11px] block font-medium">Kelompok</span>
-                <span className="font-extrabold text-slate-900">{studentInfo?.kelompok || "-"}</span>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2.5">
-              <MapPin size={16} className="text-slate-400 shrink-0 mt-0.5" />
-              <div>
-                <span className="text-slate-400 text-[11px] block font-medium">RW / Kelurahan</span>
-                <span className="font-extrabold text-slate-900">{studentInfo?.rw || "-"} / Kel. {studentInfo?.kelurahan || "-"}</span>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2.5">
-              <UserCheck size={16} className="text-slate-400 shrink-0 mt-0.5" />
-              <div>
-                <span className="text-slate-400 text-[11px] block font-medium">Nama Mitra Penilai</span>
-                <span className="font-extrabold text-slate-900">
-                  {studentInfo?.namaMitraPenilai || scores.namaMitraPenilai || "-"}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2.5">
-              <User size={16} className="text-slate-400 shrink-0 mt-0.5" />
-              <div>
-                <span className="text-slate-400 text-[11px] block font-medium">Dosen Pembimbing Lapangan</span>
-                <span className="font-extrabold text-slate-900">{studentInfo?.dplNama || "-"}</span>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2.5">
-              <Calendar size={16} className="text-slate-400 shrink-0 mt-0.5" />
-              <div>
-                <span className="text-slate-400 text-[11px] block font-medium">Periode KKN</span>
-                <span className="font-extrabold text-slate-900">{studentInfo?.periodeKkn || "03 - 31 Agustus 2026"}</span>
-              </div>
-            </div>
+          <div className="overflow-x-auto rounded-2xl border border-slate-100">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50/90 text-slate-600 font-extrabold uppercase text-[10.5px] tracking-wider border-b border-slate-200">
+                  <th className="py-3 px-3 text-center w-10">No</th>
+                  <th className="py-3 px-3">NIM</th>
+                  <th className="py-3 px-3">Nama Mahasiswa</th>
+                  <th className="py-3 px-3">Jenjang</th>
+                  <th className="py-3 px-3">Program Studi</th>
+                  <th className="py-3 px-3">Kelompok</th>
+                  <th className="py-3 px-3 text-center">Nilai DPL (30%)</th>
+                  <th className="py-3 px-3 text-center">Nilai Mitra (70%)</th>
+                  <th className="py-3 px-3 text-center">Nilai Akhir</th>
+                  <th className="py-3 px-3 text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                {paginatedStudents.map((st, idx) => {
+                  const isSelected = st.studentId === selectedStudentId;
+                  const grade = getCategory(st.nilaiAkhir);
+                  return (
+                    <tr
+                      key={st.studentId}
+                      className={`transition-colors ${
+                        isSelected ? "bg-emerald-50/60 font-semibold" : "hover:bg-slate-50/80"
+                      }`}
+                    >
+                      <td className="py-3 px-3 text-center font-bold text-slate-400">
+                        {(currentPage - 1) * itemsPerPage + idx + 1}
+                      </td>
+                      <td className="py-3 px-3 font-mono font-bold text-slate-800">{st.nim}</td>
+                      <td className="py-3 px-3 font-extrabold text-slate-900">{st.nama}</td>
+                      <td className="py-3 px-3">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 font-bold text-slate-700 text-[10.5px]">
+                          {st.jenjangPendidikan || "S1"}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-slate-600">{st.jurusan || "-"}</td>
+                      <td className="py-3 px-3 text-slate-600">{st.kelompok}</td>
+                      <td className="py-3 px-3 text-center font-black text-amber-700">
+                        {st.subtotalDpl > 0 ? st.subtotalDpl.toFixed(2) : "-"}
+                      </td>
+                      <td className="py-3 px-3 text-center font-black text-emerald-700">
+                        {st.subtotalMitra > 0 ? st.subtotalMitra.toFixed(2) : "-"}
+                      </td>
+                      <td className="py-3 px-3 text-center font-black text-slate-900">
+                        {st.nilaiAkhir > 0 ? (
+                          <span className="inline-flex items-center gap-1">
+                            <span>{st.nilaiAkhir.toFixed(2)}</span>
+                            <span className={`px-1.5 py-0.2 rounded text-[10px] font-black border ${grade.color}`}>
+                              {grade.letter}
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 font-normal">Belum Dinilai</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        <button
+                          type="button"
+                          onClick={() => handleSelectStudentForAssessment(st.studentId)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                            isSelected
+                              ? "bg-emerald-600 text-white"
+                              : "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
+                          }`}
+                        >
+                          <Award size={13} />
+                          <span>{isSelected ? "Sedang Dinilai" : "Beri Nilai"}</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
-      </div>
 
-      {/* Row 3: 2 Side-by-Side Tables (Mitra 70% & DPL 30%) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* TABEL KIRI: Form Penilaian Mitra / Lapangan (70%) */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col justify-between">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
-              <ClipboardList size={18} className="text-emerald-600" />
-              <span>Form Penilaian Mitra / Lapangan</span>
-            </h2>
-            <div className="flex items-center gap-2">
-              {!canEditMitra && (
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                  Read-Only
-                </span>
-              )}
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
-                Bobot: 70%
-              </span>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50/80 text-slate-600 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
-                  <th className="py-3 px-3 text-center w-8">No</th>
-                  <th className="py-3 px-3">Aspek</th>
-                  <th className="py-3 px-3">Indikator Singkat</th>
-                  <th className="py-3 px-2 text-center w-14">Bobot</th>
-                  <th className="py-3 px-3 text-center">Skor (0–4)</th>
-                  <th className="py-3 px-3 text-right w-20">Nilai Aspek</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                {/* Baris 1: Kehadiran */}
-                <tr className="hover:bg-slate-50/60 transition">
-                  <td className="py-3 px-3 text-center font-bold text-slate-400">1</td>
-                  <td className="py-3 px-3 font-bold text-slate-900">Kehadiran dan Kedisiplinan</td>
-                  <td className="py-3 px-3 text-slate-500 text-[11px]">&ge; 80% kewajiban jam</td>
-                  <td className="py-3 px-2 text-center font-bold text-slate-700">10%</td>
-                  <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {[0, 1, 2, 3, 4].map((num) => (
-                        <button
-                          key={num}
-                          type="button"
-                          disabled={!canEditMitra}
-                          onClick={() => handleScoreChange("skorMitraKehadiran", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
-                            scores.skorMitraKehadiran === num
-                              ? "bg-emerald-600 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
-                          } ${canEditMitra ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 text-right font-black text-slate-900">
-                    {nilaiAspekMitra.kehadiran.toFixed(2).replace(".", ",")}
-                  </td>
-                </tr>
-
-                {/* Baris 2: Warga Binaan */}
-                <tr className="hover:bg-slate-50/60 transition">
-                  <td className="py-3 px-3 text-center font-bold text-slate-400">2</td>
-                  <td className="py-3 px-3 font-bold text-slate-900">Warga Binaan</td>
-                  <td className="py-3 px-3 text-slate-500 text-[11px]">minimal 6 rumah / warga aktif</td>
-                  <td className="py-3 px-2 text-center font-bold text-slate-700">10%</td>
-                  <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {[0, 1, 2, 3, 4].map((num) => (
-                        <button
-                          key={num}
-                          type="button"
-                          disabled={!canEditMitra}
-                          onClick={() => handleScoreChange("skorMitraWargaBinaan", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
-                            scores.skorMitraWargaBinaan === num
-                              ? "bg-emerald-600 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
-                          } ${canEditMitra ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 text-right font-black text-slate-900">
-                    {nilaiAspekMitra.wargaBinaan.toFixed(2).replace(".", ",")}
-                  </td>
-                </tr>
-
-                {/* Baris 3: Keterlibatan Program Kerja */}
-                <tr className="hover:bg-slate-50/60 transition">
-                  <td className="py-3 px-3 text-center font-bold text-slate-400">3</td>
-                  <td className="py-3 px-3 font-bold text-slate-900">Keterlibatan Program Kerja</td>
-                  <td className="py-3 px-3 text-slate-500 text-[11px]">minimal 1 program aktif</td>
-                  <td className="py-3 px-2 text-center font-bold text-slate-700">10%</td>
-                  <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {[0, 1, 2, 3, 4].map((num) => (
-                        <button
-                          key={num}
-                          type="button"
-                          disabled={!canEditMitra}
-                          onClick={() => handleScoreChange("skorMitraProker", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
-                            scores.skorMitraProker === num
-                              ? "bg-emerald-600 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
-                          } ${canEditMitra ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 text-right font-black text-slate-900">
-                    {nilaiAspekMitra.proker.toFixed(2).replace(".", ",")}
-                  </td>
-                </tr>
-
-                {/* Baris 4: Komunikasi & Etika */}
-                <tr className="hover:bg-slate-50/60 transition">
-                  <td className="py-3 px-3 text-center font-bold text-slate-400">4</td>
-                  <td className="py-3 px-3 font-bold text-slate-900">Komunikasi & Etika</td>
-                  <td className="py-3 px-3 text-slate-500 text-[11px]">baik dengan warga / mitra</td>
-                  <td className="py-3 px-2 text-center font-bold text-slate-700">8%</td>
-                  <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {[0, 1, 2, 3, 4].map((num) => (
-                        <button
-                          key={num}
-                          type="button"
-                          disabled={!canEditMitra}
-                          onClick={() => handleScoreChange("skorMitraKomunikasi", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
-                            scores.skorMitraKomunikasi === num
-                              ? "bg-emerald-600 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
-                          } ${canEditMitra ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 text-right font-black text-slate-900">
-                    {nilaiAspekMitra.komunikasi.toFixed(2).replace(".", ",")}
-                  </td>
-                </tr>
-
-                {/* Baris 5: Tanggung Jawab & Kerja Sama */}
-                <tr className="hover:bg-slate-50/60 transition">
-                  <td className="py-3 px-3 text-center font-bold text-slate-400">5</td>
-                  <td className="py-3 px-3 font-bold text-slate-900">Tanggung Jawab & Kerja Sama</td>
-                  <td className="py-3 px-3 text-slate-500 text-[11px]">aktif dan bertanggung jawab</td>
-                  <td className="py-3 px-2 text-center font-bold text-slate-700">8%</td>
-                  <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {[0, 1, 2, 3, 4].map((num) => (
-                        <button
-                          key={num}
-                          type="button"
-                          disabled={!canEditMitra}
-                          onClick={() => handleScoreChange("skorMitraTanggungJawab", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
-                            scores.skorMitraTanggungJawab === num
-                              ? "bg-emerald-600 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
-                          } ${canEditMitra ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 text-right font-black text-slate-900">
-                    {nilaiAspekMitra.tanggungJawab.toFixed(2).replace(".", ",")}
-                  </td>
-                </tr>
-
-                {/* Baris 6: Bukti Kegiatan */}
-                <tr className="hover:bg-slate-50/60 transition">
-                  <td className="py-3 px-3 text-center font-bold text-slate-400">6</td>
-                  <td className="py-3 px-3 font-bold text-slate-900">Bukti Kegiatan</td>
-                  <td className="py-3 px-3 text-slate-500 text-[11px]">valid dan terverifikasi</td>
-                  <td className="py-3 px-2 text-center font-bold text-slate-700">7%</td>
-                  <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {[0, 1, 2, 3, 4].map((num) => (
-                        <button
-                          key={num}
-                          type="button"
-                          disabled={!canEditMitra}
-                          onClick={() => handleScoreChange("skorMitraBuktiKegiatan", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
-                            scores.skorMitraBuktiKegiatan === num
-                              ? "bg-emerald-600 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
-                          } ${canEditMitra ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 text-right font-black text-slate-900">
-                    {nilaiAspekMitra.buktiKegiatan.toFixed(2).replace(".", ",")}
-                  </td>
-                </tr>
-
-                {/* Baris 7: Dampak kepada Masyarakat */}
-                <tr className="hover:bg-slate-50/60 transition">
-                  <td className="py-3 px-3 text-center font-bold text-slate-400">7</td>
-                  <td className="py-3 px-3 font-bold text-slate-900">Dampak kepada Masyarakat</td>
-                  <td className="py-3 px-3 text-slate-500 text-[11px]">ada perubahan / manfaat</td>
-                  <td className="py-3 px-2 text-center font-bold text-slate-700">10%</td>
-                  <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {[0, 1, 2, 3, 4].map((num) => (
-                        <button
-                          key={num}
-                          type="button"
-                          disabled={!canEditMitra}
-                          onClick={() => handleScoreChange("skorMitraDampak", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
-                            scores.skorMitraDampak === num
-                              ? "bg-emerald-600 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
-                          } ${canEditMitra ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 text-right font-black text-slate-900">
-                    {nilaiAspekMitra.dampak.toFixed(2).replace(".", ",")}
-                  </td>
-                </tr>
-
-                {/* Baris 8: Inisiatif & Problem Solving */}
-                <tr className="hover:bg-slate-50/60 transition">
-                  <td className="py-3 px-3 text-center font-bold text-slate-400">8</td>
-                  <td className="py-3 px-3 font-bold text-slate-900">Inisiatif & Problem Solving</td>
-                  <td className="py-3 px-3 text-slate-500 text-[11px]">aktif memberikan solusi</td>
-                  <td className="py-3 px-2 text-center font-bold text-slate-700">7%</td>
-                  <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {[0, 1, 2, 3, 4].map((num) => (
-                        <button
-                          key={num}
-                          type="button"
-                          disabled={!canEditMitra}
-                          onClick={() => handleScoreChange("skorMitraInisiatif", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
-                            scores.skorMitraInisiatif === num
-                              ? "bg-emerald-600 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
-                          } ${canEditMitra ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 text-right font-black text-slate-900">
-                    {nilaiAspekMitra.inisiatif.toFixed(2).replace(".", ",")}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Subtotal Mitra Footer */}
-          <div className="p-4 bg-slate-50/90 border-t border-slate-200 flex items-center justify-between text-xs">
-            <span className="font-extrabold text-slate-600 uppercase">Subtotal Mitra (70%):</span>
-            <span className="text-base font-black text-emerald-700">
-              {subtotalMitra.toFixed(2).replace(".", ",")} / 70
-            </span>
-          </div>
-        </div>
-
-        {/* TABEL KANAN: Form Penilaian DPL (30%) */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col justify-between">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
-              <GraduationCap size={18} className="text-amber-600" />
-              <span>Form Penilaian DPL</span>
-            </h2>
-            <div className="flex items-center gap-2">
-              {!canEditDpl && (
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                  Read-Only
-                </span>
-              )}
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-50 text-amber-700 border border-amber-200">
-                Bobot: 30%
-              </span>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50/80 text-slate-600 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
-                  <th className="py-3 px-3 text-center w-8">No</th>
-                  <th className="py-3 px-3">Aspek</th>
-                  <th className="py-3 px-2 text-center w-14">Bobot</th>
-                  <th className="py-3 px-3 text-center">Skor (0–4)</th>
-                  <th className="py-3 px-3 text-right w-20">Nilai Aspek</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                {/* Baris 1: Perencanaan */}
-                <tr className="hover:bg-slate-50/60 transition">
-                  <td className="py-3 px-3 text-center font-bold text-slate-400">1</td>
-                  <td className="py-3 px-3 font-bold text-slate-900">Perencanaan & Pemahaman Program</td>
-                  <td className="py-3 px-2 text-center font-bold text-slate-700">5%</td>
-                  <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {[0, 1, 2, 3, 4].map((num) => (
-                        <button
-                          key={num}
-                          type="button"
-                          disabled={!canEditDpl}
-                          onClick={() => handleScoreChange("skorDplPerencanaan", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
-                            scores.skorDplPerencanaan === num
-                              ? "bg-amber-500 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
-                          } ${canEditDpl ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 text-right font-black text-slate-900">
-                    {nilaiAspekDpl.perencanaan.toFixed(2).replace(".", ",")}
-                  </td>
-                </tr>
-
-                {/* Baris 2: Kontribusi Individu */}
-                <tr className="hover:bg-slate-50/60 transition">
-                  <td className="py-3 px-3 text-center font-bold text-slate-400">2</td>
-                  <td className="py-3 px-3 font-bold text-slate-900">Kontribusi Individu</td>
-                  <td className="py-3 px-2 text-center font-bold text-slate-700">5%</td>
-                  <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {[0, 1, 2, 3, 4].map((num) => (
-                        <button
-                          key={num}
-                          type="button"
-                          disabled={!canEditDpl}
-                          onClick={() => handleScoreChange("skorDplKontribusi", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
-                            scores.skorDplKontribusi === num
-                              ? "bg-amber-500 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
-                          } ${canEditDpl ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 text-right font-black text-slate-900">
-                    {nilaiAspekDpl.kontribusi.toFixed(2).replace(".", ",")}
-                  </td>
-                </tr>
-
-                {/* Baris 3: Logbook */}
-                <tr className="hover:bg-slate-50/60 transition">
-                  <td className="py-3 px-3 text-center font-bold text-slate-400">3</td>
-                  <td className="py-3 px-3 font-bold text-slate-900">Logbook & Dokumentasi Akademik</td>
-                  <td className="py-3 px-2 text-center font-bold text-slate-700">5%</td>
-                  <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {[0, 1, 2, 3, 4].map((num) => (
-                        <button
-                          key={num}
-                          type="button"
-                          disabled={!canEditDpl}
-                          onClick={() => handleScoreChange("skorDplLogbook", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
-                            scores.skorDplLogbook === num
-                              ? "bg-amber-500 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
-                          } ${canEditDpl ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 text-right font-black text-slate-900">
-                    {nilaiAspekDpl.logbook.toFixed(2).replace(".", ",")}
-                  </td>
-                </tr>
-
-                {/* Baris 4: Analisis Masalah & Solusi */}
-                <tr className="hover:bg-slate-50/60 transition">
-                  <td className="py-3 px-3 text-center font-bold text-slate-400">4</td>
-                  <td className="py-3 px-3 font-bold text-slate-900">Analisis Masalah & Solusi</td>
-                  <td className="py-3 px-2 text-center font-bold text-slate-700">5%</td>
-                  <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {[0, 1, 2, 3, 4].map((num) => (
-                        <button
-                          key={num}
-                          type="button"
-                          disabled={!canEditDpl}
-                          onClick={() => handleScoreChange("skorDplAnalisis", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
-                            scores.skorDplAnalisis === num
-                              ? "bg-amber-500 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
-                          } ${canEditDpl ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 text-right font-black text-slate-900">
-                    {nilaiAspekDpl.analisis.toFixed(2).replace(".", ",")}
-                  </td>
-                </tr>
-
-                {/* Baris 5: Output, Outcome, & Dampak */}
-                <tr className="hover:bg-slate-50/60 transition">
-                  <td className="py-3 px-3 text-center font-bold text-slate-400">5</td>
-                  <td className="py-3 px-3 font-bold text-slate-900">Output, Outcome, & Dampak</td>
-                  <td className="py-3 px-2 text-center font-bold text-slate-700">5%</td>
-                  <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {[0, 1, 2, 3, 4].map((num) => (
-                        <button
-                          key={num}
-                          type="button"
-                          disabled={!canEditDpl}
-                          onClick={() => handleScoreChange("skorDplOutput", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
-                            scores.skorDplOutput === num
-                              ? "bg-amber-500 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
-                          } ${canEditDpl ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 text-right font-black text-slate-900">
-                    {nilaiAspekDpl.output.toFixed(2).replace(".", ",")}
-                  </td>
-                </tr>
-
-                {/* Baris 6: Laporan Akhir */}
-                <tr className="hover:bg-slate-50/60 transition">
-                  <td className="py-3 px-3 text-center font-bold text-slate-400">6</td>
-                  <td className="py-3 px-3 font-bold text-slate-900">Laporan Akhir, Evaluasi, & Refleksi</td>
-                  <td className="py-3 px-2 text-center font-bold text-slate-700">5%</td>
-                  <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {[0, 1, 2, 3, 4].map((num) => (
-                        <button
-                          key={num}
-                          type="button"
-                          disabled={!canEditDpl}
-                          onClick={() => handleScoreChange("skorDplLaporanAkhir", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
-                            scores.skorDplLaporanAkhir === num
-                              ? "bg-amber-500 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
-                          } ${canEditDpl ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 text-right font-black text-slate-900">
-                    {nilaiAspekDpl.laporanAkhir.toFixed(2).replace(".", ",")}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Subtotal DPL Footer */}
-          <div className="p-4 bg-slate-50/90 border-t border-slate-200 flex items-center justify-between text-xs">
-            <span className="font-extrabold text-slate-600 uppercase">Subtotal DPL (30%):</span>
-            <span className="text-base font-black text-amber-700">
-              {subtotalDpl.toFixed(2).replace(".", ",")} / 30
-            </span>
-          </div>
+        {/* Pagination */}
+        <div className="pt-2">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={(p) => setCurrentPage(p)}
+          />
         </div>
       </div>
 
-      {/* Row 4: 4 Bottom Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Rumus Perhitungan */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-            <Calculator size={15} className="text-emerald-600" />
-            <span>Rumus Perhitungan</span>
-          </h3>
-          <div className="space-y-2 mt-3 text-xs">
-            <div className="flex items-start gap-2 text-slate-700">
-              <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
-              <span className="font-semibold text-[11px]">Nilai Aspek = (Skor / 4) &times; Bobot</span>
-            </div>
-            <div className="flex items-start gap-2 text-slate-700">
-              <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
-              <span className="font-semibold text-[11px]">Komposisi akhir: Mitra 70% + DPL 30%</span>
-            </div>
-            <div className="flex items-start gap-2 text-slate-700">
-              <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
-              <span className="font-semibold text-[11px]">Nilai Akhir = Subtotal Mitra + Subtotal DPL</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Rekapitulasi Nilai (4 Mini Badges) */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Rekapitulasi Nilai</h3>
-          <div className="grid grid-cols-2 gap-2 mt-2 text-center">
-            <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200/60">
-              <span className="text-[10px] font-bold text-slate-400 block">Subtotal Mitra</span>
-              <span className="text-base font-black text-emerald-700">{subtotalMitra.toFixed(2).replace(".", ",")}</span>
-              <span className="text-[9px] text-slate-400 block">dari 70 (70%)</span>
-            </div>
-
-            <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200/60">
-              <span className="text-[10px] font-bold text-slate-400 block">Subtotal DPL</span>
-              <span className="text-base font-black text-amber-600">{subtotalDpl.toFixed(2).replace(".", ",")}</span>
-              <span className="text-[9px] text-slate-400 block">dari 30 (30%)</span>
-            </div>
-
-            <div className="bg-emerald-50/70 p-2.5 rounded-2xl border border-emerald-200/70">
-              <span className="text-[10px] font-bold text-emerald-800 block">Nilai Akhir</span>
-              <span className="text-base font-black text-emerald-800">{nilaiAkhir.toFixed(2).replace(".", ",")}</span>
-              <span className="text-[9px] text-emerald-600 block">dari 100 (100%)</span>
-            </div>
-
-            <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200/60 flex flex-col justify-center items-center">
-              <span className="text-[10px] font-bold text-slate-400 block">Kategori</span>
-              <span className={`px-2 py-0.5 rounded-lg text-xs font-black border mt-0.5 ${currentCategory.color}`}>
-                {currentCategory.label}
-              </span>
-              <span className="text-[9px] text-slate-400 block mt-0.5">Skala Standar</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Kategori Penilaian */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Kategori Penilaian</h3>
-          <div className="space-y-1.5 mt-2 text-xs">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                <span className="font-semibold text-slate-600 text-[11px]">&ge; 85 &ndash; 100</span>
-              </div>
-              <span className="font-extrabold text-slate-900 text-[11px]">Sangat Baik</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-teal-500"></span>
-                <span className="font-semibold text-slate-600 text-[11px]">75 &ndash; 84,99</span>
-              </div>
-              <span className="font-extrabold text-slate-900 text-[11px]">Baik</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-                <span className="font-semibold text-slate-600 text-[11px]">65 &ndash; 74,99</span>
-              </div>
-              <span className="font-extrabold text-slate-900 text-[11px]">Cukup</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-orange-400"></span>
-                <span className="font-semibold text-slate-600 text-[11px]">55 &ndash; 64,99</span>
-              </div>
-              <span className="font-extrabold text-slate-900 text-[11px]">Kurang</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-                <span className="font-semibold text-slate-600 text-[11px]">&lt; 55</span>
-              </div>
-              <span className="font-extrabold text-slate-900 text-[11px]">Sangat Kurang</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4: Catatan Evaluator */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-2">
-          <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-            <MessageSquare size={15} className="text-emerald-600" />
-            <span>Catatan Evaluator</span>
-          </h3>
-
-          <div className="space-y-2 flex-1">
+      {/* SECTION 2: FORM PENILAIAN ASPEK & PORTOFOLIO AKTIVITAS */}
+      {selectedStudentId && studentInfo && (
+        <div id="form-penilaian-section" className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-6">
+          {/* Header Mahasiswa yang Sedang Dinilai */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-100">
             <div>
-              <label className="text-[10px] font-bold text-slate-500 block mb-0.5">Catatan DPL:</label>
-              <textarea
-                rows={2}
-                value={scores.catatanDpl}
-                onChange={(e) => setScores((prev) => ({ ...prev, catatanDpl: e.target.value }))}
-                placeholder="Catatan dari Dosen Pembimbing Lapangan..."
-                disabled={!canEditDpl}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 focus:bg-white transition resize-none disabled:bg-slate-100 disabled:opacity-75"
-              />
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  {studentInfo.kelompok}
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">
+                  {studentInfo.rw ? `${studentInfo.rw}, ` : ""}Kel. {studentInfo.kelurahan || "Coblong"}
+                </span>
+              </div>
+              <h2 className="text-xl font-black text-slate-900 mt-1.5 flex items-center gap-2">
+                <span>{studentInfo.nama}</span>
+                <span className="font-mono text-sm text-slate-500 font-normal">({studentInfo.nim})</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Jenjang {studentInfo.jenjangPendidikan || "S1"} &bull; {studentInfo.programStudi} ({studentInfo.fakultas || "-"}) &bull; DPL: <strong>{studentInfo.dplNama || "-"}</strong>
+              </p>
             </div>
 
-            <div>
-              <label className="text-[10px] font-bold text-slate-500 block mb-0.5">Catatan Mitra / Lapangan:</label>
-              <textarea
-                rows={2}
-                value={scores.catatanMitra}
-                onChange={(e) => setScores((prev) => ({ ...prev, catatanMitra: e.target.value }))}
-                placeholder="Catatan dari Mitra / Kelurahan / RW..."
-                disabled={!canEditMitra}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 focus:bg-white transition resize-none disabled:bg-slate-100 disabled:opacity-75"
-              />
+            {/* Tab Switcher: Form Nilai vs Portofolio KKN */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-extrabold">
+              <button
+                type="button"
+                onClick={() => setDetailTab("FORM_NILAI")}
+                className={`px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
+                  detailTab === "FORM_NILAI"
+                    ? "bg-white text-emerald-800 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <ClipboardList size={15} />
+                <span>Form Aspek Penilaian</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDetailTab("PORTOFOLIO_KKN")}
+                className={`px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
+                  detailTab === "PORTOFOLIO_KKN"
+                    ? "bg-white text-emerald-800 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <Activity size={15} />
+                <span>Portofolio Aktivitas KKN</span>
+              </button>
             </div>
           </div>
+
+          {/* TAB 1: FORM ASPEK PENILAIAN */}
+          {detailTab === "FORM_NILAI" && (
+            <div className="space-y-6">
+              {/* Summary Nilai Bar */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-6 flex-wrap">
+                  <div>
+                    <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Subtotal DPL (30%)</span>
+                    <span className="text-lg font-black text-amber-700">{subtotalDpl.toFixed(2)} / 30</span>
+                  </div>
+                  <span className="text-slate-300 text-xl font-light">+</span>
+                  <div>
+                    <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Subtotal Mitra (70%)</span>
+                    <span className="text-lg font-black text-emerald-700">{subtotalMitra.toFixed(2)} / 70</span>
+                  </div>
+                  <span className="text-slate-300 text-xl font-light">=</span>
+                  <div>
+                    <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Nilai Akhir Kumulatif</span>
+                    <span className="text-2xl font-black text-slate-900">{nilaiAkhir.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className={`px-3 py-1 rounded-xl text-xs font-black border ${currentCategory.color}`}>
+                    {currentCategory.label} ({currentCategory.letter})
+                  </span>
+                </div>
+              </div>
+
+              {/* 2 Tables: Mitra 70% & DPL 30% */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* TABEL DPL (30%) */}
+                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col justify-between shadow-2xs">
+                  <div className="p-4 border-b border-slate-100 bg-amber-50/50 flex items-center justify-between">
+                    <h3 className="text-sm font-black text-amber-950 flex items-center gap-2">
+                      <GraduationCap size={17} className="text-amber-600" />
+                      <span>Aspek Dosen Pembimbing (DPL) &bull; Bobot 30%</span>
+                    </h3>
+                    {!canEditDpl && (
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-700">
+                        View Only
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px] border-b border-slate-200">
+                          <th className="py-2.5 px-3 text-center w-8">No</th>
+                          <th className="py-2.5 px-3">Aspek Akademik DPL</th>
+                          <th className="py-2.5 px-2 text-center w-12">Bobot</th>
+                          <th className="py-2.5 px-3 text-center">Skor (0–4)</th>
+                          <th className="py-2.5 px-3 text-right w-16">Nilai</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                        {/* 1. Perencanaan */}
+                        <tr className="hover:bg-slate-50/60">
+                          <td className="py-2.5 px-3 text-center font-bold text-slate-400">1</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-900">Perencanaan & Pemahaman Program</td>
+                          <td className="py-2.5 px-2 text-center font-bold text-slate-700">5%</td>
+                          <td className="py-2.5 px-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {[0, 1, 2, 3, 4].map((num) => (
+                                <button
+                                  key={num}
+                                  type="button"
+                                  disabled={!canEditDpl}
+                                  onClick={() => handleScoreChange("skorDplPerencanaan", num)}
+                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
+                                    scores.skorDplPerencanaan === num
+                                      ? "bg-amber-500 text-white shadow-xs"
+                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                  } ${canEditDpl ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                                >
+                                  {num}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-black text-slate-900">
+                            {nilaiAspekDpl.perencanaan.toFixed(2)}
+                          </td>
+                        </tr>
+
+                        {/* 2. Kontribusi */}
+                        <tr className="hover:bg-slate-50/60">
+                          <td className="py-2.5 px-3 text-center font-bold text-slate-400">2</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-900">Kontribusi Individu</td>
+                          <td className="py-2.5 px-2 text-center font-bold text-slate-700">5%</td>
+                          <td className="py-2.5 px-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {[0, 1, 2, 3, 4].map((num) => (
+                                <button
+                                  key={num}
+                                  type="button"
+                                  disabled={!canEditDpl}
+                                  onClick={() => handleScoreChange("skorDplKontribusi", num)}
+                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
+                                    scores.skorDplKontribusi === num
+                                      ? "bg-amber-500 text-white shadow-xs"
+                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                  } ${canEditDpl ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                                >
+                                  {num}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-black text-slate-900">
+                            {nilaiAspekDpl.kontribusi.toFixed(2)}
+                          </td>
+                        </tr>
+
+                        {/* 3. Logbook */}
+                        <tr className="hover:bg-slate-50/60">
+                          <td className="py-2.5 px-3 text-center font-bold text-slate-400">3</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-900">Logbook & Dokumentasi Akademik</td>
+                          <td className="py-2.5 px-2 text-center font-bold text-slate-700">5%</td>
+                          <td className="py-2.5 px-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {[0, 1, 2, 3, 4].map((num) => (
+                                <button
+                                  key={num}
+                                  type="button"
+                                  disabled={!canEditDpl}
+                                  onClick={() => handleScoreChange("skorDplLogbook", num)}
+                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
+                                    scores.skorDplLogbook === num
+                                      ? "bg-amber-500 text-white shadow-xs"
+                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                  } ${canEditDpl ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                                >
+                                  {num}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-black text-slate-900">
+                            {nilaiAspekDpl.logbook.toFixed(2)}
+                          </td>
+                        </tr>
+
+                        {/* 4. Analisis */}
+                        <tr className="hover:bg-slate-50/60">
+                          <td className="py-2.5 px-3 text-center font-bold text-slate-400">4</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-900">Analisis Masalah & Solusi</td>
+                          <td className="py-2.5 px-2 text-center font-bold text-slate-700">5%</td>
+                          <td className="py-2.5 px-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {[0, 1, 2, 3, 4].map((num) => (
+                                <button
+                                  key={num}
+                                  type="button"
+                                  disabled={!canEditDpl}
+                                  onClick={() => handleScoreChange("skorDplAnalisis", num)}
+                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
+                                    scores.skorDplAnalisis === num
+                                      ? "bg-amber-500 text-white shadow-xs"
+                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                  } ${canEditDpl ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                                >
+                                  {num}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-black text-slate-900">
+                            {nilaiAspekDpl.analisis.toFixed(2)}
+                          </td>
+                        </tr>
+
+                        {/* 5. Output */}
+                        <tr className="hover:bg-slate-50/60">
+                          <td className="py-2.5 px-3 text-center font-bold text-slate-400">5</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-900">Output, Outcome, & Dampak</td>
+                          <td className="py-2.5 px-2 text-center font-bold text-slate-700">5%</td>
+                          <td className="py-2.5 px-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {[0, 1, 2, 3, 4].map((num) => (
+                                <button
+                                  key={num}
+                                  type="button"
+                                  disabled={!canEditDpl}
+                                  onClick={() => handleScoreChange("skorDplOutput", num)}
+                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
+                                    scores.skorDplOutput === num
+                                      ? "bg-amber-500 text-white shadow-xs"
+                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                  } ${canEditDpl ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                                >
+                                  {num}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-black text-slate-900">
+                            {nilaiAspekDpl.output.toFixed(2)}
+                          </td>
+                        </tr>
+
+                        {/* 6. Laporan Akhir */}
+                        <tr className="hover:bg-slate-50/60">
+                          <td className="py-2.5 px-3 text-center font-bold text-slate-400">6</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-900">Laporan Akhir, Evaluasi & Refleksi</td>
+                          <td className="py-2.5 px-2 text-center font-bold text-slate-700">5%</td>
+                          <td className="py-2.5 px-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {[0, 1, 2, 3, 4].map((num) => (
+                                <button
+                                  key={num}
+                                  type="button"
+                                  disabled={!canEditDpl}
+                                  onClick={() => handleScoreChange("skorDplLaporanAkhir", num)}
+                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
+                                    scores.skorDplLaporanAkhir === num
+                                      ? "bg-amber-500 text-white shadow-xs"
+                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                  } ${canEditDpl ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                                >
+                                  {num}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-black text-slate-900">
+                            {nilaiAspekDpl.laporanAkhir.toFixed(2)}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="p-3 bg-amber-50/70 border-t border-slate-200 flex justify-between items-center text-xs">
+                    <span className="font-extrabold text-amber-900">Subtotal DPL:</span>
+                    <span className="text-base font-black text-amber-700">{subtotalDpl.toFixed(2)} / 30.00</span>
+                  </div>
+                </div>
+
+                {/* TABEL MITRA (70%) */}
+                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col justify-between shadow-2xs">
+                  <div className="p-4 border-b border-slate-100 bg-emerald-50/50 flex items-center justify-between">
+                    <h3 className="text-sm font-black text-emerald-950 flex items-center gap-2">
+                      <ClipboardList size={17} className="text-emerald-600" />
+                      <span>Aspek Mitra Lapangan &bull; Bobot 70%</span>
+                    </h3>
+                    {!canEditMitra && (
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-700">
+                        View Only
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px] border-b border-slate-200">
+                          <th className="py-2.5 px-3 text-center w-8">No</th>
+                          <th className="py-2.5 px-3">Aspek Lapangan Mitra</th>
+                          <th className="py-2.5 px-2 text-center w-12">Bobot</th>
+                          <th className="py-2.5 px-3 text-center">Skor (0–4)</th>
+                          <th className="py-2.5 px-3 text-right w-16">Nilai</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                        {/* 1. Kehadiran */}
+                        <tr className="hover:bg-slate-50/60">
+                          <td className="py-2 px-3 text-center font-bold text-slate-400">1</td>
+                          <td className="py-2 px-3 font-bold text-slate-900">Kehadiran dan Kedisiplinan</td>
+                          <td className="py-2 px-2 text-center font-bold text-slate-700">10%</td>
+                          <td className="py-2 px-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {[0, 1, 2, 3, 4].map((num) => (
+                                <button
+                                  key={num}
+                                  type="button"
+                                  disabled={!canEditMitra}
+                                  onClick={() => handleScoreChange("skorMitraKehadiran", num)}
+                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
+                                    scores.skorMitraKehadiran === num
+                                      ? "bg-emerald-600 text-white shadow-xs"
+                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                  } ${canEditMitra ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                                >
+                                  {num}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 text-right font-black text-slate-900">
+                            {nilaiAspekMitra.kehadiran.toFixed(2)}
+                          </td>
+                        </tr>
+
+                        {/* 2. Warga Binaan */}
+                        <tr className="hover:bg-slate-50/60">
+                          <td className="py-2 px-3 text-center font-bold text-slate-400">2</td>
+                          <td className="py-2 px-3 font-bold text-slate-900">Warga Binaan</td>
+                          <td className="py-2 px-2 text-center font-bold text-slate-700">10%</td>
+                          <td className="py-2 px-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {[0, 1, 2, 3, 4].map((num) => (
+                                <button
+                                  key={num}
+                                  type="button"
+                                  disabled={!canEditMitra}
+                                  onClick={() => handleScoreChange("skorMitraWargaBinaan", num)}
+                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
+                                    scores.skorMitraWargaBinaan === num
+                                      ? "bg-emerald-600 text-white shadow-xs"
+                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                  } ${canEditMitra ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                                >
+                                  {num}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 text-right font-black text-slate-900">
+                            {nilaiAspekMitra.wargaBinaan.toFixed(2)}
+                          </td>
+                        </tr>
+
+                        {/* 3. Proker */}
+                        <tr className="hover:bg-slate-50/60">
+                          <td className="py-2 px-3 text-center font-bold text-slate-400">3</td>
+                          <td className="py-2 px-3 font-bold text-slate-900">Keterlibatan Program Kerja</td>
+                          <td className="py-2 px-2 text-center font-bold text-slate-700">10%</td>
+                          <td className="py-2 px-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {[0, 1, 2, 3, 4].map((num) => (
+                                <button
+                                  key={num}
+                                  type="button"
+                                  disabled={!canEditMitra}
+                                  onClick={() => handleScoreChange("skorMitraProker", num)}
+                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
+                                    scores.skorMitraProker === num
+                                      ? "bg-emerald-600 text-white shadow-xs"
+                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                  } ${canEditMitra ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                                >
+                                  {num}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 text-right font-black text-slate-900">
+                            {nilaiAspekMitra.proker.toFixed(2)}
+                          </td>
+                        </tr>
+
+                        {/* 4. Komunikasi */}
+                        <tr className="hover:bg-slate-50/60">
+                          <td className="py-2 px-3 text-center font-bold text-slate-400">4</td>
+                          <td className="py-2 px-3 font-bold text-slate-900">Komunikasi & Etika</td>
+                          <td className="py-2 px-2 text-center font-bold text-slate-700">8%</td>
+                          <td className="py-2 px-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {[0, 1, 2, 3, 4].map((num) => (
+                                <button
+                                  key={num}
+                                  type="button"
+                                  disabled={!canEditMitra}
+                                  onClick={() => handleScoreChange("skorMitraKomunikasi", num)}
+                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
+                                    scores.skorMitraKomunikasi === num
+                                      ? "bg-emerald-600 text-white shadow-xs"
+                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                  } ${canEditMitra ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                                >
+                                  {num}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 text-right font-black text-slate-900">
+                            {nilaiAspekMitra.komunikasi.toFixed(2)}
+                          </td>
+                        </tr>
+
+                        {/* 5. Tanggung Jawab */}
+                        <tr className="hover:bg-slate-50/60">
+                          <td className="py-2 px-3 text-center font-bold text-slate-400">5</td>
+                          <td className="py-2 px-3 font-bold text-slate-900">Tanggung Jawab & Kerja Sama</td>
+                          <td className="py-2 px-2 text-center font-bold text-slate-700">8%</td>
+                          <td className="py-2 px-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {[0, 1, 2, 3, 4].map((num) => (
+                                <button
+                                  key={num}
+                                  type="button"
+                                  disabled={!canEditMitra}
+                                  onClick={() => handleScoreChange("skorMitraTanggungJawab", num)}
+                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
+                                    scores.skorMitraTanggungJawab === num
+                                      ? "bg-emerald-600 text-white shadow-xs"
+                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                  } ${canEditMitra ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                                >
+                                  {num}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 text-right font-black text-slate-900">
+                            {nilaiAspekMitra.tanggungJawab.toFixed(2)}
+                          </td>
+                        </tr>
+
+                        {/* 6. Bukti Kegiatan */}
+                        <tr className="hover:bg-slate-50/60">
+                          <td className="py-2 px-3 text-center font-bold text-slate-400">6</td>
+                          <td className="py-2 px-3 font-bold text-slate-900">Bukti Kegiatan</td>
+                          <td className="py-2 px-2 text-center font-bold text-slate-700">7%</td>
+                          <td className="py-2 px-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {[0, 1, 2, 3, 4].map((num) => (
+                                <button
+                                  key={num}
+                                  type="button"
+                                  disabled={!canEditMitra}
+                                  onClick={() => handleScoreChange("skorMitraBuktiKegiatan", num)}
+                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
+                                    scores.skorMitraBuktiKegiatan === num
+                                      ? "bg-emerald-600 text-white shadow-xs"
+                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                  } ${canEditMitra ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                                >
+                                  {num}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 text-right font-black text-slate-900">
+                            {nilaiAspekMitra.buktiKegiatan.toFixed(2)}
+                          </td>
+                        </tr>
+
+                        {/* 7. Dampak */}
+                        <tr className="hover:bg-slate-50/60">
+                          <td className="py-2 px-3 text-center font-bold text-slate-400">7</td>
+                          <td className="py-2 px-3 font-bold text-slate-900">Dampak kepada Masyarakat</td>
+                          <td className="py-2 px-2 text-center font-bold text-slate-700">10%</td>
+                          <td className="py-2 px-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {[0, 1, 2, 3, 4].map((num) => (
+                                <button
+                                  key={num}
+                                  type="button"
+                                  disabled={!canEditMitra}
+                                  onClick={() => handleScoreChange("skorMitraDampak", num)}
+                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
+                                    scores.skorMitraDampak === num
+                                      ? "bg-emerald-600 text-white shadow-xs"
+                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                  } ${canEditMitra ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                                >
+                                  {num}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 text-right font-black text-slate-900">
+                            {nilaiAspekMitra.dampak.toFixed(2)}
+                          </td>
+                        </tr>
+
+                        {/* 8. Inisiatif */}
+                        <tr className="hover:bg-slate-50/60">
+                          <td className="py-2 px-3 text-center font-bold text-slate-400">8</td>
+                          <td className="py-2 px-3 font-bold text-slate-900">Inisiatif & Problem Solving</td>
+                          <td className="py-2 px-2 text-center font-bold text-slate-700">7%</td>
+                          <td className="py-2 px-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {[0, 1, 2, 3, 4].map((num) => (
+                                <button
+                                  key={num}
+                                  type="button"
+                                  disabled={!canEditMitra}
+                                  onClick={() => handleScoreChange("skorMitraInisiatif", num)}
+                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
+                                    scores.skorMitraInisiatif === num
+                                      ? "bg-emerald-600 text-white shadow-xs"
+                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                  } ${canEditMitra ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                                >
+                                  {num}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 text-right font-black text-slate-900">
+                            {nilaiAspekMitra.inisiatif.toFixed(2)}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="p-3 bg-emerald-50/70 border-t border-slate-200 flex justify-between items-center text-xs">
+                    <span className="font-extrabold text-emerald-900">Subtotal Mitra:</span>
+                    <span className="text-base font-black text-emerald-700">{subtotalMitra.toFixed(2)} / 70.00</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Catatan Evaluator */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Catatan Evaluasi DPL:</label>
+                  <textarea
+                    rows={3}
+                    value={scores.catatanDpl}
+                    onChange={(e) => setScores((prev) => ({ ...prev, catatanDpl: e.target.value }))}
+                    placeholder="Tuliskan catatan akademik dan bimbingan untuk mahasiswa..."
+                    disabled={!canEditDpl}
+                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 outline-none focus:border-emerald-500 disabled:bg-slate-100"
+                  />
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Catatan Evaluasi Mitra Lapangan:</label>
+                  <textarea
+                    rows={3}
+                    value={scores.catatanMitra}
+                    onChange={(e) => setScores((prev) => ({ ...prev, catatanMitra: e.target.value }))}
+                    placeholder="Tuliskan catatan etika, inisiatif, dan kinerja lapangan..."
+                    disabled={!canEditMitra}
+                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 outline-none focus:border-emerald-500 disabled:bg-slate-100"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: PORTOFOLIO AKTIVITAS KKN */}
+          {detailTab === "PORTOFOLIO_KKN" && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Tingkat Kehadiran</span>
+                  <span className="text-xl font-black text-emerald-700 mt-1 block">
+                    {requirements.attendanceRate}%
+                  </span>
+                  <span className="text-[11px] text-slate-500">Kewajiban &ge; 80%</span>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Warga Dampingan</span>
+                  <span className="text-xl font-black text-blue-700 mt-1 block">
+                    {requirements.wargaBinaanCount} Rumah
+                  </span>
+                  <span className="text-[11px] text-slate-500">Target &ge; 6 warga aktif</span>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Program Kerja Diikuti</span>
+                  <span className="text-xl font-black text-purple-700 mt-1 block">
+                    {requirements.prokerCount} Kegiatan
+                  </span>
+                  <span className="text-[11px] text-slate-500">Program kerja kelompok & binaan</span>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Status Bukti / Evidence</span>
+                  <span className="text-xl font-black text-teal-700 mt-1 block">
+                    {requirements.isEvidenceValid ? "Lengkap" : "Terverifikasi Sebagian"}
+                  </span>
+                  <span className="text-[11px] text-slate-500">Dokumentasi foto & GPS</span>
+                </div>
+              </div>
+
+              {/* Rincian Riwayat Logbook & Presensi */}
+              <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200 space-y-3">
+                <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider">
+                  Ikhtisar Portofolio & Logbook Aktivitas KKN
+                </h4>
+                <div className="space-y-2 text-xs text-slate-600">
+                  <p>
+                    &bull; Mahasiswa <strong>{studentInfo.nama}</strong> ({studentInfo.nim}) terdaftar di <strong>{studentInfo.kelompok}</strong> dengan wilayah tugas di <strong>{studentInfo.rw ? `${studentInfo.rw}, ` : ""}Kelurahan {studentInfo.kelurahan || "Coblong"}</strong>.
+                  </p>
+                  <p>
+                    &bull; Mahasiswa telah memenuhi persyaratan verifikasi lapangan dengan tingkat presensi <strong>{requirements.attendanceRate}%</strong> dan pendampingan kepada <strong>{requirements.wargaBinaanCount} rumah tangga</strong>.
+                  </p>
+                  <p>
+                    &bull; Dokumen dan laporan kegiatan dapat diakses pada folder Google Drive kelompok bimbingan yang telah disiapkan oleh Taskforce / Super User.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 };

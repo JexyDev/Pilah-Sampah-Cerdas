@@ -12,6 +12,7 @@ export interface StudentInfo {
   id: string;
   nama: string;
   nim: string;
+  jenjangPendidikan?: string;
   programStudi: string;
   fakultas: string;
   kelompok: string;

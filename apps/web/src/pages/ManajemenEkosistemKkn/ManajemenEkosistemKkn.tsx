@@ -18,7 +18,10 @@ import {
   ChevronsLeft,
   ChevronsRight,
   UserPlus,
-  UserMinus
+  UserMinus,
+  Eye,
+  ExternalLink,
+  Phone
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
@@ -42,9 +45,13 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   const [isKelompokModalOpen, setIsKelompokModalOpen] = useState(false);
   const [kelompokModalType, setKelompokModalType] = useState<"add" | "edit">("add");
   const [selectedKelompokId, setSelectedKelompokId] = useState<string | null>(null);
-  const [kelompokForm, setKelompokForm] = useState({ name: "", dplId: "", ketuaStudentId: "", kelurahan: "", cakupanRw: "" });
+  const [kelompokForm, setKelompokForm] = useState({ name: "", dplId: "", ketuaStudentId: "", kelurahan: "", cakupanRw: "", linkGoogleDrive: "" });
   const [currentKelompokStudents, setCurrentKelompokStudents] = useState<any[]>([]);
   const [submittingKelompok, setSubmittingKelompok] = useState(false);
+
+  // Detail Kelompok Modal State
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedDetailKelompok, setSelectedDetailKelompok] = useState<any>(null);
 
   // DPL Leader Assignment State
   const [isLeaderModalOpen, setIsLeaderModalOpen] = useState(false);
@@ -277,9 +284,14 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   }, [filteredDplList, dplPage]);
 
   // Kelompok Submit Handlers
+  const handleOpenDetailKelompok = (k: any) => {
+    setSelectedDetailKelompok(k);
+    setIsDetailModalOpen(true);
+  };
+
   const handleOpenAddKelompok = () => {
     setKelompokModalType("add");
-    setKelompokForm({ name: "", dplId: "", ketuaStudentId: "", kelurahan: "", cakupanRw: "" });
+    setKelompokForm({ name: "", dplId: "", ketuaStudentId: "", kelurahan: "", cakupanRw: "", linkGoogleDrive: "" });
     setCurrentKelompokStudents([]);
     setSelectedKelompokId(null);
     setIsKelompokModalOpen(true);
@@ -301,7 +313,8 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       dplId: k.dpl?.id || "", 
       ketuaStudentId: ketuaMhs?.id || "",
       kelurahan: k.kelurahan || "",
-      cakupanRw: rwStr
+      cakupanRw: rwStr,
+      linkGoogleDrive: k.linkGoogleDrive || ""
     });
     setCurrentKelompokStudents(k.students || []);
     setSelectedKelompokId(k.id);
@@ -337,7 +350,8 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       name: kelompokForm.name,
       dplId: kelompokForm.dplId,
       kelurahan: kelompokForm.kelurahan,
-      cakupanRw: kelompokForm.cakupanRw ? kelompokForm.cakupanRw.split(",").map(r => r.trim()).filter(Boolean) : []
+      cakupanRw: kelompokForm.cakupanRw ? kelompokForm.cakupanRw.split(",").map(r => r.trim()).filter(Boolean) : [],
+      linkGoogleDrive: kelompokForm.linkGoogleDrive
     };
     
     try {
@@ -580,7 +594,26 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                         return (
                           <tr key={k.id} className="hover:bg-slate-50/70 transition-colors">
                             <td className="p-4">
-                              <span className="font-bold text-slate-900">{k.name}</span>
+                              <button
+                                onClick={() => handleOpenDetailKelompok(k)}
+                                className="font-bold text-slate-900 hover:text-emerald-600 text-left transition flex items-center gap-1.5 cursor-pointer group"
+                                title="Klik untuk melihat detail lengkap kelompok"
+                              >
+                                <span className="group-hover:underline">{k.name}</span>
+                                <Eye size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </button>
+                              {k.linkGoogleDrive && (
+                                <a
+                                  href={k.linkGoogleDrive}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-700 font-semibold mt-0.5 hover:underline"
+                                  title="Buka Folder Google Drive Kelompok"
+                                >
+                                  <ExternalLink size={11} />
+                                  <span>Google Drive</span>
+                                </a>
+                              )}
                             </td>
                             <td className="p-4">
                               <div className="flex flex-col gap-0.5">
@@ -622,19 +655,27 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                                 title="Klik untuk mengelola/menambah anggota mahasiswa di kelompok ini"
                               >
                                 <Users size={13} className="text-teal-600" />
-                                {k.students?.length || 0} Mahasiswa (Kelola)
+                                {k.students?.length || 0} Mahasiswa
                               </button>
                             </td>
                             <td className="p-4 text-center">
-                              <div className="flex items-center justify-center gap-2">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  onClick={() => handleOpenDetailKelompok(k)}
+                                  className="p-1.5 text-slate-500 hover:text-emerald-700 rounded-lg hover:bg-emerald-50 transition-all cursor-pointer"
+                                  title="Lihat Detail Kelompok"
+                                >
+                                  <Eye size={16} />
+                                </button>
+
                                 {(isDpl || !isReadOnly) && (
                                   <button
                                     onClick={() => handleOpenSetLeaderModal(k)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs"
                                     title="Klik untuk menunjuk atau melepas ketua kelompok"
                                   >
-                                    <Crown size={14} className="text-amber-600" />
-                                    {ketuaMhs ? "Ketua" : "Tunjuk Ketua"}
+                                    <Crown size={13} className="text-amber-600" />
+                                    <span>{ketuaMhs ? "Ketua" : "Tunjuk"}</span>
                                   </button>
                                 )}
 
@@ -642,17 +683,17 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                                   <>
                                     <button
                                       onClick={() => handleOpenEditKelompok(k)}
-                                      className="p-2 text-slate-500 hover:text-emerald-700 rounded-lg hover:bg-emerald-50 transition-all cursor-pointer"
+                                      className="p-1.5 text-slate-500 hover:text-emerald-700 rounded-lg hover:bg-emerald-50 transition-all cursor-pointer"
                                       title="Edit Kelompok & DPL"
                                     >
-                                      <Pencil size={16} />
+                                      <Pencil size={15} />
                                     </button>
                                     <button
                                       onClick={() => handleDeleteKelompok(k.id)}
-                                      className="p-2 text-slate-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-all cursor-pointer"
+                                      className="p-1.5 text-slate-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-all cursor-pointer"
                                       title="Hapus Kelompok"
                                     >
-                                      <Trash2 size={16} />
+                                      <Trash2 size={15} />
                                     </button>
                                   </>
                                 )}
@@ -956,6 +997,22 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Link Google Drive Kelompok (Opsional)</label>
+                <div className="relative">
+                  <input
+                    type="url"
+                    placeholder="https://drive.google.com/drive/folders/..."
+                    value={kelompokForm.linkGoogleDrive || ""}
+                    onChange={(e) => setKelompokForm({ ...kelompokForm, linkGoogleDrive: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-mono text-xs"
+                  />
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Folder Google Drive disiapkan oleh Super User / Admin untuk monitoring laporan dan portofolio KKN.
+                </p>
               </div>
 
               {kelompokModalType === "edit" && (
@@ -1329,6 +1386,155 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 className="px-5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-white hover:bg-slate-900 transition cursor-pointer"
               >
                 Selesai
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Kelompok Modal */}
+      {isDetailModalOpen && selectedDetailKelompok && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden animate-scale-up border border-slate-200 max-h-[90vh] flex flex-col">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-start bg-slate-50/80">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    Kel. {selectedDetailKelompok.kelurahan || "Coblong"}
+                  </span>
+                  {selectedDetailKelompok.cakupanRw && (
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-200/80 text-slate-700">
+                      RW: {Array.isArray(selectedDetailKelompok.cakupanRw) ? selectedDetailKelompok.cakupanRw.join(", ") : selectedDetailKelompok.cakupanRw}
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-xl font-black text-slate-900 mt-1.5">{selectedDetailKelompok.name}</h3>
+              </div>
+              <button
+                onClick={() => setIsDetailModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-200/60 transition cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-5 text-xs text-slate-700 flex-1">
+              {/* Meta DPL & Ketua & Google Drive */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70">
+                  <span className="text-[10.5px] font-bold text-slate-400 block uppercase">Dosen Pembimbing (DPL)</span>
+                  <span className="font-extrabold text-slate-900 text-sm mt-0.5 block">
+                    {selectedDetailKelompok.dpl?.name || "Belum Ditentukan"}
+                  </span>
+                  {selectedDetailKelompok.dpl?.phone && (
+                    <span className="text-[11px] text-slate-500 font-mono flex items-center gap-1 mt-0.5">
+                      <Phone size={11} className="text-emerald-600" />
+                      {selectedDetailKelompok.dpl.phone}
+                    </span>
+                  )}
+                </div>
+
+                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70">
+                  <span className="text-[10.5px] font-bold text-slate-400 block uppercase">Ketua Kelompok</span>
+                  {(() => {
+                    const ketua = selectedDetailKelompok.students?.find((s: any) => s.isKetua);
+                    return ketua ? (
+                      <div>
+                        <span className="font-extrabold text-amber-900 text-sm mt-0.5 flex items-center gap-1">
+                          <Crown size={14} className="text-amber-600" />
+                          {ketua.user?.name || "Ketua Kelompok"}
+                        </span>
+                        <span className="text-[11px] text-slate-500 font-mono mt-0.5 block">
+                          NIM: {ketua.nim || "-"}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 italic text-xs mt-1 block">Belum ditentukan</span>
+                    );
+                  })()}
+                </div>
+
+                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70 flex flex-col justify-between">
+                  <div>
+                    <span className="text-[10.5px] font-bold text-slate-400 block uppercase">Google Drive Kelompok</span>
+                    {selectedDetailKelompok.linkGoogleDrive ? (
+                      <a
+                        href={selectedDetailKelompok.linkGoogleDrive}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-black text-blue-600 hover:text-blue-700 mt-1 hover:underline"
+                      >
+                        <ExternalLink size={13} />
+                        <span>Buka Folder Drive</span>
+                      </a>
+                    ) : (
+                      <span className="text-slate-400 italic text-[11px] mt-1 block">Belum ada link drive</span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-slate-400">Penyimpanan dokumen & portofolio</span>
+                </div>
+              </div>
+
+              {/* Tabel Anggota Mahasiswa Lengkap */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                    <Users size={16} className="text-emerald-600" />
+                    <span>Daftar Anggota Mahasiswa ({selectedDetailKelompok.students?.length || 0})</span>
+                  </h4>
+                </div>
+
+                {(!selectedDetailKelompok.students || selectedDetailKelompok.students.length === 0) ? (
+                  <div className="text-center py-8 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                    Belum ada mahasiswa yang dialokasikan ke kelompok ini.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-slate-100">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10.5px] border-b border-slate-200">
+                          <th className="py-2.5 px-3 text-center w-8">No</th>
+                          <th className="py-2.5 px-3">NIM</th>
+                          <th className="py-2.5 px-3">Nama Mahasiswa</th>
+                          <th className="py-2.5 px-3">Jenjang</th>
+                          <th className="py-2.5 px-3">Program Studi</th>
+                          <th className="py-2.5 px-3 text-center">Peran</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                        {selectedDetailKelompok.students.map((st: any, idx: number) => (
+                          <tr key={st.id} className="hover:bg-slate-50/70 transition">
+                            <td className="py-2 px-3 text-center text-slate-400 font-bold">{idx + 1}</td>
+                            <td className="py-2 px-3 font-mono font-bold text-slate-800">{st.nim || "-"}</td>
+                            <td className="py-2 px-3 font-bold text-slate-900">{st.user?.name || `Mahasiswa ${st.id.substring(0, 6)}`}</td>
+                            <td className="py-2 px-3 font-semibold text-slate-600">{st.jenjangPendidikan || "S1"}</td>
+                            <td className="py-2 px-3 text-slate-600">{st.jurusan || "-"}</td>
+                            <td className="py-2 px-3 text-center">
+                              {st.isKetua ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-black text-[10px] border border-amber-300">
+                                  <Crown size={11} className="text-amber-600" /> KETUA
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 text-[11px]">Anggota</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-100 bg-slate-50/70 flex justify-between items-center text-xs">
+              <span className="text-slate-400">Total {selectedDetailKelompok.students?.length || 0} Mahasiswa</span>
+              <button
+                type="button"
+                onClick={() => setIsDetailModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition cursor-pointer"
+              >
+                Tutup
               </button>
             </div>
           </div>

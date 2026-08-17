@@ -24,6 +24,7 @@ import {
   X,
   ClipboardCheck,
   FileText,
+  Award,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup, Polygon, useMapEvents, useMap } from "react-leaflet";
 import { KELURAHAN_GEODATA } from "../../constants/coblongGeoData";
@@ -843,44 +844,80 @@ export const DplDashboardPage: React.FC = () => {
                     Belum ada program kerja yang diusulkan oleh mahasiswa di kelompok dampingan.
                   </div>
                 ) : (
-                  groups.flatMap((g: any) => g.programKerja || []).slice(0, 4).map((p: any) => (
-                    <div
-                      key={p.id}
-                      className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/80 flex items-center justify-between gap-3 text-xs"
-                    >
-                      <div className="min-w-0">
-                        <p className="font-bold text-slate-900 truncate">{p.deskripsi}</p>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          Kebutuhan: Rp {Number(p.kebutuhanBiaya || 0).toLocaleString("id-ID")}
-                        </p>
+                  groups.flatMap((g: any) => g.programKerja || []).slice(0, 4).map((p: any) => {
+                    const isMinor = (p.kategori || "").toUpperCase() === "MINOR" || (p.kategori || "").toUpperCase() === "TAMBAHAN";
+                    return (
+                      <div
+                        key={p.id}
+                        className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/80 flex items-center justify-between gap-3 text-xs"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-slate-900 truncate">{p.deskripsi}</p>
+                            <span className={`px-1.5 py-0.5 rounded text-[9.5px] font-extrabold border ${
+                              isMinor 
+                                ? "bg-purple-50 text-purple-700 border-purple-200" 
+                                : "bg-blue-50 text-blue-700 border-blue-200"
+                            }`}>
+                              {isMinor ? "Minor" : "Mayor"}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            Kebutuhan: Rp {Number(p.kebutuhanBiaya || 0).toLocaleString("id-ID")}
+                          </p>
+                        </div>
+                        <div className="shrink-0 flex items-center gap-1.5">
+                          {p.status === "DITERIMA" && (
+                            <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-bold text-[10px]">
+                              Disepakati
+                            </span>
+                          )}
+                          {p.status === "SEDANG_BERJALAN" && (
+                            <span className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-bold text-[10px]">
+                              Sedang Berjalan
+                            </span>
+                          )}
+                          {p.status === "SELESAI" && (
+                            <span className="px-2.5 py-1 bg-teal-50 text-teal-700 border border-teal-200 rounded-full font-bold text-[10px]">
+                              Sudah Selesai
+                            </span>
+                          )}
+                          {p.status === "DITOLAK" && (
+                            <span className="px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full font-bold text-[10px]">
+                              Ditolak
+                            </span>
+                          )}
+                          {(p.status === "BELUM_DISETUJUI" || !p.status) && (
+                            <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-bold text-[10px]">
+                              Belum Disetujui
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="shrink-0">
-                        {p.status === "DITERIMA" && (
-                          <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-bold text-[10px]">
-                            Disepakati
-                          </span>
-                        )}
-                        {p.status === "DITOLAK" && (
-                          <span className="px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full font-bold text-[10px]">
-                            Ditolak
-                          </span>
-                        )}
-                        {p.status === "BELUM_DISETUJUI" && (
-                          <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-bold text-[10px]">
-                            Menunggu Review
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                <span>Total Rencana Proker: <strong className="text-slate-800">{groups.flatMap((g: any) => g.programKerja || []).length} Kegiatan</strong></span>
-                <span className="text-emerald-700 font-semibold">
-                  Disetujui: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "DITERIMA").length}
-                </span>
+              {/* Status Breakdown Proker Minor, Sedang, Belum, Sudah di Bawah Tabel */}
+              <div className="pt-3 border-t border-slate-100 space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-500 flex-wrap gap-2">
+                  <span>Total Proker: <strong className="text-slate-800">{groups.flatMap((g: any) => g.programKerja || []).length} Kegiatan</strong></span>
+                  <div className="flex items-center gap-1.5 flex-wrap text-[10.5px]">
+                    <span className="px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-md font-bold">
+                      Minor: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => (p.kategori || "").toUpperCase() === "MINOR" || (p.kategori || "").toUpperCase() === "TAMBAHAN").length}
+                    </span>
+                    <span className="px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-md font-bold">
+                      Belum Disetujui: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "BELUM_DISETUJUI" || !p.status).length}
+                    </span>
+                    <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-md font-bold">
+                      Sedang: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "SEDANG_BERJALAN").length}
+                    </span>
+                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md font-bold">
+                      Sudah Disepakati: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "DITERIMA" || p.status === "SELESAI").length}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -941,16 +978,16 @@ export const DplDashboardPage: React.FC = () => {
             </Link>
 
             <Link
-              to="/jadwal-kegiatan"
-              className="bg-white border border-slate-200/80 p-4 rounded-2xl hover:border-purple-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+              to="/penilaian-kkn/mahasiswa"
+              className="bg-white border border-slate-200/80 p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-purple-50 text-purple-700 rounded-xl group-hover:bg-purple-600 group-hover:text-white transition">
-                  <Calendar size={20} />
+                <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition">
+                  <Award size={20} />
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-xs text-slate-900">Time Line KKN</h4>
-                  <p className="text-[10.5px] text-slate-500">18 tahapan timeline & kalender</p>
+                  <h4 className="font-extrabold text-xs text-slate-900">Penilaian Mahasiswa</h4>
+                  <p className="text-[10.5px] text-slate-500">Form asesmen DPL (30%) & Mitra (70%)</p>
                 </div>
               </div>
               <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
@@ -981,6 +1018,88 @@ export const DplDashboardPage: React.FC = () => {
               </Link>
             </div>
           )}
+
+          {/* Tabel Rekapitulasi Nilai Mahasiswa di Dasbor DPL */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Award size={18} className="text-emerald-600" />
+                  <h3 className="text-base font-extrabold text-slate-900">Nilai Mahasiswa Binaan</h3>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Pemantauan nilai asesmen DPL, evaluasi lapangan, dan huruf mutu mahasiswa bimbingan.
+                </p>
+              </div>
+              <Link
+                to="/penilaian-kkn/mahasiswa"
+                className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 self-start sm:self-auto"
+              >
+                <span>Buka Form Penilaian Lengkap</span>
+                <ChevronRight size={14} />
+              </Link>
+            </div>
+
+            {students.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-xs">
+                Belum ada data mahasiswa bimbingan yang terdaftar.
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-slate-100">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/90 text-slate-600 font-extrabold uppercase text-[10.5px] tracking-wider border-b border-slate-200">
+                      <th className="py-3 px-3 text-center w-10">No</th>
+                      <th className="py-3 px-3">NIM</th>
+                      <th className="py-3 px-3">Nama Mahasiswa</th>
+                      <th className="py-3 px-3">Program Studi</th>
+                      <th className="py-3 px-3">Kelompok</th>
+                      <th className="py-3 px-3 text-center">Presensi</th>
+                      <th className="py-3 px-3 text-center">Nilai DPL</th>
+                      <th className="py-3 px-3 text-center">Huruf Mutu</th>
+                      <th className="py-3 px-3 text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                    {students.slice(0, 6).map((st, idx) => {
+                      const grade = getGradeBadge(st.assessmentScore);
+                      return (
+                        <tr key={st.id} className="hover:bg-slate-50/70 transition">
+                          <td className="py-2.5 px-3 text-center font-bold text-slate-400">{idx + 1}</td>
+                          <td className="py-2.5 px-3 font-mono font-bold text-slate-800">{st.nim || "-"}</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-900">{st.name}</td>
+                          <td className="py-2.5 px-3 text-slate-600">{st.jurusan || "-"}</td>
+                          <td className="py-2.5 px-3 text-slate-600">{st.kelompokName || "-"}</td>
+                          <td className="py-2.5 px-3 text-center font-bold text-emerald-700">
+                            {st.attendanceRate ? `${st.attendanceRate}%` : "0%"}
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-black text-slate-900">
+                            {st.assessmentScore !== null && st.assessmentScore !== undefined && st.assessmentScore > 0
+                              ? st.assessmentScore
+                              : <span className="text-slate-400 font-normal">Belum Dinilai</span>}
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border ${grade.bg}`}>
+                              {grade.letter}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <Link
+                              to="/penilaian-kkn/mahasiswa"
+                              className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1"
+                            >
+                              <Award size={12} />
+                              <span>Beri Nilai</span>
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
 
           {/* Quick Groups Grid */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
