@@ -52,7 +52,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
 
     if (pathname === "/manajemen-ekosistem-kkn") {
       if (search.includes("tab=MAHASISWA")) return ["Ekosistem KKN", "Portofolio Mahasiswa"];
-      if (search.includes("tab=APPROVAL")) return ["Ekosistem KKN", "Persetujuan Sakit & Izin"];
+      if (search.includes("tab=APPROVAL")) return ["Ekosistem KKN", "Presensi & Validasi Ketidakhadiran"];
       return ["Ekosistem KKN", "Kelompok KKN"];
     }
 
@@ -64,6 +64,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/dasbor":
       case "/dashboard":
       case "/":
+        if (search.includes("tab=APPROVAL")) return ["Dasbor Utama", "Presensi & Validasi Ketidakhadiran"];
         return ["Dasbor Utama"];
       case "/monitoring-wilayah":
       case "/monitoring":

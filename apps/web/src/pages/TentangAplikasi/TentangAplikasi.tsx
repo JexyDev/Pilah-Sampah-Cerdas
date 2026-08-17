@@ -283,10 +283,10 @@ const Informasi: React.FC = () => {
                       <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-[#009966] flex items-center justify-center font-bold">
                         <FileCheck size={20} />
                       </div>
-                      <h3 className="font-extrabold text-base text-slate-900">2. Validasi Permohonan Izin &amp; Sakit</h3>
+                      <h3 className="font-extrabold text-base text-slate-900">2. Presensi &amp; Validasi Ketidakhadiran</h3>
                     </div>
                     <p className="text-xs text-slate-600 leading-relaxed">
-                      Pada Tab <strong>Validasi Ketidakhadiran</strong>, periksa surat keterangan dokter/bukti izin mahasiswa. Anda dapat menyetujui, menolak, atau mengeskalasi permohonan izin lebih dari 3 hari ke Panitia Taskforce.
+                      Pada Tab <strong>Presensi &amp; Validasi Ketidakhadiran</strong>, periksa surat keterangan dokter/bukti izin mahasiswa. Anda dapat menyetujui, menolak, atau mengeskalasi permohonan izin lebih dari 3 hari ke Panitia Taskforce.
                     </p>
                   </div>
 
