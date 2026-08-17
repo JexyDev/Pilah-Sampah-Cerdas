@@ -53,7 +53,7 @@ export class KknAttendanceService {
       });
     }
 
-    // Simpan lokasi
+    // 1. Simpan lokasi
     await prisma.studentLocation.create({
       data: {
         studentId: userId,
@@ -62,7 +62,63 @@ export class KknAttendanceService {
       },
     });
 
-    return { success: true, message: "Lokasi berhasil dilacak" };
+    // 2. Trigger auto check-in if student is inside active schedule geofence and not checked in yet
+    let autoAttendanceTriggered = false;
+    try {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date();
+      todayEnd.setHours(23, 59, 59, 999);
+
+      const activeSchedules = await prisma.schedule.findMany({
+        where: {
+          date: { gte: todayStart, lte: todayEnd },
+          latitude: { not: null },
+          longitude: { not: null },
+          isActive: true,
+        },
+      });
+
+      for (const schedule of activeSchedules) {
+        let isInside = false;
+        if (schedule.polygon && Array.isArray(schedule.polygon) && schedule.polygon.length >= 3) {
+          const polyPoints = (schedule.polygon as any[]).map((p) => ({
+            lat: Number(p[0]),
+            lng: Number(p[1]),
+          }));
+          isInside = isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, 15);
+        } else if (schedule.latitude && schedule.longitude) {
+          const dist = calculateDistance(latitude, longitude, Number(schedule.latitude), Number(schedule.longitude));
+          isInside = dist <= ((schedule.radius || 100) + 15);
+        }
+
+        if (isInside) {
+          const existingAttendance = await prisma.activityAttendance.findUnique({
+            where: {
+              studentId_scheduleId: {
+                studentId: userId,
+                scheduleId: schedule.id,
+              },
+            },
+          });
+
+          if (!existingAttendance) {
+            await this.recordAttendance({
+              studentId: userId,
+              scheduleId: schedule.id,
+              latitude,
+              longitude,
+              method: "OTOMATIS",
+            });
+            autoAttendanceTriggered = true;
+          }
+        }
+      }
+    } catch (err) {
+      console.error("[KknAttendanceService] Auto-attendance check error in pingLocation:", err);
+    }
+
+    return { success: true, message: "Lokasi berhasil dilacak", autoAttendanceTriggered };
   }
 
   async getWargaDampingan(userId: string, role?: string) {
