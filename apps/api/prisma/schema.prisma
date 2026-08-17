@@ -199,6 +199,8 @@ model User {
   validasiEndline       EndlineSurveiKelurahan[] @relation("DplEndlineValidasi")
   kritikSaran           KritikSaranPemanfaatan[] @relation("UserKritikSaran")
   reviewedProkers       ProgramKerjaKkn[]    @relation("DplReviewedProker")
+  penilaianKkn          PenilaianKknMahasiswa? @relation("StudentPenilaianKkn")
+  penilaianKknDiberikan PenilaianKknMahasiswa[] @relation("DplPenilaianKkn")
 
   @@map("pengguna")
 }
@@ -351,9 +353,10 @@ model KelompokKkn {
   createdAt     DateTime          @default(now()) @map("dibuat_pada")
   updatedAt     DateTime          @updatedAt @map("diperbarui_pada")
   dpl           User?             @relation("DplKelompok", fields: [dplId], references: [id])
-  students      StudentKkn[]
-  schedules     Schedule[]
-  programKerja  ProgramKerjaKkn[]
+  students           StudentKkn[]
+  schedules          Schedule[]
+  programKerja       ProgramKerjaKkn[]
+  penilaianMahasiswa PenilaianKknMahasiswa[]
 
   @@map("kelompok_kkn")
 }
@@ -380,6 +383,55 @@ model ProgramKerjaKkn {
   reviewedBy       User?        @relation("DplReviewedProker", fields: [reviewedById], references: [id])
 
   @@map("program_kerja_kkn")
+}
+
+model PenilaianKknMahasiswa {
+  id                     String             @id @default(uuid())
+  studentId              String             @unique @map("id_mahasiswa")
+  kelompokId             String?            @map("id_kelompok")
+  dplId                  String?            @map("id_dpl")
+  mitraId                String?            @map("id_mitra")
+  namaMitraPenilai       String?            @map("nama_mitra_penilai")
+
+  // Skor Aspek Mitra / PL (0 - 4)
+  skorMitraKehadiran     Int                @default(0) @map("skor_mitra_kehadiran")
+  skorMitraWargaBinaan   Int                @default(0) @map("skor_mitra_warga_binaan")
+  skorMitraProker        Int                @default(0) @map("skor_mitra_proker")
+  skorMitraKomunikasi    Int                @default(0) @map("skor_mitra_komunikasi")
+  skorMitraTanggungJawab Int                @default(0) @map("skor_mitra_tanggung_jawab")
+  skorMitraBuktiKegiatan Int                @default(0) @map("skor_mitra_bukti_kegiatan")
+  skorMitraDampak        Int                @default(0) @map("skor_mitra_dampak")
+  skorMitraInisiatif     Int                @default(0) @map("skor_mitra_inisiatif")
+  subtotalMitra          Decimal            @default(0.00) @map("subtotal_mitra") @db.Decimal(5, 2)
+
+  // Skor Aspek DPL (0 - 4)
+  skorDplPerencanaan     Int                @default(0) @map("skor_dpl_perencanaan")
+  skorDplKontribusi      Int                @default(0) @map("skor_dpl_kontribusi")
+  skorDplLogbook         Int                @default(0) @map("skor_dpl_logbook")
+  skorDplAnalisis        Int                @default(0) @map("skor_dpl_analisis")
+  skorDplOutput          Int                @default(0) @map("skor_dpl_output")
+  skorDplLaporanAkhir    Int                @default(0) @map("skor_dpl_laporan_akhir")
+  subtotalDpl            Decimal            @default(0.00) @map("subtotal_dpl") @db.Decimal(5, 2)
+
+  // Nilai Akhir & Kategori
+  nilaiAkhir             Decimal            @default(0.00) @map("nilai_akhir") @db.Decimal(5, 2)
+  kategoriNilai          String?            @map("kategori_nilai")
+
+  // Catatan & Status
+  catatanDpl             String?            @map("catatan_dpl")
+  catatanMitra           String?            @map("catatan_mitra")
+  status                 StatusPenilaianKkn @default(DRAFT) @map("status")
+  isFinalized            Boolean            @default(false) @map("is_finalized")
+  finalizedAt            DateTime?          @map("difinalisasi_pada")
+
+  createdAt              DateTime           @default(now()) @map("dibuat_pada")
+  updatedAt              DateTime           @updatedAt @map("diperbarui_pada")
+
+  student                User               @relation("StudentPenilaianKkn", fields: [studentId], references: [id], onDelete: Cascade)
+  dpl                    User?              @relation("DplPenilaianKkn", fields: [dplId], references: [id])
+  kelompok               KelompokKkn?       @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
+
+  @@map("penilaian_kkn_mahasiswa")
 }
 
 model KknHandoverHistory {
@@ -1144,5 +1196,11 @@ enum StatusProker {
   DITOLAK
   SEDANG_BERJALAN
   SELESAI
+}
+
+enum StatusPenilaianKkn {
+  DRAFT
+  TERSIMPAN
+  FINAL
 }
 

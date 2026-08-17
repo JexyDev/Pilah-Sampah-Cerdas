@@ -426,6 +426,10 @@ const MonitoringAbsen: React.FC = () => {
 
   const handleSaveConfig = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!["SUPER_USER", "DEVELOPER"].includes(userRole)) {
+      toast.error("Hanya Developer dan Super User yang memiliki hak akses mengubah ketentuan target.");
+      return;
+    }
     setIsSavingConfig(true);
     try {
       const res = await dplService.updateConfigTargets(configFormData);
@@ -1127,6 +1131,8 @@ const MonitoringAbsen: React.FC = () => {
     "DEVELOPER",
   ].includes(userRole);
 
+  const isSuperUserOrDev = ["SUPER_USER", "DEVELOPER"].includes(userRole);
+
   return (
     <div className="min-h-[calc(100vh-64px)] bg-slate-50 p-4 md:p-6 space-y-5 text-slate-800">
       {/* Header Utama: Ringkas, Informatif & Aksi Cepat */}
@@ -1190,7 +1196,7 @@ const MonitoringAbsen: React.FC = () => {
             <RefreshCw size={15} />
           </button>
 
-          {canManageSchedules && (
+          {isSuperUserOrDev && (
             <button
               type="button"
               onClick={() => {
@@ -1198,7 +1204,7 @@ const MonitoringAbsen: React.FC = () => {
                 setIsConfigModalOpen(true);
               }}
               className="px-3.5 py-2 rounded-xl bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-              title="Atur Hari, Jam Kerja & Target Kegiatan KKN"
+              title="Atur Hari, Jam Kerja & Target Kegiatan KKN (Khusus Developer & Super User)"
             >
               <Settings size={14} className="text-emerald-600" />
               <span>Atur Ketentuan & Target</span>
@@ -1327,7 +1333,7 @@ const MonitoringAbsen: React.FC = () => {
                 </div>
                 <span className="text-sm font-bold text-slate-900">Informasi Waktu Kerja</span>
               </div>
-              {canManageSchedules && (
+              {isSuperUserOrDev && (
                 <button
                   type="button"
                   onClick={() => {
@@ -1378,7 +1384,7 @@ const MonitoringAbsen: React.FC = () => {
                 </div>
                 <span className="text-sm font-bold text-slate-900">Target Kegiatan Lapangan</span>
               </div>
-              {canManageSchedules && (
+              {isSuperUserOrDev && (
                 <button
                   type="button"
                   onClick={() => {
@@ -1426,7 +1432,7 @@ const MonitoringAbsen: React.FC = () => {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-black text-blue-950">Catatan untuk DPL</h4>
-              {canManageSchedules && (
+              {isSuperUserOrDev && (
                 <button
                   type="button"
                   onClick={() => {
@@ -2615,9 +2621,9 @@ const MonitoringAbsen: React.FC = () => {
         </div>
       )}
 
-      {/* Modal Pengaturan Ketentuan Waktu & Target Kegiatan KKN (Super User / Taskforce / Developer) */}
-      {isConfigModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in">
+      {/* Modal Pengaturan Ketentuan Waktu & Target Kegiatan KKN (Khusus Super User & Developer) */}
+      {isConfigModalOpen && isSuperUserOrDev && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
           <div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-slate-100 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">

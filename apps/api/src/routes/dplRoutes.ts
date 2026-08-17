@@ -166,6 +166,6 @@ router.get("/penilaian/rekap", dplScopeMiddleware, dplController.getRekapNilaiAk
 // TARGET & KONFIGURASI KKN
 // ─────────────────────────────────────────────
 router.get("/config-targets", dplController.getConfigTargets);
-router.put("/config-targets", roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE"]), dplController.updateConfigTargets);
+router.put("/config-targets", roleMiddleware(["SUPER_USER", "DEVELOPER"]), dplController.updateConfigTargets);
 
 export default router;
