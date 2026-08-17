@@ -1296,7 +1296,7 @@ export class KknService {
 
     return { wargaId, statusBimbingan, notifiedAt: new Date() };
   }
-  async getActiveZone(userId: string) {
+  async getActiveZone(userId: string, currentLat?: number, currentLng?: number) {
     const student = await prisma.studentKkn.findUnique({
       where: { userId },
       include: {
@@ -1347,9 +1347,9 @@ export class KknService {
     }
 
     // 🎯 Filter jadwal aktif khusus untuk kelompok KKN mahasiswa ybs
-    let activeSchedule: any = null;
+    let activeSchedules: any[] = [];
     if (student?.kelompokId) {
-      activeSchedule = await prisma.schedule.findFirst({
+      activeSchedules = await prisma.schedule.findMany({
         where: {
           kelompokId: student.kelompokId,
           date: { gte: todayStart, lte: todayEnd },
@@ -1358,15 +1358,61 @@ export class KknService {
       });
     }
 
-    // Fallback: Jadwal umum tanpa kelompokId
-    if (!activeSchedule) {
-      activeSchedule = await prisma.schedule.findFirst({
+    // Fallback: Jika tidak ada jadwal spesifik kelompok, cari jadwal umum tanpa kelompokId
+    if (activeSchedules.length === 0) {
+      activeSchedules = await prisma.schedule.findMany({
         where: {
           kelompokId: null,
           date: { gte: todayStart, lte: todayEnd },
         },
         orderBy: { date: "asc" },
       });
+    }
+
+    let activeSchedule: any = null;
+    if (activeSchedules.length === 1) {
+      activeSchedule = activeSchedules[0];
+    } else if (activeSchedules.length > 1) {
+      // 🧠 Smart Multi-Schedule Matching: Jika ada beberapa kegiatan kelompok di hari yang sama
+      if (currentLat !== undefined && currentLng !== undefined && !isNaN(currentLat) && !isNaN(currentLng)) {
+        // 1. Cek apakah mahasiswa sedang berada di dalam geofence kegiatan tertentu
+        for (const sch of activeSchedules) {
+          let isInside = false;
+          if (sch.polygon && Array.isArray(sch.polygon) && sch.polygon.length >= 3) {
+            const polyPoints = (sch.polygon as any[]).map((p) => ({
+              lat: Number(p[0]),
+              lng: Number(p[1]),
+            }));
+            isInside = isPointInPolygonWithBuffer({ lat: currentLat, lng: currentLng }, polyPoints, 15);
+          } else if (sch.latitude && sch.longitude) {
+            const dist = calculateDistance(currentLat, currentLng, Number(sch.latitude), Number(sch.longitude));
+            isInside = dist <= ((sch.radius || 100) + 15);
+          }
+
+          if (isInside) {
+            activeSchedule = sch;
+            break;
+          }
+        }
+
+        // 2. Jika tidak di dalam zona manapun, pilih kegiatan terdekat dengan lokasi GPS mahasiswa
+        if (!activeSchedule) {
+          let minDistance = Infinity;
+          for (const sch of activeSchedules) {
+            if (sch.latitude && sch.longitude) {
+              const dist = calculateDistance(currentLat, currentLng, Number(sch.latitude), Number(sch.longitude));
+              if (dist < minDistance) {
+                minDistance = dist;
+                activeSchedule = sch;
+              }
+            }
+          }
+        }
+      }
+
+      if (!activeSchedule) {
+        activeSchedule = activeSchedules[0];
+      }
     }
 
     if (!activeSchedule && !activeArea) {

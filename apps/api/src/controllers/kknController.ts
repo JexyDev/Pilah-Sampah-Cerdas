@@ -320,7 +320,18 @@ export class KknController {
   async getActiveZone(req: Request, res: Response): Promise<void> {
     try {
       const kknUserId = req.user!.userId;
-      const data = await kknService.getActiveZone(kknUserId);
+      const lat = req.query.latitude
+        ? parseFloat(req.query.latitude as string)
+        : req.query.lat
+        ? parseFloat(req.query.lat as string)
+        : undefined;
+      const lng = req.query.longitude
+        ? parseFloat(req.query.longitude as string)
+        : req.query.lng
+        ? parseFloat(req.query.lng as string)
+        : undefined;
+
+      const data = await kknService.getActiveZone(kknUserId, lat, lng);
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[KknController] getActiveZone error:", error);
