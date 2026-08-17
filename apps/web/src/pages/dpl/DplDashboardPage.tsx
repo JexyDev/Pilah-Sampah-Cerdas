@@ -617,8 +617,13 @@ export const DplDashboardPage: React.FC = () => {
   }, [dplRwList]);
 
   const totalAllStudents = Math.max(students.length, groups.reduce((acc, g) => acc + (g.studentCount || 0), 0));
+  const totalPresensiRecorded =
+    gradeDistribution.totalHadir +
+    gradeDistribution.totalSakit +
+    gradeDistribution.totalIzin +
+    gradeDistribution.totalAlpha;
   const avgOverallAttendance =
-    groups.length > 0
+    groups.length > 0 && (totalPresensiRecorded > 0 || groups.some((g) => (g.avgAttendanceRate || 0) > 0))
       ? Math.round(groups.reduce((acc, g) => acc + (g.avgAttendanceRate || 0), 0) / groups.length)
       : 0;
 

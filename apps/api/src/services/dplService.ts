@@ -172,11 +172,9 @@ export const dplService = {
         const totalSchedules = await getEligiblePastSchedulesCount(grp.id);
         const expectedAttendances = studentCount * totalSchedules;
         const avgAttendanceRate =
-          totalSchedules === 0
-            ? 100
-            : expectedAttendances > 0 && totalAttendances > 0
-            ? Math.min(100, Math.round((totalAttendances / expectedAttendances) * 100))
-            : 0;
+          totalSchedules === 0 || expectedAttendances === 0 || totalAttendances === 0
+            ? 0
+            : Math.min(100, Math.round((totalAttendances / expectedAttendances) * 100));
 
         const pointSum = await prisma.pointHistory.aggregate({
           where:
@@ -302,11 +300,9 @@ export const dplService = {
           assessmentScore: Number(st.assessmentScore || 0),
           individualPoints: points._sum.points || 0,
           attendanceRate:
-            totalSchedules === 0
-              ? 100
-              : attendedCount > 0
-              ? Math.min(100, Math.round((attendedCount / totalSchedules) * 100))
-              : 0,
+            totalSchedules === 0 || attendedCount === 0
+              ? 0
+              : Math.min(100, Math.round((attendedCount / totalSchedules) * 100)),
           attendedCount,
           sickCount,
           izinCount,
@@ -950,8 +946,8 @@ export const dplService = {
         });
 
         const attRate =
-          totalSchedules === 0
-            ? 100
+          totalSchedules === 0 || attendancesCount === 0
+            ? 0
             : Math.min(100, Math.round((attendancesCount / totalSchedules) * 100));
 
         const indivScore = Number(st.assessmentScore || 0);
