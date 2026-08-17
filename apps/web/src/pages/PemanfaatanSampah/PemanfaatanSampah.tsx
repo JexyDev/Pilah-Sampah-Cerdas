@@ -16,7 +16,6 @@ import {
   Trash2,
   Search,
   X,
-  Sparkles,
   Leaf,
   RotateCcw,
   PlusCircle,
@@ -378,7 +377,7 @@ export const PemanfaatanSampah: React.FC = () => {
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 font-sans">
       {/* Clean Enterprise Page Header */}
       <PageHeader
-        icon={Sparkles}
+        icon={Recycle}
         category="Tata Kelola Daur Ulang Hilir"
         scope={
           isDpl

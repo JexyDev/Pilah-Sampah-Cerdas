@@ -37,7 +37,7 @@ import {
   CheckCircle2,
   Map as MapIcon,
   ChevronDown,
-  Sparkles,
+  Target,
   Info,
   Hourglass,
   XCircle,
@@ -1447,7 +1447,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-black text-slate-800">
                 <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
-                  <Sparkles size={15} />
+                  <Target size={15} />
                 </div>
                 <span className="text-sm font-bold text-slate-900">Target Kegiatan Lapangan</span>
               </div>
@@ -1643,7 +1643,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           {/* Interactive Map Legend */}
           <div className="bg-slate-50 border-t border-slate-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-1.5 font-bold text-slate-700">
-              <Sparkles size={14} className="text-emerald-600" />
+              <CheckCircle2 size={14} className="text-emerald-600" />
               <span>Legenda Fasilitas & Marker Lapangan:</span>
             </div>
             <div className="flex items-center gap-3 flex-wrap text-[11px] font-semibold text-slate-600">
