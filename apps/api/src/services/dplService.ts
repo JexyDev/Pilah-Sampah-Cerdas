@@ -1025,6 +1025,11 @@ export const dplService = {
       "kkn_target_total_jam",
       "kkn_target_harian_jam",
       "kkn_target_harian_kegiatan",
+      "kkn_hari_kerja",
+      "kkn_jam_kerja",
+      "kkn_target_pekan",
+      "kkn_target_total_hari",
+      "kkn_catatan_dpl",
     ];
 
     const configs = await prisma.systemConfig.findMany({
@@ -1038,6 +1043,11 @@ export const dplService = {
       targetTotalJam: Number(configMap.get("kkn_target_total_jam") || 100),
       targetHarianJam: Number(configMap.get("kkn_target_harian_jam") || 4),
       targetHarianKegiatan: Number(configMap.get("kkn_target_harian_kegiatan") || 5),
+      hariKerja: configMap.get("kkn_hari_kerja") || "Senin – Jumat",
+      jamKerja: configMap.get("kkn_jam_kerja") || "08.00 – 16.00",
+      targetPekan: Number(configMap.get("kkn_target_pekan") || 10),
+      targetTotalHari: Number(configMap.get("kkn_target_total_hari") || 50),
+      catatanDpl: configMap.get("kkn_catatan_dpl") || "Pastikan mahasiswa hadir minimal 4 jam per hari di lokasi kegiatan. Verifikasi lokasi melalui GPS dan unduh berita acara sebagai bukti validasi.",
     };
   },
 
@@ -1046,14 +1056,20 @@ export const dplService = {
     targetTotalJam?: number;
     targetHarianJam?: number;
     targetHarianKegiatan?: number;
+    hariKerja?: string;
+    jamKerja?: string;
+    targetPekan?: number;
+    targetTotalHari?: number;
+    catatanDpl?: string;
     updatedBy?: string;
   }) => {
-    const updates: { key: string; value: string; desc: string }[] = [];
+    const updates: { key: string; value: string; desc: string; tipe: string }[] = [];
     if (data.targetTotalKegiatan !== undefined) {
       updates.push({
         key: "kkn_target_total_kegiatan",
         value: String(data.targetTotalKegiatan),
         desc: "Target total seluruh kegiatan KKN",
+        tipe: "NUMBER",
       });
     }
     if (data.targetTotalJam !== undefined) {
@@ -1061,6 +1077,7 @@ export const dplService = {
         key: "kkn_target_total_jam",
         value: String(data.targetTotalJam),
         desc: "Target total jam kegiatan mahasiswa KKN",
+        tipe: "NUMBER",
       });
     }
     if (data.targetHarianJam !== undefined) {
@@ -1068,6 +1085,7 @@ export const dplService = {
         key: "kkn_target_harian_jam",
         value: String(data.targetHarianJam),
         desc: "Target minimum jam per hari mahasiswa KKN",
+        tipe: "NUMBER",
       });
     }
     if (data.targetHarianKegiatan !== undefined) {
@@ -1075,6 +1093,47 @@ export const dplService = {
         key: "kkn_target_harian_kegiatan",
         value: String(data.targetHarianKegiatan),
         desc: "Target minimum kegiatan per hari mahasiswa KKN",
+        tipe: "NUMBER",
+      });
+    }
+    if (data.hariKerja !== undefined) {
+      updates.push({
+        key: "kkn_hari_kerja",
+        value: String(data.hariKerja),
+        desc: "Hari kerja operasional KKN",
+        tipe: "STRING",
+      });
+    }
+    if (data.jamKerja !== undefined) {
+      updates.push({
+        key: "kkn_jam_kerja",
+        value: String(data.jamKerja),
+        desc: "Jam operasional kerja KKN",
+        tipe: "STRING",
+      });
+    }
+    if (data.targetPekan !== undefined) {
+      updates.push({
+        key: "kkn_target_pekan",
+        value: String(data.targetPekan),
+        desc: "Periode pekan kegiatan KKN",
+        tipe: "NUMBER",
+      });
+    }
+    if (data.targetTotalHari !== undefined) {
+      updates.push({
+        key: "kkn_target_total_hari",
+        value: String(data.targetTotalHari),
+        desc: "Total hari kegiatan KKN",
+        tipe: "NUMBER",
+      });
+    }
+    if (data.catatanDpl !== undefined) {
+      updates.push({
+        key: "kkn_catatan_dpl",
+        value: String(data.catatanDpl),
+        desc: "Catatan panduan presensi untuk DPL",
+        tipe: "STRING",
       });
     }
 
@@ -1084,7 +1143,7 @@ export const dplService = {
         create: {
           key: u.key,
           value: u.value,
-          tipe: "NUMBER",
+          tipe: u.tipe,
           deskripsi: u.desc,
           updatedBy: data.updatedBy || "SYSTEM",
         },

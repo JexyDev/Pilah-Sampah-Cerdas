@@ -171,6 +171,11 @@ export interface ConfigTargets {
   targetTotalJam: number;
   targetHarianJam: number;
   targetHarianKegiatan: number;
+  hariKerja?: string;
+  jamKerja?: string;
+  targetPekan?: number;
+  targetTotalHari?: number;
+  catatanDpl?: string;
 }
 
 export const dplService = {

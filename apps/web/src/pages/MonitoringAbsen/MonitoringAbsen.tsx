@@ -44,10 +44,12 @@ import {
   Hourglass,
   XCircle,
   Thermometer,
+  Settings,
 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
+import { dplService, type ConfigTargets } from "../../services/dplService";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import {
   KELURAHAN_GEODATA,
@@ -378,6 +380,62 @@ const MonitoringAbsen: React.FC = () => {
   const [isSubmittingSchedule, setIsSubmittingSchedule] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
+  // Dynamic Targets & Ketentuan Waktu (Managed by Super User / Taskforce / Developer)
+  const [configTargets, setConfigTargets] = useState<ConfigTargets>({
+    targetTotalKegiatan: 2000,
+    targetTotalJam: 100,
+    targetHarianJam: 4,
+    targetHarianKegiatan: 5,
+    hariKerja: "Senin – Jumat",
+    jamKerja: "08.00 – 16.00",
+    targetPekan: 10,
+    targetTotalHari: 50,
+    catatanDpl:
+      "Pastikan mahasiswa hadir minimal 4 jam per hari di lokasi kegiatan. Verifikasi lokasi melalui GPS dan unduh berita acara sebagai bukti validasi.",
+  });
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [configFormData, setConfigFormData] = useState<ConfigTargets>({
+    targetTotalKegiatan: 2000,
+    targetTotalJam: 100,
+    targetHarianJam: 4,
+    targetHarianKegiatan: 5,
+    hariKerja: "Senin – Jumat",
+    jamKerja: "08.00 – 16.00",
+    targetPekan: 10,
+    targetTotalHari: 50,
+    catatanDpl:
+      "Pastikan mahasiswa hadir minimal 4 jam per hari di lokasi kegiatan. Verifikasi lokasi melalui GPS dan unduh berita acara sebagai bukti validasi.",
+  });
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
+
+  const fetchConfigTargets = async () => {
+    try {
+      const data = await dplService.getConfigTargets();
+      if (data) {
+        setConfigTargets(data);
+        setConfigFormData(data);
+      }
+    } catch (err) {
+      console.error("Gagal memuat target:", err);
+    }
+  };
+
+  const handleSaveConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingConfig(true);
+    try {
+      const res = await dplService.updateConfigTargets(configFormData);
+      setConfigTargets(res);
+      toast.success("Ketentuan waktu & target kegiatan berhasil diperbarui!");
+      setIsConfigModalOpen(false);
+    } catch (err: any) {
+      console.error("Gagal update target:", err);
+      toast.error(err.response?.data?.message || "Gagal menyimpan ketentuan & target kegiatan");
+    } finally {
+      setIsSavingConfig(false);
+    }
+  };
+
   // Map settings
   const [mapCenter, setMapCenter] = useState<[number, number]>([-6.8915, 107.6107]);
   const [mapZoom] = useState<number>(15);
@@ -387,12 +445,13 @@ const MonitoringAbsen: React.FC = () => {
   }, [schedules, selectedScheduleId]);
 
   const scheduleTargetHours = useMemo(() => {
+    if (configTargets.targetHarianJam) return configTargets.targetHarianJam;
     if (!activeSchedule?.time) return 4;
     const parsed = parseTimeString(activeSchedule.time);
     const diffMins = calculateHourDifference(parsed.start, parsed.end);
     const hours = Math.round(diffMins / 60);
     return hours > 0 ? hours : 4;
-  }, [activeSchedule]);
+  }, [activeSchedule, configTargets.targetHarianJam]);
 
   // Attendance metrics counts
   const attendanceStats = useMemo(() => {
@@ -465,6 +524,7 @@ const MonitoringAbsen: React.FC = () => {
   useEffect(() => {
     fetchSchedules();
     fetchGroups();
+    fetchConfigTargets();
   }, []);
 
   useEffect(() => {
@@ -1233,7 +1293,10 @@ const MonitoringAbsen: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => fetchAttendanceAndLocations(selectedScheduleId)}
+            onClick={() => {
+              fetchAttendanceAndLocations(selectedScheduleId);
+              fetchConfigTargets();
+            }}
             className={`p-2 rounded-xl bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 transition cursor-pointer ${
               refreshing ? "animate-spin text-emerald-600" : ""
             }`}
@@ -1241,6 +1304,21 @@ const MonitoringAbsen: React.FC = () => {
           >
             <RefreshCw size={15} />
           </button>
+
+          {canManageSchedules && (
+            <button
+              type="button"
+              onClick={() => {
+                setConfigFormData(configTargets);
+                setIsConfigModalOpen(true);
+              }}
+              className="px-3.5 py-2 rounded-xl bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              title="Atur Hari, Jam Kerja & Target Kegiatan KKN"
+            >
+              <Settings size={14} className="text-emerald-600" />
+              <span>Atur Ketentuan & Target</span>
+            </button>
+          )}
 
           {canManageSchedules && (
             <button
@@ -1344,11 +1422,26 @@ const MonitoringAbsen: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Left Card: Informasi Waktu Kerja */}
           <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/80 flex flex-col justify-between space-y-4">
-            <div className="flex items-center gap-2 text-xs font-black text-slate-800">
-              <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
-                <Clock size={15} />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-black text-slate-800">
+                <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                  <Clock size={15} />
+                </div>
+                <span className="text-sm font-bold text-slate-900">Informasi Waktu Kerja</span>
               </div>
-              <span className="text-sm font-bold text-slate-900">Informasi Waktu Kerja</span>
+              {canManageSchedules && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfigFormData(configTargets);
+                    setIsConfigModalOpen(true);
+                  }}
+                  className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Pencil size={12} />
+                  <span>Ubah</span>
+                </button>
+              )}
             </div>
 
             <div className="space-y-3 pt-1">
@@ -1357,7 +1450,7 @@ const MonitoringAbsen: React.FC = () => {
                   <Calendar size={14} className="text-emerald-600" />
                   Hari Kerja
                 </span>
-                <span className="font-extrabold text-slate-900">Senin – Jumat</span>
+                <span className="font-extrabold text-slate-900">{configTargets.hariKerja || "Senin – Jumat"}</span>
               </div>
 
               <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 text-xs">
@@ -1365,7 +1458,7 @@ const MonitoringAbsen: React.FC = () => {
                   <Clock size={14} className="text-emerald-600" />
                   Jam Kerja
                 </span>
-                <span className="font-extrabold text-slate-900">08.00 – 16.00</span>
+                <span className="font-extrabold text-slate-900">{configTargets.jamKerja || activeSchedule?.time || "08.00 – 16.00"}</span>
               </div>
 
               <div className="flex items-center justify-between text-xs">
@@ -1373,38 +1466,53 @@ const MonitoringAbsen: React.FC = () => {
                   <Hourglass size={14} className="text-emerald-600" />
                   Minimal Durasi / Hari
                 </span>
-                <span className="font-extrabold text-slate-900">4 Jam</span>
+                <span className="font-extrabold text-slate-900">{configTargets.targetHarianJam || scheduleTargetHours || 4} Jam</span>
               </div>
             </div>
           </div>
 
           {/* Right Card: Target Kegiatan Lapangan */}
           <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/80 flex flex-col justify-between space-y-4">
-            <div className="flex items-center gap-2 text-xs font-black text-slate-800">
-              <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
-                <Sparkles size={15} />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-black text-slate-800">
+                <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                  <Sparkles size={15} />
+                </div>
+                <span className="text-sm font-bold text-slate-900">Target Kegiatan Lapangan</span>
               </div>
-              <span className="text-sm font-bold text-slate-900">Target Kegiatan Lapangan</span>
+              {canManageSchedules && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfigFormData(configTargets);
+                    setIsConfigModalOpen(true);
+                  }}
+                  className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Pencil size={12} />
+                  <span>Ubah Target</span>
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-3 divide-x divide-slate-200 pt-1 text-center">
               <div className="px-2 flex flex-col items-center justify-center">
                 <Calendar size={18} className="text-emerald-600 mb-1" />
-                <span className="text-2xl font-black text-slate-900 tracking-tight">10</span>
+                <span className="text-2xl font-black text-slate-900 tracking-tight">{configTargets.targetPekan || 10}</span>
                 <span className="text-xs font-bold text-slate-700">Pekan</span>
                 <span className="text-[10px] text-slate-400 font-medium">Periode Kegiatan</span>
               </div>
 
               <div className="px-2 flex flex-col items-center justify-center">
                 <CheckCircle2 size={18} className="text-emerald-600 mb-1" />
-                <span className="text-2xl font-black text-slate-900 tracking-tight">50</span>
+                <span className="text-2xl font-black text-slate-900 tracking-tight">{configTargets.targetTotalHari || 50}</span>
                 <span className="text-xs font-bold text-slate-700">Hari</span>
                 <span className="text-[10px] text-slate-400 font-medium">Total Hari Kegiatan</span>
               </div>
 
               <div className="px-2 flex flex-col items-center justify-center">
                 <Clock size={18} className="text-emerald-600 mb-1" />
-                <span className="text-2xl font-black text-slate-900 tracking-tight">100</span>
+                <span className="text-2xl font-black text-slate-900 tracking-tight">{configTargets.targetTotalJam || 100}</span>
                 <span className="text-xs font-bold text-slate-700">Jam</span>
                 <span className="text-[10px] text-slate-400 font-medium">Total Jam Kegiatan</span>
               </div>
@@ -1417,10 +1525,25 @@ const MonitoringAbsen: React.FC = () => {
           <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
             <Info size={18} />
           </div>
-          <div>
-            <h4 className="text-xs font-black text-blue-950">Catatan untuk DPL</h4>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-black text-blue-950">Catatan untuk DPL</h4>
+              {canManageSchedules && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfigFormData(configTargets);
+                    setIsConfigModalOpen(true);
+                  }}
+                  className="text-[10.5px] font-bold text-blue-700 hover:text-blue-900 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Pencil size={11} />
+                  <span>Ubah Panduan</span>
+                </button>
+              )}
+            </div>
             <p className="text-xs text-blue-800/90 font-medium mt-0.5 leading-relaxed">
-              Pastikan mahasiswa hadir minimal 4 jam per hari di lokasi kegiatan. Verifikasi lokasi melalui GPS dan unduh berita acara sebagai bukti validasi.
+              {configTargets.catatanDpl || "Pastikan mahasiswa hadir minimal 4 jam per hari di lokasi kegiatan. Verifikasi lokasi melalui GPS dan unduh berita acara sebagai bukti validasi."}
             </p>
           </div>
         </div>
@@ -2525,6 +2648,193 @@ const MonitoringAbsen: React.FC = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Pengaturan Ketentuan Waktu & Target Kegiatan KKN (Super User / Taskforce / Developer) */}
+      {isConfigModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                  <Settings size={18} />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-900">
+                    Atur Ketentuan Waktu & Target KKN
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-medium">
+                    Nilai ini ditampilkan dinamis di halaman presensi dan monitoring DPL.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsConfigModalOpen(false)}
+                className="p-1.5 rounded-full text-slate-400 hover:bg-slate-100 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveConfig} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Hari Kerja Operasional
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Senin – Jumat"
+                    value={configFormData.hariKerja || ""}
+                    onChange={(e) =>
+                      setConfigFormData({
+                        ...configFormData,
+                        hariKerja: e.target.value,
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Jam Kerja Operasional
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: 08.00 – 16.00"
+                    value={configFormData.jamKerja || ""}
+                    onChange={(e) =>
+                      setConfigFormData({
+                        ...configFormData,
+                        jamKerja: e.target.value,
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Min. Durasi (Jam/Hari)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={24}
+                    required
+                    value={configFormData.targetHarianJam || 4}
+                    onChange={(e) =>
+                      setConfigFormData({
+                        ...configFormData,
+                        targetHarianJam: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Periode (Pekan)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    required
+                    value={configFormData.targetPekan || 10}
+                    onChange={(e) =>
+                      setConfigFormData({
+                        ...configFormData,
+                        targetPekan: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Total Hari Kegiatan
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    required
+                    value={configFormData.targetTotalHari || 50}
+                    onChange={(e) =>
+                      setConfigFormData({
+                        ...configFormData,
+                        targetTotalHari: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Total Jam Kegiatan (Target Kumulatif KKN)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  required
+                  value={configFormData.targetTotalJam || 100}
+                  onChange={(e) =>
+                    setConfigFormData({
+                      ...configFormData,
+                      targetTotalJam: Number(e.target.value),
+                    })
+                  }
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Catatan Panduan untuk DPL
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={configFormData.catatanDpl || ""}
+                  onChange={(e) =>
+                    setConfigFormData({
+                      ...configFormData,
+                      catatanDpl: e.target.value,
+                    })
+                  }
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsConfigModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingConfig}
+                  className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  {isSavingConfig && <Loader2 size={14} className="animate-spin" />}
+                  Simpan Ketentuan
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
