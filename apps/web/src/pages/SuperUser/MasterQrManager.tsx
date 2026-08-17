@@ -3,7 +3,7 @@ import api from "../../utils/api";
 import toast from "react-hot-toast";
 import { Badge } from "../../components/common/Badge";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
-import { QrCode, AlertTriangle, PlayCircle, Printer, RefreshCw, Trash2, Plus, Search, Filter } from "lucide-react";
+import { QrCode, AlertTriangle, PlayCircle, Download, RefreshCw, Trash2, Plus, Search, Filter } from "lucide-react";
 
 import { useAuthStore } from "../../store/useAuthStore";
 
@@ -211,64 +211,6 @@ export const MasterQrManager: React.FC = () => {
     }
   };
 
-  const handlePrintAll = () => {
-    if (qrs.length === 0) {
-      toast.error("Tidak ada QR untuk dicetak");
-      return;
-    }
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) {
-      toast.error("Gagal membuka jendela cetak. Pastikan pop-up diizinkan.");
-      return;
-    }
-
-    const qrHtml = qrs
-      .map((q) => {
-        const isOrganik = q.category?.name?.toUpperCase().includes("ORGANIC") || q.category?.name?.toUpperCase().includes("ORGANIK");
-        const colorTheme = isOrganik ? "#059669" : "#2563eb";
-        const labelBg = isOrganik ? "#ecfdf5" : "#eff6ff";
-
-        return `
-        <div class="qr-card" style="border-color: ${colorTheme};">
-          <div class="qr-header" style="background-color: ${colorTheme};">
-            TRASHCARE PSC
-          </div>
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(q.qrCode)}" />
-          <div class="qr-code" style="color: ${colorTheme};">${q.qrCode}</div>
-          <div class="qr-category" style="background-color: ${labelBg}; color: ${colorTheme};">
-            ${q.category?.name || "Semua Jenis"}
-          </div>
-          <div class="qr-details">
-            ${q.rtRw ? `${q.rtRw.name} - Kel. ${q.rtRw.kelurahan.name}` : "TrashCare Batch QR"}
-          </div>
-        </div>
-        `;
-      })
-      .join("");
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>TrashCare - Master QR Codes</title>
-          <style>
-            @page { size: A4; margin: 10mm; }
-            body { font-family: system-ui, -apple-system, sans-serif; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 0; margin: 0; }
-            .qr-card { border: 3px solid #ccc; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; page-break-inside: avoid; background: #fff; padding-bottom: 12px; height: 270px; }
-            .qr-header { width: 100%; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; padding: 6px 0; text-transform: uppercase; }
-            .qr-card img { width: 130px; height: 130px; margin-top: 10px; margin-bottom: 6px; }
-            .qr-code { font-family: monospace; font-weight: 800; font-size: 13px; letter-spacing: 1px; }
-            .qr-category { font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 3px 12px; border-radius: 9999px; margin: 4px 0; }
-            .qr-details { font-size: 9px; font-weight: 600; color: #4b5563; padding: 0 8px; }
-          </style>
-        </head>
-        <body>
-          ${qrHtml}
-          <script>window.onload = function() { window.print(); };</script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-  };
 
   const handleExportCsv = () => {
     if (!qrs || qrs.length === 0) {
@@ -329,14 +271,8 @@ export const MasterQrManager: React.FC = () => {
             onClick={handleExportCsv}
             className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all border border-slate-200 cursor-pointer"
           >
-            Export CSV
-          </button>
-          <button
-            onClick={handlePrintAll}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
-          >
-            <Printer size={16} />
-            Cetak Stiker QR
+            <Download size={15} className="text-emerald-600" />
+            Ekspor CSV
           </button>
           {!isReadOnly && (
             <button

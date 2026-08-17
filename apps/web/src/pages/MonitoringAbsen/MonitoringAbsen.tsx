@@ -32,7 +32,6 @@ import {
   X,
   Pencil,
   Download,
-  Printer,
   Navigation,
   Table as TableIcon,
   LayoutGrid,
@@ -55,6 +54,8 @@ import { ConfirmModal } from "../../components/common/ConfirmModal";
 import {
   KELURAHAN_GEODATA,
   createKknMhsIcon as createStudentIcon,
+  createFacilityIcon,
+  formatKelompokDisplayName,
 } from "../../constants/coblongGeoData";
 
 // Fix Leaflet default icon issues in Vite
@@ -376,6 +377,7 @@ const MonitoringAbsen: React.FC = () => {
   const [startTime, setStartTime] = useState<string>("08:00");
   const [endTime, setEndTime] = useState<string>("12:00");
   const [groups, setGroups] = useState<any[]>([]);
+  const [facilities, setFacilities] = useState<any[]>([]);
   const [selectedPos, setSelectedPos] = useState<[number, number][]>([]);
   const [deleteScheduleId, setDeleteScheduleId] = useState<string | null>(null);
   const [isDeletingSchedule, setIsDeletingSchedule] = useState(false);
@@ -526,9 +528,22 @@ const MonitoringAbsen: React.FC = () => {
     }
   };
 
+  const fetchFacilities = async () => {
+    try {
+      const res = await api.get("/facilities");
+      const list =
+        res.data?.data ||
+        (Array.isArray(res.data) ? res.data : []);
+      setFacilities(list);
+    } catch (_e) {
+      // Ignored
+    }
+  };
+
   useEffect(() => {
     fetchSchedules();
     fetchGroups();
+    fetchFacilities();
     fetchConfigTargets();
   }, []);
 
@@ -638,148 +653,6 @@ const MonitoringAbsen: React.FC = () => {
     toast.success(
       `Laporan Presensi (${filtered.length} baris) berhasil diunduh`
     );
-  };
-
-  // Cetak Berita Acara Presensi PDF/Print
-  const handlePrintAttendanceReport = () => {
-    if (!attendance || attendance.length === 0) {
-      toast.error("Tidak ada data presensi untuk dicetak.");
-      return;
-    }
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) {
-      toast.error("Gagal membuka jendela cetak. Izinkan popup di browser.");
-      return;
-    }
-
-    const todayStr = new Date().toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-
-    const activeSched = schedules.find((s) => s.id === selectedScheduleId);
-
-    const rowsHtml = attendance
-      .map((rec, i) => {
-        const durationMins = calculateDurationMinutes(
-          rec.attendedAt,
-          rec.completedAt
-        );
-        const isAttended = Boolean(rec.attendedAt);
-        const isCompleted = Boolean(rec.completedAt);
-        let statusStr = "Belum Absen";
-        let statusColor = "#64748b";
-        if (isAttended && !isCompleted) {
-          statusStr = "Sedang di Lokasi";
-          statusColor = "#0284c7";
-        } else if (isCompleted) {
-          if (durationMins >= scheduleTargetHours * 60) {
-            statusStr = "Hadir (Memenuhi Syarat)";
-            statusColor = "#059669";
-          } else {
-            statusStr = "Hadir (Kurang Jam)";
-            statusColor = "#d97706";
-          }
-        }
-
-        return `
-        <tr>
-          <td style="text-align: center; border: 1px solid #cbd5e1; padding: 6px;">${i + 1}</td>
-          <td style="border: 1px solid #cbd5e1; padding: 6px; font-weight: bold;">${rec.student?.name || "-"}</td>
-          <td style="border: 1px solid #cbd5e1; padding: 6px; font-family: monospace;">${rec.student?.studentProfile?.nim || "-"}</td>
-          <td style="text-align: center; border: 1px solid #cbd5e1; padding: 6px; font-weight: bold; color: ${statusColor};">${statusStr}</td>
-          <td style="text-align: center; border: 1px solid #cbd5e1; padding: 6px;">${rec.attendedAt ? new Date(rec.attendedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-"}</td>
-          <td style="text-align: center; border: 1px solid #cbd5e1; padding: 6px;">${rec.completedAt ? new Date(rec.completedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-"}</td>
-          <td style="text-align: center; border: 1px solid #cbd5e1; padding: 6px; font-weight: bold;">${formatDurationText(durationMins)}</td>
-        </tr>
-      `;
-      })
-      .join("");
-
-    const presentCount = attendance.filter((r) => Boolean(r.attendedAt)).length;
-
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html lang="id">
-      <head>
-        <meta charset="UTF-8">
-        <title>Daftar Hadir Presensi KKN - ${activeSched?.title || "Kegiatan"}</title>
-        <style>
-          @page { size: A4 portrait; margin: 15mm; }
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 10.5pt; color: #0f172a; line-height: 1.4; padding: 15px; }
-          .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 15px; }
-          .header h2 { margin: 0; font-size: 13pt; text-transform: uppercase; }
-          .header h3 { margin: 4px 0 0 0; font-size: 11pt; font-weight: normal; color: #334155; }
-          .meta-table { width: 100%; margin-bottom: 12px; font-size: 9.5pt; }
-          .meta-table td { padding: 3px 0; }
-          table.data { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 9pt; }
-          table.data th { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 7px; font-weight: bold; text-align: left; }
-          .signature-section { margin-top: 30px; display: flex; justify-content: space-between; font-size: 9.5pt; page-break-inside: avoid; }
-          .sig-box { width: 200px; text-align: center; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h2>KECAMATAN COBLONG — KOTA BANDUNG</h2>
-          <h3>BERITA ACARA & DAFTAR HADIR KEGIATAN KKN TRASHCARE</h3>
-        </div>
-
-        <table class="meta-table">
-          <tr>
-            <td width="18%"><strong>Kegiatan</strong></td>
-            <td width="42%">: ${activeSched?.title || "Kegiatan KKN"}</td>
-            <td width="18%"><strong>Tanggal</strong></td>
-            <td width="22%">: ${activeSched?.date || todayStr}</td>
-          </tr>
-          <tr>
-            <td><strong>Lokasi Geofence</strong></td>
-            <td>: ${activeSched?.location || "Kecamatan Coblong"}</td>
-            <td><strong>Kehadiran</strong></td>
-            <td>: <strong>${presentCount}/${attendance.length} Mahasiswa</strong></td>
-          </tr>
-        </table>
-
-        <table class="data">
-          <thead>
-            <tr>
-              <th width="5%" style="text-align:center;">No</th>
-              <th width="28%">Nama Mahasiswa</th>
-              <th width="14%">NIM</th>
-              <th width="19%" style="text-align:center;">Status Presensi</th>
-              <th width="11%" style="text-align:center;">Waktu Masuk</th>
-              <th width="11%" style="text-align:center;">Waktu Pulang</th>
-              <th width="12%" style="text-align:center;">Durasi</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rowsHtml}
-          </tbody>
-        </table>
-
-        <div class="signature-section">
-          <div class="sig-box">
-            <p>Ketua Kelompok KKN,</p>
-            <div style="height: 55px;"></div>
-            <p style="text-decoration: underline; font-weight: bold;">( ........................................ )</p>
-          </div>
-          <div class="sig-box">
-            <p>Dosen Pembimbing Lapangan,</p>
-            <div style="height: 55px;"></div>
-            <p style="text-decoration: underline; font-weight: bold;">( ........................................ )</p>
-          </div>
-        </div>
-
-        <script>
-          window.onload = function() { window.print(); };
-        </script>
-      </body>
-      </html>
-    `;
-
-    printWindow.document.open();
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
   };
 
   // Fly Map to Mahasiswa Location
@@ -1032,9 +905,13 @@ const MonitoringAbsen: React.FC = () => {
     const defaultKelompokId =
       isDpl && targetGroup ? targetGroup.id : groups[0]?.id || "";
     const locInfo = getKelompokLocationInfo(targetGroup);
+    const rwTag = locInfo.rws.length > 0 ? ` ${locInfo.rws.join(", ")}` : "";
+    const defaultTitle = targetGroup
+      ? `Sosialisasi Pemilahan - Kel. ${locInfo.kelurahan}${rwTag}`
+      : "";
 
     setFormData({
-      title: "",
+      title: defaultTitle,
       category: "Sosialisasi",
       location: locInfo.fullAddress,
       radius: 100,
@@ -1293,20 +1170,10 @@ const MonitoringAbsen: React.FC = () => {
             type="button"
             onClick={() => setIsExportModalOpen(true)}
             className="px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-            title="Unduh Rekap Presensi format CSV"
+            title="Ekspor Rekap Presensi format CSV"
           >
             <Download size={14} className="text-emerald-600" />
-            <span>Unduh CSV</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handlePrintAttendanceReport}
-            className="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-            title="Cetak Berita Acara Presensi Resmi"
-          >
-            <Printer size={14} />
-            <span>Cetak PDF</span>
+            <span>Ekspor CSV</span>
           </button>
 
           <button
@@ -1668,6 +1535,60 @@ const MonitoringAbsen: React.FC = () => {
                 </>
               )}
 
+              {/* Real Facilities GIS Markers */}
+              {facilities.map((fac) => {
+                const lat = Number(fac.latitude);
+                const lng = Number(fac.longitude);
+                if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return null;
+
+                const jenisLabel: Record<string, string> = {
+                  posko_kkn: "Posko KKN",
+                  rumah_maggot: "Rumah Maggot BSF",
+                  bank_sampah: "Bank Sampah Anorganik",
+                  buruan_sae: "Buruan SAE (Urban Farming)",
+                  loseda: "Loseda Kompos",
+                  bata_terawang: "Bata Terawang",
+                  poc: "POC (Pupuk Organik Cair)",
+                  tps: "TPS",
+                };
+
+                return (
+                  <Marker
+                    key={`facility-${fac.id}`}
+                    position={[lat, lng]}
+                    icon={createFacilityIcon(fac.jenis, fac.nama)}
+                  >
+                    <Popup>
+                      <div className="p-2 font-sans space-y-1 text-xs">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="font-extrabold text-slate-900 text-xs">
+                            {fac.nama}
+                          </span>
+                        </div>
+                        <p className="text-[10px] font-black text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 inline-block uppercase">
+                          {jenisLabel[fac.jenis] || fac.jenis}
+                        </p>
+                        {fac.pic && (
+                          <p className="text-[11px] text-slate-600">
+                            <span className="font-bold">PIC:</span> {fac.pic}
+                          </p>
+                        )}
+                        {fac.kontak && (
+                          <p className="text-[11px] text-slate-600">
+                            <span className="font-bold">Kontak:</span> {fac.kontak}
+                          </p>
+                        )}
+                        {fac.kapasitas && (
+                          <p className="text-[11px] text-slate-600">
+                            <span className="font-bold">Kapasitas:</span> {fac.kapasitas} Kg
+                          </p>
+                        )}
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
+
               {/* Active Student GPS Pins */}
               {activeStudentMarkers}
             </MapContainer>
@@ -1677,7 +1598,7 @@ const MonitoringAbsen: React.FC = () => {
           <div className="bg-slate-50 border-t border-slate-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-1.5 font-bold text-slate-700">
               <Sparkles size={14} className="text-emerald-600" />
-              <span>Legenda Marker Lapangan:</span>
+              <span>Legenda Fasilitas & Marker Lapangan:</span>
             </div>
             <div className="flex items-center gap-3 flex-wrap text-[11px] font-semibold text-slate-600">
               <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 shadow-2xs">
@@ -1690,7 +1611,15 @@ const MonitoringAbsen: React.FC = () => {
               </div>
               <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-                <span>Bank Sampah / Buruan SAE</span>
+                <span>Bank Sampah (Anorganik)</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-lime-300 shadow-2xs">
+                <span className="w-2.5 h-2.5 rounded-full bg-lime-600"></span>
+                <span>Buruan SAE (Organik)</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs">
+                <span className="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+                <span>Loseda / Bata Terawang</span>
               </div>
               <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
@@ -2294,10 +2223,10 @@ const MonitoringAbsen: React.FC = () => {
                       {isDpl ? (
                         <div className="w-full h-10 px-3.5 border border-emerald-200 rounded-xl bg-emerald-50/70 flex items-center justify-between text-xs font-black text-emerald-950">
                           <span className="truncate">
-                            {groups.find((g) => g.id === formData.kelompokId)
-                              ?.name ||
-                              groups[0]?.name ||
-                              "Kelompok Binaan DPL"}
+                            {formatKelompokDisplayName(
+                              groups.find((g) => g.id === formData.kelompokId) ||
+                                groups[0]
+                            )}
                           </span>
                           <span className="text-[10px] text-emerald-700 font-bold shrink-0 ml-1">
                             Binaan Anda
@@ -2312,10 +2241,13 @@ const MonitoringAbsen: React.FC = () => {
                               (g) => g.id === newGroupId
                             );
                             const locInfo = getKelompokLocationInfo(targetGroup);
+                            const rwTag = locInfo.rws.length > 0 ? ` ${locInfo.rws.join(", ")}` : "";
+                            const cat = isCustomCategory ? customCategoryText : formData.category || "Sosialisasi";
                             setFormData((prev) => ({
                               ...prev,
                               kelompokId: newGroupId,
                               location: locInfo.fullAddress,
+                              title: targetGroup ? `${cat} - Kel. ${locInfo.kelurahan}${rwTag}` : prev.title,
                             }));
                           }}
                           className="w-full h-10 px-3 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-emerald-500 text-xs font-bold text-slate-800 outline-none cursor-pointer"
@@ -2323,7 +2255,7 @@ const MonitoringAbsen: React.FC = () => {
                           <option value="">Semua Kelompok (Kecamatan)</option>
                           {groups.map((g) => (
                             <option key={g.id} value={g.id}>
-                              {g.name} {g.kelurahan ? `(${g.kelurahan})` : ""}
+                              {formatKelompokDisplayName(g)}
                             </option>
                           ))}
                         </select>

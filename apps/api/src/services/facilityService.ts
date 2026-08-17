@@ -32,6 +32,7 @@ export const facilityService = {
       "tps",
       "buruan_sae",
       "poc",
+      "posko_kkn",
     ];
     if (!validTypes.includes(jenis)) {
       throw new Error("INVALID_FACILITY_TYPE");
@@ -56,7 +57,16 @@ export const facilityService = {
    */
   getFacilities: async (jenis?: string) => {
     if (jenis) {
-      const validTypes = ["loseda", "bata_terawang", "rumah_maggot", "bank_sampah", "tps"];
+      const validTypes = [
+        "loseda",
+        "bata_terawang",
+        "rumah_maggot",
+        "bank_sampah",
+        "tps",
+        "buruan_sae",
+        "poc",
+        "posko_kkn",
+      ];
       if (!validTypes.includes(jenis)) {
         throw new Error("INVALID_FACILITY_TYPE");
       }

@@ -217,3 +217,72 @@ export const createRealBinIcon = (categoryName: string, status: string, isPenuh:
     iconAnchor: [9, 9],
   });
 };
+
+export const createFacilityIcon = (jenis: string, nama?: string) => {
+  const t = (jenis || "").toLowerCase();
+  let bgColor = "#10b981"; // Emerald for posko_kkn
+  let svgIcon = `<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>`;
+
+  if (t === "rumah_maggot") {
+    bgColor = "#7c3aed"; // Purple
+    svgIcon = `<path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/>`;
+  } else if (t === "bank_sampah") {
+    bgColor = "#2563eb"; // Blue
+    svgIcon = `<path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5"/><path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12"/><path d="m14 16-3 3 3 3"/><path d="M8.293 13.596 3.371 5.07a1.82 1.82 0 0 1 0-1.785A1.78 1.78 0 0 1 4.927 2.4h9.854a1.784 1.784 0 0 1 1.556.885l1.943 3.375"/><path d="m14 8 3-3-3-3"/><path d="M12 2.4v16.6"/>`;
+  } else if (t === "buruan_sae") {
+    bgColor = "#65a30d"; // Lime / Olive Green
+    svgIcon = `<path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/>`;
+  } else if (t === "loseda") {
+    bgColor = "#0d9488"; // Teal
+    svgIcon = `<path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>`;
+  } else if (t === "bata_terawang") {
+    bgColor = "#f59e0b"; // Amber
+    svgIcon = `<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/>`;
+  } else if (t === "poc") {
+    bgColor = "#06b6d4"; // Cyan
+    svgIcon = `<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>`;
+  } else if (t === "tps") {
+    bgColor = "#64748b"; // Slate
+    svgIcon = `<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/>`;
+  }
+
+  return L.divIcon({
+    className: "custom-facility-icon",
+    html: `
+      <div title="${nama || jenis}" style="background-color: ${bgColor}; width: 28px; height: 28px; border-radius: 8px; border: 2px solid white; box-shadow: 0 3px 10px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; transition: transform 0.15s ease;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${svgIcon}</svg>
+      </div>
+    `,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+  });
+};
+
+export const formatKelompokDisplayName = (group?: {
+  name?: string;
+  kelurahan?: string;
+  cakupanRw?: any;
+}) => {
+  if (!group) return "Kelompok KKN";
+  const kelName = group.kelurahan ? `Kel. ${group.kelurahan}` : "";
+  let rwText = "";
+  if (Array.isArray(group.cakupanRw)) {
+    const rwNums = group.cakupanRw
+      .map((rw: any) => {
+        const num = String(rw).replace(/\\D/g, "");
+        return num ? `RW ${num.padStart(2, "0")}` : String(rw);
+      })
+      .filter(Boolean);
+    if (rwNums.length > 0) {
+      rwText = rwNums.join(", ");
+    }
+  } else if (typeof group.cakupanRw === "string" && group.cakupanRw) {
+    rwText = group.cakupanRw.startsWith("RW") ? group.cakupanRw : `RW ${group.cakupanRw}`;
+  }
+
+  const parts = [group.name || "Kelompok"];
+  if (kelName) parts.push(kelName);
+  if (rwText) parts.push(rwText);
+  return parts.join(" - ");
+};
+

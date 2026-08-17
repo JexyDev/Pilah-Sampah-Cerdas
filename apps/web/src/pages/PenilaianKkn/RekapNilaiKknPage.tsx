@@ -7,7 +7,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Download,
-  Printer,
   Search,
   Loader2,
   GraduationCap
@@ -59,9 +58,6 @@ export const RekapNilaiKknPage: React.FC = () => {
     return matchesSearch;
   });
 
-  const handlePrint = () => {
-    window.print();
-  };
 
   const handleExportCsv = () => {
     if (filteredStudents.length === 0) {
@@ -116,24 +112,17 @@ export const RekapNilaiKknPage: React.FC = () => {
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Rekapitulasi & Lembar Nilai Akhir KKN</h1>
           <p className="text-slate-500 text-sm mt-1">
-            Kompilasi perhitungan nilai akhir kumulatif (40% Individu, 30% Output Proker, 30% Presensi) siap cetak dan ekspor resmi.
+            Kompilasi perhitungan nilai akhir kumulatif (40% Individu, 30% Output Proker, 30% Presensi) siap diekspor resmi.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5">
           <button
             onClick={handleExportCsv}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2.5 rounded-xl font-bold text-xs shadow-2xs transition-all cursor-pointer"
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer"
           >
             <Download size={15} />
-            Export Nilai (CSV)
-          </button>
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-all cursor-pointer"
-          >
-            <Printer size={15} />
-            Cetak Lembar Nilai
+            Ekspor Nilai (CSV)
           </button>
         </div>
       </div>
