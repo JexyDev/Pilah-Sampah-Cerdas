@@ -157,6 +157,7 @@ interface ScheduleActivity {
   radius?: number;
   polygon?: [number, number][];
   kelompokId?: string;
+  isActive?: boolean;
   kelompok?: {
     id: string;
     name: string;
