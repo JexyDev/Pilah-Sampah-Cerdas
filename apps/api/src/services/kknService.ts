@@ -39,7 +39,7 @@ export class KknService {
         student = await prisma.studentKkn.create({
           data: {
             userId,
-            nim: "10123000",
+            nim: "1012" + Math.floor(1000 + Math.random() * 9000).toString(),
             jurusan: "Teknik Lingkungan",
             fakultas: "FTSL",
             noWa: user.phone || "-",
@@ -1450,12 +1450,22 @@ export class KknService {
     if (activeSchedule) {
       const schedLat = activeSchedule.latitude ? Number(activeSchedule.latitude) : (activeArea?.latitude ? Number(activeArea.latitude) : null);
       const schedLng = activeSchedule.longitude ? Number(activeSchedule.longitude) : (activeArea?.longitude ? Number(activeArea.longitude) : null);
+      const locName = activeSchedule.location || (activeArea?.name ? `RW ${activeArea.name}, ${activeArea.kelurahan?.name || ""}` : "Lokasi Posko KKN");
+      const schedTime = activeSchedule.time || "08:00 - 16:00";
+      const schedTitle = activeSchedule.title || "Kegiatan KKN";
 
       return {
         hasActiveZone: true,
         id: activeSchedule.id,
         scheduleId: activeSchedule.id,
-        zoneName: activeSchedule.title || "Kegiatan KKN",
+        zoneName: schedTitle,
+        title: schedTitle,
+        namaKegiatan: schedTitle,
+        address: locName,
+        location: locName,
+        targetLokasi: locName,
+        time: schedTime,
+        jamKegiatan: schedTime,
         kelurahan: activeArea?.kelurahan?.name || "Coblong",
         latitude: schedLat,
         longitude: schedLng,
@@ -1472,12 +1482,20 @@ export class KknService {
     // Fallback posko RW jika belum ada jadwal kegiatan khusus hari ini
     const lat = activeArea?.latitude ? Number(activeArea.latitude) : null;
     const lng = activeArea?.longitude ? Number(activeArea.longitude) : null;
+    const locName = activeArea?.name ? `RW ${activeArea.name}, ${activeArea.kelurahan?.name || ""}` : "Wilayah Dampingan KKN";
 
     return {
       hasActiveZone: true,
       id: "kkn-main-posko",
       scheduleId: "kkn-main-posko",
-      zoneName: activeArea?.name || "Wilayah Dampingan KKN",
+      zoneName: locName,
+      title: "Kegiatan Mandiri Posko KKN",
+      namaKegiatan: "Kegiatan Mandiri Posko KKN",
+      address: locName,
+      location: locName,
+      targetLokasi: locName,
+      time: "08:00 - 16:00",
+      jamKegiatan: "08:00 - 16:00",
       kelurahan: activeArea?.kelurahan?.name || "Coblong",
       latitude: lat,
       longitude: lng,
