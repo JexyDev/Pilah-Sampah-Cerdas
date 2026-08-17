@@ -603,7 +603,7 @@ export const DplDashboardPage: React.FC = () => {
               className="bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-amber-100 transition cursor-pointer shadow-xs animate-pulse"
             >
               <AlertTriangle size={14} className="text-amber-600 shrink-0" />
-              <span>{alerts.pendingApprovalsCount} Validasi Ketidakhadiran</span>
+              <span>{alerts.pendingApprovalsCount} Presensi & Validasi Ketidakhadiran</span>
             </button>
           )}
           <button
@@ -622,7 +622,7 @@ export const DplDashboardPage: React.FC = () => {
         {(
           [
             { key: "OVERVIEW" as TabType, label: "Ringkasan Eksekutif", icon: LayoutDashboard },
-            { key: "APPROVAL" as TabType, label: "Validasi Ketidakhadiran", icon: FileCheck, badge: alerts?.pendingApprovalsCount },
+            { key: "APPROVAL" as TabType, label: "Presensi & Validasi Ketidakhadiran", icon: FileCheck, badge: alerts?.pendingApprovalsCount },
             ...(isDeveloper
               ? [
                   { key: "KELOMPOK" as TabType, label: "Kelompok (Dev)", icon: Users },
@@ -875,8 +875,8 @@ export const DplDashboardPage: React.FC = () => {
                   )}
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-xs text-slate-900">Validasi Ketidakhadiran</h4>
-                  <p className="text-[10.5px] text-slate-500">Validasi surat izin/sakit & ketidakhadiran</p>
+                  <h4 className="font-extrabold text-xs text-slate-900">Presensi & Validasi Ketidakhadiran</h4>
+                  <p className="text-[10.5px] text-slate-500">Validasi surat izin/sakit & log hadir</p>
                 </div>
               </div>
               <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />

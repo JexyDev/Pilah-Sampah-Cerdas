@@ -10,7 +10,7 @@
  * - Cetak Lembar Nilai Resmi PDF dengan Tanda Tangan DPL & Mitra
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Printer,
   Save,
@@ -29,10 +29,11 @@ import {
   Lock,
   ChevronDown,
   Loader2,
+  AlertCircle,
+  ShieldAlert,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
-import api from "../../services/api";
 import {
   penilaianKknApiService,
   type StudentInfo,
@@ -50,6 +51,10 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const userRole = String(user?.role || user?.peran || "").toUpperCase();
 
+  const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
+  const isMitra = ["ADMIN_DLH", "DLH", "LURAH", "KELURAHAN", "RW", "MITRA"].includes(userRole);
+  const isSuper = ["SUPER_USER", "DEVELOPER", "PANITIA_TASKFORCE", "CAMAT", "PEMIMPIN"].includes(userRole);
+
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [studentsList, setStudentsList] = useState<StudentOption[]>([]);
@@ -57,15 +62,16 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
   const [studentInfo, setStudentInfo] = useState<StudentInfo | null>(null);
   const [requirements, setRequirements] = useState<RequirementsInfo>({
-    attendanceRate: 100,
-    isAttendanceValid: true,
-    wargaBinaanCount: 6,
-    isWargaValid: true,
-    prokerCount: 1,
-    isProkerValid: true,
-    isEvidenceValid: true,
+    attendanceRate: 0,
+    isAttendanceValid: false,
+    wargaBinaanCount: 0,
+    isWargaValid: false,
+    prokerCount: 0,
+    isProkerValid: false,
+    isEvidenceValid: false,
   });
 
+  // Pure Zero Initial State - 100% Real API data driven (Anti-Dummy)
   const [scores, setScores] = useState<{
     // Mitra 70%
     skorMitraKehadiran: number;
@@ -83,105 +89,107 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     skorDplAnalisis: number;
     skorDplOutput: number;
     skorDplLaporanAkhir: number;
-    // Metadata
+    // Metadata & Catatan
     namaMitraPenilai: string;
     catatanDpl: string;
     catatanMitra: string;
     isFinalized: boolean;
     status: "DRAFT" | "TERSIMPAN" | "FINAL";
   }>({
-    skorMitraKehadiran: 4,
-    skorMitraWargaBinaan: 3,
-    skorMitraProker: 3,
-    skorMitraKomunikasi: 3,
-    skorMitraTanggungJawab: 3,
-    skorMitraBuktiKegiatan: 4,
-    skorMitraDampak: 3,
-    skorMitraInisiatif: 3,
-    skorDplPerencanaan: 3,
-    skorDplKontribusi: 3,
-    skorDplLogbook: 3,
-    skorDplAnalisis: 2,
-    skorDplOutput: 3,
-    skorDplLaporanAkhir: 3,
-    namaMitraPenilai: "Bapak Ahmad Rudi (Ketua RW 04)",
-    catatanDpl:
-      "Mahasiswa menunjukkan kedisiplinan yang baik dan aktif berkontribusi dalam program kerja di masyarakat. Dokumentasi kegiatan rapi dan lengkap. Analisis masalah masih dapat ditingkatkan. Secara umum kinerja mahasiswa tergolong baik dan layak mendapatkan nilai yang diberikan.",
-    catatanMitra: "Koordinasi dengan warga sangat baik dan inisiatif tinggi.",
+    skorMitraKehadiran: 0,
+    skorMitraWargaBinaan: 0,
+    skorMitraProker: 0,
+    skorMitraKomunikasi: 0,
+    skorMitraTanggungJawab: 0,
+    skorMitraBuktiKegiatan: 0,
+    skorMitraDampak: 0,
+    skorMitraInisiatif: 0,
+    skorDplPerencanaan: 0,
+    skorDplKontribusi: 0,
+    skorDplLogbook: 0,
+    skorDplAnalisis: 0,
+    skorDplOutput: 0,
+    skorDplLaporanAkhir: 0,
+    namaMitraPenilai: "",
+    catatanDpl: "",
+    catatanMitra: "",
     isFinalized: false,
     status: "DRAFT",
   });
 
-  // Fetch Daftar Mahasiswa Binaan
+  const canEditMitra = !scores.isFinalized && (isMitra || isSuper);
+  const canEditDpl = !scores.isFinalized && (isDpl || isSuper);
+
+  // Fetch Daftar Mahasiswa Binaan dari API Real (Role-Scoped)
   useEffect(() => {
     const loadStudents = async () => {
       try {
-        const res = await api.get("/kkn/students");
-        const list = res.data?.data || (Array.isArray(res.data) ? res.data : []);
-        const formatted: StudentOption[] = list.map((s: any) => ({
-          id: s.id,
+        const list = await penilaianKknApiService.getRekapPenilaian();
+        const formatted: StudentOption[] = (Array.isArray(list) ? list : []).map((s: any) => ({
+          id: s.studentId || s.id,
           name: s.nama || s.name,
           nim: s.nim || "-",
-          kelompokName: s.kelompok || s.kelompokName || "Kelompok KKN",
+          kelompokName: s.kelompok || "Kelompok KKN",
         }));
         setStudentsList(formatted);
         if (formatted.length > 0) {
           setSelectedStudentId(formatted[0].id);
+        } else {
+          setLoading(false);
         }
       } catch (err) {
         console.error("Gagal memuat daftar mahasiswa:", err);
+        setLoading(false);
       }
     };
     loadStudents();
   }, []);
 
-  // Fetch Data Penilaian Mahasiswa Terpilih
-  useEffect(() => {
+  // Fetch Data Penilaian Mahasiswa Terpilih dari Database
+  const loadAssessment = useCallback(async () => {
     if (!selectedStudentId) return;
-
-    const loadAssessment = async () => {
-      setLoading(true);
-      try {
-        const data = await penilaianKknApiService.getStudentPenilaian(selectedStudentId);
-        setStudentInfo(data.student);
-        setRequirements(data.requirements);
-        const a = data.assessment;
-        setScores({
-          skorMitraKehadiran: Number(a.skorMitraKehadiran) || 0,
-          skorMitraWargaBinaan: Number(a.skorMitraWargaBinaan) || 0,
-          skorMitraProker: Number(a.skorMitraProker) || 0,
-          skorMitraKomunikasi: Number(a.skorMitraKomunikasi) || 0,
-          skorMitraTanggungJawab: Number(a.skorMitraTanggungJawab) || 0,
-          skorMitraBuktiKegiatan: Number(a.skorMitraBuktiKegiatan) || 0,
-          skorMitraDampak: Number(a.skorMitraDampak) || 0,
-          skorMitraInisiatif: Number(a.skorMitraInisiatif) || 0,
-          skorDplPerencanaan: Number(a.skorDplPerencanaan) || 0,
-          skorDplKontribusi: Number(a.skorDplKontribusi) || 0,
-          skorDplLogbook: Number(a.skorDplLogbook) || 0,
-          skorDplAnalisis: Number(a.skorDplAnalisis) || 0,
-          skorDplOutput: Number(a.skorDplOutput) || 0,
-          skorDplLaporanAkhir: Number(a.skorDplLaporanAkhir) || 0,
-          namaMitraPenilai: a.namaMitraPenilai || data.student.namaMitraPenilai,
-          catatanDpl:
-            a.catatanDpl ||
-            "Mahasiswa menunjukkan kedisiplinan yang baik dan aktif berkontribusi dalam program kerja di masyarakat.",
-          catatanMitra: a.catatanMitra || "",
-          isFinalized: Boolean(a.isFinalized),
-          status: a.status || "DRAFT",
-        });
-      } catch (err: any) {
-        toast.error("Gagal memuat data penilaian mahasiswa: " + (err.message || "Error"));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadAssessment();
+    setLoading(true);
+    try {
+      const data = await penilaianKknApiService.getStudentPenilaian(selectedStudentId);
+      setStudentInfo(data.student);
+      setRequirements(data.requirements);
+      const a = data.assessment;
+      setScores({
+        skorMitraKehadiran: Number(a.skorMitraKehadiran) || 0,
+        skorMitraWargaBinaan: Number(a.skorMitraWargaBinaan) || 0,
+        skorMitraProker: Number(a.skorMitraProker) || 0,
+        skorMitraKomunikasi: Number(a.skorMitraKomunikasi) || 0,
+        skorMitraTanggungJawab: Number(a.skorMitraTanggungJawab) || 0,
+        skorMitraBuktiKegiatan: Number(a.skorMitraBuktiKegiatan) || 0,
+        skorMitraDampak: Number(a.skorMitraDampak) || 0,
+        skorMitraInisiatif: Number(a.skorMitraInisiatif) || 0,
+        skorDplPerencanaan: Number(a.skorDplPerencanaan) || 0,
+        skorDplKontribusi: Number(a.skorDplKontribusi) || 0,
+        skorDplLogbook: Number(a.skorDplLogbook) || 0,
+        skorDplAnalisis: Number(a.skorDplAnalisis) || 0,
+        skorDplOutput: Number(a.skorDplOutput) || 0,
+        skorDplLaporanAkhir: Number(a.skorDplLaporanAkhir) || 0,
+        namaMitraPenilai: a.namaMitraPenilai || data.student.namaMitraPenilai || "",
+        catatanDpl: a.catatanDpl || "",
+        catatanMitra: a.catatanMitra || "",
+        isFinalized: Boolean(a.isFinalized),
+        status: a.status || "DRAFT",
+      });
+    } catch (err: any) {
+      toast.error("Gagal memuat data penilaian mahasiswa: " + (err.message || "Error"));
+    } finally {
+      setLoading(false);
+    }
   }, [selectedStudentId]);
+
+  useEffect(() => {
+    loadAssessment();
+  }, [loadAssessment]);
 
   // Kalkulasi Matematis Aspek: (Skor / 4) * Bobot
   const calcAspect = (skor: number, bobot: number) => {
-    return Number(((skor / 4) * bobot).toFixed(2));
+    const safe = Math.max(0, Math.min(4, Number(skor) || 0));
+    return Number(((safe / 4) * bobot).toFixed(2));
   };
 
   // Subtotal Mitra (Max 70)
@@ -218,21 +226,22 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
       .toFixed(2)
   );
 
-  // Nilai Akhir (Max 100)
+  // Nilai Akhir Kumulatif (Max 100)
   const nilaiAkhir = Number((subtotalMitra + subtotalDpl).toFixed(2));
 
-  // Kategori Grade
+  // Kategori Skala Standar
   const getCategory = (score: number) => {
     if (score >= 85) return { label: "Sangat Baik", color: "bg-emerald-100 text-emerald-800 border-emerald-300" };
     if (score >= 75) return { label: "Baik", color: "bg-teal-100 text-teal-800 border-teal-300" };
     if (score >= 65) return { label: "Cukup", color: "bg-amber-100 text-amber-800 border-amber-300" };
     if (score >= 55) return { label: "Kurang", color: "bg-orange-100 text-orange-800 border-orange-300" };
-    return { label: "Sangat Kurang", color: "bg-rose-100 text-rose-800 border-rose-300" };
+    if (score > 0) return { label: "Sangat Kurang", color: "bg-rose-100 text-rose-800 border-rose-300" };
+    return { label: "Belum Dinilai", color: "bg-slate-100 text-slate-600 border-slate-300" };
   };
 
   const currentCategory = getCategory(nilaiAkhir);
 
-  // Handle Update Score
+  // Handle Score Change
   const handleScoreChange = (field: keyof typeof scores, value: number) => {
     if (scores.isFinalized && !["SUPER_USER", "DEVELOPER"].includes(userRole)) {
       toast.error("Penilaian telah difinalisasi dan dikunci resmi.");
@@ -241,7 +250,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     setScores((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Simpan Penilaian (Draft)
+  // Simpan Penilaian
   const handleSaveDraft = async () => {
     if (!selectedStudentId) return;
     setSaving(true);
@@ -250,7 +259,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         studentId: selectedStudentId,
         ...scores,
       });
-      toast.success("Penilaian berhasil disimpan sebagai draft!");
+      toast.success("Penilaian mahasiswa berhasil disimpan ke database!");
       setScores((prev) => ({ ...prev, status: "TERSIMPAN" }));
     } catch (err: any) {
       toast.error(err.message || "Gagal menyimpan penilaian");
@@ -331,11 +340,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           <div class="meta-item"><span class="meta-label">Kelompok:</span><span class="meta-value">${studentInfo?.kelompok || "-"}</span></div>
           <div class="meta-item"><span class="meta-label">Wilayah Tugas:</span><span class="meta-value">${studentInfo?.rw || "-"}, Kel. ${studentInfo?.kelurahan || "-"}</span></div>
           <div class="meta-item"><span class="meta-label">Periode KKN:</span><span class="meta-value">${studentInfo?.periodeKkn || "03 - 31 Agustus 2026"}</span></div>
-          <div class="meta-item"><span class="meta-label">Mitra / Pembimbing Lapangan:</span><span class="meta-value">${studentInfo?.namaMitraPenilai || scores.namaMitraPenilai}</span></div>
+          <div class="meta-item"><span class="meta-label">Mitra / Pembimbing Lapangan:</span><span class="meta-value">${studentInfo?.namaMitraPenilai || scores.namaMitraPenilai || "Mitra Lapangan"}</span></div>
           <div class="meta-item"><span class="meta-label">Dosen Pembimbing Lapangan:</span><span class="meta-value">${studentInfo?.dplNama || "-"}</span></div>
         </div>
 
-        <!-- Tabel Mitra -->
+        <!-- Tabel Mitra (70%) -->
         <h4 style="margin: 6px 0 3px 0; font-size: 9pt; color: #0f172a; text-transform: uppercase;">A. Penilaian Mitra / Lapangan (Bobot 70%)</h4>
         <table>
           <thead>
@@ -361,7 +370,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           </tbody>
         </table>
 
-        <!-- Tabel DPL -->
+        <!-- Tabel DPL (30%) -->
         <h4 style="margin: 6px 0 3px 0; font-size: 9pt; color: #0f172a; text-transform: uppercase;">B. Penilaian Dosen Pembimbing Lapangan (Bobot 30%)</h4>
         <table>
           <thead>
@@ -396,16 +405,23 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           </div>
         </div>
 
+        ${scores.catatanDpl ? `
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 10px; border-radius: 6px; font-size: 8pt; margin-bottom: 10px;">
-          <strong>Catatan Evaluator:</strong><br>
+          <strong>Catatan DPL:</strong><br>
           <em>${scores.catatanDpl}</em>
-        </div>
+        </div>` : ""}
+
+        ${scores.catatanMitra ? `
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 10px; border-radius: 6px; font-size: 8pt; margin-bottom: 10px;">
+          <strong>Catatan Mitra:</strong><br>
+          <em>${scores.catatanMitra}</em>
+        </div>` : ""}
 
         <div class="sig-section">
           <div class="sig-box">
             <p>Mitra / Pembimbing Lapangan,</p>
             <div class="sig-space"></div>
-            <p style="text-decoration: underline; font-weight: bold; margin: 0;">${studentInfo?.namaMitraPenilai || scores.namaMitraPenilai}</p>
+            <p style="text-decoration: underline; font-weight: bold; margin: 0;">${studentInfo?.namaMitraPenilai || scores.namaMitraPenilai || "Mitra Lapangan"}</p>
             <p style="font-size: 7.5pt; color: #64748b; margin: 0;">Ketua RW / Mitra Lapangan</p>
           </div>
           <div class="sig-box">
@@ -430,7 +446,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
   return (
     <div className="min-h-[calc(100vh-64px)] bg-slate-50 p-4 md:p-6 space-y-6 text-slate-800">
-      {/* Header Utama Sesuai Gambar Acuan */}
+      {/* Header Utama */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
         <div>
           <div className="flex items-center gap-3">
@@ -448,7 +464,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             )}
           </div>
           <p className="text-slate-500 text-xs md:text-sm mt-1">
-            DPL dapat menilai kinerja mahasiswa berdasarkan performa di lapangan, evaluasi akademik, bukti kegiatan, dan rekap nilai akhir.
+            DPL & Mitra Lapangan dapat menilai kinerja mahasiswa berdasarkan performa di lapangan, evaluasi akademik, bukti kegiatan, dan rekap nilai akhir.
           </p>
         </div>
 
@@ -464,31 +480,37 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             <span>Cetak PDF</span>
           </button>
 
-          <button
-            type="button"
-            onClick={handleSaveDraft}
-            disabled={saving || (scores.isFinalized && !["SUPER_USER", "DEVELOPER"].includes(userRole))}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs font-bold transition border border-slate-300 shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50"
-            title="Simpan Skor Sebagai Draft"
-          >
-            {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-            <span>Simpan Penilaian</span>
-          </button>
+          {(canEditDpl || canEditMitra) && (
+            <button
+              type="button"
+              onClick={handleSaveDraft}
+              disabled={saving || (scores.isFinalized && !["SUPER_USER", "DEVELOPER"].includes(userRole))}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs font-bold transition border border-slate-300 shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50"
+              title="Simpan Skor Sebagai Draft"
+            >
+              {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+              <span>
+                {isDpl ? "Simpan Penilaian DPL" : isMitra ? "Simpan Penilaian Mitra" : "Simpan Penilaian"}
+              </span>
+            </button>
+          )}
 
-          <button
-            type="button"
-            onClick={handleFinalize}
-            disabled={saving || (scores.isFinalized && !["SUPER_USER", "DEVELOPER"].includes(userRole))}
-            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
-            title="Kunci & Finalisasi Nilai Resmi"
-          >
-            <CheckCircle2 size={15} />
-            <span>Finalisasi Penilaian</span>
-          </button>
+          {(isDpl || isSuper) && (
+            <button
+              type="button"
+              onClick={handleFinalize}
+              disabled={saving || (scores.isFinalized && !["SUPER_USER", "DEVELOPER"].includes(userRole))}
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
+              title="Kunci & Finalisasi Nilai Resmi"
+            >
+              <CheckCircle2 size={15} />
+              <span>Finalisasi Penilaian</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Row 1: 4 Top KPI Cards Sesuai Gambar */}
+      {/* Row 1: 4 Top KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Komposisi Penilaian (Donut Chart) */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
@@ -497,7 +519,6 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             {/* SVG Donut Chart */}
             <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
               <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
-                {/* Background ring */}
                 <path
                   className="text-amber-400"
                   strokeWidth="4"
@@ -505,7 +526,6 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   fill="none"
                   d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 />
-                {/* 70% ring */}
                 <path
                   className="text-emerald-500"
                   strokeDasharray="70, 100"
@@ -539,24 +559,24 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 2: Persyaratan Minimum (Real-time DB validation) */}
+        {/* Card 2: Persyaratan Minimum (Real Database Validation) */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
           <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Persyaratan Minimum</h3>
           <div className="grid grid-cols-2 gap-2 mt-2">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
               <CheckCircle2 size={15} className={requirements.isAttendanceValid ? "text-emerald-600" : "text-amber-500"} />
-              <span className="text-[11px]">Kehadiran &ge; 80%</span>
+              <span className="text-[11px]">Kehadiran &ge; 80% ({requirements.attendanceRate}%)</span>
             </div>
             <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
               <CheckCircle2 size={15} className={requirements.isWargaValid ? "text-emerald-600" : "text-amber-500"} />
-              <span className="text-[11px]">Warga Binaan &ge; 6</span>
+              <span className="text-[11px]">Warga Binaan &ge; 6 ({requirements.wargaBinaanCount})</span>
             </div>
             <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
               <CheckCircle2 size={15} className={requirements.isProkerValid ? "text-emerald-600" : "text-amber-500"} />
-              <span className="text-[11px]">Program Kerja &ge; 1</span>
+              <span className="text-[11px]">Program Kerja &ge; 1 ({requirements.prokerCount})</span>
             </div>
             <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-              <CheckCircle2 size={15} className="text-emerald-600" />
+              <CheckCircle2 size={15} className={requirements.isEvidenceValid ? "text-emerald-600" : "text-slate-400"} />
               <span className="text-[11px]">Evidence Valid</span>
             </div>
           </div>
@@ -616,7 +636,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Row 2: Identitas Mahasiswa Card (Sesuai Gambar) */}
+      {/* Row 2: Identitas Mahasiswa Card */}
       <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <h2 className="text-sm font-black text-slate-900 flex items-center gap-2 uppercase tracking-wide">
@@ -627,17 +647,22 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           {/* Student Picker Dropdown */}
           <div className="flex items-center gap-2">
             <label className="text-xs font-bold text-slate-500 shrink-0">Pilih Mahasiswa:</label>
-            <div className="relative min-w-[240px]">
+            <div className="relative min-w-[260px]">
               <select
                 value={selectedStudentId}
                 onChange={(e) => setSelectedStudentId(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs font-bold text-slate-800 appearance-none focus:outline-none focus:border-emerald-500 cursor-pointer"
+                disabled={studentsList.length === 0}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs font-bold text-slate-800 appearance-none focus:outline-none focus:border-emerald-500 cursor-pointer disabled:opacity-50"
               >
-                {studentsList.map((st) => (
-                  <option key={st.id} value={st.id}>
-                    {st.name} ({st.nim}) - {st.kelompokName}
-                  </option>
-                ))}
+                {studentsList.length === 0 ? (
+                  <option value="">Tidak ada mahasiswa terdaftar</option>
+                ) : (
+                  studentsList.map((st) => (
+                    <option key={st.id} value={st.id}>
+                      {st.name} ({st.nim}) - {st.kelompokName}
+                    </option>
+                  ))
+                )}
               </select>
               <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             </div>
@@ -695,7 +720,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
               <UserCheck size={16} className="text-slate-400 shrink-0 mt-0.5" />
               <div>
                 <span className="text-slate-400 text-[11px] block font-medium">Nama Mitra Penilai</span>
-                <span className="font-extrabold text-slate-900">{studentInfo?.namaMitraPenilai || scores.namaMitraPenilai}</span>
+                <span className="font-extrabold text-slate-900">
+                  {studentInfo?.namaMitraPenilai || scores.namaMitraPenilai || "-"}
+                </span>
               </div>
             </div>
 
@@ -718,7 +745,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         )}
       </div>
 
-      {/* Row 3: 2 Side-by-Side Tables Sesuai Gambar */}
+      {/* Row 3: 2 Side-by-Side Tables (Mitra 70% & DPL 30%) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* TABEL KIRI: Form Penilaian Mitra / Lapangan (70%) */}
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col justify-between">
@@ -727,9 +754,16 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
               <ClipboardList size={18} className="text-emerald-600" />
               <span>Form Penilaian Mitra / Lapangan</span>
             </h2>
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
-              Bobot: 70%
-            </span>
+            <div className="flex items-center gap-2">
+              {!canEditMitra && (
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                  Read-Only
+                </span>
+              )}
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                Bobot: 70%
+              </span>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -752,17 +786,18 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <td className="py-3 px-3 text-slate-500 text-[11px]">&ge; 80% kewajiban jam</td>
                   <td className="py-3 px-2 text-center font-bold text-slate-700">10%</td>
                   <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1.5">
                       {[0, 1, 2, 3, 4].map((num) => (
                         <button
                           key={num}
                           type="button"
+                          disabled={!canEditMitra}
                           onClick={() => handleScoreChange("skorMitraKehadiran", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition cursor-pointer flex items-center justify-center ${
+                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
                             scores.skorMitraKehadiran === num
                               ? "bg-emerald-600 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                          }`}
+                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
+                          } ${canEditMitra ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
                         >
                           {num}
                         </button>
@@ -781,17 +816,18 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <td className="py-3 px-3 text-slate-500 text-[11px]">minimal 6 rumah / warga aktif</td>
                   <td className="py-3 px-2 text-center font-bold text-slate-700">10%</td>
                   <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1.5">
                       {[0, 1, 2, 3, 4].map((num) => (
                         <button
                           key={num}
                           type="button"
+                          disabled={!canEditMitra}
                           onClick={() => handleScoreChange("skorMitraWargaBinaan", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition cursor-pointer flex items-center justify-center ${
+                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
                             scores.skorMitraWargaBinaan === num
                               ? "bg-emerald-600 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                          }`}
+                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
+                          } ${canEditMitra ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
                         >
                           {num}
                         </button>
@@ -810,17 +846,18 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <td className="py-3 px-3 text-slate-500 text-[11px]">minimal 1 program aktif</td>
                   <td className="py-3 px-2 text-center font-bold text-slate-700">10%</td>
                   <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1.5">
                       {[0, 1, 2, 3, 4].map((num) => (
                         <button
                           key={num}
                           type="button"
+                          disabled={!canEditMitra}
                           onClick={() => handleScoreChange("skorMitraProker", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition cursor-pointer flex items-center justify-center ${
+                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
                             scores.skorMitraProker === num
                               ? "bg-emerald-600 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                          }`}
+                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
+                          } ${canEditMitra ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
                         >
                           {num}
                         </button>
@@ -839,17 +876,18 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <td className="py-3 px-3 text-slate-500 text-[11px]">baik dengan warga / mitra</td>
                   <td className="py-3 px-2 text-center font-bold text-slate-700">8%</td>
                   <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1.5">
                       {[0, 1, 2, 3, 4].map((num) => (
                         <button
                           key={num}
                           type="button"
+                          disabled={!canEditMitra}
                           onClick={() => handleScoreChange("skorMitraKomunikasi", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition cursor-pointer flex items-center justify-center ${
+                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
                             scores.skorMitraKomunikasi === num
                               ? "bg-emerald-600 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                          }`}
+                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
+                          } ${canEditMitra ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
                         >
                           {num}
                         </button>
@@ -868,17 +906,18 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <td className="py-3 px-3 text-slate-500 text-[11px]">aktif dan bertanggung jawab</td>
                   <td className="py-3 px-2 text-center font-bold text-slate-700">8%</td>
                   <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1.5">
                       {[0, 1, 2, 3, 4].map((num) => (
                         <button
                           key={num}
                           type="button"
+                          disabled={!canEditMitra}
                           onClick={() => handleScoreChange("skorMitraTanggungJawab", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition cursor-pointer flex items-center justify-center ${
+                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
                             scores.skorMitraTanggungJawab === num
                               ? "bg-emerald-600 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                          }`}
+                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
+                          } ${canEditMitra ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
                         >
                           {num}
                         </button>
@@ -897,17 +936,18 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <td className="py-3 px-3 text-slate-500 text-[11px]">valid dan terverifikasi</td>
                   <td className="py-3 px-2 text-center font-bold text-slate-700">7%</td>
                   <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1.5">
                       {[0, 1, 2, 3, 4].map((num) => (
                         <button
                           key={num}
                           type="button"
+                          disabled={!canEditMitra}
                           onClick={() => handleScoreChange("skorMitraBuktiKegiatan", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition cursor-pointer flex items-center justify-center ${
+                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
                             scores.skorMitraBuktiKegiatan === num
                               ? "bg-emerald-600 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                          }`}
+                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
+                          } ${canEditMitra ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
                         >
                           {num}
                         </button>
@@ -926,17 +966,18 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <td className="py-3 px-3 text-slate-500 text-[11px]">ada perubahan / manfaat</td>
                   <td className="py-3 px-2 text-center font-bold text-slate-700">10%</td>
                   <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1.5">
                       {[0, 1, 2, 3, 4].map((num) => (
                         <button
                           key={num}
                           type="button"
+                          disabled={!canEditMitra}
                           onClick={() => handleScoreChange("skorMitraDampak", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition cursor-pointer flex items-center justify-center ${
+                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
                             scores.skorMitraDampak === num
                               ? "bg-emerald-600 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                          }`}
+                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
+                          } ${canEditMitra ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
                         >
                           {num}
                         </button>
@@ -955,17 +996,18 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <td className="py-3 px-3 text-slate-500 text-[11px]">aktif memberikan solusi</td>
                   <td className="py-3 px-2 text-center font-bold text-slate-700">7%</td>
                   <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1.5">
                       {[0, 1, 2, 3, 4].map((num) => (
                         <button
                           key={num}
                           type="button"
+                          disabled={!canEditMitra}
                           onClick={() => handleScoreChange("skorMitraInisiatif", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition cursor-pointer flex items-center justify-center ${
+                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
                             scores.skorMitraInisiatif === num
                               ? "bg-emerald-600 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                          }`}
+                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
+                          } ${canEditMitra ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
                         >
                           {num}
                         </button>
@@ -996,9 +1038,16 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
               <GraduationCap size={18} className="text-amber-600" />
               <span>Form Penilaian DPL</span>
             </h2>
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-50 text-amber-700 border border-amber-200">
-              Bobot: 30%
-            </span>
+            <div className="flex items-center gap-2">
+              {!canEditDpl && (
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                  Read-Only
+                </span>
+              )}
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-50 text-amber-700 border border-amber-200">
+                Bobot: 30%
+              </span>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -1019,17 +1068,18 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <td className="py-3 px-3 font-bold text-slate-900">Perencanaan & Pemahaman Program</td>
                   <td className="py-3 px-2 text-center font-bold text-slate-700">5%</td>
                   <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1.5">
                       {[0, 1, 2, 3, 4].map((num) => (
                         <button
                           key={num}
                           type="button"
+                          disabled={!canEditDpl}
                           onClick={() => handleScoreChange("skorDplPerencanaan", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition cursor-pointer flex items-center justify-center ${
+                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
                             scores.skorDplPerencanaan === num
                               ? "bg-amber-500 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                          }`}
+                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
+                          } ${canEditDpl ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
                         >
                           {num}
                         </button>
@@ -1047,17 +1097,18 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <td className="py-3 px-3 font-bold text-slate-900">Kontribusi Individu</td>
                   <td className="py-3 px-2 text-center font-bold text-slate-700">5%</td>
                   <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1.5">
                       {[0, 1, 2, 3, 4].map((num) => (
                         <button
                           key={num}
                           type="button"
+                          disabled={!canEditDpl}
                           onClick={() => handleScoreChange("skorDplKontribusi", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition cursor-pointer flex items-center justify-center ${
+                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
                             scores.skorDplKontribusi === num
                               ? "bg-amber-500 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                          }`}
+                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
+                          } ${canEditDpl ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
                         >
                           {num}
                         </button>
@@ -1075,17 +1126,18 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <td className="py-3 px-3 font-bold text-slate-900">Logbook & Dokumentasi Akademik</td>
                   <td className="py-3 px-2 text-center font-bold text-slate-700">5%</td>
                   <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1.5">
                       {[0, 1, 2, 3, 4].map((num) => (
                         <button
                           key={num}
                           type="button"
+                          disabled={!canEditDpl}
                           onClick={() => handleScoreChange("skorDplLogbook", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition cursor-pointer flex items-center justify-center ${
+                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
                             scores.skorDplLogbook === num
                               ? "bg-amber-500 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                          }`}
+                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
+                          } ${canEditDpl ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
                         >
                           {num}
                         </button>
@@ -1103,17 +1155,18 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <td className="py-3 px-3 font-bold text-slate-900">Analisis Masalah & Solusi</td>
                   <td className="py-3 px-2 text-center font-bold text-slate-700">5%</td>
                   <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1.5">
                       {[0, 1, 2, 3, 4].map((num) => (
                         <button
                           key={num}
                           type="button"
+                          disabled={!canEditDpl}
                           onClick={() => handleScoreChange("skorDplAnalisis", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition cursor-pointer flex items-center justify-center ${
+                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
                             scores.skorDplAnalisis === num
                               ? "bg-amber-500 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                          }`}
+                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
+                          } ${canEditDpl ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
                         >
                           {num}
                         </button>
@@ -1131,17 +1184,18 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <td className="py-3 px-3 font-bold text-slate-900">Output, Outcome, & Dampak</td>
                   <td className="py-3 px-2 text-center font-bold text-slate-700">5%</td>
                   <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1.5">
                       {[0, 1, 2, 3, 4].map((num) => (
                         <button
                           key={num}
                           type="button"
+                          disabled={!canEditDpl}
                           onClick={() => handleScoreChange("skorDplOutput", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition cursor-pointer flex items-center justify-center ${
+                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
                             scores.skorDplOutput === num
                               ? "bg-amber-500 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                          }`}
+                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
+                          } ${canEditDpl ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
                         >
                           {num}
                         </button>
@@ -1159,17 +1213,18 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <td className="py-3 px-3 font-bold text-slate-900">Laporan Akhir, Evaluasi, & Refleksi</td>
                   <td className="py-3 px-2 text-center font-bold text-slate-700">5%</td>
                   <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1.5">
                       {[0, 1, 2, 3, 4].map((num) => (
                         <button
                           key={num}
                           type="button"
+                          disabled={!canEditDpl}
                           onClick={() => handleScoreChange("skorDplLaporanAkhir", num)}
-                          className={`w-6 h-6 rounded-full text-xs font-black transition cursor-pointer flex items-center justify-center ${
+                          className={`w-6 h-6 rounded-full text-xs font-black transition flex items-center justify-center ${
                             scores.skorDplLaporanAkhir === num
                               ? "bg-amber-500 text-white shadow-xs"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                          }`}
+                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:hover:bg-slate-100"
+                          } ${canEditDpl ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-75"}`}
                         >
                           {num}
                         </button>
@@ -1194,7 +1249,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Row 4: 4 Bottom Cards Sesuai Gambar */}
+      {/* Row 4: 4 Bottom Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Rumus Perhitungan */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
@@ -1292,21 +1347,37 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 4: Catatan DPL */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+        {/* Card 4: Catatan Evaluator */}
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-2">
           <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
             <MessageSquare size={15} className="text-emerald-600" />
             <span>Catatan Evaluator</span>
           </h3>
-          <div className="mt-2 flex-1">
-            <textarea
-              rows={3}
-              value={scores.catatanDpl}
-              onChange={(e) => setScores((prev) => ({ ...prev, catatanDpl: e.target.value }))}
-              placeholder="Tuliskan catatan evaluasi kinerja mahasiswa..."
-              disabled={scores.isFinalized && !["SUPER_USER", "DEVELOPER"].includes(userRole)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 focus:bg-white transition resize-none disabled:bg-slate-100"
-            />
+
+          <div className="space-y-2 flex-1">
+            <div>
+              <label className="text-[10px] font-bold text-slate-500 block mb-0.5">Catatan DPL:</label>
+              <textarea
+                rows={2}
+                value={scores.catatanDpl}
+                onChange={(e) => setScores((prev) => ({ ...prev, catatanDpl: e.target.value }))}
+                placeholder="Catatan dari Dosen Pembimbing Lapangan..."
+                disabled={!canEditDpl}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 focus:bg-white transition resize-none disabled:bg-slate-100 disabled:opacity-75"
+              />
+            </div>
+
+            <div>
+              <label className="text-[10px] font-bold text-slate-500 block mb-0.5">Catatan Mitra / Lapangan:</label>
+              <textarea
+                rows={2}
+                value={scores.catatanMitra}
+                onChange={(e) => setScores((prev) => ({ ...prev, catatanMitra: e.target.value }))}
+                placeholder="Catatan dari Mitra / Kelurahan / RW..."
+                disabled={!canEditMitra}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 focus:bg-white transition resize-none disabled:bg-slate-100 disabled:opacity-75"
+              />
+            </div>
           </div>
         </div>
       </div>
