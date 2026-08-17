@@ -473,7 +473,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/penilaian-kkn/mahasiswa"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "RW"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "ADMIN_DLH", "LURAH", "CAMAT", "RW", "PANITIA_TASKFORCE", "PEMIMPIN"]}>
               <PenilaianKknMahasiswaPage />
             </ProtectedRoute>
           }
@@ -481,7 +481,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/penilaian-kkn/program-kerja"
           element={
-            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "PANITIA_TASKFORCE"]}>
               <PenilaianProkerPage />
             </ProtectedRoute>
           }
@@ -489,7 +489,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/penilaian-kkn/rekap"
           element={
-            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "ADMIN_DLH", "LURAH", "CAMAT", "RW", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"]}>
               <RekapNilaiKknPage />
             </ProtectedRoute>
           }

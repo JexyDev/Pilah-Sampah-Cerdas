@@ -392,6 +392,53 @@ const MonitoringAbsen: React.FC = () => {
   const [isSubmittingSchedule, setIsSubmittingSchedule] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
+const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
+  if (!schedule) {
+    return {
+      label: "Belum Ada Jadwal",
+      color: "bg-slate-100 text-slate-500 border-slate-200",
+      tooltip: "Tidak ada jadwal kegiatan terpilih",
+    };
+  }
+
+  if (schedule.isActive === false) {
+    return {
+      label: "Nonaktif (Libur)",
+      color: "bg-amber-100 text-amber-900 border-amber-300",
+      tooltip: "Jadwal dinonaktifkan secara manual oleh developer",
+    };
+  }
+
+  const now = new Date();
+  const start = new Date(schedule.date);
+  start.setHours(0, 0, 0, 0);
+
+  const end = schedule.endDate ? new Date(schedule.endDate) : new Date(schedule.date);
+  end.setHours(23, 59, 59, 999);
+
+  if (now > end) {
+    return {
+      label: "Selesai",
+      color: "bg-slate-100 text-slate-700 border-slate-300",
+      tooltip: "Periode pelaksanaan kegiatan sudah berakhir (kedaluwarsa)",
+    };
+  }
+
+  if (now < start) {
+    return {
+      label: "Mendatang",
+      color: "bg-sky-100 text-sky-800 border-sky-300",
+      tooltip: "Jadwal kegiatan terdaftar untuk masa mendatang",
+    };
+  }
+
+  return {
+    label: "Aktif",
+    color: "bg-emerald-100 text-emerald-800 border-emerald-300",
+    tooltip: "Kegiatan sedang berlangsung dalam rentang tanggal jadwal",
+  };
+};
+
   // Dynamic Targets & Ketentuan Waktu (Managed by Super User / Taskforce / Developer)
   const [configTargets, setConfigTargets] = useState<ConfigTargets>({
     targetTotalKegiatan: 2000,
@@ -402,8 +449,6 @@ const MonitoringAbsen: React.FC = () => {
     jamKerja: "08.00 – 16.00",
     targetPekan: 10,
     targetTotalHari: 50,
-    catatanDpl:
-      "Pastikan mahasiswa hadir minimal 4 jam per hari di lokasi kegiatan. Verifikasi lokasi melalui GPS dan unduh berita acara sebagai bukti validasi.",
   });
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [configFormData, setConfigFormData] = useState<ConfigTargets>({
@@ -415,8 +460,6 @@ const MonitoringAbsen: React.FC = () => {
     jamKerja: "08.00 – 16.00",
     targetPekan: 10,
     targetTotalHari: 50,
-    catatanDpl:
-      "Pastikan mahasiswa hadir minimal 4 jam per hari di lokasi kegiatan. Verifikasi lokasi melalui GPS dan unduh berita acara sebagai bukti validasi.",
   });
   const [isSavingConfig, setIsSavingConfig] = useState(false);
 
@@ -1249,32 +1292,53 @@ const MonitoringAbsen: React.FC = () => {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h2 className="text-lg font-black text-slate-900 tracking-tight">
-                  {activeSchedule?.title || "PT MAKERINDO ABSEN TEST"}
+                  {activeSchedule?.title || (schedules.length === 0 ? "Belum Ada Kegiatan KKN" : "-")}
                 </h2>
-                <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  {activeSchedule?.category || "Monitoring"}
-                </span>
+                {activeSchedule?.category && (
+                  <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    {activeSchedule.category}
+                  </span>
+                )}
+                {/* Dynamic Status Badge calculated by Dates & Times */}
+                {activeSchedule && (
+                  <span
+                    className={`text-[11px] font-black px-2.5 py-0.5 rounded-full border shadow-2xs ${
+                      getScheduleStatus(activeSchedule).color
+                    }`}
+                    title={getScheduleStatus(activeSchedule).tooltip}
+                  >
+                    {getScheduleStatus(activeSchedule).label}
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center gap-4 text-xs text-slate-500 font-semibold mt-1 flex-wrap">
-                <span className="flex items-center gap-1.5">
-                  <Calendar size={14} className="text-emerald-600" />
-                  {activeSchedule
-                    ? new Date(activeSchedule.date).toLocaleDateString("id-ID", {
+                {activeSchedule ? (
+                  <>
+                    <span className="flex items-center gap-1.5">
+                      <Calendar size={14} className="text-emerald-600" />
+                      {new Date(activeSchedule.date).toLocaleDateString("id-ID", {
                         day: "numeric",
                         month: "long",
                         year: "numeric",
-                      })
-                    : "14 Agustus 2026"}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Clock size={14} className="text-emerald-600" />
-                  {activeSchedule?.title || "PT MAKERINDO"} (Target {scheduleTargetHours} Jam)
-                </span>
-                <span className="flex items-center gap-1.5 truncate max-w-sm">
-                  <MapPin size={14} className="text-emerald-600 shrink-0" />
-                  <span className="truncate">{activeSchedule?.location || "Pesona Ciganitri"}</span>
-                </span>
+                      })}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <Clock size={14} className="text-emerald-600" />
+                      {activeSchedule.time || configTargets.jamKerja || "08.00 – 16.00"} (Target {scheduleTargetHours} Jam)
+                    </span>
+                    <span className="flex items-center gap-1.5 truncate max-w-sm">
+                      <MapPin size={14} className="text-emerald-600 shrink-0" />
+                      <span className="truncate">
+                        {activeSchedule.location || (activeSchedule.kelompok ? `Kelompok ${activeSchedule.kelompok.name}` : "Lokasi Belum Diatur")}
+                      </span>
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-xs text-slate-400 italic">
+                    Belum ada jadwal kegiatan dipilih. Silakan pilih atau buat jadwal kegiatan baru.
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -1300,37 +1364,45 @@ const MonitoringAbsen: React.FC = () => {
               <ChevronDown size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             </div>
 
-            {canManageSchedules && activeSchedule && (
+            {activeSchedule && (
               <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={handleToggleScheduleActive}
-                  className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border shadow-2xs ${
-                    activeSchedule.isActive !== false
-                      ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
-                      : "bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100"
-                  }`}
-                  title="Klik untuk Mengaktifkan / Menonaktifkan Kegiatan (Toggle Libur)"
-                >
-                  <Power size={14} className={activeSchedule.isActive !== false ? "text-emerald-600" : "text-amber-600"} />
-                  <span>{activeSchedule.isActive !== false ? "Aktif" : "Libur (Nonaktif)"}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => handleOpenEditModal(e, activeSchedule)}
-                  className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 transition cursor-pointer shadow-2xs"
-                  title="Edit Jadwal Kegiatan"
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => handleDelete(e, activeSchedule.id)}
-                  className="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition cursor-pointer shadow-2xs"
-                  title="Hapus Jadwal Kegiatan"
-                >
-                  <Trash2 size={14} />
-                </button>
+                {/* Developer Only: Manual Toggle Aktif/Libur Button */}
+                {userRole === "DEVELOPER" && (
+                  <button
+                    type="button"
+                    onClick={handleToggleScheduleActive}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border shadow-2xs ${
+                      activeSchedule.isActive !== false
+                        ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
+                        : "bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100"
+                    }`}
+                    title="Developer Override: Klik untuk Mengaktifkan / Menonaktifkan Kegiatan Secara Manual"
+                  >
+                    <Power size={14} className={activeSchedule.isActive !== false ? "text-emerald-600" : "text-amber-600"} />
+                    <span>{activeSchedule.isActive !== false ? "Dev: Aktif" : "Dev: Libur"}</span>
+                  </button>
+                )}
+
+                {canManageSchedules && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={(e) => handleOpenEditModal(e, activeSchedule)}
+                      className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 transition cursor-pointer shadow-2xs"
+                      title="Edit Jadwal Kegiatan"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDelete(e, activeSchedule.id)}
+                      className="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition cursor-pointer shadow-2xs"
+                      title="Hapus Jadwal Kegiatan"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -1376,7 +1448,7 @@ const MonitoringAbsen: React.FC = () => {
                   <Clock size={14} className="text-emerald-600" />
                   Jam Kerja
                 </span>
-                <span className="font-extrabold text-slate-900">{configTargets.jamKerja || activeSchedule?.time || "08.00 – 16.00"}</span>
+                <span className="font-extrabold text-slate-900">{activeSchedule?.time || configTargets.jamKerja || "08.00 – 16.00"}</span>
               </div>
 
               <div className="flex items-center justify-between text-xs">
@@ -1384,7 +1456,7 @@ const MonitoringAbsen: React.FC = () => {
                   <Hourglass size={14} className="text-emerald-600" />
                   Minimal Durasi / Hari
                 </span>
-                <span className="font-extrabold text-slate-900">{configTargets.targetHarianJam || scheduleTargetHours || 4} Jam</span>
+                <span className="font-extrabold text-slate-900">{scheduleTargetHours || configTargets.targetHarianJam || 4} Jam</span>
               </div>
             </div>
           </div>
@@ -1416,21 +1488,21 @@ const MonitoringAbsen: React.FC = () => {
             <div className="grid grid-cols-3 divide-x divide-slate-200 pt-1 text-center">
               <div className="px-2 flex flex-col items-center justify-center">
                 <Calendar size={18} className="text-emerald-600 mb-1" />
-                <span className="text-2xl font-black text-slate-900 tracking-tight">{configTargets.targetPekan || 10}</span>
+                <span className="text-2xl font-black text-slate-900 tracking-tight">{configTargets.targetPekan ?? 10}</span>
                 <span className="text-xs font-bold text-slate-700">Pekan</span>
                 <span className="text-[10px] text-slate-400 font-medium">Periode Kegiatan</span>
               </div>
 
               <div className="px-2 flex flex-col items-center justify-center">
                 <CheckCircle2 size={18} className="text-emerald-600 mb-1" />
-                <span className="text-2xl font-black text-slate-900 tracking-tight">{configTargets.targetTotalHari || 50}</span>
+                <span className="text-2xl font-black text-slate-900 tracking-tight">{configTargets.targetTotalHari ?? 50}</span>
                 <span className="text-xs font-bold text-slate-700">Hari</span>
                 <span className="text-[10px] text-slate-400 font-medium">Total Hari Kegiatan</span>
               </div>
 
               <div className="px-2 flex flex-col items-center justify-center">
                 <Clock size={18} className="text-emerald-600 mb-1" />
-                <span className="text-2xl font-black text-slate-900 tracking-tight">{configTargets.targetTotalJam || 100}</span>
+                <span className="text-2xl font-black text-slate-900 tracking-tight">{configTargets.targetTotalJam ?? 100}</span>
                 <span className="text-xs font-bold text-slate-700">Jam</span>
                 <span className="text-[10px] text-slate-400 font-medium">Total Jam Kegiatan</span>
               </div>
@@ -2753,24 +2825,6 @@ const MonitoringAbsen: React.FC = () => {
                     })
                   }
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Catatan Panduan untuk DPL
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  value={configFormData.catatanDpl || ""}
-                  onChange={(e) =>
-                    setConfigFormData({
-                      ...configFormData,
-                      catatanDpl: e.target.value,
-                    })
-                  }
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 

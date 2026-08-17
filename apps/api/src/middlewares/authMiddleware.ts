@@ -94,11 +94,17 @@ export const authMiddleware = async (
     if (decoded.role === "CAMAT" || decoded.role === "LURAH") {
       const writeMethods = ["POST", "PUT", "DELETE", "PATCH"];
       if (writeMethods.includes(req.method)) {
-        res.status(403).json({
-          error: "FORBIDDEN",
-          message: `Role ${decoded.role} hanya memiliki akses Read-Only. Operasi tulis ditolak.`,
-        });
-        return;
+        // Exception: LURAH is allowed to evaluate KKN as Kelurahan evaluator on penilaian-kkn endpoint
+        const isPenilaianKkn = req.baseUrl.includes("penilaian-kkn") || req.originalUrl.includes("penilaian-kkn");
+        if (decoded.role === "LURAH" && isPenilaianKkn) {
+          // Allow LURAH for penilaian-kkn write
+        } else {
+          res.status(403).json({
+            error: "FORBIDDEN",
+            message: `Role ${decoded.role} hanya memiliki akses Read-Only. Operasi tulis ditolak.`,
+          });
+          return;
+        }
       }
     }
 

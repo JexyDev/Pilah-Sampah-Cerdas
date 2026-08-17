@@ -151,23 +151,19 @@ export const DplDashboardPage: React.FC = () => {
   const isDeveloper = userRole === "DEVELOPER";
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const rawTab = searchParams.get("tab")?.toUpperCase() || "OVERVIEW";
-
-  // Normalize tab string alias - non-developer always locked to OVERVIEW (anti-redundancy)
+  const rawTab = (searchParams.get("tab") || "OVERVIEW").toUpperCase();
+  // Normalize tab string alias
   const activeTab: TabType = useMemo(() => {
-    if (!isDeveloper) return "OVERVIEW";
     if (rawTab === "STUDENTS") return "MAHASISWA";
-    if (rawTab === "APPROVALS") return "APPROVAL";
+    if (rawTab === "APPROVALS" || rawTab === "APPROVAL" || rawTab === "KETIDAKHADIRAN" || rawTab === "IZIN") return "APPROVAL";
     if (["OVERVIEW", "KELOMPOK", "MAHASISWA", "APPROVAL", "INOVASI", "MAP"].includes(rawTab)) {
       return rawTab as TabType;
     }
     return "OVERVIEW";
-  }, [rawTab, isDeveloper]);
+  }, [rawTab]);
 
   const setActiveTab = (newTab: TabType) => {
-    if (isDeveloper) {
-      setSearchParams({ tab: newTab });
-    }
+    setSearchParams({ tab: newTab });
   };
 
   const [loading, setLoading] = useState(true);
@@ -262,11 +258,12 @@ export const DplDashboardPage: React.FC = () => {
   const [assistedCitizensData, setAssistedCitizensData] = useState<AssistedCitizensResponse | null>(null);
   const [loadingCitizens, setLoadingCitizens] = useState(false);
 
-  // Rejection & Escalation Modal States
+  // Rejection, Escalation, & Evidence Preview Modal States
   const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
   const [escalatingRequestId, setEscalatingRequestId] = useState<string | null>(null);
   const [rejectionReasonInput, setRejectionReasonInput] = useState("");
   const [escalationReasonInput, setEscalationReasonInput] = useState("");
+  const [previewEvidence, setPreviewEvidence] = useState<{ url: string; title: string } | null>(null);
 
   // Student Assessment Modal States
   const [selectedStudentForAssess, setSelectedStudentForAssess] = useState<StudentDetail | null>(null);
@@ -601,13 +598,13 @@ export const DplDashboardPage: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2">
           {alerts && alerts.pendingApprovalsCount > 0 && (
-            <Link
-              to="/monitoring-absen"
+            <button
+              onClick={() => setActiveTab("APPROVAL")}
               className="bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-amber-100 transition cursor-pointer shadow-xs animate-pulse"
             >
               <AlertTriangle size={14} className="text-amber-600 shrink-0" />
-              <span>{alerts.pendingApprovalsCount} Pengajuan Ketidakhadiran</span>
-            </Link>
+              <span>{alerts.pendingApprovalsCount} Validasi Ketidakhadiran</span>
+            </button>
           )}
           <button
             onClick={loadDashboardData}
@@ -620,42 +617,44 @@ export const DplDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modern Segmented Navigation Tabs (Hanya Muncul di Role Developer) */}
-      {isDeveloper && (
-        <div className="bg-slate-100/90 p-1.5 rounded-xl border border-slate-200/80 flex items-center gap-1 overflow-x-auto scrollbar-none">
-          {(
-            [
-              { key: "OVERVIEW", label: "Ringkasan Eksekutif", icon: LayoutDashboard },
-              { key: "KELOMPOK", label: "Kelompok (Dev)", icon: Users },
-              { key: "MAHASISWA", label: "Mahasiswa & Nilai (Dev)", icon: GraduationCap },
-              { key: "APPROVAL", label: "Validasi Izin (Dev)", icon: FileCheck, badge: alerts?.pendingApprovalsCount },
-              { key: "MAP" as TabType, label: "Peta Wilayah (Dev)", icon: MapPin },
-            ] as { key: TabType; label: string; icon: any; badge?: number }[]
-          ).map((t) => {
-            const Icon = t.icon;
-            const isActive = activeTab === t.key;
-            return (
-              <button
-                key={t.key}
-                onClick={() => setActiveTab(t.key)}
-                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer whitespace-nowrap ${
-                  isActive
-                    ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
-                }`}
-              >
-                <Icon size={14} className={isActive ? "text-emerald-600" : "text-slate-400"} />
-                <span>{t.label}</span>
-                {t.badge && t.badge > 0 ? (
-                  <span className="bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full leading-none">
-                    {t.badge}
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {/* Modern Segmented Navigation Tabs */}
+      <div className="bg-slate-100/90 p-1.5 rounded-xl border border-slate-200/80 flex items-center gap-1 overflow-x-auto scrollbar-none">
+        {(
+          [
+            { key: "OVERVIEW" as TabType, label: "Ringkasan Eksekutif", icon: LayoutDashboard },
+            { key: "APPROVAL" as TabType, label: "Validasi Ketidakhadiran", icon: FileCheck, badge: alerts?.pendingApprovalsCount },
+            ...(isDeveloper
+              ? [
+                  { key: "KELOMPOK" as TabType, label: "Kelompok (Dev)", icon: Users },
+                  { key: "MAHASISWA" as TabType, label: "Mahasiswa & Nilai (Dev)", icon: GraduationCap },
+                  { key: "MAP" as TabType, label: "Peta Wilayah (Dev)", icon: MapPin },
+                ]
+              : []),
+          ] as { key: TabType; label: string; icon: any; badge?: number }[]
+        ).map((t) => {
+          const Icon = t.icon;
+          const isActive = activeTab === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+                isActive
+                  ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+              }`}
+            >
+              <Icon size={14} className={isActive ? "text-emerald-600" : "text-slate-400"} />
+              <span>{t.label}</span>
+              {t.badge && t.badge > 0 ? (
+                <span className="bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
+                  {t.badge}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
 
       {/* VIEW 1: OVERVIEW */}
       {activeTab === "OVERVIEW" && (
@@ -862,9 +861,9 @@ export const DplDashboardPage: React.FC = () => {
               <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
             </Link>
 
-            <Link
-              to="/monitoring-absen"
-              className="bg-white border border-slate-200/80 p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+            <button
+              onClick={() => setActiveTab("APPROVAL")}
+              className="bg-white border border-slate-200/80 p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer text-left w-full"
             >
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-amber-50 text-amber-700 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition relative">
@@ -876,12 +875,12 @@ export const DplDashboardPage: React.FC = () => {
                   )}
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-xs text-slate-900">Presensi & Validasi Izin</h4>
-                  <p className="text-[10.5px] text-slate-500">Validasi surat izin/sakit & log hadir</p>
+                  <h4 className="font-extrabold text-xs text-slate-900">Validasi Ketidakhadiran</h4>
+                  <p className="text-[10.5px] text-slate-500">Validasi surat izin/sakit & ketidakhadiran</p>
                 </div>
               </div>
               <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
-            </Link>
+            </button>
 
             <Link
               to="/program-kerja-kkn"
@@ -928,16 +927,16 @@ export const DplDashboardPage: React.FC = () => {
                     Membutuhkan Persetujuan ({alerts.pendingRequests.length} Pengajuan)
                   </h4>
                   <p className="text-xs text-amber-800">
-                    Beberapa mahasiswa mengajukan surat izin/sakit yang memerlukan validasi DPL di menu Presensi.
+                    Beberapa mahasiswa bimbingan mengajukan surat izin / sakit yang memerlukan validasi DPL.
                   </p>
                 </div>
               </div>
-              <Link
-                to="/monitoring-absen"
-                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition shadow-xs whitespace-nowrap"
+              <button
+                onClick={() => setActiveTab("APPROVAL")}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition shadow-xs whitespace-nowrap cursor-pointer"
               >
-                Validasi di Presensi
-              </Link>
+                Validasi Sekarang
+              </button>
             </div>
           )}
 
@@ -1432,9 +1431,26 @@ export const DplDashboardPage: React.FC = () => {
                       <p className="text-xs text-slate-600">
                         <span className="font-semibold text-slate-700">Alasan / Catatan:</span> {req.reason}
                       </p>
-                      <p className="text-[11px] text-slate-400">
-                        Diajukan pada: {new Date(req.createdAt).toLocaleDateString("id-ID")}
-                      </p>
+                      <div className="flex items-center gap-2 flex-wrap pt-1">
+                        <p className="text-[11px] text-slate-500">
+                          Diajukan: <span className="font-medium text-slate-700">{new Date(req.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</span>
+                          {req.startDate && (
+                            <span className="ml-2 font-medium text-slate-600">
+                              (Periode: {new Date(req.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                              {req.endDate && req.endDate !== req.startDate ? ` - ${new Date(req.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}` : ""})
+                            </span>
+                          )}
+                        </p>
+                        {req.evidenceUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewEvidence({ url: req.evidenceUrl!, title: `Surat Bukti ${req.type}: ${req.studentName}` })}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-100/70 border border-emerald-300 px-2 py-0.5 rounded-md cursor-pointer transition"
+                          >
+                            <Eye size={12} /> Lihat Surat / Foto Bukti
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
@@ -2156,6 +2172,55 @@ export const DplDashboardPage: React.FC = () => {
           </div>
         </div>
       )}
+      {/* MODAL PREVIEW BUKTI DOKUMEN / SURAT SAKIT */}
+      {previewEvidence && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-800 text-white">
+              <div className="flex items-center gap-2.5">
+                <FileCheck size={18} className="text-emerald-400" />
+                <h3 className="font-bold text-white text-sm truncate">{previewEvidence.title}</h3>
+              </div>
+              <button
+                onClick={() => setPreviewEvidence(null)}
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 flex flex-col items-center justify-center space-y-4">
+              <div className="max-h-[60vh] w-full overflow-auto rounded-2xl border border-slate-200 bg-slate-50 p-2 flex items-center justify-center">
+                <img
+                  src={previewEvidence.url}
+                  alt={previewEvidence.title}
+                  className="max-h-[55vh] w-auto max-w-full object-contain rounded-xl shadow-xs"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = "none";
+                    (e.currentTarget.parentElement as HTMLElement).innerHTML = `<div class="p-8 text-center text-xs text-slate-500 font-semibold">Gagal memuat pratinjau gambar bukti surat.<br><a href="${previewEvidence.url}" target="_blank" rel="noreferrer" class="text-emerald-600 underline font-bold mt-2 inline-block">Buka File di Tab Baru</a></div>`;
+                  }}
+                />
+              </div>
+              <div className="flex justify-between items-center w-full gap-3">
+                <a
+                  href={previewEvidence.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center gap-1.5"
+                >
+                  <Eye size={14} /> Buka Tab Baru
+                </a>
+                <button
+                  onClick={() => setPreviewEvidence(null)}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-xs"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODAL 6: EKSPOR REKAPITULASI KINERJA DPL DENGAN FILTER PERIODE */}
       {isExportModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">

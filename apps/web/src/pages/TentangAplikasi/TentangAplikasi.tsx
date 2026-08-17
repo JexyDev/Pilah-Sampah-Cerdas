@@ -286,7 +286,7 @@ const Informasi: React.FC = () => {
                       <h3 className="font-extrabold text-base text-slate-900">2. Validasi Permohonan Izin &amp; Sakit</h3>
                     </div>
                     <p className="text-xs text-slate-600 leading-relaxed">
-                      Pada Tab <strong>Validasi Izin</strong>, periksa surat keterangan dokter/bukti izin mahasiswa. Anda dapat menyetujui, menolak, atau mengeskalasi permohonan izin lebih dari 3 hari ke Panitia Taskforce.
+                      Pada Tab <strong>Validasi Ketidakhadiran</strong>, periksa surat keterangan dokter/bukti izin mahasiswa. Anda dapat menyetujui, menolak, atau mengeskalasi permohonan izin lebih dari 3 hari ke Panitia Taskforce.
                     </p>
                   </div>
 

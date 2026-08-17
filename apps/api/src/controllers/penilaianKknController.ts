@@ -97,15 +97,15 @@ export const penilaianKknController = {
   },
 
   /**
-   * Mengambil Rekapitulasi Penilaian KKN (Untuk Tabel / Export CSV)
+   * Mengambil Rekapitulasi Penilaian KKN (Untuk Tabel / Export CSV / Dropdown Mahasiswa)
    */
   getRekapPenilaian: async (req: Request, res: Response) => {
     try {
       const groupId = req.query.groupId as string | undefined;
-      const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(String(req.user?.role || "").toUpperCase());
-      const dplUserId = isDpl ? (req.user?.userId || (req.user as any)?.id) : undefined;
+      const evaluatorRole = String(req.user?.role || "").toUpperCase();
+      const evaluatorId = req.user?.userId || (req.user as any)?.id;
 
-      const data = await penilaianKknService.getRekapPenilaian(groupId, dplUserId);
+      const data = await penilaianKknService.getRekapPenilaian(groupId, evaluatorId, evaluatorRole);
       res.status(200).json({
         success: true,
         data,
