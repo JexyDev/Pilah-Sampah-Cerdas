@@ -511,7 +511,7 @@ const JadwalKegiatan: React.FC = () => {
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Time Line & Jadwal Kegiatan KKN</h1>
           <p className="text-slate-500 text-xs mt-1">
-            Rencana kerja terstruktur, tahapan timeline resmi, dan monitoring jadwal lapangan Kecamatan Coblong.
+            Rencana kerja terstruktur, tahapan timeline, dan monitoring jadwal lapangan Kecamatan Coblong.
           </p>
         </div>
 

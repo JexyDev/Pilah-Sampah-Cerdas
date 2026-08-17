@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Shield, Save, RefreshCw, CheckSquare, Square, ChevronDown, ChevronRight } from "lucide-react";
+import { Shield, Save, Loader2, CheckSquare, Square, ChevronDown, ChevronRight } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../utils/api";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -204,12 +204,6 @@ const RolePermissionPage: React.FC = () => {
             </p>
           </div>
         </div>
-        <button
-          onClick={loadPermissions}
-          className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-lg transition cursor-pointer"
-        >
-          <RefreshCw size={14} /> Refresh
-        </button>
       </div>
 
       <div className="grid grid-cols-12 gap-5">
@@ -258,7 +252,7 @@ const RolePermissionPage: React.FC = () => {
                   className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold px-4 py-2 rounded-lg transition cursor-pointer"
                 >
                   {saving === selectedRole.roleId ? (
-                    <RefreshCw size={13} className="animate-spin" />
+                    <Loader2 size={13} className="animate-spin" />
                   ) : (
                     <Save size={13} />
                   )}

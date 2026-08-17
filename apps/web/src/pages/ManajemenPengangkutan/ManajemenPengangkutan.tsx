@@ -30,7 +30,6 @@ import {
   ShieldAlert,
   Search,
   X,
-  RefreshCw,
   Clock,
   CheckCircle,
   AlertCircle,
@@ -114,7 +113,6 @@ export const ManajemenPengangkutan: React.FC = () => {
   const { user } = useAuthStore();
   const [tasks, setTasks] = useState<DispatchTask[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [areas, setAreas] = useState<AreaItem[]>([]);
   const [bins, setBins] = useState<BinItem[]>([]);
   const [petugasList, setPetugasList] = useState<PetugasItem[]>([]);
@@ -154,7 +152,6 @@ export const ManajemenPengangkutan: React.FC = () => {
   const fetchTasks = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
-      setRefreshing(true);
       const query = new URLSearchParams();
       if (statusFilter) query.append("status", statusFilter);
       if (rwFilter) query.append("rtRwId", rwFilter);
@@ -171,14 +168,12 @@ export const ManajemenPengangkutan: React.FC = () => {
       setTasks([]);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
   const fetchRequests = async (silent = false) => {
     try {
       if (!silent) setLoadingRequests(true);
-      setRefreshing(true);
       const res = await api.get(`/bins/reset-requests`);
       if (res.data && res.data.success && Array.isArray(res.data.data)) {
         setRequests(res.data.data);
@@ -191,7 +186,6 @@ export const ManajemenPengangkutan: React.FC = () => {
       setRequests([]);
     } finally {
       setLoadingRequests(false);
-      setRefreshing(false);
     }
   };
 
@@ -455,25 +449,14 @@ export const ManajemenPengangkutan: React.FC = () => {
         title="Pengumpulan & Pengangkutan"
         description="Manajemen dan pemantauan penugasan armada pengangkutan residu sampah terintegrasi dari Tempat Sampah warga ke pemrosesan hilir."
         actions={
-          <>
+          activeTab === "tasks" && !isReadOnly && !isPetugas ? (
             <button
-              onClick={() => (activeTab === "tasks" ? fetchTasks(false) : fetchRequests(false))}
-              disabled={loading || loadingRequests}
-              title="Sinkronkan Data Pengangkutan"
-              className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-xs"
+              onClick={openAddModal}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
-              <RefreshCw size={14} className={refreshing ? "animate-spin text-[#009966]" : "text-slate-500"} />
-              <span>Sinkronkan Data</span>
+              <Plus size={15} /> <span>Catat Tugas Baru</span>
             </button>
-            {activeTab === "tasks" && !isReadOnly && !isPetugas && (
-              <button
-                onClick={openAddModal}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-              >
-                <Plus size={15} /> <span>Catat Tugas Baru</span>
-              </button>
-            )}
-          </>
+          ) : undefined
         }
       />
 

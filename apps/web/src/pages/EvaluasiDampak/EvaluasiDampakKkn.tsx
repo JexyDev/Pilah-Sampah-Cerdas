@@ -5,7 +5,6 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  RefreshCw,
   AlertTriangle,
   FileCheck,
   Percent,
@@ -267,13 +266,6 @@ export const EvaluasiDampakKkn: React.FC = () => {
           >
             <Download size={15} />
             Ekspor Data
-          </button>
-          <button
-            onClick={loadData}
-            className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 transition border border-slate-200 flex items-center gap-2 text-xs font-bold"
-          >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-            Refresh Data
           </button>
         </div>
       </div>

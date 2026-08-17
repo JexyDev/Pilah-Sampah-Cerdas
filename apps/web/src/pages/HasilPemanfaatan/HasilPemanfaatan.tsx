@@ -4,7 +4,7 @@ import {
   Sparkles,
   Search,
   Filter,
-  RefreshCw,
+  Loader2,
   Plus,
   Star,
   CheckCircle2,
@@ -93,7 +93,6 @@ export const HasilPemanfaatan: React.FC = () => {
 
   // Program / Product Outputs State
   const [programs, setPrograms] = useState<PemanfaatanProgram[]>([]);
-  const [loadingPrograms, setLoadingPrograms] = useState(true);
 
   // Search & Filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -146,7 +145,6 @@ export const HasilPemanfaatan: React.FC = () => {
 
   const fetchProgramList = async () => {
     try {
-      setLoadingPrograms(true);
       const res = await api.get("/pemanfaatan");
       if (res.data && res.data.success) {
         setPrograms(Array.isArray(res.data.data) ? res.data.data : []);
@@ -158,8 +156,6 @@ export const HasilPemanfaatan: React.FC = () => {
     } catch (e: any) {
       console.warn("[HasilPemanfaatan] Gagal memuat program:", e?.message || e);
       setPrograms([]);
-    } finally {
-      setLoadingPrograms(false);
     }
   };
 
@@ -444,17 +440,7 @@ export const HasilPemanfaatan: React.FC = () => {
             >
               <Plus size={15} /> <span>Sampaikan Kritik & Saran</span>
             </button>
-          ) : (
-            <button
-              onClick={() => {
-                fetchProgramList();
-                fetchFeedbackList();
-              }}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-            >
-              <RefreshCw size={14} className={loadingPrograms ? "animate-spin" : ""} /> <span>Sinkron Data</span>
-            </button>
-          )
+          ) : undefined
         }
       />
 
@@ -564,14 +550,6 @@ export const HasilPemanfaatan: React.FC = () => {
                   <option value="POC">Pupuk Organik Cair (POC)</option>
                   <option value="Bank Sampah">Bank Sampah Anorganik</option>
                 </select>
-
-                <button
-                  onClick={fetchProgramList}
-                  title="Sinkronkan data dari database"
-                  className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
-                >
-                  <RefreshCw size={14} className={loadingPrograms ? "animate-spin" : ""} />
-                </button>
               </div>
             </div>
           </div>
@@ -757,14 +735,6 @@ export const HasilPemanfaatan: React.FC = () => {
                     <option value="Kualitas Layanan & Fasilitas">Kualitas Layanan &amp; Fasilitas</option>
                   </select>
                 </div>
-
-                <button
-                  onClick={fetchFeedbackList}
-                  title="Sinkronkan data dari database"
-                  className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
-                >
-                  <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-                </button>
               </div>
             </div>
 
@@ -795,7 +765,7 @@ export const HasilPemanfaatan: React.FC = () => {
           {/* Main Feedback List Section */}
           {loading ? (
             <div className="bg-white p-12 rounded-3xl border border-slate-200/90 shadow-2xs text-center flex flex-col items-center justify-center gap-3">
-              <RefreshCw size={28} className="animate-spin text-[#009966]" />
+              <Loader2 size={28} className="animate-spin text-[#009966]" />
               <p className="text-xs font-bold text-slate-500">Memuat data kritik &amp; saran dari database...</p>
             </div>
           ) : paginatedItems.length === 0 ? (

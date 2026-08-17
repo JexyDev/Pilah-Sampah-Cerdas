@@ -656,14 +656,6 @@ const Notifikasi: React.FC = () => {
             <Info size={15} /> Informasi ({infoCount})
           </button>
         </div>
-
-        <button
-          onClick={() => fetchNotifications(false)}
-          className="px-4 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-bold text-xs text-slate-700 flex items-center gap-1.5 cursor-pointer shrink-0"
-        >
-          <RefreshCcw size={14} className={loading ? "animate-spin text-[#009966]" : ""} />
-          <span>Refresh Data</span>
-        </button>
       </div>
 
       {/* 4. NOTIFICATION ITEMS LIST */}

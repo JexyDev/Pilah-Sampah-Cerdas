@@ -77,13 +77,11 @@ const DownloadPage: React.FC = () => {
     totalPoin: 6987,
   });
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdatedTime, setLastUpdatedTime] = useState<string>("");
 
   // Fetch real-time release info & landing stats from Backend API
   const fetchRealTimeData = async () => {
     try {
-      setIsRefreshing(true);
       const [relRes, statsRes] = await Promise.all([
         api.get("/system/latest-release").catch(() => null),
         api.get("/system/landing-stats").catch(() => null),
@@ -100,8 +98,6 @@ const DownloadPage: React.FC = () => {
       setLastUpdatedTime(new Date().toLocaleTimeString("id-ID"));
     } catch (err) {
       console.error("Gagal mengambil data rilis real-time:", err);
-    } finally {
-      setIsRefreshing(false);
     }
   };
 
@@ -213,16 +209,6 @@ const DownloadPage: React.FC = () => {
                   >
                     <Download size={22} className="group-hover:translate-y-0.5 transition-transform" />
                     <span>Unduh Berkas APK (v{release.version})</span>
-                  </button>
-
-                  <button
-                    onClick={fetchRealTimeData}
-                    disabled={isRefreshing}
-                    className="px-4 h-14 bg-white border border-slate-200/90 hover:border-slate-300 text-slate-700 hover:bg-slate-50 font-bold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-xs transition shrink-0 cursor-pointer"
-                    title="Perbarui Data Rilis Real-Time"
-                  >
-                    <RefreshCcw size={16} className={isRefreshing ? "animate-spin text-emerald-600" : "text-slate-500"} />
-                    <span className="hidden sm:inline">Sinkronisasi</span>
                   </button>
                 </div>
 

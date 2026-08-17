@@ -349,7 +349,6 @@ const MonitoringAbsen: React.FC = () => {
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [studentLocations, setStudentLocations] = useState<StudentLoc[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [refreshing, setRefreshing] = useState<boolean>(false);
 
   // Filter & Search States
   const [attendanceFilterTab, setAttendanceFilterTab] = useState<
@@ -567,7 +566,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   };
 
   const fetchAttendanceAndLocations = async (scheduleId?: string) => {
-    setRefreshing(true);
     try {
       if (scheduleId) {
         const attRes = await api.get(`/kegiatan/${scheduleId}/absen`);
@@ -577,8 +575,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       setStudentLocations(locRes.data.data || []);
     } catch (err: any) {
       console.error(err);
-    } finally {
-      setRefreshing(false);
     }
   };
 

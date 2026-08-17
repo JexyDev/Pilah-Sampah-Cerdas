@@ -24,7 +24,6 @@ import {
 } from "recharts";
 import {
   Receipt,
-  RefreshCw,
   Search,
   CheckCircle2,
   Leaf,
@@ -62,7 +61,6 @@ export const AktivitasMonitoring: React.FC = () => {
   const isLurah = role === "LURAH";
 
   const [loading, setLoading] = useState<boolean>(true);
-  const [refreshing, setRefreshing] = useState<boolean>(false);
   const [period, setPeriod] = useState<string>("bulanan");
   const [selectedKelurahan, setSelectedKelurahan] = useState<string>("ALL");
   const [dplKelurahans, setDplKelurahans] = useState<string[]>([]);
@@ -115,7 +113,6 @@ export const AktivitasMonitoring: React.FC = () => {
   const fetchMonitoringData = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
-      setRefreshing(true);
 
       const [kpiRes, transRes] = await Promise.all([
         api.get(`/dashboard/kpi?period=${period}&wilayah=${selectedKelurahan}`),
@@ -140,7 +137,6 @@ export const AktivitasMonitoring: React.FC = () => {
       showToast.error("Gagal memuat data monitoring pemilahan");
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
@@ -269,15 +265,6 @@ export const AktivitasMonitoring: React.FC = () => {
                 </>
               )}
             </select>
-
-            {/* Refresh Button */}
-            <button
-              onClick={() => fetchMonitoringData(false)}
-              title="Refresh Data Audit"
-              className="p-2 bg-white hover:bg-slate-50 text-slate-700 rounded-xl border border-slate-200 transition cursor-pointer shadow-xs"
-            >
-              <RefreshCw size={14} className={refreshing ? "animate-spin text-emerald-600" : "text-slate-500"} />
-            </button>
           </div>
         }
       />

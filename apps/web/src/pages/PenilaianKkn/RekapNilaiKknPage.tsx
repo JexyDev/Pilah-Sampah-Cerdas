@@ -122,7 +122,7 @@ export const RekapNilaiKknPage: React.FC = () => {
       {/* Clean Flat Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Rekapitulasi & Lembar Nilai Akhir KKN</h1>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Rekap & Nilai Akhir KKN</h1>
           <p className="text-slate-500 text-sm mt-1">
             Kompilasi perhitungan nilai akhir kumulatif (40% Individu, 30% Output Proker, 30% Presensi) siap diekspor resmi.
           </p>

@@ -16,7 +16,6 @@ import {
   Save,
   Server,
   Database,
-  RefreshCw,
   Brush,
   ShieldCheck,
   Phone,
@@ -85,7 +84,6 @@ const Pengaturan: React.FC = () => {
 
   // State Telemetri
   const [vpsHealth, setVpsHealth] = useState<VpsHealthData | null>(null);
-  const [loadingVps, setLoadingVps] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isClearingCache, setIsClearingCache] = useState(false);
 
@@ -145,13 +143,10 @@ const Pengaturan: React.FC = () => {
 
   const fetchVpsHealth = async () => {
     try {
-      setLoadingVps(true);
       const res = await api.get("/system/vps-health");
       if (res.data?.success) setVpsHealth(res.data.data);
     } catch {
       // ignore
-    } finally {
-      setLoadingVps(false);
     }
   };
 
@@ -508,9 +503,6 @@ const Pengaturan: React.FC = () => {
                   <h2 className="text-xl font-black text-slate-900 tracking-tight">Telemetri & Basis Data</h2>
                   <p className="text-xs text-slate-500 font-medium mt-1">Metrik real-time CPU, RAM, PostgreSQL, dan Redis.</p>
                 </div>
-                <button onClick={fetchVpsHealth} disabled={loadingVps} className="px-4 py-2 rounded-xl border border-emerald-200 bg-emerald-50/60 hover:bg-emerald-100/80 text-xs font-black text-[#009966] flex items-center gap-2 disabled:opacity-50 transition-all">
-                  <RefreshCw size={14} className={loadingVps ? "animate-spin" : ""} /> Segarkan
-                </button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">

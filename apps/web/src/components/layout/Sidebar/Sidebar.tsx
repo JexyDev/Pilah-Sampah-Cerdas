@@ -466,7 +466,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             { to: "/manajemen-ekosistem-kkn", label: "Kelompok", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
             { to: "/program-kerja-kkn", label: "Program Kerja", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "MAHASISWA_KKN"] as UserRole[] },
             { to: "/monitoring-absen", label: "Presensi", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
-            { to: "/dasbor?tab=APPROVAL", label: "Validasi Ketidakhadiran", allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING"] as UserRole[] },
           ],
         },
         {
@@ -477,7 +476,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             { to: "/penilaian-kkn/mahasiswa", label: "Penilaian Mahasiswa", allowed: ["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "ADMIN_DLH", "LURAH", "CAMAT", "RW", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
             { to: "/penilaian-kkn/program-kerja", label: "Penilaian Program Kerja", allowed: ["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "PANITIA_TASKFORCE"] as UserRole[] },
-            { to: "/penilaian-kkn/rekap", label: "Rekap & Lembar Nilai", allowed: ["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "ADMIN_DLH", "LURAH", "CAMAT", "RW", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
+            { to: "/penilaian-kkn/rekap", label: "Rekap & Nilai Akhir", allowed: ["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "ADMIN_DLH", "LURAH", "CAMAT", "RW", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
           ],
         },
         {

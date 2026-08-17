@@ -17,9 +17,8 @@ import {
   Award,
   Search,
   Calendar,
-  Compass,
   PhoneCall,
-  RefreshCw,
+  Loader2,
   X,
   ChevronLeft,
   ChevronRight,
@@ -322,7 +321,7 @@ const KknDashboard: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] gap-4">
-        <RefreshCw className="animate-spin text-emerald-600 w-12 h-12" />
+        <Loader2 className="animate-spin text-emerald-600 w-12 h-12" />
         <p className="text-slate-600 font-bold text-sm">Memuat Portal & Dashboard KKN...</p>
       </div>
     );
@@ -379,25 +378,14 @@ const KknDashboard: React.FC = () => {
               Kecamatan Coblong
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 flex items-center gap-2.5 tracking-tight">
-            <Compass className="text-emerald-600 w-8 h-8 shrink-0" />
-            Dashboard &amp; Monitoring Pendampingan KKN
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+            {isSuperOrAdmin ? "Monitoring Aktivitas Mahasiswa KKN" : `Portal KKN: ${studentKkn?.nama || "Mahasiswa"}`}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
             {isSuperOrAdmin
               ? `Akses ${user?.peran || "SUPER_USER"} • Memantau seluruh progres aktivasi tempat sampah dan kepatuhan 6 kelurahan di Kecamatan Coblong.`
               : `NIM: ${studentKkn?.nim || "-"} • Jurusan: ${studentKkn?.jurusan || "-"} • Wilayah: ${studentKkn?.assignedArea || "Coblong"}`}
           </p>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={fetchInitialData}
-            className="px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-2xl text-xs font-bold transition flex items-center gap-2 shadow-2xs cursor-pointer"
-          >
-            <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
-            Refresh Data
-          </button>
         </div>
       </div>
 

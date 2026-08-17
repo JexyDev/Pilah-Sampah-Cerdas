@@ -17,7 +17,7 @@ import {
   AlertCircle,
   MapPin,
   CheckCircle2,
-  RefreshCw,
+  Loader2,
   ArrowRight,
   ShieldCheck,
   ChevronRight,
@@ -184,14 +184,6 @@ export const TaskforceDashboardPage: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={loadData}
-              disabled={loading}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-2xl font-bold text-xs border border-white/20 transition cursor-pointer active:scale-95"
-            >
-              <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
-              <span>Refresh Data</span>
-            </button>
             <Link
               to="/manajemen-ekosistem-kkn"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-2xl font-extrabold text-xs shadow-md transition transform hover:-translate-y-0.5 cursor-pointer"
@@ -458,7 +450,7 @@ export const TaskforceDashboardPage: React.FC = () => {
               {loading ? (
                 <tr>
                   <td colSpan={5} className="text-center py-16 text-slate-400 font-semibold">
-                    <RefreshCw className="animate-spin text-teal-600 mx-auto mb-2" size={24} />
+                    <Loader2 className="animate-spin text-teal-600 mx-auto mb-2" size={24} />
                     <span>Memuat daftar kelompok KKN...</span>
                   </td>
                 </tr>

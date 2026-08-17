@@ -9,7 +9,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   BrainCircuit,
   Server,
-  RefreshCw,
+  Loader2,
   Search,
   Download,
   Star,
@@ -113,7 +113,6 @@ const MasterDatasetKlasifikasi: React.FC = () => {
   const [summary, setSummary] = useState<any>(null);
   const [modelInfo, setModelInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [refreshingVps, setRefreshingVps] = useState(false);
 
   // Filters State
   const [searchTerm, setSearchTerm] = useState("");
@@ -151,21 +150,6 @@ const MasterDatasetKlasifikasi: React.FC = () => {
       showToast.error("Gagal terhubung ke stream dataset VPS server.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const refreshVpsMetrics = async () => {
-    try {
-      setRefreshingVps(true);
-      const vpsRes = await api.get("/system/vps-health");
-      if (vpsRes?.data?.data) {
-        setVpsData(vpsRes.data.data);
-        showToast.success("Metrik VPS real-time berhasil diperbarui");
-      }
-    } catch {
-      showToast.error("Gagal memperbarui metrik VPS server");
-    } finally {
-      setRefreshingVps(false);
     }
   };
 
@@ -293,14 +277,6 @@ const MasterDatasetKlasifikasi: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <button
-              onClick={refreshVpsMetrics}
-              disabled={refreshingVps}
-              className="px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-extrabold text-xs flex items-center gap-2 backdrop-blur-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
-            >
-              <RefreshCw size={15} className={refreshingVps ? "animate-spin" : ""} />
-              {refreshingVps ? "Memperbarui..." : "Refresh Data Stream"}
-            </button>
             <button
               onClick={handleExportJSON}
               className="px-4 py-2.5 rounded-2xl bg-white/20 hover:bg-white/30 border border-white/30 text-white font-extrabold text-xs flex items-center gap-2 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
@@ -538,7 +514,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
               {loading ? (
                 <tr>
                   <td colSpan={10} className="py-12 text-center text-slate-400 font-bold">
-                    <RefreshCw className="animate-spin inline-block mr-2" size={18} />
+                    <Loader2 className="animate-spin inline-block mr-2" size={18} />
                     Memuat stream data dataset dari VPS server...
                   </td>
                 </tr>

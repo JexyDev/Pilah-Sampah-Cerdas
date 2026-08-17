@@ -13,7 +13,7 @@ import {
   Monitor,
   Smartphone,
   Search,
-  RefreshCw,
+  Loader2,
   AlertTriangle,
   ShieldAlert,
   X,
@@ -315,20 +315,6 @@ export const PenggunaOnline: React.FC = () => {
               {soundEnabled ? "Audio Siren ON" : "Muted"}
             </span>
           </button>
-
-          <button
-            onClick={() => {
-              setLoading(true);
-              fetchOnlineUsers();
-            }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#009966] hover:bg-[#008055] text-white font-extrabold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
-          >
-            <RefreshCw
-              size={15}
-              className={`shrink-0 ${loading ? "animate-spin" : ""}`}
-            />
-            <span>Refresh Data</span>
-          </button>
         </div>
       </div>
 
@@ -533,7 +519,7 @@ export const PenggunaOnline: React.FC = () => {
                     colSpan={isPrivilegedUser ? 8 : 7}
                     className="py-14 text-center text-slate-400 font-medium"
                   >
-                    <RefreshCw
+                    <Loader2
                       size={26}
                       className="mx-auto mb-2 animate-spin text-[#009966]"
                     />
@@ -846,7 +832,7 @@ export const PenggunaOnline: React.FC = () => {
               >
                 {isTerminating ? (
                   <>
-                    <RefreshCw size={15} className="animate-spin" />
+                    <Loader2 size={15} className="animate-spin" />
                     <span>MENGHAPUS SESI...</span>
                   </>
                 ) : (

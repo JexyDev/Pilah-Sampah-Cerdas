@@ -9,7 +9,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import * as XLSX from "xlsx";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
-import { FileSpreadsheet, Upload, Download, CheckCircle2, XCircle, AlertTriangle, ChevronDown, ChevronUp, X, Clock, Loader2, Eye, RefreshCw } from "lucide-react";
+import { FileSpreadsheet, Upload, Download, CheckCircle2, XCircle, AlertTriangle, ChevronDown, ChevronUp, X, Clock, Loader2, Eye } from "lucide-react";
 
 // ────────────────────────────────────────────────
 // Types
@@ -747,14 +747,6 @@ const ImportSurveiKkn: React.FC = () => {
             <Clock size={18} className="text-primary" />
             Riwayat Impor
           </h2>
-          <button
-            onClick={fetchHistory}
-            disabled={loadingHistory}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-40"
-            title="Muat ulang"
-          >
-            <RefreshCw size={16} className={loadingHistory ? "animate-spin" : ""} />
-          </button>
         </div>
 
         <div className="p-6">

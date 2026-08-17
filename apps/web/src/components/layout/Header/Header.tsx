@@ -52,7 +52,6 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
 
     if (pathname === "/manajemen-ekosistem-kkn") {
       if (search.includes("tab=MAHASISWA")) return ["Ekosistem KKN", "Portofolio Mahasiswa"];
-      if (search.includes("tab=APPROVAL")) return ["Ekosistem KKN", "Presensi & Validasi Ketidakhadiran"];
       return ["Ekosistem KKN", "Kelompok KKN"];
     }
 
@@ -64,7 +63,6 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/dasbor":
       case "/dashboard":
       case "/":
-        if (search.includes("tab=APPROVAL")) return ["Dasbor Utama", "Presensi & Validasi Ketidakhadiran"];
         return ["Dasbor Utama"];
       case "/monitoring-wilayah":
       case "/monitoring":
@@ -89,6 +87,12 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/evaluasi-dampak-kkn":
       case "/evaluasi-dampak":
         return ["Program KKN", "Evaluasi Dampak KKN"];
+      case "/penilaian-kkn/mahasiswa":
+        return ["Penilaian KKN", "Penilaian Mahasiswa"];
+      case "/penilaian-kkn/program-kerja":
+        return ["Penilaian KKN", "Penilaian Program Kerja"];
+      case "/penilaian-kkn/rekap":
+        return ["Penilaian KKN", "Rekap & Nilai Akhir"];
       case "/pengangkutan-residu":
       case "/manajemen-pengangkutan":
         return ["Tata Kelola Sampah", "Pengumpulan & Pengangkutan"];

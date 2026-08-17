@@ -13,7 +13,6 @@ import { EmptyTableState } from "../../components/common/EmptyTableState";
 import {
   FileText,
   Search,
-  RefreshCcw,
   Download,
   Shield,
   Trash2,
@@ -28,6 +27,7 @@ import {
   UserCheck,
   Layers,
   Sparkles,
+  Loader2,
 } from "lucide-react";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
 
@@ -297,15 +297,6 @@ export const AuditTrailList: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={fetchLogs}
-            disabled={loading}
-            className="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all cursor-pointer font-bold text-xs flex items-center gap-1.5 shadow-2xs"
-            title="Muat Ulang Data"
-          >
-            <RefreshCcw size={15} className={loading ? "animate-spin text-[#009966]" : ""} />
-            <span className="hidden sm:inline">Muat Ulang</span>
-          </button>
-          <button
             onClick={handleExportCSV}
             disabled={isExporting || logs.length === 0}
             className="px-4 py-2.5 rounded-xl bg-[#009966] hover:bg-[#008855] text-white transition-all cursor-pointer font-extrabold text-xs flex items-center gap-2 shadow-2xs"
@@ -504,7 +495,7 @@ export const AuditTrailList: React.FC = () => {
         <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col justify-between">
           {loading ? (
             <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3 font-bold text-xs">
-              <RefreshCcw className="animate-spin text-[#009966]" size={32} />
+              <Loader2 className="animate-spin text-[#009966]" size={32} />
               <p>Memuat riwayat log aktivitas...</p>
             </div>
           ) : (

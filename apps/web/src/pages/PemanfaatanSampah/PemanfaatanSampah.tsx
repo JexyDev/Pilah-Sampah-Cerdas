@@ -25,7 +25,6 @@ import {
   Sprout,
   ArrowRightLeft,
   MapPin,
-  RefreshCw,
   Bug,
   FlaskConical,
 } from "lucide-react";
@@ -519,14 +518,6 @@ export const PemanfaatanSampah: React.FC = () => {
               </option>
             ))}
           </select>
-
-          <button
-            onClick={fetchItems}
-            title="Refresh Data"
-            className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl transition-all cursor-pointer shrink-0"
-          >
-            <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
-          </button>
 
           {/* Reset Filters */}
           {(searchQuery || selectedProgramFilter !== "ALL" || selectedBahanFilter !== "ALL" || selectedRwFilter !== "ALL") && (

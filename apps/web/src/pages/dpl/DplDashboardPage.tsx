@@ -15,7 +15,7 @@ import {
   Eye,
   Sparkles,
   ChevronRight,
-  RefreshCw,
+  Loader2,
   Users,
   Download,
   GraduationCap,
@@ -561,6 +561,60 @@ export const DplDashboardPage: React.FC = () => {
 
   const totalApprovalPages = Math.max(1, Math.ceil(filteredApprovalHistory.length / ITEMS_PER_PAGE));
 
+  // Dynamic Kelurahan & RW calculation from DPL groups
+  const dplKelurahanList = useMemo(() => {
+    const set = new Set<string>();
+    groups.forEach((g) => {
+      if (g.kelurahan && g.kelurahan.trim() !== "") {
+        set.add(g.kelurahan.trim());
+      }
+    });
+    return Array.from(set);
+  }, [groups]);
+
+  const dplRwList = useMemo(() => {
+    const set = new Set<string>();
+    groups.forEach((g) => {
+      if (!g.cakupanRw) return;
+      if (Array.isArray(g.cakupanRw)) {
+        g.cakupanRw.forEach((rw) => {
+          const cleaned = String(rw).trim().replace(/^RW\s*/i, "");
+          if (cleaned) {
+            set.add(/^\d+$/.test(cleaned) ? cleaned.padStart(2, "0") : cleaned);
+          }
+        });
+      } else if (typeof g.cakupanRw === "string") {
+        g.cakupanRw.split(/[,&/]/).forEach((part) => {
+          const cleaned = part.trim().replace(/^RW\s*/i, "");
+          if (cleaned) {
+            set.add(/^\d+$/.test(cleaned) ? cleaned.padStart(2, "0") : cleaned);
+          }
+        });
+      } else if (typeof g.cakupanRw === "number") {
+        set.add(String(g.cakupanRw).padStart(2, "0"));
+      }
+    });
+    return Array.from(set).sort((a, b) => {
+      const numA = parseInt(a, 10);
+      const numB = parseInt(b, 10);
+      if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+      return a.localeCompare(b);
+    });
+  }, [groups]);
+
+  const kelurahanBadgeLabel = useMemo(() => {
+    if (dplKelurahanList.length === 0) return "Tingkat 2: Kelurahan Binaan";
+    if (dplKelurahanList.length === 1) return `Tingkat 2: Kel. ${dplKelurahanList[0]}`;
+    if (dplKelurahanList.length <= 2) return `Tingkat 2: Kel. ${dplKelurahanList.join(", ")}`;
+    return `Tingkat 2: ${dplKelurahanList.length} Kelurahan (${dplKelurahanList.slice(0, 2).map((k) => `Kel. ${k}`).join(", ")}...)`;
+  }, [dplKelurahanList]);
+
+  const rwBadgeLabel = useMemo(() => {
+    if (dplRwList.length === 0) return "Tingkat 3: RW Binaan";
+    if (dplRwList.length <= 4) return `Tingkat 3: RW ${dplRwList.join(", ")}`;
+    return `Tingkat 3: ${dplRwList.length} RW (${dplRwList.slice(0, 3).map((r) => `RW ${r}`).join(", ")}...)`;
+  }, [dplRwList]);
+
   const totalAllStudents = Math.max(students.length, groups.reduce((acc, g) => acc + (g.studentCount || 0), 0));
   const avgOverallAttendance =
     groups.length > 0
@@ -598,63 +652,52 @@ export const DplDashboardPage: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2">
           {alerts && alerts.pendingApprovalsCount > 0 && (
-            <button
-              onClick={() => setActiveTab("APPROVAL")}
+            <Link
+              to="/monitoring-absen"
               className="bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-amber-100 transition cursor-pointer shadow-xs animate-pulse"
             >
               <AlertTriangle size={14} className="text-amber-600 shrink-0" />
-              <span>{alerts.pendingApprovalsCount} Presensi & Validasi Ketidakhadiran</span>
-            </button>
+              <span>{alerts.pendingApprovalsCount} Pengajuan Izin / Sakit</span>
+            </Link>
           )}
-          <button
-            onClick={loadDashboardData}
-            className="p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl border border-slate-200 transition cursor-pointer flex items-center gap-1.5 text-xs font-bold"
-            title="Muat Ulang Data"
-          >
-            <RefreshCw size={14} />
-            <span>Muat Ulang</span>
-          </button>
         </div>
       </div>
 
-      {/* Modern Segmented Navigation Tabs */}
-      <div className="bg-slate-100/90 p-1.5 rounded-xl border border-slate-200/80 flex items-center gap-1 overflow-x-auto scrollbar-none">
-        {(
-          [
-            { key: "OVERVIEW" as TabType, label: "Ringkasan Eksekutif", icon: LayoutDashboard },
-            { key: "APPROVAL" as TabType, label: "Presensi & Validasi Ketidakhadiran", icon: FileCheck, badge: alerts?.pendingApprovalsCount },
-            ...(isDeveloper
-              ? [
-                  { key: "KELOMPOK" as TabType, label: "Kelompok (Dev)", icon: Users },
-                  { key: "MAHASISWA" as TabType, label: "Mahasiswa & Nilai (Dev)", icon: GraduationCap },
-                  { key: "MAP" as TabType, label: "Peta Wilayah (Dev)", icon: MapPin },
-                ]
-              : []),
-          ] as { key: TabType; label: string; icon: any; badge?: number }[]
-        ).map((t) => {
-          const Icon = t.icon;
-          const isActive = activeTab === t.key;
-          return (
-            <button
-              key={t.key}
-              onClick={() => setActiveTab(t.key)}
-              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer whitespace-nowrap ${
-                isActive
-                  ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
-              }`}
-            >
-              <Icon size={14} className={isActive ? "text-emerald-600" : "text-slate-400"} />
-              <span>{t.label}</span>
-              {t.badge && t.badge > 0 ? (
-                <span className="bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
-                  {t.badge}
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
+      {/* Modern Segmented Navigation Tabs (Hanya untuk Developer) */}
+      {isDeveloper && (
+        <div className="bg-slate-100/90 p-1.5 rounded-xl border border-slate-200/80 flex items-center gap-1 overflow-x-auto scrollbar-none">
+          {(
+            [
+              { key: "OVERVIEW" as TabType, label: "Ringkasan Eksekutif", icon: LayoutDashboard },
+              { key: "KELOMPOK" as TabType, label: "Kelompok (Dev)", icon: Users },
+              { key: "MAHASISWA" as TabType, label: "Mahasiswa & Nilai (Dev)", icon: GraduationCap },
+              { key: "MAP" as TabType, label: "Peta Wilayah (Dev)", icon: MapPin },
+            ] as { key: TabType; label: string; icon: any; badge?: number }[]
+          ).map((t) => {
+            const Icon = t.icon;
+            const isActive = activeTab === t.key;
+            return (
+              <button
+                key={t.key}
+                onClick={() => setActiveTab(t.key)}
+                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+                  isActive
+                    ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                }`}
+              >
+                <Icon size={14} className={isActive ? "text-emerald-600" : "text-slate-400"} />
+                <span>{t.label}</span>
+                {t.badge && t.badge > 0 ? (
+                  <span className="bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
+                    {t.badge}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* VIEW 1: OVERVIEW */}
       {activeTab === "OVERVIEW" && (
@@ -681,11 +724,17 @@ export const DplDashboardPage: React.FC = () => {
                   <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
                   Tingkat 1: Kecamatan Coblong
                 </span>
-                <span className="px-3 py-1 bg-blue-50 text-blue-800 border border-blue-200 rounded-lg font-extrabold">
-                  Tingkat 2: 6 Kelurahan
+                <span
+                  title={dplKelurahanList.length > 0 ? dplKelurahanList.map((k) => `Kelurahan ${k}`).join(", ") : undefined}
+                  className="px-3 py-1 bg-blue-50 text-blue-800 border border-blue-200 rounded-lg font-extrabold"
+                >
+                  {kelurahanBadgeLabel}
                 </span>
-                <span className="px-3 py-1 bg-indigo-50 text-indigo-800 border border-indigo-200 rounded-lg font-extrabold">
-                  Tingkat 3: RW Binaan
+                <span
+                  title={dplRwList.length > 0 ? dplRwList.map((r) => `RW ${r}`).join(", ") : undefined}
+                  className="px-3 py-1 bg-indigo-50 text-indigo-800 border border-indigo-200 rounded-lg font-extrabold"
+                >
+                  {rwBadgeLabel}
                 </span>
               </div>
             </div>
@@ -861,8 +910,8 @@ export const DplDashboardPage: React.FC = () => {
               <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
             </Link>
 
-            <button
-              onClick={() => setActiveTab("APPROVAL")}
+            <Link
+              to="/monitoring-absen"
               className="bg-white border border-slate-200/80 p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer text-left w-full"
             >
               <div className="flex items-center gap-3">
@@ -875,12 +924,12 @@ export const DplDashboardPage: React.FC = () => {
                   )}
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-xs text-slate-900">Presensi & Validasi Ketidakhadiran</h4>
+                  <h4 className="font-extrabold text-xs text-slate-900">Presensi Mahasiswa</h4>
                   <p className="text-[10.5px] text-slate-500">Validasi surat izin/sakit & log hadir</p>
                 </div>
               </div>
               <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
-            </button>
+            </Link>
 
             <Link
               to="/program-kerja-kkn"
@@ -907,7 +956,7 @@ export const DplDashboardPage: React.FC = () => {
                   <Calendar size={20} />
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-xs text-slate-900">Time Line Resmi KKN</h4>
+                  <h4 className="font-extrabold text-xs text-slate-900">Time Line KKN</h4>
                   <p className="text-[10.5px] text-slate-500">18 tahapan timeline & kalender</p>
                 </div>
               </div>
@@ -931,12 +980,12 @@ export const DplDashboardPage: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setActiveTab("APPROVAL")}
+              <Link
+                to="/monitoring-absen"
                 className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition shadow-xs whitespace-nowrap cursor-pointer"
               >
                 Validasi Sekarang
-              </button>
+              </Link>
             </div>
           )}
 
@@ -1939,24 +1988,16 @@ export const DplDashboardPage: React.FC = () => {
                   Rekapitulasi seluruh usulan daur ulang, fasilitas pengolahan, dan karya inovasi mahasiswa bimbingan.
                 </p>
               </div>
-              <button
-                onClick={fetchIdeKreatif}
-                className="px-3 py-1.5 text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-100 transition flex items-center gap-1.5 cursor-pointer shrink-0"
-              >
-                <RefreshCw size={13} className={ideLoading ? "animate-spin" : ""} />
-                Muat Ulang
-              </button>
             </div>
 
             {ideLoading ? (
               <div className="text-center py-12 text-slate-400 text-xs font-semibold">
-                <RefreshCw className="animate-spin mx-auto mb-2 text-amber-500" size={22} />
+                <Loader2 className="animate-spin mx-auto mb-2 text-amber-500" size={22} />
                 Memuat ide kreatif mahasiswa...
               </div>
             ) : ideList.length === 0 ? (
               <div className="text-center py-12 text-slate-400 text-xs font-semibold p-6 bg-slate-50">
                 Belum ada ide kreatif dari kelompok mahasiswa bimbingan Anda.
-                <p className="mt-1 text-[11px] text-slate-400">Klik &quot;Muat Ulang&quot; untuk mengambil data terbaru dari database.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">

@@ -1,4 +1,4 @@
-import { X, Star, Banknote, Recycle, AlertCircle, Eye, LineChart, BarChart, Leaf, TrendingUp, TrendingDown, Wallet, Zap, MapPin, AlertTriangle, Truck, Pencil, Trash2, Calendar, ChevronRight, GraduationCap, Search, CheckCircle2, Sparkles, RotateCcw, UserCheck, Code2, ShieldCheck, Award, BookOpen, RefreshCcw, Settings, Save, Loader2, Building2, History, Home, Bell, RefreshCw, Megaphone, Archive, Send, Users, ShoppingBag } from "lucide-react";
+import { X, Star, Banknote, Recycle, AlertCircle, Eye, LineChart, BarChart, Leaf, TrendingUp, TrendingDown, Wallet, Zap, MapPin, AlertTriangle, Truck, Pencil, Trash2, Calendar, ChevronRight, GraduationCap, Search, CheckCircle2, Sparkles, RotateCcw, UserCheck, Code2, ShieldCheck, Award, BookOpen, RefreshCcw, Settings, Save, Loader2, Building2, History, Home, Bell, Megaphone, Archive, Send, Users, ShoppingBag } from "lucide-react";
 
 /**
  * Project: TrashCare
@@ -766,13 +766,6 @@ const WargaDashboard: React.FC = () => {
                 <Bell className="text-emerald-600" size={18} />
                 Notifikasi Terbaru
               </h5>
-              <button
-                onClick={fetchNotifications}
-                className="text-emerald-600 hover:text-emerald-300 text-[11px] font-bold uppercase tracking-wider flex items-center gap-0.5 cursor-pointer"
-              >
-                <RefreshCw size={14} />
-                Refresh
-              </button>
             </div>
 
             {isLoadingNotifications ? (

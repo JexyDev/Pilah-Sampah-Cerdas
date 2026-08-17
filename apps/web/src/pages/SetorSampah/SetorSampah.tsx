@@ -14,7 +14,6 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   Search,
-  RefreshCw,
   CheckCircle,
   Scale,
   Sparkles,
@@ -62,7 +61,6 @@ export default function SetorSampah() {
 
   const [logs, setLogs] = useState<DepositLog[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [refreshing, setRefreshing] = useState<boolean>(false);
 
   // Detail Modal & Image Lightbox State
   const [selectedLogForDetail, setSelectedLogForDetail] = useState<DepositLog | null>(null);
@@ -87,7 +85,6 @@ export default function SetorSampah() {
 
   const fetchLogs = async (silent = false) => {
     if (!silent) setIsLoading(true);
-    setRefreshing(true);
     try {
       const res = await api.get("/transactions/deposits");
       if (res.data?.success && Array.isArray(res.data.data)) {
@@ -101,7 +98,6 @@ export default function SetorSampah() {
       setLogs([]);
     } finally {
       setIsLoading(false);
-      setRefreshing(false);
     }
   };
 
@@ -298,17 +294,6 @@ export default function SetorSampah() {
         scope={isLurah ? `Kelurahan ${userKelurahan || "Cipaganti"}` : "Kecamatan Coblong"}
         title="Pemilahan Sampah"
         description="Pemantauan real-time transaksi penyetoran sampah terpilah warga, inferensi model AI, dan bukti telemetri foto lapangan secara terpadu."
-        actions={
-          <button
-            onClick={() => fetchLogs(false)}
-            disabled={isLoading}
-            title="Sinkronkan Data Penyetoran"
-            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-xs"
-          >
-            <RefreshCw size={14} className={refreshing ? "animate-spin text-[#009966]" : "text-slate-500"} />
-            <span>Sinkronkan Data</span>
-          </button>
-        }
       />
 
       {/* KPI Stats Grid */}

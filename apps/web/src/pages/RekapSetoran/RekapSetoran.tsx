@@ -13,7 +13,6 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   Search,
-  RefreshCw,
   Scale,
   Sparkles,
   Loader2,
@@ -39,7 +38,6 @@ import PageHeader from "../../components/common/PageHeader";
 export default function RekapSetoran() {
   const [deposits, setDeposits] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [refreshing, setRefreshing] = useState<boolean>(false);
 
   // Detail Modal & Image Lightbox State
   const [selectedDeposit, setSelectedDeposit] = useState<any | null>(null);
@@ -56,7 +54,6 @@ export default function RekapSetoran() {
 
   const fetchDeposits = async (silent = false) => {
     if (!silent) setLoading(true);
-    setRefreshing(true);
     try {
       const response = await api.get("/transactions/deposits");
       if (response.data?.success && Array.isArray(response.data.data)) {
@@ -70,7 +67,6 @@ export default function RekapSetoran() {
       setDeposits([]);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
@@ -232,23 +228,12 @@ export default function RekapSetoran() {
         title="Pemantauan & Rekapitulasi"
         description="Laporan pemantauan dan rekapitulasi transaksi penyetoran sampah terpilah warga di tingkat Rukun Warga secara terpadu dan akuntabel."
         actions={
-          <>
-            <button
-              onClick={() => fetchDeposits(false)}
-              disabled={loading}
-              title="Sinkronkan Data Setoran"
-              className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-xs"
-            >
-              <RefreshCw size={14} className={refreshing ? "animate-spin text-[#009966]" : "text-slate-500"} />
-              <span>Sinkronkan Data</span>
-            </button>
-            <button
-              onClick={handleExportCSV}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-            >
-              <FileSpreadsheet size={15} /> <span>Ekspor Laporan CSV</span>
-            </button>
-          </>
+          <button
+            onClick={handleExportCSV}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <FileSpreadsheet size={15} /> <span>Ekspor Laporan CSV</span>
+          </button>
         }
       />
 
