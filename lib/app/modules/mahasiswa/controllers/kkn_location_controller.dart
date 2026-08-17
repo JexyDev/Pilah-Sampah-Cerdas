@@ -329,8 +329,31 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           final t = int.tryParse(timeStr);
           if (t != null && t > 10) { // e.g. "60", "120"
             duration = t;
-          } else if (timeStr.contains('-')) { // e.g. "08:00 - 10:00"
-            duration = 120; // fallback default for range
+          } else if (timeStr.contains('-')) { // e.g. "12:40 - 14:00 WIB"
+            try {
+              final parts = timeStr.split('-');
+              final startStr = parts[0].replaceAll(RegExp(r'[^0-9:]'), '').trim();
+              final endStr = parts[1].replaceAll(RegExp(r'[^0-9:]'), '').trim();
+              
+              if (startStr.contains(':') && endStr.contains(':')) {
+                final now = DateTime.now();
+                final startParts = startStr.split(':');
+                final endParts = endStr.split(':');
+                
+                final startTime = DateTime(now.year, now.month, now.day, int.parse(startParts[0]), int.parse(startParts[1]));
+                final endTime = DateTime(now.year, now.month, now.day, int.parse(endParts[0]), int.parse(endParts[1]));
+                
+                duration = endTime.difference(startTime).inMinutes;
+                if (duration <= 0) duration = 120;
+                
+                mergedData['startTime'] = startTime.toIso8601String();
+                mergedData['endTime'] = endTime.toIso8601String();
+              } else {
+                duration = 120;
+              }
+            } catch (_) {
+              duration = 120;
+            }
           }
         }
       }
@@ -544,7 +567,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
     double targetLat = 0.0;
     double targetLng = 0.0;
-    double radius = 50.0; // Default radius strictly 50m if not provided
+    // FIX #2: Naikkan default radius ke 150m untuk toleransi error GPS HP
+    // di area pemukiman/dalam gedung (akurasi GPS HP biasanya 20–100m)
+    double radius = 150.0;
 
     if (target['latitude'] != null) {
       targetLat = double.tryParse(target['latitude'].toString()) ?? targetLat;
@@ -566,14 +591,55 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       radius = 500.0;
     }
 
-    final distance = Geolocator.distanceBetween(
-      pos.latitude,
-      pos.longitude,
-      targetLat,
-      targetLng,
-    );
+    // FIX #3: Guard null-island — koordinat (0.0, 0.0) berarti Admin belum
+    // mengisi lat/lng kegiatan. Jangan hitung jarak ke Afrika, anggap saja
+    // tidak ada target valid hari ini.
+    if (targetLat == 0.0 && targetLng == 0.0) {
+      state = state.copyWith(
+        error: 'Koordinat lokasi kegiatan belum dikonfigurasi oleh Admin. Hubungi DPL Anda.',
+        isInsideRadius: false,
+        distanceToTarget: 999999.0,
+      );
+      _stopZoneTimer(isExitingZone: _accumulatedSeconds > 0 || _zoneEntryTime != null);
+      return;
+    }
 
-    final bool nowInside = distance <= radius;
+    bool nowInside = false;
+    double distance;
+
+    // POLYGON CHECK: Jika API menyediakan polygon, gunakan Ray Casting algorithm
+    // untuk cek apakah user berada di dalam area polygon tersebut.
+    // Ini lebih akurat dan mengatasi kasus di mana titik pusat (lat/lng) salah input
+    // oleh Admin tapi polygon sudah benar.
+    final polygonRaw = target['polygon'];
+    if (polygonRaw != null && polygonRaw is List && polygonRaw.length >= 3) {
+      try {
+        final polygonPoints = polygonRaw.map((point) {
+          final List pts = point as List;
+          return (lat: (pts[0] as num).toDouble(), lng: (pts[1] as num).toDouble());
+        }).toList();
+
+        nowInside = _isPointInPolygon(
+          lat: pos.latitude,
+          lng: pos.longitude,
+          polygon: polygonPoints,
+        );
+
+        // Hitung jarak ke centroid polygon untuk ditampilkan di UI
+        final centroidLat = polygonPoints.map((p) => p.lat).reduce((a, b) => a + b) / polygonPoints.length;
+        final centroidLng = polygonPoints.map((p) => p.lng).reduce((a, b) => a + b) / polygonPoints.length;
+        distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, centroidLat, centroidLng);
+      } catch (_) {
+        // Fallback ke radius jika parsing polygon gagal
+        distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, targetLat, targetLng);
+        nowInside = distance <= radius;
+      }
+    } else {
+      // RADIUS CHECK: Fallback jika tidak ada polygon
+      distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, targetLat, targetLng);
+      nowInside = distance <= radius;
+    }
+
     state = state.copyWith(
       distanceToTarget: distance,
       isInsideRadius: nowInside,
@@ -584,6 +650,34 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     } else {
       _stopZoneTimer(isExitingZone: _accumulatedSeconds > 0 || _zoneEntryTime != null);
     }
+  }
+
+  /// Ray Casting algorithm untuk Point-in-Polygon check.
+  /// Mengirimkan sebuah sinar horizontal dari titik (lat, lng) ke arah kanan
+  /// dan menghitung berapa kali sinar tersebut memotong tepi polygon.
+  /// Jika ganjil → di dalam; jika genap → di luar.
+  bool _isPointInPolygon({
+    required double lat,
+    required double lng,
+    required List<({double lat, double lng})> polygon,
+  }) {
+    bool inside = false;
+    final int n = polygon.length;
+    int j = n - 1;
+    for (int i = 0; i < n; i++) {
+      final double xi = polygon[i].lat;
+      final double yi = polygon[i].lng;
+      final double xj = polygon[j].lat;
+      final double yj = polygon[j].lng;
+
+      final bool intersect =
+          ((yi > lng) != (yj > lng)) &&
+          (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
+
+      if (intersect) inside = !inside;
+      j = i;
+    }
+    return inside;
   }
 
   /// Trigger manual or auto attendance with full payload

@@ -69,15 +69,29 @@ class LocationService {
       }
 
       Position? pos;
+      // FIX: Timeout diperpanjang ke 15 detik & gunakan medium accuracy
+      // (menggabungkan Cell Tower + Wi-Fi + GPS) untuk cold-start lebih cepat.
+      // Jika masih timeout, coba ulang dengan low accuracy (network-only),
+      // lalu fallback ke last known position.
       try {
         pos = await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
+            accuracy: LocationAccuracy.medium,
             distanceFilter: 0,
           ),
-        ).timeout(const Duration(seconds: 5));
+        ).timeout(const Duration(seconds: 15));
       } catch (_) {
-        pos = await Geolocator.getLastKnownPosition();
+        // Retry dengan akurasi lebih rendah (network-only, lebih cepat)
+        try {
+          pos = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.low,
+              distanceFilter: 0,
+            ),
+          ).timeout(const Duration(seconds: 8));
+        } catch (_) {
+          pos = await Geolocator.getLastKnownPosition();
+        }
       }
       return pos;
     } catch (_) {

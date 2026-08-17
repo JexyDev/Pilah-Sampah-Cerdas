@@ -227,6 +227,8 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
       );
     }
 
+    // Ambil string waktu asli dari data jadwal (misal: "11:00 - 13:00 WIB")
+    final String? timeLabel = state.activeActivity?['time']?.toString();
     Widget content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -338,7 +340,12 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
                 const SizedBox(height: 8),
                 _buildInfoRow('Nama Kegiatan:', state.activeActivity != null ? (state.activeActivity!['namaKegiatan'] ?? '-') : '-'),
                 const SizedBox(height: 8),
-                _buildInfoRow('Waktu Kegiatan:', state.activeActivity != null ? '${state.targetDurationMinutes} Menit' : '-'),
+                // Tampilkan jam kegiatan asli jika tersedia ("11:00 - 13:00 WIB")
+                if (timeLabel != null && timeLabel.isNotEmpty && timeLabel.contains(':')) ...[
+                  _buildInfoRow('Jam Kegiatan:', timeLabel.toUpperCase()),
+                  const SizedBox(height: 8),
+                ],
+                _buildInfoRow('Durasi Kegiatan:', state.activeActivity != null ? '$targetMenit Menit' : '-'),
               ],
             ),
           ),
@@ -509,10 +516,27 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
 
   Widget _buildInfoRow(String label, String value) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+        // Label menggunakan Expanded agar memiliki proporsi lebar tetap (40%)
+        // sehingga tidak akan menabrak value di sebelahnya.
+        Expanded(
+          flex: 4,
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Value menggunakan Expanded (60%) agar rapi membungkus ke baris baru
+        Expanded(
+          flex: 6,
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+          ),
+        ),
       ],
     );
   }
