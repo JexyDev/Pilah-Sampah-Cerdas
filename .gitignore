@@ -56,3 +56,9 @@ yarn-error.log*
 Thumbs.db
 scratch/
 apps/api/scripts/
+android/local.properties
+android/app/
+ios/
+linux/
+macos/
+windows/

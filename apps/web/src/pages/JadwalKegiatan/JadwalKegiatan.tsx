@@ -1,4 +1,26 @@
-import { Loader2, CalendarCheck, CalendarDays, Clock, ChevronLeft, ChevronRight, Plus, MapPin, X, Trash2, Pencil, ChevronDown, ChevronUp, Layers, List } from "lucide-react";
+import {
+  Loader2,
+  CalendarCheck,
+  CalendarDays,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  MapPin,
+  X,
+  Trash2,
+  Pencil,
+  ChevronDown,
+  ChevronUp,
+  Layers,
+  List,
+  Table as TableIcon,
+  Download,
+  Search,
+  CheckCircle2,
+  FileSpreadsheet,
+  Calendar,
+} from "lucide-react";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -6,13 +28,18 @@ import { Loader2, CalendarCheck, CalendarDays, Clock, ChevronLeft, ChevronRight,
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap, Polygon, Polyline, Circle } from "react-leaflet";
 import L from "leaflet";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+import {
+  TIMELINE_KKN_DATA,
+  TIMELINE_KKN_HEADER,
+  type TimelineKknItem,
+} from "../../data/timelineKknData";
 
 // Fix default Leaflet icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -100,6 +127,53 @@ const JadwalKegiatan: React.FC = () => {
   const [error, setError] = useState("");
   const [isGroupedView, setIsGroupedView] = useState(true);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+
+  // Main Tab: Tabel Timeline (Excel View) vs Kalender & Agenda Interaktif
+  const [activeMainTab, setActiveMainTab] = useState<"TABEL_TIMELINE" | "KALENDER_AGENDA">("TABEL_TIMELINE");
+  const [timelineSearch, setTimelineSearch] = useState("");
+  const [selectedFase, setSelectedFase] = useState<string>("ALL");
+  const [timelineList] = useState<TimelineKknItem[]>(TIMELINE_KKN_DATA);
+
+  const filteredTimeline = useMemo(() => {
+    return timelineList.filter((item) => {
+      const q = timelineSearch.toLowerCase();
+      const matchesSearch =
+        item.tahapMinggu.toLowerCase().includes(q) ||
+        item.kegiatanUtama.toLowerCase().includes(q) ||
+        item.outputTarget.toLowerCase().includes(q) ||
+        item.picKeterangan.toLowerCase().includes(q) ||
+        item.fase.toLowerCase().includes(q);
+
+      const matchesFase =
+        selectedFase === "ALL" ||
+        item.fase.toLowerCase().includes(selectedFase.toLowerCase());
+
+      return matchesSearch && matchesFase;
+    });
+  }, [timelineList, timelineSearch, selectedFase]);
+
+  const handleExportTimelineCsv = () => {
+    const headers = ["Tahap / Minggu", "Tanggal", "Fase", "Kegiatan Utama", "Output / Target", "PIC / Keterangan", "Status"];
+    const rows = filteredTimeline.map((item) => [
+      `"${item.tahapMinggu.replace(/"/g, '""')}"`,
+      `"${item.tanggal.replace(/"/g, '""')}"`,
+      `"${item.fase.replace(/"/g, '""')}"`,
+      `"${item.kegiatanUtama.replace(/"/g, '""')}"`,
+      `"${item.outputTarget.replace(/"/g, '""')}"`,
+      `"${item.picKeterangan.replace(/"/g, '""')}"`,
+      `"${item.statusPelaksanaan || "BELUM_DIMULAI"}"`,
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Timeline_KKN_Coblong_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Tabel Timeline KKN berhasil diunduh (CSV)");
+  };
 
   const [geofenceMode, setGeofenceMode] = useState<"CIRCLE" | "POLYGON">("CIRCLE");
   const [manualLat, setManualLat] = useState<string>("");
@@ -372,49 +446,297 @@ const JadwalKegiatan: React.FC = () => {
     });
   };
 
+  const renderFaseBadge = (fase: string) => {
+    if (fase.includes("Pra-Kegiatan")) {
+      return (
+        <span className="px-2.5 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-[10.5px] font-extrabold whitespace-nowrap">
+          Pra-Kegiatan
+        </span>
+      );
+    }
+    if (fase.includes("Fase 1")) {
+      return (
+        <span className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-[10.5px] font-extrabold whitespace-nowrap">
+          Fase 1: Persiapan
+        </span>
+      );
+    }
+    if (fase.includes("Fase 2")) {
+      return (
+        <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-[10.5px] font-extrabold whitespace-nowrap">
+          Fase 2: Pilot
+        </span>
+      );
+    }
+    if (fase.includes("Fase 3")) {
+      return (
+        <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10.5px] font-extrabold whitespace-nowrap">
+          Fase 3: Implementasi
+        </span>
+      );
+    }
+    return (
+      <span className="px-2.5 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-[10.5px] font-extrabold whitespace-nowrap">
+        Fase 4: Evaluasi
+      </span>
+    );
+  };
+
+  const renderStatusBadge = (status?: string) => {
+    if (status === "SELESAI") {
+      return (
+        <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[10.5px] font-extrabold flex items-center gap-1 w-fit">
+          <CheckCircle2 size={12} /> Selesai
+        </span>
+      );
+    }
+    if (status === "SEDANG_BERJALAN") {
+      return (
+        <span className="px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10.5px] font-extrabold flex items-center gap-1 w-fit">
+          <Clock size={12} /> Berjalan
+        </span>
+      );
+    }
+    return (
+      <span className="px-3 py-1 bg-slate-100 text-slate-600 border border-slate-200 rounded-full text-[10.5px] font-bold w-fit">
+        Belum
+      </span>
+    );
+  };
+
   return (
-    <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-64px)] overflow-hidden -m-6 bg-surface-container">
-      {/* Canvas */}
-      <main className="flex-1 overflow-hidden flex flex-col lg:flex-row bg-surface p-4 lg:p-6 gap-4 lg:gap-6 relative">
-        {/* Calendar Section */}
-        <div className="flex-1 min-h-[400px] lg:min-h-0 flex flex-col bg-white rounded-xl shadow-sm border border-outline-variant/50 overflow-hidden">
-          {/* Calendar Header */}
-          <div className="p-5 border-b border-outline-variant/30 flex justify-between items-center shrink-0">
-            <div className="flex items-center gap-4">
-              <h2 className="text-[20px] font-bold text-on-surface">
-                {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-              </h2>
-              <div className="flex items-center gap-1">
+    <div className="space-y-6 text-slate-800">
+      {/* Top Header & View Switcher Tabs */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Time Line & Jadwal Kegiatan KKN</h1>
+          <p className="text-slate-500 text-xs mt-1">
+            Rencana kerja terstruktur, tahapan timeline resmi, dan monitoring jadwal lapangan Kecamatan Coblong.
+          </p>
+        </div>
+
+        {/* View Switcher Tabs */}
+        <div className="bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200 flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setActiveMainTab("TABEL_TIMELINE")}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer ${
+              activeMainTab === "TABEL_TIMELINE"
+                ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <TableIcon size={14} className={activeMainTab === "TABEL_TIMELINE" ? "text-emerald-600" : "text-slate-400"} />
+            <span>Tabel Rencana Kerja</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveMainTab("KALENDER_AGENDA")}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer ${
+              activeMainTab === "KALENDER_AGENDA"
+                ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <CalendarDays size={14} className={activeMainTab === "KALENDER_AGENDA" ? "text-emerald-600" : "text-slate-400"} />
+            <span>Kalender & Agenda</span>
+          </button>
+        </div>
+      </div>
+
+      {/* VIEW 1: TABEL TIMELINE (SESUAI SHEET 1 EXCEL DPL) */}
+      {activeMainTab === "TABEL_TIMELINE" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Hero Banner: Info Timeline Resmi */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0 shadow-2xs">
+                  <FileSpreadsheet size={24} className="text-emerald-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                    {TIMELINE_KKN_HEADER.judul}
+                  </h2>
+                  <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                    Tema: <strong className="text-emerald-800">"{TIMELINE_KKN_HEADER.tema}"</strong> • Pra-Kegiatan: {TIMELINE_KKN_HEADER.praKegiatan} • Penerjunan: {TIMELINE_KKN_HEADER.penerjunan}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={prevMonth}
-                  className="p-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors cursor-pointer"
+                  type="button"
+                  onClick={handleExportTimelineCsv}
+                  className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-2xl text-xs font-extrabold transition flex items-center gap-2 cursor-pointer shadow-2xs"
                 >
-                  <ChevronLeft />
-                </button>
-                <button
-                  onClick={goToToday}
-                  className="text-[12px] font-bold px-3 py-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors cursor-pointer"
-                >
-                  Hari Ini
-                </button>
-                <button
-                  onClick={nextMonth}
-                  className="p-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors cursor-pointer"
-                >
-                  <ChevronRight />
+                  <Download size={14} className="text-emerald-600" />
+                  <span>Unduh CSV</span>
                 </button>
               </div>
             </div>
-            {["SUPER_USER", "RW", "RT", "PETUGAS_RESIDU"].includes(user?.peran || "") && (
-              <button
-                className="bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-bold px-4 py-2 rounded-lg flex items-center gap-2 transition-colors active:scale-95 transform shadow-sm cursor-pointer"
-                onClick={() => setIsModalOpen(true)}
-              >
-                <Plus size={14} />
-                Buat Jadwal Baru
-              </button>
-            )}
+
+            {/* 4 Summary Stat Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+              <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/70">
+                <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">Total Kegiatan</span>
+                <span className="text-2xl font-black text-slate-900 mt-1 block">{TIMELINE_KKN_DATA.length} Tahapan</span>
+                <span className="text-[10.5px] text-slate-400 font-medium">Pra-kegiatan hingga penutupan</span>
+              </div>
+              <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/70">
+                <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">Fase Program</span>
+                <span className="text-2xl font-black text-emerald-700 mt-1 block">4 Fase</span>
+                <span className="text-[10.5px] text-emerald-600 font-semibold">Persiapan, Pilot, Implementasi, Evaluasi</span>
+              </div>
+              <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/70">
+                <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">Durasi Penerjunan</span>
+                <span className="text-2xl font-black text-indigo-700 mt-1 block">12 Pekan</span>
+                <span className="text-[10.5px] text-indigo-600 font-semibold">12 Agustus – 31 Oktober 2026</span>
+              </div>
+              <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/70">
+                <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">Wilayah Sasaran</span>
+                <span className="text-2xl font-black text-slate-900 mt-1 block">6 Kelurahan</span>
+                <span className="text-[10.5px] text-slate-400 font-medium">Kecamatan Coblong, Bandung</span>
+              </div>
+            </div>
           </div>
+
+          {/* Filter Bar */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2 w-full md:w-auto flex-1">
+              <div className="relative flex-1 max-w-md">
+                <input
+                  type="text"
+                  placeholder="Cari kegiatan utama, target capaian, atau PIC..."
+                  value={timelineSearch}
+                  onChange={(e) => setTimelineSearch(e.target.value)}
+                  className="w-full pl-3 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-emerald-500 focus:bg-white transition font-medium"
+                />
+                <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+
+              <div className="min-w-[200px]">
+                <select
+                  value={selectedFase}
+                  onChange={(e) => setSelectedFase(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+                >
+                  <option value="ALL">Semua Fase Program</option>
+                  <option value="Pra-Kegiatan">Pra-Kegiatan</option>
+                  <option value="Fase 1">Fase 1 - Persiapan & Observasi</option>
+                  <option value="Fase 2">Fase 2 - Pilot Project</option>
+                  <option value="Fase 3">Fase 3 - Implementasi & Pendampingan</option>
+                  <option value="Fase 4">Fase 4 - Evaluasi & Penutupan</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="text-xs font-bold text-slate-500">
+              Menampilkan <strong className="text-slate-900">{filteredTimeline.length}</strong> kegiatan
+            </div>
+          </div>
+
+          {/* Tabular Table */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-700 border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/90 text-slate-500 border-b border-slate-200 text-[11px] uppercase tracking-wider font-bold">
+                    <th className="py-3.5 px-4 w-12 text-center">No</th>
+                    <th className="py-3.5 px-4 w-32">Tahap / Minggu</th>
+                    <th className="py-3.5 px-4 w-36">Tanggal</th>
+                    <th className="py-3.5 px-4 w-40">Fase</th>
+                    <th className="py-3.5 px-4 min-w-[280px]">Kegiatan Utama</th>
+                    <th className="py-3.5 px-4 min-w-[260px]">Output / Target</th>
+                    <th className="py-3.5 px-4 w-52">PIC / Keterangan</th>
+                    <th className="py-3.5 px-4 w-28 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium">
+                  {filteredTimeline.map((item, idx) => (
+                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
+                        {idx + 1}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="font-extrabold text-slate-900 block">
+                          {item.tahapMinggu}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                          <Calendar size={13} className="text-emerald-600 shrink-0" />
+                          {item.tanggal}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {renderFaseBadge(item.fase)}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900 leading-relaxed">
+                        {item.kegiatanUtama}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-600 leading-relaxed">
+                        {item.outputTarget}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-700 font-semibold text-[11px] leading-relaxed">
+                        {item.picKeterangan}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        {renderStatusBadge(item.statusPelaksanaan)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW 2: KALENDER & AGENDA INTERAKTIF */}
+      {activeMainTab === "KALENDER_AGENDA" && (
+        <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-140px)] overflow-hidden bg-surface-container rounded-3xl border border-slate-200">
+          {/* Canvas */}
+          <main className="flex-1 overflow-hidden flex flex-col lg:flex-row bg-surface p-4 lg:p-6 gap-4 lg:gap-6 relative">
+            {/* Calendar Section */}
+            <div className="flex-1 min-h-[400px] lg:min-h-0 flex flex-col bg-white rounded-xl shadow-sm border border-outline-variant/50 overflow-hidden">
+              {/* Calendar Header */}
+              <div className="p-5 border-b border-outline-variant/30 flex justify-between items-center shrink-0">
+                <div className="flex items-center gap-4">
+                  <h2 className="text-[20px] font-bold text-on-surface">
+                    {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+                  </h2>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={prevMonth}
+                      className="p-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors cursor-pointer"
+                    >
+                      <ChevronLeft />
+                    </button>
+                    <button
+                      onClick={goToToday}
+                      className="text-[12px] font-bold px-3 py-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors cursor-pointer"
+                    >
+                      Hari Ini
+                    </button>
+                    <button
+                      onClick={nextMonth}
+                      className="p-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors cursor-pointer"
+                    >
+                      <ChevronRight />
+                    </button>
+                  </div>
+                </div>
+                {["SUPER_USER", "RW", "RT", "PETUGAS_RESIDU"].includes(user?.peran || "") && (
+                  <button
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-bold px-4 py-2 rounded-lg flex items-center gap-2 transition-colors active:scale-95 transform shadow-sm cursor-pointer"
+                    onClick={() => setIsModalOpen(true)}
+                  >
+                    <Plus size={14} />
+                    Buat Jadwal Baru
+                  </button>
+                )}
+              </div>
 
           {/* Calendar Grid */}
           <div className="flex-1 flex flex-col overflow-hidden">
@@ -1323,6 +1645,8 @@ const JadwalKegiatan: React.FC = () => {
           type="danger"
         />
       </main>
+    </div>
+      )}
     </div>
   );
 };

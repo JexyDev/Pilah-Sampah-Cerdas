@@ -11,6 +11,9 @@ export interface GroupSummary {
   targetHours?: number;
   targetTotalKegiatan?: number;
   activatedBinsCount: number;
+  organikBinsCount?: number;
+  anorganikBinsCount?: number;
+  totalWasteWeight?: number;
   avgAttendanceRate: number;
   totalGroupPoints: number;
   programKerja?: any[];

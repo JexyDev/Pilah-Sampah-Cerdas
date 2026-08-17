@@ -83,14 +83,91 @@ export const ProgramKerjaKkn: React.FC = () => {
     deskripsi: "",
   });
 
+  const [formStartDate, setFormStartDate] = useState("");
+  const [formEndDate, setFormEndDate] = useState("");
+
+  const formatIndonesianDateRange = (startStr: string, endStr: string) => {
+    if (!startStr) return "";
+    const startDate = new Date(startStr);
+    if (isNaN(startDate.getTime())) return startStr;
+
+    if (!endStr || startStr === endStr) {
+      return startDate.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    }
+
+    const endDate = new Date(endStr);
+    if (isNaN(endDate.getTime())) return startStr;
+
+    const startDay = startDate.getDate();
+    const endFormatted = endDate.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    return `${startDay} – ${endFormatted}`;
+  };
+
+  const handleDateChange = (start: string, end: string) => {
+    setFormStartDate(start);
+    setFormEndDate(end);
+    if (start) {
+      const formatted = formatIndonesianDateRange(start, end);
+      setFormData((prev) => ({ ...prev, waktuPelaksanaan: formatted }));
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch kelompok list
-      const kelRes = await api.get("/kelompok");
-      if (kelRes.data?.success && Array.isArray(kelRes.data.data)) {
-        setKelompokList(kelRes.data.data);
+      // Fetch kelompok list with robust multi-endpoint fallback
+      let groups: any[] = [];
+      try {
+        const kelRes = await api.get("/kelompok");
+        const list =
+          kelRes.data?.data ||
+          kelRes.data?.groups ||
+          (Array.isArray(kelRes.data) ? kelRes.data : []);
+        if (Array.isArray(list) && list.length > 0) {
+          groups = list;
+        }
+      } catch (_e) {
+        // Fallback below
       }
+
+      if (groups.length === 0) {
+        try {
+          const dplGroups = await dplService.getGroupSummary();
+          if (Array.isArray(dplGroups) && dplGroups.length > 0) {
+            groups = dplGroups.map((g: any) => ({
+              id: g.id,
+              name: g.name || g.namaKelompok,
+              kelurahan: g.kelurahan,
+              cakupanRw: g.cakupanRw,
+            }));
+          }
+        } catch (_e) {
+          // Fallback below
+        }
+      }
+
+      if (groups.length === 0) {
+        // Fallback default list if DB still initializing
+        groups = [
+          { id: "kel-1", name: "Kelompok 1 - Dago", kelurahan: "Dago" },
+          { id: "kel-2", name: "Kelompok 2 - Lebakgede", kelurahan: "Lebakgede" },
+          { id: "kel-3", name: "Kelompok 3 - Lebaksiliwangi", kelurahan: "Lebaksiliwangi" },
+          { id: "kel-4", name: "Kelompok 4 - Sadangserang", kelurahan: "Sadangserang" },
+          { id: "kel-5", name: "Kelompok 5 - Sekeloa", kelurahan: "Sekeloa" },
+          { id: "kel-6", name: "Kelompok 6 - Cipaganti", kelurahan: "Cipaganti" },
+        ];
+      }
+
+      setKelompokList(groups);
 
       // Fetch proker list
       const data = await dplService.getProgramKerja(
@@ -112,6 +189,8 @@ export const ProgramKerjaKkn: React.FC = () => {
   const handleOpenAddModal = () => {
     setFormMode("add");
     setEditingId(null);
+    setFormStartDate("");
+    setFormEndDate("");
     setFormData({
       kelompokId: kelompokList[0]?.id || "",
       nomor: prokerList.length + 1,
@@ -129,6 +208,8 @@ export const ProgramKerjaKkn: React.FC = () => {
   const handleOpenEditModal = (item: ProgramKerjaItem) => {
     setFormMode("edit");
     setEditingId(item.id);
+    setFormStartDate("");
+    setFormEndDate("");
     setFormData({
       kelompokId: item.kelompokId,
       nomor: item.nomor,
@@ -721,32 +802,51 @@ export const ProgramKerjaKkn: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Waktu Pelaksanaan
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: 03 – 05 Agustus 2026"
-                    value={formData.waktuPelaksanaan}
-                    onChange={(e) => setFormData({ ...formData, waktuPelaksanaan: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
-                  />
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Waktu & Tanggal Pelaksanaan (Pilih Kalender)
+                </label>
+                <div className="grid grid-cols-2 gap-2 mb-1.5">
+                  <div>
+                    <span className="text-[10px] text-slate-500 font-bold block mb-0.5">Tanggal Mulai</span>
+                    <input
+                      type="date"
+                      value={formStartDate}
+                      onChange={(e) => handleDateChange(e.target.value, formEndDate)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-500 font-bold block mb-0.5">Tanggal Selesai</span>
+                    <input
+                      type="date"
+                      value={formEndDate}
+                      onChange={(e) => handleDateChange(formStartDate, e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Kebutuhan Biaya (Rp)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1000}
-                    value={formData.kebutuhanBiaya}
-                    onChange={(e) => setFormData({ ...formData, kebutuhanBiaya: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
+                <input
+                  type="text"
+                  placeholder="Contoh: 03 – 05 Agustus 2026"
+                  value={formData.waktuPelaksanaan}
+                  onChange={(e) => setFormData({ ...formData, waktuPelaksanaan: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Kebutuhan Biaya (Rp)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  step={1000}
+                  value={formData.kebutuhanBiaya}
+                  onChange={(e) => setFormData({ ...formData, kebutuhanBiaya: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                />
               </div>
 
               <div>
