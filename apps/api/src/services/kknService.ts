@@ -1342,20 +1342,19 @@ export class KknService {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-    const attendanceToday = await prisma.activityAttendance.findFirst({
+    // Fetch student's completed/attended schedule IDs today
+    const completedAttendances = await prisma.activityAttendance.findMany({
       where: {
         studentId: userId,
-        attendedAt: { gte: todayStart },
+        attendedAt: { gte: todayStart, lte: todayEnd },
+        OR: [
+          { checkOutAt: { not: null } },
+          { status: "ALPA" },
+        ],
       },
+      select: { scheduleId: true },
     });
-
-    let attendanceStatus = "belum_absen";
-    if (activeLeave) {
-      const typeLower = (activeLeave.type || "").toLowerCase();
-      attendanceStatus = typeLower.includes("sakit") ? "sakit" : "izin";
-    } else if (attendanceToday) {
-      attendanceStatus = attendanceToday.status === "ALPA" ? "alpa" : "hadir";
-    }
+    const completedScheduleIds = new Set(completedAttendances.map((a) => a.scheduleId));
 
     // 🎯 Filter jadwal aktif khusus untuk kelompok KKN mahasiswa ybs (isActive: true)
     let activeSchedules: any[] = [];
@@ -1382,14 +1381,36 @@ export class KknService {
       });
     }
 
+    // Filter out schedules that student has already completed/checked out
+    const pendingSchedules = activeSchedules.filter((sch) => !completedScheduleIds.has(sch.id));
+    const targetScheduleList = pendingSchedules.length > 0 ? pendingSchedules : activeSchedules;
+
     let activeSchedule: any = null;
-    if (activeSchedules.length === 1) {
-      activeSchedule = activeSchedules[0];
-    } else if (activeSchedules.length > 1) {
-      // 🧠 Smart Multi-Schedule Matching: Jika ada beberapa kegiatan kelompok di hari yang sama
+    const now = new Date();
+    const currentWibMinutes = ((now.getUTCHours() + 7) % 24) * 60 + now.getUTCMinutes();
+
+    // 1. Time Window Matching: Pick schedule matching current time e.g. "08:00 - 10:00" vs "13:00 - 15:00"
+    for (const sch of targetScheduleList) {
+      let startMins = 0;
+      let endMins = 24 * 60;
+      if (sch.time && sch.time.includes("-")) {
+        const parts = sch.time.split("-");
+        const startParts = parts[0].trim().replace(".", ":").split(":");
+        const endParts = parts[1].trim().replace(".", ":").split(":");
+        if (startParts.length >= 2) startMins = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
+        if (endParts.length >= 2) endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
+      }
+
+      if (currentWibMinutes >= startMins && currentWibMinutes <= endMins) {
+        activeSchedule = sch;
+        break;
+      }
+    }
+
+    // 2. Smart Multi-Schedule Matching by Geofence if no exact time match
+    if (!activeSchedule && targetScheduleList.length > 0) {
       if (currentLat !== undefined && currentLng !== undefined && !isNaN(currentLat) && !isNaN(currentLng)) {
-        // 1. Cek apakah mahasiswa sedang berada di dalam geofence kegiatan tertentu
-        for (const sch of activeSchedules) {
+        for (const sch of targetScheduleList) {
           let isInside = false;
           if (sch.polygon && Array.isArray(sch.polygon) && sch.polygon.length >= 3) {
             const polyPoints = (sch.polygon as any[]).map((p) => ({
@@ -1408,10 +1429,9 @@ export class KknService {
           }
         }
 
-        // 2. Jika tidak di dalam zona manapun, pilih kegiatan terdekat dengan lokasi GPS mahasiswa
         if (!activeSchedule) {
           let minDistance = Infinity;
-          for (const sch of activeSchedules) {
+          for (const sch of targetScheduleList) {
             if (sch.latitude && sch.longitude) {
               const dist = calculateDistance(currentLat, currentLng, Number(sch.latitude), Number(sch.longitude));
               if (dist < minDistance) {
@@ -1424,8 +1444,28 @@ export class KknService {
       }
 
       if (!activeSchedule) {
-        activeSchedule = activeSchedules[0];
+        activeSchedule = targetScheduleList[0];
       }
+    }
+
+    // Fetch attendance specific to activeSchedule
+    const attendanceForActiveSchedule = activeSchedule
+      ? await prisma.activityAttendance.findUnique({
+          where: {
+            studentId_scheduleId: {
+              studentId: userId,
+              scheduleId: activeSchedule.id,
+            },
+          },
+        })
+      : null;
+
+    let attendanceStatus = "belum_absen";
+    if (activeLeave) {
+      const typeLower = (activeLeave.type || "").toLowerCase();
+      attendanceStatus = typeLower.includes("sakit") ? "sakit" : "izin";
+    } else if (attendanceForActiveSchedule) {
+      attendanceStatus = attendanceForActiveSchedule.status === "ALPA" ? "alpa" : "hadir";
     }
 
     // Syarat Alur Presensi: Jika DPL tidak mengaktifkan kegiatan -> Otomatis Libur / Tidak ada kegiatan aktif
