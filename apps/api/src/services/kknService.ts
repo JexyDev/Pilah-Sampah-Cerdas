@@ -9,6 +9,8 @@ import { PrismaClient } from "@prisma/client";
 import { configService } from "./configService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
+import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
+import { calculateDistance } from "./kknAttendanceService.js";
 
 const prisma = new PrismaClient();
 
