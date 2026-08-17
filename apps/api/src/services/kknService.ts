@@ -1466,7 +1466,16 @@ export class KknService {
       const typeLower = (activeLeave.type || "").toLowerCase();
       attendanceStatus = typeLower.includes("sakit") ? "sakit" : "izin";
     } else if (attendanceForActiveSchedule) {
-      attendanceStatus = attendanceForActiveSchedule.status === "ALPA" ? "alpa" : "hadir";
+      const attStatUpper = String(attendanceForActiveSchedule.status || "").toUpperCase();
+      if (attStatUpper.includes("IZIN")) {
+        attendanceStatus = "izin";
+      } else if (attStatUpper.includes("SAKIT")) {
+        attendanceStatus = "sakit";
+      } else if (attStatUpper.includes("ALPA")) {
+        attendanceStatus = "alpa";
+      } else {
+        attendanceStatus = "hadir";
+      }
     }
 
     // Syarat Alur Presensi: Jika DPL tidak mengaktifkan kegiatan -> Otomatis Libur / Tidak ada kegiatan aktif
