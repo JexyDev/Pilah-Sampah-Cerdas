@@ -176,13 +176,21 @@ const DualGeofencePickerModalMap: React.FC<{
 
   useEffect(() => {
     map.invalidateSize();
-    const t1 = setTimeout(() => map.invalidateSize(), 100);
-    const t2 = setTimeout(() => map.invalidateSize(), 300);
+    if (points && points.length > 0 && points[0] && !isNaN(points[0][0]) && !isNaN(points[0][1])) {
+      map.setView(points[0], map.getZoom() || 15);
+    }
+    const t1 = setTimeout(() => {
+      map.invalidateSize();
+      if (points && points.length > 0 && points[0] && !isNaN(points[0][0]) && !isNaN(points[0][1])) {
+        map.setView(points[0], map.getZoom() || 15);
+      }
+    }, 150);
+    const t2 = setTimeout(() => map.invalidateSize(), 350);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [mode, map]);
+  }, [mode, map, points]);
 
   useMapEvents({
     click(e) {
@@ -1015,19 +1023,25 @@ const MonitoringAbsen: React.FC = () => {
     }
   };
 
+  const handleProceedToStep2 = (e?: React.MouseEvent | React.FormEvent) => {
+    if (e) e.preventDefault();
+    const step1Errors = validateStep1();
+    if (Object.keys(step1Errors).length > 0) {
+      setFormErrors(step1Errors);
+      const firstErr = Object.values(step1Errors)[0];
+      toast.error(`Periksa Form: ${firstErr}`);
+      return;
+    }
+    setFormErrors({});
+    setModalStep(2);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Jika masih di langkah 1 (Detail), wajib lanjut ke langkah 2 (Peta) terlebih dahulu
     if (modalStep === 1) {
-      const step1Errors = validateStep1();
-      if (Object.keys(step1Errors).length > 0) {
-        setFormErrors(step1Errors);
-        const firstErr = Object.values(step1Errors)[0];
-        toast.error(`Periksa Form: ${firstErr}`);
-        return;
-      }
-      setFormErrors({});
-      setModalStep(2);
+      handleProceedToStep2(e);
       return;
     }
 
@@ -2133,6 +2147,12 @@ const MonitoringAbsen: React.FC = () => {
 
             <form
               onSubmit={handleSubmit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && modalStep === 1) {
+                  e.preventDefault();
+                  handleProceedToStep2(e);
+                }
+              }}
               noValidate
               className="p-6 overflow-y-auto space-y-4 text-xs font-semibold flex-1"
             >
@@ -2392,14 +2412,24 @@ const MonitoringAbsen: React.FC = () => {
                     </button>
                   </div>
 
+                  <div className="bg-emerald-50/80 border border-emerald-200/90 px-3.5 py-2.5 rounded-xl flex items-center gap-2 text-xs text-emerald-950">
+                    <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse shrink-0"></span>
+                    <span className="font-bold">
+                      {geofenceMode === "CIRCLE"
+                        ? "Klik pada peta untuk menentukan / menggeser titik pusat geofence presensi."
+                        : "Klik pada peta untuk menambahkan titik sudut batas polygon presensi."}
+                    </span>
+                  </div>
+
                   {(() => {
                     const modalTargetGroup = groups.find((g) => g.id === formData.kelompokId);
                     const modalLocInfo = getKelompokLocationInfo(modalTargetGroup);
                     const mapModalCenter = selectedPos.length > 0 ? selectedPos[0] : modalLocInfo.centroid;
 
                     return (
-                      <div className="h-[280px] rounded-2xl overflow-hidden border border-slate-200 relative z-0">
+                      <div className="h-[280px] rounded-2xl overflow-hidden border border-slate-200 relative z-0 shadow-inner">
                         <MapContainer
+                          key={`modal-geofence-map-${modalMode}-${formData.id || "new"}-${geofenceMode}`}
                           center={mapModalCenter}
                           zoom={15}
                           style={{ height: "100%", width: "100%" }}
@@ -2454,26 +2484,17 @@ const MonitoringAbsen: React.FC = () => {
                     if (modalStep === 2) setModalStep(1);
                     else setIsModalOpen(false);
                   }}
-                  className="px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-bold cursor-pointer transition text-xs"
+                  className="px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-bold cursor-pointer transition text-xs flex items-center gap-1.5"
                 >
-                  {modalStep === 2 ? "Kembali" : "Batal"}
+                  {modalStep === 2 ? "← Kembali ke Detail" : "Batal"}
                 </button>
 
                 <div className="flex items-center gap-2">
                   {modalStep === 1 ? (
                     <button
                       type="button"
-                      onClick={() => {
-                        const errs = validateStep1();
-                        if (Object.keys(errs).length > 0) {
-                          setFormErrors(errs);
-                          toast.error("Periksa kelengkapan form");
-                          return;
-                        }
-                        setFormErrors({});
-                        setModalStep(2);
-                      }}
-                      className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold cursor-pointer shadow-sm transition text-xs flex items-center gap-1"
+                      onClick={handleProceedToStep2}
+                      className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold cursor-pointer shadow-sm transition text-xs flex items-center gap-1.5"
                     >
                       <span>Lanjut ke Area Peta</span>
                       <span>→</span>
@@ -2490,7 +2511,7 @@ const MonitoringAbsen: React.FC = () => {
                           <span>Menyimpan...</span>
                         </>
                       ) : (
-                        <span>Simpan Kegiatan</span>
+                        <span>{modalMode === "edit" ? "Simpan Perubahan Kegiatan" : "Simpan Kegiatan Baru"}</span>
                       )}
                     </button>
                   )}
