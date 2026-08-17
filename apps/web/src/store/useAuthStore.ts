@@ -95,7 +95,7 @@ const getAvatarConfig = (rawRole: string): { avatarBg: string; avatarColor: stri
 const getWilayahByRole = (role: string): string => {
   switch (role) {
     case "DEVELOPER":
-      return "PT Makerindo";
+      return "Kecamatan Coblong";
     case "SUPER_USER":
       return "Kecamatan Coblong";
     case "ADMIN_DLH":
@@ -169,7 +169,13 @@ const getInitialUser = (): User | null => {
       clearAllStoredItems();
       return null;
     }
-    if (user && (user.wilayah === "Sistem Pusat" || user.wilayah === "Dinas Lingkungan Hidup")) {
+    if (
+      user &&
+      (user.wilayah === "Sistem Pusat" ||
+        user.wilayah === "Dinas Lingkungan Hidup" ||
+        user.wilayah === "PT Makerindo" ||
+        !user.wilayah)
+    ) {
       user.wilayah = "Kecamatan Coblong";
       const storage = getActiveStorage();
       storage.setItem("psc_user", JSON.stringify(user));

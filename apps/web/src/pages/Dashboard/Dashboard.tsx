@@ -27,7 +27,7 @@ import LeaderboardWidget from "../../components/LeaderboardWidget";
 import { CustomSelect, type SelectOption } from "../../components/common/CustomSelect";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 
-const WILAYAH_OPTIONS: SelectOption[] = [
+const DEFAULT_WILAYAH_OPTIONS: SelectOption[] = [
   { value: "Kecamatan Coblong", label: "Kecamatan Coblong (Semua)", sublabel: "Cakupan Seluruh Kecamatan" },
   { value: "Kel. Dago", label: "Kel. Dago", sublabel: "Kelurahan Dago" },
   { value: "Kel. Sadang Serang", label: "Kel. Sadang Serang", sublabel: "Kelurahan Sadang Serang" },
@@ -35,9 +35,6 @@ const WILAYAH_OPTIONS: SelectOption[] = [
   { value: "Kel. Lebak Gede", label: "Kel. Lebak Gede", sublabel: "Kelurahan Lebak Gede" },
   { value: "Kel. Lebak Siliwangi", label: "Kel. Lebak Siliwangi", sublabel: "Kelurahan Lebak Siliwangi" },
   { value: "Kel. Cipaganti", label: "Kel. Cipaganti", sublabel: "Kelurahan Cipaganti" },
-  { value: "RW 06 Dago", label: "RW 06 Dago", sublabel: "Rukun Warga 06 Dago" },
-  { value: "RW 05 Dago", label: "RW 05 Dago", sublabel: "Rukun Warga 05 Dago" },
-  { value: "RW 03 Sekeloa", label: "RW 03 Sekeloa", sublabel: "Rukun Warga 03 Sekeloa" },
 ];
 
 const PERIODE_OPTIONS: SelectOption[] = [
@@ -1569,11 +1566,60 @@ const Dashboard: React.FC = () => {
   const [showCompositionDetail, setShowCompositionDetail] = useState(false);
   const [timeFilter, setTimeFilter] = useState("semua");
 
+  // Wilayah selection state (Default: Kecamatan Coblong)
+  const isLurahRole = (user?.role || user?.peran || "").toUpperCase() === "LURAH";
+  const userKelurahan = user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "");
+  
+  const [selectedWilayah, setSelectedWilayah] = useState<string>(() => {
+    if (isLurahRole) {
+      return userKelurahan ? (userKelurahan.startsWith("Kel.") ? userKelurahan : `Kel. ${userKelurahan}`) : "Kel. Cipaganti";
+    }
+    if (user?.wilayah && user.wilayah !== "PT Makerindo" && user.wilayah !== "Sistem Pusat" && user.wilayah !== "Dinas Lingkungan Hidup") {
+      return user.wilayah;
+    }
+    return "Kecamatan Coblong";
+  });
+
+  const [wilayahOptions, setWilayahOptions] = useState<SelectOption[]>(DEFAULT_WILAYAH_OPTIONS);
+
+  // Fetch real list of Kelurahan from backend API
+  useEffect(() => {
+    const fetchRealKelurahan = async () => {
+      try {
+        const res = await api.get("/areas/kelurahan");
+        const list = res.data?.data || (Array.isArray(res.data) ? res.data : []);
+        if (Array.isArray(list) && list.length > 0) {
+          const dynamicOptions: SelectOption[] = [
+            {
+              value: "Kecamatan Coblong",
+              label: "Kecamatan Coblong (Semua)",
+              sublabel: "Cakupan Seluruh Kecamatan",
+            },
+            ...list.map((k: any) => {
+              const name = k.name || k.nama || "";
+              const formattedName = name.startsWith("Kel.") ? name : `Kel. ${name}`;
+              return {
+                value: formattedName,
+                label: formattedName,
+                sublabel: `Kelurahan ${name.replace(/^Kel\.\s*/i, "")}`,
+              };
+            }),
+          ];
+          setWilayahOptions(dynamicOptions);
+        }
+      } catch (_e) {
+        // Fallback to default Coblong options
+      }
+    };
+    fetchRealKelurahan();
+  }, []);
+
   const handleRegionChange = (newWilayah: string) => {
+    setSelectedWilayah(newWilayah);
     if (updateWilayah) {
       updateWilayah(newWilayah);
-      showToast.success(`Wilayah aktif diubah ke ${newWilayah}`);
     }
+    showToast.success(`Wilayah aktif diubah ke ${newWilayah}`);
   };
 
   const [trendData, setTrendData] = useState<any[]>([]);
@@ -1611,11 +1657,9 @@ const Dashboard: React.FC = () => {
       return;
     }
 
-    const isLurahRole = (user?.role || user?.peran || "").toUpperCase() === "LURAH";
-    const userKelurahan = user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "");
     const effectiveWilayah = isLurahRole
-      ? (userKelurahan || "Cipaganti")
-      : (user?.wilayah || "Kecamatan Coblong");
+      ? (userKelurahan ? (userKelurahan.startsWith("Kel.") ? userKelurahan : `Kel. ${userKelurahan}`) : "Kel. Cipaganti")
+      : (selectedWilayah || "Kecamatan Coblong");
 
     const fetchStats = async () => {
       try {
@@ -1701,21 +1745,23 @@ const Dashboard: React.FC = () => {
         const [binsSettled, trendSettled, locSettled] =
           await Promise.allSettled([
             api.get("/bins"),
-            api.get("/dashboard/trend", { params: { weeks, wilayah: user?.wilayah } }),
+            api.get("/dashboard/trend", { params: { weeks, wilayah: effectiveWilayah } }),
             api.get("/bins/locations"),
           ]);
 
-        const hasWilayah =
-          user?.wilayah &&
-          user?.wilayah !== "Kecamatan Coblong" &&
-          user?.wilayah !== "Sistem Pusat";
+        const isDistrictScope =
+          !effectiveWilayah ||
+          effectiveWilayah === "Kecamatan Coblong" ||
+          effectiveWilayah === "Sistem Pusat" ||
+          effectiveWilayah === "PT Makerindo";
 
         if (binsSettled.status === "fulfilled") {
           let binsData = binsSettled.value.data?.data ?? binsSettled.value.data ?? [];
-          if (hasWilayah) {
+          if (!isDistrictScope) {
+            const cleanWil = effectiveWilayah.replace(/^Kel\.\s*/i, "").toLowerCase();
             binsData = binsData.filter((b: any) => {
-              const binRtRwName = typeof b.rtRw === "string" ? b.rtRw : b.rtRw?.name || "";
-              return binRtRwName === user?.wilayah;
+              const binKelName = (b.kelurahan?.name || b.rtRw?.kelurahan?.name || (typeof b.rtRw === "string" ? b.rtRw : b.rtRw?.name || "")).toLowerCase();
+              return binKelName.includes(cleanWil);
             });
           }
           const realBins = Array.isArray(binsData) ? binsData.filter((b: any) => !(b.qrCode || b.kode || b.id || "").toUpperCase().includes("TEST")) : [];
@@ -1739,7 +1785,7 @@ const Dashboard: React.FC = () => {
       }
     };
     fetchStats();
-  }, [user, weeks, timeFilter]);
+  }, [user, weeks, timeFilter, selectedWilayah]);
 
   if (loading) {
     return (
@@ -1846,30 +1892,30 @@ const Dashboard: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">
           <CustomSelect
             value={
-              (user?.role || user?.peran || "").toUpperCase() === "LURAH"
-                ? `Kel. ${user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "Cipaganti")}`
-                : user?.wilayah || "Kecamatan Coblong"
+              isLurahRole
+                ? `Kel. ${userKelurahan.replace(/^Kel\.\s*/i, "") || "Cipaganti"}`
+                : selectedWilayah
             }
             onChange={(val) => {
-              if ((user?.role || user?.peran || "").toUpperCase() !== "LURAH") {
+              if (!isLurahRole) {
                 handleRegionChange(val);
               }
             }}
             options={
-              (user?.role || user?.peran || "").toUpperCase() === "LURAH"
+              isLurahRole
                 ? [
                     {
-                      value: `Kel. ${user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "Cipaganti")}`,
-                      label: `Kel. ${user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "Cipaganti")} (Terkunci - Wilayah Tugas)`,
+                      value: `Kel. ${userKelurahan.replace(/^Kel\.\s*/i, "") || "Cipaganti"}`,
+                      label: `Kel. ${userKelurahan.replace(/^Kel\.\s*/i, "") || "Cipaganti"} (Terkunci - Wilayah Tugas)`,
                       sublabel: "Wilayah Administratif Tugas Lurah",
                     },
                   ]
-                : WILAYAH_OPTIONS
+                : wilayahOptions
             }
             icon={<MapPin size={15} className="text-[#009966] flex-shrink-0" />}
             label="Wilayah:"
             variant="emerald"
-            disabled={(user?.role || user?.peran || "").toUpperCase() === "LURAH"}
+            disabled={isLurahRole}
           />
 
           <CustomSelect

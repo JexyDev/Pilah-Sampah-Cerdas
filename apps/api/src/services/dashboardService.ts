@@ -478,6 +478,18 @@ export const dashboardService = {
 
   getTrend: async (weeks: number = 8, wilayah?: string) => {
     const isFiltered = isWilayahFiltered(wilayah);
+    const areaIds = isFiltered ? await resolveAreaIds(wilayah) : [];
+    const rwFilter = isFiltered
+      ? areaIds.length > 0
+        ? { id: { in: areaIds } }
+        : {
+            OR: [
+              { name: { contains: wilayah, mode: "insensitive" as const } },
+              { kelurahan: { name: { contains: wilayah, mode: "insensitive" as const } } },
+            ],
+          }
+      : undefined;
+
     const result = [];
     const now = new Date();
 
@@ -494,11 +506,7 @@ export const dashboardService = {
             gte: startOfWeek,
             lte: endOfWeek,
           },
-          warga: isFiltered
-            ? {
-                rw: { name: wilayah },
-              }
-            : undefined,
+          warga: rwFilter ? { rw: rwFilter } : undefined,
         },
       });
 
@@ -508,7 +516,7 @@ export const dashboardService = {
             gte: startOfWeek,
             lte: endOfWeek,
           },
-          rw: isFiltered ? { name: wilayah } : undefined,
+          rw: rwFilter,
         },
       });
 
