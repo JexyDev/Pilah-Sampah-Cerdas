@@ -43,6 +43,9 @@ import permissionRouter from "./routes/permissionRoutes.js";
 import surveiKknRouter from "./routes/surveiKknRoutes.js";
 import evaluasiDampakRouter from "./routes/evaluasiDampakRoutes.js";
 import datasetKlasifikasiRouter from "./routes/datasetKlasifikasiRoutes.js";
+import panduanRouter from "./routes/panduanRoutes.js";
+import masterKegiatanRouter from "./routes/masterKegiatanRoutes.js";
+
 import { setupSwagger } from "./swagger.js";
 import { readOnlyGuard } from "./middlewares/readOnlyGuard.js";
 
@@ -124,6 +127,9 @@ app.use("/api/v1/permissions", permissionRouter);
 app.use("/api/v1/survei-kkn", surveiKknRouter);
 app.use("/api/v1/evaluasi-dampak", evaluasiDampakRouter);
 app.use("/api/v1", datasetKlasifikasiRouter);
+app.use("/api/v1/panduan", panduanRouter);
+app.use("/api/v1/master-kegiatan", masterKegiatanRouter);
+
 
 // Master API Spec Alias Mounts (Compatibility for mobile client without /v1 prefix)
 app.use("/api/v1/user", userRouter);

@@ -216,11 +216,15 @@ export const dplController = {
       const dplUserId = getUserId(req);
       const id = req.params.id;
       const { status, catatanDpl } = req.body;
-      if (!["DITERIMA", "DITOLAK"].includes(status)) {
-        res.status(400).json({ error: "BAD_REQUEST", message: "Status harus DITERIMA atau DITOLAK" });
+      const validStatuses = ["DITERIMA", "DITOLAK", "SEDANG_BERJALAN", "SELESAI", "BELUM_DISETUJUI"];
+      if (!validStatuses.includes(status)) {
+        res.status(400).json({
+          error: "BAD_REQUEST",
+          message: `Status harus salah satu dari: ${validStatuses.join(", ")}`,
+        });
         return;
       }
-      const data = await dplService.decideProgramKerja(dplUserId, id, status, catatanDpl);
+      const data = await dplService.decideProgramKerja(dplUserId, id, status as any, catatanDpl);
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[dplController.decideProgramKerja] error:", error);

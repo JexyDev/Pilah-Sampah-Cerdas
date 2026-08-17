@@ -811,7 +811,7 @@ export const dplService = {
       nomor?: number;
       deskripsi?: string;
       kebutuhanBiaya?: number;
-      status?: "BELUM_DISETUJUI" | "DITERIMA" | "DITOLAK";
+      status?: "BELUM_DISETUJUI" | "DITERIMA" | "DITOLAK" | "SEDANG_BERJALAN" | "SELESAI";
       catatanDpl?: string;
     }
   ) => {
@@ -839,12 +839,12 @@ export const dplService = {
   },
 
   /**
-   * 12. Program Kerja KKN - Decision (Accept / Reject)
+   * 12. Program Kerja KKN - Decision (Accept / Reject / Update Status)
    */
   decideProgramKerja: async (
     dplUserId: string,
     id: string,
-    status: "DITERIMA" | "DITOLAK",
+    status: "DITERIMA" | "DITOLAK" | "SEDANG_BERJALAN" | "SELESAI" | "BELUM_DISETUJUI",
     catatanDpl?: string
   ) => {
     const proker = await prisma.programKerjaKkn.update({

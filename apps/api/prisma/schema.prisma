@@ -1062,6 +1062,35 @@ model ImportLog {
 }
 
 // ─────────────────────────────────────────────
+// PANDUAN & MASTER KEGIATAN SAMPAH (SUPER USER)
+// ─────────────────────────────────────────────
+
+model Panduan {
+  id           String   @id @default(uuid())
+  judul        String   @map("judul")
+  kategoriRole String   @map("kategori_peran")
+  deskripsi    String?  @map("deskripsi")
+  fileUrl      String?  @map("file_url")
+  linkUrl      String?  @map("link_url")
+  createdAt    DateTime @default(now()) @map("dibuat_pada")
+  updatedAt    DateTime @updatedAt @map("diperbarui_pada")
+
+  @@map("buku_panduan")
+}
+
+model MasterKegiatanSampah {
+  id          String   @id @default(uuid())
+  nama        String   @unique @map("nama")
+  kategori    String   @map("kategori")
+  deskripsi   String?  @map("deskripsi")
+  statusAktif Boolean  @default(true) @map("status_aktif")
+  createdAt   DateTime @default(now()) @map("dibuat_pada")
+  updatedAt   DateTime @updatedAt @map("diperbarui_pada")
+
+  @@map("master_kegiatan_sampah")
+}
+
+// ─────────────────────────────────────────────
 // ENUMS
 // ─────────────────────────────────────────────
 
@@ -1082,6 +1111,7 @@ enum FacilityType {
   tps
   buruan_sae
   poc
+  posko_kkn
 }
 
 enum OwnershipType {
@@ -1107,4 +1137,7 @@ enum StatusProker {
   BELUM_DISETUJUI
   DITERIMA
   DITOLAK
+  SEDANG_BERJALAN
+  SELESAI
 }
+

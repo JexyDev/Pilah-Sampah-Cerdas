@@ -40,7 +40,6 @@ import {
   Map as MapIcon,
   ChevronDown,
   Sparkles,
-  AlertCircle,
 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
@@ -1337,31 +1336,31 @@ const MonitoringAbsen: React.FC = () => {
           </div>
         </div>
 
-        {/* 4 KPI Metric Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-4">
+        {/* Ketentuan Jam Kerja KKN & Target 100 Jam */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-4">
           <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-slate-200/70 text-slate-700 flex items-center justify-center shrink-0">
-              <Users size={18} />
+              <Calendar size={18} />
             </div>
             <div>
-              <span className="text-[11px] font-bold text-slate-500 block">Total Mahasiswa</span>
+              <span className="text-[10.5px] font-bold text-slate-500 block uppercase">Hari Kerja</span>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-lg font-black text-slate-900">{attendanceStats.total}</span>
-                <span className="text-[11px] font-semibold text-slate-500">Terdata</span>
+                <span className="text-sm font-extrabold text-slate-900">Senin – Jumat</span>
               </div>
+              <span className="text-[10px] text-slate-400 font-semibold">(Kecuali Hari Libur)</span>
             </div>
           </div>
 
           <div className="bg-emerald-50/70 p-3.5 rounded-xl border border-emerald-200/80 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
-              <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+              <Clock size={18} />
             </div>
             <div>
-              <span className="text-[11px] font-bold text-emerald-900 block">Di Lapangan</span>
+              <span className="text-[10.5px] font-bold text-emerald-900 block uppercase">Jam Operasional</span>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-lg font-black text-emerald-950">{attendanceStats.active}</span>
-                <span className="text-[11px] font-bold text-emerald-700">Aktif</span>
+                <span className="text-sm font-extrabold text-emerald-950">08:00 – 16:00 WIB</span>
               </div>
+              <span className="text-[10px] text-emerald-700 font-semibold">(Cut-off 06:00 - 18:00)</span>
             </div>
           </div>
 
@@ -1370,26 +1369,24 @@ const MonitoringAbsen: React.FC = () => {
               <Sparkles size={18} />
             </div>
             <div>
-              <span className="text-[11px] font-bold text-teal-900 block">Selesai Hadir</span>
+              <span className="text-[10.5px] font-bold text-teal-900 block uppercase">Min. Durasi Kerja</span>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-lg font-black text-teal-950">{attendanceStats.completed}</span>
-                <span className="text-[11px] font-bold text-teal-700">
-                  ({attendanceStats.fulfilledTarget} Target OK)
-                </span>
+                <span className="text-sm font-extrabold text-teal-950">4 Jam / Hari</span>
               </div>
+              <span className="text-[10px] text-teal-700 font-semibold">(Maksimal 8 Jam/Hari)</span>
             </div>
           </div>
 
-          <div className="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200/80 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
-              <AlertCircle size={18} />
+          <div className="bg-indigo-50/70 p-3.5 rounded-xl border border-indigo-200/80 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center shrink-0">
+              <CheckCircle2 size={18} />
             </div>
             <div>
-              <span className="text-[11px] font-bold text-amber-900 block">Belum Absen</span>
+              <span className="text-[10.5px] font-bold text-indigo-900 block uppercase">Target Kumulatif</span>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-lg font-black text-amber-950">{attendanceStats.notAttended}</span>
-                <span className="text-[11px] font-bold text-amber-700">Mahasiswa</span>
+                <span className="text-sm font-extrabold text-indigo-950">100 Jam</span>
               </div>
+              <span className="text-[10px] text-indigo-700 font-semibold">({attendanceStats.completed} Hadir Sesi Ini)</span>
             </div>
           </div>
         </div>
@@ -1486,6 +1483,32 @@ const MonitoringAbsen: React.FC = () => {
               {/* Active Student GPS Pins */}
               {activeStudentMarkers}
             </MapContainer>
+          </div>
+
+          {/* Interactive Map Legend */}
+          <div className="bg-slate-50 border-t border-slate-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-1.5 font-bold text-slate-700">
+              <Sparkles size={14} className="text-emerald-600" />
+              <span>Legenda Marker Lapangan:</span>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap text-[11px] font-semibold text-slate-600">
+              <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 shadow-2xs">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <span>Posko KKN</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-purple-200 shadow-2xs">
+                <span className="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
+                <span>Rumah Maggot</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs">
+                <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                <span>Bank Sampah / Buruan SAE</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                <span>Live Presensi Mahasiswa</span>
+              </div>
+            </div>
           </div>
         </div>
       )}

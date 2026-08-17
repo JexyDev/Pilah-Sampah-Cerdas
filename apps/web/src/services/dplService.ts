@@ -116,7 +116,7 @@ export interface ProgramKerjaItem {
   nomor: number;
   deskripsi: string;
   kebutuhanBiaya: number;
-  status: "BELUM_DISETUJUI" | "DITERIMA" | "DITOLAK";
+  status: "BELUM_DISETUJUI" | "DITERIMA" | "DITOLAK" | "SEDANG_BERJALAN" | "SELESAI";
   catatanDpl?: string | null;
   reviewedByName?: string | null;
   reviewedAt?: string | null;

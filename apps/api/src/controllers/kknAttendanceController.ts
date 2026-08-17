@@ -219,4 +219,37 @@ export const kknAttendanceController = {
       });
     }
   },
+
+  getTimesheetSummary: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const rawRole = (req as any).user?.role;
+      const roleName = String(typeof rawRole === "object" ? rawRole?.name : rawRole || "").toUpperCase();
+      const isDpl = roleName === "DPL" || roleName === "DOSEN_PEMBIMBING";
+      const isStudent = roleName === "MAHASISWA_KKN";
+
+      const currentUserId = (req as any).user?.userId || (req as any).user?.id;
+      const kelompokId = req.query.kelompokId as string | undefined;
+      const studentId = isStudent ? currentUserId : (req.query.studentId as string | undefined);
+      const dplUserId = isDpl ? currentUserId : undefined;
+
+      const result = await kknAttendanceService.getTimesheetSummary({
+        kelompokId,
+        studentId,
+        dplUserId,
+      });
+
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] getTimesheetSummary error:", error);
+      res.status(500).json({
+        success: false,
+        error: "INTERNAL_SERVER_ERROR",
+        message: "Gagal mendapatkan data rekap timesheet presensi",
+      });
+    }
+  },
 };
+

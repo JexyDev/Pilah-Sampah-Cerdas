@@ -25,6 +25,7 @@ import {
   Recycle,
   ShieldCheck,
   Award,
+  BookOpen,
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -464,7 +465,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             { to: "/dashboard-dpl", label: "Dasbor DPL", allowed: ["DEVELOPER", "DPL", "DOSEN_PEMBIMBING"] as UserRole[] },
             { to: "/dashboard-kkn", label: "Dasbor KKN Taskforce", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "PEMIMPIN", "MAHASISWA_KKN"] as UserRole[] },
             { to: "/manajemen-ekosistem-kkn", label: "Kelompok Dampingan", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
-            { to: "/monitoring-absen", label: "Validasi Absensi", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
+            { to: "/monitoring-absen", label: "Validasi Presensi", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
             { to: "/program-kerja-kkn", label: "Program Kerja KKN", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "MAHASISWA_KKN"] as UserRole[] },
           ],
         },
@@ -472,11 +473,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           type: "group",
           label: "Penilaian KKN",
           icon: Award,
-          allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[],
+          allowed: ["DEVELOPER"] as UserRole[],
           children: [
-            { to: "/penilaian-kkn/mahasiswa", label: "Penilaian Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
-            { to: "/penilaian-kkn/program-kerja", label: "Penilaian Program Kerja", allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE"] as UserRole[] },
-            { to: "/penilaian-kkn/rekap", label: "Rekap & Lembar Nilai", allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
+            { to: "/penilaian-kkn/mahasiswa", label: "Penilaian Mahasiswa", allowed: ["DEVELOPER"] as UserRole[] },
+            { to: "/penilaian-kkn/program-kerja", label: "Penilaian Program Kerja", allowed: ["DEVELOPER"] as UserRole[] },
+            { to: "/penilaian-kkn/rekap", label: "Rekap & Lembar Nilai", allowed: ["DEVELOPER"] as UserRole[] },
           ],
         },
         {
@@ -487,7 +488,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             { to: "/superUser/data-survei-baseline", label: "Data Survei Baseline", allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
             { to: "/superUser/data-survei-endline", label: "Data Survei Endline", allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
-            { to: "/evaluasi-dampak-kkn", label: "Perubahan Dampak", allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
+            { to: "/evaluasi-dampak-kkn", label: "Perubahan dan Dampak", allowed: ["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
             { to: "/superUser/import-survei-kkn", label: "Impor Survei KKN", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"] as UserRole[] },
           ],
         },
@@ -527,6 +528,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             { to: "/master-data/kecamatan", label: "Kecamatan" },
             { to: "/master-data/kelurahan", label: "Kelurahan" },
             { to: "/master-data/rukun-warga", label: "Rukun Warga" },
+          ],
+        },
+        {
+          type: "group",
+          label: "Panduan & Inovasi",
+          icon: BookOpen,
+          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[],
+          children: [
+            { to: "/master-data/panduan", label: "Buku Panduan" },
+            { to: "/master-data/kegiatan-sampah", label: "Master Kegiatan Sampah" },
           ],
         },
         {

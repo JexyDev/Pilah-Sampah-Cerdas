@@ -320,7 +320,7 @@ export const ProgramKerjaKkn: React.FC = () => {
             </select>
           </div>
 
-          {/* Status Filter */}
+        {/* Status Filter */}
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-slate-600">Status:</span>
             <select
@@ -329,7 +329,9 @@ export const ProgramKerjaKkn: React.FC = () => {
               className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500"
             >
               <option value="ALL">Semua Status</option>
-              <option value="DITERIMA">Diterima / Disepakati</option>
+              <option value="DITERIMA">Disetujui DPL</option>
+              <option value="SEDANG_BERJALAN">Sedang Dikerjakan</option>
+              <option value="SELESAI">Sudah Selesai</option>
               <option value="BELUM_DISETUJUI">Belum Disetujui</option>
               <option value="DITOLAK">Ditolak</option>
             </select>
@@ -383,6 +385,8 @@ export const ProgramKerjaKkn: React.FC = () => {
                   const isAccepted = p.status === "DITERIMA";
                   const isRejected = p.status === "DITOLAK";
                   const isPending = p.status === "BELUM_DISETUJUI";
+                  const isProgress = p.status === "SEDANG_BERJALAN";
+                  const isDone = p.status === "SELESAI";
 
                   return (
                     <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
@@ -408,7 +412,19 @@ export const ProgramKerjaKkn: React.FC = () => {
                         {isAccepted && (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-bold text-[10.5px]">
                             <CheckCircle2 size={12} />
-                            Diterima
+                            Disetujui
+                          </span>
+                        )}
+                        {isProgress && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-bold text-[10.5px]">
+                            <Clock size={12} />
+                            Sedang Berjalan
+                          </span>
+                        )}
+                        {isDone && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full font-bold text-[10.5px]">
+                            <CheckCircle2 size={12} />
+                            Selesai
                           </span>
                         )}
                         {isRejected && (
@@ -442,7 +458,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                                   })
                                 }
                                 title="Terima Rencana Kerja"
-                                className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+                                className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer"
                               >
                                 <CheckCircle2 size={15} />
                               </button>
@@ -457,7 +473,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                                   })
                                 }
                                 title="Tolak Rencana Kerja"
-                                className="p-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors"
+                                className="p-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
                               >
                                 <XCircle size={15} />
                               </button>
@@ -468,7 +484,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                               <button
                                 onClick={() => handleOpenEditModal(p)}
                                 title="Edit Rencana Kerja"
-                                className="p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+                                className="p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
                               >
                                 <Pencil size={14} />
                               </button>
@@ -481,7 +497,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                                   })
                                 }
                                 title="Hapus Rencana Kerja"
-                                className="p-1.5 rounded-lg bg-slate-100 text-rose-600 hover:bg-rose-50 transition-colors"
+                                className="p-1.5 rounded-lg bg-slate-100 text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -497,6 +513,7 @@ export const ProgramKerjaKkn: React.FC = () => {
           </div>
         )}
       </div>
+
 
       {/* Modal Add / Edit Form */}
       {isFormModalOpen && (

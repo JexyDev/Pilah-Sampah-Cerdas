@@ -272,6 +272,19 @@ export class KknAttendanceService {
     const { studentId, scheduleId, latitude, longitude, method, nim: inputNim, namaMahasiswa: inputNama, kodeZona: inputKodeZona } = params;
     const isAutoAlpa = method?.toUpperCase() === "ALPA_AUTO" || method?.toUpperCase() === "ALPA";
 
+    // 0. Validate operational hours (06:00 - 18:00 WIB)
+    if (!isAutoAlpa) {
+      const now = new Date();
+      // WIB is UTC + 7
+      const utcHours = now.getUTCHours();
+      const wibHours = (utcHours + 7) % 24;
+      if (wibHours < 6 || wibHours >= 18) {
+        throw new Error(
+          "OUT_OF_OPERATIONAL_HOURS: Presensi kegiatan KKN hanya dapat dilakukan pada jam operasional 06:00 - 18:00 WIB."
+        );
+      }
+    }
+
     // 1. Get activity location configuration if exists
     let actLoc: any = null;
     try {
@@ -743,6 +756,135 @@ export class KknAttendanceService {
 
     return combined;
   }
+
+  /**
+   * Get timesheet summary (accumulated work hours vs 100h target) for students.
+   */
+  async getTimesheetSummary(params: {
+    kelompokId?: string;
+    dplUserId?: string;
+    studentId?: string;
+  }) {
+    const { kelompokId, dplUserId, studentId } = params;
+
+    let whereStudent: any = {};
+    if (studentId) {
+      whereStudent.userId = studentId;
+    } else if (kelompokId && kelompokId !== "ALL") {
+      whereStudent.kelompokId = kelompokId;
+    } else if (dplUserId) {
+      const kelompokBinaan = await prisma.kelompokKkn.findMany({
+        where: { OR: [{ dplId: dplUserId }, { dpl: { id: dplUserId } }] },
+        select: { id: true },
+      });
+      whereStudent.kelompokId = { in: kelompokBinaan.map((k) => k.id) };
+    }
+
+    const students = await prisma.studentKkn.findMany({
+      where: whereStudent,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            attendances: {
+              include: {
+                schedule: {
+                  select: { id: true, title: true, date: true },
+                },
+              },
+              orderBy: { attendedAt: "desc" },
+            },
+          },
+        },
+        kelompok: {
+          select: { id: true, name: true, kelurahan: true, cakupanRw: true },
+        },
+        assignedRw: {
+          select: { id: true, name: true },
+        },
+      },
+      orderBy: [{ isKetua: "desc" }, { user: { name: "asc" } }],
+    });
+
+    const TARGET_TOTAL_HOURS = 100;
+    const TARGET_TOTAL_MINUTES = TARGET_TOTAL_HOURS * 60; // 6000 mins
+
+    const summary = students.map((s) => {
+      let totalMinutes = 0;
+      let validSessionsCount = 0;
+      let fulfilledTargetDays = 0;
+
+      const sessionDetails = s.user.attendances.map((att) => {
+        let durationMins = 0;
+        if (att.checkOutAt) {
+          const diffMs = att.checkOutAt.getTime() - att.attendedAt.getTime();
+          // Cap max 8 hours (480 mins) per session
+          durationMins = Math.min(480, Math.max(0, Math.floor(diffMs / (1000 * 60))));
+        }
+        totalMinutes += durationMins;
+        if (durationMins > 0) validSessionsCount++;
+        if (durationMins >= 240) fulfilledTargetDays++; // >= 4 hours
+
+        return {
+          id: att.id,
+          scheduleId: att.scheduleId,
+          scheduleTitle: att.schedule?.title || "Kegiatan KKN",
+          attendedAt: att.attendedAt,
+          checkOutAt: att.checkOutAt,
+          durationMinutes: durationMins,
+          durationFormatted: `${Math.floor(durationMins / 60)} Jam ${durationMins % 60} Menit`,
+          isMinTargetMet: durationMins >= 240,
+          status: att.status,
+        };
+      });
+
+      const hours = Math.floor(totalMinutes / 60);
+      const mins = totalMinutes % 60;
+      const progressPercentage = Math.min(
+        100,
+        Math.round((totalMinutes / TARGET_TOTAL_MINUTES) * 1000) / 10
+      );
+
+      return {
+        studentId: s.userId,
+        studentName: s.user.name,
+        nim: s.nim || "-",
+        phone: s.user.phone,
+        jurusan: s.jurusan,
+        fakultas: s.fakultas,
+        isKetua: s.isKetua,
+        kelompokId: s.kelompokId,
+        kelompokName: s.kelompok?.name || "Tanpa Kelompok",
+        kelurahan: s.kelompok?.kelurahan || "-",
+        assignedRwName: s.assignedRw?.name || "-",
+        totalMinutes,
+        totalHours: hours,
+        remainingMinutes: mins,
+        totalFormatted: `${hours} Jam ${mins} Menit`,
+        targetTotalHours: TARGET_TOTAL_HOURS,
+        progressPercentage,
+        totalDaysAttended: sessionDetails.length,
+        fulfilledTargetDays,
+        isTargetFulfilled: totalMinutes >= TARGET_TOTAL_MINUTES,
+        sessions: sessionDetails,
+      };
+    });
+
+    return {
+      targetRules: {
+        hariKerja: "Senin – Jumat",
+        jamOperasional: "08:00 – 16:00 WIB (Toleransi 06:00 – 18:00 WIB)",
+        targetHarianMinJam: 4,
+        targetTotalJam: TARGET_TOTAL_HOURS,
+        durasiBulan: 2.5,
+      },
+      totalMahasiswa: summary.length,
+      students: summary,
+    };
+  }
 }
 
 export const kknAttendanceService = new KknAttendanceService();
+

@@ -151,6 +151,21 @@ router.get(
   kknAttendanceController.getAttendanceList
 );
 
+router.get(
+  "/timesheet/summary",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN", "MAHASISWA_KKN", "DEVELOPER"]),
+  kknAttendanceController.getTimesheetSummary
+);
+
+router.get(
+  "/kkn/attendance/timesheet-summary",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN", "MAHASISWA_KKN", "DEVELOPER"]),
+  kknAttendanceController.getTimesheetSummary
+);
+
+
 import { KknAttendanceService } from "../services/kknAttendanceService.js";
 const kknAttendanceServiceInstance = new KknAttendanceService();
 

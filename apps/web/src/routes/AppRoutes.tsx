@@ -79,6 +79,8 @@ import ProgramKerjaKkn from "../pages/ProgramKerjaKkn/ProgramKerjaKkn";
 import PenilaianMahasiswaPage from "../pages/PenilaianKkn/PenilaianMahasiswaPage";
 import PenilaianProkerPage from "../pages/PenilaianKkn/PenilaianProkerPage";
 import RekapNilaiKknPage from "../pages/PenilaianKkn/RekapNilaiKknPage";
+import MasterPanduanPage from "../pages/MasterData/MasterPanduanPage";
+import MasterKegiatanSampahPage from "../pages/MasterData/MasterKegiatanSampahPage";
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
@@ -471,7 +473,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/penilaian-kkn/mahasiswa"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
               <PenilaianMahasiswaPage />
             </ProtectedRoute>
           }
@@ -479,7 +481,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/penilaian-kkn/program-kerja"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
               <PenilaianProkerPage />
             </ProtectedRoute>
           }
@@ -487,8 +489,24 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/penilaian-kkn/rekap"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
               <RekapNilaiKknPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master-data/panduan"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DEVELOPER"]}>
+              <MasterPanduanPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master-data/kegiatan-sampah"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DEVELOPER"]}>
+              <MasterKegiatanSampahPage />
             </ProtectedRoute>
           }
         />
