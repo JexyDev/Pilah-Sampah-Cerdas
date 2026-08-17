@@ -462,7 +462,7 @@ export const DplDashboardPage: React.FC = () => {
       "Total Hadir (Kegiatan)",
       "Sakit (Hari)",
       "Izin (Hari)",
-      "Alpha (Hari)",
+      "Tanpa Keterangan (Hari)",
       "Tingkat Kehadiran (%)",
       "Poin Individu",
       "Nilai Asesmen DPL",
@@ -825,7 +825,7 @@ export const DplDashboardPage: React.FC = () => {
                 <span className="text-slate-300">•</span>
                 <span className="text-purple-700 font-bold">{gradeDistribution.totalIzin} Izin</span>
                 <span className="text-slate-300">•</span>
-                <span className="text-rose-700 font-bold">{gradeDistribution.totalAlpha} Alpha</span>
+                <span className="text-rose-700 font-bold">{gradeDistribution.totalAlpha} Tanpa Keterangan</span>
               </div>
             </div>
 
