@@ -241,7 +241,8 @@ export class KknAttendanceService {
 
     const defaultLat = configLatStr ? parseFloat(configLatStr) : -6.8915; // Bandung / Coblong
     const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.6107;
-    const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 100;
+    const configDurationStr = await configService.getConfig("default_activity_duration_minutes");
+    const targetDurationMinutes = (schedule as any).targetDurationMinutes || (configDurationStr ? parseInt(configDurationStr, 10) : 60);
 
     return {
       scheduleId: schedule.id,
@@ -249,6 +250,8 @@ export class KknAttendanceService {
       latitude: schedule.latitude ? Number(schedule.latitude) : defaultLat,
       longitude: schedule.longitude ? Number(schedule.longitude) : defaultLng,
       radius: schedule.radius ? Number(schedule.radius) : defaultRadius,
+      targetDurationMinutes,
+      durationMinutes: targetDurationMinutes,
       polygon: schedule.polygon,
       isConfigured: schedule.latitude !== null && schedule.longitude !== null,
     };
