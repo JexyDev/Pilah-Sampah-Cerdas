@@ -159,14 +159,10 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
     }
 
     final bool hasPendingRequest = resetState.result != null && resetState.result!.status == BinResetStatus.pending;
-<<<<<<< HEAD
-    return binsAsync.when(skipLoadingOnReload: true, data: (bins) {
-        return _buildForm(bins, userId, isPending: hasPendingRequest);
-=======
     return binsAsync.when(
+      skipLoadingOnReload: true,
       data: (bins) {
         return _buildForm(bins, userId, petugasState, isPending: hasPendingRequest);
->>>>>>> 20024bc6 (feat: fungsi detail notifikasi)
       },
       loading: () => const AppLoading(),
       error: (_, __) => const Center(child: Text(AppStrings.errorGeneric)),

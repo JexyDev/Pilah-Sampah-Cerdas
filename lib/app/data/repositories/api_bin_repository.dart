@@ -5,6 +5,8 @@ import 'package:dio/dio.dart';
 import '../models/bin_entity.dart';
 import '../models/ai_detection_entity.dart';
 import '../models/bin_reset_entity.dart';
+import '../models/petugas_entity.dart';
+import '../models/petugas_status_response.dart';
 import 'bin_repository.dart';
 import '../providers/api_client.dart';
 import '../../core/utils/image_compressor.dart';
