@@ -17,7 +17,7 @@ class PengajuanIzinMahasiswaEntity extends Equatable {
 
   final String id;
   final String mahasiswaId;
-  final KategoriIzin kategori; // sakit | izin (BUKAN alpha)
+  final KategoriIzin kategori; // sakit | izin (BUKAN tanpa keterangan)
   final String fotoBuktiUrl;
   final String deskripsi;
   final DateTime tanggalKegiatanTerkait;

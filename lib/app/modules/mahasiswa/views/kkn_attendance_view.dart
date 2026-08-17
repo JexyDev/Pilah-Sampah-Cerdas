@@ -288,7 +288,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
     final bool isDisabled = state.zoneResetWarning != null && 
         (state.zoneResetWarning!.toLowerCase().contains('izin') || state.zoneResetWarning!.toLowerCase().contains('sakit'));
     
-    final bool isAlpa = state.zoneResetWarning != null && state.zoneResetWarning!.toLowerCase().contains('alpa') && !state.isSuccessAttendance;
+    final bool isAlpa = state.zoneResetWarning != null && state.zoneResetWarning!.toLowerCase().contains('tanpa keterangan') && !state.isSuccessAttendance;
     final bool isSuccess = state.isSuccessAttendance;
 
     final bool isLibur = state.activeActivity != null && 
@@ -630,7 +630,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
             label: Text(
               isSuccess 
                   ? 'Berhasil Absen' 
-                  : (isAlpa ? 'Alpa (Waktu Habis)' : 'Absen Sekarang'),
+                  : (isAlpa ? 'Tanpa Keterangan (Waktu Habis)' : 'Absen Sekarang'),
               style: TextStyle(
                 fontWeight: FontWeight.bold, 
                 fontSize: 15, 
