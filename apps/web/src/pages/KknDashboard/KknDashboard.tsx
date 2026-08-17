@@ -1146,7 +1146,7 @@ const KknDashboard: React.FC = () => {
           {/* Map Legend Overlay (High Z-Index & Isolate to prevent flickering on zoom in/out) */}
           <div
             className="absolute bottom-4 right-4 flex flex-col gap-2 max-w-xs font-sans text-xs pointer-events-auto select-none"
-            style={{ zIndex: 1000, isolation: "isolate" }}
+            style={{ zIndex: 500, isolation: "isolate" }}
           >
             {!isLegendOpen ? (
               <button

@@ -918,7 +918,7 @@ const ManajemenTempatSampah: React.FC = () => {
               {/* Map Overlay Legend Card (Legenda Peta) */}
               <div
                 className="absolute bottom-4 right-4 flex flex-col pointer-events-auto max-w-[280px] sm:max-w-[300px] select-none"
-                style={{ zIndex: 1000, isolation: "isolate" }}
+                style={{ zIndex: 500, isolation: "isolate" }}
               >
                 {!isLegendOpen ? (
                   <button

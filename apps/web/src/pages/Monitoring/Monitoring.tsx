@@ -637,7 +637,7 @@ const Monitoring: React.FC = () => {
             {/* Map Overlay Unified Legend Card (Single Consolidated Source of Truth) */}
             <div
               className="absolute bottom-4 right-4 flex flex-col pointer-events-auto max-w-[280px] sm:max-w-[300px] select-none"
-              style={{ zIndex: 1000, isolation: "isolate" }}
+              style={{ zIndex: 500, isolation: "isolate" }}
             >
               {!isLegendOpen ? (
                 <button
