@@ -975,7 +975,7 @@ const MonitoringAbsen: React.FC = () => {
       radius: 100,
       kelompokId: defaultKelompokId,
     });
-    setSelectedPos([[locInfo.centroid[0], locInfo.centroid[1]]]);
+    setSelectedPos([]);
     setIsModalOpen(true);
   };
 
@@ -2163,9 +2163,6 @@ const MonitoringAbsen: React.FC = () => {
                               kelompokId: newGroupId,
                               location: locInfo.fullAddress,
                             }));
-                            setSelectedPos([
-                              [locInfo.centroid[0], locInfo.centroid[1]],
-                            ]);
                           }}
                           className="w-full h-10 px-3 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-emerald-500 text-xs font-bold text-slate-800 outline-none cursor-pointer"
                         >
@@ -2303,28 +2300,32 @@ const MonitoringAbsen: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="h-[280px] rounded-2xl overflow-hidden border border-slate-200 relative z-0">
-                    <MapContainer
-                      center={
-                        selectedPos.length > 0
-                          ? selectedPos[0]
-                          : [-6.8915, 107.6107]
-                      }
-                      zoom={15}
-                      style={{ height: "100%", width: "100%" }}
-                    >
-                      <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      />
-                      <DualGeofencePickerModalMap
-                        mode={geofenceMode}
-                        points={selectedPos || []}
-                        onChange={(pts) => setSelectedPos(pts)}
-                        radius={Number(formData.radius) || 100}
-                      />
-                    </MapContainer>
-                  </div>
+                  {(() => {
+                    const modalTargetGroup = groups.find((g) => g.id === formData.kelompokId);
+                    const modalLocInfo = getKelompokLocationInfo(modalTargetGroup);
+                    const mapModalCenter = selectedPos.length > 0 ? selectedPos[0] : modalLocInfo.centroid;
+
+                    return (
+                      <div className="h-[280px] rounded-2xl overflow-hidden border border-slate-200 relative z-0">
+                        <MapContainer
+                          center={mapModalCenter}
+                          zoom={15}
+                          style={{ height: "100%", width: "100%" }}
+                        >
+                          <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                          />
+                          <DualGeofencePickerModalMap
+                            mode={geofenceMode}
+                            points={selectedPos || []}
+                            onChange={(pts) => setSelectedPos(pts)}
+                            radius={Number(formData.radius) || 100}
+                          />
+                        </MapContainer>
+                      </div>
+                    );
+                  })()}
 
                   {geofenceMode === "CIRCLE" && (
                     <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between gap-4">
