@@ -63,7 +63,7 @@ class KknLocationState {
     this.zoneResetWarning,
     this.checkInTime,
     this.checkOutTime,
-    this.targetDurationMinutes = 120,
+    this.targetDurationMinutes = 60,
   });
 
   KknLocationState copyWith({
@@ -246,11 +246,11 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       final repo = ref.read(kknRepositoryProvider);
       final locationData = await repo.getTargetLocation(_currentTargetScheduleId!);
       
-      int duration = 120;
+      int duration = 60;
       if (locationData['targetDurationMinutes'] != null) {
-        duration = int.tryParse(locationData['targetDurationMinutes'].toString()) ?? 120;
+        duration = int.tryParse(locationData['targetDurationMinutes'].toString()) ?? 60;
       } else if (locationData['durationMinutes'] != null) {
-        duration = int.tryParse(locationData['durationMinutes'].toString()) ?? 120;
+        duration = int.tryParse(locationData['durationMinutes'].toString()) ?? 60;
       }
       
       state = state.copyWith(
