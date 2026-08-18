@@ -360,7 +360,7 @@ router.post(
   kknController.registerWarga
 );
 
-import { uploadSingleImage } from "../middlewares/uploadMiddleware.js";
+import { uploadSingleImage, safeUploadSingleImage } from "../middlewares/uploadMiddleware.js";
 
 /**
  * @swagger
@@ -378,7 +378,7 @@ router.post(
   "/pengajuan-izin",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
-  uploadSingleImage.single("fotoBukti"),
+  safeUploadSingleImage("fotoBukti"),
   kknController.createLeaveRequest
 );
 

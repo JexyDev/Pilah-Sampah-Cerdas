@@ -1099,12 +1099,20 @@ export class KknService {
       ? new Date(payload.tanggalKegiatanTerkait)
       : new Date();
 
+    if (isNaN(targetDate.getTime())) {
+      targetDate = new Date();
+    }
+
     if (payload.scheduleId) {
-      const schedule = await prisma.schedule.findUnique({
-        where: { id: payload.scheduleId },
-      });
-      if (schedule && schedule.date) {
-        targetDate = new Date(schedule.date);
+      try {
+        const schedule = await prisma.schedule.findUnique({
+          where: { id: payload.scheduleId },
+        });
+        if (schedule && schedule.date) {
+          targetDate = new Date(schedule.date);
+        }
+      } catch (schErr) {
+        console.warn("[createLeaveRequest] Schedule lookup fallback:", schErr);
       }
     }
 
@@ -1113,10 +1121,14 @@ export class KknService {
     const endDate = new Date(targetDate);
     endDate.setHours(23, 59, 59, 999);
 
+    const leaveType = (payload.kategori || "IZIN").toUpperCase().includes("SAKIT")
+      ? "SAKIT"
+      : "IZIN";
+
     const leave = await (prisma as any).studentLeaveRequest.create({
       data: {
         studentId,
-        type: payload.kategori || "Izin",
+        type: leaveType,
         reason: payload.deskripsi || "Berhalangan hadir kegiatan KKN",
         evidenceUrl: payload.fotoBuktiUrl || null,
         startDate,
@@ -1124,6 +1136,27 @@ export class KknService {
         status: "PENDING",
       },
     });
+
+    // Notify DPL asynchronously in background (non-blocking, won't trigger 502/timeout)
+    try {
+      const studentProfile = await prisma.studentKkn.findFirst({
+        where: { OR: [{ userId: studentId }, { id: studentId }] },
+        include: { kelompok: { include: { dpl: true } }, user: true },
+      });
+      const dplUser = studentProfile?.kelompok?.dpl;
+      if (dplUser) {
+        await prisma.notification.create({
+          data: {
+            userId: dplUser.id,
+            title: `Pengajuan Ketidakhadiran (${leaveType}) Baru`,
+            message: `Mahasiswa ${studentProfile?.user?.name || "KKN"} mengajukan ${leaveType}: "${leave.reason}"`,
+            isRead: false,
+          },
+        });
+      }
+    } catch (notifErr) {
+      console.warn("[createLeaveRequest] Background DPL notification warning (non-critical):", notifErr);
+    }
 
     return {
       izinId: leave.id,
