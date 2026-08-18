@@ -256,3 +256,15 @@ iframe {
 .dark .leaflet-container {
   background-color: #0b1120 !important;
 }
+
+/* ==========================================================
+   AUTOFILL STYLES (PREVENT DARK GREY CHROME OVERLAY ON FORMS)
+   ========================================================== */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #0f172a !important;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}

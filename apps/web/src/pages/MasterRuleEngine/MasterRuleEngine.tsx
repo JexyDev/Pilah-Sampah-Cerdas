@@ -39,6 +39,7 @@ export interface RuleEngineConfig {
   attendanceMinDurationMinutes: number;
   attendanceMinDurationSeconds: number;
   attendanceOutOfZoneToleranceMinutes: number;
+  kknTotalDays: number;
   kknStartDate: string;
   kknEndDate: string;
   kknAutoHolidayWeekends: boolean;
@@ -53,10 +54,11 @@ const DEFAULT_CONFIG: RuleEngineConfig = {
   wargaReminderNotificationEnabled: true,
   lateSubmissionDiscount: 0.5,
   lateSubmissionPenaltyActive: true,
-  attendanceMinDurationHours: 2,
+  attendanceMinDurationHours: 4,
   attendanceMinDurationMinutes: 0,
   attendanceMinDurationSeconds: 0,
   attendanceOutOfZoneToleranceMinutes: 15,
+  kknTotalDays: 50,
   kknStartDate: "2026-08-20",
   kknEndDate: "2026-10-20",
   kknAutoHolidayWeekends: true,

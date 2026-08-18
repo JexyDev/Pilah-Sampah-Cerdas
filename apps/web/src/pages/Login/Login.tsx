@@ -540,6 +540,26 @@ const Login: React.FC = () => {
 
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
+  // Force light mode on login page unconditionally
+  useEffect(() => {
+    const root = document.documentElement;
+    const savedTheme = useThemeStore.getState().theme;
+    root.classList.remove("dark");
+    root.setAttribute("data-theme", "light");
+
+    return () => {
+      // Restore user preference when navigating away
+      const currentTheme = useThemeStore.getState().theme || savedTheme;
+      if (currentTheme === "dark") {
+        root.classList.add("dark");
+        root.setAttribute("data-theme", "dark");
+      } else {
+        root.classList.remove("dark");
+        root.setAttribute("data-theme", "light");
+      }
+    };
+  }, []);
+
   const handleIdentifierBlur = () => {
     const normalized = normalizePhone(identifier);
     if (normalized !== identifier && normalized) setIdentifier(normalized);
@@ -768,7 +788,7 @@ const Login: React.FC = () => {
                   <input
                     id="login-phone"
                     autoFocus
-                    className={`w-full pl-10 pr-4 h-12 bg-slate-50 border ${identifierError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-medium focus:ring-1 outline-none transition-all`}
+                    className={`w-full pl-10 pr-4 h-12 bg-white text-slate-900 placeholder:text-slate-400 border ${identifierError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-semibold focus:ring-1 outline-none transition-all shadow-2xs`}
                     placeholder="08123456789 atau +6281234567890"
                     type="text"
                     value={identifier}
@@ -805,7 +825,7 @@ const Login: React.FC = () => {
                   <input
                     id="login-password"
                     ref={passwordInputRef}
-                    className={`w-full pl-10 pr-11 h-12 bg-slate-50 border ${passwordError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-medium focus:ring-1 outline-none transition-all`}
+                    className={`w-full pl-10 pr-11 h-12 bg-white text-slate-900 placeholder:text-slate-400 border ${passwordError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-semibold focus:ring-1 outline-none transition-all shadow-2xs`}
                     placeholder="Masukkan kata sandi akun"
                     type={showPassword ? "text" : "password"}
                     value={password}
