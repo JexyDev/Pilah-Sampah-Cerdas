@@ -173,7 +173,7 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
       if (isSuccess) {
         await refresh(); // Refresh list after success
         // Panggil notifikasi latar belakang
-        NotificationEngine().showActivationNotification(15);
+        NotificationEngine().showActivationNotification(10);
         return true;
       } else {
         state = state.copyWith(
@@ -234,8 +234,8 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
         await refresh(); // Refresh list after success
         // MUST refresh the home dashboard to update points and citizens list!
         ref.read(mahasiswaControllerProvider.notifier).refresh();
-        // Panggil notifikasi latar belakang (Asumsi poin 15 untuk aktivasi)
-        NotificationEngine().showActivationNotification(15);
+        // Panggil notifikasi latar belakang (Asumsi poin 10 untuk aktivasi)
+        NotificationEngine().showActivationNotification(10);
         return true;
       } else {
         state = state.copyWith(

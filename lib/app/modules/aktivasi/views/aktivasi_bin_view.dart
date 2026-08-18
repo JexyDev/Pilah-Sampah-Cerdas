@@ -299,7 +299,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
 
       // Trigger notification when success transitions from false to true
       if (!(prev?.isSuccess ?? false) && next.isSuccess) {
-        import_engine.NotificationEngine().showActivationNotification(20);
+        import_engine.NotificationEngine().showActivationNotification(10);
         // Refresh point providers if they exist globally
         ref.invalidate(pointHistoryProvider);
       }

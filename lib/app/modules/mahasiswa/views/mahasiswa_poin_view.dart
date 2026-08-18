@@ -323,7 +323,7 @@ class MahasiswaPoinView extends ConsumerWidget {
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Poin KKN diperoleh dari presensi geofence (+10 PTS), aktivasi tempat sampah warga (+15 PTS), dan laporan pemanfaatan daur ulang.',
+              'Poin KKN diperoleh dari presensi geofence (+10 PTS), aktivasi tempat sampah warga (+10 PTS), dan laporan pemanfaatan daur ulang.',
               style: TextStyle(fontSize: 11, color: AppColors.primaryGreen, height: 1.3),
             ),
           ),
