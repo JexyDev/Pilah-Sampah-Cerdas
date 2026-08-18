@@ -107,6 +107,8 @@ export interface ApprovalHistoryLog {
   type: string;
   reason: string;
   status: string;
+  startDate?: string;
+  endDate?: string;
   reviewedAt: string;
   rejectionReason?: string;
 }

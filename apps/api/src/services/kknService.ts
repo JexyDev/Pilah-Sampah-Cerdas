@@ -1095,10 +1095,23 @@ export class KknService {
       scheduleId?: string;
     }
   ) {
-    const startDate = payload.tanggalKegiatanTerkait
+    let targetDate = payload.tanggalKegiatanTerkait
       ? new Date(payload.tanggalKegiatanTerkait)
       : new Date();
-    const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+
+    if (payload.scheduleId) {
+      const schedule = await prisma.schedule.findUnique({
+        where: { id: payload.scheduleId },
+      });
+      if (schedule && schedule.date) {
+        targetDate = new Date(schedule.date);
+      }
+    }
+
+    const startDate = new Date(targetDate);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(targetDate);
+    endDate.setHours(23, 59, 59, 999);
 
     const leave = await (prisma as any).studentLeaveRequest.create({
       data: {
@@ -1115,6 +1128,8 @@ export class KknService {
     return {
       izinId: leave.id,
       status: leave.status,
+      startDate,
+      endDate,
     };
   }
 

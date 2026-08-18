@@ -1646,6 +1646,7 @@ export const DplDashboardPage: React.FC = () => {
                   <tr>
                     <th className="px-4 py-3.5">Nama Mahasiswa</th>
                     <th className="px-4 py-3.5">Jenis Ketidakhadiran</th>
+                    <th className="px-4 py-3.5">Tanggal / Periode Izin</th>
                     <th className="px-4 py-3.5 min-w-[240px]">Alasan / Catatan</th>
                     <th className="px-4 py-3.5 text-center">Status Keputusan</th>
                     <th className="px-4 py-3.5">Waktu Verifikasi</th>
@@ -1661,6 +1662,16 @@ export const DplDashboardPage: React.FC = () => {
                         }`}>
                           {log.type}
                         </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-slate-700 dark:text-slate-300 font-semibold text-[11.5px]">
+                        {log.startDate ? (
+                          <span>
+                            {new Date(log.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                            {log.endDate && log.endDate.split("T")[0] !== log.startDate.split("T")[0]
+                              ? ` - ${new Date(log.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}`
+                              : ""}
+                          </span>
+                        ) : "-"}
                       </td>
                       <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300 max-w-xs truncate">{log.reason}</td>
                       <td className="px-4 py-3.5 text-center">
@@ -1683,7 +1694,7 @@ export const DplDashboardPage: React.FC = () => {
 
                   {paginatedApprovalHistory.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="p-4 text-center text-slate-400 italic">
+                      <td colSpan={6} className="p-4 text-center text-slate-400 italic">
                         Belum ada data riwayat persetujuan.
                       </td>
                     </tr>

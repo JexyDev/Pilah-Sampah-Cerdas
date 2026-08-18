@@ -613,6 +613,8 @@ export const dplService = {
       type: h.type,
       reason: h.reason,
       status: h.status,
+      startDate: h.startDate,
+      endDate: h.endDate,
       reviewedAt: h.reviewedAt || h.updatedAt,
       rejectionReason: h.rejectionReason,
     }));
