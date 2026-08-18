@@ -775,10 +775,20 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className={`px-3 py-1.5 rounded-xl text-xs font-black border ${currentCategory.color}`}>
                   {currentCategory.label} ({currentCategory.letter})
                 </span>
+                <button
+                  type="button"
+                  onClick={handleSaveScore}
+                  disabled={saving || !selectedStudentId}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition shadow-xs cursor-pointer disabled:opacity-50"
+                  title="Simpan Penilaian Mahasiswa"
+                >
+                  {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+                  <span>Simpan Penilaian</span>
+                </button>
               </div>
             </div>
 
