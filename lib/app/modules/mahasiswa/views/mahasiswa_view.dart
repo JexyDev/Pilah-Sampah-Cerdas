@@ -401,7 +401,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
       if (w.role.isNotEmpty && w.role.toUpperCase() != 'WARGA') return false;
       
       final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
-      final isMyRw = cleanUserRw.isEmpty || cleanWargaRw == cleanUserRw;
+      final isMyRw = cleanUserRw.isNotEmpty && cleanWargaRw == cleanUserRw;
       
       // Jika backend mengirim mahasiswaId, cocokkan. Jika tidak, minimal harus satu RW dengan mahasiswa
       final isMyId = w.mahasiswaId.isNotEmpty && w.mahasiswaId == user?.id;

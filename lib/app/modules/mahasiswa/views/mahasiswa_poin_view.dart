@@ -172,7 +172,7 @@ class MahasiswaPoinView extends ConsumerWidget {
     final myWargaList = mhsState.wargaList.where((w) {
       if (w.role.isNotEmpty && w.role.toUpperCase() != 'WARGA') return false;
       final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
-      final isMyRw = cleanUserRw.isEmpty || cleanWargaRw == cleanUserRw;
+      final isMyRw = cleanUserRw.isNotEmpty && cleanWargaRw == cleanUserRw;
       final isMyId = w.mahasiswaId.isNotEmpty && w.mahasiswaId == user?.id;
       final isMyName = w.pendampingName.trim().toLowerCase() == (user?.name ?? '').trim().toLowerCase();
       
