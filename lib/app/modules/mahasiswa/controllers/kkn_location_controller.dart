@@ -146,26 +146,28 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
   Future<void> _loadPersistentTimer() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedDate = prefs.getString(_prefKeyDate);
-    final today = DateTime.now().toLocal().toString().substring(
-      0,
-      10,
-    ); // YYYY-MM-DD
+    final targetKey = _currentTargetScheduleId != null && _currentTargetScheduleId != 'SCH-TODAY'
+        ? '_$_currentTargetScheduleId'
+        : '';
+    final savedDate = prefs.getString('${_prefKeyDate}$targetKey');
+    final today = DateTime.now().toLocal().toString().substring(0, 10);
 
-    // Reset jika beda hari atau beda target zona
     if (savedDate != today) {
       _accumulatedSeconds = 0;
       await _savePersistentTimer();
     } else {
-      _accumulatedSeconds = prefs.getInt(_prefKeyAccumulated) ?? 0;
+      _accumulatedSeconds = prefs.getInt('${_prefKeyAccumulated}$targetKey') ?? 0;
     }
   }
 
   Future<void> _savePersistentTimer() async {
     final prefs = await SharedPreferences.getInstance();
     final today = DateTime.now().toLocal().toString().substring(0, 10);
-    await prefs.setString(_prefKeyDate, today);
-    await prefs.setInt(_prefKeyAccumulated, _accumulatedSeconds);
+    final targetKey = _currentTargetScheduleId != null && _currentTargetScheduleId != 'SCH-TODAY'
+        ? '_$_currentTargetScheduleId'
+        : '';
+    await prefs.setString('${_prefKeyDate}$targetKey', today);
+    await prefs.setInt('${_prefKeyAccumulated}$targetKey', _accumulatedSeconds);
     if (_currentTargetScheduleId != null) {
       await prefs.setString(_prefKeyTarget, _currentTargetScheduleId!);
     }
@@ -174,8 +176,11 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   Future<void> _savePersistentTimerTempValue(int tempSeconds) async {
     final prefs = await SharedPreferences.getInstance();
     final today = DateTime.now().toLocal().toString().substring(0, 10);
-    await prefs.setString(_prefKeyDate, today);
-    await prefs.setInt(_prefKeyAccumulated, tempSeconds);
+    final targetKey = _currentTargetScheduleId != null && _currentTargetScheduleId != 'SCH-TODAY'
+        ? '_$_currentTargetScheduleId'
+        : '';
+    await prefs.setString('${_prefKeyDate}$targetKey', today);
+    await prefs.setInt('${_prefKeyAccumulated}$targetKey', tempSeconds);
     if (_currentTargetScheduleId != null) {
       await prefs.setString(_prefKeyTarget, _currentTargetScheduleId!);
     }
@@ -227,13 +232,26 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
               activeZone['id']?.toString() ??
               activeZone['scheduleId']?.toString();
           final status =
-              (activeZone['attendanceStatus'] ?? activeZone['status'])
-                  ?.toString()
+              (activeZone['attendanceStatus'] ?? activeZone['status'] ?? activeZone['kehadiran'] ?? '')
+                  .toString()
                   .toLowerCase();
-          if (status == 'izin' || status == 'sakit') {
+          final bool isAttended = activeZone['isAttended'] == true || status == 'hadir';
+
+          if (isAttended || status == 'hadir') {
+            final targetMins = activeZone['targetDurationMinutes'] ?? activeZone['durationMinutes'] ?? 60;
+            _accumulatedSeconds = (targetMins as num).toInt() * 60;
+            state = state.copyWith(
+              isSuccessAttendance: true,
+              inZoneDurationSeconds: _accumulatedSeconds,
+              isEligibleForAttendance: false,
+              zoneResetWarning: 'Anda sudah berhasil melakukan presensi (Hadir) pada jadwal kegiatan ini.',
+              clearWarning: false,
+              clearError: true,
+            );
+          } else if (status == 'izin' || status == 'sakit') {
             state = state.copyWith(
               zoneResetWarning:
-                  'Anda tercatat ${status?.toUpperCase()} pada jadwal kegiatan ini.',
+                  'Anda tercatat ${status.toUpperCase()} pada jadwal kegiatan ini.',
             );
           } else if (status == 'alpa') {
             state = state.copyWith(
@@ -583,10 +601,29 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         }
       }
 
-      state = state.copyWith(
-        activeActivity: mergedData,
-        targetDurationMinutes: duration,
-      );
+      final status = (mergedData['attendanceStatus'] ?? mergedData['status'] ?? mergedData['kehadiran'] ?? '')
+          .toString()
+          .toLowerCase();
+      final bool isAttended = mergedData['isAttended'] == true || status == 'hadir';
+
+      if (isAttended || status == 'hadir') {
+        _accumulatedSeconds = duration * 60;
+        state = state.copyWith(
+          activeActivity: mergedData,
+          targetDurationMinutes: duration,
+          isSuccessAttendance: true,
+          inZoneDurationSeconds: _accumulatedSeconds,
+          isEligibleForAttendance: false,
+          zoneResetWarning: 'Anda sudah berhasil melakukan presensi (Hadir) pada jadwal kegiatan ini.',
+          clearWarning: false,
+          clearError: true,
+        );
+      } else {
+        state = state.copyWith(
+          activeActivity: mergedData,
+          targetDurationMinutes: duration,
+        );
+      }
     } catch (e) {
       state = state.copyWith(error: NetworkExceptionHelper.getErrorMessage(e));
     }

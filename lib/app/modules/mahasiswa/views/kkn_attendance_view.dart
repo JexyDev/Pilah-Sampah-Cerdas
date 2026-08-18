@@ -569,7 +569,49 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
               ],
             ),
           )
-        else
+        else if (isSuccess)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGreen.withValues(alpha: 0.12),
+              border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.4)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryGreen,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Presensi Kehadiran Terverifikasi',
+                        style: TextStyle(
+                          color: AppColors.primaryGreen,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Status kehadiran Anda telah berhasil dicatat & disinkronkan ke server.',
+                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          )
+        else if (!isAlpa && !isDisabled)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -649,7 +691,10 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text('$durasiMenit mnt $durasiDetik dtk', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 18)),
+                            Text(
+                              isSuccess ? '$targetMenit mnt 0 dtk' : '$durasiMenit mnt $durasiDetik dtk', 
+                              style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 18)
+                            ),
                             const SizedBox(width: 4),
                             Text('/ $targetMenit mnt', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                           ],
@@ -664,7 +709,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      '${targetMenit > 0 ? ((durasiMenit / targetMenit) * 100).toStringAsFixed(1) : 0}%',
+                      isSuccess ? '100.0%' : '${targetMenit > 0 ? ((durasiMenit / targetMenit) * 100).toStringAsFixed(1) : 0}%',
                       style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 11),
                     ),
                   ),
@@ -672,17 +717,19 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
               ),
               const SizedBox(height: 16),
               LinearProgressIndicator(
-                value: targetMenit > 0 ? (durasiMenit / targetMenit).clamp(0.0, 1.0) : 0,
+                value: isSuccess ? 1.0 : (targetMenit > 0 ? (durasiMenit / targetMenit).clamp(0.0, 1.0) : 0),
                 backgroundColor: Colors.grey[300],
-                color: Colors.orange,
+                color: isSuccess ? AppColors.primaryGreen : Colors.orange,
                 minHeight: 6,
                 borderRadius: BorderRadius.circular(3),
               ),
               const SizedBox(height: 12),
               Text(
-                remainingMenit > 0 
-                    ? 'Waktu tersisa: $remainingMenit menit lagi sebelum tombol absen terbuka.'
-                    : 'Waktu terpenuhi! Tombol absen sudah terbuka.',
+                isSuccess 
+                    ? 'Waktu terpenuhi! Presensi Anda resmi terdaftar.'
+                    : (remainingMenit > 0 
+                        ? 'Waktu tersisa: $remainingMenit menit lagi sebelum tombol absen terbuka.'
+                        : 'Waktu terpenuhi! Tombol absen sudah terbuka.'),
                 style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
             ],
@@ -700,22 +747,22 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
             } : null,
             icon: Icon(
               isSuccess ? Icons.check_circle_rounded : (isAlpa ? Icons.cancel_rounded : Icons.location_on_rounded), 
-              color: (state.isEligibleForAttendance || isSuccess || isAlpa) ? Colors.white : Colors.grey[500],
+              color: Colors.white,
               size: 20,
             ),
             label: Text(
               isSuccess 
-                  ? 'Berhasil Absen' 
-                  : (isAlpa ? 'Tanpa Keterangan (Waktu Habis)' : 'Absen Sekarang'),
-              style: TextStyle(
+                  ? '✅ Anda Sudah Presensi (Hadir)' 
+                  : (isAlpa ? '⚠️ Tanpa Keterangan (Waktu Habis)' : 'Absen Sekarang'),
+              style: const TextStyle(
                 fontWeight: FontWeight.bold, 
                 fontSize: 15, 
-                color: (state.isEligibleForAttendance || isSuccess || isAlpa) ? Colors.white : Colors.grey[500]
+                color: Colors.white,
               ),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: isSuccess ? AppColors.primaryGreen : (isAlpa ? AppColors.dangerRed : Colors.grey[300]),
-              disabledBackgroundColor: Colors.grey[300],
+              disabledBackgroundColor: isSuccess ? AppColors.primaryGreen : (isAlpa ? AppColors.dangerRed : Colors.grey[300]),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ).copyWith(
               backgroundColor: WidgetStateProperty.resolveWith((states) {
@@ -729,13 +776,13 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
         ),
         const SizedBox(height: 8),
         if (!state.isEligibleForAttendance && !isSuccess && !isAlpa)
-            Text(
-              targetMenit >= 60
-                ? 'Presensi baru dapat dilakukan setelah Anda berada di lokasi kegiatan selama ${targetMenit ~/ 60} jam tanpa putus.'
-                : 'Presensi baru dapat dilakukan setelah durasi kehadiran mencapai minimum $targetMenit menit.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 11, color: AppColors.dangerRed),
-            ),
+          Text(
+            targetMenit >= 60
+              ? 'Presensi baru dapat dilakukan setelah Anda berada di lokasi kegiatan selama ${targetMenit ~/ 60} jam tanpa putus.'
+              : 'Presensi baru dapat dilakukan setelah durasi kehadiran mencapai minimum $targetMenit menit.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 11, color: AppColors.dangerRed),
+          ),
       ],
     );
 
