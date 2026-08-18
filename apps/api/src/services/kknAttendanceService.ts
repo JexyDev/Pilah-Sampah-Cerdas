@@ -80,61 +80,8 @@ export class KknAttendanceService {
       },
     }).catch(() => {});
 
-    // 2. Trigger auto check-in if student is inside active schedule geofence and not checked in yet
+    // 2. Trigger auto check-in check removed: check-in is dynamic and recorded via client or scheduler
     let autoAttendanceTriggered = false;
-    try {
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const todayEnd = new Date();
-      todayEnd.setHours(23, 59, 59, 999);
-
-      const activeSchedules = await prisma.schedule.findMany({
-        where: {
-          date: { gte: todayStart, lte: todayEnd },
-          latitude: { not: null },
-          longitude: { not: null },
-          isActive: true,
-        },
-      });
-
-      for (const schedule of activeSchedules) {
-        let isInside = false;
-        if (schedule.polygon && Array.isArray(schedule.polygon) && schedule.polygon.length >= 3) {
-          const polyPoints = (schedule.polygon as any[]).map((p) => ({
-            lat: Number(p[0]),
-            lng: Number(p[1]),
-          }));
-          isInside = isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, 15);
-        } else if (schedule.latitude && schedule.longitude) {
-          const dist = calculateDistance(latitude, longitude, Number(schedule.latitude), Number(schedule.longitude));
-          isInside = dist <= ((schedule.radius || 100) + 15);
-        }
-
-        if (isInside) {
-          const existingAttendance = await prisma.activityAttendance.findUnique({
-            where: {
-              studentId_scheduleId: {
-                studentId: userId,
-                scheduleId: schedule.id,
-              },
-            },
-          });
-
-          if (!existingAttendance) {
-            await this.recordAttendance({
-              studentId: userId,
-              scheduleId: schedule.id,
-              latitude,
-              longitude,
-              method: "OTOMATIS",
-            });
-            autoAttendanceTriggered = true;
-          }
-        }
-      }
-    } catch (err) {
-      console.error("[KknAttendanceService] Auto-attendance check error in pingLocation:", err);
-    }
 
     return { success: true, message: "Lokasi berhasil dilacak", autoAttendanceTriggered };
   }
@@ -210,89 +157,10 @@ export class KknAttendanceService {
       },
     });
 
-    // 3. Auto-attendance check using the latest location from batch
-    const latestLoc = savedLocations[savedLocations.length - 1];
-    if (!latestLoc) return { locations: [], autoAttendanceTriggered: [] };
-
-    const latitude = Number(latestLoc.latitude);
-    const longitude = Number(latestLoc.longitude);
-
-    // Find active schedule for today (overlapping with date)
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
-
-    const activeSchedules = await prisma.schedule.findMany({
-      where: {
-        date: {
-          gte: todayStart,
-          lte: todayEnd,
-        },
-        latitude: { not: null },
-        longitude: { not: null },
-      },
-    });
-
-    const triggerResults = [];
-    for (const schedule of activeSchedules) {
-      let isInside = false;
-      if (schedule.polygon && Array.isArray(schedule.polygon) && schedule.polygon.length >= 3) {
-        const polyPoints = (schedule.polygon as any[]).map((p) => ({
-          lat: Number(p[0]),
-          lng: Number(p[1]),
-        }));
-        isInside = isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, 15);
-      } else if (schedule.latitude && schedule.longitude) {
-        const dist = calculateDistance(
-          latitude,
-          longitude,
-          Number(schedule.latitude),
-          Number(schedule.longitude)
-        );
-        isInside = dist <= ((schedule.radius || 100) + 15);
-      }
-
-      if (isInside) {
-        // Check if already attended
-        const existingAttendance = await prisma.activityAttendance.findUnique({
-          where: {
-            studentId_scheduleId: {
-              studentId,
-              scheduleId: schedule.id,
-            },
-          },
-        });
-
-        if (!existingAttendance) {
-          // Trigger Auto Attendance!
-          try {
-            const att = await this.recordAttendance({
-              studentId,
-              scheduleId: schedule.id,
-              latitude,
-              longitude,
-              method: "OTOMATIS",
-            });
-            triggerResults.push({
-              scheduleId: schedule.id,
-              status: "AUTO_ATTEND_SUCCESS",
-              data: att,
-            });
-          } catch (err: any) {
-            triggerResults.push({
-              scheduleId: schedule.id,
-              status: "AUTO_ATTEND_FAILED",
-              error: err.message,
-            });
-          }
-        }
-      }
-    }
-
+    // 3. Auto-attendance check removed: check-in is dynamic and recorded via client or scheduler
     return {
       locations: savedLocations,
-      autoAttendanceTriggered: triggerResults,
+      autoAttendanceTriggered: [],
     };
   }
 
@@ -317,10 +185,24 @@ export class KknAttendanceService {
     const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.6107;
     const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 100;
     
-    // Always fetch target duration from Rule Engine as the single source of truth!
+    // Always fetch target duration from Rule Engine or schedule duration as the single source of truth!
+    let scheduleDurationMinutes = 0;
+    if (schedule?.time && schedule.time.includes("-")) {
+      const parts = schedule.time.split("-");
+      const startParts = parts[0].trim().replace(".", ":").split(":");
+      const endParts = parts[1].trim().replace(".", ":").split(":");
+      if (startParts.length >= 2 && endParts.length >= 2) {
+        const startMins = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
+        const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
+        if (endMins > startMins) {
+          scheduleDurationMinutes = endMins - startMins;
+        }
+      }
+    }
+
     const ruleConfigs = await configService.getRuleEngineConfigs();
     const ruleTargetMinutes = (ruleConfigs.attendanceMinDurationHours * 60) + ruleConfigs.attendanceMinDurationMinutes;
-    const targetDurationMinutes = ruleTargetMinutes > 0 ? ruleTargetMinutes : 120;
+    const targetDurationMinutes = scheduleDurationMinutes > 0 ? scheduleDurationMinutes : (ruleTargetMinutes > 0 ? ruleTargetMinutes : 120);
 
     let isAttended = false;
     let attendanceStatus: string | null = null;

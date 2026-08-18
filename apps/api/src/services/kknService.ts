@@ -2016,6 +2016,21 @@ export class KknService {
       };
     }
 
+    let scheduleDurationMinutes = 0;
+    if (activeSchedule?.time && activeSchedule.time.includes("-")) {
+      const parts = activeSchedule.time.split("-");
+      const startParts = parts[0].trim().replace(".", ":").split(":");
+      const endParts = parts[1].trim().replace(".", ":").split(":");
+      if (startParts.length >= 2 && endParts.length >= 2) {
+        const startMins = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
+        const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
+        if (endMins > startMins) {
+          scheduleDurationMinutes = endMins - startMins;
+        }
+      }
+    }
+    const finalTargetDurationMinutes = scheduleDurationMinutes > 0 ? scheduleDurationMinutes : targetDurationMinutes;
+
     // Jika ada jadwal kegiatan spesifik untuk kelompoknya, gunakan data & koordinat jadwal tersebut!
     if (activeSchedule) {
       const schedLat = activeSchedule.latitude ? Number(activeSchedule.latitude) : (activeArea?.latitude ? Number(activeArea.latitude) : null);
@@ -2041,7 +2056,7 @@ export class KknService {
         longitude: schedLng,
         radiusMeter: activeSchedule.radius || 100,
         radius: activeSchedule.radius || 100,
-        targetDurationMinutes,
+        targetDurationMinutes: finalTargetDurationMinutes,
         attendanceStatus,
         status: attendanceStatus,
         kehadiran: attendanceStatus,
