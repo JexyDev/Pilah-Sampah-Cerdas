@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
@@ -457,13 +458,27 @@ class KknBackgroundTaskHandler extends TaskHandler {
 
   /// Ping backend — fire-and-forget
   Future<void> _pingBackend(double lat, double lng) async {
-    // Menggunakan HTTP langsung karena Dio tidak bisa diakses di background isolate
-    // (Dio perlu interceptor yang di-setup di main isolate)
-    // Ping ini opsional — jika gagal, tidak masalah
+    if (_apiBaseUrl == null || _authToken == null) {
+      debugPrint('[KKN-BG] Skip ping: baseUrl or authToken is null');
+      return;
+    }
     try {
-      // Untuk saat ini, hanya log. Implementasi HTTP call bisa ditambahkan nanti
-      // jika API base URL dan token tersedia.
-      debugPrint('[KKN-BG] Ping: ($lat, $lng)');
+      final client = HttpClient();
+      client.connectionTimeout = const Duration(seconds: 5);
+      final cleanBaseUrl = _apiBaseUrl!.endsWith('/')
+          ? _apiBaseUrl!.substring(0, _apiBaseUrl!.length - 1)
+          : _apiBaseUrl!;
+      final uri = Uri.parse('$cleanBaseUrl/location-ping');
+      final request = await client.postUrl(uri);
+      request.headers.set('Content-Type', 'application/json');
+      request.headers.set('Authorization', 'Bearer $_authToken');
+      request.write(jsonEncode({
+        'latitude': lat,
+        'longitude': lng,
+      }));
+      final response = await request.close();
+      debugPrint('[KKN-BG] Ping sent: ($lat, $lng) -> status: ${response.statusCode}');
+      client.close();
     } catch (e) {
       debugPrint('[KKN-BG] Ping failed: $e');
     }

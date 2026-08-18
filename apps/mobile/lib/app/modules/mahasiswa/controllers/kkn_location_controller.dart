@@ -14,6 +14,8 @@ import '../../../data/services/notification_engine.dart';
 import '../../../core/utils/network_exception_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import '../../../core/values/app_config.dart';
+import '../../../core/utils/safe_storage.dart';
 import '../services/kkn_background_task_handler.dart';
 
 class KknLocationState {
@@ -296,10 +298,10 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     if (target == null) return;
     
     try {
-      // Ambil API config dari environment
-      final prefs = await SharedPreferences.getInstance();
-      final apiBaseUrl = prefs.getString('api_base_url');
-      final authToken = prefs.getString('auth_token');
+      // Ambil API config dan auth token dari SafeStorage & AppConfig
+      const storage = SafeStorage();
+      final authToken = await storage.read(key: AppConfig.accessTokenKey);
+      final apiBaseUrl = AppConfig.apiBaseUrl;
       
       final result = await startKknForegroundService(
         targetData: target,

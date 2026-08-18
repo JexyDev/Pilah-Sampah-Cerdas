@@ -42,19 +42,45 @@ export const websocketService = {
             }
           }
 
-          // 2. Live Location Updates from Petugas
+          // 2. Live Location Updates from Petugas & Mahasiswa KKN
           if (msg.type === "LOCATION_UPDATE") {
             if (!clientUserId) return;
             const { latitude, longitude } = msg;
             if (latitude !== undefined && longitude !== undefined) {
-              // Update live coordinates in DB
-              await prisma.petugasResidu.updateMany({
-                where: { userId: clientUserId },
-                data: {
-                  latitude: Number(latitude),
-                  longitude: Number(longitude),
-                },
+              const latNum = Number(latitude);
+              const lngNum = Number(longitude);
+
+              const user = await prisma.user.findUnique({
+                where: { id: clientUserId },
+                include: { role: true },
               });
+
+              if (user?.role?.name === "MAHASISWA_KKN") {
+                await prisma.studentLocation.create({
+                  data: {
+                    studentId: clientUserId,
+                    latitude: latNum,
+                    longitude: lngNum,
+                  },
+                });
+                websocketService.broadcastStudentLocation({
+                  studentId: clientUserId,
+                  latitude: latNum,
+                  longitude: lngNum,
+                  recordedAt: new Date().toISOString(),
+                });
+              } else if (
+                user?.role?.name === "PETUGAS_RESIDU" ||
+                user?.role?.name === "PETUGAS_PEMILAHAN"
+              ) {
+                await prisma.petugasResidu.updateMany({
+                  where: { userId: clientUserId },
+                  data: {
+                    latitude: latNum,
+                    longitude: lngNum,
+                  },
+                });
+              }
             }
           }
         } catch (error) {
@@ -155,6 +181,26 @@ export const websocketService = {
           ws.send(message);
         } catch (err) {
           console.error("[WebSocketService] broadcastDeposit send error:", err);
+        }
+      }
+    });
+  },
+
+  /**
+   * Broadcast student location update to connected monitoring clients
+   */
+  broadcastStudentLocation: (locationData: any) => {
+    const message = JSON.stringify({
+      type: "STUDENT_LOCATION_UPDATE",
+      data: locationData,
+    });
+
+    allSockets.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(message);
+        } catch (err) {
+          console.error("[WebSocketService] broadcastStudentLocation send error:", err);
         }
       }
     });

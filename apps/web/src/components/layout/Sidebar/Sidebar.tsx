@@ -121,8 +121,22 @@ const NavGroup: React.FC<{
   const location = useLocation();
   const currentPath = location.pathname + location.search;
 
+  const isSubActive = (subTo: string, index: number) => {
+    if (currentPath === subTo) return true;
+    if (
+      !location.search &&
+      ["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"].includes(location.pathname) &&
+      subTo.startsWith("/master-pengguna")
+    ) {
+      return index === 0;
+    }
+    return false;
+  };
+
   const isAnySubActive = items.some(
-    (item) => currentPath === item.to || (["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"].includes(item.to) && ["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"].includes(location.pathname) && !location.search)
+    (item, idx) =>
+      isSubActive(item.to, idx) ||
+      (location.pathname === "/master-pengguna" && item.to.startsWith("/master-pengguna"))
   );
 
   React.useEffect(() => {
@@ -154,8 +168,8 @@ const NavGroup: React.FC<{
       </button>
       {isOpen && (
         <div className="ml-4 pl-2 border-l-2 border-slate-200/80 dark:border-slate-800 my-1 space-y-1">
-          {items.map((sub) => {
-            const isActive = currentPath === sub.to || (["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"].includes(sub.to) && ["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"].includes(location.pathname) && !location.search);
+          {items.map((sub, idx) => {
+            const isActive = isSubActive(sub.to, idx);
             return (
               <NavLink
                 key={sub.to}
@@ -643,10 +657,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       header: "MANAJEMEN DATA MASTER",
       items: [
         {
-          to: "/master-pengguna",
-          icon: Users,
+          type: "group",
           label: "Data Pengguna",
+          icon: Users,
           allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN", "RW"] as UserRole[],
+          children: [
+            { to: "/master-pengguna?role=developer", label: "Developer", allowed: ["DEVELOPER"] as UserRole[] },
+            { to: "/master-pengguna?role=su", label: "Super User", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
+            { to: "/master-pengguna?role=pimpinan", label: "Pimpinan", allowed: ["DEVELOPER", "SUPER_USER", "PEMIMPIN"] as UserRole[] },
+            { to: "/master-pengguna?role=taskforce", label: "Task Force", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
+            { to: "/master-pengguna?role=dpl", label: "Dosen Pendamping Lapangan", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
+            { to: "/master-pengguna?role=dlh", label: "Dinas Lingkungan Hidup", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
+            { to: "/master-pengguna?role=camat", label: "Camat", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
+            { to: "/master-pengguna?role=lurah", label: "Lurah", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
+            { to: "/master-pengguna?role=rw", label: "Rukun Warga", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
+            { to: "/master-pengguna?role=petugas-residu", label: "Petugas Pemilah", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
+            { to: "/master-pengguna?role=mahasiswa", label: "Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
+            { to: "/master-pengguna?role=warga", label: "Warga", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
+          ],
         },
         {
           type: "group",

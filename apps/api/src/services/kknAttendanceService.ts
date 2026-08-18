@@ -8,6 +8,7 @@ import { prisma } from "../lib/prisma.js";
 
 import { configService } from "./configService.js";
 import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
+import { websocketService } from "./websocketService.js";
 
 
 // Helper: Haversine Formula (meters)
@@ -53,13 +54,31 @@ export class KknAttendanceService {
     }
 
     // 1. Simpan lokasi
-    await prisma.studentLocation.create({
+    const newLocation = await prisma.studentLocation.create({
       data: {
         studentId: userId,
         latitude,
         longitude,
       },
     });
+
+    // Broadcast realtime GPS via WebSocket
+    websocketService.broadcastStudentLocation({
+      id: newLocation.id,
+      studentId: userId,
+      latitude,
+      longitude,
+      recordedAt: newLocation.recordedAt,
+    });
+
+    // Cleanup student locations older than 24 hours
+    const cutoff24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    await prisma.studentLocation.deleteMany({
+      where: {
+        studentId: userId,
+        recordedAt: { lt: cutoff24h },
+      },
+    }).catch(() => {});
 
     // 2. Trigger auto check-in if student is inside active schedule geofence and not checked in yet
     let autoAttendanceTriggered = false;
@@ -499,16 +518,6 @@ export class KknAttendanceService {
       targetStudentIds = students.map((s) => s.userId);
     }
 
-    // Get active logged-in user IDs from RefreshToken
-    const activeSessions = await prisma.refreshToken.findMany({
-      where: {
-        expiresAt: { gte: new Date() },
-        ...(targetStudentIds ? { userId: { in: targetStudentIds } } : {}),
-      },
-      select: { userId: true },
-    });
-    const loggedInUserIds = new Set(activeSessions.map((s) => s.userId));
-
     // Group by student to get the latest position of each active student
     const locations = await prisma.studentLocation.findMany({
       where: {
@@ -540,70 +549,65 @@ export class KknAttendanceService {
     // Deduplicate to only keep the latest location per student
     const uniqueStudents = new Map<string, (typeof locations)[0]>();
     for (const loc of locations) {
-      if (
-        !uniqueStudents.has(loc.studentId) &&
-        (loggedInUserIds.size === 0 || loggedInUserIds.has(loc.studentId))
-      ) {
+      if (!uniqueStudents.has(loc.studentId)) {
         uniqueStudents.set(loc.studentId, loc);
       }
     }
 
-    // Include registered Mahasiswa KKN who have real active attendance records today
-    if (loggedInUserIds.size > 0) {
-      const activeMahasiswaWithAbsen = await prisma.user.findMany({
-        where: {
-          role: { name: "MAHASISWA_KKN" },
-          id: { in: Array.from(loggedInUserIds) },
-        },
-        select: {
-          id: true,
-          name: true,
-          phone: true,
-          studentProfile: {
-            select: {
-              nim: true,
-              jurusan: true,
-            },
-          },
-          attendances: {
-            where: {
-              attendedAt: { gte: cutoff },
-            },
-            orderBy: { attendedAt: "desc" },
-            take: 1,
-            select: {
-              latitude: true,
-              longitude: true,
-              attendedAt: true,
-            },
+    // Include registered Mahasiswa KKN who have active attendance coordinates today if no direct location ping exists
+    const activeMahasiswaWithAbsen = await prisma.user.findMany({
+      where: {
+        role: { name: "MAHASISWA_KKN" },
+        ...(targetStudentIds ? { id: { in: targetStudentIds } } : {}),
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        studentProfile: {
+          select: {
+            nim: true,
+            jurusan: true,
           },
         },
-      });
+        attendances: {
+          where: {
+            attendedAt: { gte: cutoff },
+          },
+          orderBy: { attendedAt: "desc" },
+          take: 1,
+          select: {
+            latitude: true,
+            longitude: true,
+            attendedAt: true,
+          },
+        },
+      },
+    });
 
-      for (const mhs of activeMahasiswaWithAbsen) {
-        if (!uniqueStudents.has(mhs.id) && mhs.attendances.length > 0) {
-          const latestAbsen = mhs.attendances[0];
-          if (latestAbsen.latitude && latestAbsen.longitude) {
-            uniqueStudents.set(mhs.id, {
-              id: `absen-${mhs.id}`,
-              studentId: mhs.id,
-              latitude: latestAbsen.latitude as any,
-              longitude: latestAbsen.longitude as any,
-              recordedAt: latestAbsen.attendedAt,
-              student: {
-                id: mhs.id,
-                name: mhs.name,
-                email: mhs.phone,
-                phone: mhs.phone,
-                studentProfile: mhs.studentProfile
-                  ? {
-                      nim: mhs.studentProfile.nim,
-                      jurusan: mhs.studentProfile.jurusan,
-                    }
-                  : undefined,
-              },
-            } as any);
-          }
+    for (const mhs of activeMahasiswaWithAbsen) {
+      if (!uniqueStudents.has(mhs.id) && mhs.attendances.length > 0) {
+        const latestAbsen = mhs.attendances[0];
+        if (latestAbsen.latitude && latestAbsen.longitude) {
+          uniqueStudents.set(mhs.id, {
+            id: `absen-${mhs.id}`,
+            studentId: mhs.id,
+            latitude: latestAbsen.latitude as any,
+            longitude: latestAbsen.longitude as any,
+            recordedAt: latestAbsen.attendedAt,
+            student: {
+              id: mhs.id,
+              name: mhs.name,
+              email: mhs.phone,
+              phone: mhs.phone,
+              studentProfile: mhs.studentProfile
+                ? {
+                    nim: mhs.studentProfile.nim,
+                    jurusan: mhs.studentProfile.jurusan,
+                  }
+                : undefined,
+            },
+          } as any);
         }
       }
     }
