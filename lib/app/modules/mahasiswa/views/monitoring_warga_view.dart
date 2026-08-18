@@ -341,7 +341,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Cari nama atau ID tempat sampah...',
-                    prefixIcon: const Icon(Icons.search),
+                    prefixIcon: const Icon(Icons.search_rounded),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                   ),
@@ -374,7 +374,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                         key: ValueKey('rtrw_$userRw'),
                         decoration: InputDecoration(
                           labelText: 'RW Dampingan',
-                          prefixIcon: const Icon(Icons.maps_home_work_outlined, size: 18, color: AppColors.primaryGreen),
+                          prefixIcon: const Icon(Icons.maps_home_work_rounded, size: 18, color: AppColors.primaryGreen),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           filled: true,
