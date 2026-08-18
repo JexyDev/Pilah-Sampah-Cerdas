@@ -298,8 +298,11 @@ export class KknAttendanceService {
     const defaultLat = configLatStr ? parseFloat(configLatStr) : -6.8915; // Bandung / Coblong
     const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.6107;
     const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 100;
-    const configDurationStr = await configService.getConfig("default_activity_duration_minutes");
-    const targetDurationMinutes = (schedule as any).targetDurationMinutes || (configDurationStr ? parseInt(configDurationStr, 10) : 60);
+    
+    // Always fetch target duration from Rule Engine as the single source of truth!
+    const ruleConfigs = await configService.getRuleEngineConfigs();
+    const ruleTargetMinutes = (ruleConfigs.attendanceMinDurationHours * 60) + ruleConfigs.attendanceMinDurationMinutes;
+    const targetDurationMinutes = ruleTargetMinutes > 0 ? ruleTargetMinutes : 120;
 
     return {
       scheduleId: schedule.id,

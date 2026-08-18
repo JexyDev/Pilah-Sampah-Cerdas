@@ -377,7 +377,6 @@ const MonitoringAbsen: React.FC = () => {
   });
   const [isCustomCategory, setIsCustomCategory] = useState<boolean>(false);
   const [customCategoryText, setCustomCategoryText] = useState<string>("");
-  const [activityMinHours, setActivityMinHours] = useState<number>(4);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [startTime, setStartTime] = useState<string>("08:00");
@@ -502,16 +501,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   }, [schedules, selectedScheduleId]);
 
   const scheduleTargetHours = useMemo(() => {
-    if (activeSchedule?.time) {
-      const parsed = parseTimeString(activeSchedule.time);
-      const diffMins = calculateHourDifference(parsed.start, parsed.end);
-      if (diffMins > 0) {
-        const hours = diffMins / 60;
-        return Number((hours % 1 === 0 ? hours : hours.toFixed(1)).toString());
-      }
-    }
-    return configTargets.targetHarianJam || 4;
-  }, [activeSchedule, configTargets.targetHarianJam]);
+    // Acuan tunggal durasi minimal presensi berasal langsung dari Rule Engine (targetHarianJam)
+    return configTargets.targetHarianJam || 2;
+  }, [configTargets.targetHarianJam]);
 
   // Attendance metrics counts
   const attendanceStats = useMemo(() => {
@@ -946,7 +938,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     setEndDate(today);
     setStartTime("08:00");
     setEndTime("12:00");
-    setActivityMinHours(4);
     setIsCustomCategory(false);
     setCustomCategoryText("");
     setFormErrors({});
@@ -987,8 +978,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     const parsedTime = parseTimeString(schedule.time);
     setStartTime(parsedTime.start);
     setEndTime(parsedTime.end);
-    const diffMins = calculateHourDifference(parsedTime.start, parsedTime.end);
-    setActivityMinHours(Math.max(1, Math.round(diffMins / 60)));
 
     const cat = schedule.category || "Sosialisasi";
     if (STANDARD_CATEGORIES.includes(cat)) {
@@ -2363,23 +2352,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200 text-xs font-black text-emerald-900">
-                      <span>Syarat Minimal Jam Absensi:</span>
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="number"
-                          min={1}
-                          max={12}
-                          value={activityMinHours}
-                          onChange={(e) =>
-                            setActivityMinHours(
-                              Math.max(1, Number(e.target.value))
-                            )
-                          }
-                          className="w-12 h-7 text-center font-black bg-white border border-emerald-300 rounded-lg text-xs outline-none"
-                        />
-                        <span>Jam</span>
-                      </div>
+                    <div className="flex items-center justify-between bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200 text-xs font-semibold text-emerald-900">
+                      <span className="flex items-center gap-1.5 font-bold">
+                        <Hourglass size={14} className="text-emerald-700 shrink-0" />
+                        <span>Durasi Minimal Presensi:</span>
+                      </span>
+                      <span className="font-extrabold text-emerald-950 bg-emerald-100/90 px-2.5 py-1 rounded-lg border border-emerald-300 text-[11px]">
+                        {configTargets.targetHarianJam || 2} Jam (Terpusat Rule Engine)
+                      </span>
                     </div>
                   </div>
 

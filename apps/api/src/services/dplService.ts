@@ -1026,6 +1026,8 @@ export const dplService = {
       "kkn_target_pekan",
       "kkn_target_total_hari",
       "kkn_catatan_dpl",
+      "attendance_min_duration_hours",
+      "attendance_min_duration_minutes",
     ];
 
     const configs = await prisma.systemConfig.findMany({
@@ -1034,10 +1036,14 @@ export const dplService = {
 
     const configMap = new Map(configs.map((c) => [c.key, c.value]));
 
+    const ruleHours = parseInt(configMap.get("attendance_min_duration_hours") || "2", 10);
+    const ruleMins = parseInt(configMap.get("attendance_min_duration_minutes") || "0", 10);
+    const targetHarianJamFromRule = ruleHours + (ruleMins / 60);
+
     return {
       targetTotalKegiatan: Number(configMap.get("kkn_target_total_kegiatan") || 2000),
       targetTotalJam: Number(configMap.get("kkn_target_total_jam") || 100),
-      targetHarianJam: Number(configMap.get("kkn_target_harian_jam") || 4),
+      targetHarianJam: targetHarianJamFromRule || Number(configMap.get("kkn_target_harian_jam") || 2),
       targetHarianKegiatan: Number(configMap.get("kkn_target_harian_kegiatan") || 5),
       hariKerja: configMap.get("kkn_hari_kerja") || "Senin – Jumat",
       jamKerja: configMap.get("kkn_jam_kerja") || "08.00 – 16.00",

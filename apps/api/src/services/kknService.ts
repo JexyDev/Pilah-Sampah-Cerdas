@@ -1327,6 +1327,11 @@ export class KknService {
 
     const activeArea = student?.assignedRw || student?.user?.rw;
 
+    // Fetch target duration dynamically from Rule Engine as the single source of truth!
+    const ruleConfigs = await configService.getRuleEngineConfigs();
+    const ruleTargetMinutes = (ruleConfigs.attendanceMinDurationHours * 60) + ruleConfigs.attendanceMinDurationMinutes;
+    const targetDurationMinutes = ruleTargetMinutes > 0 ? ruleTargetMinutes : 120;
+
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
@@ -1488,7 +1493,7 @@ export class KknService {
         latitude: null,
         longitude: null,
         radiusMeter: 100,
-        targetDurationMinutes: 60,
+        targetDurationMinutes,
         attendanceStatus: activeLeave ? attendanceStatus : "libur",
         status: activeLeave ? attendanceStatus : "libur",
         kehadiran: activeLeave ? attendanceStatus : "libur",
@@ -1521,7 +1526,7 @@ export class KknService {
         longitude: schedLng,
         radiusMeter: activeSchedule.radius || 100,
         radius: activeSchedule.radius || 100,
-        targetDurationMinutes: 60,
+        targetDurationMinutes,
         attendanceStatus,
         status: attendanceStatus,
         kehadiran: attendanceStatus,
@@ -1551,7 +1556,7 @@ export class KknService {
       longitude: lng,
       radiusMeter: 100,
       radius: 100,
-      targetDurationMinutes: 60,
+      targetDurationMinutes,
       attendanceStatus,
       status: attendanceStatus,
       kehadiran: attendanceStatus,
