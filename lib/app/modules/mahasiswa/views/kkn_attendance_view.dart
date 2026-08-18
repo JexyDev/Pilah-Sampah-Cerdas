@@ -531,51 +531,90 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
         const SizedBox(height: 16),
 
         // Status Inside Radius
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: state.isInsideRadius ? AppColors.primaryGreen.withValues(alpha: 0.1) : AppColors.dangerRed.withValues(alpha: 0.1),
-            border: Border.all(color: state.isInsideRadius ? AppColors.primaryGreen.withValues(alpha: 0.5) : AppColors.dangerRed.withValues(alpha: 0.5)),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.dangerRed,
-                  shape: BoxShape.circle,
+        if (state.activeActivity == null || state.activeActivity!.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.1),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.5)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.grey,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.info_outline_rounded, color: Colors.white, size: 20),
                 ),
-                child: Icon(
-                  state.isInsideRadius ? Icons.check_rounded : Icons.close_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      state.isInsideRadius ? 'Kamu berada di dalam radius lokasi' : 'Kamu berada di luar radius lokasi',
-                      style: TextStyle(
-                        color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.dangerRed,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Tidak ada jadwal aktif saat ini',
+                        style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 14),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      state.isInsideRadius ? 'Sinyal GPS stabil dan lokasi terdeteksi.' : 'Pergerakan absensi dihentikan sementara.',
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                    ),
-                  ],
+                      SizedBox(height: 2),
+                      Text(
+                        'Jadwal kegiatan KKN belum tersedia atau lokasi belum diset.',
+                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
+          )
+        else
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: state.isInsideRadius ? AppColors.primaryGreen.withValues(alpha: 0.1) : AppColors.dangerRed.withValues(alpha: 0.1),
+              border: Border.all(color: state.isInsideRadius ? AppColors.primaryGreen.withValues(alpha: 0.5) : AppColors.dangerRed.withValues(alpha: 0.5)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.dangerRed,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    state.isInsideRadius ? Icons.check_rounded : Icons.close_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        state.isInsideRadius ? 'Kamu berada di dalam radius lokasi' : 'Kamu berada di luar radius lokasi',
+                        style: TextStyle(
+                          color: state.isInsideRadius ? AppColors.primaryGreen : AppColors.dangerRed,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        state.isInsideRadius ? 'Sinyal GPS stabil dan lokasi terdeteksi.' : 'Pergerakan absensi dihentikan sementara.',
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
         const SizedBox(height: 16),
 
         // Durasi Card
