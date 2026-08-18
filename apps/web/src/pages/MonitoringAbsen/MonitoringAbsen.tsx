@@ -1155,8 +1155,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     setGeofenceMode("CIRCLE");
     setStartDate(today);
     setEndDate(today);
+    const targetHours = Math.round(Number(configTargets.targetHarianJam) || 2);
+    const endHourNum = 8 + (targetHours > 0 ? targetHours : 2);
+    const endHourStr = endHourNum < 10 ? `0${endHourNum}:00` : `${endHourNum}:00`;
     setStartTime("08:00");
-    setEndTime("12:00");
+    setEndTime(endHourStr);
     setIsCustomCategory(false);
     setCustomCategoryText("");
     setFormErrors({});
