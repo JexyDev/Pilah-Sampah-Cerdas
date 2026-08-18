@@ -1107,19 +1107,20 @@ export const dplService = {
 
     const configMap = new Map(configs.map((c) => [c.key, c.value]));
 
-    const ruleHours = parseInt(configMap.get("attendance_min_duration_hours") || "2", 10);
-    const ruleMins = parseInt(configMap.get("attendance_min_duration_minutes") || "0", 10);
-    const targetHarianJamFromRule = ruleHours + (ruleMins / 60);
+    const targetHarianRaw = Number(configMap.get("kkn_target_harian_jam"));
+    const targetHarian = !isNaN(targetHarianRaw) && targetHarianRaw > 0 ? targetHarianRaw : 4;
+    const targetHariTotal = Number(configMap.get("kkn_target_total_hari") || 50);
+    const targetJamTotal = Number(configMap.get("kkn_target_total_jam") || (targetHariTotal * targetHarian));
 
     return {
       targetTotalKegiatan: Number(configMap.get("kkn_target_total_kegiatan") || 2000),
-      targetTotalJam: Number(configMap.get("kkn_target_total_jam") || 100),
-      targetHarianJam: targetHarianJamFromRule || Number(configMap.get("kkn_target_harian_jam") || 2),
+      targetTotalJam: targetJamTotal,
+      targetHarianJam: Math.round(targetHarian),
       targetHarianKegiatan: Number(configMap.get("kkn_target_harian_kegiatan") || 5),
       hariKerja: configMap.get("kkn_hari_kerja") || "Senin – Jumat",
       jamKerja: configMap.get("kkn_jam_kerja") || "08.00 – 16.00",
       targetPekan: Number(configMap.get("kkn_target_pekan") || 10),
-      targetTotalHari: Number(configMap.get("kkn_target_total_hari") || 50),
+      targetTotalHari: targetHariTotal,
       catatanDpl: configMap.get("kkn_catatan_dpl") || "Pastikan mahasiswa hadir minimal 4 jam per hari di lokasi kegiatan. Verifikasi lokasi melalui GPS dan unduh berita acara sebagai bukti validasi.",
     };
   },

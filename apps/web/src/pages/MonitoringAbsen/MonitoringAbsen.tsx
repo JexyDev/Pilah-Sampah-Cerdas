@@ -499,9 +499,18 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   }, [schedules, selectedScheduleId]);
 
   const scheduleTargetHours = useMemo(() => {
-    // Acuan tunggal durasi minimal presensi berasal langsung dari Rule Engine (targetHarianJam)
-    return configTargets.targetHarianJam || 2;
-  }, [configTargets.targetHarianJam]);
+    // 1. Prioritaskan kalkulasi durasi dari rentang jam kegiatan (misal 08:00 - 12:00 -> 4 Jam)
+    if (activeSchedule?.time) {
+      const { start, end } = parseTimeString(activeSchedule.time);
+      const diffMins = calculateHourDifference(start, end);
+      if (diffMins > 0) {
+        return Math.round(diffMins / 60);
+      }
+    }
+    // 2. Fallback ke target harian terpusat Rule Engine / Konfigurasi KKN (default 4 Jam bulat)
+    const harian = Number(configTargets.targetHarianJam);
+    return !isNaN(harian) && harian > 0 ? Math.round(harian) : 4;
+  }, [activeSchedule?.time, configTargets.targetHarianJam]);
 
   // Attendance metrics counts
   const attendanceStats = useMemo(() => {
@@ -2325,7 +2334,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         <span>Durasi Minimal Presensi:</span>
                       </span>
                       <span className="font-extrabold text-emerald-950 bg-emerald-100/90 px-2.5 py-1 rounded-lg border border-emerald-300 text-[11px]">
-                        {configTargets.targetHarianJam || 2} Jam (Terpusat Rule Engine)
+                        {scheduleTargetHours || Math.round(Number(configTargets.targetHarianJam) || 4)} Jam (Terpusat Rule Engine)
                       </span>
                     </div>
                   </div>

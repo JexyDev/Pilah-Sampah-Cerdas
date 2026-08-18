@@ -258,7 +258,7 @@ iframe {
 }
 
 /* ==========================================================
-   AUTOFILL STYLES (PREVENT DARK GREY CHROME OVERLAY ON FORMS)
+   AUTOFILL STYLES (PREVENT DISCOLORATION ON FORMS)
    ========================================================== */
 input:-webkit-autofill,
 input:-webkit-autofill:hover, 
@@ -268,3 +268,39 @@ input:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
   transition: background-color 5000s ease-in-out 0s;
 }
+
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover, 
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active {
+  -webkit-text-fill-color: #f8fafc !important;
+  -webkit-box-shadow: 0 0 0 1000px #0f172a inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ==========================================================
+   DARK MODE SCROLLBAR & FORM DEFAULTS
+   ========================================================== */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+.dark select option {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
