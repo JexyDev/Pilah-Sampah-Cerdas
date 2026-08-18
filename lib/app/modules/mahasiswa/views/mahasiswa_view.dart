@@ -416,6 +416,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
         Expanded(
           child: _SummaryCard(
             icon: Icons.people_alt_rounded,
+            iconAsset: 'assets/icons/employees.png',
             label: 'Total Warga',
             value: '$totalWarga',
             color: AppColors.primaryGreen,
@@ -425,6 +426,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
         Expanded(
           child: _SummaryCard(
             icon: Icons.verified_user_rounded,
+            iconAsset: 'assets/icons/trash-check.png',
             label: 'Tempat Sampah Aktif',
             value: '$wargaAktif',
             color: AppColors.primaryBlueDark,
@@ -434,6 +436,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
         Expanded(
           child: _SummaryCard(
             icon: Icons.stars_rounded,
+            iconAsset: 'assets/icons/trophy-star.png',
             label: 'Poin Personal',
             value: '${d?.contributionPoints ?? 0}',
             color: AppColors.success,
@@ -581,6 +584,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.location_on_rounded,
+                iconAsset: 'assets/icons/verified-user.png',
                 title: 'Presensi',
                 subtitle: 'Presensi ${kknState.targetDurationMinutes % 60 == 0 ? '${kknState.targetDurationMinutes ~/ 60} jam' : '${kknState.targetDurationMinutes} menit'} zona KKN',
                 gradientColors: const [AppColors.primaryBlueLight, AppColors.primaryBlue],
@@ -595,6 +599,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.recycling_rounded,
+                iconAsset: 'assets/icons/activity.png',
                 title: 'Kegiatan Mahasiswa',
                 subtitle: 'Individu & Pemanfaatan',
                 gradientColors: const [AppColors.primaryBlue, AppColors.primaryBlueDark],
@@ -605,6 +610,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.rule_rounded,
+                iconAsset: 'assets/icons/submission.png',
                 title: 'Pengajuan Izin',
                 subtitle: 'Izin/Sakit DPL',
                 gradientColors: const [AppColors.primaryBlueLight, AppColors.primaryBlue],
@@ -784,12 +790,14 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
 class _SummaryCard extends StatelessWidget {
   const _SummaryCard({
     required this.icon,
+    this.iconAsset,
     required this.label,
     required this.value,
     required this.color,
   });
 
   final IconData icon;
+  final String? iconAsset;
   final String label;
   final String value;
   final Color color;
@@ -817,7 +825,9 @@ class _SummaryCard extends StatelessWidget {
               color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
             ),
-            child: Icon(icon, color: color, size: 22),
+            child: iconAsset != null 
+                ? Image.asset(iconAsset!, width: 22, height: 22, color: color)
+                : Icon(icon, color: color, size: 22),
           ),
           const SizedBox(height: 8),
           Text(
@@ -851,6 +861,7 @@ class _SummaryCard extends StatelessWidget {
 class _MenuTileCard extends StatelessWidget {
   const _MenuTileCard({
     required this.icon,
+    this.iconAsset,
     required this.title,
     required this.subtitle,
     required this.gradientColors,
@@ -858,6 +869,7 @@ class _MenuTileCard extends StatelessWidget {
   });
 
   final IconData icon;
+  final String? iconAsset;
   final String title;
   final String subtitle;
   final List<Color> gradientColors;
@@ -912,7 +924,12 @@ class _MenuTileCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: Icon(icon, color: Colors.white, size: 22),
+                      child: iconAsset != null
+                          ? Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Image.asset(iconAsset!, color: Colors.white),
+                            )
+                          : Icon(icon, color: Colors.white, size: 22),
                     ),
                     const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.textHint),
                   ],

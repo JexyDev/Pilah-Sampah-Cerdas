@@ -88,6 +88,7 @@ flutter:
     # Logo aplikasi
     - assets/logos.webp
     - assets/logos.jpeg
+    - assets/icons/
 
     # Stitch UI — screen reference assets
     - assets/stitch_ui/aktivasi_bin.png/screen.png

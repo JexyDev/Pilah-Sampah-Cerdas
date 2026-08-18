@@ -211,6 +211,7 @@ class _MahasiswaNotificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     IconData iconData = Icons.notifications_rounded;
+    String? iconAsset;
     Color iconColor = AppColors.primaryGreen;
     Color iconBg = AppColors.primaryGreen.withValues(alpha: 0.1);
 
@@ -221,10 +222,12 @@ class _MahasiswaNotificationCard extends StatelessWidget {
       iconBg = const Color(0xFF8E24AA).withValues(alpha: 0.12);
     } else if (type.contains('POIN_KKN') || item.title.toLowerCase().contains('poin')) {
       iconData = Icons.stars_rounded;
+      iconAsset = 'assets/icons/medal.png';
       iconColor = AppColors.warningOrange;
       iconBg = AppColors.warningOrange.withValues(alpha: 0.15);
-    } else if (type.contains('IZIN') || item.title.toLowerCase().contains('dpl')) {
+    } else if (type.contains('IZIN') || item.title.toLowerCase().contains('dpl') || type.contains('SAKIT') || item.title.toLowerCase().contains('sakit') || item.title.toLowerCase().contains('pengajuan')) {
       iconData = Icons.assignment_turned_in_rounded;
+      iconAsset = 'assets/icons/submission.png';
       iconColor = AppColors.primaryBlueDark;
       iconBg = AppColors.primaryBlueDark.withValues(alpha: 0.1);
     } else if (type.contains('PRESENSI')) {
@@ -263,7 +266,9 @@ class _MahasiswaNotificationCard extends StatelessWidget {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)),
-                  child: Icon(iconData, color: iconColor, size: 22),
+                  child: iconAsset != null 
+                    ? Padding(padding: const EdgeInsets.all(10.0), child: Image.asset(iconAsset, color: iconColor))
+                    : Icon(iconData, color: iconColor, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

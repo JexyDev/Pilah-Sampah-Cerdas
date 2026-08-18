@@ -37,6 +37,25 @@ class DetailNotifikasiView extends StatelessWidget {
         return const Color(0xFF4F46E5);
     }
   }
+  Widget _buildIconWidget(String iconName, String type, Color iconColor) {
+    final typeUpper = type.toUpperCase();
+    if (typeUpper.contains('PUNISHMENT') || typeUpper.contains('PENALTI')) {
+      return Icon(Icons.warning_rounded, color: iconColor, size: 64);
+    }
+    if (iconName == 'star' || typeUpper == 'POIN_BERTAMBAH') {
+      return Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Image.asset('assets/icons/medal.png', color: iconColor, width: 64, height: 64),
+      );
+    }
+    if (typeUpper.contains('PENGAJUAN') || iconName == 'local_shipping' || iconName == 'rule') {
+      return Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Image.asset('assets/icons/submission.png', color: iconColor, width: 64, height: 64),
+      );
+    }
+    return Icon(_resolveIcon(iconName, type), color: iconColor, size: 64);
+  }
 
   IconData _resolveIcon(String iconName, String type) {
     if (type.toUpperCase().contains('PUNISHMENT') || type.toUpperCase().contains('PENALTI')) {
@@ -107,11 +126,7 @@ class DetailNotifikasiView extends StatelessWidget {
                 color: iconBg,
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                _resolveIcon(item.icon, item.type),
-                color: iconColor,
-                size: 64,
-              ),
+              child: _buildIconWidget(item.icon, item.type, iconColor),
             ),
             const SizedBox(height: AppDimensions.xl),
             Text(
