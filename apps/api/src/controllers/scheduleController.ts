@@ -7,6 +7,9 @@
 
 import { Request, Response } from "express";
 import { scheduleService } from "../services/scheduleService.js";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export const scheduleController = {
   getAllSchedules: async (req: Request, res: Response) => {
@@ -55,8 +58,6 @@ export const scheduleController = {
 
       if (req.user?.userId) {
         if (isDpl && !resolvedKelompokId) {
-          const { PrismaClient } = await import("@prisma/client");
-          const prisma = new PrismaClient();
           const dplGroup = await prisma.kelompokKkn.findFirst({
             where: { OR: [{ dplId: req.user.userId }, { dpl: { id: req.user.userId } }] },
           });
@@ -64,8 +65,6 @@ export const scheduleController = {
             resolvedKelompokId = dplGroup.id;
           }
         } else if (isMahasiswa && !resolvedKelompokId) {
-          const { PrismaClient } = await import("@prisma/client");
-          const prisma = new PrismaClient();
           const studentProfile = await prisma.studentKkn.findUnique({
             where: { userId: req.user.userId },
             select: { kelompokId: true }
@@ -109,8 +108,6 @@ export const scheduleController = {
       const userId = req.user?.userId || (req.user as any)?.id;
 
       if (["MAHASISWA_KKN", "DPL", "DOSEN_PEMBIMBING"].includes(userRole)) {
-        const { PrismaClient } = await import("@prisma/client");
-        const prisma = new PrismaClient();
         const schedule = await prisma.schedule.findUnique({ where: { id } });
         if (!schedule) {
           res.status(404).json({ success: false, message: "Jadwal tidak ditemukan" });
@@ -160,8 +157,6 @@ export const scheduleController = {
       const userId = req.user?.userId || (req.user as any)?.id;
 
       if (["MAHASISWA_KKN", "DPL", "DOSEN_PEMBIMBING"].includes(userRole)) {
-        const { PrismaClient } = await import("@prisma/client");
-        const prisma = new PrismaClient();
         const schedule = await prisma.schedule.findUnique({ where: { id } });
         if (!schedule) {
           res.status(404).json({ success: false, message: "Jadwal tidak ditemukan" });

@@ -9,6 +9,9 @@ import { Request, Response } from "express";
 import { aiService } from "../services/aiService.js";
 import { redisService } from "../services/redisService.js";
 import { WasteAiAdapterFactory } from "../infrastructure/ai/WasteAiAdapterFactory.js";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export class AiController {
   /**
@@ -231,8 +234,7 @@ export class AiController {
    */
   async getCo2eStats(req: Request, res: Response): Promise<void> {
     try {
-      const prismaClient = new (await import("@prisma/client")).PrismaClient();
-      const organicLogs = await prismaClient.setoranOtomatis.findMany({
+      const organicLogs = await prisma.setoranOtomatis.findMany({
         where: {
           hasilKlasifikasiAi: "organik",
         },

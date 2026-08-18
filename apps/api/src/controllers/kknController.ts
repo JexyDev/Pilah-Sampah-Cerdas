@@ -7,6 +7,9 @@
 
 import { Request, Response } from "express";
 import { kknService } from "../services/kknService.js";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export class KknController {
   async validateQrMaster(req: Request, res: Response): Promise<void> {
@@ -16,9 +19,6 @@ export class KknController {
         res.status(400).json({ error: "BAD_REQUEST", message: "QR Code diperlukan." });
         return;
       }
-      const { PrismaClient } = await import("@prisma/client");
-      const prisma = new PrismaClient();
-
       const existingBin = await prisma.bin.findUnique({
         where: { qrCode },
       });

@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { rwService } from "../services/rwService.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 const router = Router();
 
@@ -23,8 +26,6 @@ router.use(async (req, res, next) => {
 
   if (!req.user.rwId) {
     try {
-      const { PrismaClient } = await import("@prisma/client");
-      const prisma = new PrismaClient();
       const dbUser = await prisma.user.findUnique({
         where: { id: req.user.userId },
         select: { rwId: true, name: true, address: true },
