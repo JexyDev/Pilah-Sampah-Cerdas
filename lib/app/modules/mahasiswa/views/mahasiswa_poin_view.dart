@@ -165,20 +165,6 @@ class MahasiswaPoinView extends ConsumerWidget {
   }
 
   Widget _buildStatsRow(MahasiswaState mhsState, WidgetRef ref) {
-    final user = ref.watch(authProvider).user;
-    final cleanUserRw = user?.rw.trim().replaceFirst(RegExp(r'^0+'), '') ?? '';
-
-    // Warga dampingan mahasiswa ini (dari endpoint kknWarga)
-    final myWargaList = mhsState.wargaList.where((w) {
-      if (w.role.isNotEmpty && w.role.toUpperCase() != 'WARGA') return false;
-      final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
-      final isMyRw = cleanUserRw.isNotEmpty && cleanWargaRw == cleanUserRw;
-      final isMyId = w.mahasiswaId.isNotEmpty && w.mahasiswaId == user?.id;
-      final isMyName = w.pendampingName.trim().toLowerCase() == (user?.name ?? '').trim().toLowerCase();
-      
-      return isMyId || isMyName || isMyRw;
-    }).toList();
-
     final points = mhsState.dashboard?.contributionPoints ?? 0;
     
     final asyncHistory = ref.watch(pointHistoryProvider);
