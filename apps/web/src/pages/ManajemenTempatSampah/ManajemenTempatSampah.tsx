@@ -21,7 +21,6 @@ import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import L from "leaflet";
 import {
   KELURAHAN_GEODATA,
-  createRealBinIcon,
   createHouseholdPinIcon,
 } from "../../constants/coblongGeoData";
 
@@ -265,8 +264,26 @@ const ManajemenTempatSampah: React.FC = () => {
   }, [verifiedMapBins, selectedMapKelurahan, mapCategoryFilter, mapStatusFilter, mapSearchInput]);
 
   // Group Filtered Bins by Household (1 Single Pin per House)
-  const householdMapGroups = React.useMemo(() => {
-    const map = new Map<string, {
+  const householdMapGroups = React.useMemo<Array<{
+    householdKey: string;
+    userId?: string;
+    wargaName: string;
+    wargaPhone?: string;
+    address: string;
+    rtRw: string;
+    kelurahan: string;
+    latitude: number;
+    longitude: number;
+    organikBin: any | null;
+    anorganikBin: any | null;
+    residuBin: any | null;
+    allBins: any[];
+    isPenuh: boolean;
+    isSedang: boolean;
+    isRusak: boolean;
+    lastActivity?: string;
+  }>>(() => {
+    const map: Record<string, {
       householdKey: string;
       userId?: string;
       wargaName: string;
@@ -284,7 +301,7 @@ const ManajemenTempatSampah: React.FC = () => {
       isSedang: boolean;
       isRusak: boolean;
       lastActivity?: string;
-    }>();
+    }> = {};
 
     for (const bin of filteredMapBins) {
       const lat = Number(bin.latitude);
@@ -308,7 +325,7 @@ const ManajemenTempatSampah: React.FC = () => {
       const isResidu = catLower.includes("residu") || catLower.includes("b3");
       const isOrganik = !isAnorganik && !isResidu;
 
-      let group = map.get(key);
+      let group = map[key];
       if (!group) {
         group = {
           householdKey: key,
@@ -329,7 +346,7 @@ const ManajemenTempatSampah: React.FC = () => {
           isRusak: false,
           lastActivity: bin.lastActivityLog || bin.verifiedAt,
         };
-        map.set(key, group);
+        map[key] = group;
       }
 
       group.allBins.push(bin);
@@ -350,7 +367,7 @@ const ManajemenTempatSampah: React.FC = () => {
       }
     }
 
-    return Array.from(map.values());
+    return Object.values(map);
   }, [filteredMapBins]);
 
   // Search Bar Candidate Results (Limit 5 items)

@@ -456,7 +456,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     }
     
     // Mulai ulang dari awal
-    await startTracking(context);
+    await startTracking();
   }
 
   /// Set the active schedule target to calculate geofencing

@@ -146,6 +146,16 @@ router.post("/students/:studentId/assess", dplScopeMiddleware, dplController.ass
  *         description: Keputusan berhasil disimpan
  */
 router.post("/approvals/:requestId/decide", dplScopeMiddleware, dplController.decideLeaveRequest);
+router.post(
+  ["/approvals/:requestId/cancel-decide", "/approvals/:requestId/decide-cancel", "/approvals/:requestId/override-hadir"],
+  dplScopeMiddleware,
+  dplController.decideCancelLeaveRequest
+);
+router.put(
+  ["/approvals/:requestId/cancel-decide", "/approvals/:requestId/decide-cancel", "/approvals/:requestId/override-hadir"],
+  dplScopeMiddleware,
+  dplController.decideCancelLeaveRequest
+);
 
 // ─────────────────────────────────────────────
 // PROGRAM KERJA KKN

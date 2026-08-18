@@ -48,13 +48,8 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
 
   initTheme: () => {
     let saved = localStorage.getItem("trashcare-theme") as "light" | "dark" | null;
-    if (!saved) {
-      // Check system preference
-      if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-        saved = "dark";
-      } else {
-        saved = "light";
-      }
+    if (saved !== "dark") {
+      saved = "light";
     }
     applyThemeToDOM(saved);
     set({ theme: saved });

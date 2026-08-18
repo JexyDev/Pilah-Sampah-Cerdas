@@ -196,6 +196,19 @@ export class KknController {
     }
   }
 
+  async cancelLeaveRequest(req: Request, res: Response) {
+    try {
+      const studentId = req.user!.userId;
+      const leaveRequestId = req.params.id;
+      const reason = req.body?.alasan || req.body?.reason;
+      const result = await kknService.cancelLeaveRequest(studentId, leaveRequestId, reason);
+      res.status(200).json(result);
+    } catch (error: any) {
+      console.error("[KknController] cancelLeaveRequest error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
   async getActivityLog(req: Request, res: Response) {
     try {
       const kknUserId = req.user!.userId;
@@ -222,7 +235,21 @@ export class KknController {
   async inputFacility(req: Request, res: Response) {
     try {
       const kknUserId = req.user!.userId;
-      const data = await kknService.bantuInputFasilitas(kknUserId, req.body);
+      let fotoUrl = req.body.foto;
+      if (req.file) {
+        fotoUrl = `/uploads/${req.file.filename}`;
+      }
+
+      const payload = {
+        ...req.body,
+        foto: fotoUrl,
+        latitude: req.body.latitude != null ? Number(req.body.latitude) : undefined,
+        longitude: req.body.longitude != null ? Number(req.body.longitude) : undefined,
+        rwId: req.body.rwId,
+        kapasitas: req.body.kapasitas != null ? Number(req.body.kapasitas) : undefined,
+      };
+
+      const data = await kknService.bantuInputFasilitas(kknUserId, payload);
       res.status(201).json({ success: true, data });
     } catch (error: any) {
       console.error("[KknController] inputFacility error:", error);

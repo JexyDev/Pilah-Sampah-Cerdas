@@ -265,6 +265,15 @@ export const dplService = {
     return res.data;
   },
 
+  decideCancelLeaveRequest: async (
+    requestId: string,
+    action: "APPROVE_HADIR" | "REJECT_CANCEL",
+    note?: string
+  ) => {
+    const res = await api.post(`/dpl/approvals/${requestId}/cancel-decide`, { action, note });
+    return res.data;
+  },
+
   getProgramKerja: async (groupId?: string): Promise<ProgramKerjaItem[]> => {
     try {
       const res = await api.get("/dpl/program-kerja", { params: { groupId } });

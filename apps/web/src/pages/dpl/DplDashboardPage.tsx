@@ -369,11 +369,14 @@ export const DplDashboardPage: React.FC = () => {
     }
   };
 
+  const [decidingLeaveId, setDecidingLeaveId] = useState<string | null>(null);
+
   const handleDecideLeave = async (
     requestId: string,
     status: "APPROVED" | "REJECTED" | "ESCALATED",
     note?: string
   ) => {
+    setDecidingLeaveId(requestId);
     try {
       await dplService.decideLeaveRequest(requestId, status, note);
       if (status === "APPROVED") {
@@ -395,6 +398,34 @@ export const DplDashboardPage: React.FC = () => {
       setApprovalHistory(updatedHistory);
     } catch (err: any) {
       toast.error("Gagal memproses pengajuan izin");
+    } finally {
+      setDecidingLeaveId(null);
+    }
+  };
+
+  const handleDecideCancelLeave = async (
+    requestId: string,
+    action: "APPROVE_HADIR" | "REJECT_CANCEL",
+    note?: string
+  ) => {
+    setDecidingLeaveId(requestId);
+    try {
+      const res = await dplService.decideCancelLeaveRequest(requestId, action, note);
+      toast.success(
+        action === "APPROVE_HADIR"
+          ? "Permohonan pembatalan disetujui! Status presensi mahasiswa diubah menjadi Hadir."
+          : "Permohonan pembatalan ditolak. Status izin tetap berlaku."
+      );
+      const [updatedAlerts, updatedHistory] = await Promise.all([
+        dplService.getAlerts(),
+        dplService.getApprovalHistory(),
+      ]);
+      setAlerts(updatedAlerts);
+      setApprovalHistory(updatedHistory);
+    } catch (err: any) {
+      toast.error("Gagal memproses permohonan pembatalan izin");
+    } finally {
+      setDecidingLeaveId(null);
     }
   };
 
@@ -1551,12 +1582,16 @@ export const DplDashboardPage: React.FC = () => {
                   const hoursElapsed = (Date.now() - new Date(req.createdAt).getTime()) / (1000 * 60 * 60);
                   const isOver24Hours = hoursElapsed >= 24;
                   const canTakeover = ["PANITIA_TASKFORCE", "SUPER_USER", "DEVELOPER", "ADMIN_DLH"].includes(userRole);
+                  const isCancelReq = req.status === "CANCEL_REQUESTED";
+                  const isBusy = decidingLeaveId === req.id;
 
                   return (
                     <div
                       key={req.id}
                       className={`p-4 border rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition ${
-                        isOver24Hours
+                        isCancelReq
+                          ? "border-cyan-300 dark:border-cyan-700/60 bg-cyan-50/40 dark:bg-cyan-950/30"
+                          : isOver24Hours
                           ? "border-rose-300 dark:border-rose-700/60 bg-rose-50/40 dark:bg-rose-950/30 shadow-xs"
                           : "border-amber-200/80 dark:border-amber-700/60 bg-amber-50/40 dark:bg-amber-950/30"
                       }`}
@@ -1571,7 +1606,12 @@ export const DplDashboardPage: React.FC = () => {
                           >
                             {req.type}
                           </span>
-                          {isOver24Hours && (
+                          {isCancelReq && (
+                            <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-700 flex items-center gap-1">
+                              <CheckCircle size={11} /> Permohonan Batal Izin (Ingin Hadir)
+                            </span>
+                          )}
+                          {!isCancelReq && isOver24Hours && (
                             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700 flex items-center gap-1">
                               <Clock size={11} /> &gt;24 Jam (Siap Diambil Alih Panitia Taskforce / SU)
                             </span>
@@ -1603,30 +1643,54 @@ export const DplDashboardPage: React.FC = () => {
                       </div>
 
                       <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                        <button
-                          onClick={() => setRejectingRequestId(req.id)}
-                          className="px-3 py-1.5 bg-red-50 dark:bg-rose-950/60 text-red-700 dark:text-rose-400 font-bold text-xs rounded-lg hover:bg-red-100 dark:hover:bg-rose-900/60 transition flex items-center gap-1 border border-red-200 dark:border-rose-700/40 cursor-pointer"
-                        >
-                          <XCircle size={14} /> {isOver24Hours && canTakeover ? "Ambil Alih & Tolak" : "Tolak"}
-                        </button>
-                        {!isOver24Hours && (
-                          <button
-                            onClick={() => setEscalatingRequestId(req.id)}
-                            className="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold text-xs rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/60 transition flex items-center gap-1 border border-amber-200 dark:border-amber-700/40 cursor-pointer"
-                          >
-                            <AlertTriangle size={14} /> Eskalasi Taskforce
-                          </button>
+                        {isCancelReq ? (
+                          <>
+                            <button
+                              disabled={isBusy}
+                              onClick={() => handleDecideCancelLeave(req.id, "REJECT_CANCEL")}
+                              className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center gap-1 border border-slate-300 dark:border-slate-700 cursor-pointer disabled:opacity-50"
+                            >
+                              <XCircle size={14} /> Tolak Batal
+                            </button>
+                            <button
+                              disabled={isBusy}
+                              onClick={() => handleDecideCancelLeave(req.id, "APPROVE_HADIR")}
+                              className="px-3.5 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer disabled:opacity-50"
+                            >
+                              <CheckCircle size={14} /> Setujui Batal &amp; Jadikan Hadir
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              disabled={isBusy}
+                              onClick={() => setRejectingRequestId(req.id)}
+                              className="px-3 py-1.5 bg-red-50 dark:bg-rose-950/60 text-red-700 dark:text-rose-400 font-bold text-xs rounded-lg hover:bg-red-100 dark:hover:bg-rose-900/60 transition flex items-center gap-1 border border-red-200 dark:border-rose-700/40 cursor-pointer disabled:opacity-50"
+                            >
+                              <XCircle size={14} /> {isOver24Hours && canTakeover ? "Ambil Alih & Tolak" : "Tolak"}
+                            </button>
+                            {!isOver24Hours && (
+                              <button
+                                disabled={isBusy}
+                                onClick={() => setEscalatingRequestId(req.id)}
+                                className="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold text-xs rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/60 transition flex items-center gap-1 border border-amber-200 dark:border-amber-700/40 cursor-pointer disabled:opacity-50"
+                              >
+                                <AlertTriangle size={14} /> Eskalasi Taskforce
+                              </button>
+                            )}
+                            <button
+                              disabled={isBusy}
+                              onClick={() => handleDecideLeave(req.id, "APPROVED")}
+                              className={`px-3.5 py-1.5 font-bold text-xs rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer disabled:opacity-50 ${
+                                isOver24Hours && canTakeover
+                                  ? "bg-rose-600 hover:bg-rose-700 text-white"
+                                  : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                              }`}
+                            >
+                              <CheckCircle size={14} /> {isOver24Hours && canTakeover ? "Ambil Alih & Setujui" : "Setujui"}
+                            </button>
+                          </>
                         )}
-                        <button
-                          onClick={() => handleDecideLeave(req.id, "APPROVED")}
-                          className={`px-3.5 py-1.5 font-bold text-xs rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer ${
-                            isOver24Hours && canTakeover
-                              ? "bg-rose-600 hover:bg-rose-700 text-white"
-                              : "bg-emerald-600 hover:bg-emerald-700 text-white"
-                          }`}
-                        >
-                          <CheckCircle size={14} /> {isOver24Hours && canTakeover ? "Ambil Alih & Setujui" : "Setujui"}
-                        </button>
                       </div>
                     </div>
                   );
@@ -1651,11 +1715,14 @@ export const DplDashboardPage: React.FC = () => {
                     setSelectedApprovalStatus(e.target.value);
                     setApprovalPage(1);
                   }}
-                  className="text-xs font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg px-3 py-1.5 outline-none"
+                  className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer"
                 >
                   <option value="ALL">Semua Keputusan</option>
                   <option value="APPROVED">Disetujui</option>
                   <option value="REJECTED">Ditolak</option>
+                  <option value="CANCELLED">Dibatalkan Mahasiswa</option>
+                  <option value="OVERRIDDEN_HADIR">Batal Izin (Hadir)</option>
+                  <option value="ESCALATED">Dieskalasi</option>
                 </select>
               </div>
             </div>
@@ -1673,44 +1740,71 @@ export const DplDashboardPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {paginatedApprovalHistory.map((log) => (
-                    <tr key={log.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
-                      <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-slate-100">{log.studentName}</td>
-                      <td className="px-4 py-3.5">
-                        <span className={`px-2 py-0.5 rounded font-bold text-[11px] border ${
-                          log.type === "SAKIT" ? "bg-red-50 dark:bg-rose-950 text-red-700 dark:text-rose-300 border-red-200 dark:border-rose-700" : "bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700"
-                        }`}>
-                          {log.type}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-slate-700 dark:text-slate-300 font-semibold text-[11.5px]">
-                        {log.startDate ? (
-                          <span>
-                            {new Date(log.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
-                            {log.endDate && log.endDate.split("T")[0] !== log.startDate.split("T")[0]
-                              ? ` - ${new Date(log.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}`
-                              : ""}
+                  {paginatedApprovalHistory.map((log) => {
+                    const st = (log.status || "").toUpperCase();
+                    const isAppr = st === "APPROVED";
+                    const isRej = st === "REJECTED";
+                    const isEsc = st === "ESCALATED";
+                    const isCanc = st === "CANCELLED";
+                    const isOverr = st === "OVERRIDDEN_HADIR";
+
+                    let badgeClass = "bg-slate-100 text-slate-700 border-slate-200";
+                    let badgeLabel = log.status || "-";
+
+                    if (isAppr) {
+                      badgeClass = "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700/40";
+                      badgeLabel = "Disetujui";
+                    } else if (isRej) {
+                      badgeClass = "bg-red-50 dark:bg-rose-950/60 text-red-700 dark:text-rose-400 border-red-200 dark:border-rose-700/40";
+                      badgeLabel = "Ditolak";
+                    } else if (isEsc) {
+                      badgeClass = "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700/40";
+                      badgeLabel = "Dieskalasi";
+                    } else if (isCanc) {
+                      badgeClass = "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700";
+                      badgeLabel = "Dibatalkan Mahasiswa";
+                    } else if (isOverr) {
+                      badgeClass = "bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-400 border-cyan-200 dark:border-cyan-700/40";
+                      badgeLabel = "Batal Izin (Hadir)";
+                    }
+
+                    return (
+                      <tr key={log.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
+                        <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-slate-100">{log.studentName}</td>
+                        <td className="px-4 py-3.5">
+                          <span className={`px-2 py-0.5 rounded font-bold text-[11px] border ${
+                            log.type === "SAKIT" ? "bg-red-50 dark:bg-rose-950 text-red-700 dark:text-rose-300 border-red-200 dark:border-rose-700" : "bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700"
+                          }`}>
+                            {log.type}
                           </span>
-                        ) : "-"}
-                      </td>
-                      <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300 max-w-xs truncate">{log.reason}</td>
-                      <td className="px-4 py-3.5 text-center">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${
-                            log.status === "APPROVED"
-                              ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700/40"
-                              : "bg-red-50 dark:bg-rose-950/60 text-red-700 dark:text-rose-400 border-red-200 dark:border-rose-700/40"
-                          }`}
-                        >
-                          {log.status === "APPROVED" ? <CheckCircle size={12} /> : <XCircle size={12} />}
-                          {log.status === "APPROVED" ? "Disetujui" : "Ditolak"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
-                        {log.reviewedAt ? new Date(log.reviewedAt).toLocaleString("id-ID") : "-"}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-4 py-3.5 text-slate-700 dark:text-slate-300 font-semibold text-[11.5px]">
+                          {log.startDate ? (
+                            <span>
+                              {new Date(log.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                              {log.endDate && log.endDate.split("T")[0] !== log.startDate.split("T")[0]
+                                ? ` - ${new Date(log.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}`
+                                : ""}
+                            </span>
+                          ) : "-"}
+                        </td>
+                        <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={log.reason}>
+                          {log.reason}
+                        </td>
+                        <td className="px-4 py-3.5 text-center">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${badgeClass}`}
+                          >
+                            {isAppr || isOverr ? <CheckCircle size={12} /> : isRej ? <XCircle size={12} /> : null}
+                            {badgeLabel}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                          {log.reviewedAt ? new Date(log.reviewedAt).toLocaleString("id-ID") : "-"}
+                        </td>
+                      </tr>
+                    );
+                  })}
 
                   {paginatedApprovalHistory.length === 0 && (
                     <tr>

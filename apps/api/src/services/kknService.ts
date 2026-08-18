@@ -826,23 +826,100 @@ export class KknService {
     kknUserId: string,
     data: {
       userId: string;
-      rwId: number;
+      rwId?: any;
       nama: string;
       jenis: any;
       longitude: number;
       latitude: number;
       foto?: string;
+      kapasitas?: number;
+      alamat?: string;
     }
   ) {
+    if (!data.nama || !data.jenis) {
+      throw new Error("Nama dan jenis fasilitas wajib diisi");
+    }
+
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId: kknUserId },
+      include: { kelompok: true, user: true, assignedRw: true },
+    });
+
+    let wargaUser: any = null;
+    if (data.userId) {
+      wargaUser = await prisma.user.findUnique({
+        where: { id: data.userId },
+        include: { rw: true },
+      });
+    }
+
+    // Smart RW Resolver
+    let targetRwId: number | null = null;
+    if (data.rwId != null) {
+      const rawRw = String(data.rwId).trim();
+      const numRw = parseInt(rawRw.replace(/\D/g, ""), 10);
+
+      if (!isNaN(numRw)) {
+        const directRw = await prisma.rw.findUnique({ where: { id: numRw } });
+        if (directRw) {
+          targetRwId = directRw.id;
+        } else {
+          const padStr = numRw.toString().padStart(2, "0");
+          const matchedRw = await prisma.rw.findFirst({
+            where: {
+              OR: [
+                { name: { equals: `RW ${padStr}`, mode: "insensitive" } },
+                { name: { equals: `RW ${numRw}`, mode: "insensitive" } },
+                { name: { contains: `RW ${padStr}`, mode: "insensitive" } },
+              ],
+            },
+          });
+          if (matchedRw) targetRwId = matchedRw.id;
+        }
+      }
+    }
+
+    // Fallback: Warga's RW or Student's RW
+    if (!targetRwId && wargaUser?.rwId) {
+      targetRwId = wargaUser.rwId;
+    }
+    if (!targetRwId && student?.assignedRwId) {
+      targetRwId = student.assignedRwId;
+    }
+    if (!targetRwId && student?.user?.rwId) {
+      targetRwId = student.user.rwId;
+    }
+    if (!targetRwId && student?.kelompok?.cakupanRw) {
+      try {
+        const parsed =
+          typeof student.kelompok.cakupanRw === "string"
+            ? JSON.parse(student.kelompok.cakupanRw)
+            : student.kelompok.cakupanRw;
+        if (Array.isArray(parsed) && parsed.length > 0) targetRwId = Number(parsed[0]);
+      } catch (_) {}
+    }
+    if (!targetRwId) {
+      const firstRw = await prisma.rw.findFirst();
+      targetRwId = firstRw?.id || 1;
+    }
+
+    const picName = wargaUser ? wargaUser.name : (data.userId || "Warga Binaan");
+    const kontakPhone = wargaUser ? wargaUser.phone || "-" : "-";
+    const alamatLokasi = data.alamat || (wargaUser ? wargaUser.address || "-" : "-");
+
     const facility = await prisma.facility.create({
       data: {
         nama: data.nama,
         jenis: data.jenis,
-        pic: data.userId, // Warga's name or ID
+        pic: picName,
+        kontak: kontakPhone,
+        alamat: alamatLokasi,
+        kapasitas: data.kapasitas != null ? data.kapasitas : null,
         latitude: data.latitude,
         longitude: data.longitude,
-        rwId: data.rwId,
-        foto: data.foto,
+        rwId: targetRwId,
+        kelompokId: student?.kelompokId || null,
+        foto: data.foto || null,
         statusApproval: "PENDING",
       },
     });
@@ -1388,6 +1465,37 @@ export class KknService {
     const endDate = new Date(targetDate);
     endDate.setHours(23, 59, 59, 999);
 
+    // 🎯 VALIDASI ANTI-TUMPUK (1 Hari/Pertemuan = 1 Status Pengajuan)
+    const studentProfile = await prisma.studentKkn.findFirst({
+      where: { OR: [{ userId: studentId }, { id: studentId }] },
+      include: { kelompok: { include: { dpl: true } }, user: true },
+    });
+    const studentUserIds = Array.from(
+      new Set([studentId, studentProfile?.id, studentProfile?.userId].filter(Boolean) as string[])
+    );
+
+    const existingLeave = await (prisma as any).studentLeaveRequest.findFirst({
+      where: {
+        studentId: { in: studentUserIds },
+        startDate: { lte: endDate },
+        endDate: { gte: startDate },
+        status: { in: ["PENDING", "APPROVED", "CANCEL_REQUESTED"] },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (existingLeave) {
+      if (existingLeave.status === "PENDING") {
+        throw new Error("Pengajuan izin Anda sebelumnya masih dalam proses verifikasi.");
+      }
+      if (existingLeave.status === "APPROVED") {
+        throw new Error("Pengajuan izin untuk tanggal ini sudah disetujui. Silakan ajukan pembatalan jika ingin hadir.");
+      }
+      if (existingLeave.status === "CANCEL_REQUESTED") {
+        throw new Error("Permohonan pembatalan izin Anda sedang menunggu konfirmasi DPL.");
+      }
+    }
+
     const leaveType = (payload.kategori || "IZIN").toUpperCase().includes("SAKIT")
       ? "SAKIT"
       : "IZIN";
@@ -1406,10 +1514,6 @@ export class KknService {
 
     // Notify DPL asynchronously in background (non-blocking, won't trigger 502/timeout)
     try {
-      const studentProfile = await prisma.studentKkn.findFirst({
-        where: { OR: [{ userId: studentId }, { id: studentId }] },
-        include: { kelompok: { include: { dpl: true } }, user: true },
-      });
       const dplUser = studentProfile?.kelompok?.dpl;
       if (dplUser) {
         await prisma.notification.create({
@@ -1433,9 +1537,104 @@ export class KknService {
     };
   }
 
+  /**
+   * Pembatalan Izin Mahasiswa (Batal Izin / Jadi Hadir)
+   * - Skenario A (PENDING): Langsung CANCELLED (Self-Service)
+   * - Skenario B (APPROVED): Status CANCEL_REQUESTED (Menunggu Konfirmasi / Override DPL)
+   */
+  async cancelLeaveRequest(studentId: string, leaveRequestId: string, reason?: string) {
+    const leave = await (prisma as any).studentLeaveRequest.findUnique({
+      where: { id: leaveRequestId },
+      include: { student: true },
+    });
+
+    if (!leave) {
+      throw new Error("Pengajuan izin tidak ditemukan.");
+    }
+
+    // Pastikan milik mahasiswa bersangkutan
+    const studentProfile = await prisma.studentKkn.findFirst({
+      where: { OR: [{ userId: studentId }, { id: studentId }] },
+      include: { kelompok: { include: { dpl: true } }, user: true },
+    });
+    const validIds = new Set([studentId, studentProfile?.userId, studentProfile?.id].filter(Boolean));
+    if (!validIds.has(leave.studentId)) {
+      throw new Error("Anda tidak memiliki izin untuk membatalkan pengajuan ini.");
+    }
+
+    if (leave.status === "CANCELLED" || leave.status === "OVERRIDDEN_HADIR") {
+      throw new Error("Pengajuan izin ini sudah dibatalkan sebelumnya.");
+    }
+
+    if (leave.status === "REJECTED") {
+      throw new Error("Pengajuan izin yang ditolak tidak perlu dibatalkan.");
+    }
+
+    // Skenario A: Masih PENDING -> Batal langsung (Self-Service)
+    if (leave.status === "PENDING") {
+      const updated = await (prisma as any).studentLeaveRequest.update({
+        where: { id: leaveRequestId },
+        data: {
+          status: "CANCELLED",
+          rejectionReason: reason || "Dibatalkan oleh mahasiswa sendiri sebelum diverifikasi",
+        },
+      });
+      return {
+        success: true,
+        status: "CANCELLED",
+        message: "Pengajuan izin berhasil dibatalkan. Anda dapat melakukan presensi kehadiran normal.",
+        data: updated,
+      };
+    }
+
+    // Skenario B: Sudah APPROVED -> Mengajukan permohonan pembatalan ke DPL
+    if (leave.status === "APPROVED") {
+      const updated = await (prisma as any).studentLeaveRequest.update({
+        where: { id: leaveRequestId },
+        data: {
+          status: "CANCEL_REQUESTED",
+          rejectionReason: reason || "Mahasiswa mengajukan pembatalan izin untuk hadir pada kegiatan",
+        },
+      });
+
+      // Notifikasi ke DPL
+      try {
+        const dplUser = studentProfile?.kelompok?.dpl;
+        if (dplUser) {
+          await prisma.notification.create({
+            data: {
+              userId: dplUser.id,
+              title: "Permohonan Pembatalan Izin Mahasiswa",
+              message: `Mahasiswa ${studentProfile?.user?.name || "KKN"} mengajukan pembatalan izin untuk tanggal ${new Date(leave.startDate).toLocaleDateString("id-ID")}.`,
+              isRead: false,
+            },
+          });
+        }
+      } catch (notifErr) {
+        console.warn("[cancelLeaveRequest] Background DPL notification error:", notifErr);
+      }
+
+      return {
+        success: true,
+        status: "CANCEL_REQUESTED",
+        message: "Permohonan pembatalan izin telah dikirimkan ke DPL. Menunggu konfirmasi DPL untuk pengubahan status kehadiran.",
+        data: updated,
+      };
+    }
+
+    throw new Error(`Status izin (${leave.status}) tidak dapat dibatalkan.`);
+  }
+
   async getLeaveRequests(studentId: string) {
+    const studentProfile = await prisma.studentKkn.findFirst({
+      where: { OR: [{ userId: studentId }, { id: studentId }] },
+    });
+    const studentUserIds = Array.from(
+      new Set([studentId, studentProfile?.id, studentProfile?.userId].filter(Boolean) as string[])
+    );
+
     const list = await (prisma as any).studentLeaveRequest.findMany({
-      where: { studentId },
+      where: { studentId: { in: studentUserIds } },
       orderBy: { createdAt: "desc" },
     });
     return list.map((item: any) => ({

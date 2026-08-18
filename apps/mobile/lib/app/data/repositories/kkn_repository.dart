@@ -80,6 +80,10 @@ abstract class KknRepository {
   /// GET /api/v1/kkn/pengajuan-izin
   Future<List<dynamic>> getPengajuanIzin();
 
+  /// Membatalkan pengajuan izin / sakit (Skenario A & B)
+  /// PUT /api/v1/kkn/pengajuan-izin/:id/batal
+  Future<Map<String, dynamic>> cancelPengajuanIzin(String izinId, {String? alasan});
+
   /// Mengambil data statistik dampak kelurahan (GET /api/v1/kkn/dampak-kelurahan)
   Future<DampakKelurahanData> getDampakKelurahan();
 

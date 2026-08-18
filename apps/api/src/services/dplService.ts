@@ -545,7 +545,7 @@ export const dplService = {
     }
 
     const pendingRequests = await prisma.studentLeaveRequest.findMany({
-      where: { studentId: { in: studentUserIds }, status: "PENDING" },
+      where: { studentId: { in: studentUserIds }, status: { in: ["PENDING", "CANCEL_REQUESTED"] } },
       include: {
         student: { select: { id: true, name: true, phone: true } },
       },
@@ -563,6 +563,7 @@ export const dplService = {
         evidenceUrl: r.evidenceUrl,
         startDate: r.startDate,
         endDate: r.endDate,
+        status: r.status,
         createdAt: r.createdAt,
       })),
     };
@@ -600,7 +601,7 @@ export const dplService = {
               {
                 OR: [
                   { reviewedById: dplUserId },
-                  { status: { in: ["APPROVED", "REJECTED", "ESCALATED"] } },
+                  { status: { in: ["APPROVED", "REJECTED", "ESCALATED", "CANCELLED", "OVERRIDDEN_HADIR"] } },
                 ],
               },
             ],
@@ -755,6 +756,115 @@ export const dplService = {
           },
         });
       }
+    }
+
+    return updated;
+  },
+
+  /**
+   * Decide (Approve / Reject) Permohonan Pembatalan Izin Mahasiswa (Skenario B)
+   * Jika disetujui (APPROVE_HADIR):
+   * - Ubah status pengajuan menjadi OVERRIDDEN_HADIR
+   * - Update kehadiran mahasiswa pada jadwal terkait menjadi HADIR (method: OVERRIDE_DPL)
+   * Jika ditolak (REJECT_CANCEL):
+   * - Kembalikan status ke APPROVED
+   */
+  decideCancelLeaveRequest: async (
+    dplUserId: string,
+    requestId: string,
+    action: "APPROVE_HADIR" | "REJECT_CANCEL",
+    note?: string
+  ) => {
+    const req = await prisma.studentLeaveRequest.findUnique({
+      where: { id: requestId },
+      include: {
+        student: {
+          include: {
+            studentProfile: {
+              include: { kelompok: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!req) {
+      throw new Error("REQUEST_NOT_FOUND");
+    }
+
+    if (action === "REJECT_CANCEL") {
+      const updated = await prisma.studentLeaveRequest.update({
+        where: { id: requestId },
+        data: {
+          status: "APPROVED",
+          rejectionReason: note || "Permohonan pembatalan izin ditolak DPL. Izin tetap berlaku.",
+          reviewedById: dplUserId,
+          reviewedAt: new Date(),
+        },
+      });
+      return updated;
+    }
+
+    // APPROVE_HADIR: Setujui Batal Izin -> Ubah ke Hadir
+    const updated = await prisma.studentLeaveRequest.update({
+      where: { id: requestId },
+      data: {
+        status: "OVERRIDDEN_HADIR",
+        reviewedById: dplUserId,
+        reviewedAt: new Date(),
+        rejectionReason: note || "Izin dibatalkan dan disetujui DPL. Status presensi diubah menjadi Hadir.",
+      },
+    });
+
+    const start = new Date(req.startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(req.endDate || req.startDate);
+    end.setHours(23, 59, 59, 999);
+
+    const studentProfile = await prisma.studentKkn.findFirst({
+      where: {
+        OR: [{ userId: req.studentId }, { id: req.studentId }],
+      },
+    });
+
+    const targetStudentId = studentProfile?.userId || req.studentId;
+
+    const schedules = await prisma.schedule.findMany({
+      where: {
+        date: {
+          gte: start,
+          lte: end,
+        },
+        ...(studentProfile?.kelompokId
+          ? { OR: [{ kelompokId: studentProfile.kelompokId }, { kelompokId: null }] }
+          : {}),
+      },
+    });
+
+    for (const sch of schedules) {
+      const lat = sch.latitude ? Number(sch.latitude) : 0;
+      const lng = sch.longitude ? Number(sch.longitude) : 0;
+      await prisma.activityAttendance.upsert({
+        where: {
+          studentId_scheduleId: {
+            studentId: targetStudentId,
+            scheduleId: sch.id,
+          },
+        },
+        create: {
+          studentId: targetStudentId,
+          scheduleId: sch.id,
+          status: "HADIR",
+          method: "OVERRIDE_DPL",
+          latitude: lat,
+          longitude: lng,
+          attendedAt: new Date(),
+        },
+        update: {
+          status: "HADIR",
+          method: "OVERRIDE_DPL",
+        },
+      });
     }
 
     return updated;

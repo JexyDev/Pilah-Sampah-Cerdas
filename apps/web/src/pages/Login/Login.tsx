@@ -230,7 +230,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
       <div
-        className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-200"
+        className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Banner - Emerald Green #009966 */}
@@ -258,7 +258,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
         </div>
 
         {/* 3-Step Progress Bar */}
-        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800">
+        <div className="w-full h-1.5 bg-slate-100">
           <div
             className="h-full bg-emerald-400 transition-all duration-500"
             style={{ width: step === "phone" ? "33%" : step === "otp" ? "66%" : "100%" }}
@@ -275,25 +275,25 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                 <div className="w-14 h-14 rounded-full bg-emerald-50 text-[#009966] border border-emerald-100/80 flex items-center justify-center mx-auto shadow-xs">
                   <MessageSquare size={26} />
                 </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 font-medium leading-relaxed max-w-xs mx-auto">
+                <p className="text-sm text-slate-600 font-medium leading-relaxed max-w-xs mx-auto">
                   Masukkan nomor HP yang terdaftar. Kode OTP 6 digit akan dikirimkan ke WhatsApp Anda.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider block">
                   NOMOR HP TERDAFTAR
                 </label>
 
                 {/* Rules Guidance Card matching reference image 1:1 */}
-                <div className="text-[11px] text-slate-500 font-medium bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 space-y-1.5">
-                  <p className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 font-semibold">
+                <div className="text-[11px] text-slate-500 font-medium bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80 space-y-1.5">
+                  <p className="flex items-center gap-1.5 text-slate-600 font-semibold">
                     <span className="text-emerald-600 font-extrabold">✓</span> Hanya angka — format nomor Indonesia (+62/08/628)
                   </p>
-                  <p className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 font-semibold">
+                  <p className="flex items-center gap-1.5 text-slate-600 font-semibold">
                     <span className="text-emerald-600 font-extrabold">✓</span> Contoh: 08123456789 atau +6281234567890
                   </p>
-                  <p className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 font-semibold">
+                  <p className="flex items-center gap-1.5 text-slate-600 font-semibold">
                     <span className="text-emerald-600 font-extrabold">✓</span> Panjang: 10–13 digit (setelah kode negara)
                   </p>
                 </div>
@@ -302,7 +302,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                 <div className="relative">
                   <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={19} />
                   <input
-                    className={`w-full pl-11 pr-4 h-13 bg-white dark:bg-slate-800 border ${phoneError ? "border-rose-500 focus:ring-rose-500" : "border-slate-300 dark:border-slate-700 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl text-base font-bold text-slate-900 dark:text-slate-100 outline-none transition-all`}
+                    className={`w-full pl-11 pr-4 h-13 bg-white border ${phoneError ? "border-rose-500 focus:ring-rose-500" : "border-slate-300 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl text-base font-bold text-slate-900 outline-none transition-all`}
                     placeholder="08123456789 atau +6281234567890"
                     type="tel"
                     inputMode="numeric"
@@ -354,12 +354,12 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
           {step === "otp" && (
             <>
               <div className="text-center space-y-2">
-                <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-100/80 dark:border-emerald-700/40 flex items-center justify-center mx-auto shadow-xs">
+                <div className="w-14 h-14 rounded-full bg-emerald-50 text-[#009966] border border-emerald-100/80 flex items-center justify-center mx-auto shadow-xs">
                   <ShieldCheck size={28} />
                 </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 font-medium leading-relaxed max-w-xs mx-auto">
+                <p className="text-sm text-slate-600 font-medium leading-relaxed max-w-xs mx-auto">
                   Kode OTP 6 digit dikirim ke WhatsApp{" "}
-                  <strong className="text-slate-900 dark:text-slate-100 font-bold">{normalizePhone(phone)}</strong>.
+                  <strong className="text-slate-900 font-bold">{normalizePhone(phone)}</strong>.
                 </p>
                 <p className="text-[11px] text-slate-400 font-medium">Periksa WhatsApp Anda. Kode berlaku 5 menit.</p>
               </div>
@@ -370,7 +370,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                   <input
                     key={i}
                     ref={(el) => { otpRefs.current[i] = el; }}
-                    className={`w-12 h-14 text-center text-2xl font-black border-2 ${otpError ? "border-rose-400" : "border-slate-200 dark:border-slate-700 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-slate-100 outline-none transition-all shadow-2xs`}
+                    className={`w-12 h-14 text-center text-2xl font-black border-2 ${otpError ? "border-rose-400" : "border-slate-200 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl bg-slate-50 focus:bg-white text-slate-900 outline-none transition-all shadow-2xs`}
                     type="text"
                     inputMode="numeric"
                     maxLength={1}
@@ -393,7 +393,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
               <div className="flex gap-3 pt-1">
                 <button
                   onClick={() => { setStep("phone"); setOtp(["", "", "", "", "", ""]); setOtpError(""); }}
-                  className="flex-1 h-12 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="flex-1 h-12 border border-slate-200 text-slate-700 text-xs font-bold rounded-2xl hover:bg-slate-50 transition flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <ArrowLeft size={16} /> Kembali
                 </button>
@@ -432,35 +432,35 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
           {step === "new_password" && (
             <>
               <div className="text-center space-y-2">
-                <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-100/80 dark:border-emerald-700/40 flex items-center justify-center mx-auto shadow-xs">
+                <div className="w-14 h-14 rounded-full bg-emerald-50 text-[#009966] border border-emerald-100/80 flex items-center justify-center mx-auto shadow-xs">
                   <Lock size={26} />
                 </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 font-medium leading-relaxed max-w-xs mx-auto">
+                <p className="text-sm text-slate-600 font-medium leading-relaxed max-w-xs mx-auto">
                   Buat kata sandi baru yang kuat untuk akun TrashCare Anda.
                 </p>
               </div>
 
               {/* Ketentuan password */}
-              <div className="text-[11px] text-slate-500 bg-slate-50/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 space-y-1.5">
-                <p className="font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-1">Ketentuan Kata Sandi:</p>
-                <p className={newPassword.length >= PASSWORD_MIN_LEN ? "text-emerald-700 dark:text-emerald-400 font-bold" : "text-slate-600 dark:text-slate-400 font-medium"}>
+              <div className="text-[11px] text-slate-500 bg-slate-50/80 border border-slate-200/80 rounded-2xl p-4 space-y-1.5">
+                <p className="font-extrabold text-slate-800 uppercase tracking-wider mb-1">Ketentuan Kata Sandi:</p>
+                <p className={newPassword.length >= PASSWORD_MIN_LEN ? "text-emerald-700 font-bold" : "text-slate-600 font-medium"}>
                   {newPassword.length >= PASSWORD_MIN_LEN ? "✓" : "○"} Minimal {PASSWORD_MIN_LEN} karakter
                 </p>
-                <p className={/[A-Za-z]/.test(newPassword) ? "text-emerald-700 dark:text-emerald-400 font-bold" : "text-slate-600 dark:text-slate-400 font-medium"}>
+                <p className={/[A-Za-z]/.test(newPassword) ? "text-emerald-700 font-bold" : "text-slate-600 font-medium"}>
                   {/[A-Za-z]/.test(newPassword) ? "✓" : "○"} Mengandung minimal 1 huruf (a–z atau A–Z)
                 </p>
-                <p className={/\d/.test(newPassword) ? "text-emerald-700 dark:text-emerald-400 font-bold" : "text-slate-600 dark:text-slate-400 font-medium"}>
+                <p className={/\d/.test(newPassword) ? "text-emerald-700 font-bold" : "text-slate-600 font-medium"}>
                   {/\d/.test(newPassword) ? "✓" : "○"} Mengandung minimal 1 angka (0–9)
                 </p>
               </div>
 
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Kata Sandi Baru</label>
+                  <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Kata Sandi Baru</label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input
-                      className={`w-full pl-11 pr-11 h-12 bg-white dark:bg-slate-800 border ${pwError ? "border-rose-500" : "border-slate-300 dark:border-slate-700 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none transition-all`}
+                      className={`w-full pl-11 pr-11 h-12 bg-white border ${pwError ? "border-rose-500" : "border-slate-300 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl text-sm font-bold text-slate-900 outline-none transition-all`}
                       placeholder="Kata sandi baru (min. 8 karakter)"
                       type={showNewPw ? "text" : "password"}
                       value={newPassword}
@@ -475,11 +475,11 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Konfirmasi Kata Sandi</label>
+                  <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Konfirmasi Kata Sandi</label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input
-                      className={`w-full pl-11 pr-11 h-12 bg-white dark:bg-slate-800 border ${(pwError && confirmPassword) ? "border-rose-500" : "border-slate-300 dark:border-slate-700 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none transition-all`}
+                      className={`w-full pl-11 pr-11 h-12 bg-white border ${(pwError && confirmPassword) ? "border-rose-500" : "border-slate-300 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl text-sm font-bold text-slate-900 outline-none transition-all`}
                       placeholder="Ulangi kata sandi baru"
                       type={showConfirmPw ? "text" : "password"}
                       value={confirmPassword}
@@ -543,19 +543,21 @@ const Login: React.FC = () => {
   // Force light mode on login page unconditionally
   useEffect(() => {
     const root = document.documentElement;
-    const savedTheme = useThemeStore.getState().theme;
     root.classList.remove("dark");
     root.setAttribute("data-theme", "light");
+    root.style.colorScheme = "light";
 
     return () => {
       // Restore user preference when navigating away
-      const currentTheme = useThemeStore.getState().theme || savedTheme;
+      const currentTheme = useThemeStore.getState().theme;
       if (currentTheme === "dark") {
         root.classList.add("dark");
         root.setAttribute("data-theme", "dark");
+        root.style.colorScheme = "dark";
       } else {
         root.classList.remove("dark");
         root.setAttribute("data-theme", "light");
+        root.style.colorScheme = "light";
       }
     };
   }, []);
@@ -671,17 +673,17 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-slate-50 to-teal-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4 sm:p-8 relative overflow-hidden font-sans">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-slate-50 to-teal-100 p-4 sm:p-8 relative overflow-hidden font-sans">
 
       {/* Background Decorative Blur Spheres */}
-      <div className="absolute top-[-10%] left-[-10%] w-[450px] h-[450px] rounded-full bg-emerald-300/30 dark:bg-emerald-600/10 blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[450px] h-[450px] rounded-full bg-sky-300/30 dark:bg-sky-600/10 blur-3xl pointer-events-none"></div>
+      <div className="absolute top-[-10%] left-[-10%] w-[450px] h-[450px] rounded-full bg-emerald-300/30 blur-3xl pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[450px] h-[450px] rounded-full bg-sky-300/30 blur-3xl pointer-events-none"></div>
 
       {/* Forgot Password Modal */}
       {showForgotModal && <ForgotPasswordModal onClose={() => setShowForgotModal(false)} />}
 
       {/* Main Split Container Card */}
-      <div className="w-full max-w-[1120px] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden grid grid-cols-1 md:grid-cols-12 z-10 transition-all duration-500 animate-fade-in-up">
+      <div className="w-full max-w-[1120px] bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden grid grid-cols-1 md:grid-cols-12 z-10 transition-all duration-500 animate-fade-in-up">
 
         {/* Left Side: Rich Eco Feature Panel (Desktop Eco-Monitoring Showcase) */}
         <div className="hidden md:flex md:col-span-5 bg-gradient-to-br from-[#0f3d2e] via-[#14532d] to-[#064e3b] text-white p-8 sm:p-10 flex-col justify-between relative overflow-hidden">
@@ -744,7 +746,7 @@ const Login: React.FC = () => {
         </div>
 
         {/* Right Side: Clean Modern Login Form */}
-        <div className="col-span-12 md:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-white dark:bg-slate-900 space-y-6">
+        <div className="col-span-12 md:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-white space-y-6">
 
           <div className="space-y-5">
 
@@ -758,14 +760,14 @@ const Login: React.FC = () => {
                 </span>
               </Link>
 
-              <Link to="/" className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition">
+              <Link to="/" className="text-xs font-extrabold text-emerald-600 hover:text-emerald-700 transition">
                 Kembali ke Beranda →
               </Link>
             </div>
 
             <div className="space-y-2 text-left pt-1">
-              <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Masuk ke Portal Web</h1>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Masuk ke Portal Web</h1>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
                 Portal Web TrashCare diperuntukkan khusus bagi pengelola dan pimpinan, meliputi Admin, Pimpinan Perguruan Tinggi, TaskForce, Dosen Pendamping Lapangan (DPL), Dinas Lingkungan Hidup (DLH), Camat, Lurah, dan Rukun Warga (RW). Silakan masukkan nomor HP terdaftar dan kata sandi akun Anda.
               </p>
             </div>
@@ -776,7 +778,7 @@ const Login: React.FC = () => {
               {/* Phone Input */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
                     Nomor HP Terdaftar
                   </label>
                   <span className="text-[10px] text-slate-400 font-medium">
@@ -788,7 +790,7 @@ const Login: React.FC = () => {
                   <input
                     id="login-phone"
                     autoFocus
-                    className={`w-full pl-10 pr-4 h-12 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 border ${identifierError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-emerald-600"} rounded-xl text-sm font-semibold focus:ring-1 outline-none transition-all shadow-2xs`}
+                    className={`w-full pl-10 pr-4 h-12 bg-white text-slate-900 placeholder:text-slate-400 border ${identifierError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-semibold focus:ring-1 outline-none transition-all shadow-2xs`}
                     placeholder="08123456789 atau +6281234567890"
                     type="text"
                     value={identifier}
@@ -817,7 +819,7 @@ const Login: React.FC = () => {
 
               {/* Password Input */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
                   Kata Sandi
                 </label>
                 <div className="relative">
@@ -825,7 +827,7 @@ const Login: React.FC = () => {
                   <input
                     id="login-password"
                     ref={passwordInputRef}
-                    className={`w-full pl-10 pr-11 h-12 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 border ${passwordError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-emerald-600"} rounded-xl text-sm font-semibold focus:ring-1 outline-none transition-all shadow-2xs`}
+                    className={`w-full pl-10 pr-11 h-12 bg-white text-slate-900 placeholder:text-slate-400 border ${passwordError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-semibold focus:ring-1 outline-none transition-all shadow-2xs`}
                     placeholder="Masukkan kata sandi akun"
                     type={showPassword ? "text" : "password"}
                     value={password}
@@ -837,7 +839,7 @@ const Login: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition cursor-pointer"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-slate-200/60 transition cursor-pointer"
                     disabled={isStoreLoading || isLocalLoading}
                     title={showPassword ? "Sembunyikan Kata Sandi" : "Tampilkan Kata Sandi"}
                   >
@@ -864,7 +866,7 @@ const Login: React.FC = () => {
                     className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${
                       rememberMe
                         ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
-                        : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 hover:border-emerald-400"
+                        : "bg-white border-slate-300 hover:border-emerald-400"
                     }`}
                   >
                     {rememberMe && (
@@ -874,7 +876,7 @@ const Login: React.FC = () => {
                     )}
                   </button>
                   <label
-                    className="text-xs text-slate-600 dark:text-slate-400 font-bold select-none cursor-pointer flex items-center gap-1"
+                    className="text-xs text-slate-600 font-bold select-none cursor-pointer flex items-center gap-1"
                     onClick={() => setRememberMe(!rememberMe)}
                   >
                     <span>Ingat Saya</span>
@@ -885,7 +887,7 @@ const Login: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowForgotModal(true)}
-                  className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-extrabold transition cursor-pointer hover:underline"
+                  className="text-xs text-emerald-600 hover:text-emerald-700 font-extrabold transition cursor-pointer hover:underline"
                 >
                   Lupa Kata Sandi?
                 </button>

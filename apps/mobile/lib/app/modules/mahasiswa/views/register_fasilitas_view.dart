@@ -75,8 +75,10 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
       if (permission == LocationPermission.deniedForever) throw Exception('Izin lokasi ditolak permanen.');
 
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 15),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
       );
       final newLoc = LatLng(position.latitude, position.longitude);
       setState(() {
@@ -132,6 +134,11 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
         const SnackBar(content: Text('Berhasil mendaftarkan fasilitas warga!'), backgroundColor: AppColors.primaryGreen),
       );
       Navigator.pop(context);
+    } else if (mounted) {
+      final err = ref.read(fasilitasKknProvider).error ?? 'Gagal mendaftarkan fasilitas.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(err), backgroundColor: AppColors.dangerRed),
+      );
     }
   }
 

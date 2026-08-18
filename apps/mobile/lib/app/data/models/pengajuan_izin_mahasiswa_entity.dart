@@ -43,7 +43,7 @@ extension KategoriIzinExt on KategoriIzin {
   }
 }
 
-enum StatusIzin { menunggu, disetujui, ditolak }
+enum StatusIzin { menunggu, disetujui, ditolak, dibatalkan, menungguBatal, hadirOverride }
 
 extension StatusIzinExt on StatusIzin {
   String get displayName {
@@ -54,6 +54,12 @@ extension StatusIzinExt on StatusIzin {
         return 'Disetujui';
       case StatusIzin.ditolak:
         return 'Ditolak';
+      case StatusIzin.dibatalkan:
+        return 'Dibatalkan';
+      case StatusIzin.menungguBatal:
+        return 'Menunggu Pembatalan DPL';
+      case StatusIzin.hadirOverride:
+        return 'Batal Izin (Hadir)';
     }
   }
 }

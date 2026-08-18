@@ -187,11 +187,11 @@ export const createKknMhsIcon = (status: "PRESENT" | "SICK" | "PERMIT" | "ABSENT
 };
 
 export const createHouseholdPinIcon = (
-  hasOrganik: boolean,
-  hasAnorganik: boolean,
-  isPenuh: boolean,
-  isSedang: boolean,
-  isRusak: boolean
+  hasOrganik: boolean = true,
+  hasAnorganik: boolean = true,
+  isPenuh: boolean = false,
+  isSedang: boolean = false,
+  isRusak: boolean = false
 ) => {
   let mainColor = "#059669"; // Emerald-600
   let pulseRing = "";
@@ -204,6 +204,13 @@ export const createHouseholdPinIcon = (
   } else if (isSedang) {
     mainColor = "#d97706"; // Amber-600
   }
+
+  const badgeOrganik = hasOrganik
+    ? `<span style="background: #10b981; color: white; font-size: 8px; font-weight: 900; font-family: monospace; padding: 1px 3.5px; border-radius: 4px; border: 1px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">O</span>`
+    : "";
+  const badgeAnorganik = hasAnorganik
+    ? `<span style="background: #f59e0b; color: white; font-size: 8px; font-weight: 900; font-family: monospace; padding: 1px 3.5px; border-radius: 4px; border: 1px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">A</span>`
+    : "";
 
   return L.divIcon({
     className: "custom-household-pin-icon",
@@ -218,8 +225,8 @@ export const createHouseholdPinIcon = (
         </div>
         <!-- Dual Badge Indicator (O: Organik, A: Anorganik) -->
         <div style="display: flex; gap: 2px; margin-top: -6px; z-index: 3;">
-          <span style="background: #10b981; color: white; font-size: 8px; font-weight: 900; font-family: monospace; padding: 1px 3.5px; border-radius: 4px; border: 1px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">O</span>
-          <span style="background: #f59e0b; color: white; font-size: 8px; font-weight: 900; font-family: monospace; padding: 1px 3.5px; border-radius: 4px; border: 1px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">A</span>
+          ${badgeOrganik}
+          ${badgeAnorganik}
         </div>
       </div>
     `,

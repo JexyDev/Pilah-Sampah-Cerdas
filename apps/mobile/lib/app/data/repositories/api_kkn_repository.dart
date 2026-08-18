@@ -416,6 +416,22 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
+  Future<Map<String, dynamic>> cancelPengajuanIzin(String izinId, {String? alasan}) async {
+    try {
+      final response = await apiClient.dio.put(
+        '${ApiEndpoints.kknPengajuanIzin}/$izinId/batal',
+        data: {'alasan': alasan ?? 'Dibatalkan oleh mahasiswa'},
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data as Map<String, dynamic>? ?? {'success': true};
+      }
+      throw Exception('Gagal membatalkan pengajuan (${response.statusCode})');
+    } catch (e) {
+      throw Exception('Gagal membatalkan pengajuan izin: $e');
+    }
+  }
+
+  @override
   Future<DampakKelurahanData> getDampakKelurahan() async {
     try {
       dynamic response;

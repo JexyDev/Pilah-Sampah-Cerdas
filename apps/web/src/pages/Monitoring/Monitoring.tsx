@@ -35,13 +35,11 @@ import {
   AlertTriangle,
   Lock,
   RefreshCw,
-  Table as TableIcon,
-  Home
+  Table as TableIcon
 } from "lucide-react";
 
 import {
   KELURAHAN_GEODATA,
-  createRealBinIcon,
   createHouseholdPinIcon,
 } from "../../constants/coblongGeoData";
 
@@ -356,8 +354,26 @@ const Monitoring: React.FC = () => {
   }, [verifiedMapBins, selectedMapKelurahan, selectedRukunWarga, mapCategoryFilter, mapStatusFilter, mapSearchInput]);
 
   // Group Filtered Bins by Household (1 Single Pin per House)
-  const householdMapGroups = useMemo(() => {
-    const map = new Map<string, {
+  const householdMapGroups = useMemo<Array<{
+    householdKey: string;
+    userId?: string;
+    wargaName: string;
+    wargaPhone?: string;
+    address: string;
+    rtRw: string;
+    kelurahan: string;
+    latitude: number;
+    longitude: number;
+    organikBin: any | null;
+    anorganikBin: any | null;
+    residuBin: any | null;
+    allBins: any[];
+    isPenuh: boolean;
+    isSedang: boolean;
+    isRusak: boolean;
+    lastActivity?: string;
+  }>>(() => {
+    const map: Record<string, {
       householdKey: string;
       userId?: string;
       wargaName: string;
@@ -375,7 +391,7 @@ const Monitoring: React.FC = () => {
       isSedang: boolean;
       isRusak: boolean;
       lastActivity?: string;
-    }>();
+    }> = {};
 
     for (const bin of filteredMapBins) {
       const lat = Number(bin.latitude);
@@ -399,7 +415,7 @@ const Monitoring: React.FC = () => {
       const isResidu = catLower.includes("residu") || catLower.includes("b3");
       const isOrganik = !isAnorganik && !isResidu;
 
-      let group = map.get(key);
+      let group = map[key];
       if (!group) {
         group = {
           householdKey: key,
@@ -420,7 +436,7 @@ const Monitoring: React.FC = () => {
           isRusak: false,
           lastActivity: (bin as any).lastActivityLog || (bin as any).verifiedAt,
         };
-        map.set(key, group);
+        map[key] = group;
       }
 
       group.allBins.push(bin);
@@ -441,7 +457,7 @@ const Monitoring: React.FC = () => {
       }
     }
 
-    return Array.from(map.values());
+    return Object.values(map);
   }, [filteredMapBins]);
 
   // Table Filtered Items

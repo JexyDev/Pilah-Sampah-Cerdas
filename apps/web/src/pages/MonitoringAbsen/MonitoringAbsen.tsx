@@ -1774,8 +1774,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       );
 
                       const statusUpper = String(rec.status || "").toUpperCase();
+                      const methodUpper = String(rec.method || "").toUpperCase();
                       const isSakit = statusUpper.includes("SAKIT");
                       const isIzin = statusUpper.includes("IZIN");
+                      const isOverrideDpl = methodUpper === "OVERRIDE_DPL" || statusUpper.includes("OVERRIDE");
                       const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
                       const isHadir = isAttended && !isTanpaKeterangan;
 
@@ -1835,7 +1837,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             </div>
                           </td>
                           <td className="py-3.5 px-4 text-center">
-                            {isSakit ? (
+                            {isOverrideDpl ? (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-cyan-50 text-cyan-700 border border-cyan-200" title="Izin dibatalkan dan di-override menjadi Hadir oleh DPL">
+                                <CheckCircle2 size={13} className="text-cyan-600" />
+                                Hadir (Batal Izin)
+                              </span>
+                            ) : isSakit ? (
                               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
                                 <Thermometer size={13} className="text-amber-600" />
                                 Sakit

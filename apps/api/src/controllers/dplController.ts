@@ -148,6 +148,35 @@ export const dplController = {
     }
   },
 
+  decideCancelLeaveRequest: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const dplUserId = getUserId(req);
+      const { requestId } = req.params;
+      const { action, note } = req.body;
+
+      if (!["APPROVE_HADIR", "REJECT_CANCEL"].includes(action)) {
+        res.status(400).json({
+          error: "BAD_REQUEST",
+          message: "Aksi harus 'APPROVE_HADIR' (setujui jadi hadir) atau 'REJECT_CANCEL' (tolak pembatalan)",
+        });
+        return;
+      }
+
+      const data = await dplService.decideCancelLeaveRequest(dplUserId, requestId, action, note);
+      res.json({
+        success: true,
+        message:
+          action === "APPROVE_HADIR"
+            ? "Permohonan pembatalan izin disetujui. Status presensi mahasiswa telah diubah menjadi Hadir."
+            : "Permohonan pembatalan izin ditolak. Status izin tetap berlaku.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[dplController.decideCancelLeaveRequest] error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  },
+
   getProgramKerja: async (req: Request, res: Response): Promise<void> => {
     try {
       const dplUserId = getUserId(req);

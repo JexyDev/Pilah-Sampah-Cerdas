@@ -11,6 +11,7 @@ import { kknController } from "../controllers/kknController.js";
 import { kknAttendanceController } from "../controllers/kknAttendanceController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
+import { uploadSingleImage, safeUploadSingleImage } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
 
@@ -295,7 +296,8 @@ router.get(
 router.post(
   "/fasilitas/bantu-input",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH"]),
+  safeUploadSingleImage("foto"),
   kknController.inputFacility
 );
 
@@ -486,8 +488,6 @@ router.post(
   kknController.registerWarga
 );
 
-import { uploadSingleImage, safeUploadSingleImage } from "../middlewares/uploadMiddleware.js";
-
 /**
  * @swagger
  * /api/v1/kkn/pengajuan-izin:
@@ -513,6 +513,20 @@ router.get(
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
   kknController.getLeaveRequests
+);
+
+router.put(
+  ["/pengajuan-izin/:id/batal", "/pengajuan-izin/:id/cancel"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.cancelLeaveRequest
+);
+
+router.post(
+  ["/pengajuan-izin/:id/batal", "/pengajuan-izin/:id/cancel"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.cancelLeaveRequest
 );
 
 // Alias routes matching exact Mahasiswa KKN spec
