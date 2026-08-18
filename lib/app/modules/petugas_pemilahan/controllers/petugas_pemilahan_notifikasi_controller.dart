@@ -96,20 +96,22 @@ final petugasPemilahanNotificationsProvider = FutureProvider<List<NotificationEn
     final markAllTimestamp = prefs.getInt('mark_all_notifs_${userId}_$role') ?? 0;
     
     for (final ph in pointHistory) {
-      if (ph.points > 0) {
+      if (ph.points != 0) {
         final notifId = 'point_${ph.id}';
         final isRead = readSet.contains(notifId) || 
             ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
             LocalNotificationCacheService().isRead(userId, role, notifId, ph.createdAt);
             
+        final isPunishment = ph.points < 0;
+            
         list.add(NotificationEntity(
           id: notifId,
-          type: 'POIN_PETUGAS',
-          title: 'Poin Petugas Bertambah!',
-          desc: ph.description.isNotEmpty ? ph.description : 'Anda mendapatkan +${ph.points} poin.',
+          type: isPunishment ? 'PUNISHMENT' : 'POIN_BERTAMBAH',
+          title: isPunishment ? 'Penalti Pengurangan Poin' : 'Poin Insentif Bertambah!',
+          desc: ph.description.isNotEmpty ? ph.description : (isPunishment ? 'Anda mendapatkan penalti ${ph.points} poin.' : 'Anda mendapatkan tambahan +${ph.points} poin.'),
           isRead: isRead,
           time: ph.createdAt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
-          icon: 'star',
+          icon: isPunishment ? 'warning' : 'star',
         ));
       }
     }

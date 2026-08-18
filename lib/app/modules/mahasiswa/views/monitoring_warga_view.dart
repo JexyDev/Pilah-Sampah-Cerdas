@@ -73,15 +73,23 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
   }
 
   List<WargaDampingan> _getFilteredWarga(List<WargaDampingan> allWarga, bool isAktivasiBinMode, String userKec, String userKel, String userRw) {
+    // Helper: bersihkan string kelurahan untuk perbandingan
+    String cleanKel(String val) => val
+        .toLowerCase()
+        .replaceAll('kel.', '')
+        .replaceAll('kelurahan', '')
+        .replaceAll('desa', '')
+        .trim();
+
+    final targetKelClean = cleanKel(userKel);
+    final targetRwClean = userRw.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
+
     return allWarga.where((w) {
-      if (w.role.isNotEmpty && w.role != 'WARGA') return false; // Hanya tampilkan role warga
+      if (w.role.isNotEmpty && w.role != 'WARGA') return false;
 
       if (isAktivasiBinMode) {
-        final targetRwClean = userRw.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
-        final targetKelClean = userKel.toLowerCase().replaceAll('kel.', '').replaceAll('kelurahan', '').replaceAll('desa', '').trim();
-
         final wRwClean = w.rw.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
-        final wKelClean = w.kelurahan.toLowerCase().replaceAll('kel.', '').replaceAll('kelurahan', '').replaceAll('desa', '').trim();
+        final wKelClean = cleanKel(w.kelurahan);
         final wAddr = w.address.toLowerCase();
 
         final rwMatches = targetRwClean.isEmpty || wRwClean == targetRwClean || wAddr.contains('rw $targetRwClean') || wAddr.contains('rw 0$targetRwClean');
@@ -89,6 +97,18 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
 
         if (!rwMatches || !kelMatches) return false;
       } else {
+        // ── Filter WAJIB: hanya tampilkan warga dari kelurahan mahasiswa ──
+        // Ini mencegah warga dari kelurahan lain muncul di monitoring
+        if (targetKelClean.isNotEmpty) {
+          final wKelClean = cleanKel(w.kelurahan);
+          final wAddr = w.address.toLowerCase();
+          final kelMatches = wKelClean.contains(targetKelClean) ||
+              targetKelClean.contains(wKelClean) ||
+              wAddr.contains(targetKelClean);
+          if (!kelMatches) return false;
+        }
+
+        // ── Filter tambahan dari dropdown pilihan user ──
         if (_selectedKelurahan != 'Semua') {
           final targetKel = _selectedKelurahan.toLowerCase();
           final matches = w.kelurahan.toLowerCase().contains(targetKel) || 

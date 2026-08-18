@@ -33,8 +33,8 @@ class ApiClient {
 
   ApiClient({required this.dio, required this.secureStorage}) {
     dio.options.baseUrl = AppConfig.apiBaseUrl;
-    dio.options.connectTimeout = const Duration(seconds: 30);
-    dio.options.receiveTimeout = const Duration(seconds: 30);
+    dio.options.connectTimeout = const Duration(seconds: 15);
+    dio.options.receiveTimeout = const Duration(seconds: 15);
     dio.options.headers = {
       'Content-Type': 'application/json',
     };

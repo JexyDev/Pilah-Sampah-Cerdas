@@ -64,7 +64,7 @@ class FirebaseNotificationService {
         'title': title,
         'desc': desc,
         'isRead': false,
-        'time': 'Baru saja',
+        'time': DateTime.now().toUtc().toIso8601String(),
         'icon': icon ?? _resolveIcon(type),
         'timestamp': DateTime.now().millisecondsSinceEpoch,
       };
@@ -100,7 +100,7 @@ class FirebaseNotificationService {
             title: map['title']?.toString() ?? 'Notifikasi',
             desc: map['desc']?.toString() ?? '',
             isRead: map['isRead'] as bool? ?? false,
-            time: map['time']?.toString() ?? 'Baru saja',
+            time: map['time']?.toString() ?? DateTime.now().toUtc().toIso8601String(),
             icon: map['icon']?.toString() ?? 'info',
           ));
         } catch (e) { debugPrint('Silenced error: $e'); }

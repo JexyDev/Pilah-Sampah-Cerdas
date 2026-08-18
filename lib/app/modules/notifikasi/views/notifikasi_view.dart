@@ -6,6 +6,7 @@ import '../../../data/models/notification_entity.dart';
 import '../controllers/notifikasi_controller.dart';
 import '../controllers/warga_notifikasi_controller.dart';
 import '../../shared/widgets/app_loading.dart';
+import 'package:intl/intl.dart';
 
 
 /// Halaman daftar notifikasi Warga.
@@ -200,11 +201,15 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                             ref.invalidate(wargaNotificationsProvider);
                           }
 
-                          Navigator.pushNamed(
-                            context,
-                            '/detail-notifikasi',
-                            arguments: item,
-                          );
+                          if (item.type.toUpperCase() == 'POIN_BERTAMBAH' || item.type.toUpperCase() == 'POIN' || item.type.toUpperCase() == 'PUNISHMENT') {
+                            Navigator.pushNamed(context, AppRoutes.poin);
+                          } else {
+                            Navigator.pushNamed(
+                              context,
+                              '/detail-notifikasi',
+                              arguments: item,
+                            );
+                          }
                         },
                       );
                     },
@@ -311,7 +316,7 @@ class _NotificationTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    item.time,
+                    _formatDateTime(item.time),
                     style: const TextStyle(
                       fontSize: 11,
                       color: AppColors.textHint,
@@ -324,6 +329,16 @@ class _NotificationTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatDateTime(String? rawStr) {
+    if (rawStr == null || rawStr.isEmpty || rawStr == '-') return '';
+    try {
+      final dt = DateTime.parse(rawStr).toLocal();
+      return '${DateFormat('d MMMM yyyy, HH:mm', 'id_ID').format(dt)} WIB';
+    } catch (_) {
+      return rawStr; // fallback jika bukan ISO string (misal 'Baru saja')
+    }
   }
 
   Widget _buildIconWidget(String iconName, String type, Color iconColor) {

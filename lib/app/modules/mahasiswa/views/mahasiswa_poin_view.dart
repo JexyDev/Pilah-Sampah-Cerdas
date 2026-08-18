@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
+import '../../../data/models/point_history_entity.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../riwayat/controllers/riwayat_controller.dart' show pointHistoryProvider;
 import '../controllers/mahasiswa_controller.dart';
 import '../controllers/riwayat_kkn_controller.dart';
-import '../views/riwayat_kkn_view.dart' show KknHistoryLog, KknHistoryType;
 
 final pengajuanIzinCountProvider = FutureProvider.autoDispose<int>((ref) async {
   try {
@@ -37,6 +38,7 @@ class MahasiswaPoinView extends ConsumerWidget {
         onRefresh: () async {
           await ref.read(mahasiswaControllerProvider.notifier).fetchAll();
           if (user != null) {
+            ref.invalidate(pointHistoryProvider);
             await ref.read(riwayatKknControllerProvider.notifier).refresh();
             ref.invalidate(pengajuanIzinCountProvider);
           }
@@ -68,7 +70,7 @@ class MahasiswaPoinView extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   if (user != null)
-                    _buildPoinHistoryList(ref.watch(riwayatKknControllerProvider))
+                    _buildPoinHistoryList(ref.watch(pointHistoryProvider))
                   else
                     const SizedBox.shrink(),
                   const SizedBox(height: 40),
@@ -333,18 +335,15 @@ class MahasiswaPoinView extends ConsumerWidget {
     );
   }
 
-  Widget _buildPoinHistoryList(RiwayatKknState state) {
-    if (state.isLoading && state.logs.isEmpty) {
-      return const Padding(
+  Widget _buildPoinHistoryList(AsyncValue<List<PointHistoryEntity>> asyncHistory) {
+    return asyncHistory.when(
+      loading: () => const Padding(
         padding: EdgeInsets.all(32),
         child: Center(
           child: CircularProgressIndicator(color: AppColors.primaryGreen),
         ),
-      );
-    }
-
-    if (state.errorMessage != null && state.logs.isEmpty) {
-      return Container(
+      ),
+      error: (err, stack) => Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -356,49 +355,51 @@ class MahasiswaPoinView extends ConsumerWidget {
             const Icon(Icons.error_outline, size: 40, color: AppColors.dangerRed),
             const SizedBox(height: 8),
             Text(
-              'Gagal memuat riwayat poin.\n${state.errorMessage}',
+              'Gagal memuat riwayat poin.\n$err',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
             ),
           ],
         ),
-      );
-    }
+      ),
+      data: (history) {
+        // Filter logs that actually have points awarded for the Poin View
+        final pointLogs = history.where((log) => log.points > 0).toList();
 
-    // Filter logs that actually have points awarded for the Poin View
-    final pointLogs = state.logs.where((log) => log.points != null && log.points! > 0).toList();
-
-    if (pointLogs.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: const Column(
-          children: [
-            Icon(Icons.monetization_on_outlined, size: 40, color: AppColors.textHint),
-            SizedBox(height: 8),
-            Text(
-              'Belum ada riwayat perolehan poin.',
-              style: TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+        if (pointLogs.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
             ),
-          ],
-        ),
-      );
-    }
+            child: const Column(
+              children: [
+                Icon(Icons.monetization_on_outlined, size: 40, color: AppColors.textHint),
+                SizedBox(height: 8),
+                Text(
+                  'Belum ada riwayat perolehan poin.',
+                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          );
+        }
 
-    return Column(
-      children: pointLogs
-          .map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _PoinHistoryItem(item: item),
-              ))
-          .toList(),
+        return Column(
+          children: pointLogs
+              .map((item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _PoinHistoryItem(item: item),
+                  ))
+              .toList(),
+        );
+      },
     );
   }
 }
+
 
 class _StatCard extends StatelessWidget {
   const _StatCard({
@@ -464,11 +465,31 @@ class _StatCard extends StatelessWidget {
 class _PoinHistoryItem extends StatelessWidget {
   const _PoinHistoryItem({required this.item});
 
-  final KknHistoryLog item;
+  final PointHistoryEntity item;
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(item.timestamp.toLocal());
+    final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(item.createdAt.toLocal());
+
+    // Map description to standardized title
+    String title = item.description;
+    IconData icon = Icons.check_circle_outline_rounded;
+
+    if (title.toLowerCase().contains('aktivasi')) {
+      title = 'Aktivasi Tempat Sampah Warga';
+      icon = Icons.qr_code_scanner_rounded;
+    } else if (title.toLowerCase().contains('pemanfaatan')) {
+      if (!title.toLowerCase().startsWith('laporan')) {
+        title = 'Laporan Pemanfaatan Sampah: $title';
+      }
+      icon = Icons.recycling_rounded;
+    } else if (title.toLowerCase().contains('geofence') || title.toLowerCase().contains('presensi')) {
+      title = 'Ping Lokasi Posko / Presensi';
+      icon = Icons.location_on_rounded;
+    } else if (title.toLowerCase().contains('registrasi')) {
+      title = 'Bonus Registrasi Akun Mahasiswa KKN';
+      icon = Icons.card_giftcard_rounded;
+    }
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -486,7 +507,7 @@ class _PoinHistoryItem extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              item.type == KknHistoryType.gps ? Icons.location_on_rounded : Icons.check_circle_outline_rounded,
+              icon,
               color: AppColors.primaryGreen,
               size: 20,
             ),
@@ -497,13 +518,13 @@ class _PoinHistoryItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.title,
+                  title,
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
@@ -518,7 +539,7 @@ class _PoinHistoryItem extends StatelessWidget {
             ),
           ),
           Text(
-            '+${item.points ?? 0} PTS',
+            '+${item.points} PTS',
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,
@@ -530,3 +551,4 @@ class _PoinHistoryItem extends StatelessWidget {
     );
   }
 }
+

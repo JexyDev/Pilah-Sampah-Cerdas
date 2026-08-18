@@ -5,6 +5,7 @@ import '../../auth/controllers/auth_controller.dart';
 
 import '../../../data/services/local_notification_cache_service.dart';
 import '../../../data/services/firebase_notification_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final Set<String> _wargaShownNotifIds = {};
 
@@ -24,6 +25,37 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
   }
 
   final List<NotificationEntity> result = [];
+
+  try {
+    final pointRepo = ref.read(wasteLogRepositoryProvider);
+    final pointHistory = await pointRepo.getPointHistoryByUser(userId);
+    
+    final prefs = await SharedPreferences.getInstance();
+    final readList = prefs.getStringList('read_notifs_${userId}_$role') ?? [];
+    final readSet = readList.toSet();
+    final markAllTimestamp = prefs.getInt('mark_all_notifs_${userId}_$role') ?? 0;
+    
+    for (final ph in pointHistory) {
+      if (ph.points != 0) {
+        final notifId = 'point_${ph.id}';
+        final isRead = readSet.contains(notifId) || 
+            ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
+            LocalNotificationCacheService().isRead(userId, role, notifId, ph.createdAt);
+            
+        final isPunishment = ph.points < 0;
+            
+        result.add(NotificationEntity(
+          id: notifId,
+          type: isPunishment ? 'PUNISHMENT' : 'POIN_BERTAMBAH',
+          title: isPunishment ? 'Penalti Pengurangan Poin' : 'Poin Bertambah!',
+          desc: ph.description.isNotEmpty ? ph.description : (isPunishment ? 'Poin Anda dikurangi ${ph.points}.' : 'Anda mendapatkan tambahan +${ph.points} poin.'),
+          isRead: isRead,
+          time: ph.createdAt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
+          icon: isPunishment ? 'warning' : 'star',
+        ));
+      }
+    }
+  } catch (_) {}
 
   for (final notif in list) {
     final type = notif.type.toUpperCase();

@@ -37,33 +37,13 @@ class ApiAuthRepository implements AuthRepository {
     final cleanPhone = PhoneFormatter.prepareLoginPhoneInput(phone);
     
     try {
-      Response response;
-      try {
-        response = await apiClient.dio.post(
-          '/auth/login',
-          data: {
-            'phone': cleanPhone, 
-            'password': password
-          },
-        );
-      } on DioException catch (e) {
-        if (e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-          if (cleanPhone.startsWith('+62')) {
-            final altPhone = '0${cleanPhone.substring(3)}';
-            response = await apiClient.dio.post(
-              '/auth/login',
-              data: {
-                'phone': altPhone, 
-                'password': password
-              },
-            );
-          } else {
-            rethrow;
-          }
-        } else {
-          rethrow;
-        }
-      }
+      final response = await apiClient.dio.post(
+        '/auth/login',
+        data: {
+          'phone': cleanPhone, 
+          'password': password
+        },
+      );
 
       if (response.statusCode == 200) {
         final data = response.data['data'] as Map<String, dynamic>;
@@ -101,9 +81,14 @@ class ApiAuthRepository implements AuthRepository {
           // Cek apakah login response sudah ada kelurahan/rw
           if (user.kelurahan.isEmpty || user.rw.isEmpty) {
             // Baca dari local storage yang mungkin sudah disimpan sebelumnya
-            final localKec = await secureStorage.read(key: AppConfig.mahasiswaKecamatanKey);
-            final localKel = await secureStorage.read(key: AppConfig.mahasiswaKelurahanKey);
-            final localRt = await secureStorage.read(key: AppConfig.mahasiswaRwKey);
+            final results = await Future.wait([
+              secureStorage.read(key: AppConfig.mahasiswaKecamatanKey),
+              secureStorage.read(key: AppConfig.mahasiswaKelurahanKey),
+              secureStorage.read(key: AppConfig.mahasiswaRwKey),
+            ]);
+            final localKec = results[0];
+            final localKel = results[1];
+            final localRt = results[2];
             if ((localKel != null && localKel.isNotEmpty) ||
                 (localRt != null && localRt.isNotEmpty) ||
                 (localKec != null && localKec.isNotEmpty)) {

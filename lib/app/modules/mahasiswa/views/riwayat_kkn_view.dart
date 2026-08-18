@@ -6,7 +6,7 @@ import '../../../core/values/app_colors.dart';
 import '../controllers/riwayat_kkn_controller.dart';
 
 // Model
-enum KknHistoryType { aktivasi, gps }
+enum KknHistoryType { aktivasi, gps, izin }
 
 class KknHistoryLog {
   final String title;
@@ -51,6 +51,8 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
       return logs.where((l) => l.type == KknHistoryType.aktivasi).toList();
     } else if (_filterIndex == 2) {
       return logs.where((l) => l.type == KknHistoryType.gps).toList();
+    } else if (_filterIndex == 3) {
+      return logs.where((l) => l.type == KknHistoryType.izin).toList();
     }
     return logs;
   }
@@ -59,40 +61,45 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
   Widget build(BuildContext context) {
     final state = ref.watch(riwayatKknControllerProvider);
     final filteredLogs = _getFilteredLogs(state.logs);
-    final totalPoints = state.logs.fold<int>(0, (sum, log) => sum + (log.points ?? 0));
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('Riwayat Aktivitas KKN', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: Colors.white)),
+        title: const Text('Riwayat Aktivitas KKN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
         backgroundColor: AppColors.primaryGreen,
+        iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
       ),
       body: Column(
         children: [
-          // Total Points Banner
           Container(
-            color: AppColors.primaryGreen,
-            width: double.infinity,
-            padding: const EdgeInsets.only(bottom: 24, left: 24, right: 24),
-            child: Column(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            child: Row(
               children: [
-                const Text('Total Poin Terkumpul', style: TextStyle(color: Colors.white70, fontSize: 13)),
-                const SizedBox(height: 4),
-                Text(
-                  '$totalPoints',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Total Aktivitas', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${state.logs.length} Aktivitas',
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                      ),
+                    ],
                   ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: AppColors.primaryGreen.withValues(alpha: 0.1), shape: BoxShape.circle),
+                  child: const Icon(Icons.history_rounded, color: AppColors.primaryGreen, size: 28),
                 ),
               ],
             ),
           ),
-          // Filter Tabs
-          Container(
-            color: Colors.white,
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
@@ -100,7 +107,9 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
                 const SizedBox(width: 8),
                 _filterTab('Aktivasi Warga', 1),
                 const SizedBox(width: 8),
-                _filterTab('Ping Lokasi', 2),
+                _filterTab('Ping Lokasi Posko', 2),
+                const SizedBox(width: 8),
+                _filterTab('Pengajuan Izin', 3),
               ],
             ),
           ),
@@ -160,14 +169,26 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
     Color iconColor;
     Color bgColor;
     
-    if (isAktivasi) {
+    if (log.type == KknHistoryType.aktivasi) {
       iconData = Icons.qr_code_scanner_rounded;
       iconColor = AppColors.success;
       bgColor = AppColors.success.withValues(alpha: 0.1);
-    } else {
+    } else if (log.type == KknHistoryType.gps) {
       iconData = Icons.location_on_rounded;
-      iconColor = (log.isGpsActive == true) ? AppColors.primaryBlue : AppColors.dangerRed;
-      bgColor = (log.isGpsActive == true) ? AppColors.primaryBlue.withValues(alpha: 0.1) : AppColors.dangerRed.withValues(alpha: 0.1);
+      iconColor = (log.isGpsActive == true) ? AppColors.primaryGreen : AppColors.dangerRed;
+      bgColor = (log.isGpsActive == true) ? AppColors.primaryGreen.withValues(alpha: 0.1) : AppColors.dangerRed.withValues(alpha: 0.1);
+    } else {
+      iconData = Icons.assignment_rounded;
+      if (log.isGpsActive == true) { // approved
+        iconColor = AppColors.success;
+        bgColor = AppColors.success.withValues(alpha: 0.1);
+      } else if (log.isGpsActive == false) { // rejected
+        iconColor = AppColors.dangerRed;
+        bgColor = AppColors.dangerRed.withValues(alpha: 0.1);
+      } else { // pending
+        iconColor = AppColors.warningOrange;
+        bgColor = AppColors.warningOrange.withValues(alpha: 0.1);
+      }
     }
 
     return Container(
