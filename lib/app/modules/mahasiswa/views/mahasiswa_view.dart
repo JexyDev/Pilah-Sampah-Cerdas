@@ -645,6 +645,24 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
             ),
           ],
         ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _MenuTileCard(
+                icon: Icons.add_business_rounded,
+                title: 'Fasilitas Warga',
+                subtitle: 'Daftar fasilitas baru',
+                gradientColors: const [AppColors.warningYellow, AppColors.warningOrange],
+                onTap: () => Navigator.pushNamed(context, AppRoutes.registerFasilitas),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Container(), // Placeholder untuk menyamakan ukuran
+            ),
+          ],
+        ),
       ],
     );
   }

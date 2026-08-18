@@ -38,5 +38,7 @@ class AppRoutes {
   static const String pengajuanWarga = '/petugas-pemilahan/pengajuan-warga';
   static const String monitoringDampakKelurahan = '/mahasiswa/dampak-kelurahan';
   static const String riwayatKkn = '/mahasiswa/riwayat';
+  static const String registerPosko = '/mahasiswa/posko/register';
+  static const String registerFasilitas = '/mahasiswa/fasilitas/register';
 }
 

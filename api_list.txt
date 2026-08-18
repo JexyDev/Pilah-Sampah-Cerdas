@@ -1,0 +1,92 @@
+/api/v1/users [get]: Get all users
+/api/v1/users [post]: Create a new user
+/api/v1/users/{id} [delete]: Delete a user by ID
+/api/v1/users/{id} [put]: Update a user by ID
+/api/v1/users/{id}/onboarding-status [get]: Get user onboarding status
+/api/v1/transactions/my-deposits [get]: Mengambil riwayat poin dan transaksi setoran sampah milik Warga
+/api/v1/rw/dashboard [get]: Dashboard ringkasan statistik wilayah RT/RW
+/api/v1/rw/bins/pending [get]: Daftar pengajuan aktivasi tempat sampah warga yang pending approval RW
+/api/v1/rw/bins/{id}/approve [put]: Menyetujui pengajuan aktivasi tempat sampah warga oleh RW
+/api/v1/rw/bins/{id}/reject [put]: Menolak pengajuan tempat sampah warga
+/api/v1/rw/bins/inactive [get]: Daftar tempat sampah inaktif (30 hari tanpa aktivitas) di wilayah RW
+/api/v1/rw/bins/{id}/broken [put]: Menandai tempat sampah rusak fisik secara permanen (BROKEN)
+/api/v1/rw/petugas/pending [get]: Daftar pengajuan verifikasi akun petugas residu
+/api/v1/rw/petugas/{id}/verify [put]: Verifikasi persetujuan / penolakan akun petugas residu oleh RW
+/api/v1/rw/ide [get]: Daftar pengajuan ide daur ulang warga
+/api/v1/rw/ide/{id}/verify [put]: Verifikasi ide daur ulang warga & penambahan +50 poin
+/api/v1/rw/facilities/pending [get]: Daftar pengajuan registrasi fasilitas daur ulang/kompos
+/api/v1/rw/facilities/{id}/verify [put]: Verifikasi pengajuan fasilitas daur ulang/kompos
+/api/v1/rw/facilities [get]: Daftar seluruh fasilitas (Loseda, Maggot, Bata Terawang, Bank Sampah) di RW
+/api/v1/rw/facilities/{id}/production [post]: Input laporan mingguan hasil panen & material masuk fasilitas
+/api/v1/rw/residu-monitoring [get]: Monitoring hasil setoran residu petugas hilir yang terikat dengan 1 RW
+/api/v1/petugas-residu/pending-logs [get]: Mendapatkan antrian tempat sampah yang perlu ditimbang/diangkut
+/api/v1/petugas-residu/jadwal-harian [get]: Mendapatkan jadwal penjemputan harian petugas residu
+/api/v1/petugas-residu/violation [post]: Melaporkan pelanggaran pemilahan sampah warga oleh petugas
+/api/v1/petugas-residu/submit-log [post]: Input manual hasil penimbangan residu industri/fisik
+/api/v1/petugas-residu/dashboard [get]: Dashboard monitoring timbulan residu & penjemputan
+/api/v1/petugas-residu/analytics [get]: Analitik timbulan residu per wilayah
+/api/v1/petugas-residu/riwayat [get]: Riwayat penimbangan & setoran residu
+/api/v1/points/me [get]: Get point history and total points for current user
+/api/v1/points/history/{userId} [get]: Get point history for a specific user (Admin only)
+/api/v1/points/leaderboard [get]: Get leaderboard of users based on points
+/api/v1/notifications [get]: Mendapatkan seluruh notifikasi generik user (Warga / RW / RT / Admin)
+/api/v1/notifications/read-all [put]: Membaca (tandai selesai) seluruh notifikasi user secara massal
+/api/v1/notifications/{id}/read [put]: Membaca (tandai selesai) notifikasi individual berdasarkan ID
+/api/v1/kkn/validate-qr-master [post]: Validasi QR Code Master oleh Mahasiswa KKN saat serah terima
+/api/v1/kkn/dashboard [get]: Dashboard statistik & progress penugasan Mahasiswa KKN
+/api/v1/kkn/handover [post]: Serah terima wilayah & aset KKN antar gelombang/mahasiswa
+/api/v1/kkn/warga-dampingan [get]: Daftar warga dampingan Mahasiswa KKN di wilayah tugas
+/api/v1/kkn/warga [get]: List seluruh warga di wilayah tugas KKN
+/api/v1/kkn/warga/activate-by-scan [post]: Aktivasi tempat sampah warga via scan QR oleh Mahasiswa KKN (Merekam GPS & Langsung Otomatis ACTIVE_BOUND)
+/api/v1/kkn/warga/activate-bin [post]: Pendaftaran & aktivasi bin warga oleh Mahasiswa KKN
+/api/v1/kkn/warga/{wargaId} [get]: Detail profil & status bin warga dampingan
+/api/v1/kkn/activity-log [get]: Logbook riwayat aktivitas lapangan Mahasiswa KKN
+/api/v1/kkn/fasilitas/bantu-input [post]: Pendataan & input fasilitas daur ulang warga oleh Mahasiswa KKN
+/api/v1/kkn/location-ping [post]: Presensi & ping lokasi GPS real-time Mahasiswa KKN di lapangan
+/api/v1/kkn/qr/claim [post]: Klaim batch QR Code oleh Mahasiswa KKN saat diterjunkan
+/api/v1/kkn/kelompok/me [get]: Info kelompok KKN, anggota tim, & DPL pendamping
+/api/v1/kkn/active-zone [get]: Batas wilayah penugasan (Polygon RW & RT) Mahasiswa KKN
+/api/v1/kkn/pemanfaatan-sampah [post]: Pencatatan pemanfaatan sampah (Loseda/Maggot/Kompos) oleh Mahasiswa KKN
+/api/v1/kkn/register-warga [post]: Membantu pendaftaran akun Warga baru di lapangan (Auth: No HP +62)
+/api/v1/kkn/pengajuan-izin [post]: Pengajuan izin/sakit Mahasiswa KKN disertai unggah foto bukti
+/api/v1/households/register [post]: Register a new household
+/api/v1/households/me [get]: Get all households for the authenticated user
+/api/v1/dpl/groups [get]: Mendapatkan ringkasan kelompok KKN bimbingan DPL
+/api/v1/dpl/students [get]: Mendapatkan daftar detail mahasiswa KKN bimbingan DPL
+/api/v1/dpl/students/{studentId}/citizens [get]: Mendapatkan daftar warga dampingan per mahasiswa
+/api/v1/dpl/map-coverage [get]: Mendapatkan peta sebaran polygon RW & titik koordinat Bins KKN
+/api/v1/dpl/alerts [get]: Mendapatkan daftar notifikasi & alert DPL
+/api/v1/dpl/approvals/history [get]: Mendapatkan riwayat persetujuan logbook KKN
+/api/v1/dpl/students/{studentId}/assess [post]: Submit penilaian aktivitas mahasiswa KKN
+/api/v1/dpl/approvals/{requestId}/decide [post]: Memberikan keputusan approval pengajuan izin mahasiswa
+/api/v1/dashboard/kpi [get]: Mendapatkan Statistik KPI Wilayah (Camat, Lurah, Admin DLH, RW)
+/api/v1/dashboard/transactions [get]: Mendapatkan Transaksi Timbulan Sampah Real-time (Camat, Lurah, Admin DLH)
+/api/v1/dashboard/summary [get]: Ringkasan Personal Dashboard User Login
+/api/v1/dashboard/analytics [get]: Data Analitik Komposisi & Akurasi Pemilahan Sampah (Camat, Lurah, DLH)
+/api/v1/dashboard/export-dataset [get]: Ekspor Dataset Laporan Sampah CSV/Excel (Camat, Lurah, Admin DLH)
+/api/v1/dashboard/regions [get]: Mendapatkan Daftar Region / Kelurahan Wilayah Monitoring
+/api/v1/dashboard/trend [get]: Mendapatkan Grafik Tren Timbulan Sampah Berkelanjutan
+/api/v1/bins [get]: Get all bins
+/api/v1/bins [post]: Create a bin
+/api/v1/bins/{id} [put]: Update a bin
+/api/v1/bins/{id} [delete]: Delete a bin
+/api/v1/bins/locations [get]: Get location summary grouped by RW (for ManajemenLokasi page)
+/api/v1/bins/my-bins [get]: Menampilkan daftar tempat sampah milik Warga yang sedang aktif
+/api/v1/bins/kelurahans [get]: Mendapatkan daftar seluruh Kelurahan (Coblong)
+/api/v1/bins/kelurahans [post]: Tambah Kelurahan Baru (Admin DLH / Super Admin)
+/api/v1/bins/kelurahans/{id} [delete]: Hapus Kelurahan (Admin DLH / Super Admin)
+/api/v1/bins/scan [post]: Scan a QR code on a Bin to deposit waste
+/api/v1/bins/{id}/status [get]: Get status of a bin
+/api/v1/bins/{id}/empty [post]: Empty bin capacity
+/api/v1/auth/login [post]: Login user
+/api/v1/auth/request-otp [post]: Mengirimkan kode OTP via WhatsApp Fonnte ke nomor ponsel warga
+/api/v1/auth/verify-otp [post]: Memvalidasi kecocokan kode OTP WhatsApp
+/api/v1/auth/reset-password [post]: Menyimpan password baru pasca-lupa password / reset OTP
+/api/v1/auth/refresh [post]: Refresh Access Token
+/api/v1/auth/logout [post]: Logout user
+/api/v1/auth/me [get]: Get current authenticated user basic info
+/api/v1/auth/upload-avatar [post]: Upload profile photo
+/api/v1/auth/profile [put]: Update current authenticated user profile
+/api/v1/auth/password [put]: Update current authenticated user password
+/api/v1/waste/detect-mock [post]: Simulasi Deteksi Gambar Sampah AI
+/api/v1/waste/detect [post]: Upload dan Deteksi Sampah AI (Untuk Mobile App)

@@ -82,4 +82,13 @@ abstract class KknRepository {
 
   /// Mengambil data statistik dampak kelurahan (GET /api/v1/kkn/dampak-kelurahan)
   Future<DampakKelurahanData> getDampakKelurahan();
+
+  /// Mendaftarkan lokasi posko KKN
+  Future<Map<String, dynamic>> registerPosko(Map<String, dynamic> data, {String? imagePath});
+
+  /// Mendapatkan detail posko me
+  Future<PoskoKknResponse?> getPoskoMe();
+
+  /// Mendaftarkan fasilitas daur ulang (Rumah Maggot dll)
+  Future<Map<String, dynamic>> registerFasilitas(Map<String, dynamic> data, {String? imagePath});
 }
