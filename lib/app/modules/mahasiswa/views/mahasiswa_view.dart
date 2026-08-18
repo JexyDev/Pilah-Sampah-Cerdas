@@ -392,9 +392,21 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
   Widget _buildSummaryCards(MahasiswaState state) {
     final d = state.dashboard;
     
-    // Total Warga Dampingan Mahasiswa ini (dari endpoint kknWargaDampingan)
+    final user = ref.watch(authProvider).user;
+    final cleanUserRw = user?.rw.trim().replaceFirst(RegExp(r'^0+'), '') ?? '';
+    
+    // Total Warga Dampingan Mahasiswa ini (dari endpoint kknWarga)
     final myWargaList = state.wargaList.where((w) {
-      return w.role == 'WARGA' || w.role.isEmpty;
+      if (w.role != 'WARGA' && w.role.isNotEmpty) return false;
+      
+      final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
+      final isMyRw = cleanUserRw.isEmpty || cleanWargaRw == cleanUserRw;
+      
+      // Jika backend mengirim mahasiswaId, cocokkan. Jika tidak, minimal harus satu RW dengan mahasiswa
+      final isMyId = w.mahasiswaId.isNotEmpty && w.mahasiswaId == user?.id;
+      final isMyName = w.pendampingName.trim().toLowerCase() == (user?.name ?? '').trim().toLowerCase();
+      
+      return isMyId || isMyName || isMyRw;
     }).toList();
 
     final totalWarga = myWargaList.length;
