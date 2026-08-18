@@ -184,7 +184,7 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
   }
 
   @override
-  Future<List<Map<String, dynamic>>?> getCachedHistory({String? dateRange, String? type}) async {
+  Future<List<Map<String, dynamic>>?> getCachedHistory() async {
     final prefs = await SharedPreferences.getInstance();
     final cachedStr = prefs.getString(_cacheKeyHistory);
     if (cachedStr != null && cachedStr.isNotEmpty) {
@@ -199,12 +199,9 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getHistory({String? dateRange, String? type}) async {
+  Future<List<Map<String, dynamic>>> getHistory() async {
     try {
-      final response = await apiClient.dio.get('/petugas-residu/riwayat', queryParameters: {
-        if (dateRange != null) 'range': dateRange,
-        if (type != null) 'type': type,
-      });
+      final response = await apiClient.dio.get('/petugas-residu/riwayat');
 
       if (response.statusCode == 200 && response.data != null) {
         final List<dynamic> list = response.data is Map<String, dynamic>

@@ -78,7 +78,11 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     // 1. Load from cache first
     final cachedDash = await repo.getCachedDashboard();
     final cachedJadwal = await repo.getCachedJadwalHarian();
-    final cachedHistory = await repo.getCachedHistory(dateRange: state.selectedDateRange, type: state.selectedTypeFilter);
+    final cachedHistoryRaw = await repo.getCachedHistory();
+    
+    final cachedHistory = cachedHistoryRaw != null 
+        ? _filterLocally(cachedHistoryRaw, state.selectedDateRange, state.selectedTypeFilter) 
+        : null;
     
     if (cachedDash != null || cachedJadwal != null || cachedHistory != null) {
       state = state.copyWith(
@@ -115,8 +119,13 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
 
   Future<void> _fetchHistoryFresh(var repo) async {
     try {
-      final history = await repo.getHistory(dateRange: state.selectedDateRange, type: state.selectedTypeFilter);
-      if (mounted) state = state.copyWith(historyList: history, isLoading: false);
+      final history = await repo.getHistory();
+      if (mounted) {
+        state = state.copyWith(
+          historyList: _filterLocally(history, state.selectedDateRange, state.selectedTypeFilter), 
+          isLoading: false
+        );
+      }
     } catch (_) {
       if (mounted && state.historyList.isEmpty) state = state.copyWith(isLoading: false);
     }
@@ -200,17 +209,53 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     }
   }
 
+  List<Map<String, dynamic>> _filterLocally(List<Map<String, dynamic>> rawList, String dateRange, String type) {
+    return rawList.where((item) {
+      // 1. Filter Date Range
+      final rawDate = item['timestamp']?.toString() ?? item['submittedAt']?.toString() ?? item['createdAt']?.toString();
+      if (rawDate == null || rawDate.isEmpty) return false;
+      DateTime dt;
+      try {
+        dt = DateTime.parse(rawDate).toLocal();
+      } catch (_) {
+        return true;
+      }
+
+      final now = DateTime.now();
+      if (dateRange == 'HARI_INI') {
+        if (dt.year != now.year || dt.month != now.month || dt.day != now.day) return false;
+      } else if (dateRange == 'MINGGU_INI') {
+        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+        final endOfWeek = startOfWeek.add(const Duration(days: 6));
+        final dtDate = DateTime(dt.year, dt.month, dt.day);
+        final start = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
+        final end = DateTime(endOfWeek.year, endOfWeek.month, endOfWeek.day);
+        if (dtDate.isBefore(start) || dtDate.isAfter(end)) return false;
+      } else if (dateRange == 'BULAN_INI') {
+        if (dt.year != now.year || dt.month != now.month) return false;
+      }
+
+      // 2. Filter Type (Timbangan only, if SETORAN)
+      if (type == 'SETORAN') {
+        final title = item['title']?.toString().toUpperCase() ?? '';
+        final classification = item['classification']?.toString().toUpperCase() ?? '';
+        if (!title.contains('TIMBANGAN') && !title.contains('SETORAN') && !classification.contains('TIMBANGAN')) return false;
+      }
+      return true;
+    }).toList();
+  }
+
   Future<void> setHistoryFilters({String? dateRange, String? type}) async {
     final newDateRange = dateRange ?? state.selectedDateRange;
     final newTypeFilter = type ?? state.selectedTypeFilter;
     
     final repo = _ref.read(petugasPemilahanRepositoryProvider);
-    final cachedList = await repo.getCachedHistory(dateRange: newDateRange, type: newTypeFilter);
+    final cachedList = await repo.getCachedHistory();
     if (cachedList != null && cachedList.isNotEmpty) {
       state = state.copyWith(
         selectedDateRange: newDateRange,
         selectedTypeFilter: newTypeFilter,
-        historyList: cachedList,
+        historyList: _filterLocally(cachedList, newDateRange, newTypeFilter),
       );
     } else {
       state = state.copyWith(
@@ -221,11 +266,11 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     }
     
     try {
-      final list = await repo.getHistory(
-        dateRange: newDateRange,
-        type: newTypeFilter,
+      final list = await repo.getHistory();
+      state = state.copyWith(
+        isLoading: false, 
+        historyList: _filterLocally(list, newDateRange, newTypeFilter),
       );
-      state = state.copyWith(isLoading: false, historyList: list);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: NetworkExceptionHelper.getErrorMessage(e));
     }

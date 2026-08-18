@@ -19,9 +19,9 @@ abstract class PetugasPemilahanRepository {
     double? longitude,
   });
 
-  Future<List<Map<String, dynamic>>?> getCachedHistory({String? dateRange, String? type});
+  Future<List<Map<String, dynamic>>?> getCachedHistory();
   /// Ambil riwayat gabungan setoran manual & violation milik petugas
-  Future<List<Map<String, dynamic>>> getHistory({String? dateRange, String? type});
+  Future<List<Map<String, dynamic>>> getHistory();
 
   /// Ganti password khusus Petugas Pemilahan
   Future<bool> changePassword({required String oldPassword, required String newPassword});
