@@ -9,32 +9,32 @@ class DetailNotifikasiView extends StatelessWidget {
   Color _resolveIconBg(String type) {
     switch (type.toUpperCase()) {
       case 'POIN_BERTAMBAH':
-        return const Color(0xFFFEF3C7);
+        return const Color(0xFFFEF3C7); // Light Amber
       case 'TONG_PENUH':
-        return const Color(0xFFFEE2E2);
+        return const Color(0xFFFEE2E2); // Light Red
       case 'PENGAJUAN_PENGOSONGAN':
       case 'PENGAJUAN_DISETUJUI':
-        return const Color(0xFFD1FAE5);
+        return const Color(0xFFD1FAE5); // Light Green
       case 'PENGAJUAN_DITOLAK':
-        return const Color(0xFFFEE2E2);
+        return const Color(0xFFFEE2E2); // Light Red
       default:
-        return const Color(0xFFE0E7FF);
+        return AppColors.primaryGreen.withValues(alpha: 0.15); // Light Green untuk default
     }
   }
 
   Color _resolveIconColor(String type) {
     switch (type.toUpperCase()) {
       case 'POIN_BERTAMBAH':
-        return const Color(0xFFD97706);
+        return const Color(0xFFD97706); // Amber
       case 'TONG_PENUH':
-        return const Color(0xFFDC2626);
+        return const Color(0xFFDC2626); // Red
       case 'PENGAJUAN_PENGOSONGAN':
       case 'PENGAJUAN_DISETUJUI':
-        return const Color(0xFF059669);
+        return const Color(0xFF059669); // Green
       case 'PENGAJUAN_DITOLAK':
-        return const Color(0xFFDC2626);
+        return const Color(0xFFDC2626); // Red
       default:
-        return const Color(0xFF4F46E5);
+        return AppColors.primaryGreen; // Default ke tema utama
     }
   }
   Widget _buildIconWidget(String iconName, String type, Color iconColor) {

@@ -4,6 +4,8 @@ import '../../../core/values/app_colors.dart';
 import '../../../data/models/notification_entity.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
+import 'mahasiswa_poin_view.dart';
+import 'package:intl/intl.dart';
 
 /// Halaman Notifikasi Khusus Mahasiswa KKN.
 /// Terpisah sepenuhnya dari Halaman Notifikasi Warga & Petugas.
@@ -19,10 +21,10 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
   final List<String> _filters = [
     'Semua',
     'Poin KKN',
-    'DPL & Izin',
-    'Presensi & Posko GPS',
+    'Pengajuan Izin',
+    'Ping Lokasi Posko',
     'Aktivasi Tempat Sampah Warga',
-    'Laporan Pemanfaatan'
+    'Laporan Pemanfaatan Sampah'
   ];
 
   @override
@@ -105,16 +107,16 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
                     if (_selectedFilter == 'Poin KKN') {
                       return typeUpper.contains('POIN') || titleLower.contains('poin');
                     }
-                    if (_selectedFilter == 'DPL & Izin') {
-                      return typeUpper.contains('IZIN') || typeUpper.contains('DPL') || titleLower.contains('dpl') || titleLower.contains('izin');
+                    if (_selectedFilter == 'Pengajuan Izin') {
+                      return typeUpper.contains('IZIN') || titleLower.contains('dpl');
                     }
-                    if (_selectedFilter == 'Presensi & Posko GPS') {
-                      return typeUpper.contains('PRESENSI') || typeUpper.contains('GPS') || typeUpper.contains('WELCOME') || typeUpper.contains('KKN') || titleLower.contains('presensi') || titleLower.contains('posko');
+                    if (_selectedFilter == 'Ping Lokasi Posko') {
+                      return typeUpper.contains('PRESENSI') || typeUpper.contains('GPS');
                     }
                     if (_selectedFilter == 'Aktivasi Tempat Sampah Warga') {
                       return typeUpper.contains('AKTIVASI') || typeUpper.contains('BIN') || titleLower.contains('bin') || titleLower.contains('aktivasi') || titleLower.contains('tempat sampah');
                     }
-                    if (_selectedFilter == 'Laporan Pemanfaatan') {
+                    if (_selectedFilter == 'Laporan Pemanfaatan Sampah') {
                       return typeUpper.contains('LAPORAN') || typeUpper.contains('PEMANFAATAN') || titleLower.contains('laporan') || titleLower.contains('pemanfaatan');
                     }
                     return true;
@@ -160,7 +162,16 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
                             ref.invalidate(mahasiswaNotificationsProvider);
                           }
                           if (context.mounted) {
-                            Navigator.pushNamed(context, '/detail-notifikasi', arguments: item);
+                            if (item.type.toUpperCase() == 'POIN_KKN' || item.type.toUpperCase() == 'PUNISHMENT') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const MahasiswaPoinView(),
+                                ),
+                              );
+                            } else {
+                              Navigator.pushNamed(context, '/detail-notifikasi', arguments: item);
+                            }
                           }
                         },
                       );
@@ -309,7 +320,7 @@ class _MahasiswaNotificationCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        item.time,
+                        _formatDateTime(item.time),
                         style: const TextStyle(
                           fontSize: 10,
                           color: AppColors.textHint,
@@ -325,5 +336,15 @@ class _MahasiswaNotificationCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatDateTime(String? rawStr) {
+    if (rawStr == null || rawStr.isEmpty || rawStr == '-') return '';
+    try {
+      final dt = DateTime.parse(rawStr).toLocal();
+      return '${DateFormat('d MMMM yyyy, HH:mm', 'id_ID').format(dt)} WIB';
+    } catch (_) {
+      return rawStr;
+    }
   }
 }

@@ -97,20 +97,22 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     final pointHistory = await pointRepo.getPointHistoryByUser(userId);
     
     for (final ph in pointHistory) {
-      if (ph.points > 0) {
+      if (ph.points != 0) {
         final notifId = 'point_${ph.id}';
         final isRead = readSet.contains(notifId) || 
             ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
             LocalNotificationCacheService().isRead(userId, role, notifId, ph.createdAt);
             
+        final isPunishment = ph.points < 0;
+            
         list.add(NotificationEntity(
           id: notifId,
-          type: 'POIN_KKN',
-          title: 'Poin KKN Bertambah!',
-          desc: ph.description.isNotEmpty ? ph.description : 'Anda mendapatkan +${ph.points} poin.',
+          type: isPunishment ? 'PUNISHMENT' : 'POIN_KKN',
+          title: isPunishment ? 'Penalti Poin KKN' : 'Poin KKN Bertambah!',
+          desc: ph.description.isNotEmpty ? ph.description : (isPunishment ? 'Poin KKN Anda dikurangi ${ph.points}.' : 'Anda mendapatkan +${ph.points} poin.'),
           isRead: isRead,
           time: ph.createdAt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
-          icon: 'star',
+          icon: isPunishment ? 'warning' : 'star',
         ));
       }
     }
@@ -136,8 +138,8 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
         list.add(NotificationEntity(
           id: notifId,
           type: 'IZIN',
-          title: isApproved ? 'Pengajuan $kategori Disetujui' : 'Pengajuan $kategori Ditolak',
-          desc: isApproved ? 'DPL telah menyetujui pengajuan Anda.' : 'DPL menolak pengajuan Anda. ${izin['rejectionReason'] ?? ''}',
+          title: isApproved ? 'Pengajuan Izin Disetujui' : 'Pengajuan Izin Ditolak',
+          desc: isApproved ? 'DPL telah menyetujui pengajuan $kategori Anda.' : 'DPL menolak pengajuan $kategori Anda. ${izin['rejectionReason'] ?? ''}',
           isRead: isRead,
           time: dt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
           icon: isApproved ? 'check_circle' : 'cancel',

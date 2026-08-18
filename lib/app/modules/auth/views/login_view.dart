@@ -388,6 +388,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                   onPressed: authState.isLoading ? null : _onLogin,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.primaryGreen,
+                                    disabledBackgroundColor: AppColors.primaryGreen.withValues(alpha: 0.7),
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),

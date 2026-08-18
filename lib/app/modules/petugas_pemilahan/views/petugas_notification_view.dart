@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../controllers/petugas_pemilahan_notifikasi_controller.dart';
+import 'package:intl/intl.dart';
+import '../../../routes/app_routes.dart';
 
 /// Halaman Notifikasi Khusus Petugas Pemilahan Hilir.
 class PetugasNotificationView extends ConsumerStatefulWidget {
@@ -161,7 +163,11 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
                       ref.invalidate(petugasPemilahanNotificationsProvider);
                     }
                     if (context.mounted) {
-                      Navigator.pushNamed(context, '/detail-notifikasi', arguments: notif);
+                      if (notif.type.toUpperCase() == 'POIN_BERTAMBAH' || notif.type.toUpperCase() == 'POIN' || notif.type.toUpperCase() == 'PUNISHMENT') {
+                        Navigator.pushNamed(context, AppRoutes.poin);
+                      } else {
+                        Navigator.pushNamed(context, '/detail-notifikasi', arguments: notif);
+                      }
                     }
                   },
                   borderRadius: BorderRadius.circular(12),
@@ -178,12 +184,28 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(10),
+                          width: 44,
+                          height: 44,
                           decoration: BoxDecoration(
-                            color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                            color: notif.type.toUpperCase().contains('PUNISHMENT') 
+                                ? const Color(0xFFFEE2E2) 
+                                : (notif.icon == 'star' || notif.type.toUpperCase() == 'POIN_BERTAMBAH')
+                                    ? AppColors.warningYellow.withValues(alpha: 0.15)
+                                    : AppColors.primaryGreen.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.scale_rounded, color: AppColors.primaryGreen, size: 20),
+                          child: notif.type.toUpperCase().contains('PUNISHMENT') 
+                              ? const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 22)
+                              : notif.icon == 'star' || notif.type.toUpperCase() == 'POIN_BERTAMBAH'
+                                  ? Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: Image.asset('assets/icons/medal.png', color: AppColors.warningYellow),
+                                    )
+                                  : Icon(
+                                      notif.icon == 'scale' ? Icons.scale_rounded : Icons.notifications_rounded,
+                                      color: AppColors.primaryGreen,
+                                      size: 22,
+                                    ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -221,7 +243,7 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                notif.time,
+                                _formatDateTime(notif.time),
                                 style: TextStyle(fontSize: 10, color: AppColors.textSecondary.withValues(alpha: 0.7)),
                               ),
                             ],
@@ -242,6 +264,16 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
   ],
 ),
     );
+  }
+
+  String _formatDateTime(String? rawStr) {
+    if (rawStr == null || rawStr.isEmpty || rawStr == '-') return '';
+    try {
+      final dt = DateTime.parse(rawStr).toLocal();
+      return '${DateFormat('d MMMM yyyy, HH:mm', 'id_ID').format(dt)} WIB';
+    } catch (_) {
+      return rawStr;
+    }
   }
 }
 

@@ -44,7 +44,7 @@ class LocalNotificationCacheService {
       title: title,
       desc: desc,
       isRead: false,
-      time: 'Baru saja',
+      time: DateTime.now().toUtc().toIso8601String(),
       icon: icon ?? _resolveDefaultIcon(type),
     );
 

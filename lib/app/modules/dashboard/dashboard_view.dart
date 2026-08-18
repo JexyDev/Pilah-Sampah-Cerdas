@@ -209,14 +209,11 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                 children: [
                   _navItem(
                     3,
-                    role == UserRole.mahasiswaKkn ? Icons.analytics_rounded : 
-                    (role == UserRole.petugasPemilahan ? Icons.monetization_on_rounded : null),
-                    role == UserRole.mahasiswaKkn ? Icons.analytics_outlined : 
-                    (role == UserRole.petugasPemilahan ? Icons.monetization_on_outlined : null),
-                    role == UserRole.mahasiswaKkn ? 'Monitoring' : 
-                    (role == UserRole.petugasPemilahan ? 'Poin' : 'Poin'),
-                    activeAsset: (role == UserRole.mahasiswaKkn || role == UserRole.petugasPemilahan) ? null : 'assets/icons/medal_active.png',
-                    inactiveAsset: (role == UserRole.mahasiswaKkn || role == UserRole.petugasPemilahan) ? null : 'assets/icons/medal.png',
+                    role == UserRole.petugasPemilahan ? Icons.monetization_on_rounded : null,
+                    role == UserRole.petugasPemilahan ? Icons.monetization_on_outlined : null,
+                    'Poin', // Semua role dinamakan 'Poin'
+                    activeAsset: role == UserRole.petugasPemilahan ? null : 'assets/icons/medal_active.png',
+                    inactiveAsset: role == UserRole.petugasPemilahan ? null : 'assets/icons/medal.png',
                   ),
                   _navItem(
                     4,
@@ -372,12 +369,9 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
           label: Text('History'),
         ),
         NavigationRailDestination(
-          icon: Icon(role == UserRole.mahasiswaKkn ? Icons.analytics_outlined : 
-                     role == UserRole.petugasPemilahan ? Icons.map_outlined : Icons.stars_outlined),
-          selectedIcon: Icon(role == UserRole.mahasiswaKkn ? Icons.analytics_rounded : 
-                             role == UserRole.petugasPemilahan ? Icons.map_rounded : Icons.stars_rounded),
-          label: Text(role == UserRole.mahasiswaKkn ? 'Monitoring' : 
-                      role == UserRole.petugasPemilahan ? 'Peta' : 'Poin'),
+          icon: Icon(role == UserRole.petugasPemilahan ? Icons.map_outlined : Icons.stars_outlined),
+          selectedIcon: Icon(role == UserRole.petugasPemilahan ? Icons.map_rounded : Icons.stars_rounded),
+          label: Text(role == UserRole.petugasPemilahan ? 'Peta' : 'Poin'),
         ),
         const NavigationRailDestination(
           icon: Icon(Icons.person_outline_rounded),
