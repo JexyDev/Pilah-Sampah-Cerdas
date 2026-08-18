@@ -139,7 +139,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     ref.listen<ScanFlowState>(scanFlowProvider, (prev, next) {
       if (next.errorCode != null && !next.isLoading) {
         _showErrorDialog(context, next.errorCode!, next.errorMessage);
-        ref.read(scanFlowProvider.notifier).clearError();
+        // Do not clearError here so QrScannerWidget knows it failed and resets itself
       }
       // Saat AI berhasil (step 1→2), tampilkan bottom sheet konfirmasi AI dulu.
       // QR Scanner baru aktif setelah user tap "Lanjut" di sheet.
@@ -169,14 +169,23 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
             ref.invalidate(notificationsProvider);
             ref.invalidate(binsProvider);
 
-            // Rating dialog 1-5 bintang (hanya muncul 1x saat pertama kali berhasil setor)
-            showFeatureRatingOnceIfNeeded(
-              context: context,
-              featureKey: 'warga_setor_sampah',
-              featureTitle: 'Setoran Sampah Berhasil! ⭐',
-              featureSubtitle: 'Bagaimana kepuasan Anda saat pertama kali melakukan setoran & pemilahan sampah TrashCare?',
-              roleTag: 'Warga',
-            );
+            // Tampilkan popup sukses lalu keluar
+            _showSuccessDialog(context, next.scanResult!.pointsAwarded).then((_) {
+              if (mounted) {
+                // Rating dialog 1-5 bintang (hanya muncul 1x saat pertama kali berhasil setor)
+                showFeatureRatingOnceIfNeeded(
+                  context: context,
+                  featureKey: 'warga_setor_sampah',
+                  featureTitle: 'Setoran Sampah Berhasil! 🎉',
+                  featureSubtitle: 'Bagaimana kepuasan Anda saat pertama kali melakukan setoran & pemilahan sampah TrashCare?',
+                  roleTag: 'Warga',
+                ).then((_) {
+                  if (mounted) {
+                    Navigator.of(context).pop(); // Keluar dari halaman scan
+                  }
+                });
+              }
+            });
           }
         });
       }
@@ -1225,6 +1234,80 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
           ref.read(scanFlowProvider.notifier).reset();
           Navigator.of(context).pop();
         },
+      ),
+    );
+  }
+
+  Future<void> _showSuccessDialog(BuildContext context, int pointsAwarded) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.primaryGreen,
+                  size: 64,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Transaksi Berhasil!',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Tempat sampah berhasil dipindai dan data telah dicatat. Anda mendapatkan tambahan +$pointsAwarded poin.',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black54,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Selesai',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
