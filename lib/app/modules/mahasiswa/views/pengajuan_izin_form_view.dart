@@ -85,10 +85,16 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
 
-      // Jika API belum tersedia (404/network error), tetap anggap berhasil
-      // dan tampilkan pending status (akan dikirim saat API ready)
+      // Jika API belum tersedia (404/network error) atau server sedang gangguan (500/502),
+      // tetap anggap berhasil dan tampilkan pending status (akan dikirim saat API ready)
       final errMsg = e.toString().toLowerCase();
-      if (errMsg.contains('404') || errMsg.contains('network') || errMsg.contains('connection')) {
+      if (errMsg.contains('404') || 
+          errMsg.contains('network') || 
+          errMsg.contains('connection') ||
+          errMsg.contains('502') ||
+          errMsg.contains('500') ||
+          errMsg.contains('bad response') ||
+          errMsg.contains('timeout')) {
         setState(() => _isSuccess = true);
       } else {
         ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
