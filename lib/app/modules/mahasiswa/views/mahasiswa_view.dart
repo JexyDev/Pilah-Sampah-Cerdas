@@ -549,11 +549,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
               ],
             ),
           ),
-          Icon(
-            iconData,
-            color: textColor.withValues(alpha: 0.7),
-            size: 24,
-          )
         ],
       ),
     );
