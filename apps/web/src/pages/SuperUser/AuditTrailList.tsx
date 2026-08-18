@@ -112,83 +112,83 @@ export const AuditTrailList: React.FC = () => {
     if (act.includes("REACTIVATE_BIN")) {
       return {
         label: "Reaktivasi Tempat Sampah",
-        badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        badgeClass: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
         category: "TEMPAT_SAMPAH",
       };
     }
     if (act.includes("KKN_HANDOVER")) {
       return {
         label: "Serah Terima Tugas KKN",
-        badgeClass: "bg-purple-50 text-purple-700 border-purple-200",
+        badgeClass: "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
         category: "KKN",
       };
     }
     if (act.includes("GENERATE_QR") || act.includes("QR")) {
       return {
         label: "Pembuatan Kode QR Massal",
-        badgeClass: "bg-blue-50 text-blue-700 border-blue-200",
+        badgeClass: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
         category: "QR_CODE",
       };
     }
     if (act.includes("APPROVE_ACTIVATION") || act.includes("APPROVE_BIN")) {
       return {
         label: "Persetujuan Tempat Sampah",
-        badgeClass: "bg-teal-50 text-teal-700 border-teal-200",
+        badgeClass: "bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800",
         category: "TEMPAT_SAMPAH",
       };
     }
     if (act.includes("REJECT_ACTIVATION") || act.includes("REJECT_BIN")) {
       return {
         label: "Penolakan Aktivasi Tempat Sampah",
-        badgeClass: "bg-rose-50 text-rose-700 border-rose-200",
+        badgeClass: "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800",
         category: "TEMPAT_SAMPAH",
       };
     }
     if (act.includes("REPORT_BIN_BROKEN") || act.includes("BROKEN")) {
       return {
         label: "Pelaporan Tempat Sampah Rusak",
-        badgeClass: "bg-amber-50 text-amber-700 border-amber-200",
+        badgeClass: "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
         category: "TEMPAT_SAMPAH",
       };
     }
     if (act.includes("UPDATE_BIN")) {
       return {
         label: "Pembaruan Data Tempat Sampah",
-        badgeClass: "bg-[#009966]/10 text-[#009966] border-[#009966]/30",
+        badgeClass: "bg-[#009966]/10 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border-[#009966]/30 dark:border-emerald-800",
         category: "TEMPAT_SAMPAH",
       };
     }
     if (act.includes("CREATE_USER")) {
       return {
         label: "Penambahan Pengguna Baru",
-        badgeClass: "bg-indigo-50 text-indigo-700 border-indigo-200",
+        badgeClass: "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
         category: "MUTASI_USER",
       };
     }
     if (act.includes("UPDATE_USER")) {
       return {
         label: "Pembaruan Profil Pengguna",
-        badgeClass: "bg-sky-50 text-sky-700 border-sky-200",
+        badgeClass: "bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800",
         category: "MUTASI_USER",
       };
     }
     if (act.includes("DELETE_USER")) {
       return {
         label: "Penghapusan Akun Pengguna",
-        badgeClass: "bg-rose-100 text-rose-800 border-rose-300",
+        badgeClass: "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-800",
         category: "MUTASI_USER",
       };
     }
     if (act.includes("SYSTEM") || act.includes("CONFIG") || act.includes("PENALTY")) {
       return {
         label: "Peristiwa Otomatis Sistem",
-        badgeClass: "bg-slate-100 text-slate-700 border-slate-300",
+        badgeClass: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700",
         category: "SISTEM",
       };
     }
     return {
       label: action.replace(/_/g, " "),
-      badgeClass: "bg-slate-100 text-slate-700 border-slate-200",
+      badgeClass: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700",
       category: "LAINNYA",
     };
   };
@@ -280,17 +280,17 @@ export const AuditTrailList: React.FC = () => {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto animate-fade-in">
       {/* 1. HEADER BANNER */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20 shrink-0 font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-[#009966]/10 dark:bg-emerald-950/50 text-[#009966] dark:text-emerald-400 flex items-center justify-center border border-[#009966]/20 dark:border-emerald-800/60 shrink-0 font-bold">
             <Activity size={24} />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
               Monitoring Log Aktivitas
             </h1>
-            <p className="text-xs text-slate-500 font-semibold mt-0.5">
-              Riwayat pencatatan seluruh perubahan data, transaksi, dan konfigurasi sistem secara <strong className="text-slate-600">permanen</strong> dan <strong className="text-slate-600">tidak dapat diubah</strong>.
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-0.5">
+              Riwayat pencatatan seluruh perubahan data, transaksi, dan konfigurasi sistem secara <strong className="text-slate-600 dark:text-slate-300">permanen</strong> dan <strong className="text-slate-600 dark:text-slate-300">tidak dapat diubah</strong>.
             </p>
           </div>
         </div>
@@ -309,56 +309,56 @@ export const AuditTrailList: React.FC = () => {
 
       {/* 2. STATS METRICS CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-4">
-          <div className="w-11 h-11 rounded-xl bg-emerald-50 text-[#009966] flex items-center justify-center font-black border border-emerald-200">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-[#009966] dark:text-emerald-400 flex items-center justify-center font-black border border-emerald-200 dark:border-emerald-800">
             <Layers size={20} />
           </div>
           <div>
-            <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Total Log</p>
-            <p className="text-xl font-black text-slate-800">{stats.total} <span className="text-xs text-slate-400 font-bold">Catatan</span></p>
+            <p className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Log</p>
+            <p className="text-xl font-black text-slate-800 dark:text-slate-100">{stats.total} <span className="text-xs text-slate-400 dark:text-slate-500 font-bold">Catatan</span></p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-4">
-          <div className="w-11 h-11 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center font-black border border-sky-200">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center font-black border border-sky-200 dark:border-sky-800">
             <Clock size={20} />
           </div>
           <div>
-            <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Aktivitas Hari Ini</p>
-            <p className="text-xl font-black text-slate-800">{stats.todayLogs} <span className="text-xs text-slate-400 font-bold">Perubahan</span></p>
+            <p className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Aktivitas Hari Ini</p>
+            <p className="text-xl font-black text-slate-800 dark:text-slate-100">{stats.todayLogs} <span className="text-xs text-slate-400 dark:text-slate-500 font-bold">Perubahan</span></p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-4">
-          <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-black border border-amber-200">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black border border-amber-200 dark:border-amber-800">
             <UserCheck size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Pengguna Teraktif</p>
-            <p className="text-sm font-black text-slate-800 truncate">{stats.topUser}</p>
-            <p className="text-[10.5px] text-slate-400 font-semibold">{stats.maxUserCount} aktivitas</p>
+            <p className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Pengguna Teraktif</p>
+            <p className="text-sm font-black text-slate-800 dark:text-slate-100 truncate">{stats.topUser}</p>
+            <p className="text-[10.5px] text-slate-400 dark:text-slate-500 font-semibold">{stats.maxUserCount} aktivitas</p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-4">
-          <div className="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-black border border-purple-200">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center font-black border border-purple-200 dark:border-purple-800">
             <Shield size={20} />
           </div>
           <div>
-            <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Integritas Data</p>
+            <p className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Integritas Data</p>
             {stats.total > 0 ? (
               <>
-                <p className="text-sm font-black text-emerald-600 flex items-center gap-1">
+                <p className="text-sm font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                   <CheckCircle2 size={14} /> Terverifikasi
                 </p>
-                <p className="text-[10.5px] text-slate-400 font-semibold">{stats.total} catatan tersimpan</p>
+                <p className="text-[10.5px] text-slate-400 dark:text-slate-500 font-semibold">{stats.total} catatan tersimpan</p>
               </>
             ) : (
               <>
-                <p className="text-sm font-black text-slate-400 flex items-center gap-1">
+                <p className="text-sm font-black text-slate-400 dark:text-slate-500 flex items-center gap-1">
                   <Shield size={14} /> Belum ada data
                 </p>
-                <p className="text-[10.5px] text-slate-400 font-semibold">Tidak ada catatan</p>
+                <p className="text-[10.5px] text-slate-400 dark:text-slate-500 font-semibold">Tidak ada catatan</p>
               </>
             )}
           </div>
@@ -366,9 +366,9 @@ export const AuditTrailList: React.FC = () => {
       </div>
 
       {/* 3. CATEGORY TABS & FILTER TOOLBAR */}
-      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
+      <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         {/* Category Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-slate-100">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-slate-100 dark:border-slate-800">
           {[
             { id: "SEMUA", label: "Semua Aktivitas", icon: Activity },
             { id: "TEMPAT_SAMPAH", label: "Tempat Sampah", icon: Trash2 },
@@ -389,7 +389,7 @@ export const AuditTrailList: React.FC = () => {
                 className={`px-4 py-2 rounded-xl font-black text-xs transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
                   active
                     ? "bg-[#009966] text-white shadow-2xs"
-                    : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/60"
+                    : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700"
                 }`}
               >
                 <TabIcon size={14} />
@@ -403,24 +403,24 @@ export const AuditTrailList: React.FC = () => {
         <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
           {/* Search Box */}
           <div className="lg:col-span-4 relative">
-            <label className="block text-[10.5px] font-black text-slate-400 uppercase tracking-wider mb-1">
+            <label className="block text-[10.5px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
               Pencarian Kata Kunci
             </label>
             <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={15} />
               <input
                 type="text"
                 placeholder="Cari nama pengguna, email, atau aksi..."
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#009966] bg-slate-50/50"
+                className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-[#009966] bg-slate-50/50 dark:bg-slate-800"
               />
             </div>
           </div>
 
           {/* Action Type Dropdown */}
           <div className="lg:col-span-3">
-            <label className="block text-[10.5px] font-black text-slate-400 uppercase tracking-wider mb-1">
+            <label className="block text-[10.5px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
               Jenis Aktivitas
             </label>
             <select
@@ -429,23 +429,23 @@ export const AuditTrailList: React.FC = () => {
                 setActionFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966] bg-white cursor-pointer shadow-2xs"
+              className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#009966] bg-white dark:bg-slate-800 cursor-pointer shadow-2xs"
             >
-              <option value="">Semua Jenis Aktivitas</option>
-              <option value="REACTIVATE_BIN">Reaktivasi Tempat Sampah</option>
-              <option value="KKN_HANDOVER">Serah Terima KKN</option>
-              <option value="GENERATE_QR_BATCH">Pembuatan Kode QR Massal</option>
-              <option value="APPROVE_ACTIVATION">Persetujuan Tempat Sampah</option>
-              <option value="REJECT_ACTIVATION">Penolakan Aktivasi Tempat Sampah</option>
-              <option value="REPORT_BIN_BROKEN">Pelaporan Tempat Sampah Rusak</option>
-              <option value="UPDATE_BIN_CAPACITY">Pembaruan Kapasitas Tempat Sampah</option>
-              <option value="APPROVE_RECYCLE_IDEA">Persetujuan Ide Daur Ulang</option>
+              <option value="" className="dark:bg-slate-800">Semua Jenis Aktivitas</option>
+              <option value="REACTIVATE_BIN" className="dark:bg-slate-800">Reaktivasi Tempat Sampah</option>
+              <option value="KKN_HANDOVER" className="dark:bg-slate-800">Serah Terima KKN</option>
+              <option value="GENERATE_QR_BATCH" className="dark:bg-slate-800">Pembuatan Kode QR Massal</option>
+              <option value="APPROVE_ACTIVATION" className="dark:bg-slate-800">Persetujuan Tempat Sampah</option>
+              <option value="REJECT_ACTIVATION" className="dark:bg-slate-800">Penolakan Aktivasi Tempat Sampah</option>
+              <option value="REPORT_BIN_BROKEN" className="dark:bg-slate-800">Pelaporan Tempat Sampah Rusak</option>
+              <option value="UPDATE_BIN_CAPACITY" className="dark:bg-slate-800">Pembaruan Kapasitas Tempat Sampah</option>
+              <option value="APPROVE_RECYCLE_IDEA" className="dark:bg-slate-800">Persetujuan Ide Daur Ulang</option>
             </select>
           </div>
 
           {/* Start Date */}
           <div className="lg:col-span-2">
-            <label className="block text-[10.5px] font-black text-slate-400 uppercase tracking-wider mb-1">
+            <label className="block text-[10.5px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
               Dari Tanggal
             </label>
             <input
@@ -455,13 +455,13 @@ export const AuditTrailList: React.FC = () => {
                 setStartDateFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966] bg-white cursor-pointer"
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#009966] bg-white dark:bg-slate-800 cursor-pointer"
             />
           </div>
 
           {/* End Date */}
           <div className="lg:col-span-2">
-            <label className="block text-[10.5px] font-black text-slate-400 uppercase tracking-wider mb-1">
+            <label className="block text-[10.5px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
               Sampai Tanggal
             </label>
             <input
@@ -471,7 +471,7 @@ export const AuditTrailList: React.FC = () => {
                 setEndDateFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966] bg-white cursor-pointer"
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#009966] bg-white dark:bg-slate-800 cursor-pointer"
             />
           </div>
 
@@ -480,7 +480,7 @@ export const AuditTrailList: React.FC = () => {
             <button
               type="button"
               onClick={handleResetFilters}
-              className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-extrabold rounded-xl text-xs transition-all cursor-pointer"
+              className="w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-extrabold rounded-xl text-xs transition-all cursor-pointer border border-transparent dark:border-slate-700"
               title="Reset Filter"
             >
               Reset
@@ -492,17 +492,17 @@ export const AuditTrailList: React.FC = () => {
       {/* 4. MAIN DATA TABLE & PAYLOAD INSPECTOR */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Table Container */}
-        <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col justify-between">
+        <div className="lg:col-span-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col justify-between">
           {loading ? (
-            <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3 font-bold text-xs">
+            <div className="py-20 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 gap-3 font-bold text-xs">
               <Loader2 className="animate-spin text-[#009966]" size={32} />
               <p>Memuat riwayat log aktivitas...</p>
             </div>
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-100 text-xs text-left">
-                  <thead className="bg-slate-50/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-xs text-left">
+                  <thead className="bg-slate-50/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                     <tr>
                       <th className="py-3.5 px-4">Waktu Kejadian</th>
                       <th className="py-3.5 px-4">Pelaku Aktivitas</th>
@@ -511,7 +511,7 @@ export const AuditTrailList: React.FC = () => {
                       <th className="py-3.5 px-4 text-center">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                     {paginatedLogs.length === 0 ? (
                       <EmptyTableState
                         colSpan={5}
@@ -539,15 +539,15 @@ export const AuditTrailList: React.FC = () => {
                             key={l.id}
                             onClick={() => setSelectedLog(l)}
                             className={`transition-colors cursor-pointer ${
-                              isSelected ? "bg-emerald-50/60 font-semibold" : "hover:bg-slate-50/80"
+                              isSelected ? "bg-emerald-50/60 dark:bg-emerald-950/40 font-semibold" : "hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
                             }`}
                           >
                             {/* Waktu Kejadian */}
                             <td className="py-3.5 px-4 whitespace-nowrap">
-                              <span className="font-bold text-slate-800 block text-[11px]">
+                              <span className="font-bold text-slate-800 dark:text-slate-100 block text-[11px]">
                                 {formattedTime} WIB
                               </span>
-                              <span className="text-[10px] text-slate-400 font-mono">
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                                 ID: {l.id.slice(0, 8)}...
                               </span>
                             </td>
@@ -555,7 +555,7 @@ export const AuditTrailList: React.FC = () => {
                             {/* Pelaku Aktivitas (User Avatar + Name + Role) */}
                             <td className="py-3.5 px-4">
                               <div className="flex items-center gap-2.5">
-                                <div className="w-7 h-7 rounded-full bg-[#009966] text-white font-bold text-[10px] flex items-center justify-center shrink-0 overflow-hidden border border-white shadow-2xs">
+                                <div className="w-7 h-7 rounded-full bg-[#009966] text-white font-bold text-[10px] flex items-center justify-center shrink-0 overflow-hidden border border-white dark:border-slate-800 shadow-2xs">
                                   {l.user?.fotoProfil ? (
                                     <img
                                       src={getProfilePhotoUrl(l.user.fotoProfil, userName)}
@@ -568,10 +568,10 @@ export const AuditTrailList: React.FC = () => {
                                   )}
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="font-bold text-slate-800 text-xs truncate max-w-[130px]">
+                                  <p className="font-bold text-slate-800 dark:text-slate-100 text-xs truncate max-w-[130px]">
                                     {userName}
                                   </p>
-                                  <span className="inline-block text-[9px] font-extrabold px-2 py-0.2 rounded-full uppercase bg-slate-100 text-slate-500 border border-slate-200">
+                                  <span className="inline-block text-[9px] font-extrabold px-2 py-0.2 rounded-full uppercase bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                                     {userRole}
                                   </span>
                                 </div>
@@ -589,10 +589,10 @@ export const AuditTrailList: React.FC = () => {
 
                             {/* Referensi Target */}
                             <td className="py-3.5 px-4">
-                              <span className="font-bold text-slate-700 block text-[11px]">
+                              <span className="font-bold text-slate-700 dark:text-slate-200 block text-[11px]">
                                 {l.referenceType || "Database"}
                               </span>
-                              <span className="text-[10px] text-slate-400 font-mono">
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                                 {l.referenceId || "-"}
                               </span>
                             </td>
@@ -604,7 +604,7 @@ export const AuditTrailList: React.FC = () => {
                                   e.stopPropagation();
                                   setSelectedLog(l);
                                 }}
-                                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-[#009966] hover:text-white text-slate-600 transition-all font-extrabold text-[11px] cursor-pointer inline-flex items-center gap-1"
+                                className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#009966] hover:text-white dark:hover:bg-[#009966] dark:hover:text-white text-slate-600 dark:text-slate-300 transition-all font-extrabold text-[11px] cursor-pointer inline-flex items-center gap-1 border border-transparent dark:border-slate-700"
                               >
                                 <Eye size={12} />
                                 <span>Detail</span>
@@ -620,7 +620,7 @@ export const AuditTrailList: React.FC = () => {
 
               {/* Pagination */}
               {filteredLogs.length > 0 && (
-                <div className="p-4 border-t border-slate-100">
+                <div className="p-4 border-t border-slate-100 dark:border-slate-800">
                   <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
@@ -636,17 +636,17 @@ export const AuditTrailList: React.FC = () => {
         </div>
 
         {/* Payload Inspector Side Panel */}
-        <div className="lg:col-span-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-4 h-fit sticky top-6">
+        <div className="lg:col-span-4 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4 h-fit sticky top-6">
           <div>
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-3">
               <div className="flex items-center gap-2">
-                <FileText className="text-[#009966]" size={18} />
-                <h3 className="font-black text-slate-800 text-sm">Detail Perubahan Data</h3>
+                <FileText className="text-[#009966] dark:text-emerald-400" size={18} />
+                <h3 className="font-black text-slate-800 dark:text-slate-100 text-sm">Detail Perubahan Data</h3>
               </div>
               {selectedLog && (
                 <button
                   onClick={() => copyToClipboard(JSON.stringify(selectedLog.newValue || selectedLog, null, 2))}
-                  className="text-xs font-extrabold text-[#009966] hover:underline flex items-center gap-1 cursor-pointer"
+                  className="text-xs font-extrabold text-[#009966] dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
                   title="Salin JSON Payload"
                 >
                   <Copy size={13} />
@@ -654,26 +654,26 @@ export const AuditTrailList: React.FC = () => {
                 </button>
               )}
             </div>
-            <p className="text-xs text-slate-500 font-medium">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               Perbandingan kondisi data sebelum dan sesudah perubahan dilakukan.
             </p>
           </div>
 
           {selectedLog ? (
             <div className="space-y-4">
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1.5">
-                <div className="flex justify-between items-center text-[10.5px] font-black text-slate-400 uppercase tracking-wider">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1.5">
+                <div className="flex justify-between items-center text-[10.5px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                   <span>Jenis Aktivitas</span>
-                  <span className="text-[#009966] font-mono">{selectedLog.action}</span>
+                  <span className="text-[#009966] dark:text-emerald-400 font-mono">{selectedLog.action}</span>
                 </div>
-                <p className="text-xs font-black text-slate-800">
+                <p className="text-xs font-black text-slate-800 dark:text-slate-100">
                   {getActionMeta(selectedLog.action).label}
                 </p>
               </div>
 
               {/* Nilai Baru / New Value */}
               <div className="space-y-1.5">
-                <span className="text-[10.5px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <span className="text-[10.5px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1">
                   <CheckCircle2 size={13} className="text-emerald-500" /> Kondisi Sesudah
                 </span>
                 <pre className="p-3.5 bg-slate-900 text-emerald-400 rounded-2xl border border-slate-800 text-[10.5px] font-mono overflow-x-auto whitespace-pre-wrap max-h-56 scrollbar-thin shadow-inner leading-relaxed">
@@ -684,7 +684,7 @@ export const AuditTrailList: React.FC = () => {
               {/* Nilai Lama / Old Value (If present) */}
               {selectedLog.oldValue && (
                 <div className="space-y-1.5">
-                  <span className="text-[10.5px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                  <span className="text-[10.5px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1">
                     <Clock size={13} className="text-amber-500" /> Kondisi Sebelum
                   </span>
                   <pre className="p-3.5 bg-slate-900 text-amber-300 rounded-2xl border border-slate-800 text-[10.5px] font-mono overflow-x-auto whitespace-pre-wrap max-h-48 scrollbar-thin shadow-inner leading-relaxed">
@@ -694,8 +694,8 @@ export const AuditTrailList: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="text-center text-xs text-slate-400 font-semibold py-16 bg-slate-50/60 rounded-2xl border border-dashed border-slate-200 space-y-2">
-              <Sparkles className="mx-auto text-slate-300" size={28} />
+            <div className="text-center text-xs text-slate-400 dark:text-slate-500 font-semibold py-16 bg-slate-50/60 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 space-y-2">
+              <Sparkles className="mx-auto text-slate-300 dark:text-slate-600" size={28} />
               <p>Pilih salah satu baris log pada tabel untuk melihat detail perubahan data.</p>
             </div>
           )}

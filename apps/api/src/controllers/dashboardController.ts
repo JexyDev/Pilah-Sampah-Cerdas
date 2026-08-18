@@ -53,17 +53,44 @@ export const dashboardController = {
             wilayah = dplKelurahans.join(",");
           }
         }
-      } else if (!wilayah && user && (user.role === "LURAH" || user.role === "CAMAT") && user.rwId) {
+      } else if (user && (user.role === "RW" || user.role === "RT") && user.rwId) {
         const { PrismaClient } = await import("@prisma/client");
         const prisma = new PrismaClient();
-        const userArea = await prisma.rw.findUnique({
+        const rwArea = await prisma.rw.findUnique({
           where: { id: user.rwId },
-          include: { kelurahan: { include: { kecamatan: true } } },
+          include: { kelurahan: true },
         });
-        if (user.role === "LURAH" && userArea?.kelurahan) {
-          wilayah = userArea.kelurahan.name;
-        } else if (user.role === "CAMAT" && userArea?.kelurahan?.kecamatan) {
-          wilayah = userArea.kelurahan.kecamatan.name;
+        if (rwArea) {
+          wilayah = `${rwArea.name} ${rwArea.kelurahan?.name || ""}`.trim();
+        }
+      } else if (!wilayah && user && (user.role === "LURAH" || user.role === "CAMAT")) {
+        const { PrismaClient } = await import("@prisma/client");
+        const prisma = new PrismaClient();
+        if (user.rwId) {
+          const userArea = await prisma.rw.findUnique({
+            where: { id: user.rwId },
+            include: { kelurahan: { include: { kecamatan: true } } },
+          });
+          if (user.role === "LURAH" && userArea?.kelurahan) {
+            wilayah = userArea.kelurahan.name;
+          } else if (user.role === "CAMAT" && userArea?.kelurahan?.kecamatan) {
+            wilayah = userArea.kelurahan.kecamatan.name;
+          }
+        } else {
+          const dbU = await prisma.user.findUnique({
+            where: { id: user.userId },
+            include: { rw: { include: { kelurahan: { include: { kecamatan: true } } } } },
+          });
+          if (user.role === "LURAH" && dbU?.rw?.kelurahan) {
+            wilayah = dbU.rw.kelurahan.name;
+          } else if (user.role === "CAMAT" && dbU?.rw?.kelurahan?.kecamatan) {
+            wilayah = dbU.rw.kelurahan.kecamatan.name;
+          } else if (user.role === "LURAH" && dbU?.address) {
+            const match = await prisma.kelurahan.findFirst({
+              where: { name: { contains: dbU.address, mode: "insensitive" } },
+            });
+            if (match) wilayah = match.name;
+          }
         }
       }
 

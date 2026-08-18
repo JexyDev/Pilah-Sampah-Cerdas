@@ -281,32 +281,32 @@ export const ReviewDiscrepancy: React.FC = () => {
       </div>
 
       {/* Filter & Search Control Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">
         <div className="relative flex-1 min-w-[240px]">
-          <Search size={16} className="absolute left-3.5 top-3 text-gray-400" />
+          <Search size={16} className="absolute left-3.5 top-3 text-gray-400 dark:text-slate-500" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Cari nama warga, kelurahan, atau jenis sampah..."
-            className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+            className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-800 transition"
           />
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <Filter size={16} className="text-gray-400" />
-            <span className="text-xs font-bold text-gray-500">Status:</span>
+            <Filter size={16} className="text-gray-400 dark:text-slate-500" />
+            <span className="text-xs font-bold text-gray-500 dark:text-slate-400">Status:</span>
           </div>
 
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="text-xs bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 px-3 py-2 font-semibold text-gray-700"
+            className="text-xs bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 cursor-pointer"
           >
-            <option value="Semua">Semua Status</option>
-            <option value="PENDING_REVIEW">Menunggu Review (Pending)</option>
-            <option value="RESOLVED">Selesai (Resolved)</option>
+            <option value="Semua" className="dark:bg-slate-800">Semua Status</option>
+            <option value="PENDING_REVIEW" className="dark:bg-slate-800">Menunggu Review (Pending)</option>
+            <option value="RESOLVED" className="dark:bg-slate-800">Selesai (Resolved)</option>
           </select>
 
           <div className="flex items-center gap-2">
@@ -314,14 +314,14 @@ export const ReviewDiscrepancy: React.FC = () => {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="text-xs bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 px-3 py-1.5 text-gray-700"
+              className="text-xs bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 px-3 py-1.5 text-gray-700 dark:text-slate-200 cursor-pointer"
             />
-            <span className="text-xs text-gray-400">-</span>
+            <span className="text-xs text-gray-400 dark:text-slate-500">-</span>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="text-xs bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 px-3 py-1.5 text-gray-700"
+              className="text-xs bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 px-3 py-1.5 text-gray-700 dark:text-slate-200 cursor-pointer"
             />
           </div>
         </div>
@@ -329,14 +329,14 @@ export const ReviewDiscrepancy: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Table List of Pending & Resolved Reviews */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col h-[70vh]">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-            <h3 className="font-bold text-gray-800 text-sm">Daftar Laporan Diskrepansi ({filteredLogs.length})</h3>
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col h-[70vh]">
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50 flex justify-between items-center">
+            <h3 className="font-bold text-gray-800 dark:text-slate-100 text-sm">Daftar Laporan Diskrepansi ({filteredLogs.length})</h3>
             {loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-600"></div>}
           </div>
           <div className="overflow-y-auto flex-1">
-            <table className="min-w-full divide-y divide-gray-200 text-sm text-left relative">
-              <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider sticky top-0 z-10">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800 text-sm text-left relative">
+              <thead className="bg-gray-50 dark:bg-slate-800/80 text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider sticky top-0 z-10">
                 <tr>
                   <th className="px-6 py-3">Tanggal</th>
                   <th className="px-6 py-3">Warga & Wilayah</th>
@@ -345,7 +345,7 @@ export const ReviewDiscrepancy: React.FC = () => {
                   <th className="px-6 py-3 text-right">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 text-gray-700">
+              <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-gray-700 dark:text-slate-300">
                 {filteredLogs.length === 0 && !loading ? (
                   <EmptyTableState
                     colSpan={5}
@@ -358,32 +358,32 @@ export const ReviewDiscrepancy: React.FC = () => {
                     <tr
                       key={log.id}
                       onClick={() => setSelectedLog(log)}
-                      className={`hover:bg-gray-50 transition cursor-pointer ${
-                        selectedLog?.id === log.id ? "bg-emerald-50/60 border-l-4 border-l-emerald-600" : "border-l-4 border-l-transparent"
+                      className={`hover:bg-gray-50 dark:hover:bg-slate-800/50 transition cursor-pointer ${
+                        selectedLog?.id === log.id ? "bg-emerald-50/60 dark:bg-emerald-950/40 border-l-4 border-l-emerald-600 dark:border-l-emerald-500" : "border-l-4 border-l-transparent"
                       }`}
                     >
-                      <td className="px-6 py-4 text-xs font-semibold text-gray-500 whitespace-nowrap">
+                      <td className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 whitespace-nowrap">
                         {new Date(log.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="font-semibold text-gray-900 line-clamp-1">{log.household?.user?.name}</div>
-                        <div className="text-[10px] text-gray-400 line-clamp-1">
+                        <div className="font-semibold text-gray-900 dark:text-slate-100 line-clamp-1">{log.household?.user?.name}</div>
+                        <div className="text-[10px] text-gray-400 dark:text-slate-500 line-clamp-1">
                           {log.household?.rtRw?.name} (Kel. {log.household?.rtRw?.kelurahan?.name})
                         </div>
                       </td>
                       <td className="px-6 py-4 text-center">
                         {log.discrepancyStatus === "RESOLVED" ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800 uppercase">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 uppercase">
                             Selesai
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-800 uppercase">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 uppercase">
                             Pending
                           </span>
                         )}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-indigo-100 text-indigo-800 uppercase">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 uppercase">
                           {log.aiClassification}
                         </span>
                       </td>
@@ -391,13 +391,13 @@ export const ReviewDiscrepancy: React.FC = () => {
                         <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => setSelectedLog(log)}
-                            className="text-emerald-600 hover:text-emerald-800 font-bold text-xs whitespace-nowrap cursor-pointer"
+                            className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-bold text-xs whitespace-nowrap cursor-pointer"
                           >
                             {log.discrepancyStatus === "RESOLVED" ? "Lihat" : "Tinjau"}
                           </button>
                           <button
                             onClick={() => handleDeleteLog(log.id)}
-                            className="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 transition cursor-pointer"
+                            className="text-rose-500 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer"
                             title="Hapus / Invalidate Record"
                           >
                             <Trash2 size={14} />
@@ -424,25 +424,25 @@ export const ReviewDiscrepancy: React.FC = () => {
 
 
         {/* Panel Resolution Detail */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col h-[70vh] overflow-y-auto">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col h-[70vh] overflow-y-auto">
           {selectedLog ? (
             <div className="space-y-6 flex-1 flex flex-col">
               <div>
                 <div className="flex justify-between items-start">
-                  <h3 className="font-extrabold text-gray-900 text-base">Detail Tinjauan</h3>
+                  <h3 className="font-extrabold text-gray-900 dark:text-slate-100 text-base">Detail Tinjauan</h3>
                   {selectedLog.discrepancyStatus === "RESOLVED" && (
-                    <span className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-md">
+                    <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-1 rounded-md">
                       <Check size={12} /> Terselesaikan
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-gray-400 mt-0.5">Kontras antara deteksi sensor AI vs petugas.</p>
+                <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">Kontras antara deteksi sensor AI vs petugas.</p>
               </div>
 
               {/* Image Preview Thumbnail */}
               {selectedLog.evidencePhotoUrl ? (
                 <div 
-                  className="w-full h-40 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-pointer group relative shadow-sm"
+                  className="w-full h-40 bg-gray-100 dark:bg-slate-800 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 cursor-pointer group relative shadow-sm"
                   onClick={() => setIsPhotoModalOpen(true)}
                 >
                   <img 
@@ -457,33 +457,33 @@ export const ReviewDiscrepancy: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="w-full h-32 bg-gray-50 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400">
+                <div className="w-full h-32 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 flex flex-col items-center justify-center text-gray-400 dark:text-slate-500">
                   <ImageIcon size={24} className="mb-2 opacity-50" />
                   <span className="text-[10px] font-medium">Foto bukti tidak tersedia</span>
                 </div>
               )}
 
               {/* Contrast Panel */}
-              <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+              <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-slate-800/70 p-4 rounded-xl border border-gray-100 dark:border-slate-700">
                 <div className="space-y-1">
-                  <span className="text-[9px] uppercase font-bold text-gray-400">Model AI</span>
-                  <div className="text-sm font-bold text-indigo-700 font-mono">{selectedLog.aiClassification}</div>
-                  <span className="text-[10px] text-gray-500 block">Conf: {Number(selectedLog.aiConfidence).toFixed(1)}%</span>
-                  <span className="text-[10px] text-gray-500 block">Berat: {selectedLog.weightKg} Kg</span>
+                  <span className="text-[9px] uppercase font-bold text-gray-400 dark:text-slate-400">Model AI</span>
+                  <div className="text-sm font-bold text-indigo-700 dark:text-indigo-400 font-mono">{selectedLog.aiClassification}</div>
+                  <span className="text-[10px] text-gray-500 dark:text-slate-400 block">Conf: {Number(selectedLog.aiConfidence).toFixed(1)}%</span>
+                  <span className="text-[10px] text-gray-500 dark:text-slate-400 block">Berat: {selectedLog.weightKg} Kg</span>
                 </div>
-                <div className="space-y-1 border-l border-gray-200 pl-4">
-                  <span className="text-[9px] uppercase font-bold text-gray-400">Fisik Petugas</span>
-                  <div className="text-sm font-bold text-orange-700 font-mono">{selectedLog.petugasClassification}</div>
-                  <span className="text-[10px] text-gray-500 block">Actual: {selectedLog.actualWeightPetugas || selectedLog.weightKg} Kg</span>
-                  <span className="text-[10px] text-gray-500 block truncate" title={selectedLog.geolocation}>Lokasi: {selectedLog.geolocation || "-"}</span>
+                <div className="space-y-1 border-l border-gray-200 dark:border-slate-700 pl-4">
+                  <span className="text-[9px] uppercase font-bold text-gray-400 dark:text-slate-400">Fisik Petugas</span>
+                  <div className="text-sm font-bold text-orange-700 dark:text-orange-400 font-mono">{selectedLog.petugasClassification}</div>
+                  <span className="text-[10px] text-gray-500 dark:text-slate-400 block">Actual: {selectedLog.actualWeightPetugas || selectedLog.weightKg} Kg</span>
+                  <span className="text-[10px] text-gray-500 dark:text-slate-400 block truncate" title={selectedLog.geolocation}>Lokasi: {selectedLog.geolocation || "-"}</span>
                 </div>
               </div>
 
               {/* Resolution Action */}
-              <div className="space-y-3 mt-auto pt-4 border-t border-gray-100">
+              <div className="space-y-3 mt-auto pt-4 border-t border-gray-100 dark:border-slate-800">
                 {selectedLog.discrepancyStatus === "PENDING_REVIEW" ? (
                   <>
-                    <p className="text-xs text-gray-500 leading-relaxed">
+                    <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">
                       Putusan akan memperbarui klasifikasi permanen di basis data dan mengkalkulasi ulang poin Warga.
                     </p>
                     <div className="flex flex-col gap-2">
@@ -491,14 +491,14 @@ export const ReviewDiscrepancy: React.FC = () => {
                         <button
                           disabled={isSubmitting}
                           onClick={() => handleResolve(selectedLog.id, selectedLog.aiClassification)}
-                          className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[11px] font-bold shadow-sm transition disabled:opacity-50"
+                          className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[11px] font-bold shadow-sm transition disabled:opacity-50 cursor-pointer"
                         >
                           Approve AI
                         </button>
                         <button
                           disabled={isSubmitting}
                           onClick={() => handleResolve(selectedLog.id, selectedLog.petugasClassification)}
-                          className="flex-1 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-[11px] font-bold shadow-sm transition disabled:opacity-50"
+                          className="flex-1 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-[11px] font-bold shadow-sm transition disabled:opacity-50 cursor-pointer"
                         >
                           Approve Petugas
                         </button>
@@ -506,14 +506,14 @@ export const ReviewDiscrepancy: React.FC = () => {
                       <button
                         disabled={isSubmitting}
                         onClick={openKoreksiModal}
-                        className="w-full py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg text-[11px] font-bold shadow-sm transition disabled:opacity-50"
+                        className="w-full py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg text-[11px] font-bold shadow-sm transition disabled:opacity-50 cursor-pointer"
                       >
                         Koreksi Manual / Reject
                       </button>
                     </div>
                   </>
                 ) : (
-                  <p className="text-xs text-center text-gray-400 italic bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <p className="text-xs text-center text-gray-400 dark:text-slate-500 italic bg-gray-50 dark:bg-slate-800/50 p-3 rounded-lg border border-gray-100 dark:border-slate-800">
                     Diskrepansi ini telah diputuskan.
                   </p>
                 )}
@@ -521,10 +521,10 @@ export const ReviewDiscrepancy: React.FC = () => {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-70">
-              <ShieldCheck className="text-gray-300" size={64} />
+              <ShieldCheck className="text-gray-300 dark:text-slate-600" size={64} />
               <div>
-                <h4 className="font-bold text-gray-800 text-sm">Tidak Ada Tinjauan Aktif</h4>
-                <p className="text-[11px] text-gray-400 mt-1 max-w-xs mx-auto">
+                <h4 className="font-bold text-gray-800 dark:text-slate-100 text-sm">Tidak Ada Tinjauan Aktif</h4>
+                <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1 max-w-xs mx-auto">
                   Pilih salah satu baris di tabel sebelah kiri untuk meninjau detail diskrepansi.
                 </p>
               </div>
@@ -555,40 +555,40 @@ export const ReviewDiscrepancy: React.FC = () => {
       {/* Modal Koreksi Manual */}
       {isKoreksiModalOpen && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in zoom-in-95 duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-              <h3 className="text-lg font-bold text-gray-900">Koreksi Manual Hasil Tinjauan</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col border border-gray-100 dark:border-slate-800">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-800/50">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100">Koreksi Manual Hasil Tinjauan</h3>
               <button
                 onClick={() => setIsKoreksiModalOpen(false)}
-                className="text-gray-400 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer"
+                className="text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 p-1.5 rounded-full transition-colors cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
             
             <form onSubmit={submitKoreksi} className="p-6 flex flex-col gap-5">
-              <p className="text-xs text-gray-500 leading-relaxed mb-2">
+              <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed mb-2">
                 Pilih keputusan final klasifikasi dan perbaiki berat aktual jika terdapat kesalahan dari kedua belah pihak.
               </p>
               
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5">
+                <label className="block text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase mb-1.5">
                   Klasifikasi Final
                 </label>
                 <select
                   required
                   value={koreksiClass}
                   onChange={(e) => setKoreksiClass(e.target.value)}
-                  className="w-full h-11 px-3 rounded-xl border border-gray-200 bg-gray-50 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:bg-white transition-colors text-sm font-semibold text-slate-800"
+                  className="w-full h-11 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-800 transition-colors text-sm font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
                 >
-                  <option value="ORGANIC">Organik</option>
-                  <option value="ANORGANIK">Anorganik</option>
-                  <option value="RESIDU">Residu</option>
+                  <option value="ORGANIC" className="dark:bg-slate-800">Organik</option>
+                  <option value="ANORGANIK" className="dark:bg-slate-800">Anorganik</option>
+                  <option value="RESIDU" className="dark:bg-slate-800">Residu</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5">
+                <label className="block text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase mb-1.5">
                   Berat Aktual (Kg)
                 </label>
                 <input
@@ -598,15 +598,15 @@ export const ReviewDiscrepancy: React.FC = () => {
                   value={koreksiWeight}
                   onChange={(e) => setKoreksiWeight(e.target.value)}
                   placeholder="Misal: 2.5"
-                  className="w-full h-11 px-3 rounded-xl border border-gray-200 bg-gray-50 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:bg-white transition-colors text-sm"
+                  className="w-full h-11 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-800 text-slate-800 dark:text-slate-200 transition-colors text-sm"
                 />
               </div>
 
-              <div className="flex gap-3 mt-4 pt-4 border-t border-gray-100">
+              <div className="flex gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsKoreksiModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors text-xs cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors text-xs cursor-pointer border border-transparent dark:border-slate-700"
                 >
                   Batal
                 </button>
@@ -626,8 +626,8 @@ export const ReviewDiscrepancy: React.FC = () => {
       {/* Modal Tambah Diskrepansi Manual */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in zoom-in-95 duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-emerald-950 to-slate-900 text-white">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col border border-gray-100 dark:border-slate-800">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gradient-to-r from-emerald-950 to-slate-900 text-white">
               <h3 className="text-sm font-extrabold text-white">Tambah Laporan Diskrepansi Manual</h3>
               <button
                 onClick={() => setIsCreateModalOpen(false)}
@@ -639,75 +639,75 @@ export const ReviewDiscrepancy: React.FC = () => {
 
             <form onSubmit={handleCreateDiscrepancy} className="p-6 space-y-4">
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Nama Warga / PIC</label>
+                <label className="block text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase mb-1">Nama Warga / PIC</label>
                 <input
                   type="text"
                   required
                   value={newWargaName}
                   onChange={(e) => setNewWargaName(e.target.value)}
                   placeholder="Misal: Bambang Gunawan"
-                  className="w-full h-10 px-3 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-emerald-500"
+                  className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Kelurahan</label>
+                  <label className="block text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase mb-1">Kelurahan</label>
                   <select
                     value={newKelurahan}
                     onChange={(e) => setNewKelurahan(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-emerald-500 font-semibold text-gray-800"
+                    className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-emerald-500 font-semibold text-gray-800 dark:text-slate-200 cursor-pointer"
                   >
-                    <option value="Dago">Dago</option>
-                    <option value="Lebak Siliwangi">Lebak Siliwangi</option>
-                    <option value="Lebak Gede">Lebak Gede</option>
-                    <option value="Sekeloa">Sekeloa</option>
-                    <option value="Sadang Serang">Sadang Serang</option>
-                    <option value="Cipaganti">Cipaganti</option>
+                    <option value="Dago" className="dark:bg-slate-800">Dago</option>
+                    <option value="Lebak Siliwangi" className="dark:bg-slate-800">Lebak Siliwangi</option>
+                    <option value="Lebak Gede" className="dark:bg-slate-800">Lebak Gede</option>
+                    <option value="Sekeloa" className="dark:bg-slate-800">Sekeloa</option>
+                    <option value="Sadang Serang" className="dark:bg-slate-800">Sadang Serang</option>
+                    <option value="Cipaganti" className="dark:bg-slate-800">Cipaganti</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">RT / RW</label>
+                  <label className="block text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase mb-1">RT / RW</label>
                   <input
                     type="text"
                     required
                     value={newRtRw}
                     onChange={(e) => setNewRtRw(e.target.value)}
                     placeholder="Misal: RT 02 / RW 03"
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-emerald-500"
+                    className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Hasil Deteksi AI</label>
+                  <label className="block text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase mb-1">Hasil Deteksi AI</label>
                   <select
                     value={newAiCategory}
                     onChange={(e) => setNewAiCategory(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-emerald-500 font-semibold text-indigo-700"
+                    className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-emerald-500 font-semibold text-indigo-700 dark:text-indigo-400 cursor-pointer"
                   >
-                    <option value="ORGANIC">Organik</option>
-                    <option value="ANORGANIK">Anorganik</option>
-                    <option value="RESIDU">Residu</option>
+                    <option value="ORGANIC" className="dark:bg-slate-800">Organik</option>
+                    <option value="ANORGANIK" className="dark:bg-slate-800">Anorganik</option>
+                    <option value="RESIDU" className="dark:bg-slate-800">Residu</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Input Fisik Petugas</label>
+                  <label className="block text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase mb-1">Input Fisik Petugas</label>
                   <select
                     value={newPetugasCategory}
                     onChange={(e) => setNewPetugasCategory(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-emerald-500 font-semibold text-orange-700"
+                    className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-emerald-500 font-semibold text-orange-700 dark:text-orange-400 cursor-pointer"
                   >
-                    <option value="ORGANIC">Organik</option>
-                    <option value="ANORGANIK">Anorganik</option>
-                    <option value="RESIDU">Residu</option>
+                    <option value="ORGANIC" className="dark:bg-slate-800">Organik</option>
+                    <option value="ANORGANIK" className="dark:bg-slate-800">Anorganik</option>
+                    <option value="RESIDU" className="dark:bg-slate-800">Residu</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Berat Sampah (Kg)</label>
+                <label className="block text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase mb-1">Berat Sampah (Kg)</label>
                 <input
                   type="number"
                   step="0.1"
@@ -715,15 +715,15 @@ export const ReviewDiscrepancy: React.FC = () => {
                   value={newWeight}
                   onChange={(e) => setNewWeight(e.target.value)}
                   placeholder="Misal: 10.5"
-                  className="w-full h-10 px-3 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-emerald-500"
+                  className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
-              <div className="flex gap-3 pt-3 border-t border-gray-100">
+              <div className="flex gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 text-xs transition cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-xs transition cursor-pointer border border-transparent dark:border-slate-700"
                 >
                   Batal
                 </button>

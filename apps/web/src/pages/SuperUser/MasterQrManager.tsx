@@ -269,22 +269,22 @@ export const MasterQrManager: React.FC = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header Bar */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <QrCode className="text-emerald-600" size={28} />
+          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
+            <QrCode className="text-emerald-600 dark:text-emerald-400" size={28} />
             Master Database QR Code & Tempat Sampah
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Manajemen penuh status QR Code, reaktivasi tempat sampah inaktif/rusak, dan produksi batch stiker fisik.
           </p>
         </div>
         <div className="flex flex-wrap gap-2.5">
           <button
             onClick={handleExportCsv}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all border border-slate-200 cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer"
           >
-            <Download size={15} className="text-emerald-600" />
+            <Download size={15} className="text-emerald-600 dark:text-emerald-400" />
             Ekspor CSV
           </button>
           {!isReadOnly && (
@@ -301,16 +301,16 @@ export const MasterQrManager: React.FC = () => {
 
       {/* Inactive & Broken Bins Alert Banner */}
       {inactiveBins.length > 0 && (
-        <div className="bg-amber-50/80 border border-amber-200/80 p-5 rounded-2xl space-y-3 shadow-xs">
+        <div className="bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 p-5 rounded-2xl space-y-3 shadow-xs">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5 text-amber-900 font-bold text-sm">
-              <AlertTriangle className="text-amber-600 shrink-0" size={20} />
+            <div className="flex items-center gap-2.5 text-amber-900 dark:text-amber-300 font-bold text-sm">
+              <AlertTriangle className="text-amber-600 dark:text-amber-400 shrink-0" size={20} />
               <span>Peringatan: {inactiveBins.length} Tempat Sampah Membutuhkan Tindakan (TIDAK AKTIF / RUSAK)</span>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-amber-200/60 overflow-hidden shadow-xs">
-            <table className="min-w-full divide-y divide-slate-100 text-sm text-left">
-              <thead className="bg-amber-50/50 text-[11px] font-bold text-amber-900 uppercase tracking-wider">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-amber-200/60 dark:border-amber-800/50 overflow-hidden shadow-xs">
+            <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-sm text-left">
+              <thead className="bg-amber-50/50 dark:bg-amber-950/50 text-[11px] font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wider">
                 <tr>
                   <th className="px-5 py-3">Kode QR</th>
                   <th className="px-5 py-3">Warga Pemilik</th>
@@ -319,16 +319,16 @@ export const MasterQrManager: React.FC = () => {
                   <th className="px-5 py-3 text-right">Aksi Reaktivasi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                 {inactiveBins.map((b, idx) => (
-                  <tr key={idx} className="hover:bg-amber-50/20 transition-colors">
-                    <td className="px-5 py-3 font-mono text-xs font-bold text-amber-950">{b.qrCode}</td>
+                  <tr key={idx} className="hover:bg-amber-50/20 dark:hover:bg-amber-950/20 transition-colors">
+                    <td className="px-5 py-3 font-mono text-xs font-bold text-amber-950 dark:text-amber-200">{b.qrCode}</td>
                     <td className="px-5 py-3">
-                      <div className="font-semibold text-xs text-slate-900">{b.owner}</div>
-                      <div className="text-[11px] text-slate-400">{b.ownerEmail}</div>
+                      <div className="font-semibold text-xs text-slate-900 dark:text-slate-100">{b.owner}</div>
+                      <div className="text-[11px] text-slate-400 dark:text-slate-500">{b.ownerEmail}</div>
                     </td>
-                    <td className="px-5 py-3 text-xs text-slate-600">{b.wilayah}</td>
-                    <td className="px-5 py-3 text-xs text-slate-500">
+                    <td className="px-5 py-3 text-xs text-slate-600 dark:text-slate-400">{b.wilayah}</td>
+                    <td className="px-5 py-3 text-xs text-slate-500 dark:text-slate-400">
                       {new Date(b.lastActivity).toLocaleDateString("id-ID")}
                     </td>
                     <td className="px-5 py-3 text-right">
@@ -349,11 +349,11 @@ export const MasterQrManager: React.FC = () => {
       )}
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 gap-6">
+      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-6">
         <button
           onClick={() => setActiveTab("qrs")}
           className={`pb-3 text-sm font-bold border-b-2 transition-all cursor-pointer ${
-            activeTab === "qrs" ? "border-emerald-600 text-emerald-700" : "border-transparent text-slate-500 hover:text-slate-700"
+            activeTab === "qrs" ? "border-emerald-600 dark:border-emerald-500 text-emerald-700 dark:text-emerald-400" : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
           }`}
         >
           Semua Master QR & Tempat Sampah ({qrs.length})
@@ -361,7 +361,7 @@ export const MasterQrManager: React.FC = () => {
         <button
           onClick={() => setActiveTab("pending_petugas")}
           className={`pb-3 text-sm font-bold border-b-2 transition-all cursor-pointer ${
-            activeTab === "pending_petugas" ? "border-emerald-600 text-emerald-700" : "border-transparent text-slate-500 hover:text-slate-700"
+            activeTab === "pending_petugas" ? "border-emerald-600 dark:border-emerald-500 text-emerald-700 dark:text-emerald-400" : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
           }`}
         >
           Verifikasi Petugas Residu ({pendingPetugas.length})
@@ -369,40 +369,40 @@ export const MasterQrManager: React.FC = () => {
       </div>
 
       {activeTab === "qrs" && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
           {/* Filters & Search */}
-          <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-wrap gap-3 justify-between items-center">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex flex-wrap gap-3 justify-between items-center">
             <div className="relative flex-1 min-w-[240px]">
-              <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
+              <Search className="absolute left-3 top-2.5 text-slate-400 dark:text-slate-500" size={16} />
               <input
                 type="text"
                 placeholder="Cari Kode QR atau Pemilik..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
               />
             </div>
             <div className="flex items-center gap-2">
-              <Filter size={16} className="text-slate-400" />
+              <Filter size={16} className="text-slate-400 dark:text-slate-500" />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-slate-700"
+                className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-slate-700 dark:text-slate-200 cursor-pointer"
               >
-                <option value="">Semua Status Tempat Sampah</option>
-                <option value="ACTIVE_BOUND">ACTIVE_BOUND (Aktif)</option>
-                <option value="PRINTED">PRINTED (Belum Dipakai)</option>
-                <option value="ASSIGNED_TO_PIC">ASSIGNED_TO_PIC (Mahasiswa KKN)</option>
-                <option value="INACTIVE">INACTIVE (Tidak Aktif 30 Hari)</option>
-                <option value="BROKEN">BROKEN (Rusak Fisik)</option>
+                <option value="" className="dark:bg-slate-800">Semua Status Tempat Sampah</option>
+                <option value="ACTIVE_BOUND" className="dark:bg-slate-800">ACTIVE_BOUND (Aktif)</option>
+                <option value="PRINTED" className="dark:bg-slate-800">PRINTED (Belum Dipakai)</option>
+                <option value="ASSIGNED_TO_PIC" className="dark:bg-slate-800">ASSIGNED_TO_PIC (Mahasiswa KKN)</option>
+                <option value="INACTIVE" className="dark:bg-slate-800">INACTIVE (Tidak Aktif 30 Hari)</option>
+                <option value="BROKEN" className="dark:bg-slate-800">BROKEN (Rusak Fisik)</option>
               </select>
             </div>
           </div>
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-100 text-sm text-left">
-              <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-sm text-left">
+              <thead className="bg-slate-50 dark:bg-slate-800/80 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-3.5">Preview QR</th>
                   <th className="px-6 py-3.5">Status & Kategori</th>
@@ -412,7 +412,7 @@ export const MasterQrManager: React.FC = () => {
                   {!isReadOnly && <th className="px-6 py-3.5 text-right">Aksi Kelola</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                 {paginatedQrs.length === 0 ? (
                   <EmptyTableState
                     colSpan={isReadOnly ? 4 : 6}
@@ -430,15 +430,15 @@ export const MasterQrManager: React.FC = () => {
                     const isInactive = q.status === "INACTIVE";
 
                     return (
-                      <tr key={q.id} className="hover:bg-slate-50/60 transition-colors">
+                      <tr key={q.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="px-6 py-4">
-                          <div className="flex flex-col items-center gap-1 bg-slate-50 p-2 rounded-xl border border-slate-200/80 w-fit shadow-2xs">
+                          <div className="flex flex-col items-center gap-1 bg-slate-50 dark:bg-slate-800 p-2 rounded-xl border border-slate-200/80 dark:border-slate-700 w-fit shadow-2xs">
                             <img
-                              className="w-14 h-14"
+                              className="w-14 h-14 bg-white p-1 rounded-lg"
                               alt="QR Code"
                               src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(q.qrCode)}`}
                             />
-                            <span className="text-[10px] font-mono font-bold text-slate-800 tracking-wider">
+                            <span className="text-[10px] font-mono font-bold text-slate-800 dark:text-slate-200 tracking-wider">
                               {q.qrCode}
                             </span>
                           </div>
@@ -446,23 +446,23 @@ export const MasterQrManager: React.FC = () => {
                         <td className="px-6 py-4 space-y-1.5">
                           <Badge status={q.status} />
                           <div>
-                            <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
+                            <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-transparent dark:border-slate-700">
                               {q.category?.name || "UMUM"}
                             </span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-xs font-mono font-bold text-slate-700">{q.qrBatch ? q.qrBatch.batchCode : "-"}</div>
-                          <div className="text-[11px] text-slate-400">{q.rtRw ? `${q.rtRw.name} (Kel. ${q.rtRw.kelurahan.name})` : "-"}</div>
+                          <div className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300">{q.qrBatch ? q.qrBatch.batchCode : "-"}</div>
+                          <div className="text-[11px] text-slate-400 dark:text-slate-500">{q.rtRw ? `${q.rtRw.name} (Kel. ${q.rtRw.kelurahan.name})` : "-"}</div>
                         </td>
                         <td className="px-6 py-4">
                           {q.user ? (
                             <div>
-                              <div className="font-semibold text-xs text-slate-900">{q.user.name}</div>
-                              <div className="text-[11px] text-slate-400">{q.user.phone || q.user.email}</div>
+                              <div className="font-semibold text-xs text-slate-900 dark:text-slate-100">{q.user.name}</div>
+                              <div className="text-[11px] text-slate-400 dark:text-slate-500">{q.user.phone || q.user.email}</div>
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-400 italic">Belum terikat Warga</span>
+                            <span className="text-xs text-slate-400 dark:text-slate-500 italic">Belum terikat Warga</span>
                           )}
                         </td>
                         {!isReadOnly && (
@@ -470,13 +470,13 @@ export const MasterQrManager: React.FC = () => {
                             <select
                               value={q.status}
                               onChange={(e) => handleUpdateStatus(q.id, e.target.value)}
-                              className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer"
+                              className="px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer"
                             >
-                              <option value="ACTIVE_BOUND">ACTIVE_BOUND</option>
-                              <option value="PRINTED">PRINTED</option>
-                              <option value="ASSIGNED_TO_PIC">ASSIGNED_TO_PIC</option>
-                              <option value="INACTIVE">INACTIVE</option>
-                              <option value="BROKEN">BROKEN</option>
+                              <option value="ACTIVE_BOUND" className="dark:bg-slate-800">ACTIVE_BOUND</option>
+                              <option value="PRINTED" className="dark:bg-slate-800">PRINTED</option>
+                              <option value="ASSIGNED_TO_PIC" className="dark:bg-slate-800">ASSIGNED_TO_PIC</option>
+                              <option value="INACTIVE" className="dark:bg-slate-800">INACTIVE</option>
+                              <option value="BROKEN" className="dark:bg-slate-800">BROKEN</option>
                             </select>
                           </td>
                         )}
@@ -487,7 +487,7 @@ export const MasterQrManager: React.FC = () => {
                                 <button
                                   onClick={() => handleReactivate(q.id)}
                                   title="Aktifkan Kembali"
-                                  className="p-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-all border border-emerald-200 cursor-pointer inline-flex items-center gap-1"
+                                  className="p-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg text-xs font-bold transition-all border border-emerald-200 dark:border-emerald-800 cursor-pointer inline-flex items-center gap-1"
                                 >
                                   <PlayCircle size={14} />
                                   <span className="hidden sm:inline">Aktifkan</span>
@@ -498,7 +498,7 @@ export const MasterQrManager: React.FC = () => {
                                 <button
                                   onClick={() => handleOpenReplaceModal(q)}
                                   title="Ganti QR Code Rusak"
-                                  className="p-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition-all border border-blue-200 cursor-pointer inline-flex items-center gap-1"
+                                  className="p-1.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg text-xs font-bold transition-all border border-blue-200 dark:border-blue-800 cursor-pointer inline-flex items-center gap-1"
                                 >
                                   <RefreshCw size={14} />
                                   <span className="hidden sm:inline">Ganti QR</span>
@@ -508,7 +508,7 @@ export const MasterQrManager: React.FC = () => {
                               <button
                                 onClick={() => handleDeleteBin(q.id, q.qrCode)}
                                 title="Hapus QR Code"
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-lg transition-all cursor-pointer"
                               >
                                 <Trash2 size={15} />
                               </button>
@@ -538,9 +538,9 @@ export const MasterQrManager: React.FC = () => {
 
       {/* Petugas Verification Tab */}
       {activeTab === "pending_petugas" && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-            <h3 className="font-bold text-slate-800 text-sm">Verifikasi Akun Petugas Residu (Global)</h3>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+            <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Verifikasi Akun Petugas Residu (Global)</h3>
           </div>
           <div className="p-4 overflow-x-auto">
             {pendingPetugas.length === 0 ? (
@@ -549,22 +549,22 @@ export const MasterQrManager: React.FC = () => {
                 description="Tidak ada pengajuan verifikasi akun petugas residu baru saat ini."
               />
             ) : (
-              <table className="min-w-full divide-y divide-slate-100 text-sm text-left">
-                <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-sm text-left">
+                <thead className="bg-slate-50 dark:bg-slate-800 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   <tr>
                     <th className="px-6 py-3">Nama & Kontak</th>
                     <th className="px-6 py-3">Zona Tugas</th>
                     <th className="px-6 py-3 text-right">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                   {pendingPetugas.map((petugas) => (
-                    <tr key={petugas.id} className="hover:bg-slate-50/50 transition">
+                    <tr key={petugas.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition">
                       <td className="px-6 py-4">
-                        <p className="font-semibold text-sm text-slate-900">{petugas.nama}</p>
-                        <p className="text-xs text-slate-500">{petugas.noWa}</p>
+                        <p className="font-semibold text-sm text-slate-900 dark:text-slate-100">{petugas.nama}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{petugas.noWa}</p>
                       </td>
-                      <td className="px-6 py-4 text-xs font-semibold text-slate-600">
+                      <td className="px-6 py-4 text-xs font-semibold text-slate-600 dark:text-slate-300">
                         {petugas.assignedZone || "-"}
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -595,8 +595,8 @@ export const MasterQrManager: React.FC = () => {
       {/* Replace Broken Bin Modal */}
       {showReplaceModal && selectedOldBin && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleExecuteReplace} className="bg-white max-w-lg w-full rounded-2xl shadow-xl overflow-hidden flex flex-col border border-slate-100">
-            <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
+          <form onSubmit={handleExecuteReplace} className="bg-white dark:bg-slate-900 max-w-lg w-full rounded-2xl shadow-xl overflow-hidden flex flex-col border border-slate-100 dark:border-slate-800">
+            <div className="px-6 py-4 bg-slate-900 dark:bg-slate-950 text-white flex justify-between items-center">
               <h3 className="font-bold text-base flex items-center gap-2">
                 <RefreshCw size={18} className="text-emerald-400" />
                 Ganti Tempat Sampah Rusak (Replace QR)
@@ -610,19 +610,19 @@ export const MasterQrManager: React.FC = () => {
               </button>
             </div>
 
-            <div className="p-6 space-y-4 text-sm text-slate-700">
-              <div className="bg-rose-50 border border-rose-200/80 p-4 rounded-xl space-y-1">
-                <div className="text-xs font-bold text-rose-800 uppercase tracking-wider">QR Code Lama (Rusak)</div>
-                <div className="font-mono font-bold text-rose-950 text-sm">{selectedOldBin.qrCode}</div>
-                <div className="text-xs text-rose-700">
+            <div className="p-6 space-y-4 text-sm text-slate-700 dark:text-slate-300">
+              <div className="bg-rose-50 dark:bg-rose-950/50 border border-rose-200/80 dark:border-rose-800/80 p-4 rounded-xl space-y-1">
+                <div className="text-xs font-bold text-rose-800 dark:text-rose-300 uppercase tracking-wider">QR Code Lama (Rusak)</div>
+                <div className="font-mono font-bold text-rose-950 dark:text-rose-200 text-sm">{selectedOldBin.qrCode}</div>
+                <div className="text-xs text-rose-700 dark:text-rose-300">
                   Pemilik: <span className="font-bold">{selectedOldBin.user?.name || "Tanpa Pemilik"}</span>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Pilih QR Code Baru Pengganti</label>
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Pilih QR Code Baru Pengganti</label>
                 {availablePrintedQrs.length === 0 ? (
-                  <div className="p-3 border border-amber-200 bg-amber-50 rounded-xl text-xs text-amber-800 font-medium">
+                  <div className="p-3 border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 rounded-xl text-xs text-amber-800 dark:text-amber-300 font-medium">
                     Tidak ada QR Code berstatus PRINTED yang tersedia. Silakan generate batch QR baru terlebih dahulu.
                   </div>
                 ) : (
@@ -630,11 +630,11 @@ export const MasterQrManager: React.FC = () => {
                     value={newQrInput}
                     onChange={(e) => setNewQrInput(e.target.value)}
                     required
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs bg-white font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none"
                   >
-                    <option value="">-- Pilih QR Code Pengganti --</option>
+                    <option value="" className="dark:bg-slate-800">-- Pilih QR Code Pengganti --</option>
                     {availablePrintedQrs.map((item) => (
-                      <option key={item.id} value={item.qrCode}>
+                      <option key={item.id} value={item.qrCode} className="dark:bg-slate-800">
                         {item.qrCode} ({item.category?.name || "UMUM"})
                       </option>
                     ))}
@@ -642,16 +642,16 @@ export const MasterQrManager: React.FC = () => {
                 )}
               </div>
 
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed">
                 Tindakan ini akan mengubah status QR lama ({selectedOldBin.qrCode}) menjadi BROKEN permanen dan mengalihkan kepemilikan Warga ke QR Code baru yang dipilih secara otomatis (`ACTIVE_BOUND`).
               </p>
             </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-2 justify-end">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex gap-2 justify-end">
               <button
                 type="button"
                 onClick={() => setShowReplaceModal(false)}
-                className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 Batal
               </button>
@@ -670,7 +670,7 @@ export const MasterQrManager: React.FC = () => {
       {/* Generate Batch Modal */}
       {showGenerateModal && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleGenerate} className="bg-white max-w-md w-full rounded-2xl shadow-xl overflow-hidden flex flex-col border border-slate-100">
+          <form onSubmit={handleGenerate} className="bg-white dark:bg-slate-900 max-w-md w-full rounded-2xl shadow-xl overflow-hidden flex flex-col border border-slate-100 dark:border-slate-800">
             <div className="px-6 py-4 bg-emerald-700 text-white flex justify-between items-center">
               <h3 className="font-bold text-base flex items-center gap-2">
                 <Plus size={18} />
@@ -684,41 +684,41 @@ export const MasterQrManager: React.FC = () => {
                 ✕
               </button>
             </div>
-            <div className="p-6 space-y-4 text-sm text-slate-700">
+            <div className="p-6 space-y-4 text-sm text-slate-700 dark:text-slate-300">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Kode Batch</label>
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Kode Batch</label>
                 <input
                   type="text"
                   value="Otomatis Ditentukan Sistem"
                   disabled
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs bg-slate-100 text-slate-500 font-medium cursor-not-allowed"
+                  className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium cursor-not-allowed"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Jumlah Stiker QR Code</label>
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Jumlah Stiker QR Code</label>
                 <input
                   type="number"
                   min="1"
                   max="1000"
                   value={totalQr}
                   onChange={(e) => setTotalQr(parseInt(e.target.value))}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none"
                   required
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Kategori Jenis Tempat Sampah</label>
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Kategori Jenis Tempat Sampah</label>
                 <select
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-medium bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none"
                   required
                 >
-                  <option value="">-- Pilih Kategori --</option>
+                  <option value="" className="dark:bg-slate-800">-- Pilih Kategori --</option>
                   {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <option key={c.id} value={c.id} className="dark:bg-slate-800">
                       {c.name}
                     </option>
                   ))}
@@ -726,26 +726,26 @@ export const MasterQrManager: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Wilayah RT / RW Penerima</label>
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Wilayah RT / RW Penerima</label>
                 <select
                   value={rtRwId}
                   onChange={(e) => setRtRwId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-medium bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none"
                 >
-                  <option value="">Umum (Tanpa Wilayah Spesifik)</option>
+                  <option value="" className="dark:bg-slate-800">Umum (Tanpa Wilayah Spesifik)</option>
                   {rtRwAreas.map((item) => (
-                    <option key={item.id} value={item.id}>
+                    <option key={item.id} value={item.id} className="dark:bg-slate-800">
                       {item.name} ({item.kelurahan?.name})
                     </option>
                   ))}
                 </select>
               </div>
             </div>
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-2 justify-end">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex gap-2 justify-end">
               <button
                 type="button"
                 onClick={() => setShowGenerateModal(false)}
-                className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 Batal
               </button>

@@ -374,26 +374,26 @@ export const HasilPemanfaatan: React.FC = () => {
       case "DISTRIBUSI":
       case "PANEN":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50">
             <CheckCircle2 size={13} /> {status === "DISTRIBUSI" ? "Telah Didistribusikan" : status === "PANEN" ? "Siap Panen/Terkonversi" : "Selesai Ditindaklanjuti"}
           </span>
         );
       case "DALAM_PROSES":
       case "PROSES":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-sky-50 text-sky-700 border border-sky-200">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-700/50">
             <Clock size={13} /> {status === "PROSES" ? "Dalam Pengolahan" : "Dalam Proses"}
           </span>
         );
       case "DITOLAK":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-rose-50 text-rose-700 border border-rose-200">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-700/50">
             <XCircle size={13} /> Ditolak
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-700 border border-amber-200">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50">
             <AlertCircle size={13} /> {status === "TERENCANA" ? "Terjadwal" : "Menunggu Tanggapan"}
           </span>
         );
@@ -407,16 +407,16 @@ export const HasilPemanfaatan: React.FC = () => {
           <Star
             key={star}
             size={14}
-            className={star <= rating ? "fill-amber-400 text-amber-400" : "text-slate-300"}
+            className={star <= rating ? "fill-amber-400 text-amber-400" : "text-slate-300 dark:text-slate-600"}
           />
         ))}
-        <span className="text-xs font-black text-slate-700 ml-1">{rating}.0</span>
+        <span className="text-xs font-black text-slate-700 dark:text-slate-300 ml-1">{rating}.0</span>
       </div>
     );
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 font-sans">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-100 font-sans">
       {/* Clean Enterprise Page Header */}
       <PageHeader
         icon={Sparkles}
@@ -445,7 +445,7 @@ export const HasilPemanfaatan: React.FC = () => {
       />
 
       {/* Segmented Top Navigation Sub-Tabs */}
-      <div className="bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 flex items-center gap-1.5">
+      <div className="bg-slate-100/90 dark:bg-slate-800/80 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1.5">
         <button
           onClick={() => {
             setActiveSectionTab("HASIL");
@@ -454,8 +454,8 @@ export const HasilPemanfaatan: React.FC = () => {
           }}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
             activeSectionTab === "HASIL"
-              ? "bg-white text-emerald-700 shadow-xs border border-slate-200/60"
-              : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+              ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-slate-700"
+              : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/50 dark:hover:bg-slate-700/50"
           }`}
         >
           <PackageCheck size={16} />
@@ -469,8 +469,8 @@ export const HasilPemanfaatan: React.FC = () => {
           }}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
             activeSectionTab === "FEEDBACK"
-              ? "bg-white text-emerald-700 shadow-xs border border-slate-200/60"
-              : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+              ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-slate-700"
+              : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/50 dark:hover:bg-slate-700/50"
           }`}
         >
           <MessageSquare size={16} />
@@ -483,49 +483,49 @@ export const HasilPemanfaatan: React.FC = () => {
         <>
           {/* KPI Metric Summary Cards - Hasil Produk */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
-            <div className="bg-white p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-              <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl shrink-0 border border-emerald-100">
+            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-700/50">
                 <Leaf className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Hasil Panen Olahan</p>
-                <p className="text-lg font-black text-emerald-700 mt-0.5">{totalPanenKg.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-400">Kg/L</span></p>
+                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Hasil Panen Olahan</p>
+                <p className="text-lg font-black text-emerald-700 dark:text-emerald-400 mt-0.5">{totalPanenKg.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-400">Kg/L</span></p>
               </div>
             </div>
 
-            <div className="bg-white p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-              <div className="p-3 bg-slate-100 text-slate-700 rounded-xl shrink-0 border border-slate-200">
+            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl shrink-0 border border-slate-200 dark:border-slate-700">
                 <TrendingUp className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Nilai Ekonomi Daur</p>
-                <p className="text-lg font-black text-slate-900 mt-0.5">Rp {totalNilaiEkonomi.toLocaleString("id-ID")}</p>
+                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Nilai Ekonomi Daur</p>
+                <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">Rp {totalNilaiEkonomi.toLocaleString("id-ID")}</p>
               </div>
             </div>
 
-            <div className="bg-white p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-              <div className="p-3 bg-slate-100 text-slate-700 rounded-xl shrink-0 border border-slate-200">
+            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl shrink-0 border border-slate-200 dark:border-slate-700">
                 <Boxes className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Total Bahan Terolah</p>
-                <p className="text-lg font-black text-slate-900 mt-0.5">{totalBahanMasukKg.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-400">Kg</span></p>
+                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Total Bahan Terolah</p>
+                <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">{totalBahanMasukKg.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-400">Kg</span></p>
               </div>
             </div>
 
-            <div className="bg-white p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-              <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl shrink-0 border border-emerald-100">
+            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-700/50">
                 <Building2 className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Program & Fasilitas</p>
-                <p className="text-lg font-black text-slate-900 mt-0.5">{programs.length} <span className="text-xs font-semibold text-slate-400">Titik Olahan</span></p>
+                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Program & Fasilitas</p>
+                <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">{programs.length} <span className="text-xs font-semibold text-slate-400">Titik Olahan</span></p>
               </div>
             </div>
           </div>
 
           {/* Search & Filter Bar - Hasil Produk */}
-          <div className="bg-white p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
+          <div className="bg-white dark:bg-slate-900 p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
             <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -534,7 +534,7 @@ export const HasilPemanfaatan: React.FC = () => {
                   placeholder="Cari nama program, jenis olahan, lokasi fasilitas, atau penerima manfaat..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-2xl text-xs font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#009966] focus:bg-white transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 pl-10 pr-4 py-2.5 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] focus:bg-white dark:focus:bg-slate-800 transition-all"
                 />
               </div>
 
@@ -542,7 +542,7 @@ export const HasilPemanfaatan: React.FC = () => {
                 <select
                   value={kategoriFilter}
                   onChange={(e) => setKategoriFilter(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-[#009966] transition-all cursor-pointer"
+                  className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-3 py-2.5 rounded-2xl text-xs font-bold outline-none focus:border-[#009966] transition-all cursor-pointer"
                 >
                   <option value="ALL">Semua Jenis Pengolahan</option>
                   <option value="Kompos">Kompos Organik (Buruan Sae)</option>
@@ -555,10 +555,10 @@ export const HasilPemanfaatan: React.FC = () => {
           </div>
 
           {/* Table Hasil Olahan & Distribusi */}
-          <div className="bg-white rounded-3xl border border-slate-200/90 shadow-2xs overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs whitespace-nowrap">
-                <thead className="bg-slate-50 text-slate-700 font-extrabold border-b border-slate-200/80 uppercase tracking-wider text-[10.5px]">
+                <thead className="bg-slate-50/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-extrabold border-b border-slate-200/80 dark:border-slate-800 uppercase tracking-wider text-[10.5px]">
                   <tr>
                     <th className="px-4 py-3.5 text-center w-12">No</th>
                     <th className="px-4 py-3.5">Nama Program & Fasilitas</th>
@@ -571,38 +571,38 @@ export const HasilPemanfaatan: React.FC = () => {
                     <th className="px-4 py-3.5 text-center">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {paginatedPrograms.map((p, idx) => (
-                    <tr key={p.id} className="hover:bg-slate-50/80 transition">
+                    <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
                       <td className="px-4 py-3.5 text-center font-bold text-slate-400">
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className="font-extrabold text-slate-900 block text-sm">{p.namaProgram}</span>
-                        <span className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5 font-medium">
+                        <span className="font-extrabold text-slate-900 dark:text-slate-100 block text-sm">{p.namaProgram}</span>
+                        <span className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5 font-medium">
                           <MapPin size={12} /> {p.lokasiFasilitas || "Fasilitas Komunal"}
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                        <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                           {p.jenisProgram}
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-md text-[11px] inline-block">
+                        <span className="font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/50 px-2.5 py-0.5 rounded-md text-[11px] inline-block">
                           {p.rw?.name || `RW ${p.rwId}`} ({p.rw?.kelurahan?.name || "Coblong"})
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-center font-bold text-slate-700">
+                      <td className="px-4 py-3.5 text-center font-bold text-slate-700 dark:text-slate-300">
                         {p.jumlahBahanMasukKg} Kg
                       </td>
-                      <td className="px-4 py-3.5 text-center font-extrabold text-emerald-700">
+                      <td className="px-4 py-3.5 text-center font-extrabold text-emerald-700 dark:text-emerald-400">
                         {p.jumlahHasilKg} {p.unitHasil || "Kg"}
                       </td>
-                      <td className="px-4 py-3.5 text-center font-extrabold text-amber-600">
+                      <td className="px-4 py-3.5 text-center font-extrabold text-amber-600 dark:text-amber-400">
                         {p.nilaiEkonomiRp ? `Rp ${p.nilaiEkonomiRp.toLocaleString("id-ID")}` : "-"}
                       </td>
-                      <td className="px-4 py-3.5 font-medium text-slate-600">
+                      <td className="px-4 py-3.5 font-medium text-slate-600 dark:text-slate-300">
                         {p.targetPenerimaManfaat || "Warga Sekitar RW"}
                       </td>
                       <td className="px-4 py-3.5 text-center">
@@ -623,7 +623,7 @@ export const HasilPemanfaatan: React.FC = () => {
             </div>
 
             {totalPages > 1 && (
-              <div className="p-4 border-t border-slate-100">
+              <div className="p-4 border-t border-slate-100 dark:border-slate-800">
                 <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}
@@ -643,59 +643,59 @@ export const HasilPemanfaatan: React.FC = () => {
         <>
           {/* KPI Metric Summary Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
-            <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-              <div className="p-3 bg-slate-100 text-slate-700 rounded-2xl shrink-0">
+            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-2xl shrink-0">
                 <MessageSquare className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Total Aspirasi</p>
-                <p className="text-lg font-black text-slate-900 mt-0.5">{totalCount}</p>
+                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Total Aspirasi</p>
+                <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">{totalCount}</p>
               </div>
             </div>
 
-            <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-              <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl shrink-0 border border-amber-100">
+            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-2xl shrink-0 border border-amber-100 dark:border-amber-700/50">
                 <AlertCircle className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Menunggu</p>
-                <p className="text-lg font-black text-amber-600 mt-0.5">{pendingCount}</p>
+                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Menunggu</p>
+                <p className="text-lg font-black text-amber-600 dark:text-amber-400 mt-0.5">{pendingCount}</p>
               </div>
             </div>
 
-            <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-              <div className="p-3 bg-sky-50 text-sky-600 rounded-2xl shrink-0 border border-sky-100">
+            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 rounded-2xl shrink-0 border border-sky-100 dark:border-sky-700/50">
                 <Clock className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Dalam Proses</p>
-                <p className="text-lg font-black text-sky-600 mt-0.5">{inProgressCount}</p>
+                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Dalam Proses</p>
+                <p className="text-lg font-black text-sky-600 dark:text-sky-400 mt-0.5">{inProgressCount}</p>
               </div>
             </div>
 
-            <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl shrink-0 border border-emerald-100">
+            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-2xl shrink-0 border border-emerald-100 dark:border-emerald-700/50">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Ditindaklanjuti</p>
-                <p className="text-lg font-black text-emerald-700 mt-0.5">{resolvedCount}</p>
+                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Ditindaklanjuti</p>
+                <p className="text-lg font-black text-emerald-700 dark:text-emerald-400 mt-0.5">{resolvedCount}</p>
               </div>
             </div>
 
-            <div className="bg-white p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5 col-span-2 lg:col-span-1">
-              <div className="p-3 bg-amber-50 text-amber-600 rounded-xl shrink-0 border border-amber-100">
+            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 col-span-2 lg:col-span-1">
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-xl shrink-0 border border-amber-100 dark:border-amber-700/50">
                 <Star className="w-5 h-5 fill-amber-400 text-amber-500" />
               </div>
               <div>
-                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Kepuasan Warga</p>
-                <p className="text-lg font-black text-slate-900 mt-0.5">{avgRating} <span className="text-xs font-semibold text-slate-400">/ 5.0</span></p>
+                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Kepuasan Warga</p>
+                <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">{avgRating} <span className="text-xs font-semibold text-slate-400">/ 5.0</span></p>
               </div>
             </div>
           </div>
 
           {/* Interactive Controls & Filters Bar */}
-          <div className="bg-white p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
+          <div className="bg-white dark:bg-slate-900 p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
             {/* Top Controls Row */}
             <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
               {/* Search Input */}
@@ -706,12 +706,12 @@ export const HasilPemanfaatan: React.FC = () => {
                   placeholder="Cari berdasarkan nama warga, judul, isi kritik, atau wilayah RW..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-2xl text-xs font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#009966] focus:bg-white transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 pl-10 pr-4 py-2.5 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] focus:bg-white dark:focus:bg-slate-800 transition-all"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                   >
                     <X size={14} />
                   </button>
@@ -725,7 +725,7 @@ export const HasilPemanfaatan: React.FC = () => {
                   <select
                     value={kategoriFilter}
                     onChange={(e) => setKategoriFilter(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 pl-9 pr-3 py-2.5 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-[#009966] transition-all cursor-pointer"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 pl-9 pr-3 py-2.5 rounded-2xl text-xs font-bold outline-none focus:border-[#009966] transition-all cursor-pointer"
                   >
                     <option value="ALL">Semua Kategori</option>
                     <option value="Pengolahan Kompos">Pengolahan Kompos</option>
@@ -739,7 +739,7 @@ export const HasilPemanfaatan: React.FC = () => {
             </div>
 
             {/* Filter Status Tabs */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none border-t border-slate-100 pt-3">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none border-t border-slate-100 dark:border-slate-800 pt-3">
               {[
                 { id: "ALL", label: "Semua Status" },
                 { id: "MENUNGGU", label: "Menunggu Tanggapan" },
@@ -753,7 +753,7 @@ export const HasilPemanfaatan: React.FC = () => {
                   className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
                     statusFilter === tab.id
                       ? "bg-[#009966] text-white shadow-xs"
-                      : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                      : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
                   }`}
                 >
                   {tab.label}
@@ -764,9 +764,9 @@ export const HasilPemanfaatan: React.FC = () => {
 
           {/* Main Feedback List Section */}
           {loading ? (
-            <div className="bg-white p-12 rounded-3xl border border-slate-200/90 shadow-2xs text-center flex flex-col items-center justify-center gap-3">
-              <Loader2 size={28} className="animate-spin text-[#009966]" />
-              <p className="text-xs font-bold text-slate-500">Memuat data kritik &amp; saran dari database...</p>
+            <div className="bg-white dark:bg-slate-900 p-12 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs text-center flex flex-col items-center justify-center gap-3">
+              <Loader2 size={28} className="animate-spin text-[#009966] dark:text-emerald-400" />
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Memuat data kritik &amp; saran dari database...</p>
             </div>
           ) : paginatedItems.length === 0 ? (
             <EmptyTableState
@@ -784,22 +784,22 @@ export const HasilPemanfaatan: React.FC = () => {
               {paginatedItems.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-2xs hover:border-slate-300 transition-all space-y-4"
+                  className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-all space-y-4"
                 >
                   {/* Header: Citizen Info & Status Badge */}
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#009966] font-extrabold flex items-center justify-center border border-emerald-100 text-sm">
+                      <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-extrabold flex items-center justify-center border border-emerald-100 dark:border-emerald-700/50 text-sm">
                         {(item.wargaNama || "W").charAt(0).toUpperCase()}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="font-extrabold text-slate-900 text-sm">{item.wargaNama || "Warga"}</h4>
-                          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                          <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">{item.wargaNama || "Warga"}</h4>
+                          <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/50 px-2 py-0.5 rounded-md">
                             {item.rw?.name || (item.rwId ? `RW ${item.rwId}` : "Warga Coblong")}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">
                           {item.createdAt ? new Date(item.createdAt).toLocaleDateString("id-ID", {
                             day: "numeric",
                             month: "long",
@@ -820,12 +820,12 @@ export const HasilPemanfaatan: React.FC = () => {
                   {/* Body: Title & Content */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10.5px] font-black text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200 uppercase tracking-wider">
+                      <span className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 uppercase tracking-wider">
                         {item.kategori}
                       </span>
-                      <h3 className="font-extrabold text-slate-900 text-base">{item.judul}</h3>
+                      <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-base">{item.judul}</h3>
                     </div>
-                    <p className="text-xs text-slate-600 leading-relaxed font-medium whitespace-pre-line">
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium whitespace-pre-line">
                       {item.isiKritikSaran}
                     </p>
 
@@ -833,7 +833,7 @@ export const HasilPemanfaatan: React.FC = () => {
                       <div className="pt-2">
                         <button
                           onClick={() => setPreviewPhotoUrl(item.fotoBuktiUrl || null)}
-                          className="group relative rounded-2xl overflow-hidden border border-slate-200 w-36 h-24 block cursor-pointer"
+                          className="group relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 w-36 h-24 block cursor-pointer"
                         >
                           <img
                             src={item.fotoBuktiUrl}
@@ -850,14 +850,14 @@ export const HasilPemanfaatan: React.FC = () => {
 
                   {/* Official Response Section (If Available) */}
                   {item.tanggapan ? (
-                    <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-2">
+                    <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/50 space-y-2">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-emerald-800 text-xs font-black">
+                        <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 text-xs font-black">
                           <MessageCircle size={14} />
                           <span>Tanggapan Resmi Pengelola / RW:</span>
                         </div>
                         {item.ditanggapiPada && (
-                          <span className="text-[10px] text-emerald-600 font-bold">
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
                             {new Date(item.ditanggapiPada).toLocaleDateString("id-ID", {
                               day: "numeric",
                               month: "short",
@@ -866,11 +866,11 @@ export const HasilPemanfaatan: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-700 font-medium leading-relaxed whitespace-pre-line">
+                      <p className="text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed whitespace-pre-line">
                         {item.tanggapan}
                       </p>
                       {item.ditanggapiOleh && (
-                        <p className="text-[10.5px] text-emerald-700 font-bold italic">
+                        <p className="text-[10.5px] text-emerald-700 dark:text-emerald-400 font-bold italic">
                           Oleh: {item.ditanggapiOleh}
                         </p>
                       )}
@@ -879,10 +879,10 @@ export const HasilPemanfaatan: React.FC = () => {
 
                   {/* Action Buttons for Management Roles */}
                   {isManagementRole && (
-                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                       <button
                         onClick={() => openRespondModal(item)}
-                        className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-[#009966] text-xs font-bold rounded-xl border border-emerald-200 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                        className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-[#009966] dark:text-emerald-400 text-xs font-bold rounded-xl border border-emerald-200 dark:border-emerald-700/50 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
                       >
                         <MessageCircle size={13} />
                         <span>{item.tanggapan ? "Perbarui Tanggapan" : "Beri Tanggapan Resmi"}</span>
@@ -891,7 +891,7 @@ export const HasilPemanfaatan: React.FC = () => {
                       {["DEVELOPER", "SUPER_USER"].includes(user?.peran || "") && (
                         <button
                           onClick={() => handleDelete(item.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer"
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-xl transition cursor-pointer"
                           title="Hapus Kritik/Saran"
                         >
                           <Trash2 size={15} />
@@ -903,7 +903,7 @@ export const HasilPemanfaatan: React.FC = () => {
               ))}
 
               {totalPages > 1 && (
-                <div className="p-4 bg-white rounded-3xl border border-slate-200/90 shadow-2xs">
+                <div className="p-4 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs">
                   <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
@@ -922,20 +922,20 @@ export const HasilPemanfaatan: React.FC = () => {
       {/* Modal 1: Form Sampaikan Kritik & Saran Baru */}
       {showAddModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col p-6 space-y-4 border border-slate-200 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col p-6 space-y-4 border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-400 flex items-center justify-center font-bold">
                   <Plus size={18} />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900">Sampaikan Kritik &amp; Saran</h3>
-                  <p className="text-xs text-slate-500 font-medium">Suara Anda membangun lingkungan yang lebih bersih</p>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">Sampaikan Kritik &amp; Saran</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Suara Anda membangun lingkungan yang lebih bersih</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -943,13 +943,13 @@ export const HasilPemanfaatan: React.FC = () => {
 
             <form onSubmit={handleAddSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-black text-slate-700 mb-1">
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
                   Kategori Pemanfaatan <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={formKategori}
                   onChange={(e) => setFormKategori(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-[#009966] transition"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-[#009966] transition cursor-pointer"
                 >
                   <option value="Pengolahan Kompos">Pengolahan Kompos</option>
                   <option value="Bank Sampah">Bank Sampah</option>
@@ -960,7 +960,7 @@ export const HasilPemanfaatan: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-black text-slate-700 mb-1">
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
                   Judul Aspirasi / Topik <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -968,16 +968,16 @@ export const HasilPemanfaatan: React.FC = () => {
                   placeholder="Contoh: Usulan Penambahan Komposter di RW 03"
                   value={formJudul}
                   onChange={(e) => setFormJudul(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-[#009966] transition"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] transition"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-black text-slate-700 mb-1">
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
                   Rating Kepuasan Daur Ulang <span className="text-rose-500">*</span>
                 </label>
-                <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
@@ -987,16 +987,16 @@ export const HasilPemanfaatan: React.FC = () => {
                     >
                       <Star
                         size={22}
-                        className={star <= formRating ? "fill-amber-400 text-amber-400" : "text-slate-300"}
+                        className={star <= formRating ? "fill-amber-400 text-amber-400" : "text-slate-300 dark:text-slate-600"}
                       />
                     </button>
                   ))}
-                  <span className="text-xs font-black text-slate-700 ml-2">{formRating}.0 Dari 5.0</span>
+                  <span className="text-xs font-black text-slate-700 dark:text-slate-300 ml-2">{formRating}.0 Dari 5.0</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-black text-slate-700 mb-1">
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
                   Isi Kritik &amp; Saran <span className="text-rose-500">*</span>
                 </label>
                 <textarea
@@ -1004,13 +1004,13 @@ export const HasilPemanfaatan: React.FC = () => {
                   placeholder="Tuliskan masukan, kendala, atau saran konstruktif mengenai pemanfaatan sampah di lingkungan Anda..."
                   value={formIsi}
                   onChange={(e) => setFormIsi(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-[#009966] transition"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] transition"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-black text-slate-700 mb-1">
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
                   URL Foto Lampiran Bukti (Opsional)
                 </label>
                 <input
@@ -1018,22 +1018,22 @@ export const HasilPemanfaatan: React.FC = () => {
                   placeholder="https://..."
                   value={formFotoUrl}
                   onChange={(e) => setFormFotoUrl(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-[#009966] transition"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] transition"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50"
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={submittingAdd}
-                  className="px-5 py-2.5 bg-[#009966] hover:bg-[#008855] text-white text-xs font-black rounded-xl transition flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                  className="px-5 py-2.5 bg-[#009966] hover:bg-[#008855] text-white text-xs font-black rounded-xl transition flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
                 >
                   {submittingAdd ? "Mengirim..." : "Kirim Aspirasi"}
                 </button>
@@ -1046,41 +1046,41 @@ export const HasilPemanfaatan: React.FC = () => {
       {/* Modal 2: Form Beri Tanggapan Resmi (Admin / RW / DLH) */}
       {showRespondModal && selectedItemForRespond && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col p-6 space-y-4 border border-slate-200 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col p-6 space-y-4 border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-800 flex items-center justify-center font-bold">
+                <div className="w-9 h-9 rounded-xl bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 flex items-center justify-center font-bold">
                   <MessageCircle size={18} />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900">Beri Tanggapan Resmi</h3>
-                  <p className="text-xs text-slate-500 font-medium">Tanggapi aspirasi dari {selectedItemForRespond.wargaNama}</p>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">Beri Tanggapan Resmi</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Tanggapi aspirasi dari {selectedItemForRespond.wargaNama}</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowRespondModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Aspirasi Summary */}
-            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-1">
-              <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">{selectedItemForRespond.kategori}</p>
-              <h4 className="font-extrabold text-xs text-slate-900">{selectedItemForRespond.judul}</h4>
-              <p className="text-xs text-slate-600 font-medium italic">"{selectedItemForRespond.isiKritikSaran}"</p>
+            <div className="bg-slate-50 dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1">
+              <p className="text-[11px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">{selectedItemForRespond.kategori}</p>
+              <h4 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">{selectedItemForRespond.judul}</h4>
+              <p className="text-xs text-slate-600 dark:text-slate-300 font-medium italic">"{selectedItemForRespond.isiKritikSaran}"</p>
             </div>
 
             <form onSubmit={handleRespondSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-black text-slate-700 mb-1">
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
                   Status Tindak Lanjut <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={respondStatus}
                   onChange={(e) => setRespondStatus(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-[#009966] transition"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-[#009966] transition cursor-pointer"
                 >
                   <option value="DALAM_PROSES">Dalam Proses</option>
                   <option value="SELESAI">Selesai Ditindaklanjuti</option>
@@ -1089,7 +1089,7 @@ export const HasilPemanfaatan: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-black text-slate-700 mb-1">
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
                   Pesan Tanggapan Resmi <span className="text-rose-500">*</span>
                 </label>
                 <textarea
@@ -1097,23 +1097,23 @@ export const HasilPemanfaatan: React.FC = () => {
                   placeholder="Tuliskan jawaban resmi, langkah penanganan, atau tindak lanjut dari pengelola wilayah..."
                   value={respondTanggapan}
                   onChange={(e) => setRespondTanggapan(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-[#009966] transition"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] transition"
                   required
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowRespondModal(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50"
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={submittingRespond}
-                  className="px-5 py-2.5 bg-[#009966] hover:bg-[#008855] text-white text-xs font-black rounded-xl transition flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                  className="px-5 py-2.5 bg-[#009966] hover:bg-[#008855] text-white text-xs font-black rounded-xl transition flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
                 >
                   {submittingRespond ? "Simpan..." : "Simpan Tanggapan"}
                 </button>
@@ -1129,7 +1129,7 @@ export const HasilPemanfaatan: React.FC = () => {
           className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs animate-in fade-in"
           onClick={() => setPreviewPhotoUrl(null)}
         >
-          <div className="relative max-w-3xl w-full bg-white p-2 rounded-3xl shadow-2xl border border-slate-700 overflow-hidden">
+          <div className="relative max-w-3xl w-full bg-white dark:bg-slate-900 p-2 rounded-3xl shadow-2xl border border-slate-700 overflow-hidden">
             <button
               onClick={() => setPreviewPhotoUrl(null)}
               className="absolute top-4 right-4 bg-slate-900/80 text-white p-2 rounded-full hover:bg-slate-900 cursor-pointer"
@@ -1161,3 +1161,4 @@ export const HasilPemanfaatan: React.FC = () => {
 };
 
 export default HasilPemanfaatan;
+

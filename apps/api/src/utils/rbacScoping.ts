@@ -141,7 +141,21 @@ export async function getScopingFilters(user: {
 
   // 3. LURAH is scoped by Kelurahan
   if (role === "LURAH") {
-    const kelurahanId = dbUser.rw?.kelurahanId;
+    let kelurahanId = dbUser.rw?.kelurahanId;
+    let kelurahanName = dbUser.rw?.kelurahan?.name;
+
+    if (!kelurahanId && dbUser.address) {
+      const match = await prisma.kelurahan.findFirst({
+        where: {
+          name: { contains: dbUser.address, mode: "insensitive" },
+        },
+      });
+      if (match) {
+        kelurahanId = match.id;
+        kelurahanName = match.name;
+      }
+    }
+
     if (!kelurahanId) {
       return {
         userFilter: { id: "none" },
@@ -150,22 +164,31 @@ export async function getScopingFilters(user: {
         wasteLogFilter: { id: "none" },
       };
     }
+
+    const userOr: any[] = [{ rw: { kelurahanId } }];
+    const binOr: any[] = [{ kelurahanId }, { rw: { kelurahanId } }];
+    const householdOr: any[] = [{ rw: { kelurahanId } }];
+    const wasteLogOr: any[] = [
+      { bin: { kelurahanId } },
+      { bin: { rw: { kelurahanId } } },
+      { warga: { rw: { kelurahanId } } },
+    ];
+
+    if (kelurahanName) {
+      userOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
+      binOr.push({ kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } });
+      binOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
+      householdOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
+      wasteLogOr.push({ bin: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
+      wasteLogOr.push({ bin: { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } } });
+      wasteLogOr.push({ warga: { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } } });
+    }
+
     return {
-      userFilter: { rw: { kelurahanId } },
-      binFilter: {
-        OR: [
-          { kelurahanId },
-          { rw: { kelurahanId } },
-        ],
-      },
-      householdFilter: { rw: { kelurahanId } },
-      wasteLogFilter: {
-        OR: [
-          { bin: { kelurahanId } },
-          { bin: { rw: { kelurahanId } } },
-          { warga: { rw: { kelurahanId } } },
-        ],
-      },
+      userFilter: { OR: userOr },
+      binFilter: { OR: binOr },
+      householdFilter: { OR: householdOr },
+      wasteLogFilter: { OR: wasteLogOr },
     };
   }
 
@@ -188,10 +211,11 @@ export async function getScopingFilters(user: {
     };
   }
 
-  // 5. MAHASISWA_KKN is scoped by their assigned RW area
+  // 5. MAHASISWA_KKN is scoped by their assigned RW area or kelompok kelurahan
   if (role === "MAHASISWA_KKN") {
     const student = await prisma.studentKkn.findUnique({
       where: { userId: user.userId },
+      include: { kelompok: true },
     });
     if (student && student.assignedRwId) {
       return {
@@ -199,6 +223,26 @@ export async function getScopingFilters(user: {
         binFilter: { rwId: student.assignedRwId },
         householdFilter: { rwId: student.assignedRwId },
         wasteLogFilter: { bin: { rwId: student.assignedRwId } },
+      };
+    }
+    if (student?.kelompok?.kelurahan) {
+      const kel = student.kelompok.kelurahan;
+      return {
+        userFilter: { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } },
+        binFilter: {
+          OR: [
+            { kelurahan: { name: { equals: kel, mode: "insensitive" } } },
+            { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } },
+          ],
+        },
+        householdFilter: { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } },
+        wasteLogFilter: {
+          OR: [
+            { bin: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } },
+            { bin: { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } } },
+            { warga: { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } } },
+          ],
+        },
       };
     }
   }

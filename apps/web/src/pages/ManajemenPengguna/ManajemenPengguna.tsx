@@ -102,9 +102,6 @@ const KELURAHAN_RW_MAP: Record<string, string[]> = {
 };
 
 
-
-
-
 const normalizeRoleFromUrl = (param: string | null): string => {
   if (!param) return "SUPER_USER";
   const p = param.trim().toLowerCase();
@@ -281,24 +278,6 @@ const ManajemenPengguna: React.FC = () => {
     fetchUsers();
   }, [searchQuery, selectedRole, selectedStatus]);
 
-  // Password validation check
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isPasswordValid) {
-      if (modalType === "add" && !formData.password) {
-        showToast.error("Kata sandi wajib diisi untuk pengguna baru");
-      } else if (formData.password && !passwordRules?.minLength) {
-        showToast.error("Kata sandi minimal 8 karakter");
-      } else if (formData.password && !passwordRules?.matches) {
-        showToast.error("Konfirmasi kata sandi tidak cocok");
-      } else {
-        showToast.error("Kata sandi belum memenuhi persyaratan keamanan");
-      }
-      return;
-    }
-
-    handleSubmit(e);
-  };
   const filteredRwsByKelurahan = useMemo(() => {
     const targetClean = getCleanKelName(modalKelurahan).toLowerCase();
     if (!targetClean || targetClean === "unassigned") {
@@ -891,18 +870,18 @@ const ManajemenPengguna: React.FC = () => {
     const rwList = Array.from(new Set(rwNumbers)).sort((a, b) => a - b).map(n => `RW ${String(n).padStart(2, "0")}`);
 
     if (rwList.length === 0 && !foundKel) {
-      return <span className="text-slate-700 font-semibold">{str}</span>;
+      return <span className="text-slate-700 dark:text-slate-300 font-semibold">{str}</span>;
     }
 
     return (
       <div className="flex flex-wrap items-center gap-1 max-w-xs">
         {rwList.map((rwItem, idx) => (
-          <span key={idx} className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 font-extrabold whitespace-nowrap inline-block shadow-2xs">
+          <span key={idx} className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
             {rwItem}
           </span>
         ))}
         {foundKel && (
-          <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md text-[10px] border border-emerald-200 font-extrabold whitespace-nowrap inline-block shadow-2xs">
+          <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
             Kel. {foundKel}
           </span>
         )}
@@ -927,7 +906,7 @@ const ManajemenPengguna: React.FC = () => {
 
     return (
       <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-full bg-[#009966] text-white font-extrabold text-xs flex items-center justify-center shrink-0 overflow-hidden border-2 border-white shadow-2xs">
+        <div className="w-8 h-8 rounded-full bg-[#009966] text-white font-extrabold text-xs flex items-center justify-center shrink-0 overflow-hidden border-2 border-white dark:border-slate-800 shadow-2xs">
           {photo ? (
             <img
               src={getProfilePhotoUrl(photo, name)}
@@ -939,7 +918,7 @@ const ManajemenPengguna: React.FC = () => {
             <span>{initials}</span>
           )}
         </div>
-        <span className="font-bold text-slate-800 text-xs leading-tight">{name}</span>
+        <span className="font-bold text-slate-800 dark:text-slate-100 text-xs leading-tight">{name}</span>
       </div>
     );
   };
@@ -949,7 +928,7 @@ const ManajemenPengguna: React.FC = () => {
     if (!rawPhone || formatted === "-" || formatted === "") {
       return (
         <div className="flex items-center gap-1.5 text-slate-400 font-mono text-xs">
-          <Phone size={12} className="text-slate-300 shrink-0" />
+          <Phone size={12} className="text-slate-300 dark:text-slate-600 shrink-0" />
           <span>-</span>
         </div>
       );
@@ -963,7 +942,7 @@ const ManajemenPengguna: React.FC = () => {
         target="_blank"
         rel="noreferrer"
         title="Hubungi via WhatsApp"
-        className="font-mono text-slate-600 hover:text-emerald-600 hover:underline inline-flex items-center gap-1.5 transition-colors font-bold"
+        className="font-mono text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline inline-flex items-center gap-1.5 transition-colors font-bold"
       >
         <Phone size={12} className="text-emerald-500 shrink-0" />
         <span>{formatted}</span>
@@ -1060,7 +1039,7 @@ const ManajemenPengguna: React.FC = () => {
       : "text-[11px] font-black";
 
     return (
-      <div className="w-8 h-8 rounded-full bg-[#009966] text-white flex items-center justify-center shrink-0 overflow-hidden border-2 border-white shadow-sm font-sans">
+      <div className="w-8 h-8 rounded-full bg-[#009966] text-white flex items-center justify-center shrink-0 overflow-hidden border-2 border-white dark:border-slate-800 shadow-sm font-sans">
         {foto ? (
           <img src={getProfilePhotoUrl(foto, name)} alt="" className="w-full h-full object-cover" onError={(e) => handleAvatarError(e, name)} />
         ) : (
@@ -1077,7 +1056,7 @@ const ManajemenPengguna: React.FC = () => {
     return (
       <div className="flex items-center gap-2.5">
         {renderAvatar({ name: dplName, fotoProfil })}
-        <span className="font-bold text-slate-800 text-xs">{dplName}</span>
+        <span className="font-bold text-slate-800 dark:text-slate-100 text-xs">{dplName}</span>
       </div>
     );
   };
@@ -1085,20 +1064,20 @@ const ManajemenPengguna: React.FC = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
         {/* Tier 1: Title & Status Badge */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
               Manajemen Pengguna
             </h1>
-            <p className="text-xs text-slate-500 font-medium">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               Kelola akses, daftar pengguna, peran sistem, dan otentikasi akun
             </p>
           </div>
 
           <div className="self-start sm:self-center flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-[#009966] border border-emerald-200/80 shadow-2xs">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/50 text-[#009966] dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/80 shadow-2xs">
               <span className="w-2 h-2 rounded-full bg-[#009966] animate-pulse" />
               RBAC Aktif
             </span>
@@ -1106,8 +1085,8 @@ const ManajemenPengguna: React.FC = () => {
         </div>
 
         {/* Tier 2: Info & Action Buttons */}
-        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-xs text-slate-500 font-medium">
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
             Total {users.length} pengguna terdaftar di seluruh role
           </div>
 
@@ -1127,51 +1106,51 @@ const ManajemenPengguna: React.FC = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+            <p className="text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
               Total Pengguna
             </p>
-            <h3 className="text-2xl font-black text-slate-800 mt-1">
+            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">
               {users.length}
             </h3>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200/60">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-200/60 dark:border-blue-800/60">
             <User size={20} />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+            <p className="text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
               Status Aktif
             </p>
-            <h3 className="text-2xl font-black text-emerald-600 mt-1">
+            <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
               {users.filter((u) => u.status === "Aktif" || u.status === "ACTIVE" || !u.status).length}
             </h3>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200/60">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/60 dark:border-emerald-800/60">
             <CheckCircle size={20} />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between gap-3">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[10.5px] sm:text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+            <p className="text-[10.5px] sm:text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
               Peran Terfilter
             </p>
-            <h3 className="text-sm sm:text-base font-black text-slate-800 mt-1 leading-snug break-words">
+            <h3 className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 mt-1 leading-snug break-words">
               {ROLE_LABEL_MAP[selectedRole] || selectedRole}
             </h3>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-200/60 shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-200/60 dark:border-purple-800/60 shrink-0">
             <User size={20} />
           </div>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <div className="flex flex-col md:flex-row items-center justify-between gap-3">
           {/* Search Box */}
           <div className="relative w-full md:w-80">
@@ -1181,7 +1160,7 @@ const ManajemenPengguna: React.FC = () => {
               placeholder="Cari nama, No. HP..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
             />
           </div>
 
@@ -1190,7 +1169,7 @@ const ManajemenPengguna: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-              className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
+              className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-all cursor-pointer"
             >
               <span className={`w-2 h-2 rounded-full ${
                 selectedStatus === "Aktif" ? "bg-emerald-500 shadow-xs shadow-emerald-500/50" : selectedStatus === "Nonaktif" ? "bg-rose-500 shadow-xs shadow-rose-500/50" : "bg-slate-400"
@@ -1202,7 +1181,7 @@ const ManajemenPengguna: React.FC = () => {
             {isStatusDropdownOpen && (
               <>
                 <div className="fixed inset-0 z-20" onClick={() => setIsStatusDropdownOpen(false)} />
-                <div className="absolute right-0 mt-1.5 w-40 bg-white border border-slate-200/90 rounded-xl shadow-lg z-30 p-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute right-0 mt-1.5 w-40 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-lg z-30 p-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
                   {[
                     { value: "Semua", label: "Semua Status", color: "bg-slate-400" },
                     { value: "Aktif", label: "Aktif", color: "bg-emerald-500" },
@@ -1217,8 +1196,8 @@ const ManajemenPengguna: React.FC = () => {
                       }}
                       className={`flex items-center gap-2.5 w-full px-3 py-2 text-xs font-extrabold rounded-lg transition-all text-left cursor-pointer ${
                         selectedStatus === opt.value
-                          ? "bg-[#009966]/10 text-[#009966]"
-                          : "text-slate-700 hover:bg-slate-50"
+                          ? "bg-[#009966]/10 text-[#009966] dark:text-emerald-400"
+                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
                       }`}
                     >
                       <span className={`w-2 h-2 rounded-full ${opt.color}`} />
@@ -1233,11 +1212,11 @@ const ManajemenPengguna: React.FC = () => {
       </div>
 
       {/* Main Table Card */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+              <tr className="bg-slate-50/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                 {["DEVELOPER", "SUPER_USER"].includes(selectedRole) ? (
                   <>
                     <th className="py-3 px-4">NAMA LENGKAP</th>
@@ -1349,26 +1328,26 @@ const ManajemenPengguna: React.FC = () => {
             <tbody className="text-xs">
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={10} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
                     <div className="flex flex-col items-center justify-center gap-3">
                       <Loader2 className="animate-spin text-blue-600" size={28} />
-                      <p className="font-semibold text-xs">Memuat data pengguna...</p>
+                      <p className="font-semibold text-xs text-slate-600 dark:text-slate-400">Memuat data pengguna...</p>
                     </div>
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={10} className="px-6 py-8 text-center text-rose-600 font-medium">
+                  <td colSpan={10} className="px-6 py-8 text-center text-rose-600 dark:text-rose-400 font-medium">
                     {error}
                   </td>
                 </tr>
               ) : paginatedUsers.length > 0 ? (
                 paginatedUsers.map((u) => (
-                  <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                  <tr key={u.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         {renderAvatar(u)}
-                        <span className="font-bold text-slate-800 text-xs">{u.name}</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-100 text-xs">{u.name}</span>
                       </div>
                     </td>
 
@@ -1378,16 +1357,16 @@ const ManajemenPengguna: React.FC = () => {
                       </>
                     ) : ["PEMIMPIN", "PANITIA_TASKFORCE"].includes(selectedRole) ? (
                       <>
-                        <td className="py-3 px-4 font-mono font-bold text-slate-700">{u.nip || "-"}</td>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-700 dark:text-slate-300">{u.nip || "-"}</td>
                         <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
-                        <td className="py-3 px-4 text-slate-700 font-semibold">{u.institusi || u.prodi || "Universitas Komputer Indonesia"}</td>
-                        <td className="py-3 px-4 text-slate-700 font-bold">{u.jabatan || (selectedRole === "PEMIMPIN" ? "Rektor" : "Anggota Task Force")}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">{u.institusi || u.prodi || "Universitas Komputer Indonesia"}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-bold">{u.jabatan || (selectedRole === "PEMIMPIN" ? "Rektor" : "Anggota Task Force")}</td>
                       </>
                     ) : selectedRole === "DPL" ? (
                       <>
-                        <td className="py-3 px-4 font-mono font-bold text-slate-700">{u.nip || "-"}</td>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-700 dark:text-slate-300">{u.nip || "-"}</td>
                         <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
-                        <td className="py-3 px-4 text-slate-700 font-semibold">
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">
                           {u.dplKelompok && u.dplKelompok.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
                               {Array.from(
@@ -1398,29 +1377,29 @@ const ManajemenPengguna: React.FC = () => {
                                   })
                                 ).values()
                               ).map((groupName: any, i: number) => (
-                                <span key={i} className="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg text-[11px] border border-emerald-200/80 font-extrabold whitespace-nowrap inline-flex items-center gap-1.5 shadow-2xs">
+                                <span key={i} className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-lg text-[11px] border border-emerald-200/80 dark:border-emerald-800/80 font-extrabold whitespace-nowrap inline-flex items-center gap-1.5 shadow-2xs">
                                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                                   {groupName}
                                 </span>
                               ))}
                             </div>
                           ) : (
-                            <span className="text-slate-400 font-medium text-xs">-</span>
+                            <span className="text-slate-400 dark:text-slate-500 font-medium text-xs">-</span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-slate-700 font-bold">{extractJenjang(u.programStudi || u.prodi, u.jenjangPendidikan)}</td>
-                        <td className="py-3 px-4 text-slate-700 font-semibold">{cleanProdiName(u.programStudi || u.prodi)}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-bold">{extractJenjang(u.programStudi || u.prodi, u.jenjangPendidikan)}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">{cleanProdiName(u.programStudi || u.prodi)}</td>
                       </>
                     ) : selectedRole === "ADMIN_DLH" ? (
                       <>
                         <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
-                        <td className="py-3 px-4 text-slate-800 font-bold">
-                          <span className="bg-teal-50 text-teal-700 px-2.5 py-0.5 rounded-md text-[10px] border border-teal-200/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 px-2.5 py-0.5 rounded-md text-[10px] border border-teal-200/80 dark:border-teal-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
                             {u.provinsi || "Jawa Barat"}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-800 font-bold">
-                          <span className="bg-sky-50 text-sky-700 px-2.5 py-0.5 rounded-md text-[10px] border border-sky-200/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 px-2.5 py-0.5 rounded-md text-[10px] border border-sky-200/80 dark:border-sky-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
                             {getCleanKabupatenName(u.kabupaten || u.wilayah)}
                           </span>
                         </td>
@@ -1428,30 +1407,30 @@ const ManajemenPengguna: React.FC = () => {
                     ) : selectedRole === "CAMAT" ? (
                       <>
                         <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
-                        <td className="py-3 px-4 text-slate-800 font-bold">
-                          <span className="bg-sky-50 text-sky-700 px-2.5 py-0.5 rounded-md text-[10px] border border-sky-200/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 px-2.5 py-0.5 rounded-md text-[10px] border border-sky-200/80 dark:border-sky-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
                             {getCleanKabupatenName(u.kabupaten || u.wilayah)}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-800 font-bold">
-                          <span className="bg-[#e5f7ed] text-[#009966] px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 font-bold whitespace-nowrap inline-block shadow-2xs">
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
                             {formatKecamatanName(u.kecamatan)}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-800 font-bold">
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
                           {(() => {
                             const isCoblongKec = (u.kecamatan || "").toLowerCase().includes("coblong");
                             const kels = isCoblongKec ? ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"] : [];
                             return kels.length > 0 ? (
                               <div className="flex flex-wrap gap-1 max-w-md">
                                 {kels.map((kel, i) => (
-                                  <span key={i} className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md text-[10px] border border-emerald-200 font-bold whitespace-nowrap inline-block shadow-2xs">
+                                  <span key={i} className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
                                     Kel. {kel}
                                   </span>
                                 ))}
                               </div>
                             ) : (
-                              <span className="text-slate-400 font-medium text-xs">-</span>
+                              <span className="text-slate-400 dark:text-slate-500 font-medium text-xs">-</span>
                             );
                           })()}
                         </td>
@@ -1459,20 +1438,20 @@ const ManajemenPengguna: React.FC = () => {
                     ) : selectedRole === "LURAH" ? (
                       <>
                         <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
-                        <td className="py-3 px-4 text-slate-800 font-bold">
-                          <span className="bg-[#e5f7ed] text-[#009966] px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 font-bold whitespace-nowrap inline-block shadow-2xs">
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
                             {formatKecamatanName(u.kecamatan)}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-800 font-bold">
-                          <span className="bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 font-bold whitespace-nowrap inline-block shadow-2xs">
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
                             {detectKelurahanName(u)}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-800 font-bold">
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
                           <div className="flex flex-wrap gap-1 max-w-md">
                             {getRwListForKelurahan(u.kelurahan || u.address).map((rwItem: string, i: number) => (
-                              <span key={i} className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 font-extrabold whitespace-nowrap inline-block shadow-2xs">
+                              <span key={i} className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
                                 {rwItem}
                               </span>
                             ))}
@@ -1482,96 +1461,96 @@ const ManajemenPengguna: React.FC = () => {
                     ) : selectedRole === "RW" ? (
                       <>
                         <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
-                        <td className="py-3 px-4 text-slate-800 font-bold">
-                          <span className="bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 font-bold whitespace-nowrap inline-block shadow-2xs">
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
                             {detectKelurahanName(u)}
                           </span>
                         </td>
                         <td className="py-3 px-4">
                           {u.rw && u.rw !== "-" ? (
-                            <span className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 font-extrabold whitespace-nowrap inline-block shadow-2xs">
+                            <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
                               {u.rw.startsWith("RW") ? u.rw : `RW ${String(u.rw).padStart(2, "0")}`}
                             </span>
                           ) : (
-                            <span className="text-slate-400 font-medium">-</span>
+                            <span className="text-slate-400 dark:text-slate-500 font-medium">-</span>
                           )}
                         </td>
                         <td className="py-3 px-4">{renderPetugasResiduCell(u.petugasResidu)}</td>
-                        <td className="py-3 px-4 text-slate-700">{u.address || "-"}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{u.address || "-"}</td>
                       </>
                     ) : selectedRole === "PETUGAS_RESIDU" ? (
                       <>
                         <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
-                        <td className="py-3 px-4 text-slate-800 font-bold">
-                          <span className="bg-[#e5f7ed] text-[#009966] px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 font-bold whitespace-nowrap inline-block shadow-2xs">
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
                             {formatKecamatanName(u.kecamatan)}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-800 font-bold">
-                          <span className="bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 font-bold whitespace-nowrap inline-block shadow-2xs">
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
                             {detectKelurahanName(u)}
                           </span>
                         </td>
                         <td className="py-3 px-4">
                           {u.rw && u.rw !== "-" ? (
-                            <span className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 font-extrabold whitespace-nowrap inline-block shadow-2xs">
+                            <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
                               {u.rw.startsWith("RW") ? u.rw : `RW ${String(u.rw).padStart(2, "0")}`}
                             </span>
                           ) : (
-                            <span className="text-slate-400 font-medium">-</span>
+                            <span className="text-slate-400 dark:text-slate-500 font-medium">-</span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-slate-700">{u.wilayah || (u.rw ? `${u.rw}, ${detectKelurahanName(u)}` : detectKelurahanName(u)) || "-"}</td>
-                        <td className="py-3 px-4 text-slate-700">{u.address || "-"}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{u.wilayah || (u.rw ? `${u.rw}, ${detectKelurahanName(u)}` : detectKelurahanName(u)) || "-"}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{u.address || "-"}</td>
                       </>
                     ) : selectedRole === "MAHASISWA_KKN" ? (
                       <>
-                        <td className="py-3 px-4 font-mono font-bold text-slate-700">{u.nim || u.studentProfile?.nim || "-"}</td>
-                        <td className="py-3 px-4 text-slate-700 font-bold">{extractJenjang(u.studentProfile?.jurusan || u.prodi || u.programStudi, u.jenjangPendidikan || u.studentProfile?.jenjangPendidikan)}</td>
-                        <td className="py-3 px-4 text-slate-700 font-semibold">{cleanProdiName(u.studentProfile?.jurusan || u.prodi || u.programStudi)}</td>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-700 dark:text-slate-300">{u.nim || u.studentProfile?.nim || "-"}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-bold">{extractJenjang(u.studentProfile?.jurusan || u.prodi || u.programStudi, u.jenjangPendidikan || u.studentProfile?.jenjangPendidikan)}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">{cleanProdiName(u.studentProfile?.jurusan || u.prodi || u.programStudi)}</td>
                         <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
                         <td className="py-3 px-4">
                           {u.studentProfile?.kelompok?.name && u.studentProfile.kelompok.name !== "-" ? (
-                            <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md text-[10px] border border-blue-200 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
                               {cleanKknDisplayName(u.studentProfile.kelompok.name)}
                             </span>
                           ) : (
-                            <span className="text-slate-400 font-medium">-</span>
+                            <span className="text-slate-400 dark:text-slate-500 font-medium">-</span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-slate-700 font-semibold">
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">
                           {renderDplCell(u.studentProfile?.kelompok?.dplName || u.studentProfile?.kelompok?.dpl?.name, u.studentProfile?.kelompok?.dplFotoProfil || u.studentProfile?.kelompok?.dpl?.fotoProfil)}
                         </td>
-                        <td className="py-3 px-4 text-slate-700 font-semibold">{renderWilayahBadges(getMahasiswaWilayahStr(u))}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">{renderWilayahBadges(getMahasiswaWilayahStr(u))}</td>
                       </>
                     ) : (
                       <>
                         <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
-                        <td className="py-3 px-4 text-slate-800 font-bold">
-                          <span className="bg-[#e5f7ed] text-[#009966] px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 font-bold whitespace-nowrap inline-block shadow-2xs">
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
                             {formatKecamatanName(u.kecamatan)}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-800 font-bold">
-                          <span className="bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 font-bold whitespace-nowrap inline-block shadow-2xs">
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
                             {detectKelurahanName(u)}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-800 font-bold">
-                          <span className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 font-extrabold whitespace-nowrap inline-block shadow-2xs">
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
                             {u.rw ? (u.rw.startsWith("RW") ? u.rw : `RW ${String(u.rw).padStart(2, "0")}`) : "RW 06"}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-700">{u.address || "-"}</td>
-                        <td className="py-3 px-4 text-center font-bold text-slate-800">{u.jumlahAnggotaKeluarga != null && u.jumlahAnggotaKeluarga !== "" ? u.jumlahAnggotaKeluarga : "-"}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{u.address || "-"}</td>
+                        <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-100">{u.jumlahAnggotaKeluarga != null && u.jumlahAnggotaKeluarga !== "" ? u.jumlahAnggotaKeluarga : "-"}</td>
                       </>
                     )}
 
                     <td className="py-3 px-4 text-center">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
                         (u.status === "Aktif" || u.status === "ACTIVE" || !u.status)
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                          : "bg-rose-50 text-rose-700 border border-rose-200"
+                          ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
+                          : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
                       }`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${
                           (u.status === "Aktif" || u.status === "ACTIVE" || !u.status) ? "bg-emerald-500" : "bg-rose-500"
@@ -1596,7 +1575,7 @@ const ManajemenPengguna: React.FC = () => {
                             return (
                               <button
                                 onClick={() => handleOpenEditModal(u)}
-                                className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                                className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-600 dark:hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
                                 title="Edit"
                               >
                                 <Pencil size={15} />
@@ -1623,8 +1602,8 @@ const ManajemenPengguna: React.FC = () => {
                                 }}
                                 className={`w-8 h-8 rounded-lg transition-colors flex items-center justify-center ${
                                   isSelf
-                                    ? "bg-slate-100 text-slate-300 opacity-40 cursor-not-allowed"
-                                    : "bg-slate-100 text-slate-600 hover:bg-rose-600 hover:text-white cursor-pointer"
+                                    ? "bg-slate-100 dark:bg-slate-800 text-slate-300 dark:text-slate-600 opacity-40 cursor-not-allowed"
+                                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-rose-600 hover:text-white cursor-pointer"
                                 }`}
                                 title={isSelf ? "Akun Anda Sendiri - Tidak dapat dihapus" : "Hapus"}
                               >
@@ -1669,48 +1648,48 @@ const ManajemenPengguna: React.FC = () => {
 
       {/* Modal Tambah/Edit — Standar ISO 27001 */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={handleCloseModal}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4" onClick={handleCloseModal}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
             {/* Modal Header */}
-            <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+            <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/80 dark:to-slate-900">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                     modalType === "add"
-                      ? "bg-[#009966]/10 text-[#009966] border border-[#009966]/20"
-                      : "bg-blue-50 text-blue-600 border border-blue-200/60"
+                      ? "bg-[#009966]/10 dark:bg-emerald-950/50 text-[#009966] dark:text-emerald-400 border border-[#009966]/20 dark:border-emerald-800/60"
+                      : "bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60"
                   }`}>
                     {modalType === "add" ? <UserPlus size={20} /> : <Pencil size={20} />}
                   </div>
                   <div>
-                    <h3 className="text-base font-extrabold text-slate-800">
+                    <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100">
                       {modalType === "add" ? "Tambah Pengguna Baru" : "Edit Data Pengguna"}
                     </h3>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
+                    <p className="text-[11px] text-slate-400 dark:text-slate-400 mt-0.5">
                       {modalType === "add" ? "Isi formulir untuk mendaftarkan pengguna baru ke sistem" : `Perbarui informasi akun ${selectedUser?.name || ""}`}
                     </p>
                   </div>
                 </div>
-                <button type="button" onClick={handleCloseModal} className="w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer">
+                <button type="button" onClick={handleCloseModal} className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center justify-center transition-colors cursor-pointer">
                   <X size={18} />
                 </button>
               </div>
             </div>
 
-            <form onSubmit={handleFormSubmit} className="overflow-y-auto max-h-[75vh]">
+            <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[75vh]">
               <div className="p-6 space-y-5">
                 {/* ── Section: Informasi Dasar ── */}
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <User size={14} className="text-slate-400" />
-                    <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Informasi Dasar & Foto Profil</span>
+                    <User size={14} className="text-slate-400 dark:text-slate-500" />
+                    <span className="text-[11px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Informasi Dasar & Foto Profil</span>
                   </div>
                   <div className="space-y-3.5">
-                    {/* Foto Profil Input & Live Preview (LOKASI PALING AWAL DI ATAS NAMA LENGKAP) */}
+                    {/* Foto Profil Input & Live Preview */}
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Foto Profil</label>
-                      <div className="flex items-center gap-3.5 bg-slate-50/90 p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs">
-                        <div className="w-13 h-13 rounded-full bg-[#009966] text-white font-black text-xs flex items-center justify-center shrink-0 overflow-hidden border-2 border-white shadow-md font-sans tracking-wider">
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Foto Profil</label>
+                      <div className="flex items-center gap-3.5 bg-slate-50/90 dark:bg-slate-800/90 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-2xs">
+                        <div className="w-13 h-13 rounded-full bg-[#009966] text-white font-black text-xs flex items-center justify-center shrink-0 overflow-hidden border-2 border-white dark:border-slate-700 shadow-md font-sans tracking-wider">
                           {formData.fotoProfil ? (
                             <img
                               src={getProfilePhotoUrl(formData.fotoProfil, formData.name)}
@@ -1729,9 +1708,9 @@ const ManajemenPengguna: React.FC = () => {
                               value={formData.fotoProfil}
                               onChange={(e) => setFormData({ ...formData, fotoProfil: e.target.value })}
                               placeholder="URL Foto (https://...) atau Unggah berkas"
-                              className="flex-1 h-9 px-3 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-800 focus:border-[#009966] focus:ring-1 focus:ring-[#009966] outline-none"
+                              className="flex-1 h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#009966] focus:ring-1 focus:ring-[#009966] outline-none"
                             />
-                            <label className="h-9 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#009966] border border-emerald-200 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 shadow-2xs">
+                            <label className="h-9 px-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-[#009966] dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 shadow-2xs">
                               <Upload size={13} />
                               <span>Unggah</span>
                               <input
@@ -1754,14 +1733,14 @@ const ManajemenPengguna: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => setFormData({ ...formData, fotoProfil: "" })}
-                                className="h-9 px-2.5 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 text-xs font-bold transition-colors cursor-pointer"
+                                className="h-9 px-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-xs font-bold transition-colors cursor-pointer"
                                 title="Reset Foto"
                               >
                                 <X size={14} />
                               </button>
                             )}
                           </div>
-                          <p className="text-[10px] text-slate-400 font-medium">
+                          <p className="text-[10px] text-slate-400 dark:text-slate-400 font-medium">
                             {formData.fotoProfil ? "Preview foto profil aktif" : `Default foto otomatis inisial nama: (${getNameInitials(formData.name)})`}
                           </p>
                         </div>
@@ -1769,12 +1748,12 @@ const ManajemenPengguna: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Nama Lengkap <span className="text-rose-500">*</span></label>
-                      <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Masukkan nama lengkap" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-semibold text-slate-800 transition-all outline-none" />
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Nama Lengkap <span className="text-rose-500">*</span></label>
+                      <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Masukkan nama lengkap" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1.5">No. Telepon <span className="text-rose-500">*</span></label>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">No. Telepon <span className="text-rose-500">*</span></label>
                       <input
                         type="text"
                         required
@@ -1787,12 +1766,12 @@ const ManajemenPengguna: React.FC = () => {
                           }
                         }}
                         placeholder="+628xxxxxxxxxx"
-                        className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-mono font-semibold text-slate-800 transition-all outline-none"
+                        className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Peran Sistem</label>
-                      <input type="text" disabled value={ROLE_LABEL_MAP[formData.roleName] || formData.roleName} className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-100 text-slate-500 text-xs font-bold cursor-not-allowed" />
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Peran Sistem</label>
+                      <input type="text" disabled value={ROLE_LABEL_MAP[formData.roleName] || formData.roleName} className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs font-bold cursor-not-allowed" />
                     </div>
                   </div>
                 </div>
@@ -1801,21 +1780,21 @@ const ManajemenPengguna: React.FC = () => {
                 {(["DPL", "MAHASISWA_KKN", "PEMIMPIN", "PANITIA_TASKFORCE", "WARGA", "RW", "PETUGAS_RESIDU", "LURAH", "ADMIN_DLH", "CAMAT"].includes(formData.roleName)) && (
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <Info size={14} className="text-slate-400" />
-                      <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Data Khusus Peran</span>
+                      <Info size={14} className="text-slate-400 dark:text-slate-500" />
+                      <span className="text-[11px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Data Khusus Peran</span>
                     </div>
                     <div className="space-y-3">
                       {/* DPL Fields */}
                       {formData.roleName === "DPL" && (
                         <>
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">NIP / NIDN</label>
-                            <input type="text" value={formData.nip} onChange={(e) => setFormData({ ...formData, nip: e.target.value })} placeholder="4127.34.02.006" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-mono font-semibold transition-all outline-none" />
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIP / NIDN</label>
+                            <input type="text" value={formData.nip} onChange={(e) => setFormData({ ...formData, nip: e.target.value })} placeholder="4127.34.02.006" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Jenjang Pendidikan</label>
-                              <select value={formData.jenjangPendidikan} onChange={(e) => setFormData({...formData, jenjangPendidikan: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none">
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jenjang Pendidikan</label>
+                              <select value={formData.jenjangPendidikan} onChange={(e) => setFormData({...formData, jenjangPendidikan: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none">
                                 <option value="S1">S1 (Sarjana)</option>
                                 <option value="S2">S2 (Magister)</option>
                                 <option value="S3">S3 (Doktor)</option>
@@ -1824,19 +1803,19 @@ const ManajemenPengguna: React.FC = () => {
                               </select>
                             </div>
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Program Studi</label>
-                              <input type="text" value={formData.programStudi || formData.prodi} onChange={(e) => setFormData({ ...formData, programStudi: e.target.value, prodi: e.target.value })} placeholder="Manajemen" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-semibold transition-all outline-none" />
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Program Studi</label>
+                              <input type="text" value={formData.programStudi || formData.prodi} onChange={(e) => setFormData({ ...formData, programStudi: e.target.value, prodi: e.target.value })} placeholder="Manajemen" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
                             </div>
                           </div>
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kelompok KKN Bimbingan</label>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kelompok KKN Bimbingan</label>
                             <select
                               value={formData.dplKelompokIds?.[0] || ""}
                               onChange={(e) => {
                                 const val = e.target.value;
                                 setFormData({ ...formData, dplKelompokIds: val ? [val] : [] });
                               }}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                             >
                                <option value="">-- Pilih Kelompok Bimbingan KKN --</option>
                               {kelompokList.map((k: any) => (
@@ -1845,7 +1824,7 @@ const ManajemenPengguna: React.FC = () => {
                                 </option>
                               ))}
                             </select>
-                            <p className="text-[10px] text-slate-400 mt-1">Dipilih dari 32 Kelompok KKN terintegrasi secara real-time dari database.</p>
+                            <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Dipilih dari 32 Kelompok KKN terintegrasi secara real-time dari database.</p>
                           </div>
                         </>
                       )}
@@ -1855,11 +1834,11 @@ const ManajemenPengguna: React.FC = () => {
                         <>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">NIM (Nomor Induk Mahasiswa)</label>
-                              <input type="text" inputMode="numeric" pattern="[0-9]*" value={formData.nim} onChange={(e) => setFormData({ ...formData, nim: e.target.value.replace(/\D/g, "") })} placeholder="10123047" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-mono font-semibold transition-all outline-none" />
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIM (Nomor Induk Mahasiswa)</label>
+                              <input type="text" inputMode="numeric" pattern="[0-9]*" value={formData.nim} onChange={(e) => setFormData({ ...formData, nim: e.target.value.replace(/\D/g, "") })} placeholder="10123047" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
                             </div>
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kelompok KKN</label>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kelompok KKN</label>
                               <select
                                 value={formData.dplKelompokIds?.[0] || ""}
                                 onChange={(e) => {
@@ -1884,7 +1863,7 @@ const ManajemenPengguna: React.FC = () => {
                                     dplId: autoDplId,
                                   });
                                 }}
-                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                               >
                                 <option value="">-- Tanpa Kelompok (Mandiri / Unassigned) --</option>
                                 {kelompokList.map((k: any) => (
@@ -1897,7 +1876,7 @@ const ManajemenPengguna: React.FC = () => {
                           </div>
 
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Dosen Pendamping Lapangan (DPL)</label>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Dosen Pendamping Lapangan (DPL)</label>
                             <select
                               value={formData.dplId || ""}
                               onChange={(e) => {
@@ -1920,7 +1899,7 @@ const ManajemenPengguna: React.FC = () => {
                                   dplKelompokIds: autoKelompokId ? [autoKelompokId] : [],
                                 });
                               }}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                             >
                               <option value="">-- Tanpa Dosen Pendamping --</option>
                               {dplList.map((d: any) => (
@@ -1933,8 +1912,8 @@ const ManajemenPengguna: React.FC = () => {
 
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Jenjang Pendidikan</label>
-                              <select value={formData.jenjangPendidikan} onChange={(e) => setFormData({...formData, jenjangPendidikan: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none">
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jenjang Pendidikan</label>
+                              <select value={formData.jenjangPendidikan} onChange={(e) => setFormData({...formData, jenjangPendidikan: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none">
                                 <option value="S1">S1 (Sarjana)</option>
                                 <option value="S2">S2 (Magister)</option>
                                 <option value="S3">S3 (Doktor)</option>
@@ -1943,8 +1922,8 @@ const ManajemenPengguna: React.FC = () => {
                               </select>
                             </div>
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Program Studi</label>
-                              <input type="text" value={formData.prodi} onChange={(e) => setFormData({ ...formData, prodi: e.target.value })} placeholder="S1 Teknik Informatika" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-semibold transition-all outline-none" />
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Program Studi</label>
+                              <input type="text" value={formData.prodi} onChange={(e) => setFormData({ ...formData, prodi: e.target.value })} placeholder="S1 Teknik Informatika" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
                             </div>
                           </div>
                         </>
@@ -1955,17 +1934,17 @@ const ManajemenPengguna: React.FC = () => {
                         <>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">NIP</label>
-                              <input type="text" value={formData.nip} onChange={(e) => setFormData({ ...formData, nip: e.target.value })} placeholder="4127.34.02.001" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-mono font-semibold transition-all outline-none" />
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIP</label>
+                              <input type="text" value={formData.nip} onChange={(e) => setFormData({ ...formData, nip: e.target.value })} placeholder="4127.34.02.001" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
                             </div>
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Institusi</label>
-                              <input type="text" value={formData.institusi || (formData.roleName === "PEMIMPIN" ? formData.prodi : "")} onChange={(e) => setFormData({ ...formData, institusi: e.target.value })} placeholder="Universitas Komputer Indonesia" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-semibold transition-all outline-none" />
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Institusi</label>
+                              <input type="text" value={formData.institusi || (formData.roleName === "PEMIMPIN" ? formData.prodi : "")} onChange={(e) => setFormData({ ...formData, institusi: e.target.value })} placeholder="Universitas Komputer Indonesia" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
                             </div>
                           </div>
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Jabatan</label>
-                            <input type="text" value={formData.jabatan || ""} onChange={(e) => setFormData({ ...formData, jabatan: e.target.value })} placeholder={formData.roleName === "PEMIMPIN" ? "Rektor / Dekan / Pimpinan Utama" : "Ketua Task Force / Anggota Tim KKN"} className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-semibold transition-all outline-none" />
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jabatan</label>
+                            <input type="text" value={formData.jabatan || ""} onChange={(e) => setFormData({ ...formData, jabatan: e.target.value })} placeholder={formData.roleName === "PEMIMPIN" ? "Rektor / Dekan / Pimpinan Utama" : "Ketua Task Force / Anggota Tim KKN"} className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
                           </div>
                         </>
                       )}
@@ -1974,11 +1953,11 @@ const ManajemenPengguna: React.FC = () => {
                       {formData.roleName === "ADMIN_DLH" && (
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Provinsi Penugasan *</label>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Provinsi Penugasan *</label>
                             <select
                               value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
                               onChange={(e) => handleProvinsiSelect(e.target.value)}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                             >
                               {provinsiList.map((p: any) => (
                                 <option key={p.id} value={p.name || p.nama}>
@@ -1988,11 +1967,11 @@ const ManajemenPengguna: React.FC = () => {
                             </select>
                           </div>
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kota / Kabupaten Penugasan *</label>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kota / Kabupaten Penugasan *</label>
                             <select
                               value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
                               onChange={(e) => handleKabupatenSelect(e.target.value)}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                             >
                               {filteredKabupatenList.length === 0 ? (
                                 <option value="">-- Belum ada Kota/Kabupaten di Master Data --</option>
@@ -2011,11 +1990,11 @@ const ManajemenPengguna: React.FC = () => {
                         <>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Provinsi Penugasan *</label>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Provinsi Penugasan *</label>
                               <select
                                 value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
                                 onChange={(e) => handleProvinsiSelect(e.target.value)}
-                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                               >
                                 {provinsiList.map((p: any) => (
                                   <option key={p.id} value={p.name || p.nama}>
@@ -2025,11 +2004,11 @@ const ManajemenPengguna: React.FC = () => {
                               </select>
                             </div>
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kota / Kabupaten Penugasan *</label>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kota / Kabupaten Penugasan *</label>
                               <select
                                 value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
                                 onChange={(e) => handleKabupatenSelect(e.target.value)}
-                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                               >
                                 {filteredKabupatenList.length === 0 ? (
                                   <option value="">-- Belum ada Kota/Kabupaten di Master Data --</option>
@@ -2042,11 +2021,11 @@ const ManajemenPengguna: React.FC = () => {
                             </div>
                           </div>
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kecamatan Penugasan *</label>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kecamatan Penugasan *</label>
                             <select
                               value={formData.kecamatan || (filteredKecamatanList[0]?.name || "")}
                               onChange={(e) => setFormData({ ...formData, kecamatan: e.target.value })}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                             >
                               {filteredKecamatanList.length === 0 ? (
                                 <option value="">-- Belum ada Kecamatan di Master Data --</option>
@@ -2058,23 +2037,23 @@ const ManajemenPengguna: React.FC = () => {
                             </select>
                           </div>
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Cakupan Kelurahan Bawahan (Semua Kelurahan)</label>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Cakupan Kelurahan Bawahan (Semua Kelurahan)</label>
                             {(() => {
                               const curKec = formData.kecamatan || (filteredKecamatanList[0]?.name || "");
                               const kelsModal = filteredKelurahanList.map((kl: any) => getCleanKelName(kl.name || kl.nama));
                               return kelsModal.length > 0 ? (
                                 <>
-                                  <div className="flex flex-wrap gap-1.5 p-3 rounded-xl bg-emerald-50/50 border border-emerald-200/80">
+                                  <div className="flex flex-wrap gap-1.5 p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60">
                                     {kelsModal.map((kel: string) => (
-                                      <span key={kel} className="bg-emerald-100/80 text-emerald-800 px-2.5 py-1 rounded-lg text-[11px] border border-emerald-300/60 font-extrabold shadow-2xs">
+                                      <span key={kel} className="bg-emerald-100/80 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 px-2.5 py-1 rounded-lg text-[11px] border border-emerald-300/60 dark:border-emerald-700 font-extrabold shadow-2xs">
                                         Kel. {kel}
                                       </span>
                                     ))}
                                   </div>
-                                  <p className="text-[10px] text-slate-400 mt-1">Camat secara otomatis membawahi dan mengawasi seluruh {kelsModal.length} Kelurahan di {curKec}.</p>
+                                  <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Camat secara otomatis membawahi dan mengawasi seluruh {kelsModal.length} Kelurahan di {curKec}.</p>
                                 </>
                               ) : (
-                                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-400 text-xs italic font-medium">
+                                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-xs italic font-medium">
                                   Belum ada data Kelurahan terdaftar untuk {curKec || "kecamatan penugasan"} di Master Data.
                                 </div>
                               );
@@ -2088,11 +2067,11 @@ const ManajemenPengguna: React.FC = () => {
                         <>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Provinsi Penugasan *</label>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Provinsi Penugasan *</label>
                               <select
                                 value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
                                 onChange={(e) => handleProvinsiSelect(e.target.value)}
-                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                               >
                                 {provinsiList.map((p: any) => (
                                   <option key={p.id} value={p.name || p.nama}>
@@ -2102,11 +2081,11 @@ const ManajemenPengguna: React.FC = () => {
                               </select>
                             </div>
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kota / Kabupaten Penugasan *</label>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kota / Kabupaten Penugasan *</label>
                               <select
                                 value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
                                 onChange={(e) => handleKabupatenSelect(e.target.value)}
-                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                               >
                                 {filteredKabupatenList.length === 0 ? (
                                   <option value="">-- Belum ada Kota/Kabupaten di Master Data --</option>
@@ -2121,11 +2100,11 @@ const ManajemenPengguna: React.FC = () => {
 
                           {/* 1. Kecamatan (Dropdown) */}
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kecamatan Penugasan *</label>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kecamatan Penugasan *</label>
                             <select
                               value={formData.kecamatan || (filteredKecamatanList[0]?.name || "")}
                               onChange={(e) => handleKecamatanSelect(e.target.value)}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                             >
                               {filteredKecamatanList.length === 0 ? (
                                 <option value="">-- Belum ada Kecamatan di Master Data --</option>
@@ -2139,7 +2118,7 @@ const ManajemenPengguna: React.FC = () => {
 
                           {/* 2. Kelurahan (Dropdown - Cascading Level 1) */}
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kelurahan Penugasan *</label>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kelurahan Penugasan *</label>
                             <select
                               value={getCleanKelName(modalKelurahan)}
                               onChange={(e) => {
@@ -2174,7 +2153,7 @@ const ManajemenPengguna: React.FC = () => {
                                   };
                                 });
                               }}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                               disabled={filteredKelurahanList.length === 0}
                             >
                               {(() => {
@@ -2198,10 +2177,10 @@ const ManajemenPengguna: React.FC = () => {
                             </select>
                           </div>
 
-                          {/* 3. Rukun Warga (RW) (Dropdown - Cascading Level 2 derived from selected Kelurahan!) */}
+                          {/* 3. Rukun Warga (RW) */}
                           {["WARGA", "RW", "PETUGAS_RESIDU"].includes(formData.roleName) && (
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Rukun Warga Penugasan *</label>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Rukun Warga Penugasan *</label>
                               <select
                                 value={formData.rtRwId || ""}
                                 onChange={(e) => {
@@ -2224,7 +2203,7 @@ const ManajemenPengguna: React.FC = () => {
                                     };
                                   });
                                 }}
-                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                                 disabled={filteredRwsByKelurahan.length === 0}
                               >
                                 {filteredRwsByKelurahan.length === 0 ? (
@@ -2248,11 +2227,11 @@ const ManajemenPengguna: React.FC = () => {
                       {/* Petugas Residu Assignment for RW */}
                       {formData.roleName === "RW" && (
                         <div>
-                          <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Petugas Pemilah</label>
+                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Petugas Pemilah</label>
                           <select
                             value={formData.petugasResiduId || ""}
                             onChange={(e) => setFormData({ ...formData, petugasResiduId: e.target.value })}
-                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                           >
                             <option value="">-- Belum Ditugaskan --</option>
                             {petugasResiduList.map((p: any) => (
@@ -2267,13 +2246,13 @@ const ManajemenPengguna: React.FC = () => {
                       {/* PETUGAS_RESIDU Wilayah Penugasan */}
                       {formData.roleName === "PETUGAS_RESIDU" && (
                         <div>
-                          <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Wilayah Penugasan</label>
+                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Wilayah Penugasan</label>
                           <input
                             type="text"
                             value={formData.wilayah}
                             onChange={(e) => setFormData({ ...formData, wilayah: e.target.value })}
                             placeholder="TPS 3R Siliwangi, Jl. Siliwangi No. 10, Coblong, Kel. Cipaganti"
-                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-semibold transition-all outline-none"
+                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
                           />
                         </div>
                       )}
@@ -2281,15 +2260,15 @@ const ManajemenPengguna: React.FC = () => {
                       {/* Address for WARGA, RW, PETUGAS_RESIDU */}
                       {["WARGA", "RW", "PETUGAS_RESIDU"].includes(formData.roleName) && (
                         <div>
-                          <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Alamat Lengkap</label>
-                          <textarea rows={2} value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="Jl. Dipatiukur No. ..." className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-semibold transition-all outline-none resize-none" />
+                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Alamat Lengkap</label>
+                          <textarea rows={2} value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="Jl. Dipatiukur No. ..." className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none resize-none" />
                         </div>
                       )}
 
                       {/* Warga: Jumlah Anggota Keluarga */}
                       {formData.roleName === "WARGA" && (
                         <div>
-                          <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Jumlah Anggota Keluarga</label>
+                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jumlah Anggota Keluarga</label>
                           <input
                             type="number"
                             min="1"
@@ -2297,16 +2276,16 @@ const ManajemenPengguna: React.FC = () => {
                             value={formData.jumlahAnggotaKeluarga || ""}
                             onChange={(e) => setFormData({ ...formData, jumlahAnggotaKeluarga: e.target.value })}
                             placeholder="Contoh: 4"
-                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-semibold transition-all outline-none"
+                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
                           />
                         </div>
                       )}
 
-                      {/* Dynamic Multi-select RW for Mahasiswa (with Cascading Kelurahan Dropdown above it) */}
+                      {/* Dynamic Multi-select RW for Mahasiswa */}
                       {formData.roleName === "MAHASISWA_KKN" && (
                         <div className="space-y-3">
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Kelurahan Penugasan *</label>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kelurahan Penugasan *</label>
                             <select
                               value={getCleanKelName(modalKelurahan)}
                               onChange={(e) => {
@@ -2317,7 +2296,7 @@ const ManajemenPengguna: React.FC = () => {
                                   selectedRws: [],
                                 }));
                               }}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                               disabled={filteredKelurahanList.length === 0}
                             >
                               {(() => {
@@ -2343,14 +2322,14 @@ const ManajemenPengguna: React.FC = () => {
 
                           <div>
                             <div className="flex items-center justify-between mb-2">
-                              <label className="block text-[11px] font-bold text-slate-600">Wilayah Penugasan (RW)</label>
-                              <span className="text-[10px] font-extrabold text-[#009966] bg-[#009966]/10 px-2.5 py-0.5 rounded-full border border-[#009966]/20">
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">Wilayah Penugasan (RW)</label>
+                              <span className="text-[10px] font-extrabold text-[#009966] dark:text-emerald-400 bg-[#009966]/10 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-[#009966]/20 dark:border-emerald-800/60">
                                 Kel. {getCleanKelName(modalKelurahan) || "-"}
                               </span>
                             </div>
-                            <div className="grid grid-cols-5 gap-1.5 p-3 rounded-xl bg-slate-50/50 border border-slate-200 max-h-36 overflow-y-auto">
+                            <div className="grid grid-cols-5 gap-1.5 p-3 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 max-h-36 overflow-y-auto">
                               {filteredRwsByKelurahan.length === 0 ? (
-                                <div className="col-span-5 text-center text-slate-400 text-xs py-4">
+                                <div className="col-span-5 text-center text-slate-400 dark:text-slate-500 text-xs py-4">
                                   Belum ada data RW untuk kelurahan ini.
                                 </div>
                               ) : (
@@ -2359,7 +2338,7 @@ const ManajemenPengguna: React.FC = () => {
                                   const rwCleanName = area.cleanName || (area.name.split("(")[0].trim().startsWith("RW") ? area.name.split("(")[0].trim() : `RW ${rwNum}`);
                                   const isChecked = formData.selectedRws.includes(rwNum) || formData.selectedRws.includes(rwCleanName);
                                   return (
-                                    <label key={area.id || rwNum} className={`flex items-center justify-center gap-1 py-1.5 rounded-lg border text-[10px] font-bold cursor-pointer transition-all ${isChecked ? "bg-[#009966]/10 text-[#009966] border-[#009966]/30 shadow-2xs" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}`}>
+                                    <label key={area.id || rwNum} className={`flex items-center justify-center gap-1 py-1.5 rounded-lg border text-[10px] font-bold cursor-pointer transition-all ${isChecked ? "bg-[#009966]/10 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border-[#009966]/30 dark:border-emerald-800/80 shadow-2xs" : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60"}`}>
                                       <input type="checkbox" checked={isChecked} onChange={() => handleRwToggle(rwNum)} className="sr-only" />
                                       {rwCleanName}
                                     </label>
@@ -2377,20 +2356,20 @@ const ManajemenPengguna: React.FC = () => {
                 {/* ── Section: Keamanan Akun ── */}
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <Shield size={14} className="text-slate-400" />
-                    <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Keamanan Akun</span>
+                    <Shield size={14} className="text-slate-400 dark:text-slate-500" />
+                    <span className="text-[11px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Keamanan Akun</span>
                   </div>
                   <div className="space-y-3">
                     {/* Password */}
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1.5">
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
                         Kata Sandi {modalType === "add" && <span className="text-rose-500">*</span>}
-                        {modalType === "edit" && <span className="text-[10px] text-slate-400 font-normal ml-1">(Kosongkan jika tidak diubah)</span>}
+                        {modalType === "edit" && <span className="text-[10px] text-slate-400 dark:text-slate-400 font-normal ml-1">(Kosongkan jika tidak diubah)</span>}
                       </label>
                       <div className="relative">
-                        <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input type={showPassword ? "text" : "password"} required={modalType === "add"} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Minimal 8 karakter" className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-semibold transition-all outline-none" />
-                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer">
+                        <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                        <input type={showPassword ? "text" : "password"} required={modalType === "add"} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Minimal 8 karakter" className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
                           {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                       </div>
@@ -2400,7 +2379,7 @@ const ManajemenPengguna: React.FC = () => {
                         <div className="mt-2">
                           <div className="flex gap-1 mb-1.5">
                             {[1, 2, 3, 4].map((i) => (
-                              <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= passwordStrength.level ? passwordStrength.color : "bg-slate-200"}`} />
+                              <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= passwordStrength.level ? passwordStrength.color : "bg-slate-200 dark:bg-slate-700"}`} />
                             ))}
                           </div>
                           <div className="flex items-center justify-between">
@@ -2413,7 +2392,7 @@ const ManajemenPengguna: React.FC = () => {
 
                       {/* Password Rules Checklist */}
                       {formData.password && passwordRules && (
-                        <div className="mt-2 p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                        <div className="mt-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1">
                           {[
                             { key: "minLength", label: "Minimal 8 karakter" },
                             { key: "hasUppercase", label: "Mengandung huruf besar (A-Z)" },
@@ -2423,7 +2402,7 @@ const ManajemenPengguna: React.FC = () => {
                           ].map(({ key, label }) => (
                             <div key={key} className="flex items-center gap-2">
                               <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${
-                                (passwordRules as any)[key] ? "bg-emerald-500 text-white" : "bg-slate-300 text-white"
+                                (passwordRules as any)[key] ? "bg-emerald-500 text-white" : "bg-slate-300 dark:bg-slate-700 text-white"
                               }`}>
                                 {(passwordRules as any)[key] ? (
                                   <svg className="w-2 h-2" viewBox="0 0 12 12" fill="none"><path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -2431,7 +2410,7 @@ const ManajemenPengguna: React.FC = () => {
                                   <svg className="w-2 h-2" viewBox="0 0 12 12" fill="none"><path d="M9 3L3 9M3 3l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                                 )}
                               </div>
-                              <span className={`text-[10px] font-semibold ${(passwordRules as any)[key] ? "text-emerald-600" : "text-slate-400"}`}>{label}</span>
+                              <span className={`text-[10px] font-semibold ${(passwordRules as any)[key] ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}`}>{label}</span>
                             </div>
                           ))}
                         </div>
@@ -2441,22 +2420,22 @@ const ManajemenPengguna: React.FC = () => {
                     {/* Confirm Password */}
                     {(modalType === "add" || formData.password) && (
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-600 mb-1.5">
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
                           Konfirmasi Kata Sandi <span className="text-rose-500">*</span>
                         </label>
                         <div className="relative">
-                          <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                          <input type={showConfirmPassword ? "text" : "password"} required={modalType === "add" || !!formData.password} value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} placeholder="Ulangi kata sandi" className={`w-full h-10 pl-10 pr-10 rounded-xl border bg-slate-50/50 focus:ring-2 focus:bg-white text-xs font-semibold transition-all outline-none ${
+                          <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                          <input type={showConfirmPassword ? "text" : "password"} required={modalType === "add" || !!formData.password} value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} placeholder="Ulangi kata sandi" className={`w-full h-10 pl-10 pr-10 rounded-xl border dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold transition-all outline-none ${
                             formData.confirmPassword
-                              ? (passwordRules?.matches ? "border-emerald-300 focus:border-emerald-400 focus:ring-emerald-100" : "border-rose-300 focus:border-rose-400 focus:ring-rose-100")
-                              : "border-slate-200 focus:border-[#009966] focus:ring-[#009966]/10"
+                              ? (passwordRules?.matches ? "border-emerald-300 dark:border-emerald-700 focus:border-emerald-400 focus:ring-emerald-100 dark:focus:ring-emerald-950" : "border-rose-300 dark:border-rose-700 focus:border-rose-400 focus:ring-rose-100 dark:focus:ring-rose-950")
+                              : "border-slate-200 dark:border-slate-700 focus:border-[#009966] focus:ring-[#009966]/10"
                           }`} />
-                          <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer">
+                          <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
                             {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                           </button>
                         </div>
                         {formData.confirmPassword && (
-                          <p className={`text-[10px] font-semibold mt-1 ${passwordRules?.matches ? "text-emerald-500" : "text-rose-500"}`}>
+                          <p className={`text-[10px] font-semibold mt-1 ${passwordRules?.matches ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
                             {passwordRules?.matches ? "✓ Kata sandi cocok" : "✗ Kata sandi tidak cocok"}
                           </p>
                         )}
@@ -2466,25 +2445,25 @@ const ManajemenPengguna: React.FC = () => {
                     {/* Status */}
                     {/* Status Akun Segmented Control */}
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Status Akun</label>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Status Akun</label>
                       {(() => {
                         const isSelfAccountInModal = modalType === "edit" && user && selectedUser && (selectedUser.id === user.id || (selectedUser.phone && user.phone && selectedUser.phone === user.phone));
                         return (
                           <>
-                            <div className="grid grid-cols-2 gap-2.5 p-1 bg-slate-100/80 rounded-2xl border border-slate-200/80">
+                            <div className="grid grid-cols-2 gap-2.5 p-1 bg-slate-100/80 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700">
                               <button
                                 type="button"
                                 onClick={() => setFormData({ ...formData, status: "Aktif" })}
                                 className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
                                   formData.status === "Aktif" || formData.status === "ACTIVE" || !formData.status
-                                    ? "bg-white text-emerald-700 shadow-sm border border-emerald-200 ring-2 ring-emerald-500/20"
-                                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                                    ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 shadow-sm border border-emerald-200 dark:border-emerald-800/80 ring-2 ring-emerald-500/20"
+                                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50"
                                 }`}
                               >
                                 <span className={`w-2.5 h-2.5 rounded-full ${
                                   formData.status === "Aktif" || formData.status === "ACTIVE" || !formData.status
                                     ? "bg-emerald-500 animate-pulse"
-                                    : "bg-slate-300"
+                                    : "bg-slate-300 dark:bg-slate-600"
                                 }`} />
                                 <span>Aktif</span>
                               </button>
@@ -2498,22 +2477,22 @@ const ManajemenPengguna: React.FC = () => {
                                 }}
                                 className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all ${
                                   isSelfAccountInModal
-                                    ? "opacity-50 cursor-not-allowed bg-slate-200 text-slate-400"
+                                    ? "opacity-50 cursor-not-allowed bg-slate-200 dark:bg-slate-700 text-slate-400"
                                     : formData.status === "Nonaktif"
-                                      ? "bg-white text-rose-700 shadow-sm border border-rose-200 ring-2 ring-rose-500/20 cursor-pointer"
-                                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 cursor-pointer"
+                                      ? "bg-white dark:bg-slate-900 text-rose-700 dark:text-rose-300 shadow-sm border border-rose-200 dark:border-rose-800/80 ring-2 ring-rose-500/20 cursor-pointer"
+                                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 cursor-pointer"
                                 }`}
                               >
                                 <span className={`w-2.5 h-2.5 rounded-full ${
                                   formData.status === "Nonaktif"
                                     ? "bg-rose-500 animate-pulse"
-                                    : "bg-slate-300"
+                                    : "bg-slate-300 dark:bg-slate-600"
                                 }`} />
                                 <span>Nonaktif</span>
                               </button>
                             </div>
                             {isSelfAccountInModal && (
-                              <p className="text-[10px] font-bold text-amber-700 bg-amber-50 p-2 rounded-xl border border-amber-200/80 flex items-center gap-1.5 mt-2">
+                              <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 p-2 rounded-xl border border-amber-200/80 dark:border-amber-800/60 flex items-center gap-1.5 mt-2">
                                 <AlertTriangle size={13} className="shrink-0 text-amber-500" />
                                 <span>Ini adalah akun Anda yang sedang login. Status akun tidak dapat dinonaktifkan demi keamanan.</span>
                               </p>
@@ -2527,8 +2506,8 @@ const ManajemenPengguna: React.FC = () => {
               </div>
 
               {/* Modal Footer */}
-              <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-2">
-                <button type="button" onClick={handleCloseModal} className="px-5 py-2.5 rounded-xl font-extrabold text-xs text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer">
+              <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-end gap-2">
+                <button type="button" onClick={handleCloseModal} className="px-5 py-2.5 rounded-xl font-extrabold text-xs text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
                   Batal
                 </button>
                 <button type="submit" disabled={isSubmitting || !isPasswordValid} className={`px-5 py-2.5 text-white rounded-xl font-extrabold text-xs disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-sm transition-all ${
@@ -2543,19 +2522,19 @@ const ManajemenPengguna: React.FC = () => {
         </div>
       )}      {/* Delete Modal */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-lg w-full max-w-sm overflow-hidden flex flex-col p-6 text-center">
-            <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-4 border border-rose-200">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg w-full max-w-sm overflow-hidden flex flex-col p-6 text-center border border-slate-200 dark:border-slate-800">
+            <div className="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto mb-4 border border-rose-200 dark:border-rose-800/80">
               <AlertTriangle size={24} />
             </div>
-            <h3 className="text-base font-extrabold text-slate-800 mb-1">Hapus Pengguna</h3>
-            <p className="text-xs text-slate-500 mb-6">
+            <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 mb-1">Hapus Pengguna</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
               Apakah Anda yakin ingin menghapus akun <strong>{userToDelete?.name}</strong>?
             </p>
             <div className="flex justify-center gap-3">
               <button
                 onClick={closeDeleteModal}
-                className="flex-1 px-4 py-2 rounded-xl font-extrabold text-xs border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer"
+                className="flex-1 px-4 py-2 rounded-xl font-extrabold text-xs border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
               >
                 Batal
               </button>
