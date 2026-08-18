@@ -361,7 +361,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           <div class="meta-item"><span class="meta-label">Program Studi:</span><span class="meta-value">${studentInfo?.programStudi || "-"}</span></div>
           <div class="meta-item"><span class="meta-label">Kelompok:</span><span class="meta-value">${studentInfo?.kelompok || "-"}</span></div>
           <div class="meta-item"><span class="meta-label">Wilayah Tugas:</span><span class="meta-value">${studentInfo?.rw || "-"}, Kel. ${studentInfo?.kelurahan || "-"}</span></div>
-          <div class="meta-item"><span class="meta-label">Dosen Pembimbing:</span><span class="meta-value">${studentInfo?.dplNama || "-"}</span></div>
+          <div class="meta-item"><span class="meta-label">Dosen Pendamping:</span><span class="meta-value">${studentInfo?.dplNama || "-"}</span></div>
           <div class="meta-item"><span class="meta-label">Mitra / Pembimbing:</span><span class="meta-value">${studentInfo?.namaMitraPenilai || scores.namaMitraPenilai || "Mitra Lapangan"}</span></div>
         </div>
 
@@ -391,7 +391,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         </table>
 
         <!-- Tabel DPL (30%) -->
-        <h4 style="margin: 6px 0 3px 0; font-size: 9pt; color: #0f172a; text-transform: uppercase;">B. Penilaian Dosen Pembimbing Lapangan (Bobot 30%)</h4>
+        <h4 style="margin: 6px 0 3px 0; font-size: 9pt; color: #0f172a; text-transform: uppercase;">B. Penilaian Dosen Pendamping Lapangan (Bobot 30%)</h4>
         <table>
           <thead>
             <tr>
@@ -433,9 +433,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             <p style="font-size: 7.5pt; color: #64748b; margin: 0;">Mitra Pembimbing</p>
           </div>
           <div class="sig-box">
-            <p>Dosen Pembimbing Lapangan,</p>
+            <p>Dosen Pendamping Lapangan,</p>
             <div class="sig-space"></div>
-            <p style="text-decoration: underline; font-weight: bold; margin: 0;">${studentInfo?.dplNama || "Dosen Pembimbing Lapangan"}</p>
+            <p style="text-decoration: underline; font-weight: bold; margin: 0;">${studentInfo?.dplNama || "Dosen Pendamping Lapangan"}</p>
             <p style="font-size: 7.5pt; color: #64748b; margin: 0;">NIP. ${studentInfo?.dplNip || "-"}</p>
           </div>
         </div>
@@ -787,7 +787,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <div className="p-4 border-b border-slate-100 bg-amber-50/50 flex items-center justify-between">
                     <h3 className="text-sm font-black text-amber-950 flex items-center gap-2">
                       <GraduationCap size={17} className="text-amber-600" />
-                      <span>Aspek Dosen Pembimbing (DPL) &bull; Bobot 30%</span>
+                      <span>Aspek Dosen Pendamping (DPL) &bull; Bobot 30%</span>
                     </h3>
                     {!canEditDpl && (
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-700">

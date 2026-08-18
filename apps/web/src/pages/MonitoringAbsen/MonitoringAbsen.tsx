@@ -8,7 +8,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import {
   MapContainer,
-  TileLayer,
   Marker,
   Popup,
   Circle,
@@ -17,6 +16,7 @@ import {
   useMap,
   useMapEvents,
 } from "react-leaflet";
+import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import L from "leaflet";
 import {
   Loader2,
@@ -1186,7 +1186,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 Monitoring & Validasi Presensi Mahasiswa
               </h1>
               <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                {isDpl ? "Dosen Pembimbing Lapangan (DPL)" : "Monitoring Wilayah"}
+                {isDpl ? "Dosen Pendamping Lapangan (DPL)" : "Monitoring Wilayah"}
               </span>
             </div>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
@@ -1507,10 +1507,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           <div className="h-[340px] relative z-0">
             <MapContainer center={mapCenter} zoom={mapZoom} className="w-full h-full">
               <ChangeMapView center={mapCenter} zoom={mapZoom} />
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
+              <ThemeTileLayer />
 
               {/* Boundary 6 Kelurahan */}
               {Object.values(KELURAHAN_GEODATA).map((kg) => (
@@ -2432,10 +2429,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           zoom={15}
                           style={{ height: "100%", width: "100%" }}
                         >
-                          <TileLayer
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                          />
+                          <ThemeTileLayer />
                           <DualGeofencePickerModalMap
                             mode={geofenceMode}
                             points={selectedPos || []}

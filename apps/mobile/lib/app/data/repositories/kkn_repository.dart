@@ -66,7 +66,7 @@ abstract class KknRepository {
   /// Mengirim laporan pemanfaatan hasil sampah ke backend
   Future<bool> submitPemanfaatanSampah(PemanfaatanSampahRequest request);
 
-  /// Mengirim pengajuan izin/sakit ke DPL (Dosen Pembimbing Lapangan)
+  /// Mengirim pengajuan izin/sakit ke DPL (Dosen Pendamping Lapangan)
   /// POST /api/v1/kkn/pengajuan-izin
   Future<void> submitPengajuanIzin({
     String? scheduleId,

@@ -26,7 +26,8 @@ import {
   FileText,
   Award,
 } from "lucide-react";
-import { MapContainer, TileLayer, Marker, Popup, Polygon, useMapEvents, useMap } from "react-leaflet";
+import { MapContainer, Marker, Popup, Polygon, useMapEvents, useMap } from "react-leaflet";
+import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import { KELURAHAN_GEODATA } from "../../constants/coblongGeoData";
 import L from "leaflet";
 
@@ -644,12 +645,12 @@ export const DplDashboardPage: React.FC = () => {
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-xs font-bold text-emerald-700">
             <GraduationCap size={16} />
-            <span>Portal Akademik & Pembimbing Lapangan</span>
+            <span>Portal Akademik & Dosen Pendamping Lapangan</span>
             <span className="text-slate-300">•</span>
             <span className="text-slate-500 font-normal">Kecamatan Coblong</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            Dasbor Pembimbing Lapangan (DPL)
+            Dasbor
           </h1>
           <p className="text-slate-500 text-xs sm:text-sm max-w-2xl">
             Rekapitulasi portofolio mahasiswa KKN, verifikasi presensi lapangan, dan penilaian akademik wilayah Kecamatan Coblong.
@@ -817,10 +818,8 @@ export const DplDashboardPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Presensi Sesi Aggregates */}
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-1 text-xs font-medium">
-                <span className="text-emerald-700 font-bold">{gradeDistribution.totalHadir} Hadir</span>
-                <span className="text-slate-300">•</span>
+              {/* Presensi Sesi Aggregates (Hanya Sakit, Izin, Tanpa Keterangan) */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 flex flex-wrap items-center justify-around gap-1 text-xs font-medium">
                 <span className="text-blue-700 font-bold">{gradeDistribution.totalSakit} Sakit</span>
                 <span className="text-slate-300">•</span>
                 <span className="text-purple-700 font-bold">{gradeDistribution.totalIzin} Izin</span>
@@ -1470,10 +1469,10 @@ export const DplDashboardPage: React.FC = () => {
                               {st.attendanceRate}%
                             </span>
                             <span 
-                              title={`Rincian: ${st.attendedCount} Hadir, ${st.sickCount} Sakit, ${st.izinCount} Izin, ${st.alphaCount} Tanpa Keterangan (Alpha)`}
+                              title={`Rincian: ${st.attendedCount} Hadir, ${st.sickCount} Sakit, ${st.izinCount} Izin, ${st.alphaCount} Tanpa Keterangan`}
                               className="text-[11px] text-slate-500 font-mono font-medium cursor-help hover:text-slate-900"
                             >
-                              ({st.attendedCount}H / {st.sickCount}S / {st.izinCount}I / {st.alphaCount} Tanpa Keterangan)
+                              ({st.attendedCount}H / {st.sickCount}S / {st.izinCount}I / {st.alphaCount}TK)
                             </span>
                           </div>
                         </td>
@@ -1827,10 +1826,7 @@ export const DplDashboardPage: React.FC = () => {
                 selectedKelurahan={selectedKelurahanMap}
                 setSelectedKelurahan={setSelectedKelurahanMap}
               />
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
+              <ThemeTileLayer />
 
               {/* RENDER KELURAHAN BOUNDARY POLYGONS (ZONA PER DAERAH KECAMATAN COBLONG) */}
               {Object.values(KELURAHAN_GEODATA).map((kelGeo) => {

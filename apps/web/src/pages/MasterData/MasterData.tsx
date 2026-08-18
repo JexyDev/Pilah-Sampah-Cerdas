@@ -452,7 +452,7 @@ const MasterData: React.FC = () => {
                   <span className="font-bold text-blue-700">{selectedMhsDetail.studentProfile?.kelompok?.name || "Belum Plotting"}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Dosen Pembimbing (DPL)</span>
+                  <span className="text-slate-500">Dosen Pendamping Lapangan (DPL)</span>
                   <span className="font-semibold text-purple-700">{selectedMhsDetail.studentProfile?.kelompok?.dpl?.name || "Belum Ada DPL"}</span>
                 </div>
                 <div className="flex justify-between py-1">

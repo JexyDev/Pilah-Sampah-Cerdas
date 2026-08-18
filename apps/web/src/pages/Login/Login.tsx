@@ -612,7 +612,7 @@ const Login: React.FC = () => {
         LURAH: "Lurah",
         RW: "Pengurus RW",
         RT: "Pengurus RT",
-        DPL: "Dosen Pembimbing (DPL)",
+        DPL: "Dosen Pendamping Lapangan (DPL)",
         PEMIMPIN: "Pimpinan",
         PANITIA_TASKFORCE: "Task Force",
       };
@@ -630,7 +630,7 @@ const Login: React.FC = () => {
         setPassword("");
         setTimeout(() => passwordInputRef.current?.focus(), 50);
       } else if (storeErr === "ROLE_NOT_ALLOWED_ON_WEB") {
-        triggerToast("Akses Web khusus Admin, Rukun Warga, Dosen Pembimbing Lapangan (DPL), dan Pimpinan. Warga, Mahasiswa, dan Petugas Residu hanya dapat menggunakan aplikasi Mobile.", "warning");
+        triggerToast("Akses Web khusus Admin, Rukun Warga, Dosen Pendamping Lapangan (DPL), dan Pimpinan. Warga, Mahasiswa, dan Petugas Residu hanya dapat menggunakan aplikasi Mobile.", "warning");
         setIdentifierError("Akses Web ditutup untuk peran ini (Gunakan Aplikasi Mobile)");
       } else if (storeErr === "USER_INACTIVE") {
         triggerToast("Akun Anda belum aktif atau telah dinonaktifkan.", "warning");

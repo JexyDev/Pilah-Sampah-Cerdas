@@ -26,7 +26,7 @@ const ROLE_LABEL_MAP: Record<string, string> = {
   RW: "Rukun Warga",
   PEMIMPIN: "Pimpinan",
   PANITIA_TASKFORCE: "Task Force",
-  DPL: "Dosen Pembimbing Lapangan",
+  DPL: "Dosen Pendamping Lapangan",
   PETUGAS_RESIDU: "Petugas Pemilah",
   MAHASISWA_KKN: "Mahasiswa",
   WARGA: "Warga",
@@ -1326,7 +1326,7 @@ const ManajemenPengguna: React.FC = () => {
                     <th className="py-3 px-4">PROGRAM STUDI</th>
                     <th className="py-3 px-4">NO. HP</th>
                     <th className="py-3 px-4">KELOMPOK KKN</th>
-                    <th className="py-3 px-4">DOSEN PEMBIMBING</th>
+                    <th className="py-3 px-4">DOSEN PENDAMPING</th>
                     <th className="py-3 px-4">WILAYAH PENUGASAN</th>
                     <th className="py-3 px-4 text-center">STATUS</th>
                     {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
@@ -1897,7 +1897,7 @@ const ManajemenPengguna: React.FC = () => {
                           </div>
 
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Dosen Pembimbing Lapangan (DPL)</label>
+                            <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Dosen Pendamping Lapangan (DPL)</label>
                             <select
                               value={formData.dplId || ""}
                               onChange={(e) => {
@@ -1922,7 +1922,7 @@ const ManajemenPengguna: React.FC = () => {
                               }}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white text-xs font-bold cursor-pointer transition-all outline-none"
                             >
-                              <option value="">-- Tanpa Dosen Pembimbing --</option>
+                              <option value="">-- Tanpa Dosen Pendamping --</option>
                               {dplList.map((d: any) => (
                                 <option key={d.id} value={d.id}>
                                   {d.name} {d.nip ? `(NIP: ${d.nip})` : ""} {d.programStudi ? `- ${cleanProdiName(d.programStudi)}` : ""}

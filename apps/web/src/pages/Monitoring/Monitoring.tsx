@@ -11,7 +11,8 @@
  */
 
 import React, { useEffect, useState, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, Tooltip, useMapEvents } from "react-leaflet";
+import { MapContainer, Marker, Popup, Circle, Polygon, Tooltip, useMapEvents } from "react-leaflet";
+import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useMonitoringStore } from "../../store/useMonitoringStore";
@@ -876,8 +877,8 @@ const Monitoring: React.FC = () => {
               <MapFlyTo target={flyTarget} />
               <MapEvents setZoom={setMapZoom} setSelectedKelurahan={setSelectedMapKelurahan} />
 
-              <TileLayer
-                url={
+              <ThemeTileLayer
+                lightUrl={
                   mapTileProvider === "google_vector"
                     ? "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
                     : mapTileProvider === "google_satellite"

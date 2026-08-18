@@ -254,6 +254,7 @@ export class AuthRepository {
         Lurah: "LURAH",
         "Rukun Warga": "RW",
         "Rukun Tetangga": "RT",
+        "Dosen Pendamping Lapangan": "DPL",
         "Dosen Pembimbing Lapangan": "DPL",
         "Petugas Residu": "PETUGAS_RESIDU",
         Mahasiswa: "MAHASISWA_KKN",

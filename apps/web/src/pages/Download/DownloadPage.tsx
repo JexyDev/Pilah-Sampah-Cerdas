@@ -576,7 +576,7 @@ const DownloadPage: React.FC = () => {
               <li><Link to="/login" className="hover:text-white transition">Portal Camat</Link></li>
               <li><Link to="/login" className="hover:text-white transition">Portal Lurah</Link></li>
               <li><Link to="/login" className="hover:text-white transition">Portal Rukun Warga</Link></li>
-              <li><Link to="/login" className="hover:text-white transition">Portal Dosen Pembimbing Lapangan</Link></li>
+              <li><Link to="/login" className="hover:text-white transition">Portal Dosen Pendamping Lapangan</Link></li>
               <li><Link to="/login" className="hover:text-white transition">Monitoring Data Sampah</Link></li>
               <li><Link to="/login" className="hover:text-white transition">Pendampingan Kuliah Kerja Nyata</Link></li>
             </ul>

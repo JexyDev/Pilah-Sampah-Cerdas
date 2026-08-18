@@ -53,8 +53,8 @@ const Informasi: React.FC = () => {
       case "DPL":
       case "DOSEN_PEMBIMBING":
         return {
-          title: "Dosen Pembimbing Lapangan (DPL)",
-          desc: "Panduan pembimbingan akademik, verifikasi logbook presensi, validasi pengajuan izin mahasiswa, dan penginputan nilai akhir program KKN.",
+          title: "Dosen Pendamping Lapangan (DPL)",
+          desc: "Panduan pendampingan akademik, verifikasi logbook presensi, validasi pengajuan izin mahasiswa, dan penginputan nilai akhir program KKN.",
           icon: GraduationCap,
           color: "bg-indigo-50 text-indigo-700 border-indigo-200",
         };
@@ -256,7 +256,7 @@ const Informasi: React.FC = () => {
                       <h3 className="font-extrabold text-base text-slate-900">1. Penilaian Kinerja Mahasiswa KKN</h3>
                     </div>
                     <p className="text-xs text-slate-600 leading-relaxed">
-                      Buka menu <strong>Dasbor DPL</strong> &rarr; Tab <strong>Mahasiswa &amp; Nilai</strong>. Anda dapat melihat kehadiran, partisipasi dampingan warga, dan memasukkan nilai akhir mahasiswa bimbingan secara langsung.
+                      Buka menu <strong>Dasbor</strong> &rarr; Tab <strong>Mahasiswa &amp; Nilai</strong>. Anda dapat melihat kehadiran, partisipasi dampingan warga, dan memasukkan nilai akhir mahasiswa bimbingan secara langsung.
                     </p>
                   </div>
 
@@ -626,7 +626,7 @@ const Informasi: React.FC = () => {
                 {[
                   { role: "Warga", icon: Users, desc: "Akses Mobile: Foto sampah AI, scan QR Tempat Sampah, riwayat setoran, poin reward, dan ide daur ulang." },
                   { role: "Mahasiswa KKN", icon: GraduationCap, desc: "Akses Mobile & Web: Presensi GPS, pendampingan aktivasi QR warga, verifikasi tempat sampah, dan pengisian survei." },
-                  { role: "Dosen Pembimbing (DPL)", icon: UserCheck, desc: "Akses Web Portal: Monitoring mahasiswa bimbingan, penilaian kinerja KKN, validasi permohonan izin/sakit." },
+                  { role: "Dosen Pendamping Lapangan (DPL)", icon: UserCheck, desc: "Akses Web Portal: Monitoring mahasiswa bimbingan, penilaian kinerja KKN, validasi permohonan izin/sakit." },
                   { role: "Petugas Residu", icon: Truck, desc: "Akses Mobile & Web: Jadwal pengangkutan, rute TPS, klaim tugas penjemputan, dan input timbangan fisik." },
                   { role: "Rukun Warga (RW)", icon: Building2, desc: "Akses Web: Persetujuan tempat sampah warga, monitoring kepatuhan RW, fasilitas pengolahan, dan ide inovasi." },
                   { role: "Lurah & Camat", icon: Building, desc: "Akses Web Read-Only: Monitoring spasial agregasi wilayah, statistik median kepatuhan, dan eskalasi layanan." },

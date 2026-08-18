@@ -188,7 +188,7 @@ export const penilaianKknService = {
         kelompokId: kelompok?.id || "",
         rw: rw?.name || "RW -",
         kelurahan: kelurahan?.name || "Coblong",
-        dplNama: dpl?.name || kelompok?.dplNamaMentah || "Dosen Pembimbing Lapangan",
+        dplNama: dpl?.name || kelompok?.dplNamaMentah || "Dosen Pendamping Lapangan",
         dplNip: dpl?.nip || "-",
         periodeKkn: "03 - 31 Agustus 2026",
         namaMitraPenilai: assessment.namaMitraPenilai || namaMitra,

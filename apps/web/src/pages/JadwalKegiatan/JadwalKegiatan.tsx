@@ -32,7 +32,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap, Polygon, Polyline, Circle } from "react-leaflet";
+import { MapContainer, Marker, useMapEvents, useMap, Polygon, Polyline, Circle } from "react-leaflet";
+import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import L from "leaflet";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import {
@@ -1246,10 +1247,7 @@ const JadwalKegiatan: React.FC = () => {
                         zoom={15}
                         style={{ height: "100%", width: "100%" }}
                       >
-                        <TileLayer
-                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        />
+                        <ThemeTileLayer />
                         <DualGeofencePickerMap
                           mode={geofenceMode}
                           points={formData.polygon || []}

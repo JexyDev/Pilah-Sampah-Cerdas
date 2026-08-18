@@ -40,12 +40,12 @@ import {
 } from "lucide-react";
 import {
   MapContainer,
-  TileLayer,
   Marker,
   Popup,
   Polygon,
   useMap,
 } from "react-leaflet";
+import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import L from "leaflet";
 import {
   CoblongGeo,
@@ -1030,10 +1030,7 @@ const KknDashboard: React.FC = () => {
             className="w-full h-full z-0"
           >
             <MapFlyToController center={mapCenter} zoom={mapZoom} />
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
+            <ThemeTileLayer />
 
             {/* 1. KELURAHAN BOUNDARY POLYGONS */}
             {showPolygons &&

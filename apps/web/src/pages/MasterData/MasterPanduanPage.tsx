@@ -22,7 +22,7 @@ const ROLE_OPTIONS = [
   { value: "MAHASISWA_KKN", label: "Mahasiswa KKN" },
   { value: "RW", label: "Pengurus RW / RT" },
   { value: "PETUGAS_RESIDU", label: "Petugas Residu" },
-  { value: "DPL", label: "Dosen Pembimbing Lapangan" },
+  { value: "DPL", label: "Dosen Pendamping Lapangan" },
   { value: "UMUM", label: "Panduan Umum & SOP" },
 ];
 
@@ -375,7 +375,7 @@ export const MasterPanduanPage: React.FC = () => {
                   <option value="MAHASISWA_KKN">Mahasiswa KKN</option>
                   <option value="RW">Pengurus RW / RT</option>
                   <option value="PETUGAS_RESIDU">Petugas Residu</option>
-                  <option value="DPL">Dosen Pembimbing Lapangan (DPL)</option>
+                  <option value="DPL">Dosen Pendamping Lapangan (DPL)</option>
                   <option value="UMUM">Umum & SOP</option>
                 </select>
               </div>

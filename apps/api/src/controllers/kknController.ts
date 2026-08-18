@@ -177,7 +177,7 @@ export class KknController {
       });
       res.status(201).json({
         success: true,
-        message: "Pengajuan izin berhasil dikirim. Menunggu verifikasi Dosen Pembimbing Lapangan (DPL).",
+        message: "Pengajuan izin berhasil dikirim. Menunggu verifikasi Dosen Pendamping Lapangan (DPL).",
         data,
       });
     } catch (error: any) {

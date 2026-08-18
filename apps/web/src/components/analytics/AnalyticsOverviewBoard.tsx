@@ -635,9 +635,9 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           scoreHeader="Rata-rata Skor"
         />
 
-        {/* 7. Tabel Peringkat Dosen Pembimbing (DPL) */}
+        {/* 7. Tabel Peringkat Dosen Pendamping Lapangan (DPL) */}
         <TableSection
-          title="Peringkat Dosen Pembimbing Lapangan (DPL)"
+          title="Peringkat Dosen Pendamping Lapangan (DPL)"
           subtitle="Tabel pencapaian &amp; skor rata-rata binaan DPL"
           icon={FileText}
           iconBgColor="bg-[#009966]/10 border-[#009966]/20"

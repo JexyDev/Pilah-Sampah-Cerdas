@@ -16,7 +16,8 @@ import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import KategoriSampah from "../KategoriSampah/KategoriSampah";
-import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, Tooltip, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, Marker, Popup, Circle, Polygon, Tooltip, useMap, useMapEvents } from "react-leaflet";
+import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import L from "leaflet";
 import {
   KELURAHAN_GEODATA,
@@ -1006,9 +1007,9 @@ const ManajemenTempatSampah: React.FC = () => {
                 <MapFlyTo target={flyTarget} />
                 <MapEvents setZoom={setMapZoom} setSelectedKelurahan={setSelectedMapKelurahan} />
 
-                {/* Dynamically Resolved Tile Provider (Google Maps Vector / Satelit / CartoDB / OSM) */}
-                <TileLayer
-                  url={
+                {/* Dynamically Resolved Tile Provider (Google Maps Vector / Satelit / CartoDB / OSM / Dark Matter) */}
+                <ThemeTileLayer
+                  lightUrl={
                     mapTileProvider === "google_vector"
                       ? "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
                       : mapTileProvider === "google_satellite"

@@ -304,7 +304,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "OPERASIONAL",
       items: [
-        { to: "/dasbor", icon: LayoutDashboard, label: "Dasbor Utama", allowed: ALL_ROLES },
+        {
+          to: "/dasbor",
+          icon: LayoutDashboard,
+          label: userRole === "DPL" || userRole === "DOSEN_PEMBIMBING" ? "Dasbor" : "Dasbor Utama",
+          allowed: ALL_ROLES,
+        },
         { to: "/monitoring-wilayah", icon: MapPin, label: "Peta Wilayah", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU"] as UserRole[] },
       ],
     },
@@ -498,7 +503,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             { to: "/master-pengguna?role=su", label: "Super User" },
             { to: "/master-pengguna?role=pimpinan", label: "Pimpinan" },
             { to: "/master-pengguna?role=taskforce", label: "Task Force" },
-            { to: "/master-pengguna?role=dpl", label: "Dosen Pembimbing Lapangan" },
+            { to: "/master-pengguna?role=dpl", label: "Dosen Pendamping Lapangan" },
             { to: "/master-pengguna?role=dlh", label: "Dinas Lingkungan Hidup" },
             { to: "/master-pengguna?role=camat", label: "Camat" },
             { to: "/master-pengguna?role=lurah", label: "Lurah" },

@@ -471,7 +471,7 @@ export const ProgramKerjaKkn: React.FC = () => {
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Program Kerja KKN</h1>
           <p className="text-slate-500 text-xs mt-1">
-            Menampilkan rencana dan pelaksanaan program kerja mahasiswa KKN yang divalidasi oleh Dosen Pembimbing Lapangan.
+            Menampilkan rencana dan pelaksanaan program kerja mahasiswa KKN yang divalidasi oleh Dosen Pendamping Lapangan.
           </p>
         </div>
 

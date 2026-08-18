@@ -161,7 +161,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Pengajuan izin/sakit Anda telah dikirimkan ke DPL (Dosen Pembimbing Lapangan) untuk diverifikasi. Anda akan mendapat notifikasi setelah diproses.',
+                    'Pengajuan izin/sakit Anda telah dikirimkan ke DPL (Dosen Pendamping Lapangan) untuk diverifikasi. Anda akan mendapat notifikasi setelah diproses.',
                     style: TextStyle(fontSize: 12, color: Colors.black87),
                   ),
                 ],

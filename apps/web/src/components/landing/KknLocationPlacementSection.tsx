@@ -93,7 +93,7 @@ export const KknLocationPlacementSection: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-500 italic leading-relaxed px-1">
-              * Setiap kelompok terdiri dari 13–18 mahasiswa lintas program studi, didampingi 1 DPL (Dosen Pembimbing Lapangan).
+              * Setiap kelompok terdiri dari 13–18 mahasiswa lintas program studi, didampingi 1 DPL (Dosen Pendamping Lapangan).
             </p>
           </div>
         </div>

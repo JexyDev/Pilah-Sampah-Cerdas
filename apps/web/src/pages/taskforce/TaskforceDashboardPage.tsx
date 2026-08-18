@@ -179,7 +179,7 @@ export const TaskforceDashboardPage: React.FC = () => {
               Dasbor Pengelolaan KKN
             </h1>
             <p className="text-emerald-100 text-sm mt-2 max-w-2xl font-medium leading-relaxed">
-              Pusat kendali operasional panitia untuk mengelola {totalKelompok} Kelompok KKN, {totalDplCount} Dosen Pembimbing Lapangan (DPL), {totalStudentsCount} Mahasiswa, serta validasi survei kelurahan.
+              Pusat kendali operasional panitia untuk mengelola {totalKelompok} Kelompok KKN, {totalDplCount} Dosen Pendamping Lapangan (DPL), {totalStudentsCount} Mahasiswa, serta validasi survei kelurahan.
             </p>
           </div>
 

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { MapContainer, TileLayer, Polygon, Popup, useMapEvents } from "react-leaflet";
+import { MapContainer, Polygon, Popup, useMapEvents } from "react-leaflet";
+import { ThemeTileLayer } from "../common/ThemeTileLayer";
 import "leaflet/dist/leaflet.css";
 import { KELURAHAN_GEODATA } from "../../constants/coblongGeoData";
 
@@ -68,10 +69,7 @@ export const PolygonGeofenceMap: React.FC<{ onSelectArea?: (area: PolygonData) =
         scrollWheelZoom={true}
         style={{ width: "100%", height: "100%" }}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <ThemeTileLayer />
 
         <MapZoomListener onZoomChange={setZoomLevel} />
 

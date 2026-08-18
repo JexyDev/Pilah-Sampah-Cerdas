@@ -174,7 +174,7 @@ class KelompokKknView extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const Text(
-                                    'Dosen Pembimbing Lapangan (DPL):',
+                                    'Dosen Pendamping Lapangan (DPL):',
                                     style: TextStyle(fontSize: 11, color: Colors.white60),
                                   ),
                                   Text(

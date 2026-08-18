@@ -245,10 +245,6 @@ iframe {
 /* ==========================================================
    LEAFLET MAP DARK MODE STYLES
    ========================================================== */
-.dark .leaflet-tile {
-  filter: brightness(0.65) invert(1) contrast(3.2) hue-rotate(200deg) saturate(0.3) brightness(0.7);
-}
-
 .dark .leaflet-popup-content-wrapper,
 .dark .leaflet-popup-tip {
   background-color: #0f172a !important;

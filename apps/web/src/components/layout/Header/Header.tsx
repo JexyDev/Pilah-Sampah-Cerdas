@@ -20,6 +20,21 @@ import { getProfilePhotoUrl, handleAvatarError } from "../../../utils/photoUtils
 import api from "../../../services/api";
 import { ThemeToggle } from "../../common/ThemeToggle";
 
+const formatTimeAgo = (dateString?: string) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSec = Math.floor((now.getTime() - date.getTime()) / 1000);
+  if (diffInSec < 60) return "Baru saja";
+  const diffInMin = Math.floor(diffInSec / 60);
+  if (diffInMin < 60) return `${diffInMin} menit lalu`;
+  const diffInHours = Math.floor(diffInMin / 60);
+  if (diffInHours < 24) return `${diffInHours} jam lalu`;
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 7) return `${diffInDays} hari lalu`;
+  return date.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+};
+
 interface HeaderProps {
   onToggleSidebar: () => void;
   isCollapsed?: boolean;
@@ -64,6 +79,9 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/dasbor":
       case "/dashboard":
       case "/":
+        if (user?.peran === "DPL" || user?.peran === "DOSEN_PEMBIMBING") {
+          return ["Dasbor"];
+        }
         return ["Dasbor Utama"];
       case "/monitoring-wilayah":
       case "/monitoring":
@@ -112,7 +130,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
             pimpinan: "Pimpinan",
             pemimpin: "Pimpinan",
             taskforce: "Task Force",
-            dpl: "Dosen Pembimbing Lapangan",
+            dpl: "Dosen Pendamping Lapangan",
             dlh: "Dinas Lingkungan Hidup",
             camat: "Camat",
             lurah: "Lurah",
@@ -155,7 +173,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/peta":
         return ["Manajemen Lokasi"];
       case "/dashboard-dpl":
-        return ["Dasbor DPL"];
+        return ["Dasbor"];
       case "/role-permissions":
         return ["Hak Akses & Peran"];
       case "/manajemen-ekosistem-kkn":
