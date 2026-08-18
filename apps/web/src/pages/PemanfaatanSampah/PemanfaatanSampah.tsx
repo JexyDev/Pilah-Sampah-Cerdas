@@ -230,10 +230,7 @@ export const PemanfaatanSampah: React.FC = () => {
 
         if (res.data && res.data.success) {
           const imageUrl = res.data.data.imageUrl;
-          const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
-          const serverUrl = apiBaseUrl.replace("/api/v1", "");
-          const fullImageUrl = `${serverUrl}${imageUrl}`;
-          setFotoDokumentasiUrl(fullImageUrl);
+          setFotoDokumentasiUrl(imageUrl);
           showToast.success("Foto berhasil diunggah");
         }
       } catch (err) {

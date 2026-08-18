@@ -124,11 +124,6 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
 
   const getCategoryIllustration = (cat: any) => {
     if (cat?.imageUrl) {
-      if (cat.imageUrl.startsWith("/uploads")) {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
-        const host = baseUrl.replace("/api/v1", "");
-        return `${host}${cat.imageUrl}`;
-      }
       return cat.imageUrl;
     }
 

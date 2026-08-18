@@ -61,7 +61,7 @@ const DownloadPage: React.FC = () => {
     version: "1.0.6",
     buildNumber: 106,
     releaseNotes: "Fitur Real-Time Polling 10-Detik & Visual Overhaul",
-    apkUrl: "http://localhost:3000/api/v1/system/download-apk",
+    apkUrl: "/api/v1/system/download-apk",
     fileSizeBytes: 26004512,
     formattedSize: "24.8 MB",
     publishedAt: new Date().toISOString(),
@@ -111,7 +111,7 @@ const DownloadPage: React.FC = () => {
   }, []);
 
   const handleDownloadApk = () => {
-    window.location.href = release.apkUrl || "http://localhost:3000/api/v1/system/download-apk";
+    window.location.href = release.apkUrl || "/api/v1/system/download-apk";
   };
 
   // Format date helper (PUEBI/KBBI standard)

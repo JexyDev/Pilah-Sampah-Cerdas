@@ -274,11 +274,8 @@ archiveAuditLogsCron.start();
     });
     if (dummyUser) {
       console.log(
-        "[AutoSanitize] Found dummy RT/RW/Lurah/Camat names in DB. Sanitizing to human names..."
+        "[AutoSanitize] Found dummy RT/RW/Lurah/Camat names in DB. Please run naming sanitization scripts manually."
       );
-      const { exec } = await import("child_process");
-      exec("npx tsx scripts/fix-rt-rw-human-names.ts");
-      exec("npx tsx scripts/fix-executive-human-names.ts");
     }
   } catch (e: any) {
     console.error("[AutoMigration Log]", e?.message || e);

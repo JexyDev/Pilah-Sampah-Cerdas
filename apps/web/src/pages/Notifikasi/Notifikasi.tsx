@@ -62,13 +62,7 @@ const NotificationModal = ({
             const res = await api.get(`/bins/reset-request/${reqId}`);
             if (res.data.success && res.data.data.evidencePhotoUrl) {
               const url = res.data.data.evidencePhotoUrl;
-              if (url.startsWith("/uploads")) {
-                const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
-                const host = baseUrl.replace("/api/v1", "");
-                setEvidencePhoto(`${host}${url}`);
-              } else {
-                setEvidencePhoto(url);
-              }
+              setEvidencePhoto(url);
             }
           } catch (e) {
             console.error("Failed to fetch reset request detail:", e);

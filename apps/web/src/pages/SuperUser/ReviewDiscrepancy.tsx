@@ -446,7 +446,7 @@ export const ReviewDiscrepancy: React.FC = () => {
                   onClick={() => setIsPhotoModalOpen(true)}
                 >
                   <img 
-                    src={selectedLog.evidencePhotoUrl.startsWith('http') ? selectedLog.evidencePhotoUrl : `http://localhost:3000${selectedLog.evidencePhotoUrl}`} 
+                    src={selectedLog.evidencePhotoUrl} 
                     alt="Bukti Fisik" 
                     className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
                   />
@@ -544,7 +544,7 @@ export const ReviewDiscrepancy: React.FC = () => {
               <X size={24} />
             </button>
             <img 
-              src={selectedLog.evidencePhotoUrl.startsWith('http') ? selectedLog.evidencePhotoUrl : `http://localhost:3000${selectedLog.evidencePhotoUrl}`} 
+              src={selectedLog.evidencePhotoUrl} 
               alt="Bukti Fisik Resolusi Tinggi" 
               className="w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
             />

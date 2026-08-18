@@ -12,21 +12,18 @@ export const getApiBaseUrl = (): string => {
     return import.meta.env.VITE_API_BASE_URL;
   }
   if (typeof window !== "undefined") {
-    const { protocol, hostname } = window.location;
+    const { hostname } = window.location;
     if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return `${protocol}//${hostname}:3000/api/v1`;
+      return `http://${hostname}:3000/api/v1`;
     }
-    if (protocol === "https:") {
-      return `${protocol}//${hostname}/api/v1`;
-    }
-    return `${protocol}//${hostname}:3000/api/v1`;
+    return "/api/v1";
   }
   return "/api/v1";
 };
 
 const api = axios.create({
   baseURL: getApiBaseUrl(),
-  timeout: 15000,
+  timeout: 30000,
   headers: {
     "Content-Type": "application/json",
     "ngrok-skip-browser-warning": "true",

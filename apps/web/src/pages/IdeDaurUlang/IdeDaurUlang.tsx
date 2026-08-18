@@ -159,12 +159,7 @@ const IdeDaurUlang: React.FC = () => {
 
   const getImageUrl = (path: string | null) => {
     if (!path) return "";
-    if (path.startsWith("http://") || path.startsWith("https://")) {
-      return path;
-    }
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
-    const host = baseUrl.replace("/api/v1", "");
-    return `${host}${path}`;
+    return path;
   };
 
   const canSubmit = user?.peran === "WARGA" || user?.peran === "SUPER_USER" || user?.peran === "ADMIN_DLH" || user?.peran === "RW";
