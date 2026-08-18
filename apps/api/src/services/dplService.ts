@@ -692,12 +692,20 @@ export const dplService = {
       },
     });
 
-    // Jika disetujui (APPROVED), sinkronkan presensi otomatis untuk seluruh jadwal kegiatan dalam rentang tanggal izin
+    // Jika disetujui (APPROVED), sinkronkan presensi otomatis untuk jadwal kegiatan mahasiswa ybs
     if (status === "APPROVED") {
       const start = new Date(req.startDate);
       start.setHours(0, 0, 0, 0);
       const end = new Date(req.endDate || req.startDate);
       end.setHours(23, 59, 59, 999);
+
+      const studentProfile = await prisma.studentKkn.findFirst({
+        where: {
+          OR: [{ userId: req.studentId }, { id: req.studentId }],
+        },
+      });
+
+      const targetStudentId = studentProfile?.userId || req.studentId;
 
       const schedules = await prisma.schedule.findMany({
         where: {
@@ -705,6 +713,9 @@ export const dplService = {
             gte: start,
             lte: end,
           },
+          ...(studentProfile?.kelompokId
+            ? { OR: [{ kelompokId: studentProfile.kelompokId }, { kelompokId: null }] }
+            : {}),
         },
       });
 
@@ -720,12 +731,12 @@ export const dplService = {
         await prisma.activityAttendance.upsert({
           where: {
             studentId_scheduleId: {
-              studentId: req.studentId,
+              studentId: targetStudentId,
               scheduleId: sch.id,
             },
           },
           create: {
-            studentId: req.studentId,
+            studentId: targetStudentId,
             scheduleId: sch.id,
             status: attStatus,
             method: "IZIN_DPL",

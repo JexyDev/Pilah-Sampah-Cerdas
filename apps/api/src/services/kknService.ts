@@ -1352,10 +1352,13 @@ export class KknService {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-    // Check student's leave request status (izin / sakit) - must be APPROVED and active today
+    // Fetch all valid student ID representations to prevent any user ID mismatch
+    const studentUserIds = Array.from(new Set([userId, student?.id, student?.userId].filter(Boolean) as string[]));
+
+    // Check student's leave request status (izin / sakit) - must belong ONLY to this student, be APPROVED, and active today
     const activeLeave = await (prisma as any).studentLeaveRequest.findFirst({
       where: {
-        studentId: userId,
+        studentId: { in: studentUserIds },
         status: "APPROVED",
         startDate: { lte: todayEnd },
         endDate: { gte: todayStart },
@@ -1366,7 +1369,7 @@ export class KknService {
     // Fetch student's completed/attended schedule IDs today
     const completedAttendances = await prisma.activityAttendance.findMany({
       where: {
-        studentId: userId,
+        studentId: { in: studentUserIds },
         attendedAt: { gte: todayStart, lte: todayEnd },
         OR: [
           { checkOutAt: { not: null } },
@@ -1471,12 +1474,10 @@ export class KknService {
 
     // Fetch attendance specific to activeSchedule
     const attendanceForActiveSchedule = activeSchedule
-      ? await prisma.activityAttendance.findUnique({
+      ? await prisma.activityAttendance.findFirst({
           where: {
-            studentId_scheduleId: {
-              studentId: userId,
-              scheduleId: activeSchedule.id,
-            },
+            studentId: { in: studentUserIds },
+            scheduleId: activeSchedule.id,
           },
         })
       : null;
