@@ -338,20 +338,7 @@ export class KknAttendanceService {
       });
 
       if (existing) {
-        if (existing.checkOutAt) {
-          throw new Error("ALREADY_ATTENDED_AND_CHECKED_OUT");
-        }
-
-        // This is a checkout
-        const record = await tx.activityAttendance.update({
-          where: { id: existing.id },
-          data: {
-            checkOutAt: new Date(),
-            status: isAutoAlpa ? "ALPA" : "LEPAS_RADIUS",
-          },
-        });
-
-        return record;
+        return existing;
       }
 
       const record = await tx.activityAttendance.create({
