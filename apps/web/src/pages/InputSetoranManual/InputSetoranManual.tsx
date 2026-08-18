@@ -134,22 +134,22 @@ const InputSetoranManual: React.FC = () => {
   }
 
   return (
-    <div className="max-w-3xl mx-auto py-6">
+    <div className="max-w-3xl mx-auto py-6 text-slate-800 dark:text-slate-100">
       <div className="mb-8">
-        <h2 className="text-2xl font-extrabold text-on-surface">Input Setoran Residu Hilir</h2>
-        <p className="text-sm text-on-surface-variant mt-1">
+        <h2 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">Input Setoran Residu Hilir</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
           Gunakan form ini khusus Petugas Residu untuk mencatat penimbangan & setoran sampah residu hasil pemilahan hilir (Residu tanpa QR Code).
         </p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 sm:p-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           
           {/* Warga Selection Searchable Autocomplete */}
           <div className="relative">
-            <label className="block text-sm font-bold text-slate-700 mb-2">Nama Warga / Nomor HP *</label>
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nama Warga / Nomor HP *</label>
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
               <input
                 type="text"
                 value={searchQuery}
@@ -163,13 +163,13 @@ const InputSetoranManual: React.FC = () => {
                   setShowWargaSuggestions(true);
                 }}
                 placeholder="Cari Nama Warga atau Nomor HP..."
-                className="w-full bg-slate-50 border border-slate-200 pl-11 pr-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 pl-11 pr-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] transition-all text-sm font-bold"
                 required
               />
             </div>
             
             {showWargaSuggestions && filteredWarga.length > 0 && (
-              <div className="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg z-50 p-2 flex flex-col gap-1">
+              <div className="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 p-2 flex flex-col gap-1">
                 {filteredWarga.map((w) => (
                   <button
                     key={w.id}
@@ -179,21 +179,21 @@ const InputSetoranManual: React.FC = () => {
                       setSearchQuery(`${w.name} (${w.phone || 'Warga'})`);
                       setShowWargaSuggestions(false);
                     }}
-                    className="text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:bg-slate-50 text-slate-700 flex justify-between items-center"
+                    className="text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex justify-between items-center cursor-pointer"
                   >
                     <div>
                       <p className="font-bold">{w.name}</p>
-                      <p className="text-[10px] text-slate-500">{w.phone || "-"}</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">{w.phone || "-"}</p>
                     </div>
                     {wargaId === w.id && (
-                      <span className="text-primary font-bold">Terpilih</span>
+                      <span className="text-[#009966] dark:text-emerald-400 font-bold">Terpilih</span>
                     )}
                   </button>
                 ))}
               </div>
             )}
             {showWargaSuggestions && filteredWarga.length === 0 && (
-              <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-50 p-4 text-center text-xs text-slate-500">
+              <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 p-4 text-center text-xs text-slate-500 dark:text-slate-400">
                 Tidak ada warga ditemukan
               </div>
             )}
@@ -202,11 +202,11 @@ const InputSetoranManual: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Kategori Sampah */}
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Kategori Sampah *</label>
+              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Kategori Sampah *</label>
               <select
                 value={kategoriId}
                 onChange={(e) => setKategoriId(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] transition-all text-sm font-bold cursor-pointer"
                 required
               >
                 <option value="">-- Pilih Kategori --</option>
@@ -220,7 +220,7 @@ const InputSetoranManual: React.FC = () => {
 
             {/* Berat Kg */}
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Berat Setoran (Kg) *</label>
+              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Berat Setoran (Kg) *</label>
               <input
                 type="number"
                 step="0.01"
@@ -228,15 +228,15 @@ const InputSetoranManual: React.FC = () => {
                 value={beratKg}
                 onChange={(e) => setBeratKg(e.target.value)}
                 placeholder="Contoh: 15.5"
-                className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] transition-all text-sm font-bold"
                 required
               />
               
               {/* Real-time points estimation */}
               {kategoriId && Number(beratKg) > 0 && (
-                <div className="mt-2 p-3 bg-primary/5 rounded-xl border border-primary/10 flex justify-between items-center">
-                  <span className="text-xs font-bold text-slate-600">Estimasi Poin:</span>
-                  <span className="text-sm font-black text-primary">
+                <div className="mt-2 p-3 bg-emerald-50 dark:bg-emerald-950/60 rounded-xl border border-emerald-100 dark:border-emerald-700/50 flex justify-between items-center">
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Estimasi Poin:</span>
+                  <span className="text-sm font-black text-[#009966] dark:text-emerald-400">
                     +{estimatedPoints.toFixed(1)} Poin
                   </span>
                 </div>
@@ -246,12 +246,12 @@ const InputSetoranManual: React.FC = () => {
 
           {/* Upload Foto */}
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Foto Bukti (Wajib) *</label>
-            <p className="text-[11px] text-slate-500 mb-3 leading-relaxed">
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Foto Bukti (Wajib) *</label>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">
               Silakan unggah foto bukti setoran sampah untuk disimpan di dalam log audit.
             </p>
 
-            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-xl hover:border-primary transition-colors bg-slate-50 cursor-pointer relative overflow-hidden group">
+            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 dark:border-slate-700 border-dashed rounded-xl hover:border-[#009966] dark:hover:border-emerald-500 transition-colors bg-slate-50 dark:bg-slate-800/60 cursor-pointer relative overflow-hidden group">
               <input
                 type="file"
                 accept="image/*"
@@ -262,25 +262,25 @@ const InputSetoranManual: React.FC = () => {
               <div className="space-y-2 text-center relative z-0">
                 {photoPreview ? (
                   <div className="flex flex-col items-center">
-                    <div className="w-32 h-32 rounded-lg overflow-hidden border-2 border-primary mb-3 shadow-sm">
+                    <div className="w-32 h-32 rounded-lg overflow-hidden border-2 border-[#009966] dark:border-emerald-500 mb-3 shadow-sm">
                       <img
                         src={photoPreview}
                         alt="Preview"
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <p className="text-xs text-primary font-bold group-hover:underline">Ganti Foto Bukti</p>
+                    <p className="text-xs text-[#009966] dark:text-emerald-400 font-bold group-hover:underline">Ganti Foto Bukti</p>
                   </div>
                 ) : (
                   <>
-                    <Upload className="mx-auto h-12 w-12 text-slate-400 group-hover:text-primary transition-colors" />
-                    <div className="flex text-sm text-slate-600 justify-center">
-                      <span className="relative rounded-md font-bold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary">
+                    <Upload className="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500 group-hover:text-[#009966] dark:group-hover:text-emerald-400 transition-colors" />
+                    <div className="flex text-sm text-slate-600 dark:text-slate-300 justify-center">
+                      <span className="relative rounded-md font-bold text-[#009966] dark:text-emerald-400 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-[#009966]">
                         Pilih file gambar
                       </span>
                       <p className="pl-1">atau drag & drop</p>
                     </div>
-                    <p className="text-xs text-slate-500">PNG, JPG, JPEG up to 5MB</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">PNG, JPG, JPEG up to 5MB</p>
                   </>
                 )}
               </div>
@@ -288,11 +288,11 @@ const InputSetoranManual: React.FC = () => {
           </div>
 
           {/* Submit Button */}
-          <div className="pt-4 border-t border-slate-200">
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full flex justify-center items-center gap-2 py-4 px-4 border border-transparent rounded-xl shadow-sm text-sm font-extrabold text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-70 transition-all uppercase tracking-wider"
+              className="w-full flex justify-center items-center gap-2 py-4 px-4 border border-transparent rounded-xl shadow-sm text-sm font-extrabold text-white bg-[#009966] hover:bg-[#008055] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#009966] disabled:opacity-70 transition-all uppercase tracking-wider cursor-pointer"
             >
               {isSubmitting ? (
                 <>

@@ -206,20 +206,20 @@ export default function RekapSetoran() {
     const jenisUpper = (cat || "").toUpperCase();
     if (jenisUpper.includes("ORGANIK") || jenisUpper.includes("ORGANIC")) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-emerald-100/90 text-emerald-800 border border-emerald-300 shadow-2xs">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-emerald-100/90 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50 shadow-2xs">
           <LeafIcon size={13} /> Organik
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-amber-100/90 text-amber-800 border border-amber-300 shadow-2xs">
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-amber-100/90 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 shadow-2xs">
         <Layers size={13} /> Anorganik
       </span>
     );
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 font-sans">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-100 font-sans">
       {/* Clean Enterprise Page Header */}
       <PageHeader
         icon={Receipt}
@@ -240,55 +240,55 @@ export default function RekapSetoran() {
       {/* KPI Metric Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         {/* Total Weight Card */}
-        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5 group hover:border-emerald-300 transition-all">
-          <div className="p-3 bg-emerald-50 text-[#009966] rounded-2xl shrink-0 border border-emerald-100 group-hover:scale-105 transition-transform">
+        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 group hover:border-emerald-300 dark:hover:border-emerald-700/60 transition-all">
+          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 rounded-2xl shrink-0 border border-emerald-100 dark:border-emerald-700/50 group-hover:scale-105 transition-transform">
             <Scale className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10.5px] text-slate-500 font-black uppercase tracking-wider">Total Berat Sampah</p>
-            <p className="text-lg font-black text-slate-900 mt-0.5">
+            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Total Berat Sampah</p>
+            <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">
               {totalWeight >= 1000 ? (totalWeight / 1000).toFixed(1) : totalWeight.toLocaleString("id-ID", { maximumFractionDigits: 1 })}{" "}
-              <span className="text-xs font-bold text-slate-500">{totalWeight >= 1000 ? "Ton" : "Kg"}</span>
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalWeight >= 1000 ? "Ton" : "Kg"}</span>
             </p>
           </div>
         </div>
 
         {/* Total Transactions Card */}
-        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5 group hover:border-blue-300 transition-all">
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl shrink-0 border border-blue-100 group-hover:scale-105 transition-transform">
+        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 group hover:border-blue-300 dark:hover:border-blue-700/60 transition-all">
+          <div className="p-3 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 rounded-2xl shrink-0 border border-blue-100 dark:border-blue-700/50 group-hover:scale-105 transition-transform">
             <Receipt className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10.5px] text-slate-500 font-black uppercase tracking-wider">Total Transaksi</p>
-            <p className="text-lg font-black text-blue-700 mt-0.5">{totalItems} <span className="text-xs font-semibold text-slate-500">Setoran</span></p>
+            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Total Transaksi</p>
+            <p className="text-lg font-black text-blue-700 dark:text-blue-400 mt-0.5">{totalItems} <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Setoran</span></p>
           </div>
         </div>
 
         {/* Gamification Points Card */}
-        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5 group hover:border-amber-300 transition-all">
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl shrink-0 border border-amber-100 group-hover:scale-105 transition-transform">
+        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 group hover:border-amber-300 dark:hover:border-amber-700/60 transition-all">
+          <div className="p-3 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-2xl shrink-0 border border-amber-100 dark:border-amber-700/50 group-hover:scale-105 transition-transform">
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10.5px] text-slate-500 font-black uppercase tracking-wider">Poin Terdistribusi</p>
-            <p className="text-lg font-black text-amber-700 mt-0.5">{totalPoints.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-500">Pts</span></p>
+            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Poin Terdistribusi</p>
+            <p className="text-lg font-black text-amber-700 dark:text-amber-400 mt-0.5">{totalPoints.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Pts</span></p>
           </div>
         </div>
 
         {/* AI Confidence Card */}
-        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5 group hover:border-purple-300 transition-all">
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl shrink-0 border border-purple-100 group-hover:scale-105 transition-transform">
+        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 group hover:border-purple-300 dark:hover:border-purple-700/60 transition-all">
+          <div className="p-3 bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 rounded-2xl shrink-0 border border-purple-100 dark:border-purple-700/50 group-hover:scale-105 transition-transform">
             <Bot className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10.5px] text-slate-500 font-black uppercase tracking-wider">Akurasi Verifikasi AI</p>
-            <p className="text-lg font-black text-purple-700 mt-0.5">{averageConfidence}% <span className="text-xs font-semibold text-slate-500">(Presisi)</span></p>
+            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Akurasi Verifikasi AI</p>
+            <p className="text-lg font-black text-purple-700 dark:text-purple-400 mt-0.5">{averageConfidence}% <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">(Presisi)</span></p>
           </div>
         </div>
       </div>
 
       {/* Filter & Search Controls Bar */}
-      <div className="bg-white p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 shadow-2xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5">
+      <div className="bg-white dark:bg-slate-900 p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5">
         {/* Search Bar */}
         <div className="relative flex-1 min-w-[240px]">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -297,12 +297,12 @@ export default function RekapSetoran() {
             value={filterRw}
             onChange={(e) => setFilterRw(e.target.value)}
             placeholder="Cari nama warga, Rukun Warga, kelurahan, no. telp..."
-            className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#009966] focus:bg-white transition-all"
+            className="w-full pl-10 pr-9 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] focus:bg-white dark:focus:bg-slate-800 transition-all"
           />
           {filterRw && (
             <button
               onClick={() => setFilterRw("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
             >
               <X size={14} />
             </button>
@@ -315,7 +315,7 @@ export default function RekapSetoran() {
           <select
             value={filterKategori}
             onChange={(e) => setFilterKategori(e.target.value)}
-            className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-[#009966] transition cursor-pointer"
+            className="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-[#009966] transition cursor-pointer"
           >
             <option value="ALL">Semua Kategori Sampah</option>
             <option value="ORGANIC">Organik</option>
@@ -327,7 +327,7 @@ export default function RekapSetoran() {
           <select
             value={filterPeriode}
             onChange={(e) => setFilterPeriode(e.target.value)}
-            className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-[#009966] transition cursor-pointer"
+            className="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-[#009966] transition cursor-pointer"
           >
             <option value="ALL">Semua Periode</option>
             <option value="7d">7 Hari Terakhir</option>
@@ -339,7 +339,7 @@ export default function RekapSetoran() {
           {(filterRw || filterKategori !== "ALL" || filterPeriode !== "ALL") && (
             <button
               onClick={resetFilters}
-              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+              className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-2xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
             >
               <RotateCcw size={13} /> Reset
             </button>
@@ -348,21 +348,21 @@ export default function RekapSetoran() {
       </div>
 
       {/* Main Data Table Card */}
-      <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+      <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
           <div>
-            <h3 className="font-extrabold text-base text-slate-900 tracking-tight flex items-center gap-2">
-              <Calendar size={18} className="text-[#009966]" /> Rincian Riwayat Setoran Audit
+            <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
+              <Calendar size={18} className="text-[#009966] dark:text-emerald-400" /> Rincian Riwayat Setoran Audit
             </h3>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
               Menampilkan {totalItems === 0 ? 0 : `${startIndex + 1} - ${endIndex}`} dari {totalItems} data setoran terverifikasi (Klik baris untuk detail)
             </p>
           </div>
         </div>
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
-            <Loader2 className="animate-spin text-[#009966]" size={28} />
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400 dark:text-slate-500">
+            <Loader2 className="animate-spin text-[#009966] dark:text-emerald-400" size={28} />
             <p className="text-xs font-bold">Memuat data rekapitulasi setoran...</p>
           </div>
         ) : currentItems.length === 0 ? (
@@ -375,7 +375,7 @@ export default function RekapSetoran() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-200 bg-slate-50/80">
+                <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80">
                   <th className="py-3.5 px-4 rounded-l-2xl">ID Transaksi</th>
                   <th className="py-3.5 px-4">Nama Warga</th>
                   <th className="py-3.5 px-4">Rukun Warga</th>
@@ -386,24 +386,24 @@ export default function RekapSetoran() {
                   <th className="py-3.5 px-4 text-center rounded-r-2xl">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                 {currentItems.map((item) => {
                   return (
                     <tr
                       key={item.id}
                       onClick={() => setSelectedDeposit(item)}
-                      className="hover:bg-slate-50/90 transition-colors cursor-pointer group"
+                      className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
                     >
                       {/* ID */}
-                      <td className="py-3.5 px-4 font-mono font-black text-slate-900 tracking-tight group-hover:text-[#009966]">
+                      <td className="py-3.5 px-4 font-mono font-black text-slate-900 dark:text-slate-100 tracking-tight group-hover:text-[#009966] dark:group-hover:text-emerald-400">
                         {item.id.length > 16 ? `${item.id.substring(0, 12)}...` : item.id}
                       </td>
 
                       {/* Warga */}
-                      <td className="py-3.5 px-4 font-bold text-slate-900 align-middle">
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100 align-middle">
                         {item.warga || "Warga Coblong"}
                         {item.phone && (
-                          <span className="block text-[10px] text-slate-400 font-semibold">
+                          <span className="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold">
                             {item.phone}
                           </span>
                         )}
@@ -411,7 +411,7 @@ export default function RekapSetoran() {
 
                       {/* Rukun Warga */}
                       <td className="py-3.5 px-4 whitespace-nowrap align-middle">
-                        <span className="inline-block bg-[#eef5ff] text-[#2b6cb0] font-bold text-xs px-3 py-1 rounded-xl border border-[#c3dafe]">
+                        <span className="inline-block bg-[#eef5ff] dark:bg-blue-950/60 text-[#2b6cb0] dark:text-blue-300 font-bold text-xs px-3 py-1 rounded-xl border border-[#c3dafe] dark:border-blue-800/50">
                           {formatRukunWarga(item.rw || item.rtRw)}
                         </span>
                       </td>
@@ -422,17 +422,17 @@ export default function RekapSetoran() {
                       </td>
 
                       {/* Berat */}
-                      <td className="py-3.5 px-4 text-right font-mono font-black text-slate-900 text-sm align-middle">
+                      <td className="py-3.5 px-4 text-right font-mono font-black text-slate-900 dark:text-slate-100 text-sm align-middle">
                         {item.berat}
                       </td>
 
                       {/* Poin */}
-                      <td className="py-3.5 px-4 text-center font-mono font-black text-[#009966] text-xs align-middle">
+                      <td className="py-3.5 px-4 text-center font-mono font-black text-[#009966] dark:text-emerald-400 text-xs align-middle">
                         +{Math.round(item.poin || 0)} Pts
                       </td>
 
                       {/* Waktu */}
-                      <td className="py-3.5 px-4 font-bold text-slate-700 whitespace-nowrap align-middle">
+                      <td className="py-3.5 px-4 font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap align-middle">
                         {new Date(item.waktu).toLocaleString("id-ID", {
                           day: "numeric",
                           month: "short",
@@ -450,7 +450,7 @@ export default function RekapSetoran() {
                             setSelectedDeposit(item);
                           }}
                           title="Inspeksi Detail Transaksi"
-                          className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 mx-auto flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                          className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 mx-auto flex items-center justify-center transition-all cursor-pointer active:scale-95"
                         >
                           <Eye size={15} />
                         </button>
@@ -480,25 +480,25 @@ export default function RekapSetoran() {
       {/* INSPECTION DETAIL MODAL (100% KONSISTEN DENGAN MASTER DATASET KLASIFIKASI AI) */}
       {selectedDeposit && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-xl w-full overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 max-w-xl w-full overflow-hidden">
             {/* Modal Header (Emerald Gradient Light - Identik MasterDatasetKlasifikasi) */}
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-emerald-50/80 to-white">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-emerald-50/80 to-white dark:from-slate-800/80 dark:to-slate-900">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-[#009966] flex items-center justify-center font-bold shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 flex items-center justify-center font-bold shrink-0">
                   <Eye size={20} />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-800 flex items-center gap-2">
+                  <h3 className="text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
                     Inspeksi Detail Transaksi Setoran
                   </h3>
                   <p className="text-[11px] font-semibold text-slate-400">
-                    ID Transaksi: <span className="font-mono text-emerald-700">{selectedDeposit.id}</span>
+                    ID Transaksi: <span className="font-mono text-emerald-700 dark:text-emerald-400">{selectedDeposit.id}</span>
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedDeposit(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-all cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center transition-all cursor-pointer"
               >
                 <X size={16} />
               </button>
@@ -510,7 +510,7 @@ export default function RekapSetoran() {
               {selectedDeposit.fotoUrl && (
                 <div
                   onClick={() => setPreviewImageUrl(selectedDeposit.fotoUrl)}
-                  className="w-full h-52 rounded-2xl overflow-hidden border border-slate-200 relative group shadow-2xs cursor-pointer"
+                  className="w-full h-52 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 relative group shadow-2xs cursor-pointer"
                 >
                   <img
                     src={selectedDeposit.fotoUrl}
@@ -528,7 +528,7 @@ export default function RekapSetoran() {
               )}
 
               {/* Citizen Card Profile */}
-              <div className="flex items-center gap-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80">
+              <div className="flex items-center gap-3 p-3.5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700">
                 <div className="w-10 h-10 rounded-2xl bg-[#009966] text-white flex items-center justify-center font-black text-sm shrink-0 overflow-hidden shadow-2xs">
                   {selectedDeposit.fotoProfil ? (
                     <img
@@ -542,17 +542,17 @@ export default function RekapSetoran() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h4 className="font-extrabold text-slate-900 text-xs sm:text-sm truncate">{selectedDeposit.warga || "Warga Coblong"}</h4>
+                  <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-xs sm:text-sm truncate">{selectedDeposit.warga || "Warga Coblong"}</h4>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
-                    <span className="inline-block bg-[#eef5ff] text-[#2b6cb0] font-bold text-[11px] px-2.5 py-0.5 rounded-lg border border-[#c3dafe]">
+                    <span className="inline-block bg-[#eef5ff] dark:bg-blue-950/60 text-[#2b6cb0] dark:text-blue-300 font-bold text-[11px] px-2.5 py-0.5 rounded-lg border border-[#c3dafe] dark:border-blue-800/50">
                       {formatRukunWarga(selectedDeposit.rw || selectedDeposit.rtRw)}
                     </span>
-                    <span className="inline-block bg-[#e8f8f0] text-[#009966] font-bold text-[11px] px-2.5 py-0.5 rounded-lg border border-[#b8ebd0]">
+                    <span className="inline-block bg-[#e8f8f0] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-300 font-bold text-[11px] px-2.5 py-0.5 rounded-lg border border-[#b8ebd0] dark:border-emerald-800/50">
                       Kel. {selectedDeposit.kelurahan || "Coblong"}
                     </span>
                     {selectedDeposit.phone && (
-                      <span className="text-[11px] text-slate-500 font-semibold flex items-center gap-1">
-                        <Phone size={11} className="text-[#009966]" /> {selectedDeposit.phone}
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">
+                        <Phone size={11} className="text-[#009966] dark:text-emerald-400" /> {selectedDeposit.phone}
                       </span>
                     )}
                   </div>
@@ -560,9 +560,9 @@ export default function RekapSetoran() {
               </div>
 
               {/* AI Confidence Composition Breakdown (Identik MasterDatasetKlasifikasi) */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 space-y-2.5">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-black text-slate-800">Hasil Inferensi &amp; Akurasi Verifikasi AI</span>
+                  <span className="text-xs font-black text-slate-800 dark:text-slate-100">Hasil Inferensi &amp; Akurasi Verifikasi AI</span>
                   {renderCategoryBadge(selectedDeposit.jenis)}
                 </div>
 
@@ -575,10 +575,10 @@ export default function RekapSetoran() {
                   return (
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs font-black">
-                        <span className="text-emerald-700">🌱 Organik: {org}%</span>
-                        <span className="text-amber-700">📦 Anorganik: {inorg}%</span>
+                        <span className="text-emerald-700 dark:text-emerald-400">🌱 Organik: {org}%</span>
+                        <span className="text-amber-700 dark:text-amber-400">📦 Anorganik: {inorg}%</span>
                       </div>
-                      <div className="w-full h-3 rounded-full bg-slate-200 flex overflow-hidden border border-slate-300/60 shadow-2xs">
+                      <div className="w-full h-3 rounded-full bg-slate-200 dark:bg-slate-700 flex overflow-hidden border border-slate-300/60 dark:border-slate-600 shadow-2xs">
                         <div
                           className="bg-emerald-500 h-full transition-all duration-300"
                           style={{ width: `${org}%` }}
@@ -590,7 +590,7 @@ export default function RekapSetoran() {
                           title={`Anorganik: ${inorg}%`}
                         />
                       </div>
-                      <div className="flex justify-between text-[11px] font-bold text-slate-400 pt-1">
+                      <div className="flex justify-between text-[11px] font-bold text-slate-400 dark:text-slate-400 pt-1">
                         <span>Akurasi Confidence: {conf}%</span>
                         <span>Estimasi Berat: {selectedDeposit.berat} Kg</span>
                       </div>
@@ -601,26 +601,26 @@ export default function RekapSetoran() {
 
               {/* Specifications Details Grid */}
               <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1">
+                <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1">
                   <span className="text-[10px] font-black uppercase text-slate-400">Berat Timbangan</span>
-                  <p className="font-mono font-black text-[#009966] text-sm">{selectedDeposit.berat} Kg</p>
+                  <p className="font-mono font-black text-[#009966] dark:text-emerald-400 text-sm">{selectedDeposit.berat} Kg</p>
                 </div>
 
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1">
+                <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1">
                   <span className="text-[10px] font-black uppercase text-slate-400">Poin Terdistribusi</span>
-                  <p className="font-mono font-black text-amber-600 text-sm">+{Math.round(selectedDeposit.poin || 0)} Pts</p>
+                  <p className="font-mono font-black text-amber-600 dark:text-amber-400 text-sm">+{Math.round(selectedDeposit.poin || 0)} Pts</p>
                 </div>
 
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1">
+                <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1">
                   <span className="text-[10px] font-black uppercase text-slate-400">Status Audit</span>
-                  <p className="font-extrabold text-emerald-700 text-xs flex items-center gap-1">
+                  <p className="font-extrabold text-emerald-700 dark:text-emerald-400 text-xs flex items-center gap-1">
                     <CheckCircle2 size={13} /> {selectedDeposit.status || "Selesai"}
                   </p>
                 </div>
 
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1">
+                <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1">
                   <span className="text-[10px] font-black uppercase text-slate-400">Waktu Pencatatan</span>
-                  <p className="font-bold text-slate-800 text-xs">
+                  <p className="font-bold text-slate-800 dark:text-slate-200 text-xs">
                     {new Date(selectedDeposit.waktu).toLocaleString("id-ID", {
                       day: "2-digit",
                       month: "short",
@@ -633,17 +633,17 @@ export default function RekapSetoran() {
               </div>
 
               {/* Verified Full-Stack Footer Box */}
-              <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold flex items-center gap-2">
-                <CheckCheck size={16} className="text-[#009966] shrink-0" />
+              <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/50 text-emerald-900 dark:text-emerald-200 text-xs font-semibold flex items-center gap-2">
+                <CheckCheck size={16} className="text-[#009966] dark:text-emerald-400 shrink-0" />
                 <span>Terverifikasi real-time terintegrasi penuh: Aplikasi Mobile &rarr; Backend Express API &rarr; Database PostgreSQL.</span>
               </div>
             </div>
 
             {/* Modal Action Footer */}
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/80 flex justify-end">
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 flex justify-end">
               <button
                 onClick={() => setSelectedDeposit(null)}
-                className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black hover:bg-slate-800 transition cursor-pointer"
+                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black transition cursor-pointer"
               >
                 Tutup Detail
               </button>

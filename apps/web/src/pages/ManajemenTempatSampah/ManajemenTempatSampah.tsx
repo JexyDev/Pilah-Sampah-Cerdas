@@ -548,22 +548,22 @@ const ManajemenTempatSampah: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
+    <div className="max-w-7xl mx-auto py-6 px-4 space-y-6 text-slate-800 dark:text-slate-100 font-sans">
       {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
         {/* Tier 1: Title & Status Badge */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
               Manajemen Tempat Sampah
             </h1>
-            <p className="text-xs text-slate-500 font-medium">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               Kelola tempat sampah fisik, lokasi GPS, QR code, peta pemantauan, dan kategori sampah.
             </p>
           </div>
 
           <div className="self-start sm:self-center flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-[#009966] border border-emerald-200/80 shadow-2xs">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-700/50 shadow-2xs">
               <span className="w-2 h-2 rounded-full bg-[#009966] animate-pulse" />
               Inventaris Aktif
             </span>
@@ -571,7 +571,7 @@ const ManajemenTempatSampah: React.FC = () => {
         </div>
 
         {/* Tier 2: Sub-Tabs & Action Buttons */}
-        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -579,7 +579,7 @@ const ManajemenTempatSampah: React.FC = () => {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
                 activeTab === "kodefikasi"
                   ? "bg-[#009966] text-white shadow-xs"
-                  : "bg-slate-100/80 text-slate-600 hover:bg-slate-200/80"
+                  : "bg-slate-100/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700"
               }`}
             >
               <QrCode size={15} />
@@ -591,7 +591,7 @@ const ManajemenTempatSampah: React.FC = () => {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
                 activeTab === "monitoring"
                   ? "bg-[#009966] text-white shadow-xs"
-                  : "bg-slate-100/80 text-slate-600 hover:bg-slate-200/80"
+                  : "bg-slate-100/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700"
               }`}
             >
               <Map size={15} />
@@ -603,7 +603,7 @@ const ManajemenTempatSampah: React.FC = () => {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
                 activeTab === "kategori"
                   ? "bg-[#009966] text-white shadow-xs"
-                  : "bg-slate-100/80 text-slate-600 hover:bg-slate-200/80"
+                  : "bg-slate-100/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700"
               }`}
             >
               <Tags size={15} />
@@ -629,52 +629,52 @@ const ManajemenTempatSampah: React.FC = () => {
       {activeTab === "kategori" ? (
         <KategoriSampah openAddModalSignal={openKategoriAddSignal} />
       ) : activeTab === "monitoring" ? (
-        <div className={`space-y-6 ${isMapFullscreen ? "fixed inset-0 z-50 bg-slate-100 p-4 sm:p-6 overflow-y-auto flex flex-col justify-between h-screen w-screen animate-in fade-in duration-200" : ""}`}>
+        <div className={`space-y-6 ${isMapFullscreen ? "fixed inset-0 z-50 bg-slate-100 dark:bg-slate-950 p-4 sm:p-6 overflow-y-auto flex flex-col justify-between h-screen w-screen animate-in fade-in duration-200" : ""}`}>
 
           {/* Header Summary KPI Cards for Monitoring */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
                 TERVERIFIKASI GPS
               </span>
               <div className="flex items-baseline justify-between">
-                <h3 className="text-xl sm:text-2xl font-black text-slate-900">{verifiedMapBins.length}</h3>
-                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100">{verifiedMapBins.length}</h3>
+                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-700/50">
                   Aktif
                 </span>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
                 ORGANIK
               </span>
               <div className="flex items-baseline justify-between">
-                <h3 className="text-xl sm:text-2xl font-black text-emerald-600">
+                <h3 className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
                   {verifiedMapBins.filter((b) => (b.category?.name || b.lokasi || "").toLowerCase().includes("organik") && !(b.category?.name || b.lokasi || "").toLowerCase().includes("anorganik")).length}
                 </h3>
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-2xs" />
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
                 ANORGANIK
               </span>
               <div className="flex items-baseline justify-between">
-                <h3 className="text-xl sm:text-2xl font-black text-amber-500">
+                <h3 className="text-xl sm:text-2xl font-black text-amber-500 dark:text-amber-400">
                   {verifiedMapBins.filter((b) => (b.category?.name || b.lokasi || "").toLowerCase().includes("anorganik")).length}
                 </h3>
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-2xs" />
               </div>
             </div>
 
-            <div className="col-span-2 sm:col-span-1 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+            <div className="col-span-2 sm:col-span-1 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
                 PENUH
               </span>
               <div className="flex items-baseline justify-between">
-                <h3 className="text-xl sm:text-2xl font-black text-rose-600">
+                <h3 className="text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400">
                   {verifiedMapBins.filter((b) => b.status === "Penuh" || b.kapasitas >= 90).length}
                 </h3>
                 <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse shadow-2xs" />
@@ -683,27 +683,27 @@ const ManajemenTempatSampah: React.FC = () => {
           </div>
 
           {/* Geospatial Map Container with Live Sync Toolbar */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 sm:p-5 space-y-4 flex-1 flex flex-col min-h-0">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 space-y-4 flex-1 flex flex-col min-h-0">
 
             {/* Toolbar Top Bar - Tiered Layout for Clean UX */}
-            <div className="space-y-3 pb-3 border-b border-slate-100">
+            <div className="space-y-3 pb-3 border-b border-slate-100 dark:border-slate-800">
               {/* Row 1: Title, Live Sync Status, and Action Controls */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20 shrink-0 shadow-2xs">
+                  <div className="w-10 h-10 rounded-xl bg-[#009966]/10 text-[#009966] dark:text-emerald-400 flex items-center justify-center border border-[#009966]/20 dark:border-emerald-700/40 shrink-0 shadow-2xs">
                     <Map size={20} />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-extrabold text-base text-slate-900 tracking-tight">
+                      <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 tracking-tight">
                         Peta Sebaran Real-Time Tempat Sampah Terverifikasi
                       </h3>
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
                         Live Sync
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                       Menampilkan tempat sampah aktif terverifikasi ({filteredMapBins.length} dari {verifiedMapBins.length} Tempat Sampah)
                     </p>
                   </div>
@@ -740,7 +740,7 @@ const ManajemenTempatSampah: React.FC = () => {
                         setFlyTarget({ center: [-6.8903, 107.611], zoom: 15, timestamp: Date.now() });
                       }
                     }}
-                    className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-extrabold text-slate-700 bg-slate-50 shadow-2xs cursor-pointer hover:bg-slate-100 transition-all focus:outline-none"
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-extrabold text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 shadow-2xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-all focus:outline-none"
                   >
                     <option value="Semua Kelurahan">Semua Kelurahan</option>
                     <option value="Dago">Kel. Dago</option>
@@ -755,7 +755,7 @@ const ManajemenTempatSampah: React.FC = () => {
                   <select
                     value={mapCategoryFilter}
                     onChange={(e) => setMapCategoryFilter(e.target.value)}
-                    className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-extrabold text-slate-700 bg-slate-50 shadow-2xs cursor-pointer hover:bg-slate-100 transition-all focus:outline-none"
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-extrabold text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 shadow-2xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-all focus:outline-none"
                   >
                     <option value="Semua">Semua Kategori</option>
                     <option value="Organik">Organik</option>
@@ -766,7 +766,7 @@ const ManajemenTempatSampah: React.FC = () => {
                   <select
                     value={mapStatusFilter}
                     onChange={(e) => setMapStatusFilter(e.target.value)}
-                    className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-extrabold text-slate-700 bg-slate-50 shadow-2xs cursor-pointer hover:bg-slate-100 transition-all focus:outline-none"
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-extrabold text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 shadow-2xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-all focus:outline-none"
                   >
                     <option value="Semua">Semua Status</option>
                     <option value="Aman">Aman (&lt;70%)</option>
@@ -783,23 +783,23 @@ const ManajemenTempatSampah: React.FC = () => {
                     onClick={() => setShowKelurahanBoundaries(!showKelurahanBoundaries)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-2xs border ${
                       showKelurahanBoundaries
-                        ? "bg-[#009966]/10 text-[#009966] border-[#009966]/30 shadow-xs"
-                        : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100"
+                        ? "bg-[#009966]/10 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border-[#009966]/30 dark:border-emerald-700/50 shadow-xs"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
                     }`}
                     title={showKelurahanBoundaries ? "Sembunyikan Batas Wilayah (GeoJSON)" : "Tampilkan Batas Wilayah (GeoJSON)"}
                   >
-                    <Layers size={14} className={showKelurahanBoundaries ? "text-[#009966]" : "text-slate-400"} />
+                    <Layers size={14} className={showKelurahanBoundaries ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
                     <span>Batas Wilayah</span>
                   </button>
 
-                  <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+                  <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700">
                     <button
                       type="button"
                       onClick={() => setMapTileProvider("google_vector")}
                       className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
                         mapTileProvider === "google_vector"
                           ? "bg-[#009966] text-white shadow-2xs"
-                          : "text-slate-600 hover:text-slate-900"
+                          : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                       }`}
                       title="Tampilan Google Maps Vektor"
                     >
@@ -811,7 +811,7 @@ const ManajemenTempatSampah: React.FC = () => {
                       className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
                         mapTileProvider === "google_satellite"
                           ? "bg-[#009966] text-white shadow-2xs"
-                          : "text-slate-600 hover:text-slate-900"
+                          : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                       }`}
                       title="Tampilan Google Maps Satelit / Hybrid"
                     >
@@ -823,7 +823,7 @@ const ManajemenTempatSampah: React.FC = () => {
                       className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
                         mapTileProvider === "cartodb"
                           ? "bg-[#009966] text-white shadow-2xs"
-                          : "text-slate-600 hover:text-slate-900"
+                          : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                       }`}
                       title="Tampilan Kartografi Clean"
                     >
@@ -835,25 +835,25 @@ const ManajemenTempatSampah: React.FC = () => {
             </div>
 
             {/* Map Canvas Viewport */}
-            <div className={`w-full rounded-2xl overflow-hidden border border-slate-200/90 relative ${isMapFullscreen ? "h-[calc(100vh-180px)]" : "h-[500px]"}`}>
+            <div className={`w-full rounded-2xl overflow-hidden border border-slate-200/90 dark:border-slate-700 relative ${isMapFullscreen ? "h-[calc(100vh-180px)]" : "h-[500px]"}`}>
 
               {/* Floating Top-Left Search Bar Overlay with Limit 5 Candidate Results */}
               <div className="absolute top-4 left-4 z-20 pointer-events-auto">
-                <div className="relative w-64 sm:w-80 shadow-2xl rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-md">
+                <div className="relative w-64 sm:w-80 shadow-2xl rounded-2xl border border-slate-200/90 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
                   <div className="flex items-center px-3.5 py-2">
-                    <Search size={15} className="text-[#009966] shrink-0 mr-2.5" />
+                    <Search size={15} className="text-[#009966] dark:text-emerald-400 shrink-0 mr-2.5" />
                     <input
                       type="text"
                       placeholder="Cari kode tempat sampah..."
                       value={mapSearchInput}
                       onChange={(e) => setMapSearchInput(e.target.value)}
-                      className="w-full bg-transparent text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none"
+                      className="w-full bg-transparent text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none"
                     />
                     {mapSearchInput && (
                       <button
                         type="button"
                         onClick={() => setMapSearchInput("")}
-                        className="text-slate-400 hover:text-slate-600 p-0.5"
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
                       >
                         <X size={13} />
                       </button>
@@ -862,7 +862,7 @@ const ManajemenTempatSampah: React.FC = () => {
 
                   {/* Limit 5 Search Results List Dropdown */}
                   {mapSearchInput.trim() && (
-                    <div className="border-t border-slate-100 max-h-60 overflow-y-auto rounded-b-2xl bg-white shadow-xl">
+                    <div className="border-t border-slate-100 dark:border-slate-800 max-h-60 overflow-y-auto rounded-b-2xl bg-white dark:bg-slate-900 shadow-xl">
                       {mapSearchResults.length > 0 ? (
                         mapSearchResults.map((bin) => {
                           const catLower = (bin.category?.name || bin.lokasi || "").toLowerCase();
@@ -882,18 +882,18 @@ const ManajemenTempatSampah: React.FC = () => {
                                   });
                                 }
                               }}
-                              className="px-3.5 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-0 cursor-pointer transition-colors flex items-center justify-between"
+                              className="px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 border-b border-slate-100 dark:border-slate-800 last:border-0 cursor-pointer transition-colors flex items-center justify-between"
                             >
                               <div>
-                                <span className="font-mono font-black text-xs text-slate-900 block">{bin.kode}</span>
-                                <span className="text-[10.5px] text-slate-500 font-semibold">{bin.wargaName || bin.user?.name || "Warga Terdaftar"}</span>
+                                <span className="font-mono font-black text-xs text-slate-900 dark:text-slate-100 block">{bin.kode}</span>
+                                <span className="text-[10.5px] text-slate-500 dark:text-slate-400 font-semibold">{bin.wargaName || bin.user?.name || "Warga Terdaftar"}</span>
                               </div>
                               <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
                                 isResidu
-                                  ? "bg-slate-100 text-slate-700 border border-slate-200"
+                                  ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                                   : isAnorganic
-                                  ? "bg-amber-50 text-amber-800 border border-amber-200"
-                                  : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50"
+                                  : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50"
                               }`}>
                                 {catName}
                               </span>
@@ -919,7 +919,7 @@ const ManajemenTempatSampah: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsLegendOpen(true)}
-                    className="bg-white/95 backdrop-blur-md shadow-xl rounded-2xl px-3.5 py-2 border border-slate-200/90 flex items-center gap-2 text-xs font-black text-slate-800 hover:bg-emerald-50 hover:text-[#009966] transition-all cursor-pointer group"
+                    className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-xl rounded-2xl px-3.5 py-2 border border-slate-200/90 dark:border-slate-700 flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-slate-800 hover:text-[#009966] transition-all cursor-pointer group"
                     title="Tampilkan Legenda Peta"
                   >
                     <Layers className="w-4 h-4 text-[#009966] group-hover:scale-110 transition-transform" />
@@ -927,18 +927,18 @@ const ManajemenTempatSampah: React.FC = () => {
                     <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
                   </button>
                 ) : (
-                  <div className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-3.5 border border-slate-200/90 flex flex-col gap-2.5 min-w-[210px]">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-2xl rounded-2xl p-3.5 border border-slate-200/90 dark:border-slate-700 flex flex-col gap-2.5 min-w-[210px]">
+                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
                       <div className="flex items-center gap-2">
-                        <Layers className="w-4 h-4 text-[#009966]" />
-                        <p className="text-[11px] font-black text-slate-800 uppercase tracking-wider">
+                        <Layers className="w-4 h-4 text-[#009966] dark:text-emerald-400" />
+                        <p className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">
                           Legenda Sebaran Peta
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => setIsLegendOpen(false)}
-                        className="text-slate-400 hover:text-slate-700 p-0.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                        className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-0.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                         title="Sembunyikan Legenda"
                       >
                         <ChevronDown className="w-4 h-4" />
@@ -948,7 +948,7 @@ const ManajemenTempatSampah: React.FC = () => {
                     {/* Legenda Kategori */}
                     <div className="space-y-1.5">
                       <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Kategori Tempat Sampah</span>
-                      <div className="grid grid-cols-1 gap-1 text-xs font-semibold text-slate-700">
+                      <div className="grid grid-cols-1 gap-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
                         <div className="flex items-center gap-2">
                           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white shadow-2xs" />
                           <span>Organik</span>
@@ -965,9 +965,9 @@ const ManajemenTempatSampah: React.FC = () => {
                     </div>
 
                     {/* Legenda Kapasitas */}
-                    <div className="space-y-1.5 border-t border-slate-100 pt-2">
+                    <div className="space-y-1.5 border-t border-slate-100 dark:border-slate-800 pt-2">
                       <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Status Volume & Okupansi</span>
-                      <div className="grid grid-cols-1 gap-1 text-xs font-semibold text-slate-700">
+                      <div className="grid grid-cols-1 gap-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
                         <div className="flex items-center gap-2">
                           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100 shadow-2xs" />
                           <span>Aman (&lt; 70% Terisi)</span>
@@ -987,9 +987,9 @@ const ManajemenTempatSampah: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="border-t border-slate-100 pt-2 flex items-center justify-between text-[10px] text-slate-400 font-medium">
+                    <div className="border-t border-slate-100 dark:border-slate-800 pt-2 flex items-center justify-between text-[10px] text-slate-400 font-medium">
                       <span>Diperbarui: {lastSyncTime.toLocaleTimeString()}</span>
-                      <span className="text-emerald-600 font-bold">Realtime</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">Realtime</span>
                     </div>
                   </div>
                 )}
@@ -1202,42 +1202,41 @@ const ManajemenTempatSampah: React.FC = () => {
         <div className="space-y-6">
 
           {/* Stats Summary Cards */}
-          {/* Summary Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-xs flex items-center justify-between transition-all hover:shadow-md">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xs flex items-center justify-between transition-all hover:shadow-md">
               <div>
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
                   TOTAL TEMPAT SAMPAH
                 </p>
-                <h3 className="text-2xl font-black text-slate-900 mt-1">
+                <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">
                   {bins.length}
                 </h3>
               </div>
-              <div className="w-11 h-11 rounded-2xl bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20 shadow-2xs">
+              <div className="w-11 h-11 rounded-2xl bg-[#009966]/10 text-[#009966] dark:text-emerald-400 flex items-center justify-center border border-[#009966]/20 dark:border-emerald-700/40 shadow-2xs">
                 <Trash2 size={20} />
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-xs flex items-center justify-between transition-all hover:shadow-md">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xs flex items-center justify-between transition-all hover:shadow-md">
               <div>
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
                   STATUS NORMAL
                 </p>
-                <h3 className="text-2xl font-black text-emerald-600 mt-1">
+                <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
                   {bins.filter((b) => b.status === "ACTIVE_BOUND" || b.status === "ACTIVE" || b.status === "Normal").length}
                 </h3>
               </div>
-              <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-2xs">
+              <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-700/50 shadow-2xs">
                 <CheckCircle size={20} />
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-xs flex items-center justify-between transition-all hover:shadow-md">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xs flex items-center justify-between transition-all hover:shadow-md">
               <div>
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
                   KAPASITAS PENUH (&gt;80%)
                 </p>
-                <h3 className="text-2xl font-black text-amber-600 mt-1">
+                <h3 className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">
                   {bins.filter((b) => {
                     const vol = Number(b.currentVolumeLiter || 0);
                     const max = Number(b.maxCapacityLiter || 25);
@@ -1245,28 +1244,28 @@ const ManajemenTempatSampah: React.FC = () => {
                   }).length}
                 </h3>
               </div>
-              <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shadow-2xs">
+              <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-100 dark:border-amber-700/50 shadow-2xs">
                 <AlertTriangle size={20} />
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-xs flex items-center justify-between transition-all hover:shadow-md">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xs flex items-center justify-between transition-all hover:shadow-md">
               <div>
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
                   FISIK RUSAK
                 </p>
-                <h3 className="text-2xl font-black text-rose-600 mt-1">
+                <h3 className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">
                   {bins.filter((b) => b.status === "BROKEN" || b.realStatus === "BROKEN" || b.status === "Rusak").length}
                 </h3>
               </div>
-              <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 shadow-2xs">
+              <div className="w-11 h-11 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-100 dark:border-rose-700/50 shadow-2xs">
                 <XCircle size={20} />
               </div>
             </div>
           </div>
 
       {/* Search & Filter Toolbar matching User Screenshot */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <div className="flex flex-col md:flex-row items-center justify-between gap-3">
           {/* Search Box */}
           <div className="relative w-full md:w-80">
@@ -1276,7 +1275,7 @@ const ManajemenTempatSampah: React.FC = () => {
               placeholder="Cari kode tempat sampah..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#009966] focus:bg-white transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#009966] focus:bg-white dark:focus:bg-slate-800 transition-all"
             />
           </div>
 
@@ -1285,7 +1284,7 @@ const ManajemenTempatSampah: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-              className="flex items-center gap-2.5 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer shadow-2xs"
+              className="flex items-center gap-2.5 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-2xs"
             >
               <span className={`w-2 h-2 rounded-full ${
                 statusFilter === "Normal" || statusFilter === "ACTIVE" || statusFilter === "Aktif" ? "bg-emerald-500" : statusFilter === "Penuh" ? "bg-rose-500" : statusFilter === "Sedang" ? "bg-amber-500" : statusFilter === "Perbaikan" ? "bg-rose-500" : "bg-slate-400"
@@ -1297,7 +1296,7 @@ const ManajemenTempatSampah: React.FC = () => {
             {isStatusDropdownOpen && (
               <>
                 <div className="fixed inset-0 z-20" onClick={() => setIsStatusDropdownOpen(false)} />
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-100 rounded-2xl shadow-xl z-30 p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-30 p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150">
                   {["Semua Status", "Normal", "Penuh", "Sedang", "Perbaikan"].map((st) => {
                     const isSelected = (st === "Semua Status" && !statusFilter) || statusFilter === st;
                     return (
@@ -1310,12 +1309,12 @@ const ManajemenTempatSampah: React.FC = () => {
                         }}
                         className={`w-full text-left px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
                           isSelected
-                            ? "bg-emerald-50/80 text-[#009966] font-extrabold"
-                            : "text-slate-700 hover:bg-slate-50 font-semibold"
+                            ? "bg-emerald-50/80 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-extrabold"
+                            : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold"
                         }`}
                       >
                         <span>{st}</span>
-                        {isSelected && <Check size={16} className="text-[#009966]" />}
+                        {isSelected && <Check size={16} className="text-[#009966] dark:text-emerald-400" />}
                       </button>
                     );
                   })}
@@ -1327,11 +1326,11 @@ const ManajemenTempatSampah: React.FC = () => {
       </div>
 
       {/* Bin Table matching Master Pengguna styling */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-xs">
         <div className="overflow-x-auto w-full">
           <table className="w-full text-left border-collapse min-w-[1100px]">
             <thead>
-              <tr className="bg-slate-50/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 whitespace-nowrap">
+              <tr className="bg-slate-50/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">
                 <th className="py-3 px-4 text-center whitespace-nowrap">QR CODE</th>
                 <th className="py-3 px-4 whitespace-nowrap">KODE TEMPAT SAMPAH</th>
                 <th className="py-3 px-4 whitespace-nowrap">KATEGORI</th>
@@ -1343,16 +1342,16 @@ const ManajemenTempatSampah: React.FC = () => {
                 {!isReadOnly && <th className="py-3 px-4 text-center whitespace-nowrap">AKSI</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {loading ? (
               <tr>
                 <td colSpan={9} className="px-6 py-16 text-center">
                   <div className="flex flex-col items-center justify-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20 shadow-xs">
+                    <div className="w-12 h-12 rounded-2xl bg-[#009966]/10 text-[#009966] dark:text-emerald-400 flex items-center justify-center border border-[#009966]/20 dark:border-emerald-700/40 shadow-xs">
                       <Loader2 className="animate-spin text-[#009966]" size={24} />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-slate-800">Memuat Data Tempat Sampah...</p>
+                      <p className="text-xs font-black text-slate-800 dark:text-slate-200">Memuat Data Tempat Sampah...</p>
                       <p className="text-[11px] text-slate-400 font-medium mt-0.5">Menghubungkan ke server TrashCare real-time.</p>
                     </div>
                   </div>
@@ -1362,17 +1361,17 @@ const ManajemenTempatSampah: React.FC = () => {
               <tr>
                 <td colSpan={9} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center justify-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 shadow-xs">
+                    <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-100 dark:border-rose-700/50 shadow-xs">
                       <AlertTriangle size={24} />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-slate-900">Gagal Memuat Data Tempat Sampah</p>
+                      <p className="text-xs font-black text-slate-900 dark:text-slate-100">Gagal Memuat Data Tempat Sampah</p>
                       <p className="text-[11px] text-rose-500 font-semibold mt-0.5">{error}</p>
                     </div>
                     <button
                       type="button"
                       onClick={fetchBins}
-                      className="mt-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all cursor-pointer"
+                      className="mt-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition-all cursor-pointer"
                     >
                       Coba Lagi
                     </button>
@@ -1389,13 +1388,13 @@ const ManajemenTempatSampah: React.FC = () => {
                 return (
                   <tr
                     key={bin.kode}
-                    className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors text-xs text-slate-700 font-medium whitespace-nowrap"
+                    className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors text-xs text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap"
                   >
                     {/* 1. QR CODE */}
                     <td className="py-3 px-4 text-center whitespace-nowrap">
                       <div
                         onClick={() => setSelectedBinDetail(bin)}
-                        className="inline-flex items-center justify-center p-1 bg-white rounded-xl border border-slate-200 shadow-2xs hover:border-[#009966] hover:scale-105 transition-all cursor-pointer"
+                        className="inline-flex items-center justify-center p-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs hover:border-[#009966] hover:scale-105 transition-all cursor-pointer"
                         title="Klik untuk melihat Detail & Scan QR Code"
                       >
                         <img
@@ -1411,7 +1410,7 @@ const ManajemenTempatSampah: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setSelectedBinDetail(bin)}
-                        className="font-mono font-black text-slate-900 text-xs bg-slate-100 hover:bg-[#009966]/10 hover:text-[#009966] px-2.5 py-1 rounded-lg border border-slate-200/80 transition-colors cursor-pointer whitespace-nowrap"
+                        className="font-mono font-black text-slate-900 dark:text-slate-100 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-[#009966]/10 hover:text-[#009966] dark:hover:text-emerald-400 px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer whitespace-nowrap"
                         title="Klik untuk melihat Detail & Scan QR Code"
                       >
                         {bin.kode}
@@ -1422,10 +1421,10 @@ const ManajemenTempatSampah: React.FC = () => {
                     <td className="py-3 px-4 whitespace-nowrap">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
                         isResiduBin
-                          ? "bg-slate-100 text-slate-700 border border-slate-200"
+                          ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                           : isAnorganikBin
-                          ? "bg-amber-50 text-amber-800 border border-amber-200"
-                          : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50"
+                          : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50"
                       }`}>
                         {catText}
                       </span>
@@ -1435,7 +1434,7 @@ const ManajemenTempatSampah: React.FC = () => {
                     <td className="py-3 px-4 whitespace-nowrap">
                       {bin.wargaName || bin.user?.name ? (
                         <div>
-                          <p className="font-bold text-slate-800 text-xs whitespace-nowrap">
+                          <p className="font-bold text-slate-800 dark:text-slate-200 text-xs whitespace-nowrap">
                             {bin.wargaName || bin.user?.name}
                           </p>
                           <div className="mt-0.5 whitespace-nowrap">
@@ -1451,12 +1450,12 @@ const ManajemenTempatSampah: React.FC = () => {
                     <td className="py-3 px-4 whitespace-nowrap">
                       <div className="flex flex-col gap-1 min-w-[110px]">
                         <div className="flex justify-between items-center text-[11px] font-bold">
-                          <span className="text-slate-700">{bin.currentVolumeLiter || 0}/{bin.maxCapacityLiter || 25}L</span>
-                          <span className={bin.kapasitas > 90 ? "text-rose-600" : bin.kapasitas >= 70 ? "text-amber-600" : "text-emerald-600"}>
+                          <span className="text-slate-700 dark:text-slate-300">{bin.currentVolumeLiter || 0}/{bin.maxCapacityLiter || 25}L</span>
+                          <span className={bin.kapasitas > 90 ? "text-rose-600 dark:text-rose-400" : bin.kapasitas >= 70 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}>
                             {bin.kapasitas}%
                           </span>
                         </div>
-                        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/60">
+                        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-200/60 dark:border-slate-700">
                           <div
                             className={`h-full rounded-full transition-all duration-500 ${
                               bin.kapasitas > 90 ? "bg-rose-500" : bin.kapasitas >= 70 ? "bg-amber-500" : "bg-emerald-500"
@@ -1471,10 +1470,10 @@ const ManajemenTempatSampah: React.FC = () => {
                     <td className="py-3 px-4 text-center whitespace-nowrap">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
                         bin.status === "Penuh" || bin.realStatus === "BROKEN"
-                          ? "bg-rose-50 text-rose-700 border border-rose-200"
+                          ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-700/50"
                           : bin.realStatus === "PENDING_APPROVAL" || bin.status === "Perbaikan"
-                          ? "bg-amber-50 text-amber-700 border border-amber-200"
-                          : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50"
+                          : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50"
                       }`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${
                           bin.status === "Penuh" || bin.realStatus === "BROKEN"
@@ -1488,7 +1487,7 @@ const ManajemenTempatSampah: React.FC = () => {
                     </td>
 
                     {/* 7. DIVERIFIKASI PADA */}
-                    <td className="py-3 px-4 text-slate-600 text-xs font-semibold whitespace-nowrap">
+                    <td className="py-3 px-4 text-slate-600 dark:text-slate-400 text-xs font-semibold whitespace-nowrap">
                       {bin.verifiedAt ? (
                         bin.verifiedAt === "Belum Diaktivasi" ? (
                           <span className="text-slate-400 font-medium italic">Belum Diaktivasi</span>
@@ -1503,7 +1502,7 @@ const ManajemenTempatSampah: React.FC = () => {
                     </td>
 
                     {/* 8. GPS */}
-                    <td className="py-3 px-4 font-mono text-[11px] text-slate-600 font-semibold whitespace-nowrap">
+                    <td className="py-3 px-4 font-mono text-[11px] text-slate-600 dark:text-slate-400 font-semibold whitespace-nowrap">
                       {bin.latitude && bin.longitude ? (
                         `${Number(bin.latitude).toFixed(4)}, ${Number(bin.longitude).toFixed(4)}, ${bin.altitude || 768} mdpl`
                       ) : bin.gpsFormatted && bin.gpsFormatted !== "Belum Terikat (GPS)" ? (
@@ -1519,21 +1518,21 @@ const ManajemenTempatSampah: React.FC = () => {
                         <div className="flex items-center justify-center gap-1.5">
                           <button
                             onClick={() => handleOpenEditModal(bin)}
-                            className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 hover:bg-[#009966] hover:text-white transition-all flex items-center justify-center cursor-pointer"
+                            className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-[#009966] hover:text-white dark:hover:bg-[#009966] transition-all flex items-center justify-center cursor-pointer"
                             title="Ubah Data"
                           >
                             <Pencil size={14} />
                           </button>
                           <button
                             onClick={() => openLogModal(bin)}
-                            className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 hover:bg-[#009966] hover:text-white transition-all flex items-center justify-center cursor-pointer"
+                            className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-[#009966] hover:text-white dark:hover:bg-[#009966] transition-all flex items-center justify-center cursor-pointer"
                             title="Identitas Kepemilikan Tempat Sampah"
                           >
                             <ShieldCheck size={14} />
                           </button>
                           <button
                             onClick={() => handleOpenDeleteModal(bin.kode)}
-                            className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center cursor-pointer"
+                            className="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-600 hover:text-white dark:hover:bg-rose-600 transition-all flex items-center justify-center cursor-pointer"
                             title="Hapus Tempat Sampah"
                           >
                             <Trash2 size={14} />
@@ -1577,15 +1576,15 @@ const ManajemenTempatSampah: React.FC = () => {
       {/* Identitas Kepemilikan Tempat Sampah Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl flex flex-col overflow-hidden border border-slate-100">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-xl flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/80">
-              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <ShieldCheck className="text-[#009966]" size={20} />
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/80">
+              <h3 className="text-base font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <ShieldCheck className="text-[#009966] dark:text-emerald-400" size={20} />
                 Identitas Kepemilikan Tempat Sampah
               </h3>
               <button
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-full transition-colors cursor-pointer"
                 onClick={closeLogModal}
               >
                 <X size={20} />
@@ -1598,13 +1597,13 @@ const ManajemenTempatSampah: React.FC = () => {
               {(() => {
                 const isBound = Boolean(selectedBinObj?.wargaName || selectedBinObj?.user?.name || selectedBinObj?.userId);
                 return (
-                  <div className="bg-slate-50 p-4.5 rounded-2xl border border-slate-200/80 space-y-3 shadow-2xs">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
-                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                        <User size={15} className="text-[#009966]" /> Identitas Pemilik Tempat Sampah
+                  <div className="bg-slate-50 dark:bg-slate-800 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-3 shadow-2xs">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-700">
+                      <span className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                        <User size={15} className="text-[#009966] dark:text-emerald-400" /> Identitas Pemilik Tempat Sampah
                       </span>
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                        isBound ? "bg-emerald-100 text-emerald-800 border border-emerald-300" : "bg-slate-200 text-slate-600 border border-slate-300"
+                        isBound ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600"
                       }`}>
                         {isBound ? "Terikat Pemilik" : "Belum Terikat"}
                       </span>
@@ -1613,7 +1612,7 @@ const ManajemenTempatSampah: React.FC = () => {
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div>
                         <span className="text-slate-400 font-bold block text-[10px] uppercase">Nama Lengkap</span>
-                        <span className="font-extrabold text-slate-800 text-sm">
+                        <span className="font-extrabold text-slate-800 dark:text-slate-100 text-sm">
                           {selectedBinObj?.wargaName || selectedBinObj?.user?.name || "-"}
                         </span>
                       </div>
@@ -1623,31 +1622,31 @@ const ManajemenTempatSampah: React.FC = () => {
                       </div>
                       <div>
                         <span className="text-slate-400 font-bold block text-[10px] uppercase">Kecamatan</span>
-                        <span className="font-extrabold text-slate-700">
+                        <span className="font-extrabold text-slate-700 dark:text-slate-300">
                           {selectedBinObj?.kecamatan || selectedBinObj?.user?.kecamatan || (isBound ? "Coblong" : "-")}
                         </span>
                       </div>
                       <div>
                         <span className="text-slate-400 font-bold block text-[10px] uppercase">Kelurahan</span>
-                        <span className="font-extrabold text-slate-700">
+                        <span className="font-extrabold text-slate-700 dark:text-slate-300">
                           {selectedBinObj?.kelurahan || selectedBinObj?.user?.kelurahan || "-"}
                         </span>
                       </div>
                       <div>
                         <span className="text-slate-400 font-bold block text-[10px] uppercase">Rukun Warga</span>
-                        <span className="font-extrabold text-slate-700">
+                        <span className="font-extrabold text-slate-700 dark:text-slate-300">
                           {selectedBinObj?.rw || selectedBinObj?.user?.rw || "-"}
                         </span>
                       </div>
                       <div>
                         <span className="text-slate-400 font-bold block text-[10px] uppercase">Jml. Anggota Keluarga</span>
-                        <span className="font-extrabold text-slate-700">
+                        <span className="font-extrabold text-slate-700 dark:text-slate-300">
                           {selectedBinObj?.jumlahAnggotaKeluarga || selectedBinObj?.user?.jumlahAnggotaKeluarga ? `${selectedBinObj?.jumlahAnggotaKeluarga || selectedBinObj?.user?.jumlahAnggotaKeluarga} Orang` : "-"}
                         </span>
                       </div>
                       <div className="col-span-2">
                         <span className="text-slate-400 font-bold block text-[10px] uppercase">Alamat Lengkap</span>
-                        <span className="font-extrabold text-slate-700">
+                        <span className="font-extrabold text-slate-700 dark:text-slate-300">
                           {selectedBinObj?.address || selectedBinObj?.user?.address || selectedBinObj?.locationName || "-"}
                         </span>
                       </div>
@@ -1657,12 +1656,12 @@ const ManajemenTempatSampah: React.FC = () => {
               })()}
 
               {/* Card 2: Spesifikasi Tempat Sampah */}
-              <div className="bg-slate-50 p-4.5 rounded-2xl border border-slate-200/80 space-y-3 shadow-2xs">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
-                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                    <Box size={15} className="text-blue-600" /> Spesifikasi tempat sampah
+              <div className="bg-slate-50 dark:bg-slate-800 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-3 shadow-2xs">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-700">
+                  <span className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <Box size={15} className="text-blue-600 dark:text-blue-400" /> Spesifikasi tempat sampah
                   </span>
-                  <span className="bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border border-blue-300">
+                  <span className="bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border border-blue-300 dark:border-blue-700/50">
                     {selectedBinObj?.category?.name || selectedBinObj?.kategoriText || (selectedBinObj?.kode?.includes("ANG") ? "Anorganik" : selectedBinObj?.kode?.includes("RSD") ? "Residu" : "Organik")}
                   </span>
                 </div>
@@ -1670,25 +1669,25 @@ const ManajemenTempatSampah: React.FC = () => {
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
                     <span className="text-slate-400 font-bold block text-[10px] uppercase">Kode Tempat Sampah</span>
-                    <span className="font-mono font-black text-slate-900 text-sm">
+                    <span className="font-mono font-black text-slate-900 dark:text-slate-100 text-sm">
                       {selectedBinObj?.kode || selectedBin}
                     </span>
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold block text-[10px] uppercase">Kapasitas Maksimal</span>
-                    <span className="font-extrabold text-slate-800">
+                    <span className="font-extrabold text-slate-800 dark:text-slate-200">
                       {selectedBinObj?.maxCapacityLiter || 25} Liter
                     </span>
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold block text-[10px] uppercase">Volume Terisi Sekarang</span>
-                    <span className="font-extrabold text-emerald-700">
+                    <span className="font-extrabold text-emerald-700 dark:text-emerald-400">
                       {selectedBinObj?.currentVolumeLiter || 0} Liter ({selectedBinObj?.kapasitas || 0}%)
                     </span>
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold block text-[10px] uppercase">Status Operasional</span>
-                    <span className="font-extrabold text-slate-800">
+                    <span className="font-extrabold text-slate-800 dark:text-slate-200">
                       {selectedBinObj?.realStatus === "PRINTED" || (!selectedBinObj?.wargaName && !selectedBinObj?.user?.name) ? "Belum Diaktivasi (PRINTED)" : selectedBinObj?.realStatus === "PENDING_APPROVAL" ? "Menunggu Verifikasi" : selectedBinObj?.status || "Normal"}
                     </span>
                   </div>
@@ -1697,9 +1696,9 @@ const ManajemenTempatSampah: React.FC = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-slate-100 flex justify-end bg-slate-50/80">
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex justify-end bg-slate-50/80 dark:bg-slate-800/80">
               <button
-                className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-2xl text-xs font-bold transition-all cursor-pointer"
+                className="px-5 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-bold transition-all cursor-pointer"
                 onClick={closeLogModal}
               >
                 Tutup
@@ -1712,15 +1711,15 @@ const ManajemenTempatSampah: React.FC = () => {
       {/* QR Code Tempat Sampah Modal (FULL QR CODE ONLY) */}
       {selectedBinDetail && (
         <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden border border-slate-100 p-6 text-center">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 p-6 text-center">
             {/* Modal Header */}
-            <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
-              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                <QrCode className="text-[#009966]" size={20} />
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <QrCode className="text-[#009966] dark:text-emerald-400" size={20} />
                 QR Code Tempat Sampah
               </h3>
               <button
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-full transition-colors cursor-pointer"
                 onClick={() => setSelectedBinDetail(null)}
               >
                 <X size={20} />
@@ -1728,9 +1727,9 @@ const ManajemenTempatSampah: React.FC = () => {
             </div>
 
             {/* FULL QR CODE BODY */}
-            <div className="flex flex-col items-center justify-center gap-4 py-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <div className="flex flex-col items-center justify-center gap-4 py-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
               <img
-                className="w-56 h-56 object-contain rounded-xl p-2 bg-white shadow-xs border border-slate-200"
+                className="w-56 h-56 object-contain rounded-xl p-2 bg-white dark:bg-slate-900 shadow-xs border border-slate-200 dark:border-slate-700"
                 alt="QR Code Tempat Sampah"
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(selectedBinDetail.kode)}`}
               />
@@ -1738,7 +1737,7 @@ const ManajemenTempatSampah: React.FC = () => {
                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
                   KODE TEMPAT SAMPAH
                 </p>
-                <span className="text-sm font-mono font-black text-[#009966] tracking-wider">
+                <span className="text-sm font-mono font-black text-[#009966] dark:text-emerald-400 tracking-wider">
                   {selectedBinDetail.kode}
                 </span>
               </div>
@@ -1747,7 +1746,7 @@ const ManajemenTempatSampah: React.FC = () => {
             {/* Footer Actions */}
             <div className="mt-5 flex gap-3">
               <button
-                className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all cursor-pointer"
+                className="flex-1 py-3 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-bold transition-all cursor-pointer"
                 onClick={() => setSelectedBinDetail(null)}
               >
                 Tutup
@@ -1770,25 +1769,25 @@ const ManajemenTempatSampah: React.FC = () => {
       {/* Modal Edit Tempat Sampah */}
       {isFormModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col border border-slate-100">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col border border-slate-100 dark:border-slate-800">
             {/* Modal Header */}
-            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-start bg-white">
+            <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-white dark:bg-slate-900">
               <div className="flex items-start gap-3.5">
-                <div className="w-11 h-11 rounded-full bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20 shrink-0 mt-0.5">
+                <div className="w-11 h-11 rounded-full bg-[#009966]/10 text-[#009966] dark:text-emerald-400 flex items-center justify-center border border-[#009966]/20 dark:border-emerald-700/40 shrink-0 mt-0.5">
                   <Pencil size={22} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                  <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight">
                     Ubah Data Tempat Sampah
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                     Perbarui informasi tempat sampah fisik.
                   </p>
                 </div>
               </div>
               <button
                 onClick={closeFormModal}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-full transition-colors cursor-pointer"
               >
                 <X size={20} />
               </button>
@@ -1800,26 +1799,26 @@ const ManajemenTempatSampah: React.FC = () => {
               className="p-6 flex flex-col gap-4 overflow-y-auto max-h-[75vh]"
             >
               <div>
-                <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
                   Kode Tempat Sampah
                 </label>
                 <input
                   type="text"
                   readOnly
                   value={formData.qrCode || selectedBin || ""}
-                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 bg-slate-100/80 font-mono font-bold text-slate-700 text-xs outline-none"
+                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800 font-mono font-bold text-slate-700 dark:text-slate-300 text-xs outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
                   Kategori Sampah <span className="text-rose-500">*</span>
                 </label>
                 <select
                   required
                   value={formData.categoryId}
                   onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:border-[#009966] text-xs font-bold text-slate-800 outline-none transition-all cursor-pointer"
+                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all cursor-pointer"
                 >
                   {categories.length > 0 ? (
                     categories.map((c) => (
@@ -1837,7 +1836,7 @@ const ManajemenTempatSampah: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
                   Kapasitas Maksimum (Liter) <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -1845,36 +1844,36 @@ const ManajemenTempatSampah: React.FC = () => {
                   required
                   value={formData.maxCapacityLiter}
                   onChange={(e) => setFormData({ ...formData, maxCapacityLiter: parseFloat(e.target.value) })}
-                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:border-[#009966] text-xs font-bold text-slate-800 outline-none transition-all"
+                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
                   Status Operasional (Sensor Real-time)
                 </label>
 
                 {/* Status Card 1 */}
-                <div className="p-4 bg-slate-50/60 border border-slate-200/80 rounded-2xl flex items-center justify-between gap-3">
+                <div className="p-4 bg-slate-50/60 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 rounded-2xl flex items-center justify-between gap-3">
                   <div>
-                    <span className="text-xs font-extrabold text-slate-800 block mb-0.5">
+                    <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200 block mb-0.5">
                       Status Otomatis Lapangan
                     </span>
-                    <span className="text-[11px] text-slate-500 font-medium leading-snug block max-w-[230px]">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-snug block max-w-[230px]">
                       Dihitung otomatis dari persentase volume terisi dari sensor mobile.
                     </span>
                   </div>
                   <span className={`px-3 py-1.5 rounded-full text-[10.5px] font-extrabold uppercase tracking-wide border shrink-0 ${
                     formData.status === "BROKEN" || formData.status === "Rusak"
-                      ? "bg-rose-50 text-rose-700 border-rose-200"
-                      : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                      ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-700/50"
+                      : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/50"
                   }`}>
                     {formData.status === "BROKEN" ? "Rusak" : "Aktif"}
                   </span>
                 </div>
 
                 {/* Status Card 2 Checkbox */}
-                <label className="mt-3 flex items-start gap-3 p-4 rounded-2xl border border-amber-200/80 bg-amber-50/40 text-slate-700 cursor-pointer hover:bg-amber-50/80 transition-all">
+                <label className="mt-3 flex items-start gap-3 p-4 rounded-2xl border border-amber-200/80 dark:border-amber-700/50 bg-amber-50/40 dark:bg-amber-950/30 text-slate-700 dark:text-slate-300 cursor-pointer hover:bg-amber-50/80 dark:hover:bg-amber-950/50 transition-all">
                   <input
                     type="checkbox"
                     checked={formData.status === "BROKEN" || formData.status === "Rusak"}
@@ -1884,13 +1883,13 @@ const ManajemenTempatSampah: React.FC = () => {
                         status: e.target.checked ? "BROKEN" : "ACTIVE_BOUND",
                       })
                     }
-                    className="mt-0.5 w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500 cursor-pointer"
+                    className="mt-0.5 w-4 h-4 text-amber-600 rounded border-slate-300 dark:border-slate-600 focus:ring-amber-500 cursor-pointer"
                   />
                   <div>
-                    <span className="text-xs font-extrabold text-slate-900 block mb-0.5">
+                    <span className="text-xs font-extrabold text-slate-900 dark:text-slate-100 block mb-0.5">
                       Tandai Fisik Tempat Sampah Rusak atau dalam Perbaikan
                     </span>
-                    <span className="text-[11px] text-slate-500 font-medium leading-normal block">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-normal block">
                       Centang jika fisik tempat sampah rusak atau sobek dan perlu penanganan petugas.
                     </span>
                   </div>
@@ -1898,11 +1897,11 @@ const ManajemenTempatSampah: React.FC = () => {
               </div>
 
               {/* Modal Footer Buttons */}
-              <div className="mt-4 flex justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="mt-4 flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={closeFormModal}
-                  className="px-6 py-2.5 rounded-full font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs transition-all cursor-pointer"
+                  className="px-6 py-2.5 rounded-full font-bold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs transition-all cursor-pointer"
                 >
                   Batal
                 </button>
@@ -1923,18 +1922,18 @@ const ManajemenTempatSampah: React.FC = () => {
       {/* Modal Confirm Delete (Standardized to User Screenshot) */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col p-6 text-center transform transition-all border border-slate-100">
-            <div className="w-14 h-14 rounded-2xl bg-rose-50 text-[#ff2851] flex items-center justify-center mx-auto mb-4 border border-rose-100">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col p-6 text-center transform transition-all border border-slate-100 dark:border-slate-800">
+            <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-[#ff2851] flex items-center justify-center mx-auto mb-4 border border-rose-100 dark:border-rose-700/50">
               <AlertTriangle size={26} />
             </div>
-            <h3 className="text-lg font-extrabold text-slate-900 mb-1.5">Hapus Tempat Sampah?</h3>
-            <p className="text-xs text-slate-500 font-medium mb-6 leading-relaxed">
+            <h3 className="text-lg font-extrabold text-slate-900 dark:text-slate-100 mb-1.5">Hapus Tempat Sampah?</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6 leading-relaxed">
               Apakah Anda yakin ingin menghapus tempat sampah dengan kode <strong>{binToDelete}</strong>? Tindakan ini tidak dapat dibatalkan.
             </p>
             <div className="flex justify-center gap-3">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="flex-1 py-3 px-4 border border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 text-xs transition-all cursor-pointer"
+                className="flex-1 py-3 px-4 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 text-xs transition-all cursor-pointer"
               >
                 Batal
               </button>

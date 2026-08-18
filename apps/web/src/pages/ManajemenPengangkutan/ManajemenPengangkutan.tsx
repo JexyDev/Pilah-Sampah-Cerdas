@@ -355,10 +355,10 @@ export const ManajemenPengangkutan: React.FC = () => {
 
   const getStatusBadge = (status: DispatchTask["status"]) => {
     const configs = {
-      PENDING: { bg: "bg-amber-50 text-amber-700 border-amber-200", label: "Pending", icon: Clock },
-      CLAIMED: { bg: "bg-blue-50 text-blue-700 border-blue-200", label: "Diklaim", icon: Truck },
-      COMPLETED: { bg: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Selesai", icon: CheckCircle2 },
-      ESCALATED: { bg: "bg-rose-50 text-rose-700 border-rose-200", label: "Eskalasi", icon: AlertCircle }
+      PENDING: { bg: "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/50", label: "Pending", icon: Clock },
+      CLAIMED: { bg: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700/50", label: "Diklaim", icon: Truck },
+      COMPLETED: { bg: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/50", label: "Selesai", icon: CheckCircle2 },
+      ESCALATED: { bg: "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-700/50", label: "Eskalasi", icon: AlertCircle }
     };
     const c = configs[status] || configs.PENDING;
     const IconComp = c.icon;
@@ -371,13 +371,13 @@ export const ManajemenPengangkutan: React.FC = () => {
 
   const getRequestStatusBadge = (status: BinResetRequest["status"]) => {
     const configs = {
-      PENDING: { bg: "bg-amber-50 text-amber-700 border-amber-200", label: "Pending", icon: Clock },
-      ON_PROGRESS: { bg: "bg-blue-50 text-blue-700 border-blue-200", label: "Dalam Proses", icon: Truck },
-      COMPLETED: { bg: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Selesai", icon: CheckCircle2 },
-      APPROVED: { bg: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Disetujui", icon: CheckCircle },
-      REJECTED: { bg: "bg-rose-50 text-rose-700 border-rose-200", label: "Ditolak", icon: AlertCircle }
+      PENDING: { bg: "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/50", label: "Pending", icon: Clock },
+      ON_PROGRESS: { bg: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700/50", label: "Dalam Proses", icon: Truck },
+      COMPLETED: { bg: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/50", label: "Selesai", icon: CheckCircle2 },
+      APPROVED: { bg: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/50", label: "Disetujui", icon: CheckCircle },
+      REJECTED: { bg: "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-700/50", label: "Ditolak", icon: AlertCircle }
     };
-    const c = configs[status] || { bg: "bg-slate-50 text-slate-700 border-slate-200", label: status, icon: Clock };
+    const c = configs[status] || { bg: "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700", label: status, icon: Clock };
     const IconComp = c.icon;
     return (
       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black border ${c.bg}`}>
@@ -440,7 +440,7 @@ export const ManajemenPengangkutan: React.FC = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 font-sans">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-100 font-sans">
       {/* Clean Enterprise Page Header */}
       <PageHeader
         icon={Truck}
@@ -463,46 +463,46 @@ export const ManajemenPengangkutan: React.FC = () => {
       {/* KPI Metric Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         {/* Total Tasks Card */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3.5 group hover:border-emerald-300 transition-all">
-          <div className="p-3 bg-emerald-50 text-[#009966] rounded-xl shrink-0 border border-emerald-100 group-hover:scale-105 transition-transform">
+        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5 group hover:border-emerald-300 dark:hover:border-emerald-600 transition-all">
+          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-800/40 group-hover:scale-105 transition-transform">
             <Truck className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10.5px] text-slate-500 font-bold uppercase tracking-wider">Total Penugasan</p>
-            <p className="text-lg font-black text-slate-900 mt-0.5">{totalTasksCount} <span className="text-xs font-semibold text-slate-500">Tugas</span></p>
+            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Total Penugasan</p>
+            <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">{totalTasksCount} <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Tugas</span></p>
           </div>
         </div>
 
         {/* Pending Card */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3.5 group hover:border-amber-300 transition-all">
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-xl shrink-0 border border-amber-100 group-hover:scale-105 transition-transform">
+        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5 group hover:border-amber-300 dark:hover:border-amber-600 transition-all">
+          <div className="p-3 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-xl shrink-0 border border-amber-100 dark:border-amber-800/40 group-hover:scale-105 transition-transform">
             <Clock className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10.5px] text-slate-500 font-bold uppercase tracking-wider">Pending Penjemputan</p>
-            <p className="text-lg font-black text-amber-700 mt-0.5">{pendingTasksCount} <span className="text-xs font-semibold text-slate-500">Antrean</span></p>
+            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Pending Penjemputan</p>
+            <p className="text-lg font-black text-amber-700 dark:text-amber-400 mt-0.5">{pendingTasksCount} <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Antrean</span></p>
           </div>
         </div>
 
         {/* Claimed / On Progress Card */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3.5 group hover:border-blue-300 transition-all">
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl shrink-0 border border-blue-100 group-hover:scale-105 transition-transform">
+        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5 group hover:border-blue-300 dark:hover:border-blue-600 transition-all">
+          <div className="p-3 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 rounded-xl shrink-0 border border-blue-100 dark:border-blue-800/40 group-hover:scale-105 transition-transform">
             <UserCheck className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10.5px] text-slate-500 font-bold uppercase tracking-wider">Diklaim Petugas</p>
-            <p className="text-lg font-black text-blue-700 mt-0.5">{claimedTasksCount} <span className="text-xs font-semibold text-slate-500">Proses</span></p>
+            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Diklaim Petugas</p>
+            <p className="text-lg font-black text-blue-700 dark:text-blue-400 mt-0.5">{claimedTasksCount} <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Proses</span></p>
           </div>
         </div>
 
         {/* Completed Card */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3.5 group hover:border-purple-300 transition-all">
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-xl shrink-0 border border-purple-100 group-hover:scale-105 transition-transform">
+        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5 group hover:border-purple-300 dark:hover:border-purple-600 transition-all">
+          <div className="p-3 bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 rounded-xl shrink-0 border border-purple-100 dark:border-purple-800/40 group-hover:scale-105 transition-transform">
             <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10.5px] text-slate-500 font-bold uppercase tracking-wider">Pengangkutan Selesai</p>
-            <p className="text-lg font-black text-purple-700 mt-0.5">{completedTasksCount} <span className="text-xs font-semibold text-slate-500">Selesai</span></p>
+            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Pengangkutan Selesai</p>
+            <p className="text-lg font-black text-purple-700 dark:text-purple-400 mt-0.5">{completedTasksCount} <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Selesai</span></p>
           </div>
         </div>
       </div>
@@ -528,7 +528,7 @@ export const ManajemenPengangkutan: React.FC = () => {
       {activeTab === "tasks" ? (
         <>
           {/* Filter & Search Bar Section */}
-          <div className="bg-white p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 shadow-2xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5">
+          <div className="bg-white dark:bg-slate-900 p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5">
             {/* Search Bar */}
             <div className="relative flex-1 min-w-[240px]">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -540,12 +540,12 @@ export const ManajemenPengangkutan: React.FC = () => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#009966] focus:bg-white transition-all"
+                className="w-full pl-10 pr-9 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-[#009966] focus:bg-white dark:focus:bg-slate-800 transition-all"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                 >
                   <X size={14} />
                 </button>
@@ -561,7 +561,7 @@ export const ManajemenPengangkutan: React.FC = () => {
                   setStatusFilter(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-[#009966] transition cursor-pointer"
+                className="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-[#009966] transition cursor-pointer"
               >
                 <option value="">Semua Status Pengangkutan</option>
                 <option value="PENDING">Pending (Antrean)</option>
@@ -577,7 +577,7 @@ export const ManajemenPengangkutan: React.FC = () => {
                   setRwFilter(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-[#009966] transition cursor-pointer"
+                className="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-[#009966] transition cursor-pointer"
               >
                 <option value="">Semua Rukun Warga</option>
                 {areas.map((a) => (
@@ -591,7 +591,7 @@ export const ManajemenPengangkutan: React.FC = () => {
               {(statusFilter || rwFilter || searchQuery) && (
                 <button
                   onClick={resetFilters}
-                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                  className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-2xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                 >
                   <RotateCcw size={13} /> Reset
                 </button>
@@ -600,13 +600,13 @@ export const ManajemenPengangkutan: React.FC = () => {
           </div>
 
           {/* Table Section */}
-          <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+          <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
               <div>
-                <h3 className="font-extrabold text-base text-slate-900 tracking-tight flex items-center gap-2">
+                <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
                   <Truck size={18} className="text-[#009966]" /> Daftar Penugasan Pengangkutan Residu
                 </h3>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                   Menampilkan {filteredTasks.length === 0 ? 0 : `${(currentPage - 1) * itemsPerPage + 1} - ${Math.min(currentPage * itemsPerPage, filteredTasks.length)}`} dari {filteredTasks.length} data penugasan
                 </p>
               </div>
@@ -628,7 +628,7 @@ export const ManajemenPengangkutan: React.FC = () => {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-200 bg-slate-50/80">
+                    <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80">
                       <th className="py-3.5 px-4 rounded-l-2xl">ID Tugas</th>
                       <th className="py-3.5 px-4">Tempat Sampah</th>
                       <th className="py-3.5 px-4">Rukun Warga</th>
@@ -638,18 +638,18 @@ export const ManajemenPengangkutan: React.FC = () => {
                       <th className="py-3.5 px-4 text-center rounded-r-2xl">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                     {paginatedTasks.map((task) => (
-                      <tr key={task.id} className="hover:bg-slate-50/90 transition-colors">
-                        <td className="py-3.5 px-4 font-mono font-black text-slate-900 tracking-tight">
+                      <tr key={task.id} className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition-colors">
+                        <td className="py-3.5 px-4 font-mono font-black text-slate-900 dark:text-slate-100 tracking-tight">
                           {task.id.slice(0, 10).toUpperCase()}
                         </td>
                         <td className="py-3.5 px-4">
-                          <div className="font-bold text-slate-900">{task.bin.qrCode}</div>
+                          <div className="font-bold text-slate-900 dark:text-slate-100">{task.bin.qrCode}</div>
                           <div className="text-[10px] text-slate-400 font-mono">ID: {task.binId}</div>
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap">
-                          <span className="inline-block bg-[#eef5ff] text-[#2b6cb0] font-bold text-xs px-3 py-1 rounded-xl border border-[#c3dafe]">
+                          <span className="inline-block bg-[#eef5ff] dark:bg-blue-950/60 text-[#2b6cb0] dark:text-blue-300 font-bold text-xs px-3 py-1 rounded-xl border border-[#c3dafe] dark:border-blue-700/50">
                             {formatRukunWarga(task.bin.rtRw?.name)}
                           </span>
                           {task.bin.rtRw?.kelurahan?.name && (
@@ -658,10 +658,10 @@ export const ManajemenPengangkutan: React.FC = () => {
                             </span>
                           )}
                         </td>
-                        <td className="py-3.5 px-4 font-bold text-slate-800">
+                        <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-200">
                           {task.claimedByUser ? (
                             <div className="flex items-center gap-1.5">
-                              <UserCheck size={14} className="text-[#009966]" />
+                              <UserCheck size={14} className="text-[#009966] dark:text-emerald-400" />
                               <span>{task.claimedByUser.name}</span>
                             </div>
                           ) : (
@@ -671,7 +671,7 @@ export const ManajemenPengangkutan: React.FC = () => {
                         <td className="py-3.5 px-4 text-center">
                           {getStatusBadge(task.status)}
                         </td>
-                        <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap font-bold">
+                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap font-bold">
                           {new Date(task.createdAt).toLocaleDateString("id-ID", {
                             day: "numeric",
                             month: "short",
@@ -693,14 +693,14 @@ export const ManajemenPengangkutan: React.FC = () => {
                               <>
                                 <button
                                   onClick={() => openEditModal(task)}
-                                  className="p-2 bg-slate-100 hover:bg-emerald-50 text-emerald-700 rounded-xl transition cursor-pointer"
+                                  className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl transition cursor-pointer"
                                   title="Edit Tugas"
                                 >
                                   <Pencil size={14} />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(task.id)}
-                                  className="p-2 bg-slate-100 hover:bg-rose-50 text-rose-600 rounded-xl transition cursor-pointer"
+                                  className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-rose-600 dark:text-rose-400 rounded-xl transition cursor-pointer"
                                   title="Hapus/Batalkan"
                                 >
                                   <Trash2 size={14} />
@@ -734,13 +734,13 @@ export const ManajemenPengangkutan: React.FC = () => {
         </>
       ) : (
         /* Requests Tab Section */
-        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
             <div>
-              <h3 className="font-extrabold text-base text-slate-900 tracking-tight">
+              <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 tracking-tight">
                 Daftar Permintaan Pengosongan Tempat Sampah
               </h3>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                 Permintaan pengosongan yang dikirim langsung dari gawai warga melalui aplikasi mobile
               </p>
             </div>
@@ -756,12 +756,12 @@ export const ManajemenPengangkutan: React.FC = () => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-[#009966] focus:bg-white transition"
+                className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-[#009966] focus:bg-white dark:focus:bg-slate-800 transition"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                 >
                   <X size={13} />
                 </button>
@@ -785,7 +785,7 @@ export const ManajemenPengangkutan: React.FC = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-200 bg-slate-50/80">
+                  <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80">
                     <th className="py-3.5 px-4 rounded-l-2xl">Nama Warga</th>
                     <th className="py-3.5 px-4">Rukun Warga</th>
                     <th className="py-3.5 px-4">Tanggal Pengajuan</th>
@@ -794,19 +794,19 @@ export const ManajemenPengangkutan: React.FC = () => {
                     <th className="py-3.5 px-4 text-center rounded-r-2xl">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                   {paginatedRequests.map((req) => (
-                    <tr key={req.id} className="hover:bg-slate-50/90 transition-colors">
-                      <td className="py-3.5 px-4 font-bold text-slate-900">
+                    <tr key={req.id} className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">
                         {req.user.name}
                         <span className="block text-[10px] text-slate-400 font-semibold">{req.user.email}</span>
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="inline-block bg-[#eef5ff] text-[#2b6cb0] font-bold text-xs px-3 py-1 rounded-xl border border-[#c3dafe]">
+                        <span className="inline-block bg-[#eef5ff] dark:bg-blue-950/60 text-[#2b6cb0] dark:text-blue-300 font-bold text-xs px-3 py-1 rounded-xl border border-[#c3dafe] dark:border-blue-700/50">
                           {formatRukunWarga(req.bin.rtRw?.name)}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap font-bold text-slate-700">
+                      <td className="py-3.5 px-4 whitespace-nowrap font-bold text-slate-700 dark:text-slate-300">
                         {new Date(req.createdAt).toLocaleString("id-ID", {
                           day: "numeric",
                           month: "short",
@@ -821,7 +821,7 @@ export const ManajemenPengangkutan: React.FC = () => {
                       <td className="py-3.5 px-4 text-center">
                         <button
                           onClick={() => setEvidenceModalUrl(req.evidencePhotoUrl)}
-                          className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer"
+                          className="px-3 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer"
                         >
                           <Eye size={13} /> Lihat Foto
                         </button>
@@ -845,7 +845,7 @@ export const ManajemenPengangkutan: React.FC = () => {
                               </button>
                               <button
                                 onClick={() => handleUpdateRequestStatus(req.id, "REJECTED")}
-                                className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer"
+                                className="bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-700/50 px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer"
                               >
                                 Tolak
                               </button>
@@ -887,8 +887,8 @@ export const ManajemenPengangkutan: React.FC = () => {
       {/* Modal Dialog Form Tambah/Edit Tugas */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-900 dark:bg-slate-950 text-white">
               <h3 className="text-base font-black text-white flex items-center gap-2">
                 <Truck size={18} className="text-emerald-400" />
                 {editingTask ? "Edit Tugas Pengangkutan" : "Catat Tugas Pengangkutan"}
@@ -901,15 +901,15 @@ export const ManajemenPengangkutan: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs font-bold text-slate-700">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs font-bold text-slate-700 dark:text-slate-300">
               <div className="space-y-1.5">
-                <label className="block text-slate-800 font-extrabold">Pilih Tempat Sampah *</label>
+                <label className="block text-slate-800 dark:text-slate-200 font-extrabold">Pilih Tempat Sampah *</label>
                 <select
                   required
                   disabled={!!editingTask}
                   value={selectedBinId}
                   onChange={(e) => setSelectedBinId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 outline-none focus:border-[#009966]"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-[#009966]"
                 >
                   <option value="">-- Pilih Tempat Sampah --</option>
                   {bins.map((b) => (
@@ -921,11 +921,11 @@ export const ManajemenPengangkutan: React.FC = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-slate-800 font-extrabold">Status Pengangkutan *</label>
+                <label className="block text-slate-800 dark:text-slate-200 font-extrabold">Status Pengangkutan *</label>
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value as any)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 outline-none focus:border-[#009966]"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-[#009966]"
                 >
                   <option value="PENDING">Pending (Antrean)</option>
                   <option value="CLAIMED">Diklaim Petugas</option>
@@ -935,11 +935,11 @@ export const ManajemenPengangkutan: React.FC = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-slate-800 font-extrabold">Petugas Penjemput (Opsional)</label>
+                <label className="block text-slate-800 dark:text-slate-200 font-extrabold">Petugas Penjemput (Opsional)</label>
                 <select
                   value={selectedPetugasId}
                   onChange={(e) => setSelectedPetugasId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 outline-none focus:border-[#009966]"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-[#009966]"
                 >
                   <option value="">-- Tanpa Petugas (Bisa diklaim via Mobile) --</option>
                   {petugasList.map((p) => (
@@ -954,7 +954,7 @@ export const ManajemenPengangkutan: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition cursor-pointer"
+                  className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
                 >
                   Batal
                 </button>
@@ -973,8 +973,8 @@ export const ManajemenPengangkutan: React.FC = () => {
       {/* Review Request Modal */}
       {selectedRequestForReview && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-900 dark:bg-slate-950 text-white">
               <h3 className="text-base font-black text-white flex items-center gap-2">
                 <ShieldAlert size={18} className="text-amber-400" /> Detail Permintaan Pengosongan
               </h3>
@@ -986,21 +986,21 @@ export const ManajemenPengangkutan: React.FC = () => {
               </button>
             </div>
 
-            <div className="p-6 space-y-4 text-xs text-slate-700">
-              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+            <div className="p-6 space-y-4 text-xs text-slate-700 dark:text-slate-300">
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1">
                 <span className="text-[10px] font-black uppercase text-slate-400">Pengirim Warga</span>
-                <p className="font-extrabold text-slate-900 text-sm">{selectedRequestForReview.user.name}</p>
-                <p className="text-slate-500 font-semibold">{selectedRequestForReview.user.email}</p>
+                <p className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">{selectedRequestForReview.user.name}</p>
+                <p className="text-slate-500 dark:text-slate-400 font-semibold">{selectedRequestForReview.user.email}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1">
                   <span className="text-[10px] font-black uppercase text-slate-400">Rukun Warga</span>
-                  <p className="font-extrabold text-slate-900">{formatRukunWarga(selectedRequestForReview.bin.rtRw?.name)}</p>
+                  <p className="font-extrabold text-slate-900 dark:text-slate-100">{formatRukunWarga(selectedRequestForReview.bin.rtRw?.name)}</p>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1">
                   <span className="text-[10px] font-black uppercase text-slate-400">Kode Tempat Sampah</span>
-                  <p className="font-mono font-black text-[#009966]">{selectedRequestForReview.bin.qrCode}</p>
+                  <p className="font-mono font-black text-[#009966] dark:text-emerald-400">{selectedRequestForReview.bin.qrCode}</p>
                 </div>
               </div>
 
@@ -1009,7 +1009,7 @@ export const ManajemenPengangkutan: React.FC = () => {
                   <span className="text-[10px] font-black uppercase text-slate-400 block">Foto Bukti Pengosongan</span>
                   <div
                     onClick={() => setEvidenceModalUrl(selectedRequestForReview.evidencePhotoUrl)}
-                    className="w-full h-44 rounded-2xl overflow-hidden border border-slate-200 relative group cursor-pointer"
+                    className="w-full h-44 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 relative group cursor-pointer"
                   >
                     <img
                       src={selectedRequestForReview.evidencePhotoUrl}
@@ -1021,10 +1021,10 @@ export const ManajemenPengangkutan: React.FC = () => {
               )}
             </div>
 
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/80 flex justify-end">
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 flex justify-end">
               <button
                 onClick={() => setSelectedRequestForReview(null)}
-                className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black hover:bg-slate-800 transition cursor-pointer"
+                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black transition cursor-pointer"
               >
                 Tutup Detail
               </button>

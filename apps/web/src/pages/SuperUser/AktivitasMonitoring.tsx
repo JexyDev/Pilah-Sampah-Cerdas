@@ -180,7 +180,7 @@ export const AktivitasMonitoring: React.FC = () => {
   }, [filteredTransactions, currentPage, itemsPerPage]);
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 font-sans">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-100 font-sans">
       {/* Clean Enterprise Page Header */}
       <PageHeader
         icon={Receipt}
@@ -205,15 +205,15 @@ export const AktivitasMonitoring: React.FC = () => {
         actions={
           <div className="flex flex-wrap items-center gap-2.5">
             {/* Period Filter Dropdown */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs">
+            <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs">
               {["harian", "mingguan", "bulanan", "tahunan"].map((p) => (
                 <button
                   key={p}
                   onClick={() => setPeriod(p)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer ${
                     period === p
-                      ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                      ? "bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 shadow-xs border border-slate-200/80 dark:border-slate-700"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60"
                   }`}
                 >
                   {p}
@@ -228,8 +228,8 @@ export const AktivitasMonitoring: React.FC = () => {
               disabled={isLurah || (isDpl && dplKelurahans.length === 1)}
               className={`px-3.5 py-2 border rounded-xl text-xs font-bold outline-none transition shadow-xs ${
                 isLurah || (isDpl && dplKelurahans.length === 1)
-                  ? "bg-slate-100 border-slate-200 text-slate-600 cursor-not-allowed"
-                  : "bg-white border-slate-200 text-slate-700 focus:border-emerald-500 cursor-pointer"
+                  ? "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 cursor-not-allowed"
+                  : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:border-emerald-500 cursor-pointer"
               }`}
             >
               {isDpl ? (
@@ -272,55 +272,55 @@ export const AktivitasMonitoring: React.FC = () => {
       {/* KPI Metric Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         {/* Organik Card */}
-        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5 group hover:border-emerald-300 transition-all">
-          <div className="p-3 bg-emerald-50 text-[#009966] rounded-2xl shrink-0 border border-emerald-100 group-hover:scale-105 transition-transform">
+        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 group hover:border-emerald-300 dark:hover:border-emerald-700/60 transition-all">
+          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 rounded-2xl shrink-0 border border-emerald-100 dark:border-emerald-700/50 group-hover:scale-105 transition-transform">
             <Leaf className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10.5px] text-slate-500 font-black uppercase tracking-wider">Sampah Organik</p>
-            <p className="text-lg font-black text-slate-900 mt-0.5">
+            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Sampah Organik</p>
+            <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">
               {totalOrganik >= 1000 ? (totalOrganik / 1000).toFixed(1) : totalOrganik.toLocaleString("id-ID")}{" "}
-              <span className="text-xs font-bold text-slate-500">{totalOrganik >= 1000 ? "Ton" : "Kg"}</span>
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalOrganik >= 1000 ? "Ton" : "Kg"}</span>
             </p>
           </div>
         </div>
 
         {/* Anorganik Card */}
-        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5 group hover:border-amber-300 transition-all">
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl shrink-0 border border-amber-100 group-hover:scale-105 transition-transform">
+        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 group hover:border-amber-300 dark:hover:border-amber-700/60 transition-all">
+          <div className="p-3 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-2xl shrink-0 border border-amber-100 dark:border-amber-700/50 group-hover:scale-105 transition-transform">
             <Recycle className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10.5px] text-slate-500 font-black uppercase tracking-wider">Sampah Anorganik</p>
-            <p className="text-lg font-black text-amber-700 mt-0.5">
+            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Sampah Anorganik</p>
+            <p className="text-lg font-black text-amber-700 dark:text-amber-400 mt-0.5">
               {totalAnorganik >= 1000 ? (totalAnorganik / 1000).toFixed(1) : totalAnorganik.toLocaleString("id-ID")}{" "}
-              <span className="text-xs font-bold text-slate-500">{totalAnorganik >= 1000 ? "Ton" : "Kg"}</span>
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalAnorganik >= 1000 ? "Ton" : "Kg"}</span>
             </p>
           </div>
         </div>
 
         {/* Residu Card */}
-        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5 group hover:border-rose-300 transition-all">
-          <div className="p-3 bg-rose-50 text-rose-500 rounded-2xl shrink-0 border border-rose-100 group-hover:scale-105 transition-transform">
+        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 group hover:border-rose-300 dark:hover:border-rose-700/60 transition-all">
+          <div className="p-3 bg-rose-50 dark:bg-rose-950/60 text-rose-500 dark:text-rose-400 rounded-2xl shrink-0 border border-rose-100 dark:border-rose-700/50 group-hover:scale-105 transition-transform">
             <Trash2 className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10.5px] text-slate-500 font-black uppercase tracking-wider">Residu Non-Terpilah</p>
-            <p className="text-lg font-black text-rose-600 mt-0.5">
+            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Residu Non-Terpilah</p>
+            <p className="text-lg font-black text-rose-600 dark:text-rose-400 mt-0.5">
               {totalResidu >= 1000 ? (totalResidu / 1000).toFixed(1) : totalResidu.toLocaleString("id-ID")}{" "}
-              <span className="text-xs font-bold text-slate-500">{totalResidu >= 1000 ? "Ton" : "Kg"}</span>
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalResidu >= 1000 ? "Ton" : "Kg"}</span>
             </p>
           </div>
         </div>
 
         {/* Compliance Rate Card */}
-        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5 group hover:border-teal-300 transition-all">
-          <div className="p-3 bg-teal-50 text-teal-600 rounded-2xl shrink-0 border border-teal-100 group-hover:scale-105 transition-transform">
+        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 group hover:border-teal-300 dark:hover:border-teal-700/60 transition-all">
+          <div className="p-3 bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 rounded-2xl shrink-0 border border-teal-100 dark:border-teal-700/50 group-hover:scale-105 transition-transform">
             <Award className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10.5px] text-slate-500 font-black uppercase tracking-wider">Tingkat Kepatuhan</p>
-            <p className="text-lg font-black text-teal-700 mt-0.5">{complianceRate}% <span className="text-xs font-semibold text-slate-500">({complianceRate > 70 ? "Tinggi" : "Standar"})</span></p>
+            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Tingkat Kepatuhan</p>
+            <p className="text-lg font-black text-teal-700 dark:text-teal-400 mt-0.5">{complianceRate}% <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">({complianceRate > 70 ? "Tinggi" : "Standar"})</span></p>
           </div>
         </div>
       </div>
@@ -328,35 +328,35 @@ export const AktivitasMonitoring: React.FC = () => {
       {/* Visual Analytics Row (Charts) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Main Bar Chart Card */}
-        <div className="lg:col-span-2 bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-          <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
+          <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
             <div>
-              <h3 className="font-extrabold text-base text-slate-900 tracking-tight flex items-center gap-2">
-                <TrendingUp size={18} className="text-[#009966]" />
+              <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
+                <TrendingUp size={18} className="text-[#009966] dark:text-emerald-400" />
                 Perbandingan Komposisi Pemilahan Sampah
               </h3>
-              <p className="text-xs text-slate-500 font-semibold mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-0.5">
                 Statistik volume terpilah ({period}) di wilayah {selectedKelurahan === "ALL" ? "Keseluruhan" : selectedKelurahan}
               </p>
             </div>
-            <span className="text-[11px] bg-emerald-50 text-[#009966] font-black px-3 py-1 rounded-full border border-emerald-200">
+            <span className="text-[11px] bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-black px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-700/50">
               Live DB Verified
             </span>
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center h-72">
-              <Loader2 className="animate-spin text-[#009966]" size={28} />
+              <Loader2 className="animate-spin text-[#009966] dark:text-emerald-400" size={28} />
             </div>
           ) : (
             <div className="h-72 w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={compositionStats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-100 dark:text-slate-800/80" />
                   <XAxis dataKey="name" stroke="#64748b" fontSize={11} fontWeight={700} tickLine={false} />
                   <YAxis stroke="#64748b" fontSize={11} fontWeight={700} tickLine={false} />
                   <Tooltip
-                    cursor={{ fill: "#f8fafc" }}
+                    cursor={{ fill: "rgba(148, 163, 184, 0.1)" }}
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
@@ -384,19 +384,19 @@ export const AktivitasMonitoring: React.FC = () => {
         </div>
 
         {/* Donut Distribution Card */}
-        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-4">
-          <div className="pb-3 border-b border-slate-100">
-            <h3 className="font-extrabold text-base text-slate-900 tracking-tight flex items-center gap-2">
-              <PieChartIcon size={18} className="text-amber-500" />
+        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex flex-col justify-between space-y-4">
+          <div className="pb-3 border-b border-slate-100 dark:border-slate-800">
+            <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
+              <PieChartIcon size={18} className="text-amber-500 dark:text-amber-400" />
               Porsi Pemilahan Sampah
             </h3>
-            <p className="text-xs text-slate-500 font-semibold mt-0.5">Persentase rasio jenis sampah terurai</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-0.5">Persentase rasio jenis sampah terurai</p>
           </div>
 
           <div className="h-52 w-full relative flex items-center justify-center">
             {grandTotalKg === 0 ? (
-              <div className="flex flex-col items-center justify-center text-slate-400 text-xs font-bold">
-                <Recycle size={28} className="text-slate-300 mb-1" />
+              <div className="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-xs font-bold">
+                <Recycle size={28} className="text-slate-300 dark:text-slate-600 mb-1" />
                 Belum Ada Data Penyetoran
               </div>
             ) : (
@@ -420,7 +420,7 @@ export const AktivitasMonitoring: React.FC = () => {
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
                         return (
-                          <div className="bg-slate-900 text-white px-3 py-1.5 rounded-xl shadow-lg text-xs font-bold">
+                          <div className="bg-slate-900 text-white px-3 py-1.5 rounded-xl shadow-lg text-xs font-bold border border-slate-700">
                             {data.name}: {data.value.toLocaleString("id-ID")} Kg
                           </div>
                         );
@@ -433,8 +433,8 @@ export const AktivitasMonitoring: React.FC = () => {
             )}
             {grandTotalKg > 0 && (
               <div className="absolute flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-[10px] text-slate-500 font-black uppercase">Total</span>
-                <span className="text-base font-black text-slate-900">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-black uppercase">Total</span>
+                <span className="text-base font-black text-slate-900 dark:text-slate-100">
                   {grandTotalKg >= 1000 ? `${Math.round(grandTotalKg / 1000).toLocaleString("id-ID")} Ton` : `${Math.round(grandTotalKg).toLocaleString("id-ID")} Kg`}
                 </span>
               </div>
@@ -442,18 +442,18 @@ export const AktivitasMonitoring: React.FC = () => {
           </div>
 
           {/* Pie Legends */}
-          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center">
-            <div className="p-2 bg-emerald-50 rounded-2xl border border-emerald-100">
-              <span className="text-[10px] font-black text-emerald-800 block">Organik</span>
-              <span className="text-xs font-black text-emerald-700">{Math.round(totalOrganik).toLocaleString("id-ID")} Kg</span>
+          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-center">
+            <div className="p-2 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border border-emerald-100 dark:border-emerald-700/50">
+              <span className="text-[10px] font-black text-emerald-800 dark:text-emerald-300 block">Organik</span>
+              <span className="text-xs font-black text-emerald-700 dark:text-emerald-400">{Math.round(totalOrganik).toLocaleString("id-ID")} Kg</span>
             </div>
-            <div className="p-2 bg-amber-50 rounded-2xl border border-amber-100">
-              <span className="text-[10px] font-black text-amber-800 block">Anorganik</span>
-              <span className="text-xs font-black text-amber-700">{Math.round(totalAnorganik).toLocaleString("id-ID")} Kg</span>
+            <div className="p-2 bg-amber-50 dark:bg-amber-950/60 rounded-2xl border border-amber-100 dark:border-amber-700/50">
+              <span className="text-[10px] font-black text-amber-800 dark:text-amber-300 block">Anorganik</span>
+              <span className="text-xs font-black text-amber-700 dark:text-amber-400">{Math.round(totalAnorganik).toLocaleString("id-ID")} Kg</span>
             </div>
-            <div className="p-2 bg-rose-50 rounded-2xl border border-rose-100">
-              <span className="text-[10px] font-black text-rose-800 block">Residu</span>
-              <span className="text-xs font-black text-rose-700">{Math.round(totalResidu).toLocaleString("id-ID")} Kg</span>
+            <div className="p-2 bg-rose-50 dark:bg-rose-950/60 rounded-2xl border border-rose-100 dark:border-rose-700/50">
+              <span className="text-[10px] font-black text-rose-800 dark:text-rose-300 block">Residu</span>
+              <span className="text-xs font-black text-rose-700 dark:text-rose-400">{Math.round(totalResidu).toLocaleString("id-ID")} Kg</span>
             </div>
           </div>
         </div>
@@ -512,13 +512,13 @@ export const AktivitasMonitoring: React.FC = () => {
       </div>
 
       {/* Live Transaction Table Feed */}
-      <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+      <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
           <div>
-            <h3 className="font-extrabold text-base text-slate-900 tracking-tight">
+            <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 tracking-tight">
               Log Audit Penyetoran Sampah Realtime
             </h3>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
               Menampilkan {filteredTransactions.length} transaksi pemilahan terbaru dari aplikasi warga &amp; petugas
             </p>
           </div>
@@ -531,12 +531,12 @@ export const AktivitasMonitoring: React.FC = () => {
               placeholder="Cari nama warga / tipe..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#009966] focus:bg-white transition"
+              className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] focus:bg-white dark:focus:bg-slate-800 transition"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               >
                 <X size={13} />
               </button>
@@ -555,7 +555,7 @@ export const AktivitasMonitoring: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-200 bg-slate-50/80">
+                <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80">
                   <th className="py-3.5 px-4 rounded-l-2xl">Nama Warga / Sumber</th>
                   <th className="py-3.5 px-4">Tipe Pemilahan</th>
                   <th className="py-3.5 px-4 text-center">Insentif Poin</th>
@@ -563,33 +563,33 @@ export const AktivitasMonitoring: React.FC = () => {
                   <th className="py-3.5 px-4 text-right rounded-r-2xl">Status Verifikasi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                 {paginatedTransactions.map((t) => {
                   const isOrganik = t.tipe?.toLowerCase().includes("organik");
                   const isAnorganik = t.tipe?.toLowerCase().includes("anorganik");
 
                   return (
-                    <tr key={t.id} className="hover:bg-slate-50/80 transition-all">
-                      <td className="py-3.5 px-4 font-black text-slate-900 align-middle">
+                    <tr key={t.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-all">
+                      <td className="py-3.5 px-4 font-black text-slate-900 dark:text-slate-100 align-middle">
                         {t.nama || "Warga TrashCare"}
                       </td>
                       <td className="py-3.5 px-4 align-middle">
                         <span
                           className={`inline-flex items-center gap-1 text-[10.5px] font-black px-2.5 py-0.5 rounded-lg border ${
                             isOrganik
-                              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                              ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/50"
                               : isAnorganik
-                              ? "bg-amber-50 text-amber-800 border-amber-200"
-                              : "bg-rose-50 text-rose-800 border-rose-200"
+                              ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700/50"
+                              : "bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-700/50"
                           }`}
                         >
                           {t.tipe || "Organik"}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-center font-mono font-black text-[#009966] align-middle">
+                      <td className="py-3.5 px-4 text-center font-mono font-black text-[#009966] dark:text-emerald-400 align-middle">
                         {t.poin || "+10"}
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-700 whitespace-nowrap align-middle">
+                      <td className="py-3.5 px-4 font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap align-middle">
                         {t.waktu
                           ? new Date(t.waktu).toLocaleString("id-ID", {
                               day: "numeric",
@@ -601,7 +601,7 @@ export const AktivitasMonitoring: React.FC = () => {
                           : "Baru Saja"}
                       </td>
                       <td className="py-3.5 px-4 text-right align-middle">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-700/50">
                           <CheckCircle2 size={12} /> AI Terverifikasi
                         </span>
                       </td>
