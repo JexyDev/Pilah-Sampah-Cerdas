@@ -64,7 +64,7 @@ jobs:
             sleep 3
             echo "$VPS_PASS" | sudo -S -u postgres psql -d psc_db -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE pid <> pg_backend_pid();" 2>/dev/null || true
 
-            npm install --silent || npm install
+            npm install --silent --legacy-peer-deps || npm install --legacy-peer-deps
             npx prisma generate
 
             # Baseline migration lama agar prisma migrate deploy tidak error P3005.
