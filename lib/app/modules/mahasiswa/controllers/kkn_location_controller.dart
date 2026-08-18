@@ -1104,9 +1104,14 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         // Auto-stop background service setelah presensi berhasil
         notifyAttendanceSuccess();
         return true;
+      } else {
+        final msg = response['message']?.toString() ?? 'Gagal mencatat presensi.';
+        state = state.copyWith(error: msg);
+        return false;
       }
     } catch (e) {
-      state = state.copyWith(error: NetworkExceptionHelper.getErrorMessage(e));
+      final errMsg = e.toString().replaceAll('Exception:', '').trim();
+      state = state.copyWith(error: errMsg.isNotEmpty ? errMsg : NetworkExceptionHelper.getErrorMessage(e));
     }
     return false;
   }

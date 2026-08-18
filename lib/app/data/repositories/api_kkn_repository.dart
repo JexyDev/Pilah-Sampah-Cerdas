@@ -234,18 +234,33 @@ class ApiKknRepository implements KknRepository {
           }
           return {'success': true};
         }
-      } catch (_) {
-        final res = await apiClient.dio.post(ApiEndpoints.kknCheckIn, data: payload);
-        if (res.statusCode == 200 || res.statusCode == 201) {
-          if (res.data is Map<String, dynamic>) {
-            return res.data['data'] as Map<String, dynamic>? ?? res.data as Map<String, dynamic>;
+      } on DioException catch (e1) {
+        final msg1 = e1.response?.data?['message']?.toString() ?? e1.response?.data?['error']?.toString();
+        // Jika 400 atau 409 atau 403 (bukan 404), kemungkinan besar ini error bisnis (misal: di luar operasional / di luar radius)
+        if (e1.response?.statusCode != 404 && msg1 != null && msg1.isNotEmpty) {
+          throw Exception(msg1);
+        }
+        
+        try {
+          final res = await apiClient.dio.post(ApiEndpoints.kknCheckIn, data: payload);
+          if (res.statusCode == 200 || res.statusCode == 201) {
+            if (res.data is Map<String, dynamic>) {
+              return res.data['data'] as Map<String, dynamic>? ?? res.data as Map<String, dynamic>;
+            }
+            return {'success': true};
           }
-          return {'success': true};
+        } on DioException catch (e2) {
+          final msg2 = e2.response?.data?['message']?.toString() ?? e2.response?.data?['error']?.toString();
+          if (msg2 != null && msg2.isNotEmpty) {
+            throw Exception(msg2);
+          }
+          rethrow;
         }
       }
-      return {};
-    } catch (_) {
-      return {};
+      return {'success': false};
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Gagal menghubungi server presensi.');
     }
   }
 
