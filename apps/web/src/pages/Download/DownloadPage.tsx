@@ -25,6 +25,7 @@ import {
   HardDrive,
 } from "lucide-react";
 import ImageTigaRoleMobile from "../../assets/images/image_tiga_role_mobile.webp";
+import { useThemeStore } from "../../store/useThemeStore";
 import api from "../../services/api";
 
 // Official High-Resolution TrashCare Icon Asset (Matches Landing Page & Login Page 1:1)
@@ -57,6 +58,28 @@ interface LandingStats {
 }
 
 const DownloadPage: React.FC = () => {
+  // Force clean light mode on Download Page unconditionally
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.remove("dark");
+    root.setAttribute("data-theme", "light");
+    root.style.colorScheme = "light";
+
+    return () => {
+      // Restore user preference when navigating away
+      const currentTheme = useThemeStore.getState().theme;
+      if (currentTheme === "dark") {
+        root.classList.add("dark");
+        root.setAttribute("data-theme", "dark");
+        root.style.colorScheme = "dark";
+      } else {
+        root.classList.remove("dark");
+        root.setAttribute("data-theme", "light");
+        root.style.colorScheme = "light";
+      }
+    };
+  }, []);
+
   const [release, setRelease] = useState<ReleaseInfo>({
     version: "1.0.6",
     buildNumber: 106,
@@ -131,13 +154,13 @@ const DownloadPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-slate-900 text-slate-900 dark:text-slate-100 font-sans relative overflow-x-hidden selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen flex flex-col justify-between bg-white text-slate-900 font-sans relative overflow-x-hidden selection:bg-emerald-500 selection:text-white">
 
       {/* Main Content Wrapper - Clean White Section Scoping */}
-      <main className="flex-1 flex flex-col bg-white dark:bg-slate-900 relative">
+      <main className="flex-1 flex flex-col bg-white relative">
 
         {/* Navigation Header - Matches Landing Page Navbar Glassmorphism */}
-        <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-8 py-3.5 shadow-xs">
+        <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-3.5 shadow-xs">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2.5 group shrink-0">
               <TrashCareLogoIcon className="w-10 h-10 sm:w-11 sm:h-11 transition-transform group-hover:scale-105 shrink-0" />

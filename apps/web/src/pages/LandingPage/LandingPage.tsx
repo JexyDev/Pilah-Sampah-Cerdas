@@ -1400,10 +1400,10 @@ export const LandingPage: React.FC = () => {
         <div className="container-custom space-y-12">
           <div className="text-center space-y-2">
             <span className="text-emerald-600 font-extrabold text-sm uppercase tracking-wider">05. What</span>
-            <h2 className="text-4xl font-extrabold text-slate-900 dark:text-slate-100">Pemanfaatan Hilir dan Fasilitas GIS</h2>
+            <h2 className="text-4xl font-extrabold text-slate-900">Pemanfaatan Hilir dan Fasilitas GIS</h2>
             <p className="text-slate-500 text-sm font-medium">Pengolahan sampah terintegrasi di wilayah Kecamatan Coblong</p>
 
-            <div className="inline-flex p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full mt-4">
+            <div className="inline-flex p-1 bg-white border border-slate-200 rounded-full mt-4">
               <button
                 onClick={() => setWhatTab("pemilahan")}
                 className={`clean-interactive-tab ${whatTab === "pemilahan" ? "active" : ""}`}
@@ -1432,7 +1432,7 @@ export const LandingPage: React.FC = () => {
                   <div className={`w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto border border-slate-100 ${cat.color}`}>
                     <span className="material-symbols-outlined text-3xl">{cat.icon}</span>
                   </div>
-                  <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-base">{cat.title}</h4>
+                  <h4 className="font-extrabold text-slate-900 text-base">{cat.title}</h4>
                   <p className="text-xs text-slate-500 leading-relaxed font-medium">{cat.desc}</p>
                 </div>
               ))}
@@ -1459,14 +1459,14 @@ export const LandingPage: React.FC = () => {
                   icon: "layers"
                 },
               ].map((item, idx) => (
-                <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-8 space-y-4 hover:shadow-xl transition duration-300">
+                <div key={idx} className="bg-white border border-slate-200/80 rounded-3xl p-8 space-y-4 hover:shadow-xl transition duration-300">
                   <div className="flex items-center justify-between">
                     <span className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                       <span className="material-symbols-outlined text-2xl">{item.icon}</span>
                     </span>
-                    <span className="text-xs font-extrabold px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-full">{item.type}</span>
+                    <span className="text-xs font-extrabold px-3 py-1 bg-slate-100 text-slate-700 rounded-full">{item.type}</span>
                   </div>
-                  <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-lg">{item.title}</h4>
+                  <h4 className="font-extrabold text-slate-900 text-lg">{item.title}</h4>
                   <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
                 </div>
               ))}
@@ -1543,15 +1543,15 @@ export const LandingPage: React.FC = () => {
       {
         showContactModal && (
           <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
                     <span className="material-symbols-outlined text-xl">contact_support</span>
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-lg leading-tight">
+                    <h3 className="font-extrabold text-slate-900 text-lg leading-tight">
                       Hubungi Kami
                     </h3>
                     <p className="text-[11px] text-slate-500 font-semibold mt-0.5">Sistem Tata Kelola Sampah Coblong</p>
@@ -1559,7 +1559,7 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setShowContactModal(false)}
-                  className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-700 hover:bg-slate-200 flex items-center justify-center transition cursor-pointer"
+                  className="w-9 h-9 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700 hover:bg-slate-200 flex items-center justify-center transition cursor-pointer"
                   aria-label="Tutup modal"
                 >
                   <span className="material-symbols-outlined text-xl">close</span>
@@ -1567,8 +1567,8 @@ export const LandingPage: React.FC = () => {
               </div>
 
               {/* Body */}
-              <div className="space-y-4 text-xs text-slate-600 dark:text-slate-400">
-                <p className="font-medium text-slate-600 dark:text-slate-400 leading-relaxed">
+              <div className="space-y-4 text-xs text-slate-600">
+                <p className="font-medium text-slate-600 leading-relaxed">
                   Untuk informasi seputar sistem pemilahan sampah cerdas Kecamatan Coblong atau kerja sama operasional:
                 </p>
 
@@ -1579,10 +1579,10 @@ export const LandingPage: React.FC = () => {
                       <span className="material-symbols-outlined text-lg">location_on</span>
                     </div>
                     <div className="space-y-1 flex-1">
-                      <p className="font-extrabold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
+                      <p className="font-extrabold text-slate-900 text-xs sm:text-sm">
                         Universitas Komputer Indonesia
                       </p>
-                      <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium text-xs">
+                      <p className="text-slate-600 leading-relaxed font-medium text-xs">
                         Jl. Dipati Ukur No.112-116, Lebakgede, Kecamatan Coblong, Kota Bandung, Jawa Barat 40132
                       </p>
                       <a
@@ -1606,7 +1606,7 @@ export const LandingPage: React.FC = () => {
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email Resmi</p>
                       <a
                         href="mailto:cdc@unikom.ac.id"
-                        className="font-extrabold text-slate-900 dark:text-slate-100 hover:text-emerald-600 transition-colors text-xs sm:text-sm"
+                        className="font-extrabold text-slate-900 hover:text-emerald-600 transition-colors text-xs sm:text-sm"
                       >
                         cdc@unikom.ac.id
                       </a>
@@ -1624,7 +1624,7 @@ export const LandingPage: React.FC = () => {
                         href="https://wa.me/6285715516065"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-extrabold text-slate-900 dark:text-slate-100 hover:text-emerald-600 transition-colors text-xs sm:text-sm"
+                        className="font-extrabold text-slate-900 hover:text-emerald-600 transition-colors text-xs sm:text-sm"
                       >
                         +62 857-1551-6065
                       </a>
@@ -1649,9 +1649,9 @@ export const LandingPage: React.FC = () => {
       {
         showApkModal && (
           <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-8 space-y-6 shadow-2xl border border-slate-100 dark:border-slate-800">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
-                <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-lg flex items-center gap-2">
+            <div className="bg-white rounded-3xl max-w-md w-full p-8 space-y-6 shadow-2xl border border-slate-100">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <h3 className="font-extrabold text-slate-900 text-lg flex items-center gap-2">
                   <span className="material-symbols-outlined text-emerald-600">android</span>
                   Unduh Aplikasi Mobile
                 </h3>
@@ -1664,7 +1664,7 @@ export const LandingPage: React.FC = () => {
                 <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
                   <span className="material-symbols-outlined text-3xl">download_for_offline</span>
                 </div>
-                <h4 className="font-bold text-slate-900 dark:text-slate-100 text-base">TrashCare Mobile App</h4>
+                <h4 className="font-bold text-slate-900 text-base">TrashCare Mobile App</h4>
                 <p className="text-xs text-slate-500 leading-relaxed font-medium">
                   File instalasi rilis APK Android sedang diproses. Tautan unduhan langsung akan segera aktif.
                 </p>

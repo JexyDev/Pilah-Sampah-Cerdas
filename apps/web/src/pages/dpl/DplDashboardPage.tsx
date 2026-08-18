@@ -410,7 +410,7 @@ export const DplDashboardPage: React.FC = () => {
   ) => {
     setDecidingLeaveId(requestId);
     try {
-      const res = await dplService.decideCancelLeaveRequest(requestId, action, note);
+      await dplService.decideCancelLeaveRequest(requestId, action, note);
       toast.success(
         action === "APPROVE_HADIR"
           ? "Permohonan pembatalan disetujui! Status presensi mahasiswa diubah menjadi Hadir."

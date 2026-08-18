@@ -98,6 +98,7 @@ export interface DplAlerts {
     startDate: string;
     endDate: string;
     createdAt: string;
+    status?: string;
   }>;
 }
 
