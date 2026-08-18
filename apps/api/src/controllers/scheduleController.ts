@@ -66,7 +66,7 @@ export const scheduleController = {
         } else if (isMahasiswa && !resolvedKelompokId) {
           const { PrismaClient } = await import("@prisma/client");
           const prisma = new PrismaClient();
-          const studentProfile = await prisma.studentProfile.findUnique({
+          const studentProfile = await prisma.studentKkn.findUnique({
             where: { userId: req.user.userId },
             select: { kelompokId: true }
           });
@@ -122,7 +122,7 @@ export const scheduleController = {
         }
         // Verify ownership
         if (userRole === "MAHASISWA_KKN") {
-          const studentProfile = await prisma.studentProfile.findUnique({ where: { userId } });
+          const studentProfile = await prisma.studentKkn.findUnique({ where: { userId } });
           if (schedule.kelompokId !== studentProfile?.kelompokId) {
             res.status(403).json({ success: false, message: "FORBIDDEN_SCOPE" });
             return;
@@ -173,7 +173,7 @@ export const scheduleController = {
         }
         // Verify ownership
         if (userRole === "MAHASISWA_KKN") {
-          const studentProfile = await prisma.studentProfile.findUnique({ where: { userId } });
+          const studentProfile = await prisma.studentKkn.findUnique({ where: { userId } });
           if (schedule.kelompokId !== studentProfile?.kelompokId) {
             res.status(403).json({ success: false, message: "FORBIDDEN_SCOPE" });
             return;

@@ -18,7 +18,7 @@ export const scheduleService = {
 
       if (userRole === "MAHASISWA_KKN" && userId) {
         // Mahasiswa only sees their own group + global schedules
-        const studentProfile = await prisma.studentProfile.findUnique({
+        const studentProfile = await prisma.studentKkn.findUnique({
           where: { userId: userId },
           select: { kelompokId: true }
         });
