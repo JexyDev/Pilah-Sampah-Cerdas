@@ -761,6 +761,13 @@ class ApiAuthRepository implements AuthRepository {
           rw = '${sp['penugasanRt']}/${sp['penugasanRw']}';
         } else if (sp['kelompok']?['rw'] != null && sp['kelompok']['rw'].toString() != '-') {
           rw = sp['kelompok']['rw'].toString();
+        } else if (sp['kelompok']?['cakupanRw'] != null) {
+          final cRw = sp['kelompok']['cakupanRw'];
+          if (cRw is List) {
+            rw = cRw.map((e) => e.toString().replaceAll(RegExp(r'^RW\s*', caseSensitive: false), '').trim()).join(', ');
+          } else {
+            rw = cRw.toString().replaceAll(RegExp(r'^RW\s*', caseSensitive: false), '').trim();
+          }
         } else if (sp['assignedRw']?['name'] != null && sp['assignedRw']['name'].toString() != '-') {
           rw = sp['assignedRw']['name'].toString();
         }
