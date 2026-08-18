@@ -89,14 +89,14 @@ const createActivePresenceIcon = (studentName: string) => {
     className: "custom-active-student-presence",
     html: `
       <div style="position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-        <div style="position: absolute; inset: -4px; border-radius: 50%; background-color: #10b981; opacity: 0.35; animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-        <div style="background: linear-gradient(135deg, #059669, #10b981); color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 8px rgba(16,185,129,0.5); font-weight: 900; font-size: 10px; font-family: sans-serif;">
+        <div style="position: absolute; inset: -3px; border-radius: 50%; background-color: #10b981; opacity: 0.35; animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+        <div style="background: linear-gradient(135deg, #059669, #10b981); color: white; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border: 1.5px solid white; box-shadow: 0 2px 6px rgba(16,185,129,0.5); font-weight: 900; font-size: 8px; font-family: sans-serif;">
           ${initial}
         </div>
       </div>
     `,
-    iconSize: [22, 22],
-    iconAnchor: [11, 11],
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
   });
 };
 
