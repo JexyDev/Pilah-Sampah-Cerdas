@@ -101,7 +101,7 @@ class KelompokKknView extends ConsumerWidget {
                   child: CircularProgressIndicator(color: AppColors.primaryGreen),
                 ),
               ] else ...[
-                // Header Kelompok & Dosen Pembimbing
+                // Header Kelompok & Dosen Pendamping Lapangan (DPL)
                 Card(
                   elevation: 3,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

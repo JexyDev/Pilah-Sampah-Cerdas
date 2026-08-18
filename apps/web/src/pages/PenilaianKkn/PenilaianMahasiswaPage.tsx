@@ -113,7 +113,7 @@ export const PenilaianMahasiswaPage: React.FC = () => {
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Penilaian Mahasiswa KKN</h1>
           <p className="text-slate-500 text-sm mt-1">
-            Form evaluasi performa, inisiatif lapangan, dan keaktifan individu mahasiswa KKN bimbingan DPL.
+            Form evaluasi performa, inisiatif lapangan, dan keaktifan individu mahasiswa KKN dampingan Dosen Pendamping Lapangan (DPL).
           </p>
         </div>
 

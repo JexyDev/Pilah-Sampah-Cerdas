@@ -118,7 +118,7 @@ export const penilaianKknService = {
     // 4. Mitra Penilai (Ketua RW atau Mitra Lapangan)
     const namaMitra = rw?.name
       ? `Ketua ${rw.name} (${kelurahan?.name || "Coblong"})`
-      : "Mitra Lapangan RW";
+      : "Mitra Pendamping Lapangan (MPL) RW";
 
     // 5. Existing Penilaian Record - Default 0 jika belum dinilai di database
     const existing = studentUser.penilaianKkn;

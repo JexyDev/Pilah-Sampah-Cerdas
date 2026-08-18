@@ -849,7 +849,6 @@ export const DplDashboardPage: React.FC = () => {
                   </div>
                 ) : (
                   groups.flatMap((g: any) => g.programKerja || []).slice(0, 4).map((p: any) => {
-                    const isMinor = (p.kategori || "").toUpperCase() === "MINOR" || (p.kategori || "").toUpperCase() === "TAMBAHAN";
                     return (
                       <div
                         key={p.id}
@@ -858,40 +857,38 @@ export const DplDashboardPage: React.FC = () => {
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="font-bold text-slate-900 truncate">{p.deskripsi}</p>
-                            <span className={`px-1.5 py-0.5 rounded text-[9.5px] font-extrabold border ${
-                              isMinor 
-                                ? "bg-purple-50 text-purple-700 border-purple-200" 
-                                : "bg-blue-50 text-blue-700 border-blue-200"
-                            }`}>
-                              {isMinor ? "Minor" : "Mayor"}
-                            </span>
+                            {p.kategori && (
+                              <span className="px-1.5 py-0.5 rounded text-[9.5px] font-extrabold border bg-slate-100 text-slate-700 border-slate-200">
+                                {p.kategori}
+                              </span>
+                            )}
                           </div>
                           <p className="text-[11px] text-slate-500 mt-0.5">
                             Kebutuhan: Rp {Number(p.kebutuhanBiaya || 0).toLocaleString("id-ID")}
                           </p>
                         </div>
                         <div className="shrink-0 flex items-center gap-1.5">
-                          {p.status === "DITERIMA" && (
+                          {(p.status === "DITERIMA" || p.status === "DISETUJUI") && (
                             <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-bold text-[10px]">
-                              Disepakati
+                              Disetujui
                             </span>
                           )}
-                          {p.status === "SEDANG_BERJALAN" && (
+                          {(p.status === "SEDANG_BERJALAN" || p.status === "SEDANG_DILAKSANAKAN") && (
                             <span className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-bold text-[10px]">
-                              Sedang Berjalan
+                              Sedang Dilaksanakan
                             </span>
                           )}
-                          {p.status === "SELESAI" && (
+                          {(p.status === "SELESAI" || p.status === "SELESAI_DILAKSANAKAN") && (
                             <span className="px-2.5 py-1 bg-teal-50 text-teal-700 border border-teal-200 rounded-full font-bold text-[10px]">
-                              Sudah Selesai
+                              Selesai Dilaksanakan
                             </span>
                           )}
-                          {p.status === "DITOLAK" && (
+                          {(p.status === "DITOLAK" || p.status === "TIDAK_DISETUJUI") && (
                             <span className="px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full font-bold text-[10px]">
-                              Ditolak
+                              Tidak Disetujui
                             </span>
                           )}
-                          {(p.status === "BELUM_DISETUJUI" || !p.status) && (
+                          {(p.status === "BELUM_DISETUJUI" || p.status === "PENDING" || !p.status) && (
                             <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-bold text-[10px]">
                               Belum Disetujui
                             </span>
@@ -903,22 +900,25 @@ export const DplDashboardPage: React.FC = () => {
                 )}
               </div>
 
-              {/* Status Breakdown Proker Minor, Sedang, Belum, Sudah di Bawah Tabel */}
+              {/* Status Breakdown Proker Sesuai Standar PT Makerindo */}
               <div className="pt-3 border-t border-slate-100 space-y-2">
                 <div className="flex items-center justify-between text-xs text-slate-500 flex-wrap gap-2">
                   <span>Total Proker: <strong className="text-slate-800">{groups.flatMap((g: any) => g.programKerja || []).length} Kegiatan</strong></span>
                   <div className="flex items-center gap-1.5 flex-wrap text-[10.5px]">
-                    <span className="px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-md font-bold">
-                      Minor: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => (p.kategori || "").toUpperCase() === "MINOR" || (p.kategori || "").toUpperCase() === "TAMBAHAN").length}
-                    </span>
                     <span className="px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-md font-bold">
-                      Belum Disetujui: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "BELUM_DISETUJUI" || !p.status).length}
-                    </span>
-                    <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-md font-bold">
-                      Sedang: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "SEDANG_BERJALAN").length}
+                      Belum Disetujui: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "BELUM_DISETUJUI" || p.status === "PENDING" || !p.status).length}
                     </span>
                     <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md font-bold">
-                      Sudah Disepakati: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "DITERIMA" || p.status === "SELESAI").length}
+                      Disetujui: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "DITERIMA" || p.status === "DISETUJUI").length}
+                    </span>
+                    <span className="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-md font-bold">
+                      Tidak Disetujui: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "DITOLAK" || p.status === "TIDAK_DISETUJUI").length}
+                    </span>
+                    <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-md font-bold">
+                      Sedang Dilaksanakan: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "SEDANG_BERJALAN" || p.status === "SEDANG_DILAKSANAKAN").length}
+                    </span>
+                    <span className="px-2 py-0.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-md font-bold">
+                      Selesai Dilaksanakan: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "SELESAI" || p.status === "SELESAI_DILAKSANAKAN").length}
                     </span>
                   </div>
                 </div>
@@ -1103,63 +1103,6 @@ export const DplDashboardPage: React.FC = () => {
                 </table>
               </div>
             )}
-          </div>
-
-          {/* Quick Groups Grid */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Kelompok Bimbingan DPL</h3>
-                <p className="text-xs text-slate-500">Daftar kelompok KKN yang saat ini berada di bawah pengawasan Anda.</p>
-              </div>
-              <Link
-                to="/manajemen-ekosistem-kkn"
-                className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
-              >
-                <span>Kelola di Menu Kelompok ({groups.length})</span>
-                <ChevronRight size={14} />
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {groups.slice(0, 6).map((grp) => (
-                <div
-                  key={grp.id}
-                  className="bg-slate-50/70 border border-slate-200/60 rounded-xl p-4 space-y-3 hover:border-emerald-300 transition"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded">
-                        {grp.kelurahan}
-                      </span>
-                      <h4 className="text-sm font-bold text-slate-900 mt-1">{grp.name}</h4>
-                    </div>
-                    <span className="text-[10px] text-slate-500 font-semibold bg-white border border-slate-200 px-2 py-0.5 rounded">
-                      RW {formatCakupanRw(grp.cakupanRw)}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
-                    <div className="bg-white p-2 rounded-lg border border-slate-100">
-                      <span className="text-slate-400 block text-[10px]">Mahasiswa</span>
-                      <span className="font-bold text-slate-800">{grp.studentCount ?? 0} Orang</span>
-                    </div>
-                    <div className="bg-white p-2 rounded-lg border border-slate-100">
-                      <span className="text-slate-400 block text-[10px]">Kehadiran</span>
-                      <span className="font-bold text-emerald-600">{grp.avgAttendanceRate}%</span>
-                    </div>
-                  </div>
-
-                  <Link
-                    to={`/manajemen-ekosistem-kkn`}
-                    className="w-full py-2 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-100 transition flex items-center justify-center gap-1.5 shadow-2xs"
-                  >
-                    <span>Detail Anggota di Menu Kelompok</span>
-                    <ChevronRight size={13} />
-                  </Link>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       )}

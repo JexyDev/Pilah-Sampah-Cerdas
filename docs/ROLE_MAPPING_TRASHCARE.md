@@ -32,7 +32,7 @@
 | 4 | `LURAH` | Lurah (Admin Kelurahan) | Pemerintahan | Email + Password | Web |
 | 5 | `RW` | Ketua RW (Rukun Warga) | Pengurus Wilayah | Email + Password | Web |
 | 6 | `RT` | Ketua RT (Rukun Tetangga) | Pengurus Wilayah | Email + Password | Web |
-| 7 | `DPL` | Dosen Pembimbing Lapangan | Perguruan Tinggi | Email + Password | Web |
+| 7 | `DPL` | Dosen Pendamping Lapangan | Perguruan Tinggi | Email + Password | Web |
 | 8 | `PEMIMPIN` | Pimpinan Perguruan Tinggi | Perguruan Tinggi | Email + Password | Web |
 | 9 | `PANITIA_TASKFORCE` | Panitia / Task Force PT | Perguruan Tinggi | Email + Password | Web |
 | 10 | `PETUGAS_RESIDU` | Petugas Residu (Pengangkut) | Lapangan | Email + Password | Mobile + Web Portal |

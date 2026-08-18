@@ -220,7 +220,7 @@ export const TaskforceDashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 2: Dosen Pembimbing (DPL) */}
+        {/* Card 2: Dosen Pendamping Lapangan (DPL) */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition">
           <div className="flex items-center justify-between">
             <span className="text-xs uppercase font-extrabold text-indigo-600 tracking-wider">

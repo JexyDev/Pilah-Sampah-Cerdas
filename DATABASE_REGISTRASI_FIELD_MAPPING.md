@@ -76,7 +76,7 @@ Provinsi (Province)
 | 9 | `MAHASISWA_KKN` | Mahasiswa Program KKN |
 | 10 | `PEMIMPIN` | Pemimpin KKN |
 | 11 | `PANITIA_TASKFORCE` | Panitia Tim Khusus |
-| 12 | `DPL` | Dosen Pembimbing Lapangan |
+| 12 | `DPL` | Dosen Pendamping Lapangan |
 
 ### **Validasi Mandatory Field per Role**
 

@@ -439,7 +439,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   // Dynamic Targets & Ketentuan Waktu (Managed by Super User / Taskforce / Developer)
   const [configTargets, setConfigTargets] = useState<ConfigTargets>({
     targetTotalKegiatan: 2000,
-    targetTotalJam: 100,
+    targetTotalJam: 200,
     targetHarianJam: 4,
     targetHarianKegiatan: 5,
     hariKerja: "Senin – Jumat",
@@ -450,7 +450,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [configFormData, setConfigFormData] = useState<ConfigTargets>({
     targetTotalKegiatan: 2000,
-    targetTotalJam: 100,
+    targetTotalJam: 200,
     targetHarianJam: 4,
     targetHarianKegiatan: 5,
     hariKerja: "Senin – Jumat",
@@ -1733,34 +1733,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 ⚪ Belum ({attendanceStats.notAttended})
               </button>
             </div>
-
-            {/* View Mode Toggle */}
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-slate-600">
-              <button
-                type="button"
-                onClick={() => setDisplayMode("table")}
-                className={`p-1.5 rounded-lg transition cursor-pointer ${
-                  displayMode === "table"
-                    ? "bg-white text-emerald-800 shadow-xs"
-                    : "hover:text-slate-900"
-                }`}
-                title="Tampilan Tabel Lengkap"
-              >
-                <TableIcon size={15} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setDisplayMode("cards")}
-                className={`p-1.5 rounded-lg transition cursor-pointer ${
-                  displayMode === "cards"
-                    ? "bg-white text-emerald-800 shadow-xs"
-                    : "hover:text-slate-900"
-                }`}
-                title="Tampilan Kartu Mahasiswa"
-              >
-                <LayoutGrid size={15} />
-              </button>
-            </div>
           </div>
         </div>
 
@@ -2713,12 +2685,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     max={24}
                     required
                     value={configFormData.targetHarianJam || 4}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const harian = Number(e.target.value) || 0;
                       setConfigFormData({
                         ...configFormData,
-                        targetHarianJam: Number(e.target.value),
-                      })
-                    }
+                        targetHarianJam: harian,
+                        targetTotalJam: (configFormData.targetTotalHari || 50) * harian,
+                      });
+                    }}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
@@ -2751,26 +2725,33 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     min={1}
                     required
                     value={configFormData.targetTotalHari || 50}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const hari = Number(e.target.value) || 0;
                       setConfigFormData({
                         ...configFormData,
-                        targetTotalHari: Number(e.target.value),
-                      })
-                    }
+                        targetTotalHari: hari,
+                        targetTotalJam: hari * (configFormData.targetHarianJam || 4),
+                      });
+                    }}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Total Jam Kegiatan (Target Kumulatif KKN)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700">
+                    Total Jam Kegiatan (Target Kumulatif KKN = Total Hari × Jam/Hari)
+                  </label>
+                  <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    {(configFormData.targetTotalHari || 50)} Hari × {(configFormData.targetHarianJam || 4)} Jam = {(configFormData.targetTotalJam || 200)} Jam
+                  </span>
+                </div>
                 <input
                   type="number"
                   min={1}
                   required
-                  value={configFormData.targetTotalJam || 100}
+                  value={configFormData.targetTotalJam || 200}
                   onChange={(e) =>
                     setConfigFormData({
                       ...configFormData,

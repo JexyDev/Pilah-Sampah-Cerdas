@@ -24,14 +24,12 @@ import {
   Search,
   Filter,
   Loader2,
-  Activity,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
 import {
   penilaianKknApiService,
   type StudentInfo,
-  type RequirementsInfo,
 } from "../../services/penilaianKknApiService";
 import { Pagination } from "../../components/common/Pagination";
 
@@ -57,7 +55,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   const userRole = String(user?.role || user?.peran || "").toUpperCase();
 
   const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
-  const isMitra = ["ADMIN_DLH", "DLH", "LURAH", "KELURAHAN", "RW", "MITRA"].includes(userRole);
+  const isMitra = ["ADMIN_DLH", "DLH", "LURAH", "KELURAHAN", "RW", "MITRA", "MPL", "MITRA_LAPANGAN"].includes(userRole);
   const isSuper = ["SUPER_USER", "DEVELOPER", "PANITIA_TASKFORCE", "CAMAT", "PEMIMPIN"].includes(userRole);
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -69,19 +67,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10;
 
-  // Active Tab for Student Detail: "FORM_NILAI" vs "PORTOFOLIO_KKN"
-  const [detailTab, setDetailTab] = useState<"FORM_NILAI" | "PORTOFOLIO_KKN">("FORM_NILAI");
-
   const [studentInfo, setStudentInfo] = useState<StudentInfo | null>(null);
-  const [requirements, setRequirements] = useState<RequirementsInfo>({
-    attendanceRate: 0,
-    isAttendanceValid: false,
-    wargaBinaanCount: 0,
-    isWargaValid: false,
-    prokerCount: 0,
-    isProkerValid: false,
-    isEvidenceValid: false,
-  });
 
   // Pure State for Scores
   const [scores, setScores] = useState<{
@@ -171,7 +157,6 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     try {
       const data = await penilaianKknApiService.getStudentPenilaian(selectedStudentId);
       setStudentInfo(data.student);
-      setRequirements(data.requirements);
       const a = data.assessment;
       setScores({
         skorMitraKehadiran: Number(a.skorMitraKehadiran) || 0,
@@ -312,8 +297,15 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     }
   };
 
-  // Cetak PDF Berita Acara & Lembar Nilai
+  const isGradeComplete = subtotalDpl > 0 && subtotalMitra > 0;
+
+  // Cetak PDF Berita Acara & Lembar Nilai (Hanya jika nilai lengkap 100%)
   const handlePrintPdf = () => {
+    if (!isGradeComplete) {
+      toast.error("Cetak PDF lembar penilaian resmi hanya dapat dilakukan setelah nilai lengkap dari kedua pihak (DPL 30% dan MPL 70%).");
+      return;
+    }
+
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
       toast.error("Gagal membuka jendela cetak. Mohon izinkan popup browser.");
@@ -361,37 +353,12 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           <div class="meta-item"><span class="meta-label">Program Studi:</span><span class="meta-value">${studentInfo?.programStudi || "-"}</span></div>
           <div class="meta-item"><span class="meta-label">Kelompok:</span><span class="meta-value">${studentInfo?.kelompok || "-"}</span></div>
           <div class="meta-item"><span class="meta-label">Wilayah Tugas:</span><span class="meta-value">${studentInfo?.rw || "-"}, Kel. ${studentInfo?.kelurahan || "-"}</span></div>
-          <div class="meta-item"><span class="meta-label">Dosen Pendamping:</span><span class="meta-value">${studentInfo?.dplNama || "-"}</span></div>
-          <div class="meta-item"><span class="meta-label">Mitra / Pembimbing:</span><span class="meta-value">${studentInfo?.namaMitraPenilai || scores.namaMitraPenilai || "Mitra Lapangan"}</span></div>
+          <div class="meta-item"><span class="meta-label">Dosen Pendamping (DPL):</span><span class="meta-value">${studentInfo?.dplNama || "-"}</span></div>
+          <div class="meta-item"><span class="meta-label">Mitra Pendamping (MPL):</span><span class="meta-value">${studentInfo?.namaMitraPenilai || scores.namaMitraPenilai || "Mitra Pendamping Lapangan"}</span></div>
         </div>
 
-        <!-- Tabel Mitra (70%) -->
-        <h4 style="margin: 6px 0 3px 0; font-size: 9pt; color: #0f172a; text-transform: uppercase;">A. Penilaian Mitra / Lapangan (Bobot 70%)</h4>
-        <table>
-          <thead>
-            <tr>
-              <th width="5%" class="text-center">No</th>
-              <th width="40%">Aspek Penilaian</th>
-              <th width="15%" class="text-center">Bobot</th>
-              <th width="15%" class="text-center">Skor (0-4)</th>
-              <th width="25%" class="text-right">Nilai</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td class="text-center">1</td><td>Kehadiran dan Kedisiplinan</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraKehadiran}</td><td class="text-right">${nilaiAspekMitra.kehadiran.toFixed(2)}</td></tr>
-            <tr><td class="text-center">2</td><td>Warga Binaan</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraWargaBinaan}</td><td class="text-right">${nilaiAspekMitra.wargaBinaan.toFixed(2)}</td></tr>
-            <tr><td class="text-center">3</td><td>Keterlibatan Program Kerja</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraProker}</td><td class="text-right">${nilaiAspekMitra.proker.toFixed(2)}</td></tr>
-            <tr><td class="text-center">4</td><td>Komunikasi & Etika</td><td class="text-center">8%</td><td class="text-center">${scores.skorMitraKomunikasi}</td><td class="text-right">${nilaiAspekMitra.komunikasi.toFixed(2)}</td></tr>
-            <tr><td class="text-center">5</td><td>Tanggung Jawab & Kerja Sama</td><td class="text-center">8%</td><td class="text-center">${scores.skorMitraTanggungJawab}</td><td class="text-right">${nilaiAspekMitra.tanggungJawab.toFixed(2)}</td></tr>
-            <tr><td class="text-center">6</td><td>Bukti Kegiatan</td><td class="text-center">7%</td><td class="text-center">${scores.skorMitraBuktiKegiatan}</td><td class="text-right">${nilaiAspekMitra.buktiKegiatan.toFixed(2)}</td></tr>
-            <tr><td class="text-center">7</td><td>Dampak kepada Masyarakat</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraDampak}</td><td class="text-right">${nilaiAspekMitra.dampak.toFixed(2)}</td></tr>
-            <tr><td class="text-center">8</td><td>Inisiatif & Problem Solving</td><td class="text-center">7%</td><td class="text-center">${scores.skorMitraInisiatif}</td><td class="text-right">${nilaiAspekMitra.inisiatif.toFixed(2)}</td></tr>
-            <tr class="subtotal-row"><td colspan="4" style="text-align: right;">SUBTOTAL MITRA (70%):</td><td class="text-right">${subtotalMitra.toFixed(2)}</td></tr>
-          </tbody>
-        </table>
-
         <!-- Tabel DPL (30%) -->
-        <h4 style="margin: 6px 0 3px 0; font-size: 9pt; color: #0f172a; text-transform: uppercase;">B. Penilaian Dosen Pendamping Lapangan (Bobot 30%)</h4>
+        <h4 style="margin: 6px 0 3px 0; font-size: 9pt; color: #0f172a; text-transform: uppercase;">A. Penilaian Dosen Pendamping Lapangan (Bobot 30%)</h4>
         <table>
           <thead>
             <tr>
@@ -413,11 +380,36 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           </tbody>
         </table>
 
+        <!-- Tabel MPL (70%) -->
+        <h4 style="margin: 6px 0 3px 0; font-size: 9pt; color: #0f172a; text-transform: uppercase;">B. Penilaian Mitra Pendamping Lapangan (Bobot 70%)</h4>
+        <table>
+          <thead>
+            <tr>
+              <th width="5%" class="text-center">No</th>
+              <th width="40%">Aspek Penilaian</th>
+              <th width="15%" class="text-center">Bobot</th>
+              <th width="15%" class="text-center">Skor (0-4)</th>
+              <th width="25%" class="text-right">Nilai</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="text-center">1</td><td>Kehadiran dan Kedisiplinan</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraKehadiran}</td><td class="text-right">${nilaiAspekMitra.kehadiran.toFixed(2)}</td></tr>
+            <tr><td class="text-center">2</td><td>Warga Binaan</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraWargaBinaan}</td><td class="text-right">${nilaiAspekMitra.wargaBinaan.toFixed(2)}</td></tr>
+            <tr><td class="text-center">3</td><td>Keterlibatan Program Kerja</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraProker}</td><td class="text-right">${nilaiAspekMitra.proker.toFixed(2)}</td></tr>
+            <tr><td class="text-center">4</td><td>Komunikasi & Etika</td><td class="text-center">8%</td><td class="text-center">${scores.skorMitraKomunikasi}</td><td class="text-right">${nilaiAspekMitra.komunikasi.toFixed(2)}</td></tr>
+            <tr><td class="text-center">5</td><td>Tanggung Jawab & Kerja Sama</td><td class="text-center">8%</td><td class="text-center">${scores.skorMitraTanggungJawab}</td><td class="text-right">${nilaiAspekMitra.tanggungJawab.toFixed(2)}</td></tr>
+            <tr><td class="text-center">6</td><td>Bukti Kegiatan</td><td class="text-center">7%</td><td class="text-center">${scores.skorMitraBuktiKegiatan}</td><td class="text-right">${nilaiAspekMitra.buktiKegiatan.toFixed(2)}</td></tr>
+            <tr><td class="text-center">7</td><td>Dampak kepada Masyarakat</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraDampak}</td><td class="text-right">${nilaiAspekMitra.dampak.toFixed(2)}</td></tr>
+            <tr><td class="text-center">8</td><td>Inisiatif & Problem Solving</td><td class="text-center">7%</td><td class="text-center">${scores.skorMitraInisiatif}</td><td class="text-right">${nilaiAspekMitra.inisiatif.toFixed(2)}</td></tr>
+            <tr class="subtotal-row"><td colspan="4" style="text-align: right;">SUBTOTAL MPL (70%):</td><td class="text-right">${subtotalMitra.toFixed(2)}</td></tr>
+          </tbody>
+        </table>
+
         <!-- Rekap Nilai Akhir -->
         <div class="final-box">
           <div>
             <div style="font-size: 8pt; font-weight: 700; text-transform: uppercase; color: #047857;">NILAI AKHIR KUMULATIF</div>
-            <div style="font-size: 8pt; color: #334155;">Subtotal Mitra (${subtotalMitra.toFixed(2)}) + Subtotal DPL (${subtotalDpl.toFixed(2)})</div>
+            <div style="font-size: 8pt; color: #334155;">Subtotal DPL (${subtotalDpl.toFixed(2)}) + Subtotal MPL (${subtotalMitra.toFixed(2)})</div>
           </div>
           <div style="text-align: right;">
             <span class="final-score">${nilaiAkhir.toFixed(2)}</span>
@@ -427,16 +419,16 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
         <div class="sig-section">
           <div class="sig-box">
-            <p>Mitra / Pembimbing Lapangan,</p>
-            <div class="sig-space"></div>
-            <p style="text-decoration: underline; font-weight: bold; margin: 0;">${studentInfo?.namaMitraPenilai || scores.namaMitraPenilai || "Mitra Lapangan"}</p>
-            <p style="font-size: 7.5pt; color: #64748b; margin: 0;">Mitra Pembimbing</p>
-          </div>
-          <div class="sig-box">
-            <p>Dosen Pendamping Lapangan,</p>
+            <p>Dosen Pendamping Lapangan (DPL),</p>
             <div class="sig-space"></div>
             <p style="text-decoration: underline; font-weight: bold; margin: 0;">${studentInfo?.dplNama || "Dosen Pendamping Lapangan"}</p>
             <p style="font-size: 7.5pt; color: #64748b; margin: 0;">NIP. ${studentInfo?.dplNip || "-"}</p>
+          </div>
+          <div class="sig-box">
+            <p>Mitra Pendamping Lapangan (MPL),</p>
+            <div class="sig-space"></div>
+            <p style="text-decoration: underline; font-weight: bold; margin: 0;">${studentInfo?.namaMitraPenilai || scores.namaMitraPenilai || "Mitra Pendamping Lapangan"}</p>
+            <p style="font-size: 7.5pt; color: #64748b; margin: 0;">Mitra Pendamping Lapangan</p>
           </div>
         </div>
 
@@ -477,11 +469,20 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           <button
             type="button"
             onClick={handlePrintPdf}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition border border-slate-200 shadow-2xs cursor-pointer"
-            title="Cetak Dokumen Resmi PDF"
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition border ${
+              isGradeComplete
+                ? "bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-2xs cursor-pointer"
+                : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+            }`}
+            title={isGradeComplete ? "Cetak Dokumen Resmi PDF" : "Cetak PDF baru aktif setelah nilai lengkap dari kedua pihak (DPL 30% dan Mitra 70%)"}
           >
-            <Printer size={15} className="text-slate-500" />
+            <Printer size={15} className={isGradeComplete ? "text-slate-500" : "text-slate-400"} />
             <span>Cetak PDF</span>
+            {!isGradeComplete && (
+              <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold ml-1">
+                Belum Lengkap
+              </span>
+            )}
           </button>
 
           <button
@@ -621,7 +622,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <th className="py-3 px-3">Program Studi</th>
                   <th className="py-3 px-3">Kelompok</th>
                   <th className="py-3 px-3 text-center">Nilai DPL (30%)</th>
-                  <th className="py-3 px-3 text-center">Nilai Mitra (70%)</th>
+                  <th className="py-3 px-3 text-center">Nilai MPL (70%)</th>
                   <th className="py-3 px-3 text-center">Nilai Akhir</th>
                   <th className="py-3 px-3 text-center">Aksi</th>
                 </tr>
@@ -722,72 +723,107 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
               </p>
             </div>
 
-            {/* Tab Switcher: Form Nilai vs Portofolio KKN */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-extrabold">
-              <button
-                type="button"
-                onClick={() => setDetailTab("FORM_NILAI")}
-                className={`px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
-                  detailTab === "FORM_NILAI"
-                    ? "bg-white text-emerald-800 shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <ClipboardList size={15} />
-                <span>Form Aspek Penilaian</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setDetailTab("PORTOFOLIO_KKN")}
-                className={`px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
-                  detailTab === "PORTOFOLIO_KKN"
-                    ? "bg-white text-emerald-800 shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <Activity size={15} />
-                <span>Portofolio Aktivitas KKN</span>
-              </button>
+            {/* Header Form Penilaian Sesuai Role */}
+            <div className="flex items-center gap-2">
+              {isDpl && !isSuper && (
+                <span className="px-3 py-1 rounded-xl text-xs font-black bg-amber-50 text-amber-900 border border-amber-200 flex items-center gap-1.5 shadow-2xs">
+                  <GraduationCap size={15} className="text-amber-600" />
+                  <span>Lembar Penilaian Akademik DPL (30%)</span>
+                </span>
+              )}
+              {isMitra && !isSuper && (
+                <span className="px-3 py-1 rounded-xl text-xs font-black bg-emerald-50 text-emerald-900 border border-emerald-200 flex items-center gap-1.5 shadow-2xs">
+                  <ClipboardList size={15} className="text-emerald-600" />
+                  <span>Lembar Penilaian Lapangan Mitra (70%)</span>
+                </span>
+              )}
+              {isSuper && (
+                <span className="px-3 py-1 rounded-xl text-xs font-black bg-blue-50 text-blue-900 border border-blue-200 flex items-center gap-1.5 shadow-2xs">
+                  <Award size={15} className="text-blue-600" />
+                  <span>Lembar Penilaian Komprehensif (DPL 30% + Mitra 70%)</span>
+                </span>
+              )}
             </div>
           </div>
 
-          {/* TAB 1: FORM ASPEK PENILAIAN */}
-          {detailTab === "FORM_NILAI" && (
-            <div className="space-y-6">
-              {/* Summary Nilai Bar */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-6 flex-wrap">
-                  <div>
-                    <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Subtotal DPL (30%)</span>
-                    <span className="text-lg font-black text-amber-700">{subtotalDpl.toFixed(2)}</span>
-                  </div>
-                  <span className="text-slate-300 text-xl font-light">+</span>
-                  <div>
-                    <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Subtotal Mitra (70%)</span>
-                    <span className="text-lg font-black text-emerald-700">{subtotalMitra.toFixed(2)}</span>
-                  </div>
-                  <span className="text-slate-300 text-xl font-light">=</span>
-                  <div>
-                    <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Nilai Akhir Kumulatif</span>
-                    <span className="text-2xl font-black text-slate-900">{nilaiAkhir.toFixed(2)}</span>
-                  </div>
-                </div>
+          <div className="space-y-6">
+            {/* Summary Nilai Bar Sesuai Role */}
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-6 flex-wrap">
+                {/* Mode Tampilan DPL */}
+                {isDpl && !isSuper && (
+                  <>
+                    <div className="bg-white px-3.5 py-2 rounded-xl border border-amber-200 shadow-2xs">
+                      <span className="text-[10px] font-bold text-amber-800 uppercase block">Subtotal DPL (Porsi Anda • 30%)</span>
+                      <div className="flex items-baseline gap-1 mt-0.5">
+                        <span className="text-xl font-black text-amber-700">{subtotalDpl.toFixed(2)}</span>
+                      </div>
+                    </div>
+                    <div className="px-3 py-1.5 rounded-xl bg-slate-100/80 border border-slate-200">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase block">Subtotal MPL (Porsi Lapangan • 70%)</span>
+                      <span className="text-sm font-black text-slate-700 mt-0.5 block">
+                        {subtotalMitra > 0 ? subtotalMitra.toFixed(2) : "Belum Dinilai"}
+                      </span>
+                    </div>
+                  </>
+                )}
 
-                <div className="flex items-center gap-2">
-                  <span className={`px-3 py-1 rounded-xl text-xs font-black border ${currentCategory.color}`}>
-                    {currentCategory.label} ({currentCategory.letter})
-                  </span>
+                {/* Mode Tampilan Mitra / MPL */}
+                {isMitra && !isSuper && (
+                  <>
+                    <div className="bg-white px-3.5 py-2 rounded-xl border border-emerald-200 shadow-2xs">
+                      <span className="text-[10px] font-bold text-emerald-800 uppercase block">Subtotal MPL (Porsi Anda • 70%)</span>
+                      <div className="flex items-baseline gap-1 mt-0.5">
+                        <span className="text-xl font-black text-emerald-700">{subtotalMitra.toFixed(2)}</span>
+                      </div>
+                    </div>
+                    <div className="px-3 py-1.5 rounded-xl bg-slate-100/80 border border-slate-200">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase block">Subtotal DPL (Akademik • 30%)</span>
+                      <span className="text-sm font-black text-slate-700 mt-0.5 block">
+                        {subtotalDpl > 0 ? subtotalDpl.toFixed(2) : "Belum Dinilai"}
+                      </span>
+                    </div>
+                  </>
+                )}
+
+                {/* Mode Super User / Developer */}
+                {isSuper && (
+                  <>
+                    <div>
+                      <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Subtotal DPL (30%)</span>
+                      <span className="text-lg font-black text-amber-700">{subtotalDpl.toFixed(2)}</span>
+                    </div>
+                    <span className="text-slate-300 text-xl font-light">+</span>
+                    <div>
+                      <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Subtotal MPL (70%)</span>
+                      <span className="text-lg font-black text-emerald-700">{subtotalMitra.toFixed(2)}</span>
+                    </div>
+                    <span className="text-slate-300 text-xl font-light">=</span>
+                  </>
+                )}
+
+                <div>
+                  <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Nilai Akhir Kumulatif</span>
+                  <span className="text-2xl font-black text-slate-900">{nilaiAkhir.toFixed(2)}</span>
                 </div>
               </div>
 
-              {/* 2 Tables: Mitra 70% & DPL 30% */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* TABEL DPL (30%) */}
+              <div className="flex items-center gap-2">
+                <span className={`px-3 py-1.5 rounded-xl text-xs font-black border ${currentCategory.color}`}>
+                  {currentCategory.label} ({currentCategory.letter})
+                </span>
+              </div>
+            </div>
+
+            {/* Tables Sesuai Role */}
+            <div className={`grid grid-cols-1 ${isSuper ? "lg:grid-cols-2" : "grid-cols-1"} gap-6`}>
+              {/* TABEL DPL (30%) — Tampil untuk DPL & Super User */}
+              {(canEditDpl || isSuper) && (
                 <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col justify-between shadow-2xs">
                   <div className="p-4 border-b border-slate-100 bg-amber-50/50 flex items-center justify-between">
                     <h3 className="text-sm font-black text-amber-950 flex items-center gap-2">
                       <GraduationCap size={17} className="text-amber-600" />
-                      <span>Aspek Dosen Pendamping (DPL) &bull; Bobot 30%</span>
+                      <span>Aspek Dosen Pendamping Lapangan (DPL) &bull; Bobot 30%</span>
                     </h3>
                     {!canEditDpl && (
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-700">
@@ -986,17 +1022,19 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   </div>
 
                   <div className="p-3 bg-amber-50/70 border-t border-slate-200 flex justify-between items-center text-xs">
-                    <span className="font-extrabold text-amber-900">Subtotal DPL:</span>
+                    <span className="font-extrabold text-amber-900">Subtotal DPL (30%):</span>
                     <span className="text-base font-black text-amber-700">{subtotalDpl.toFixed(2)}</span>
                   </div>
                 </div>
+              )}
 
-                {/* TABEL MITRA (70%) */}
+              {/* TABEL MPL (70%) — Tampil untuk Mitra & Super User */}
+              {(canEditMitra || isSuper) && (
                 <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col justify-between shadow-2xs">
                   <div className="p-4 border-b border-slate-100 bg-emerald-50/50 flex items-center justify-between">
                     <h3 className="text-sm font-black text-emerald-950 flex items-center gap-2">
                       <ClipboardList size={17} className="text-emerald-600" />
-                      <span>Aspek Mitra Lapangan &bull; Bobot 70%</span>
+                      <span>Aspek Mitra Pendamping Lapangan (MPL) &bull; Bobot 70%</span>
                     </h3>
                     {!canEditMitra && (
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-700">
@@ -1010,7 +1048,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                       <thead>
                         <tr className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px] border-b border-slate-200">
                           <th className="py-2.5 px-3 text-center w-8">No</th>
-                          <th className="py-2.5 px-3">Aspek Lapangan Mitra</th>
+                          <th className="py-2.5 px-3">Aspek Lapangan (MPL)</th>
                           <th className="py-2.5 px-2 text-center w-12">Bobot</th>
                           <th className="py-2.5 px-3 text-center">Skor (0–4)</th>
                           <th className="py-2.5 px-3 text-right w-16">Nilai</th>
@@ -1049,7 +1087,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {/* 2. Warga Binaan */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2 px-3 text-center font-bold text-slate-400">2</td>
-                          <td className="py-2 px-3 font-bold text-slate-900">Warga Binaan</td>
+                          <td className="py-2 px-3 font-bold text-slate-900">Pembinaan Rumah Tangga / Warga Binaan</td>
                           <td className="py-2 px-2 text-center font-bold text-slate-700">10%</td>
                           <td className="py-2 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
@@ -1075,10 +1113,10 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                           </td>
                         </tr>
 
-                        {/* 3. Proker */}
+                        {/* 3. Program Kerja */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2 px-3 text-center font-bold text-slate-400">3</td>
-                          <td className="py-2 px-3 font-bold text-slate-900">Keterlibatan Program Kerja</td>
+                          <td className="py-2 px-3 font-bold text-slate-900">Keterlibatan Program Kerja Kelompok & Lapangan</td>
                           <td className="py-2 px-2 text-center font-bold text-slate-700">10%</td>
                           <td className="py-2 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
@@ -1107,7 +1145,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {/* 4. Komunikasi */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2 px-3 text-center font-bold text-slate-400">4</td>
-                          <td className="py-2 px-3 font-bold text-slate-900">Komunikasi & Etika</td>
+                          <td className="py-2 px-3 font-bold text-slate-900">Komunikasi, Sopan Santun, & Etika Sosial</td>
                           <td className="py-2 px-2 text-center font-bold text-slate-700">8%</td>
                           <td className="py-2 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
@@ -1136,7 +1174,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {/* 5. Tanggung Jawab */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2 px-3 text-center font-bold text-slate-400">5</td>
-                          <td className="py-2 px-3 font-bold text-slate-900">Tanggung Jawab & Kerja Sama</td>
+                          <td className="py-2 px-3 font-bold text-slate-900">Tanggung Jawab & Kerja Sama Tim</td>
                           <td className="py-2 px-2 text-center font-bold text-slate-700">8%</td>
                           <td className="py-2 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
@@ -1165,7 +1203,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {/* 6. Bukti Kegiatan */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2 px-3 text-center font-bold text-slate-400">6</td>
-                          <td className="py-2 px-3 font-bold text-slate-900">Bukti Kegiatan</td>
+                          <td className="py-2 px-3 font-bold text-slate-900">Kesesuaian Bukti Kegiatan Lapangan</td>
                           <td className="py-2 px-2 text-center font-bold text-slate-700">7%</td>
                           <td className="py-2 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
@@ -1194,7 +1232,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {/* 7. Dampak */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2 px-3 text-center font-bold text-slate-400">7</td>
-                          <td className="py-2 px-3 font-bold text-slate-900">Dampak kepada Masyarakat</td>
+                          <td className="py-2 px-3 font-bold text-slate-900">Dampak Nyata kepada Masyarakat & Wilayah</td>
                           <td className="py-2 px-2 text-center font-bold text-slate-700">10%</td>
                           <td className="py-2 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
@@ -1223,7 +1261,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {/* 8. Inisiatif */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2 px-3 text-center font-bold text-slate-400">8</td>
-                          <td className="py-2 px-3 font-bold text-slate-900">Inisiatif & Problem Solving</td>
+                          <td className="py-2 px-3 font-bold text-slate-900">Inisiatif Mandiri & Problem Solving</td>
                           <td className="py-2 px-2 text-center font-bold text-slate-700">7%</td>
                           <td className="py-2 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
@@ -1253,16 +1291,18 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   </div>
 
                   <div className="p-3 bg-emerald-50/70 border-t border-slate-200 flex justify-between items-center text-xs">
-                    <span className="font-extrabold text-emerald-900">Subtotal Mitra:</span>
+                    <span className="font-extrabold text-emerald-900">Subtotal MPL (70%):</span>
                     <span className="text-base font-black text-emerald-700">{subtotalMitra.toFixed(2)}</span>
                   </div>
                 </div>
-              </div>
+              )}
+            </div>
 
-              {/* Catatan Evaluator */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Catatan Evaluator Sesuai Role */}
+            <div className={`grid grid-cols-1 ${isSuper ? "md:grid-cols-2" : "grid-cols-1"} gap-4`}>
+              {(canEditDpl || isSuper) && (
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Catatan Evaluasi DPL:</label>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Catatan Evaluasi Dosen Pendamping Lapangan (DPL):</label>
                   <textarea
                     rows={3}
                     value={scores.catatanDpl}
@@ -1272,9 +1312,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                     className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 outline-none focus:border-emerald-500 disabled:bg-slate-100"
                   />
                 </div>
+              )}
 
+              {(canEditMitra || isSuper) && (
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Catatan Evaluasi Mitra Lapangan:</label>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Catatan Evaluasi Mitra Pendamping Lapangan (MPL):</label>
                   <textarea
                     rows={3}
                     value={scores.catatanMitra}
@@ -1284,95 +1326,48 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                     className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 outline-none focus:border-emerald-500 disabled:bg-slate-100"
                   />
                 </div>
-              </div>
+              )}
+            </div>
 
-              {/* Action Footer Bawah Form */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl">
-                <div className="text-xs text-emerald-900">
-                  <span className="font-extrabold block">Ringkasan Nilai Akhir:</span>
-                  <span className="text-slate-600">
-                    DPL (30%): <strong>{subtotalDpl.toFixed(2)}</strong> | Mitra (70%): <strong>{subtotalMitra.toFixed(2)}</strong> | Total: <strong>{nilaiAkhir.toFixed(2)}</strong> ({currentCategory.label} / {currentCategory.letter})
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                  <button
-                    type="button"
-                    onClick={handlePrintPdf}
-                    className="flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition border border-slate-200 shadow-2xs cursor-pointer"
-                  >
-                    <Printer size={15} className="text-slate-500" />
-                    <span>Cetak PDF</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSaveScore}
-                    disabled={saving || !selectedStudentId}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition shadow-xs cursor-pointer disabled:opacity-50"
-                  >
-                    {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                    <span>Simpan Penilaian</span>
-                  </button>
-                </div>
+            {/* Action Footer Bawah Form */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl">
+              <div className="text-xs text-emerald-900">
+                <span className="font-extrabold block">Ringkasan Nilai Akhir:</span>
+                <span className="text-slate-600">
+                  DPL (30%): <strong>{subtotalDpl.toFixed(2)}</strong> | MPL (70%): <strong>{subtotalMitra.toFixed(2)}</strong> | Total: <strong>{nilaiAkhir.toFixed(2)}</strong> ({currentCategory.label} / {currentCategory.letter})
+                </span>
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={handlePrintPdf}
+                  className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition border ${
+                    isGradeComplete
+                      ? "bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-2xs cursor-pointer"
+                      : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                  }`}
+                  title={isGradeComplete ? "Cetak Dokumen Resmi PDF" : "Cetak PDF baru aktif setelah nilai lengkap dari kedua pihak"}
+                >
+                  <Printer size={15} className={isGradeComplete ? "text-slate-500" : "text-slate-400"} />
+                  <span>Cetak PDF</span>
+                  {!isGradeComplete && (
+                    <span className="text-[9.5px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold ml-1">
+                      Belum Lengkap
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveScore}
+                  disabled={saving || !selectedStudentId}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                  <span>Simpan Penilaian</span>
+                </button>
               </div>
             </div>
-          )}
-
-          {/* TAB 2: PORTOFOLIO AKTIVITAS KKN */}
-          {detailTab === "PORTOFOLIO_KKN" && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Tingkat Kehadiran</span>
-                  <span className="text-xl font-black text-emerald-700 mt-1 block">
-                    {requirements.attendanceRate}%
-                  </span>
-                  <span className="text-[11px] text-slate-500">Kewajiban &ge; 80%</span>
-                </div>
-
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Warga Dampingan</span>
-                  <span className="text-xl font-black text-blue-700 mt-1 block">
-                    {requirements.wargaBinaanCount} Rumah
-                  </span>
-                  <span className="text-[11px] text-slate-500">Target &ge; 6 warga aktif</span>
-                </div>
-
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Program Kerja Diikuti</span>
-                  <span className="text-xl font-black text-purple-700 mt-1 block">
-                    {requirements.prokerCount} Kegiatan
-                  </span>
-                  <span className="text-[11px] text-slate-500">Program kerja kelompok & binaan</span>
-                </div>
-
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Status Bukti / Evidence</span>
-                  <span className="text-xl font-black text-teal-700 mt-1 block">
-                    {requirements.isEvidenceValid ? "Lengkap" : "Terverifikasi Sebagian"}
-                  </span>
-                  <span className="text-[11px] text-slate-500">Dokumentasi foto & GPS</span>
-                </div>
-              </div>
-
-              {/* Rincian Riwayat Logbook & Presensi */}
-              <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200 space-y-3">
-                <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider">
-                  Ikhtisar Portofolio & Logbook Aktivitas KKN
-                </h4>
-                <div className="space-y-2 text-xs text-slate-600">
-                  <p>
-                    &bull; Mahasiswa <strong>{studentInfo.nama}</strong> ({studentInfo.nim}) terdaftar di <strong>{studentInfo.kelompok}</strong> dengan wilayah tugas di <strong>{studentInfo.rw ? `${studentInfo.rw}, ` : ""}Kelurahan {studentInfo.kelurahan || "Coblong"}</strong>.
-                  </p>
-                  <p>
-                    &bull; Mahasiswa telah memenuhi persyaratan verifikasi lapangan dengan tingkat presensi <strong>{requirements.attendanceRate}%</strong> dan pendampingan kepada <strong>{requirements.wargaBinaanCount} rumah tangga</strong>.
-                  </p>
-                  <p>
-                    &bull; Dokumen dan laporan kegiatan dapat diakses pada folder Google Drive kelompok bimbingan yang telah disiapkan oleh Taskforce / Super User.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       )}
     </div>

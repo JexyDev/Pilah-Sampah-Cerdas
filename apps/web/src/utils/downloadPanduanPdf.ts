@@ -360,7 +360,7 @@ export const downloadPanduanPdf = () => {
                 </td>
               </tr>
               <tr>
-                <td><strong>DPL (Dosen Pembimbing)</strong></td>
+                <td><strong>DPL (Dosen Pendamping Lapangan)</strong></td>
                 <td>NIP + Email DPL</td>
                 <td>
                   • Memantau progres pendampingan kelompok mahasiswa KKN di lapangan.<br>

@@ -303,12 +303,17 @@ export const ProgramKerjaKkn: React.FC = () => {
         (item.sumber || "Mahasiswa").toLowerCase() === sourceFilter.toLowerCase();
 
       let matchesStatus = true;
-      if (statusFilter === "BELUM") {
-        matchesStatus = item.status === "BELUM_DISETUJUI" || item.status === "DITOLAK";
-      } else if (statusFilter === "SEDANG") {
-        matchesStatus = item.status === "SEDANG_BERJALAN" || item.status === "DITERIMA";
-      } else if (statusFilter === "SUDAH") {
-        matchesStatus = item.status === "SELESAI";
+      const st: any = item.status || "";
+      if (statusFilter === "BELUM_DISETUJUI") {
+        matchesStatus = st === "BELUM_DISETUJUI" || st === "PENDING" || !item.status;
+      } else if (statusFilter === "DISETUJUI") {
+        matchesStatus = st === "DITERIMA" || st === "DISETUJUI";
+      } else if (statusFilter === "TIDAK_DISETUJUI") {
+        matchesStatus = st === "DITOLAK" || st === "TIDAK_DISETUJUI";
+      } else if (statusFilter === "SEDANG_BERJALAN") {
+        matchesStatus = st === "SEDANG_BERJALAN" || st === "SEDANG_DILAKSANAKAN";
+      } else if (statusFilter === "SELESAI") {
+        matchesStatus = st === "SELESAI" || st === "SELESAI_DILAKSANAKAN";
       }
 
       return matchesSearch && matchesCategory && matchesSource && matchesStatus;
@@ -328,11 +333,13 @@ export const ProgramKerjaKkn: React.FC = () => {
   // Metric KPI Computations
   const totalCount = prokerList.length;
   const diterimaCount = prokerList.filter(
-    (p) => p.status === "DITERIMA" || p.status === "SEDANG_BERJALAN" || p.status === "SELESAI"
+    (p) => (p.status as string) === "DITERIMA" || (p.status as string) === "DISETUJUI"
   ).length;
   const diterimaPct = totalCount > 0 ? ((diterimaCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
 
-  const menungguCount = prokerList.filter((p) => p.status === "BELUM_DISETUJUI").length;
+  const menungguCount = prokerList.filter(
+    (p) => (p.status as string) === "BELUM_DISETUJUI" || (p.status as string) === "PENDING" || !p.status
+  ).length;
   const menungguPct = totalCount > 0 ? ((menungguCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
 
   const totalBiaya = prokerList.reduce((acc, p) => acc + (Number(p.kebutuhanBiaya) || 0), 0);
@@ -377,20 +384,6 @@ export const ProgramKerjaKkn: React.FC = () => {
   // Helper Badge Renderers
   const renderKategoriBadge = (kat?: string) => {
     const k = (kat || "Pemilahan").toLowerCase();
-    if (k.includes("minor")) {
-      return (
-        <span className="px-3 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded-full font-bold text-[11px]">
-          Minor (Tambahan)
-        </span>
-      );
-    }
-    if (k.includes("mayor") || k.includes("utama")) {
-      return (
-        <span className="px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full font-bold text-[11px]">
-          Mayor (Utama)
-        </span>
-      );
-    }
     if (k.includes("pemilahan")) {
       return (
         <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-bold text-[11px]">
@@ -419,6 +412,13 @@ export const ProgramKerjaKkn: React.FC = () => {
         </span>
       );
     }
+    if (k.includes("edukasi") || k.includes("sosialisasi")) {
+      return (
+        <span className="px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-bold text-[11px]">
+          Edukasi & Sosialisasi
+        </span>
+      );
+    }
     return (
       <span className="px-3 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded-full font-bold text-[11px]">
         {kat || "Lainnya"}
@@ -443,23 +443,38 @@ export const ProgramKerjaKkn: React.FC = () => {
   };
 
   const renderStatusPelaksanaanBadge = (status: string) => {
-    if (status === "SELESAI") {
+    const s = (status || "").toUpperCase();
+    if (s === "SELESAI" || s === "SELESAI_DILAKSANAKAN") {
       return (
-        <span className="px-3.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-[11px]">
-          Sudah
+        <span className="px-3.5 py-1 bg-teal-50 text-teal-700 border border-teal-200 rounded-full font-bold text-[11px]">
+          Selesai Dilaksanakan
         </span>
       );
     }
-    if (status === "SEDANG_BERJALAN" || status === "DITERIMA") {
+    if (s === "SEDANG_BERJALAN" || s === "SEDANG_DILAKSANAKAN") {
       return (
-        <span className="px-3.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg font-bold text-[11px]">
-          Sedang
+        <span className="px-3.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-bold text-[11px]">
+          Sedang Dilaksanakan
+        </span>
+      );
+    }
+    if (s === "DITERIMA" || s === "DISETUJUI") {
+      return (
+        <span className="px-3.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-bold text-[11px]">
+          Disetujui
+        </span>
+      );
+    }
+    if (s === "DITOLAK" || s === "TIDAK_DISETUJUI") {
+      return (
+        <span className="px-3.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full font-bold text-[11px]">
+          Tidak Disetujui
         </span>
       );
     }
     return (
-      <span className="px-3.5 py-1 bg-slate-100 text-slate-600 border border-slate-200 rounded-lg font-bold text-[11px]">
-        Belum
+      <span className="px-3.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-bold text-[11px]">
+        Belum Disetujui
       </span>
     );
   };
@@ -577,12 +592,11 @@ export const ProgramKerjaKkn: React.FC = () => {
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
             >
               <option value="ALL">Semua Kategori</option>
-              <option value="Mayor (Utama)">Mayor (Utama)</option>
-              <option value="Minor (Tambahan)">Minor (Tambahan)</option>
               <option value="Pemilahan">Pemilahan</option>
               <option value="Pengangkutan">Pengangkutan</option>
               <option value="Pengolahan">Pengolahan</option>
               <option value="Pemanfaatan">Pemanfaatan</option>
+              <option value="Edukasi & Sosialisasi">Edukasi & Sosialisasi</option>
               <option value="Lainnya">Lainnya</option>
             </select>
           </div>
@@ -610,9 +624,11 @@ export const ProgramKerjaKkn: React.FC = () => {
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
             >
               <option value="ALL">Semua Status</option>
-              <option value="BELUM">Belum</option>
-              <option value="SEDANG">Sedang</option>
-              <option value="SUDAH">Sudah</option>
+              <option value="BELUM_DISETUJUI">Belum Disetujui</option>
+              <option value="DISETUJUI">Disetujui</option>
+              <option value="TIDAK_DISETUJUI">Tidak Disetujui</option>
+              <option value="SEDANG_BERJALAN">Sedang Dilaksanakan</option>
+              <option value="SELESAI">Selesai Dilaksanakan</option>
             </select>
           </div>
         </div>
@@ -801,12 +817,11 @@ export const ProgramKerjaKkn: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
                   >
-                    <option value="Mayor (Utama)">Mayor (Utama)</option>
-                    <option value="Minor (Tambahan)">Minor (Tambahan)</option>
                     <option value="Pemilahan">Pemilahan</option>
                     <option value="Pengangkutan">Pengangkutan</option>
                     <option value="Pengolahan">Pengolahan</option>
                     <option value="Pemanfaatan">Pemanfaatan</option>
+                    <option value="Edukasi & Sosialisasi">Edukasi & Sosialisasi</option>
                     <option value="Lainnya">Lainnya</option>
                   </select>
                 </div>
@@ -910,11 +925,11 @@ export const ProgramKerjaKkn: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
                   >
-                    <option value="BELUM_DISETUJUI">Belum (Belum Disetujui)</option>
-                    <option value="DITERIMA">Sedang (Disetujui / Persiapan)</option>
-                    <option value="SEDANG_BERJALAN">Sedang (Sedang Dikerjakan)</option>
-                    <option value="SELESAI">Sudah (Selesai)</option>
-                    <option value="DITOLAK">Ditolak</option>
+                    <option value="BELUM_DISETUJUI">Belum Disetujui</option>
+                    <option value="DISETUJUI">Disetujui</option>
+                    <option value="SEDANG_BERJALAN">Sedang Dilaksanakan</option>
+                    <option value="SELESAI">Selesai Dilaksanakan</option>
+                    <option value="DITOLAK">Tidak Disetujui</option>
                   </select>
                 </div>
               )}

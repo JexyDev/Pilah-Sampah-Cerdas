@@ -1260,7 +1260,7 @@ const ManajemenPengguna: React.FC = () => {
                     <th className="py-3 px-4">NAMA LENGKAP</th>
                     <th className="py-3 px-4">NIP</th>
                     <th className="py-3 px-4">NO. HP</th>
-                    <th className="py-3 px-4">PEMBIMBING KELOMPOK</th>
+                    <th className="py-3 px-4">PENDAMPING KELOMPOK</th>
                     <th className="py-3 px-4">JENJANG PENDIDIKAN</th>
                     <th className="py-3 px-4">PROGRAM STUDI</th>
                     <th className="py-3 px-4 text-center">STATUS</th>
