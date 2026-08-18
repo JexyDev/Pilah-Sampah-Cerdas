@@ -13,7 +13,7 @@ echo "=== 2. Resetting Database & Seeding Real Data (apps/api) ==="
 cd /home/maker/Pilah-Sampah-Cerdas/apps/api
 npm install --silent
 npx prisma generate
-npx prisma db push --force-reset --skip-generate
+npx prisma db push --skip-generate
 npx tsx scripts/seed-official-coblong-officials.ts || true
 npx tsx scripts/seed-rt-rw-all.ts || true
 npx tsx scripts/seed-dpl-real.ts || true
