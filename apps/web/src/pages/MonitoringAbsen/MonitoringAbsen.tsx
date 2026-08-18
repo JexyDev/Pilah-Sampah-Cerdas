@@ -1779,7 +1779,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   <Hourglass size={14} className="text-emerald-600" />
                   Minimal Durasi / Hari
                 </span>
-                <span className="font-extrabold text-slate-900 dark:text-slate-100">{scheduleTargetHours || configTargets.targetHarianJam || 2} Jam</span>
+                <span className="font-extrabold text-slate-900 dark:text-slate-100">{formatHoursToUnits(scheduleTargetHours || configTargets.targetHarianJam || 2)}</span>
               </div>
             </div>
           </div>
@@ -1825,8 +1825,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
               <div className="px-2 flex flex-col items-center justify-center">
                 <Clock size={18} className="text-emerald-600 mb-1" />
-                <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{configTargets.targetTotalJam ?? 100}</span>
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Jam</span>
+                <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{formatHoursToUnits(configTargets.targetTotalJam ?? 100)}</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Total Target</span>
                 <span className="text-[10px] text-slate-400 font-medium">Total Jam Kegiatan</span>
               </div>
             </div>

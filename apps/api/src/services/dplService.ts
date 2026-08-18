@@ -1270,7 +1270,7 @@ export const dplService = {
     const minHours = Number(configMap.get("attendance_min_duration_hours") || 2);
     const minMinutes = Number(configMap.get("attendance_min_duration_minutes") || 0);
     const minSeconds = Number(configMap.get("attendance_min_duration_seconds") || 0);
-    const ruleMinDurationHours = minHours + (minMinutes / 60) + (minSeconds / 3600);
+    const ruleMinDurationHours = Number((minHours + (minMinutes / 60) + (minSeconds / 3600)).toFixed(4));
 
     const targetHarianRaw = Number(configMap.get("kkn_target_harian_jam"));
     const targetHarian = ruleMinDurationHours > 0 ? ruleMinDurationHours : (!isNaN(targetHarianRaw) && targetHarianRaw > 0 ? targetHarianRaw : 2);
