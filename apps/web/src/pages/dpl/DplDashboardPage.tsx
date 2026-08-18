@@ -26,6 +26,7 @@ import {
   FileText,
   Award,
   Clock,
+  ArrowLeft,
 } from "lucide-react";
 import { MapContainer, Marker, Popup, Polygon, useMapEvents, useMap } from "react-leaflet";
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
@@ -662,13 +663,14 @@ export const DplDashboardPage: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2">
           {alerts && alerts.pendingApprovalsCount > 0 && (
-            <Link
-              to="/monitoring-absen"
+            <button
+              type="button"
+              onClick={() => setActiveTab("APPROVAL")}
               className="bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/40 text-amber-800 dark:text-amber-300 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition cursor-pointer shadow-xs animate-pulse"
             >
               <AlertTriangle size={14} className="text-amber-600 shrink-0" />
               <span>{alerts.pendingApprovalsCount} Pengajuan Izin / Sakit</span>
-            </Link>
+            </button>
           )}
         </div>
       </div>
@@ -962,7 +964,7 @@ export const DplDashboardPage: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">Presensi Mahasiswa</h4>
-                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400">Validasi surat izin/sakit &amp; log hadir</p>
+                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400">Audit logbook &amp; kehadiran lapangan</p>
                 </div>
               </div>
               <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
@@ -1017,12 +1019,13 @@ export const DplDashboardPage: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <Link
-                to="/monitoring-absen"
+              <button
+                type="button"
+                onClick={() => setActiveTab("APPROVAL")}
                 className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition shadow-xs whitespace-nowrap cursor-pointer"
               >
                 Validasi Sekarang
-              </Link>
+              </button>
             </div>
           )}
 
@@ -1514,6 +1517,23 @@ export const DplDashboardPage: React.FC = () => {
       {/* VIEW 4: PERSETUJUAN SAKIT / IZIN / KETIDAKHADIRAN */}
       {activeTab === "APPROVAL" && (
         <div className="space-y-6">
+          {/* Header Navigasi Cepat Kembali */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab("OVERVIEW")}
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg transition flex items-center gap-1.5 cursor-pointer"
+              >
+                <ArrowLeft size={14} />
+                <span>Kembali ke Ringkasan Dasbor</span>
+              </button>
+            </div>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              Validasi &amp; Putusan Permohonan Izin / Sakit Mahasiswa Bimbingan
+            </span>
+          </div>
+
           {/* Pending Approval Requests */}
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between">

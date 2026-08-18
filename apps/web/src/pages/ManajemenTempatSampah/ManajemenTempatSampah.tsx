@@ -72,6 +72,22 @@ const MapFlyTo = ({ target }: { target: { center: [number, number]; zoom: number
 };
 
 
+const MapResizer: React.FC<{ isFullscreen: boolean }> = ({ isFullscreen }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.invalidateSize();
+    const t1 = setTimeout(() => map.invalidateSize(), 80);
+    const t2 = setTimeout(() => map.invalidateSize(), 250);
+    const t3 = setTimeout(() => map.invalidateSize(), 500);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [isFullscreen, map]);
+  return null;
+};
+
 // Helper for map events
 
 const ManajemenTempatSampah: React.FC = () => {
@@ -125,6 +141,29 @@ const ManajemenTempatSampah: React.FC = () => {
   const [mapSearchInput, setMapSearchInput] = useState<string>("");
   const [showKelurahanBoundaries, setShowKelurahanBoundaries] = useState<boolean>(true);
   const [isLegendOpen, setIsLegendOpen] = useState<boolean>(true);
+
+  // Handle ESC key to exit map fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isMapFullscreen) {
+        setIsMapFullscreen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isMapFullscreen]);
+
+  // Lock body scroll when fullscreen
+  useEffect(() => {
+    if (isMapFullscreen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMapFullscreen]);
 
   // REALTIME POLLING: Auto-sync map data every 10 seconds when Monitoring tab is active
   useEffect(() => {
@@ -629,7 +668,7 @@ const ManajemenTempatSampah: React.FC = () => {
       {activeTab === "kategori" ? (
         <KategoriSampah openAddModalSignal={openKategoriAddSignal} />
       ) : activeTab === "monitoring" ? (
-        <div className={`space-y-6 ${isMapFullscreen ? "fixed inset-0 z-50 bg-slate-100 dark:bg-slate-950 p-4 sm:p-6 overflow-y-auto flex flex-col justify-between h-screen w-screen animate-in fade-in duration-200" : ""}`}>
+        <div className="space-y-6">
 
           {/* Header Summary KPI Cards for Monitoring */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
@@ -683,10 +722,16 @@ const ManajemenTempatSampah: React.FC = () => {
           </div>
 
           {/* Geospatial Map Container with Live Sync Toolbar */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 space-y-4 flex-1 flex flex-col min-h-0">
+          <div
+            className={`bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 transition-all duration-200 ${
+              isMapFullscreen
+                ? "fixed inset-0 z-[1000] p-4 sm:p-6 flex flex-col h-screen w-screen rounded-none shadow-2xl overflow-hidden"
+                : "rounded-2xl shadow-sm p-4 sm:p-5 space-y-4 flex flex-col min-h-0"
+            }`}
+          >
 
             {/* Toolbar Top Bar - Tiered Layout for Clean UX */}
-            <div className="space-y-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="space-y-3 pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
               {/* Row 1: Title, Live Sync Status, and Action Controls */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -835,7 +880,7 @@ const ManajemenTempatSampah: React.FC = () => {
             </div>
 
             {/* Map Canvas Viewport */}
-            <div className={`w-full rounded-2xl overflow-hidden border border-slate-200/90 dark:border-slate-700 relative ${isMapFullscreen ? "h-[calc(100vh-180px)]" : "h-[500px]"}`}>
+            <div className={`w-full rounded-2xl overflow-hidden border border-slate-200/90 dark:border-slate-700 relative ${isMapFullscreen ? "flex-1 min-h-0 mt-3" : "h-[500px]"}`}>
 
               {/* Floating Top-Left Search Bar Overlay with Limit 5 Candidate Results */}
               <div className="absolute top-4 left-4 z-20 pointer-events-auto">
@@ -1004,6 +1049,7 @@ const ManajemenTempatSampah: React.FC = () => {
                 zoomControl={false}
                 style={{ height: "100%", width: "100%", zIndex: 1 }}
               >
+                <MapResizer isFullscreen={isMapFullscreen} />
                 <MapFlyTo target={flyTarget} />
                 <MapEvents setZoom={setMapZoom} setSelectedKelurahan={setSelectedMapKelurahan} />
 

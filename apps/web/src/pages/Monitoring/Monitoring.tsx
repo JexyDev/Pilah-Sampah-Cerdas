@@ -12,7 +12,7 @@
  */
 
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { MapContainer, Marker, Popup, Circle, Polygon, Tooltip, useMapEvents } from "react-leaflet";
+import { MapContainer, Marker, Popup, Circle, Polygon, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -50,6 +50,22 @@ interface KPIStats {
   alertTempatSampahPenuh: number;
   totalRumahTangga?: number;
 }
+
+const MapResizer: React.FC<{ isFullscreen: boolean }> = ({ isFullscreen }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.invalidateSize();
+    const t1 = setTimeout(() => map.invalidateSize(), 80);
+    const t2 = setTimeout(() => map.invalidateSize(), 250);
+    const t3 = setTimeout(() => map.invalidateSize(), 500);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [isFullscreen, map]);
+  return null;
+};
 
 const MapFlyTo: React.FC<{ target: { center: [number, number]; zoom: number; timestamp?: number } | null }> = ({ target }) => {
   const map = useMapEvents({});
@@ -125,6 +141,29 @@ const Monitoring: React.FC = () => {
   // Map Controls
   const [_mapZoom, setMapZoom] = useState<number>(14);
   const [flyTarget, setFlyTarget] = useState<{ center: [number, number]; zoom: number; timestamp?: number } | null>(null);
+
+  // Handle ESC key to exit map fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isMapFullscreen) {
+        setIsMapFullscreen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isMapFullscreen]);
+
+  // Lock body scroll when fullscreen
+  useEffect(() => {
+    if (isMapFullscreen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMapFullscreen]);
 
   const isKelurahanLocked = isLurah || (isDpl && dplKelurahans.length === 1);
   const isRwLocked = isRw;
@@ -448,7 +487,7 @@ const Monitoring: React.FC = () => {
       </div>
 
       {/* 2. Monitoring Container */}
-      <div className={`space-y-6 ${isMapFullscreen ? "fixed inset-0 z-50 bg-slate-100 p-4 sm:p-6 overflow-y-auto flex flex-col justify-between h-screen w-screen animate-in fade-in duration-200" : ""}`}>
+      <div className="space-y-6">
 
         {/* Summary KPI Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
@@ -507,10 +546,17 @@ const Monitoring: React.FC = () => {
         </div>
 
         {/* Geospatial Map Container with Live Sync Toolbar */}
-        <div ref={mapContainerRef} className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 space-y-4 flex-1 flex flex-col min-h-0">
+        <div
+          ref={mapContainerRef}
+          className={`bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 transition-all duration-200 ${
+            isMapFullscreen
+              ? "fixed inset-0 z-[1000] p-4 sm:p-6 flex flex-col h-screen w-screen rounded-none shadow-2xl overflow-hidden"
+              : "rounded-2xl shadow-sm p-4 sm:p-5 space-y-4 flex flex-col min-h-0"
+          }`}
+        >
 
           {/* Toolbar Top Bar */}
-          <div className="space-y-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="space-y-3 pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20 shrink-0 shadow-2xs">
@@ -718,7 +764,7 @@ const Monitoring: React.FC = () => {
           </div>
 
           {/* Map Canvas Viewport */}
-          <div className={`w-full rounded-2xl overflow-hidden border border-slate-200/90 dark:border-slate-800 relative ${isMapFullscreen ? "h-[calc(100vh-180px)]" : "h-[520px]"}`}>
+          <div className={`w-full rounded-2xl overflow-hidden border border-slate-200/90 dark:border-slate-800 relative ${isMapFullscreen ? "flex-1 min-h-0 mt-3" : "h-[520px]"}`}>
 
             {/* Floating Top-Left Search Bar */}
             <div className="absolute top-4 left-4 z-20 pointer-events-auto">
@@ -973,6 +1019,7 @@ const Monitoring: React.FC = () => {
               zoomControl={false}
               style={{ height: "100%", width: "100%", zIndex: 1 }}
             >
+              <MapResizer isFullscreen={isMapFullscreen} />
               <MapFlyTo target={flyTarget} />
               <MapEvents setZoom={setMapZoom} setSelectedKelurahan={setSelectedMapKelurahan} isLocked={isKelurahanLocked} />
 
