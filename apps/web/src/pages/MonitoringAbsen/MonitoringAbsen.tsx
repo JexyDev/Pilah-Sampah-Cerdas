@@ -1692,55 +1692,57 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             )}
           </div>
 
-          {/* Filter Status Chips & Mode Switcher */}
-          <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
-            <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/60 text-[11px] font-bold text-slate-600 dark:text-slate-400">
-              <button
-                type="button"
-                onClick={() => setAttendanceFilterTab("ALL")}
-                className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                  attendanceFilterTab === "ALL"
-                    ? "bg-white text-slate-900 shadow-xs font-black"
-                    : "hover:text-slate-900"
-                }`}
-              >
-                Semua ({attendanceStats.total})
-              </button>
-              <button
-                type="button"
-                onClick={() => setAttendanceFilterTab("ACTIVE")}
-                className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                  attendanceFilterTab === "ACTIVE"
-                    ? "bg-white text-emerald-800 shadow-xs font-black"
-                    : "hover:text-slate-900"
-                }`}
-              >
-                🟢 Lapangan ({attendanceStats.active})
-              </button>
-              <button
-                type="button"
-                onClick={() => setAttendanceFilterTab("COMPLETED")}
-                className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                  attendanceFilterTab === "COMPLETED"
-                    ? "bg-white text-teal-800 shadow-xs font-black"
-                    : "hover:text-slate-900"
-                }`}
-              >
-                ✨ Selesai ({attendanceStats.completed})
-              </button>
-              <button
-                type="button"
-                onClick={() => setAttendanceFilterTab("NOT_ATTENDED")}
-                className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                  attendanceFilterTab === "NOT_ATTENDED"
-                    ? "bg-white text-slate-900 shadow-xs font-black"
-                    : "hover:text-slate-900"
-                }`}
-              >
-                ⚪ Belum ({attendanceStats.notAttended})
-              </button>
+          {/* Filter Status Chips & Mode Switcher (Disembunyikan untuk role DPL) */}
+          {!isDpl && (
+            <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
+              <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/60 text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                <button
+                  type="button"
+                  onClick={() => setAttendanceFilterTab("ALL")}
+                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                    attendanceFilterTab === "ALL"
+                      ? "bg-white text-slate-900 shadow-xs font-black"
+                      : "hover:text-slate-900"
+                  }`}
+                >
+                  Semua ({attendanceStats.total})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAttendanceFilterTab("ACTIVE")}
+                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                    attendanceFilterTab === "ACTIVE"
+                      ? "bg-white text-emerald-800 shadow-xs font-black"
+                      : "hover:text-slate-900"
+                  }`}
+                >
+                  🟢 Lapangan ({attendanceStats.active})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAttendanceFilterTab("COMPLETED")}
+                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                    attendanceFilterTab === "COMPLETED"
+                      ? "bg-white text-teal-800 shadow-xs font-black"
+                      : "hover:text-slate-900"
+                  }`}
+                >
+                  ✨ Selesai ({attendanceStats.completed})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAttendanceFilterTab("NOT_ATTENDED")}
+                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                    attendanceFilterTab === "NOT_ATTENDED"
+                      ? "bg-white text-slate-900 shadow-xs font-black"
+                      : "hover:text-slate-900"
+                  }`}
+                >
+                  ⚪ Belum ({attendanceStats.notAttended})
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Data List Display */}
