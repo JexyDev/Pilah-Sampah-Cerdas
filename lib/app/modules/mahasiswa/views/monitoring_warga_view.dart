@@ -7,6 +7,7 @@ import '../controllers/mahasiswa_controller.dart';
 import '../controllers/aktivasi_warga_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
+import '../controllers/kelompok_kkn_controller.dart';
 
 class MonitoringWargaView extends ConsumerStatefulWidget {
   const MonitoringWargaView({super.key});
@@ -161,29 +162,11 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     
     // For ALL modes, we need to watch the aktivasi controller to get ALL warga matching the RW.
     final aktivasiState = ref.watch(aktivasiWargaProvider);
+    final kelompokState = ref.watch(kelompokKknProvider);
 
-    // Fetch list of ALL warga from aktivasiState (which hits /kkn/warga)
+    // Fetch list of ALL warga from aktivasiState (which hits /kkn/warga-list)
     // regardless of whether we are in aktivasi_bin mode or monitoring mode.
-    // Dashboard still uses state.wargaList to show ONLY Warga Dampingan.
-    List<WargaDampingan> allWargaList = isAktivasiBinMode
-        ? _getFilteredWargaAktivasi(aktivasiState.wargaList, userKec, userKel, userRw)
-        : (isAktivasiBinMode ? [] : state.wargaList.map((w) {
-              final targetKel = w.kelurahan.isNotEmpty ? w.kelurahan : userKel;
-              final targetRw = w.rw.isNotEmpty ? w.rw : userRw;
-              final targetKec = w.kecamatan.isNotEmpty ? w.kecamatan : userKec;
-              final kelDisplay = targetKel.toLowerCase().startsWith('kel') ? targetKel : 'Kel. $targetKel';
-              
-              final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RW')
-                  ? w.address
-                  : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $targetRw, $kelDisplay, Kec. $targetKec';
-              return WargaDampingan(
-                wargaId: w.wargaId, binId: w.binId, wargaName: w.wargaName, address: displayAddr, 
-                kelurahan: targetKel, rw: targetRw, kecamatan: targetKec, 
-                mahasiswaId: w.mahasiswaId, recentLogs: w.recentLogs, isActivated: w.isActivated, 
-                role: w.role, totalPoints: w.totalPoints, apiCorrectPercentage: w.apiCorrectPercentage,
-                pendampingName: w.pendampingName,
-              );
-            }).toList());
+    List<WargaDampingan> allWargaList = _getFilteredWargaAktivasi(aktivasiState.wargaList, userKec, userKel, userRw);
 
     // Remove duplicates
     final uniqueMap = <String, WargaDampingan>{};
@@ -249,13 +232,12 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
           }
         },
         color: AppColors.primaryGreen,
-        child: _buildBody(state, aktivasiState, filteredWarga, isAktivasiBinMode, kelurahanList, rtRwList, userKec, userKel, userRw),
+        child: _buildBody(state, aktivasiState, kelompokState, filteredWarga, isAktivasiBinMode, kelurahanList, rtRwList, userKec, userKel, userRw),
       ),
     );
   }
 
-  Widget _buildBody(MahasiswaState state, AktivasiWargaState? aktivasiState, List<WargaDampingan> filteredWarga, bool isAktivasiBinMode, List<String> kelurahanList, List<String> rtRwList, String userKec, String userKel, String userRw) {
-    final currentUserName = ref.watch(authProvider).user?.name ?? '';
+  Widget _buildBody(MahasiswaState state, AktivasiWargaState? aktivasiState, KelompokKknState kelompokState, List<WargaDampingan> filteredWarga, bool isAktivasiBinMode, List<String> kelurahanList, List<String> rtRwList, String userKec, String userKel, String userRw) {
     final isLoading = isAktivasiBinMode ? (aktivasiState?.isLoading ?? false) : state.isLoading;
     final errorMsg = isAktivasiBinMode ? aktivasiState?.errorMessage : state.errorMessage;
     final isEmpty = filteredWarga.isEmpty;
@@ -400,8 +382,6 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
               itemCount: filteredWarga.length,
               itemBuilder: (context, index) {
                 final warga = filteredWarga[index];
-                final isErrorProne = warga.needsReeducation;
-                
                 return Card(
                   margin: const EdgeInsets.only(bottom: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -475,33 +455,34 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                decoration: BoxDecoration(
-                                  color: !warga.isActivated
-                                      ? AppColors.dangerRed.withValues(alpha: 0.1)
-                                      : isErrorProne
-                                          ? AppColors.dangerRed.withValues(alpha: 0.1)
-                                          : AppColors.primaryGreen.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  !warga.isActivated 
-                                      ? 'Belum Aktivasi' 
-                                      : isErrorProne 
-                                          ? 'Butuh Edukasi' 
-                                          : 'Pemilahan Baik',
-                                  style: TextStyle(
-                                    color: !warga.isActivated
-                                        ? AppColors.dangerRed
-                                        : isErrorProne 
-                                            ? AppColors.dangerRed 
-                                            : AppColors.primaryGreen,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 11,
+                              Builder(builder: (_) {
+                                String mName = warga.pendampingName;
+                                if (mName.isEmpty && warga.mahasiswaId.isNotEmpty) {
+                                  final mem = kelompokState.kelompok?.members.where((m) => m.userId == warga.mahasiswaId).firstOrNull;
+                                  if (mem != null) mName = mem.name;
+                                }
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: warga.isActivated 
+                                      ? AppColors.primaryGreen.withValues(alpha: 0.1) 
+                                      : Colors.orange.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
-                                ),
-                              ),
+                                  child: Text(
+                                    !warga.isActivated 
+                                      ? 'Belum Aktivasi' 
+                                      : (warga.mahasiswaId.isNotEmpty 
+                                          ? 'Aktivasi oleh Mahasiswa${mName.isNotEmpty ? ' ($mName)' : ''}' 
+                                          : 'Aktivasi Mandiri'),
+                                    style: TextStyle(
+                                      color: warga.isActivated ? AppColors.primaryGreen : Colors.orange,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                );
+                              }),
                             ],
                           ),
                           const SizedBox(height: 6),

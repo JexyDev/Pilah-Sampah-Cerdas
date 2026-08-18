@@ -619,6 +619,30 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
             ),
           ],
         ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _MenuTileCard(
+                icon: Icons.analytics_rounded,
+                title: 'Monitoring Warga',
+                subtitle: 'Pantau poin & aktivitas',
+                gradientColors: const [AppColors.primaryGreen, AppColors.successDark],
+                onTap: () => Navigator.pushNamed(context, AppRoutes.monitoringWarga, arguments: 'monitoring'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _MenuTileCard(
+                icon: Icons.map_outlined,
+                title: 'Dampak RW',
+                subtitle: 'Statistik wilayah',
+                gradientColors: const [AppColors.primaryGreenLight, AppColors.primaryGreen],
+                onTap: () => Navigator.pushNamed(context, AppRoutes.monitoringDampakKelurahan),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }

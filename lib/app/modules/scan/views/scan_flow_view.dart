@@ -198,7 +198,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
             _buildCameraBackground(state.currentStep),
             // Content sesuai step
             _buildStepContent(context, state, isOnline),
-            if (state.isLoading)
+            if (state.isLoading && state.currentStep != 1)
               Container(
                 color: Colors.black54,
                 child: const Center(child: AppLoading()),
@@ -585,13 +585,19 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   final s = ref.read(scanFlowProvider);
                   if (s.isLoading || s.scanResult != null || s.errorCode != null) return false;
                   
-                  ref
+                  await ref
                       .read(scanFlowProvider.notifier)
                       .scanAndCommit(
                         qrCode: qrCode,
                         userLat: _userLat ?? 0.0,
                         userLng: _userLng ?? 0.0,
                       );
+                  
+                  // if there's an error, return false to reset the scanner so the user can scan again
+                  final nextS = ref.read(scanFlowProvider);
+                  if (nextS.errorCode != null) {
+                    return false;
+                  }
                   return true;
                 },
               ),

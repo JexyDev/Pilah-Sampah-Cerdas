@@ -59,7 +59,7 @@ abstract class BinRepository {
   Future<BinResetEntity> submitResetRequest({
     required String binId,
     required String userId,
-    required String evidencePhotoPath,
+    String? evidencePhotoPath,
     String? wargaName,
     String? petugasId,
     String? jenisSampah,

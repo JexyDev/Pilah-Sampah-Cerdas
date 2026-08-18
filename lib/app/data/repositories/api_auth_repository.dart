@@ -300,6 +300,7 @@ class ApiAuthRepository implements AuthRepository {
         final accessToken = data['accessToken'] as String;
         final refreshToken = data['refreshToken'] as String;
 
+        // Simpan token ke secure storage secara paralel
         await Future.wait([
           secureStorage.write(key: AppConfig.accessTokenKey, value: accessToken),
           secureStorage.write(key: AppConfig.refreshTokenKey, value: refreshToken),
@@ -331,7 +332,7 @@ class ApiAuthRepository implements AuthRepository {
     }
   }
 
-  // â”€â”€â”€ Logout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ————————————————————————————————————————————————————————————— Logout —————————————————————————————————————————————————————————————
 
   @override
   Future<void> logout() async {
@@ -358,7 +359,7 @@ class ApiAuthRepository implements AuthRepository {
     }
   }
 
-  // â”€â”€â”€ isLoggedIn â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ———————————————————————————————————————————————————————— isLoggedIn —————————————————————————————————————————————————————————————
 
   @override
   Future<bool> isLoggedIn() async {
@@ -366,7 +367,7 @@ class ApiAuthRepository implements AuthRepository {
     return token != null && token.isNotEmpty;
   }
 
-  // â”€â”€â”€ getCurrentUser â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —————————————————————————————————————————————————————— getCurrentUser —————————————————————————————————————————————————————————————
 
   @override
   Future<UserEntity?> getCurrentUser() async {
@@ -414,7 +415,7 @@ class ApiAuthRepository implements AuthRepository {
     }
   }
 
-  // â”€â”€â”€ refreshAccessToken â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ——————————————————————————————————————————————————— refreshAccessToken —————————————————————————————————————————————————————————————
 
   @override
   Future<String> refreshAccessToken() async {
@@ -452,9 +453,9 @@ class ApiAuthRepository implements AuthRepository {
     }
   }
 
-  // â”€â”€â”€ Private: fetch household setelah login â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ———————————————————————————————————— Private: fetch household setelah login —————————————————————————————————————————————————————————————
 
-  /// GET /api/v1/households/me â†’ ambil householdId + rw + kelurahan
+  /// GET /api/v1/households/me → ambil householdId + rw + kelurahan
   /// dari household pertama milik user.
   Future<UserEntity> _fetchAndAttachHousehold(UserEntity user) async {
     // Household ID khusus untuk role Warga. Hindari memanggil endpoint ini untuk role lain agar tidak terkena 401/403.
@@ -516,13 +517,13 @@ class ApiAuthRepository implements AuthRepository {
           }
         }
       }
-    } catch (_) {
-      // Tidak fatal â€” warga baru mungkin belum punya household
+    } catch (e) {
+      debugPrint('[DEBUG] _fetchAndAttachHousehold ERROR: $e');
     }
     return user;
   }
 
-  // â”€â”€â”€ Fetch Profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ————————————————————————————————————————————————————————— Fetch Profile —————————————————————————————————————————————————————————————
   @override
   Future<UserEntity> fetchProfile() {
     return _fetchAndAttachHousehold(const UserEntity(
@@ -548,7 +549,7 @@ class ApiAuthRepository implements AuthRepository {
     });
   }
 
-  // â”€â”€â”€ Upload Avatar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ————————————————————————————————————————————————————— Upload Avatar —————————————————————————————————————————————————————————————
   @override
   Future<void> uploadAvatar(String imagePath) async {
     try {
@@ -732,7 +733,7 @@ class ApiAuthRepository implements AuthRepository {
     }
   }
 
-  // â”€â”€â”€ Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ————————————————————————————————————————————————————————— Helper —————————————————————————————————————————————————————————————
 
   UserEntity _mapUser(Map<String, dynamic> userMap) {
     // Ekstrak kelurahan & rw dari berbagai kemungkinan struktur response:
@@ -936,7 +937,7 @@ class ApiAuthRepository implements AuthRepository {
       final response = await apiClient.dio.get('/auth/me');
       debugPrint('[DEBUG /auth/me] status=${response.statusCode} data=${response.data}');
       if (response.statusCode == 200) {
-        // Backend return {success, message, user: {...}} â€” bukan {data: {...}}
+        // Backend return {success, message, user: {...}} — bukan {data: {...}}
         final rawData = response.data;
         Map<String, dynamic> userMap = {};
         if (rawData is Map) {
