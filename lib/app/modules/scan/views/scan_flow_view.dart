@@ -38,6 +38,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
   final GlobalKey<QrScannerWidgetState> _qrScannerKey = GlobalKey<QrScannerWidgetState>();
   double? _userLng;
   bool _gpsLoading = false;
+  bool _isAiSheetOpen = false;
 
   // State foto
   bool _photoTaken = false;
@@ -147,9 +148,13 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
           next.currentStep == 2 &&
           next.aiResult != null &&
           !next.isLoading) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
           if (mounted) {
-            showAiSuccessSheet(context, ref);
+            _isAiSheetOpen = true;
+            await showAiSuccessSheet(context, ref);
+            if (mounted) {
+              _isAiSheetOpen = false;
+            }
           }
         });
       }
@@ -590,6 +595,8 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                 hint: isOrganic ? 'BIN-ORG-EF2072F0' : 'BIN-ANORG-8215BE3D',
                 overlayColor: AppColors.primaryGreen,
                 onQrDetected: (qrCode) async {
+                  if (_isAiSheetOpen) return false; // Jangan scan jika popup AI masih terbuka
+                  
                   // Guard: skip jika sudah loading, sukses, atau sedang ada error tampil
                   final s = ref.read(scanFlowProvider);
                   if (s.isLoading || s.scanResult != null || s.errorCode != null) return false;
@@ -1339,11 +1346,11 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
 // ─── Dialog: Scan Berhasil Step 1 (AI Result) ────────────────────────────────
 
 /// Ditampilkan saat AI berhasil mendeteksi — "Scan Berhasil!"
-void showAiSuccessSheet(BuildContext context, WidgetRef ref) {
+Future<void> showAiSuccessSheet(BuildContext context, WidgetRef ref) async {
   final state = ref.read(scanFlowProvider);
   final result = state.aiResult;
   if (result == null) return;
-  showModalBottomSheet(
+  await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     isDismissible: false,
