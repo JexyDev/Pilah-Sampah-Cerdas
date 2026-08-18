@@ -328,11 +328,15 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             const SizedBox(height: 8),
             InkWell(
               onTap: () async {
+                final now = DateTime.now();
+                final today = DateTime(now.year, now.month, now.day);
+                final initial = _tanggalKegiatan.isBefore(today) ? today : _tanggalKegiatan;
+
                 final picked = await showDatePicker(
                   context: context,
-                  initialDate: _tanggalKegiatan,
-                  firstDate: DateTime(2025),
-                  lastDate: DateTime(2027),
+                  initialDate: initial,
+                  firstDate: today,
+                  lastDate: DateTime(today.year + 1),
                   builder: (context, child) => Theme(
                     data: Theme.of(context).copyWith(
                       colorScheme: const ColorScheme.light(primary: AppColors.primaryGreen),
