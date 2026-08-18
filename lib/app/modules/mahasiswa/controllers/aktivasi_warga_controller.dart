@@ -8,6 +8,7 @@ import 'mahasiswa_controller.dart';
 import '../../../core/utils/platform_utils.dart';
 import '../../../core/utils/network_exception_helper.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../../data/services/notification_engine.dart';
 
 class AktivasiWargaState {
   final bool isLoading;
@@ -171,6 +172,8 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
 
       if (isSuccess) {
         await refresh(); // Refresh list after success
+        // Panggil notifikasi latar belakang
+        NotificationEngine().showActivationNotification(15);
         return true;
       } else {
         state = state.copyWith(
@@ -231,6 +234,8 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
         await refresh(); // Refresh list after success
         // MUST refresh the home dashboard to update points and citizens list!
         ref.read(mahasiswaControllerProvider.notifier).refresh();
+        // Panggil notifikasi latar belakang (Asumsi poin 15 untuk aktivasi)
+        NotificationEngine().showActivationNotification(15);
         return true;
       } else {
         state = state.copyWith(

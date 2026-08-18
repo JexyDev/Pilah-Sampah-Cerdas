@@ -798,9 +798,15 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         LocalNotificationCacheService().addNotification(
           userId: user.id,
           role: user.role.name,
-          title: 'Waktu KKN Berakhir ⌛',
+          title: 'Waktu KKN Berakhir ⏱️',
           desc: 'Anda tidak memenuhi waktu minimal. Status: TANPA KETERANGAN.',
           type: 'PRESENSI_KKN_ALPA',
+        );
+        NotificationEngine().showGenericNotification(
+          id: DateTime.now().millisecondsSinceEpoch.remainder(10000),
+          title: 'Waktu KKN Berakhir ⏱️',
+          body: 'Anda tidak memenuhi waktu minimal. Status: TANPA KETERANGAN.',
+          color: const Color(0xFFEF4444),
         );
       }
     } catch (e) {
@@ -1089,10 +1095,15 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           LocalNotificationCacheService().addNotification(
             userId: user.id,
             role: user.role.name,
-            title: 'Absensi KKN Berhasil 📍',
+            title: 'Absensi KKN Berhasil ✅',
             desc:
                 'Presensi Geofence KKN di $kelurahan ($rw) berhasil tercatat (+10 PTS).',
             type: 'PRESENSI_KKN_SUKSES',
+          );
+          NotificationEngine().showGenericNotification(
+            id: DateTime.now().millisecondsSinceEpoch.remainder(10000),
+            title: 'Absensi KKN Berhasil ✅',
+            body: 'Presensi Geofence KKN di $kelurahan ($rw) berhasil tercatat (+10 PTS).',
           );
         }
         ref.invalidate(mahasiswaNotificationsProvider);

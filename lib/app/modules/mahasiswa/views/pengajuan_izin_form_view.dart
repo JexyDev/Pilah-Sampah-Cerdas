@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/models/pengajuan_izin_mahasiswa_entity.dart';
 import '../../../data/providers/repository_providers.dart';
+import '../../../data/services/notification_engine.dart';
 
 class PengajuanIzinFormView extends ConsumerStatefulWidget {
   const PengajuanIzinFormView({
@@ -81,6 +82,11 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
         _isSubmitting = false;
         _isSuccess = true;
       });
+      NotificationEngine().showGenericNotification(
+        id: DateTime.now().millisecondsSinceEpoch.remainder(10000),
+        title: 'Pengajuan Izin/Sakit Terkirim ⏳',
+        body: 'Pengajuan ${_selectedKategori.displayName} sedang menunggu verifikasi DPL.',
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);

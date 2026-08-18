@@ -3,6 +3,7 @@ import '../../../core/utils/network_exception_helper.dart';
 import '../../../data/models/petugas_pemilahan_models.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/local_notification_cache_service.dart';
+import '../../../data/services/notification_engine.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../services/petugas_pemilahan_fcm_service.dart';
 
@@ -180,6 +181,11 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
             type: 'POIN_PETUGAS',
             id: 'poin_timbangan_${now.millisecondsSinceEpoch}',
             icon: 'star',
+          );
+          
+          NotificationEngine().showSubmitLogTimbanganNotification(
+            weightKg: actualWeightKg,
+            type: classification,
           );
         }
 
