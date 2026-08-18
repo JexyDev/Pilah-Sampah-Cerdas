@@ -4,7 +4,6 @@ import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 import '../../../data/services/local_notification_cache_service.dart';
-import '../../../data/services/firebase_notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final Set<String> _wargaShownNotifIds = {};
@@ -112,40 +111,9 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
     }
   }
 
-  // Gabungkan dengan LocalNotificationCacheService & FirebaseNotificationService (hanya notifikasi Warga & tanpa dummy penjemputan)
-  final localNotifs = LocalNotificationCacheService().getNotifications(userId, role);
-  for (final localItem in localNotifs) {
-    final type = localItem.type.toUpperCase();
-    final title = localItem.title.toUpperCase();
-    final desc = localItem.desc.toUpperCase();
-
-    if (type.contains('JADWAL') || type.contains('JEMPUT') || type.contains('PENGANGKUTAN') ||
-        title.contains('JEMPUT') || title.contains('HARUS DIAMBIL') || desc.contains('HARUS DIAMBIL') ||
-        localItem.id == 'seed-notif-1' || localItem.id == 'seed-notif-3' || desc.contains('ORG004520')) {
-      continue;
-    }
-
-    if (!result.any((n) => n.id == localItem.id || (n.title == localItem.title && n.desc == localItem.desc && n.type == localItem.type))) {
-      result.insert(0, localItem);
-    }
-  }
-
-  final firebaseNotifs = await FirebaseNotificationService().getNotifications(userId, role);
-  for (final fbItem in firebaseNotifs) {
-    final type = fbItem.type.toUpperCase();
-    final title = fbItem.title.toUpperCase();
-    final desc = fbItem.desc.toUpperCase();
-
-    if (type.contains('JADWAL') || type.contains('JEMPUT') || type.contains('PENGANGKUTAN') ||
-        title.contains('JEMPUT') || title.contains('HARUS DIAMBIL') || desc.contains('HARUS DIAMBIL') ||
-        fbItem.id == 'seed-notif-1' || fbItem.id == 'seed-notif-3' || desc.contains('ORG004520')) {
-      continue;
-    }
-
-    if (!result.any((n) => n.id == fbItem.id || (n.title == fbItem.title && n.desc == fbItem.desc && n.type == fbItem.type))) {
-      result.insert(0, fbItem);
-    }
-  }
+  // Server adalah source of truth — tidak menggabungkan LocalCache atau Firebase
+  // ke dalam list tampilan agar tidak terjadi duplikasi dan data tidak sinkron.
+  // LocalCache & Firebase hanya digunakan untuk tracking isRead (di markRead()).
 
   return result;
 });

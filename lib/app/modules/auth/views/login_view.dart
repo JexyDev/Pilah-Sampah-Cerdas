@@ -124,6 +124,8 @@ class _LoginViewState extends ConsumerState<LoginView> {
       String errorText = 'Nomor telepon/NIM atau kata sandi salah. Silakan coba lagi.';
       if (authState.errorCode == 'NETWORK_ERROR') {
         errorText = 'Tidak dapat terhubung ke server. Periksa koneksi.';
+      } else if (authState.errorCode == 'UNAUTHORIZED_ROLE') {
+        errorText = 'Akses ditolak. Aplikasi mobile hanya untuk Warga, Petugas Pemilah, dan Mahasiswa.';
       } else if (authState.errorCode == 'UNAPPROVED_ACCOUNT') {
         errorText =
             'Akun Anda sedang menunggu persetujuan Admin DLH. Silakan coba login kembali nanti.';
@@ -190,16 +192,6 @@ class _LoginViewState extends ConsumerState<LoginView> {
                               fontWeight: FontWeight.w800,
                               color: AppColors.primaryGreen,
                               letterSpacing: -0.5,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Kecamatan Coblong, Kota Bandung',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w500,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -457,15 +449,25 @@ class _LoginViewState extends ConsumerState<LoginView> {
                       ),
                       const SizedBox(height: 32),
 
-                      const Opacity(
-                        opacity: 0.6,
-                        child: Text(
-                          '© 2026 Universitas Komputer Indonesia. All rights reserved.',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppColors.textSecondary,
+                      const Column(
+                        children: [
+                          Text(
+                            '© 2026 Universitas Komputer Indonesia',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
-                        ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Versi 1.0.0',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppColors.textHint,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

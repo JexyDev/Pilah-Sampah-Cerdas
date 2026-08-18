@@ -17,7 +17,7 @@ class WeightText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final defaultStyle = DefaultTextStyle.of(context).style;
-    final baseStyle = style ?? defaultStyle;
+    final baseStyle = style != null ? defaultStyle.merge(style) : defaultStyle;
     final boldStyle = kgStyle ?? baseStyle.copyWith(fontWeight: FontWeight.bold);
 
     return RichText(

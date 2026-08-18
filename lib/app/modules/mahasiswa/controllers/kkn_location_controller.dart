@@ -149,14 +149,14 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     final targetKey = _currentTargetScheduleId != null && _currentTargetScheduleId != 'SCH-TODAY'
         ? '_$_currentTargetScheduleId'
         : '';
-    final savedDate = prefs.getString('${_prefKeyDate}$targetKey');
+    final savedDate = prefs.getString('$_prefKeyDate$targetKey');
     final today = DateTime.now().toLocal().toString().substring(0, 10);
 
     if (savedDate != today) {
       _accumulatedSeconds = 0;
       await _savePersistentTimer();
     } else {
-      _accumulatedSeconds = prefs.getInt('${_prefKeyAccumulated}$targetKey') ?? 0;
+      _accumulatedSeconds = prefs.getInt('$_prefKeyAccumulated$targetKey') ?? 0;
     }
   }
 
@@ -166,8 +166,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     final targetKey = _currentTargetScheduleId != null && _currentTargetScheduleId != 'SCH-TODAY'
         ? '_$_currentTargetScheduleId'
         : '';
-    await prefs.setString('${_prefKeyDate}$targetKey', today);
-    await prefs.setInt('${_prefKeyAccumulated}$targetKey', _accumulatedSeconds);
+    await prefs.setString('$_prefKeyDate$targetKey', today);
+    await prefs.setInt('$_prefKeyAccumulated$targetKey', _accumulatedSeconds);
     if (_currentTargetScheduleId != null) {
       await prefs.setString(_prefKeyTarget, _currentTargetScheduleId!);
     }
@@ -179,8 +179,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     final targetKey = _currentTargetScheduleId != null && _currentTargetScheduleId != 'SCH-TODAY'
         ? '_$_currentTargetScheduleId'
         : '';
-    await prefs.setString('${_prefKeyDate}$targetKey', today);
-    await prefs.setInt('${_prefKeyAccumulated}$targetKey', tempSeconds);
+    await prefs.setString('$_prefKeyDate$targetKey', today);
+    await prefs.setInt('$_prefKeyAccumulated$targetKey', tempSeconds);
     if (_currentTargetScheduleId != null) {
       await prefs.setString(_prefKeyTarget, _currentTargetScheduleId!);
     }

@@ -12,6 +12,7 @@ import '../../shared/widgets/app_loading.dart';
 import '../../shared/widgets/qr_scanner_widget.dart';
 import '../../../data/services/notification_engine.dart' as import_engine;
 import '../../riwayat/controllers/riwayat_controller.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 /// Aktivasi Tempat Sampah — sesuai desain:
 /// AppBar biru, QrScannerWidget (kamera native / input manual),
@@ -100,9 +101,14 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         permission == LocationPermission.denied) {
       if (mounted && showDialogs) {
         ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Akses lokasi diperlukan untuk mencatat titik posisi tempat sampah.'),
+          SnackBar(
+            content: const Text('Akses lokasi diperlukan untuk mencatat titik posisi tempat sampah.'),
             backgroundColor: AppColors.dangerRed,
+            action: SnackBarAction(
+              label: 'Pengaturan',
+              textColor: Colors.white,
+              onPressed: () => openAppSettings(),
+            ),
           ),
         );
       }

@@ -11,6 +11,7 @@ import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../controllers/fasilitas_kkn_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class RegisterFasilitasView extends ConsumerStatefulWidget {
   const RegisterFasilitasView({super.key});
@@ -75,8 +76,10 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
       if (permission == LocationPermission.deniedForever) throw Exception('Izin lokasi ditolak permanen.');
 
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 15),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
       );
       final newLoc = LatLng(position.latitude, position.longitude);
       setState(() {
@@ -85,8 +88,19 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
       _mapController.move(newLoc, 17.0);
     } catch (e) {
       if (mounted) {
+        final errText = e.toString().replaceAll('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: AppColors.dangerRed),
+          SnackBar(
+            content: Text(errText), 
+            backgroundColor: AppColors.dangerRed,
+            action: (errText.toLowerCase().contains('izin') || errText.toLowerCase().contains('ditolak')) 
+              ? SnackBarAction(
+                  label: 'Pengaturan',
+                  textColor: Colors.white,
+                  onPressed: () => openAppSettings(),
+                )
+              : null,
+          ),
         );
       }
     } finally {
@@ -905,7 +919,7 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: MediaQuery.of(context).padding.bottom + 40),
                   ],
                 ),
               ),

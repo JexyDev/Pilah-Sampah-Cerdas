@@ -1,4 +1,4 @@
-import 'dart:io';
+giimport 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../controllers/posko_kkn_controller.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class RegisterPoskoView extends ConsumerStatefulWidget {
   const RegisterPoskoView({super.key});
@@ -62,8 +63,10 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
       }
 
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 15),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
       );
       
       setState(() {
@@ -71,8 +74,19 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
       });
     } catch (e) {
       if (mounted) {
+        final errText = e.toString().replaceAll('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: AppColors.dangerRed),
+          SnackBar(
+            content: Text(errText), 
+            backgroundColor: AppColors.dangerRed,
+            action: (errText.toLowerCase().contains('izin') || errText.toLowerCase().contains('ditolak')) 
+              ? SnackBarAction(
+                  label: 'Pengaturan',
+                  textColor: Colors.white,
+                  onPressed: () => openAppSettings(),
+                )
+              : null,
+          ),
         );
       }
     } finally {
@@ -263,6 +277,7 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                       : const Text('Daftarkan Posko', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
+              SizedBox(height: MediaQuery.of(context).padding.bottom + 40),
             ],
           ),
         ),

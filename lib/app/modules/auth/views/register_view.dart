@@ -1244,15 +1244,25 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                       ),
                       const SizedBox(height: 24),
 
-                      const Opacity(
-                        opacity: 0.6,
-                        child: Text(
-                          '© 2026 Universitas Komputer Indonesia. All rights reserved.',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppColors.textSecondary,
+                      const Column(
+                        children: [
+                          Text(
+                            '© 2026 Universitas Komputer Indonesia',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
-                        ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Versi 1.0.0',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppColors.textHint,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

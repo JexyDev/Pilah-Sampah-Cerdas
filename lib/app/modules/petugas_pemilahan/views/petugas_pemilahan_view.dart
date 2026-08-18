@@ -71,7 +71,7 @@ class PetugasPemilahanView extends ConsumerWidget {
                           title: 'Siap Ditimbang',
                           value: '${dashboard?.totalJadwal ?? 0}',
                           unit: 'Lokasi',
-                          icon: Icons.delete_outline_rounded,
+                          icon: Icons.delete_rounded,
                           color: AppColors.warningYellow,
                         ),
                         const SizedBox(width: 12),
@@ -91,7 +91,7 @@ class PetugasPemilahanView extends ConsumerWidget {
                           title: 'Total Pemilahan',
                           value: '${dashboard?.totalWeightKg ?? 0.0}',
                           unit: 'Kg',
-                          icon: Icons.scale_outlined,
+                          icon: Icons.scale_rounded,
                           color: AppColors.primaryBlue,
                         ),
                         const SizedBox(width: 12),
@@ -159,7 +159,7 @@ class PetugasPemilahanView extends ConsumerWidget {
                                   const CircleAvatar(
                                     radius: 18,
                                     backgroundColor: AppColors.backgroundCanvas,
-                                    child: Icon(Icons.person_outline_rounded, color: AppColors.warningOrange, size: 20),
+                                    child: Icon(Icons.person_rounded, color: AppColors.warningOrange, size: 20),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(

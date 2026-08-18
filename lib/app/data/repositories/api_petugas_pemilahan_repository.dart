@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:http_parser/http_parser.dart';
@@ -10,8 +9,6 @@ import '../../core/values/api_constants.dart';
 import '../models/petugas_pemilahan_models.dart';
 import '../providers/api_client.dart';
 import '../services/notification_engine.dart';
-import '../services/local_notification_cache_service.dart';
-import '../services/firebase_notification_service.dart';
 import 'petugas_pemilahan_repository.dart';
 
 class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
@@ -43,10 +40,10 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
     try {
       final response = await apiClient.dio.get('/petugas-residu/dashboard');
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data is Map<String, dynamic> 
+        final data = response.data is Map<String, dynamic>
             ? (response.data['data'] as Map<String, dynamic>? ?? response.data as Map<String, dynamic>)
             : <String, dynamic>{};
-        
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_cacheKeyDashboard, jsonEncode(data));
 
@@ -95,7 +92,7 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
         final List<dynamic> list = response.data is Map<String, dynamic>
             ? (response.data['data'] as List<dynamic>? ?? [])
             : (response.data as List<dynamic>? ?? []);
-        
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_cacheKeyJadwal, jsonEncode(list));
 
@@ -113,8 +110,12 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
     }
   }
 
+  // ─── Submit Log Timbangan ──────────────────────────────────────────────────
+  /// Mengirim log timbangan fisik pemilahan ke backend.
+  /// Mengembalikan Map dari backend yang berisi data log + poin yang diperoleh.
+  /// Key yang diharapkan: { 'pointsEarned': int, 'id': String, ... }
   @override
-  Future<bool> submitLog({
+  Future<Map<String, dynamic>> submitLog({
     required String binId,
     required double actualWeightKg,
     required String classification,
@@ -136,7 +137,7 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
         'actualWeightKg': actualWeightKg,
         'classification': classification,
         'image': await MultipartFile.fromFile(
-          compressedPhotoPath, 
+          compressedPhotoPath,
           filename: compressedPhotoPath.split('/').last,
           contentType: MediaType('image', 'jpeg'),
         ),
@@ -150,31 +151,18 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
       final response = await apiClient.dio.post('/petugas-residu/submit-log', data: formData);
       debugPrint('[ApiPetugasPemilahanRepository] Response received: ${response.statusCode}');
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Tampilkan push notification & update status log timbangan
+        // Ambil data dari response backend (termasuk poin yang diperoleh)
+        final responseData = response.data is Map<String, dynamic>
+            ? (response.data['data'] as Map<String, dynamic>? ?? response.data as Map<String, dynamic>)
+            : <String, dynamic>{};
+
+        // Tampilkan push notification sistem
         NotificationEngine().showSubmitLogTimbanganNotification(
           weightKg: actualWeightKg,
           type: classification,
         );
 
-        // Catat notifikasi ke FirebaseNotificationService & LocalCache agar tersimpan di disk Halaman Notifikasi in-app
-        final userId = response.data?['userId']?.toString() ?? 'petugas_current';
-        await FirebaseNotificationService().saveNotification(
-          userId: userId,
-          role: 'PETUGAS_PEMILAHAN',
-          title: 'Log Timbangan Berhasil Disimpan! âš–ï¸',
-          desc: 'Log timbangan seberat ${actualWeightKg.toStringAsFixed(1)} kg tersimpan.',
-          type: 'TIMBANGAN_PEMILAHAN',
-        );
-
-        LocalNotificationCacheService().addNotification(
-          userId: userId,
-          role: 'PETUGAS_PEMILAHAN',
-          title: 'Log Timbangan Berhasil Disimpan! âš–ï¸',
-          desc: 'Log timbangan seberat ${actualWeightKg.toStringAsFixed(1)} kg tersimpan.',
-          type: 'TIMBANGAN_PEMILAHAN',
-        );
-
-        return true;
+        return responseData;
       }
       throw Exception('Gagal menyimpan data log timbangan.');
     } catch (e) {
@@ -207,7 +195,7 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
         final List<dynamic> list = response.data is Map<String, dynamic>
             ? (response.data['data'] as List<dynamic>? ?? [])
             : (response.data as List<dynamic>? ?? []);
-            
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_cacheKeyHistory, jsonEncode(list));
 
@@ -246,17 +234,15 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
     }
   }
 
+  // ─── Pengajuan Warga ─────────────────────────────────────────────────────
+  /// Ambil daftar pengajuan pengosongan dari warga.
+  /// Menggunakan satu endpoint utama (ApiEndpoints.binsResetRequests).
   @override
   Future<List<Map<String, dynamic>>> getDaftarPengajuanWarga() async {
     try {
-      dynamic response;
-      try {
-        response = await apiClient.dio.get(ApiEndpoints.binsResetRequests);
-      } catch (_) {
-        response = await apiClient.dio.get('/petugas-residu/pengajuan');
-      }
+      final response = await apiClient.dio.get(ApiEndpoints.binsResetRequests);
 
-      if (response != null && response.statusCode == 200 && response.data != null) {
+      if (response.statusCode == 200 && response.data != null) {
         List<dynamic> rawList = [];
         if (response.data is Map<String, dynamic>) {
           rawList = response.data['data'] as List<dynamic>? ?? [];
@@ -300,24 +286,20 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
     }
   }
 
+  /// Klaim pengajuan pengosongan dari warga menggunakan endpoint tunggal.
   @override
   Future<bool> claimPengajuanReset(String pengajuanId) async {
     try {
-      try {
-        final response = await apiClient.dio.put(
-          ApiEndpoints.binsApproveReset(pengajuanId),
-        );
-        if (response.statusCode == 200 || response.statusCode == 201) return true;
-      } catch (_) {}
-
       final response = await apiClient.dio.put(
-        '/petugas-residu/pengajuan/$pengajuanId/terima',
+        ApiEndpoints.binsApproveReset(pengajuanId),
       );
       return response.statusCode == 200 || response.statusCode == 201;
+    } on DioException catch (e) {
+      debugPrint('[ApiPetugasPemilahanRepository] Error claimPengajuanReset: $e');
+      return false;
     } catch (e) {
       debugPrint('[ApiPetugasPemilahanRepository] Error claimPengajuanReset: $e');
       return false;
     }
   }
 }
-

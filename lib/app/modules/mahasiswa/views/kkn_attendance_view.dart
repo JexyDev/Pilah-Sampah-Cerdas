@@ -6,6 +6,7 @@ import '../../../core/values/app_dimensions.dart';
 import '../controllers/kkn_location_controller.dart';
 import '../controllers/kelompok_kkn_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class KknAttendanceView extends ConsumerStatefulWidget {
   const KknAttendanceView({super.key});
@@ -406,14 +407,24 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
                     style: const TextStyle(color: AppColors.dangerRed, fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),
-                TextButton(
-                  onPressed: () => notifier.forceLocationUpdate(context),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    visualDensity: VisualDensity.compact,
+                if (state.error!.toLowerCase().contains('izin') || state.error!.toLowerCase().contains('ditolak'))
+                  TextButton(
+                    onPressed: () => openAppSettings(),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    child: const Text('Pengaturan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.dangerRed)),
+                  )
+                else
+                  TextButton(
+                    onPressed: () => notifier.forceLocationUpdate(context),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    child: const Text('Coba Lagi', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.dangerRed)),
                   ),
-                  child: const Text('Coba Lagi', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.dangerRed)),
-                ),
               ],
             ),
           ),
@@ -807,6 +818,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 11, color: AppColors.dangerRed),
           ),
+        SizedBox(height: MediaQuery.of(context).padding.bottom + 40),
       ],
     );
 

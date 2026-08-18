@@ -4,7 +4,6 @@ import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 import '../../../data/services/local_notification_cache_service.dart';
-import '../../../data/services/firebase_notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final Set<String> _mhsShownNotifIds = {};
@@ -173,24 +172,9 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     }
   }
 
-  // Gabungkan dengan LocalNotificationCacheService & FirebaseNotificationService
-  final localNotifs = LocalNotificationCacheService().getNotifications(userId, role);
-  for (final localItem in localNotifs) {
-    if (!_isMahasiswaNotification(localItem)) continue;
-
-    if (!result.any((n) => n.id == localItem.id || (n.title == localItem.title && n.desc == localItem.desc && n.type == localItem.type))) {
-      result.insert(0, localItem);
-    }
-  }
-
-  final firebaseNotifs = await FirebaseNotificationService().getNotifications(userId, role);
-  for (final fbItem in firebaseNotifs) {
-    if (!_isMahasiswaNotification(fbItem)) continue;
-
-    if (!result.any((n) => n.id == fbItem.id || (n.title == fbItem.title && n.desc == fbItem.desc && n.type == fbItem.type))) {
-      result.insert(0, fbItem);
-    }
-  }
+  // Server adalah source of truth — tidak menggabungkan LocalCache atau Firebase
+  // ke dalam list tampilan agar tidak terjadi duplikasi dan data tidak sinkron.
+  // LocalCache & Firebase hanya digunakan untuk tracking isRead (di markRead()).
 
   return result;
 });

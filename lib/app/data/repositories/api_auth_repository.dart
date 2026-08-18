@@ -262,17 +262,6 @@ class ApiAuthRepository implements AuthRepository {
     apiClient.clearTokenCache();
     final cleanPhone = PhoneFormatter.prepareLoginPhoneInput(phone);
 
-    // Bypass kode khusus dev
-    if (kDebugMode && (otp == '123456' || otp == '000000')) {
-      return UserEntity(
-        id: 'temp_otp_user',
-        name: 'User',
-        email: '',
-        phone: cleanPhone,
-        role: UserRole.warga,
-      );
-    }
-    
     try {
       final response = await apiClient.dio.post(
         '/auth/verify-otp',

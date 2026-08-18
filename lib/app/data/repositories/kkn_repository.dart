@@ -91,4 +91,8 @@ abstract class KknRepository {
 
   /// Mendaftarkan fasilitas daur ulang (Rumah Maggot dll)
   Future<Map<String, dynamic>> registerFasilitas(Map<String, dynamic> data, {String? imagePath});
+
+  /// Serah terima (handover) KKN — mengirim laporan final ke DPL / admin
+  /// POST /api/v1/kkn/handover
+  Future<Map<String, dynamic>> submitHandover(Map<String, dynamic> data);
 }

@@ -504,4 +504,17 @@ class ApiKknRepository implements KknRepository {
       throw Exception('Gagal mendata fasilitas: $e');
     }
   }
+
+  @override
+  Future<Map<String, dynamic>> submitHandover(Map<String, dynamic> data) async {
+    try {
+      final response = await apiClient.dio.post(ApiEndpoints.kknHandover, data: data);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data as Map<String, dynamic>? ?? {'success': true};
+      }
+      throw Exception('Gagal mengirim handover KKN (${response.statusCode})');
+    } catch (e) {
+      throw Exception('Gagal mengirim handover KKN: $e');
+    }
+  }
 }

@@ -411,9 +411,25 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
 
                   const SizedBox(height: 12),
                   const Center(
-                    child: Text(
-                      '© 2026 Universitas Komputer Indonesia',
-                      style: TextStyle(fontSize: 11, color: AppColors.textHint),
+                    child: Column(
+                      children: [
+                        Text(
+                          '© 2026 Universitas Komputer Indonesia',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Versi 1.0.0',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: AppColors.textHint,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 80),

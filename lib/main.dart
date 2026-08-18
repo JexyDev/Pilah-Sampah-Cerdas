@@ -24,6 +24,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import 'app/data/models/user_entity.dart';
 import 'app/modules/mahasiswa/controllers/location_ping_controller.dart';
+import 'app/modules/mahasiswa/controllers/kkn_location_controller.dart';
 import 'app/modules/notifikasi/controllers/warga_notifikasi_controller.dart';
 import 'app/modules/mahasiswa/controllers/mahasiswa_notifikasi_controller.dart';
 import 'app/modules/petugas_pemilahan/controllers/petugas_pemilahan_notifikasi_controller.dart';
@@ -332,8 +333,10 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (next.user?.role == UserRole.mahasiswaKkn) {
         ref.read(locationPingControllerProvider.notifier).startTracking();
+        ref.read(kknLocationProvider.notifier).startTracking();
       } else if (previous?.user?.role == UserRole.mahasiswaKkn && next.user == null) {
         ref.read(locationPingControllerProvider.notifier).stopTracking();
+        ref.read(kknLocationProvider.notifier).stopTracking();
       }
     });
 

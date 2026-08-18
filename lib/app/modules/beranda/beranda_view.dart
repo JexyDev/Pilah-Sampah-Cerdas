@@ -638,14 +638,14 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
           return Row(
             children: [
               _StatItem(
-                icon: Icons.star_border_rounded,
+                icon: Icons.star_rounded,
                 iconColor: AppColors.primaryBlue,
                 numericValue: daily,
                 label: 'Hari Ini',
               ),
               _VerticalDivider(),
               _StatItem(
-                icon: Icons.account_balance_wallet_outlined,
+                icon: Icons.account_balance_wallet_rounded,
                 iconColor: AppColors.primaryGreen,
                 numericValue: totalPoints,
                 label: 'Total Points',
@@ -653,7 +653,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
               ),
               _VerticalDivider(),
               _StatItem(
-                icon: Icons.emoji_events_outlined,
+                icon: Icons.emoji_events_rounded,
                 iconColor: AppColors.warningYellow,
                 value: rankValue,
                 label: 'Peringkat',

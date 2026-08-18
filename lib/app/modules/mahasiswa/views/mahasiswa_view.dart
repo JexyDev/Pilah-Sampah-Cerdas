@@ -650,30 +650,12 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
             const SizedBox(width: 12),
             Expanded(
               child: _MenuTileCard(
-                icon: Icons.map_outlined,
-                title: 'Dampak RW',
-                subtitle: 'Statistik wilayah',
-                gradientColors: const [AppColors.primaryGreenLight, AppColors.primaryGreen],
-                onTap: () => Navigator.pushNamed(context, AppRoutes.monitoringDampakKelurahan),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _MenuTileCard(
                 icon: Icons.add_business_rounded,
                 title: 'Fasilitas Warga',
                 subtitle: 'Daftar fasilitas baru',
                 gradientColors: const [AppColors.warningYellow, AppColors.warningOrange],
                 onTap: () => Navigator.pushNamed(context, AppRoutes.registerFasilitas),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Container(), // Placeholder untuk menyamakan ukuran
             ),
           ],
         ),
@@ -759,7 +741,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
             ),
             child: const Column(
               children: [
-                Icon(Icons.people_outline_rounded, size: 48, color: AppColors.textHint),
+                Icon(Icons.people_rounded, size: 48, color: AppColors.textHint),
                 SizedBox(height: 8),
                 Text(
                   'Belum ada warga dampingan.\nDaftarkan warga pertama Anda!',

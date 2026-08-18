@@ -9,8 +9,10 @@ abstract class PetugasPemilahanRepository {
   /// Ambil daftar tempat sampah dalam assignedZone dengan volume >= 70%
   Future<List<PemilahanBinPickup>> getJadwalHarian({String? kecamatan, String? kelurahan, String? rw});
 
-  /// Submit input timbangan fisik pemilahan
-  Future<bool> submitLog({
+  /// Submit input timbangan fisik pemilahan.
+  /// Mengembalikan Map dari backend yang berisi data log + poin yang diperoleh.
+  /// Key yang diharapkan: { 'pointsEarned': int, 'id': String, ... }
+  Future<Map<String, dynamic>> submitLog({
     required String binId,
     required double actualWeightKg,
     required String classification,
@@ -29,7 +31,7 @@ abstract class PetugasPemilahanRepository {
   /// Ambil daftar pengajuan reset dari warga
   Future<List<Map<String, dynamic>>> getDaftarPengajuanWarga();
 
-  /// Terima / Klaim pengajuan reset tempat sampah dari Warga (PUT /petugas-pemilahan/pengajuan/{id}/terima)
+  /// Terima / Klaim pengajuan reset tempat sampah dari Warga
   Future<bool> claimPengajuanReset(String pengajuanId);
 }
 

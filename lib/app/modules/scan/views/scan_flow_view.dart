@@ -537,7 +537,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                     textAlign: TextAlign.center,
                   ),
                 ),
-                Icon(Icons.info_outline_rounded, color: Colors.white),
+                SizedBox(width: 48),
               ],
             ),
           ),
@@ -977,33 +977,35 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Selamat!',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.warningYellow,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Selamat!',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.warningYellow,
+                              ),
                             ),
-                          ),
-                          TweenAnimationBuilder<int>(
-                            tween: IntTween(begin: 0, end: result.pointsAwarded),
-                            duration: const Duration(milliseconds: 1500),
-                            curve: Curves.easeOutExpo,
-                            builder: (context, value, child) {
-                              return Text(
-                                'Anda mendapat +$value poin',
-                                style: const TextStyle(
+                            TweenAnimationBuilder<int>(
+                              tween: IntTween(begin: 0, end: result.pointsAwarded),
+                              duration: const Duration(milliseconds: 1500),
+                              curve: Curves.easeOutExpo,
+                              builder: (context, value, child) {
+                                return Text(
+                                  'Anda mendapat +$value poin',
+                                  style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.warningYellow,
                                 ),
                               );
                             },
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -1394,18 +1396,33 @@ class _AiSuccessSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: const BoxDecoration(
-              color: AppColors.primaryGreen,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.check_rounded,
-              color: Colors.white,
-              size: 36,
-            ),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    ref.read(scanFlowProvider.notifier).reset();
+                  },
+                  icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textSecondary),
+                ),
+              ),
+              Container(
+                width: 64,
+                height: 64,
+                decoration: const BoxDecoration(
+                  color: AppColors.primaryGreen,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_rounded,
+                  color: Colors.white,
+                  size: 36,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           const Text(

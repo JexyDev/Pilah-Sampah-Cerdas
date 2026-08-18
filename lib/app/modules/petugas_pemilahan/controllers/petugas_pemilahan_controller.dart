@@ -3,7 +3,6 @@ import '../../../core/utils/network_exception_helper.dart';
 import '../../../data/models/petugas_pemilahan_models.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/local_notification_cache_service.dart';
-import '../../../data/services/notification_engine.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../services/petugas_pemilahan_fcm_service.dart';
 
@@ -152,7 +151,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final repo = _ref.read(petugasPemilahanRepositoryProvider);
-      final success = await repo.submitLog(
+      final result = await repo.submitLog(
         binId: binId,
         actualWeightKg: actualWeightKg,
         classification: classification,
@@ -161,48 +160,29 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
         longitude: longitude,
       );
 
-      if (success) {
-        // Simpan notifikasi aksi ke cache lokal agar muncul di halaman Notifikasi
-        final user = _ref.read(authProvider).user;
-        if (user != null) {
-          final poin = (actualWeightKg.round() * 2) + 10; // 2 poin/kg + 10 bonus foto
-          final now = DateTime.now();
-          final timeStr =
-              '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year} '
-              '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+      // Baca poin dari response backend (tidak kalkulasi lokal)
+      final poinFromBackend = (result['pointsEarned'] as num?)?.toInt()
+          ?? (result['points'] as num?)?.toInt()
+          ?? (result['poin'] as num?)?.toInt()
+          ?? 0;
 
-          LocalNotificationCacheService().addNotification(
-            userId: user.id,
-            role: 'PETUGAS_PEMILAHAN',
-            title: 'Input Timbangan Berhasil',
-            desc: '${actualWeightKg.toStringAsFixed(1)} kg $classification tercatat. '
-                'Estimasi poin: +$poin pts.',
-            type: 'TIMBANGAN_PEMILAHAN',
-            id: 'timbangan_${now.millisecondsSinceEpoch}',
-            icon: 'scale',
-          );
-          LocalNotificationCacheService().addNotification(
-            userId: user.id,
-            role: 'PETUGAS_PEMILAHAN',
-            title: 'Poin Petugas Bertambah!',
-            desc: 'Anda mendapatkan +$poin poin dari input timbangan $classification '
-                '${actualWeightKg.toStringAsFixed(1)} kg. ($timeStr)',
-            type: 'POIN_PETUGAS',
-            id: 'poin_timbangan_${now.millisecondsSinceEpoch}',
-            icon: 'star',
-          );
-          
-          NotificationEngine().showSubmitLogTimbanganNotification(
-            weightKg: actualWeightKg,
-            type: classification,
-          );
-        }
-
-        await refreshAll();
-        return true;
+      // Tampilkan notifikasi sistem (snackbar / push) dengan poin dari backend
+      final user = _ref.read(authProvider).user;
+      if (user != null && poinFromBackend > 0) {
+        LocalNotificationCacheService().addNotification(
+          userId: user.id,
+          role: 'PETUGAS_PEMILAHAN',
+          title: 'Input Timbangan Berhasil',
+          desc: '${actualWeightKg.toStringAsFixed(1)} kg $classification tercatat. '
+              'Poin: +$poinFromBackend pts.',
+          type: 'TIMBANGAN_PEMILAHAN',
+          id: 'timbangan_${DateTime.now().millisecondsSinceEpoch}',
+          icon: 'scale',
+        );
       }
-      state = state.copyWith(isLoading: false, errorMessage: 'Gagal mengirim timbangan pemilahan.');
-      return false;
+
+      await refreshAll();
+      return true;
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: NetworkExceptionHelper.getErrorMessage(e));
       return false;
@@ -303,38 +283,8 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     try {
       final repo = _ref.read(petugasPemilahanRepositoryProvider);
       final ok = await repo.claimPengajuanReset(pengajuanId);
-      if (ok) {
-        // Simpan notifikasi pengangkutan ke cache lokal
-        // Pengangkutan sampah memberikan 20 poin sesuai ketentuan sistem
-        final user = _ref.read(authProvider).user;
-        if (user != null) {
-          const poinPengangkutan = 20;
-          final now = DateTime.now();
-          final timeStr =
-              '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year} '
-              '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-
-          LocalNotificationCacheService().addNotification(
-            userId: user.id,
-            role: 'PETUGAS_PEMILAHAN',
-            title: 'Pengangkutan Sampah Berhasil',
-            desc: 'Konfirmasi pengangkutan sampah warga telah tercatat. '
-                'Anda mendapatkan +$poinPengangkutan poin. ($timeStr)',
-            type: 'PENGANGKUTAN_SAMPAH',
-            id: 'angkut_${now.millisecondsSinceEpoch}',
-            icon: 'local_shipping',
-          );
-          LocalNotificationCacheService().addNotification(
-            userId: user.id,
-            role: 'PETUGAS_PEMILAHAN',
-            title: 'Poin Petugas Bertambah!',
-            desc: 'Anda mendapatkan +$poinPengangkutan poin dari konfirmasi pengangkutan sampah. ($timeStr)',
-            type: 'POIN_PETUGAS',
-            id: 'poin_angkut_${now.millisecondsSinceEpoch}',
-            icon: 'star',
-          );
-        }
-      }
+      // Notifikasi dikonfirmasi oleh server via FCM — tidak simpan ke LocalCache
+      // agar tidak terjadi duplikasi dengan notifikasi server.
       await refreshAll();
       state = state.copyWith(isLoading: false);
       return ok;
