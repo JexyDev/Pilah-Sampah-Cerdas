@@ -350,89 +350,105 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (ctx) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 40, height: 4,
-                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.4,
+          maxChildSize: 0.85,
+          expand: false,
+          builder: (ctx, scrollController) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    const Text('Pilih Jenis Fasilitas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(ctx),
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
-                        child: const Icon(Icons.close, size: 20, color: AppColors.textSecondary),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Divider(height: 1),
-              ..._jenisFasilitasMap.entries.map((entry) {
-                final isSelected = _selectedJenis == entry.key;
-                return InkWell(
-                  onTap: () {
-                    setState(() => _selectedJenis = entry.key);
-                    Navigator.pop(ctx);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Handle + header (tidak ikut scroll)
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40, height: 4,
+                    decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Row(
                       children: [
-                        Container(
-                          width: 36, height: 36,
-                          decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFFE8F5E9) : const Color(0xFFF5F7FA),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(Icons.eco_rounded, size: 20, color: isSelected ? AppColors.primaryGreen : AppColors.textHint),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Text(
-                            entry.value,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                              color: isSelected ? AppColors.primaryGreen : AppColors.textPrimary,
-                            ),
+                        const Text('Pilih Jenis Fasilitas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(ctx),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                            child: const Icon(Icons.close, size: 20, color: AppColors.textSecondary),
                           ),
                         ),
-                        if (isSelected)
-                          Container(
-                            width: 24, height: 24,
-                            decoration: const BoxDecoration(color: AppColors.primaryGreen, shape: BoxShape.circle),
-                            child: const Icon(Icons.check, color: Colors.white, size: 16),
-                          )
-                        else
-                          Container(
-                            width: 24, height: 24,
-                            decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade400), shape: BoxShape.circle),
-                          ),
                       ],
                     ),
                   ),
-                );
-              }),
-              const SizedBox(height: 20),
-            ],
-          ),
+                  const SizedBox(height: 8),
+                  const Divider(height: 1),
+                  // Scrollable list
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      padding: const EdgeInsets.only(bottom: 32),
+                      children: _jenisFasilitasMap.entries.map((entry) {
+                        final isSelected = _selectedJenis == entry.key;
+                        return InkWell(
+                          onTap: () {
+                            setState(() => _selectedJenis = entry.key);
+                            Navigator.pop(ctx);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 36, height: 36,
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? const Color(0xFFE8F5E9) : const Color(0xFFF5F7FA),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(Icons.eco_rounded, size: 20, color: isSelected ? AppColors.primaryGreen : AppColors.textHint),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Text(
+                                    entry.value,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                      color: isSelected ? AppColors.primaryGreen : AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ),
+                                if (isSelected)
+                                  Container(
+                                    width: 24, height: 24,
+                                    decoration: const BoxDecoration(color: AppColors.primaryGreen, shape: BoxShape.circle),
+                                    child: const Icon(Icons.check, color: Colors.white, size: 16),
+                                  )
+                                else
+                                  Container(
+                                    width: 24, height: 24,
+                                    decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade400), shape: BoxShape.circle),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
