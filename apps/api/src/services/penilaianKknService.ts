@@ -373,7 +373,10 @@ export const penilaianKknService = {
       : prev?.dplId || studentUser.studentProfile?.kelompok?.dplId || null;
 
     const mitraId = isMitra ? evaluatorId : prev?.mitraId || null;
-    const namaMitraPenilai = payload.namaMitraPenilai || prev?.namaMitraPenilai || undefined;
+    const defaultMitraName = studentUser.studentProfile?.assignedRw?.name
+      ? `Ketua ${studentUser.studentProfile.assignedRw.name}`
+      : "Mitra Pendamping Lapangan";
+    const namaMitraPenilai = payload.namaMitraPenilai || prev?.namaMitraPenilai || defaultMitraName;
     const catatanDpl = isMitra
       ? (prev?.catatanDpl ?? "")
       : (payload.catatanDpl !== undefined ? payload.catatanDpl : (prev?.catatanDpl ?? ""));
