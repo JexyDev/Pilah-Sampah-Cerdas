@@ -119,14 +119,21 @@ const createActivePresenceIcon = (studentName: string) => {
     className: "custom-active-student-presence",
     html: `
       <div style="position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-        <div style="position: absolute; inset: -3px; border-radius: 50%; background-color: #10b981; opacity: 0.35; animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-        <div style="background: linear-gradient(135deg, #059669, #10b981); color: white; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border: 1.5px solid white; box-shadow: 0 2px 6px rgba(16,185,129,0.5); font-weight: 900; font-size: 8px; font-family: sans-serif;">
+        <style>
+          @keyframes pulseRing {
+            0% { transform: scale(0.9); opacity: 0.8; }
+            50% { transform: scale(1.7); opacity: 0.35; }
+            100% { transform: scale(2.3); opacity: 0; }
+          }
+        </style>
+        <div style="position: absolute; inset: -4px; border-radius: 50%; background-color: #10b981; animation: pulseRing 1.5s ease-out infinite;"></div>
+        <div style="background: linear-gradient(135deg, #059669, #10b981); color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 8px rgba(16,185,129,0.6); font-weight: 900; font-size: 10px; font-family: sans-serif; position: relative; z-index: 10;">
           ${initial}
         </div>
       </div>
     `,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
   });
 };
 
@@ -571,7 +578,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
   // Map settings
   const [mapCenter, setMapCenter] = useState<[number, number]>([-6.8915, 107.6107]);
-  const [mapZoom] = useState<number>(15);
+  const [mapZoom, setMapZoom] = useState<number>(15);
 
   const visibleSchedules = useMemo(() => {
     if (!selectedKelompokId) return schedules;
@@ -868,15 +875,25 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     );
   };
 
-  // Fly Map to Mahasiswa Location
+  // Fly Map to Mahasiswa Location & smooth scroll to Map Section
   const handleFocusMahasiswaMap = (rec: AttendanceRecord) => {
-    const lat = Number(rec.latitude);
-    const lng = Number(rec.longitude);
+    const liveLoc = studentLocations.find(l => l.studentId === rec.student.id || l.student?.id === rec.student.id);
+    const lat = liveLoc ? Number(liveLoc.latitude) : Number(rec.latitude);
+    const lng = liveLoc ? Number(liveLoc.longitude) : Number(rec.longitude);
+    
     if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
       setMapCenter([lat, lng]);
+      setMapZoom(18);
       setShowMap(true);
+      
+      const mapElement = document.getElementById("monitoring-map-section");
+      if (mapElement) {
+        mapElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      
+      const nameClean = rec.student.name.replace(/👑|\(Ketua Kelompok\)/g, "").trim();
       toast.success(
-        `Lokasi presensi: ${rec.student.name.replace(/👑|\(Ketua Kelompok\)/g, "").trim()}`
+        `Berhasil fokus ke lokasi GPS live mahasiswa: ${nameClean}`
       );
     } else {
       toast.error("Koordinat GPS lokasi absensi mahasiswa belum tersedia");
@@ -2350,7 +2367,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               {filteredAttendance.map((rec) => {
                 const isAttended = Boolean(rec.attendedAt);
                 const isCompleted = Boolean(rec.completedAt);
-                const isActivePresence = isAttended && !isCompleted;
+                const isInsideZone = rec.currentStatus === "MASIH_DI_LOKASI" || rec.currentStatus === "DI_LOKASI_BELUM_ABSEN";
+                const isActivePresence = (isAttended && !isCompleted) || isInsideZone;
                 const durationMins = calculateDurationMinutes(
                   rec.attendedAt,
                   rec.completedAt
