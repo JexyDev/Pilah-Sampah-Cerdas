@@ -624,3 +624,80 @@ class DampakKelurahanData extends Equatable {
         totalActiveBins,
       ];
 }
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Model untuk response GET /api/v1/kkn/posko/me
+/// ─────────────────────────────────────────────────────────────────────────────
+class PoskoKknData extends Equatable {
+  final String id;
+  final String nama;
+  final String jenis;
+  final String alamat;
+  final double latitude;
+  final double longitude;
+  final String statusApproval;
+  final String? foto;
+  final int? rwId;
+  final String? rwName;
+  final String? kelurahanName;
+
+  const PoskoKknData({
+    required this.id,
+    required this.nama,
+    required this.jenis,
+    required this.alamat,
+    required this.latitude,
+    required this.longitude,
+    required this.statusApproval,
+    this.foto,
+    this.rwId,
+    this.rwName,
+    this.kelurahanName,
+  });
+
+  factory PoskoKknData.fromJson(Map<String, dynamic> json) {
+    final rw = json['rw'] as Map<String, dynamic>?;
+    final kel = rw?['kelurahan'] as Map<String, dynamic>?;
+
+    return PoskoKknData(
+      id: json['id']?.toString() ?? '',
+      nama: json['nama']?.toString() ?? '',
+      jenis: json['jenis']?.toString() ?? '',
+      alamat: json['alamat']?.toString() ?? '',
+      latitude: double.tryParse(json['latitude']?.toString() ?? '0') ?? 0.0,
+      longitude: double.tryParse(json['longitude']?.toString() ?? '0') ?? 0.0,
+      statusApproval: json['statusApproval']?.toString() ?? 'PENDING',
+      foto: json['foto']?.toString(),
+      rwId: (rw?['id'] as num?)?.toInt(),
+      rwName: rw?['name']?.toString(),
+      kelurahanName: kel?['name']?.toString(),
+    );
+  }
+
+  @override
+  List<Object?> get props => [id, nama, statusApproval, latitude, longitude];
+}
+
+class PoskoKknResponse extends Equatable {
+  final PoskoKknData? posko;
+  final bool isUserLeader;
+  final String kelompokId;
+
+  const PoskoKknResponse({
+    this.posko,
+    required this.isUserLeader,
+    required this.kelompokId,
+  });
+
+  factory PoskoKknResponse.fromJson(Map<String, dynamic> json) {
+    return PoskoKknResponse(
+      posko: json['posko'] != null ? PoskoKknData.fromJson(json['posko']) : null,
+      isUserLeader: json['isUserLeader'] == true,
+      kelompokId: json['kelompokId']?.toString() ?? '',
+    );
+  }
+
+  @override
+  List<Object?> get props => [posko, isUserLeader, kelompokId];
+}
+

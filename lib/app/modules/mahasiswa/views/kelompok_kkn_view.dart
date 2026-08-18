@@ -4,6 +4,8 @@ import '../../../core/values/app_colors.dart';
 import '../controllers/kelompok_kkn_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
+import '../controllers/posko_kkn_controller.dart';
+import '../../../routes/app_routes.dart';
 
 class KelompokKknView extends ConsumerWidget {
   const KelompokKknView({super.key});
@@ -64,6 +66,8 @@ class KelompokKknView extends ConsumerWidget {
       if (!a.isLeader && b.isLeader) return 1;
       return 0;
     });
+
+    final isCurrentUserLeader = user != null && membersToDisplay.any((m) => m.userId == user.id && m.isLeader);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -249,6 +253,9 @@ class KelompokKknView extends ConsumerWidget {
                 ),
                 const SizedBox(height: 20),
 
+                _buildPoskoCard(context, ref, isCurrentUserLeader),
+                const SizedBox(height: 20),
+
                 // Subtitle Anggota
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -395,6 +402,88 @@ class KelompokKknView extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+  Widget _buildPoskoCard(BuildContext context, WidgetRef ref, bool isCurrentUserLeader) {
+    final poskoState = ref.watch(poskoKknProvider);
+    final posko = poskoState.poskoResponse?.posko;
+    final isLeader = poskoState.poskoResponse?.isUserLeader ?? isCurrentUserLeader;
+
+    if (poskoState.isLoading && posko == null) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.primaryBlue));
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(color: AppColors.primaryBlue.withValues(alpha: 0.08), blurRadius: 16, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: AppColors.primaryBlue.withValues(alpha: 0.1), shape: BoxShape.circle),
+                child: const Icon(Icons.home_work_rounded, color: AppColors.primaryBlue, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Lokasi Posko KKN', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                    const SizedBox(height: 2),
+                    if (posko != null)
+                      Text(
+                        posko.statusApproval == 'PENDING' ? 'Menunggu verifikasi RW' : 'Posko Aktif',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: posko.statusApproval == 'PENDING' ? AppColors.warningYellow : AppColors.primaryGreen,
+                        ),
+                      )
+                    else
+                      const Text('Belum Didaftarkan', style: TextStyle(fontSize: 12, color: AppColors.dangerRed, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (posko != null) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.location_on_rounded, size: 16, color: AppColors.textHint),
+                const SizedBox(width: 8),
+                Expanded(child: Text(posko.alamat.isNotEmpty ? posko.alamat : 'Alamat tidak tersedia', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary))),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+          if (isLeader)
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => Navigator.pushNamed(context, AppRoutes.registerPosko),
+                icon: const Icon(Icons.edit_location_alt_rounded, size: 18),
+                label: Text(posko != null ? 'Perbarui Posko' : 'Daftarkan Posko'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primaryBlue,
+                  side: const BorderSide(color: AppColors.primaryBlue),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

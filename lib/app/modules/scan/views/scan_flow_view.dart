@@ -163,35 +163,39 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
           next.currentStep == 3 &&
           next.scanResult != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            // Trigger local notification untuk Poin
-            import_engine.NotificationEngine().showPointsNotification(next.scanResult!.pointsAwarded);
+          if (!mounted) return;
+          final capturedContext = context;
+          // Trigger local notification untuk Poin
+          import_engine.NotificationEngine().showPointsNotification(next.scanResult!.pointsAwarded);
 
-            ref.invalidate(wasteLogsProvider);
-            ref.invalidate(totalPointsProvider);
-            ref.invalidate(pointHistoryProvider);
-            ref.invalidate(dailyPointsProvider);
-            ref.invalidate(notificationsProvider);
-            ref.invalidate(binsProvider);
+          ref.invalidate(wasteLogsProvider);
+          ref.invalidate(totalPointsProvider);
+          ref.invalidate(pointHistoryProvider);
+          ref.invalidate(dailyPointsProvider);
+          ref.invalidate(notificationsProvider);
+          ref.invalidate(binsProvider);
 
-            // Tampilkan popup sukses lalu keluar
-            _showSuccessDialog(context, next.scanResult!.pointsAwarded).then((_) {
-              if (mounted) {
-                // Rating dialog 1-5 bintang (hanya muncul 1x saat pertama kali berhasil setor)
-                showFeatureRatingOnceIfNeeded(
-                  context: context,
-                  featureKey: 'warga_setor_sampah',
-                  featureTitle: 'Setoran Sampah Berhasil! 🎉',
-                  featureSubtitle: 'Bagaimana kepuasan Anda saat pertama kali melakukan setoran & pemilahan sampah TrashCare?',
-                  roleTag: 'Warga',
-                ).then((_) {
-                  if (mounted) {
-                    Navigator.of(context).pop(); // Keluar dari halaman scan
-                  }
-                });
-              }
-            });
-          }
+          // Tampilkan popup sukses lalu keluar
+          // ignore: use_build_context_synchronously
+          _showSuccessDialog(capturedContext, next.scanResult!.pointsAwarded).then((_) {
+            if (mounted) {
+              // Rating dialog 1-5 bintang (hanya muncul 1x saat pertama kali berhasil setor)
+              // ignore: use_build_context_synchronously
+              showFeatureRatingOnceIfNeeded(
+                // ignore: use_build_context_synchronously
+                context: capturedContext,
+                featureKey: 'warga_setor_sampah',
+                featureTitle: 'Setoran Sampah Berhasil! 🎉',
+                featureSubtitle: 'Bagaimana kepuasan Anda saat pertama kali melakukan setoran & pemilahan sampah TrashCare?',
+                roleTag: 'Warga',
+              ).then((_) {
+                if (mounted) {
+                  // ignore: use_build_context_synchronously
+                  Navigator.of(capturedContext).pop(); // Keluar dari halaman scan
+                }
+              });
+            }
+          });
         });
       }
     });

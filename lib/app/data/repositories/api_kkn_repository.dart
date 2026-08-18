@@ -435,4 +435,58 @@ class ApiKknRepository implements KknRepository {
       throw Exception('Gagal memuat data statistik dampak RW.');
     }
   }
+  @override
+  Future<Map<String, dynamic>> registerPosko(Map<String, dynamic> data, {String? imagePath}) async {
+    try {
+      if (imagePath != null) {
+        final formData = FormData.fromMap({
+          ...data,
+          'foto': await MultipartFile.fromFile(imagePath),
+        });
+        final response = await apiClient.dio.post(ApiEndpoints.kknPoskoRegister, data: formData);
+        return response.data as Map<String, dynamic>;
+      } else {
+        final response = await apiClient.dio.post(ApiEndpoints.kknPoskoRegister, data: data);
+        return response.data as Map<String, dynamic>;
+      }
+    } catch (e) {
+      throw Exception('Gagal mendaftarkan posko: $e');
+    }
+  }
+
+  @override
+  Future<PoskoKknResponse?> getPoskoMe() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.kknPoskoMe);
+      if (response.statusCode == 200) {
+        final data = response.data['data'] as Map<String, dynamic>?;
+        if (data != null) {
+          return PoskoKknResponse.fromJson(data);
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getPoskoMe: $e');
+      throw Exception('Gagal mengambil data posko');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> registerFasilitas(Map<String, dynamic> data, {String? imagePath}) async {
+    try {
+      if (imagePath != null) {
+        final formData = FormData.fromMap({
+          ...data,
+          'foto': await MultipartFile.fromFile(imagePath),
+        });
+        final response = await apiClient.dio.post(ApiEndpoints.kknFasilitasBantuInput, data: formData);
+        return response.data as Map<String, dynamic>;
+      } else {
+        final response = await apiClient.dio.post(ApiEndpoints.kknFasilitasBantuInput, data: data);
+        return response.data as Map<String, dynamic>;
+      }
+    } catch (e) {
+      throw Exception('Gagal mendata fasilitas: $e');
+    }
+  }
 }
