@@ -20,7 +20,7 @@ jobs:
       - name: Build & Package Frontend Web (GitHub Actions)
         run: |
           cd apps/web
-          npm ci --prefer-offline --no-audit || npm install --silent
+          npm ci --prefer-offline --no-audit || npm install --silent --legacy-peer-deps
           npm run build
           test -f dist/index.html || { echo "Build failed: dist/index.html missing"; exit 1; }
           tar -czf dist.tar.gz -C dist .
