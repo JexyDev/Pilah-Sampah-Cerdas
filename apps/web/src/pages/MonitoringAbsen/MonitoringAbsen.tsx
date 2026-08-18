@@ -585,18 +585,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   }, [visibleSchedules, selectedScheduleId]);
 
   const scheduleTargetHours = useMemo(() => {
-    // 1. Prioritaskan kalkulasi durasi dari rentang jam kegiatan (misal 08:00 - 12:00 -> 4 Jam)
-    if (activeSchedule?.time) {
-      const { start, end } = parseTimeString(activeSchedule.time);
-      const diffMins = calculateHourDifference(start, end);
-      if (diffMins > 0) {
-        return Math.round(diffMins / 60);
-      }
-    }
-    // 2. Fallback ke target harian terpusat Rule Engine / Konfigurasi KKN (default 4 Jam bulat)
     const harian = Number(configTargets.targetHarianJam);
-    return !isNaN(harian) && harian > 0 ? Math.round(harian) : 4;
-  }, [activeSchedule?.time, configTargets.targetHarianJam]);
+    return !isNaN(harian) && harian > 0 ? harian : 2;
+  }, [configTargets.targetHarianJam]);
 
   // Attendance metrics counts
   const attendanceStats = useMemo(() => {
@@ -2160,12 +2151,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
                     {filteredAttendance.map((rec, idx) => {
-                      const isAttended = Boolean(rec.attendedAt);
-                      const durationMins = calculateDurationMinutes(
-                        rec.attendedAt,
-                        rec.completedAt
-                      );
-
                       const statusUpper = String(rec.status || "").toUpperCase();
                       const methodUpper = String(rec.method || "").toUpperCase();
                       const currentStatusUpper = String(rec.currentStatus || "").toUpperCase();
@@ -2177,18 +2162,26 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       const isOverrideDpl = methodUpper === "OVERRIDE_DPL" || statusUpper.includes("OVERRIDE") || currentStatusUpper === "OVERRIDDEN_HADIR";
                       const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
                       const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
-                      const isHadir = isAttended && !isTanpaKeterangan && !isBelumAdaJadwal && !isIzin && !isSakit && !isIzinPending && !isSakitPending;
+                      
+                      const isLeaveOrPending = isSakit || isIzin || isSakitPending || isIzinPending || isCancelRequested;
+                      const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
+                      const durationMins = isLeaveOrPending ? 0 : calculateDurationMinutes(rec.attendedAt, rec.completedAt);
+                      const isHadir = isAttended && !isOverrideDpl;
 
-                      const formattedHours = durationMins > 0 ? formatDurationUnits(durationMins) : "-";
+                      const formattedHours = isLeaveOrPending ? "-" : (durationMins > 0 ? formatDurationUnits(durationMins) : "-");
 
-                      const formattedActualTarget = rec.totalHours !== undefined
-                        ? `${formatHoursToUnits(rec.totalHours)} / ${formatHoursToUnits(configTargets.targetTotalJam)}`
-                        : `${durationMins > 0 ? formatDurationUnits(durationMins) : "0 Menit"} / ${formatHoursToUnits(scheduleTargetHours)}`;
+                      const formattedActualTarget = isLeaveOrPending
+                        ? `0 Menit / ${formatHoursToUnits(scheduleTargetHours)}`
+                        : (rec.totalHours !== undefined
+                            ? `${formatHoursToUnits(rec.totalHours)} / ${formatHoursToUnits(configTargets.targetTotalJam)}`
+                            : `${durationMins > 0 ? formatDurationUnits(durationMins) : "0 Menit"} / ${formatHoursToUnits(scheduleTargetHours)}`);
 
                       let poinDampingan = 0;
-                      if (durationMins >= scheduleTargetHours * 60) {
+                      if (isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal) {
+                        poinDampingan = 0;
+                      } else if (durationMins >= scheduleTargetHours * 60) {
                         poinDampingan = 10;
-                      } else if (durationMins > 0 && !isTanpaKeterangan && !isBelumAdaJadwal) {
+                      } else if (durationMins > 0) {
                         poinDampingan = 8;
                       }
 
@@ -2309,7 +2302,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             )}
                           </td>
                           <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-800 dark:text-slate-100">
-                            {rec.attendedAt
+                            {!isLeaveOrPending && rec.attendedAt
                               ? new Date(rec.attendedAt).toLocaleTimeString(
                                   "id-ID",
                                   { hour: "2-digit", minute: "2-digit" }
@@ -2317,7 +2310,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               : "-"}
                           </td>
                           <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-800 dark:text-slate-100">
-                            {rec.completedAt
+                            {!isLeaveOrPending && rec.completedAt
                               ? new Date(rec.completedAt).toLocaleTimeString(
                                   "id-ID",
                                   { hour: "2-digit", minute: "2-digit" }

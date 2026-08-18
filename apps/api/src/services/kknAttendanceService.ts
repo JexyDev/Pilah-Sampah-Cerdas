@@ -728,8 +728,10 @@ export class KknAttendanceService {
         currentStatus = isInside ? "MASIH_DI_LOKASI" : "SUDAH_MENINGGALKAN_RADIUS";
       }
 
+      const isLeave = att.method === "IZIN_DPL" || String(att.status).toUpperCase().includes("IZIN") || String(att.status).toUpperCase().includes("SAKIT");
       return {
         ...att,
+        attendedAt: isLeave ? null : att.attendedAt,
         completedAt: att.checkOutAt || (att as any).completedAt || null,
         currentStatus,
         leaveRequest: leave
@@ -788,7 +790,7 @@ export class KknAttendanceService {
           id: `leave-approved-${s.id}`,
           studentId: s.id,
           scheduleId,
-          attendedAt: (schedule?.date || new Date()).toISOString(),
+          attendedAt: null,
           completedAt: null,
           method: "IZIN_DPL",
           latitude: lat,
