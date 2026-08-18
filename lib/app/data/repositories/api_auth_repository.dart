@@ -967,6 +967,8 @@ class ApiAuthRepository implements AuthRepository {
             fakultas: fetched.fakultas.isNotEmpty ? fetched.fakultas : user.fakultas,
             universitas: fetched.universitas.isNotEmpty ? fetched.universitas : user.universitas,
             jenjangPendidikan: fetched.jenjangPendidikan.isNotEmpty ? fetched.jenjangPendidikan : user.jenjangPendidikan,
+            kelompokName: fetched.kelompokName.isNotEmpty ? fetched.kelompokName : user.kelompokName,
+            dplName: fetched.dplName.isNotEmpty ? fetched.dplName : user.dplName,
           );
         }
       }

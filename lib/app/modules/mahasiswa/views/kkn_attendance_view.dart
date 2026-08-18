@@ -163,12 +163,34 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
     ) ?? false;
 
     if (confirm) {
-      await notifier.recordAttendance(
+      final success = await notifier.recordAttendance(
         method: 'GPS_VALIDATED',
         kodeZona: _kodeZonaCtrl.text.trim(),
         rw: _rtRwCtrl.text.trim(),
         kelurahan: _selectedKelurahan,
       );
+      if (mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Presensi KKN berhasil tercatat (Hadir)!'),
+              backgroundColor: AppColors.primaryGreen,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } else {
+          final err = ref.read(kknLocationProvider).error ?? 'Gagal melakukan presensi. Silakan periksa GPS & koneksi internet Anda.';
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(err),
+              backgroundColor: AppColors.dangerRed,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
     }
   }
 
