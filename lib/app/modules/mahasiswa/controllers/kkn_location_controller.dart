@@ -263,6 +263,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             );
           } else {
             state = state.copyWith(clearWarning: true);
+            await _loadPersistentTimer();
           }
           
           if (activeZone['latitude'] != null &&
@@ -270,6 +271,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             state = state.copyWith(
               activeActivity: activeZone,
               targetDurationMinutes: targetMins,
+              inZoneDurationSeconds: (isAttended || status == 'hadir') ? targetMins * 60 : _accumulatedSeconds,
             );
           }
         }
@@ -687,19 +689,22 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
                 .toString()
                 .toLowerCase();
 
-        // Jika sudah ada status final (hadir/izin/sakit) atau sukses absen, reset timer ke 0 & block
+        // Jika sudah ada status final (hadir/izin/sakit) atau sukses absen
         if (status == 'izin' ||
             status == 'sakit' ||
             status == 'hadir' ||
             state.isSuccessAttendance) {
-          _stopZoneTimer(resetCompletely: true);
+          final bool isHadir = status == 'hadir' || state.isSuccessAttendance;
+          final int targetSecs = (state.targetDurationMinutes > 0 ? state.targetDurationMinutes : 120) * 60;
+          _stopZoneTimer(resetCompletely: !isHadir);
+          if (isHadir) _accumulatedSeconds = targetSecs;
           state = state.copyWith(
-            inZoneDurationSeconds: 0,
+            inZoneDurationSeconds: isHadir ? targetSecs : 0,
             isEligibleForAttendance: false,
-            isSuccessAttendance: status == 'hadir' || state.isSuccessAttendance,
-            zoneResetWarning: status == 'hadir' || state.isSuccessAttendance
+            isSuccessAttendance: isHadir,
+            zoneResetWarning: isHadir
                 ? 'Anda sudah berhasil melakukan absensi (Hadir) pada jadwal ini.'
-                : 'Anda tercatat $status pada jadwal ini, absensi ditutup.',
+                : 'Anda tercatat ${status.toUpperCase()} pada jadwal ini, absensi ditutup.',
             clearWarning: false,
           );
           return; // Stop processing further

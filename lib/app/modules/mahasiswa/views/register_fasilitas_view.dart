@@ -642,11 +642,11 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                                   markers: [
                                     Marker(
                                       point: _selectedLocation!,
-                                      width: 80,
-                                      height: 80,
+                                      width: 36,
+                                      height: 36,
                                       child: const Icon(
                                         Icons.location_on,
-                                        size: 40,
+                                        size: 24,
                                         color: AppColors.primaryGreen,
                                       ),
                                     ),
