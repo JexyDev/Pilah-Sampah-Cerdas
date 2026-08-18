@@ -23,6 +23,8 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
   String _binOrganikId = '';
   String _binAnorganikId = '';
   bool _isProcessing = false;
+  // Key untuk mengakses method resetScanner() secara manual dari luar widget
+  final GlobalKey<QrScannerWidgetState> _scannerKey = GlobalKey<QrScannerWidgetState>();
 
   /// Memvalidasi format & kategori QR Code tempat sampah
   String? _validateBinQr(String qr, int step) {
@@ -101,28 +103,32 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
     // Validasi kesesuaian kategori QR (Organik vs Anorganik vs Random)
     final validationError = _validateBinQr(cleanQr, _step);
     if (validationError != null) {
-      await showDialog(
-        context: context,
-        builder: (dialogCtx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: AppColors.dangerRed, size: 28),
-              SizedBox(width: 10),
-              Expanded(child: Text('Kategori QR Tidak Sesuai', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+      if (mounted) {
+        await showDialog(
+          context: context,
+          builder: (dialogCtx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: AppColors.dangerRed, size: 28),
+                SizedBox(width: 10),
+                Expanded(child: Text('Kategori QR Tidak Sesuai', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+              ],
+            ),
+            content: Text(validationError, style: const TextStyle(fontSize: 13, height: 1.4)),
+            actions: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen),
+                onPressed: () => Navigator.pop(dialogCtx),
+                child: const Text('Pindai Ulang', style: TextStyle(color: Colors.white)),
+              ),
             ],
           ),
-          content: Text(validationError, style: const TextStyle(fontSize: 13, height: 1.4)),
-          actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen),
-              onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('Pindai Ulang', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-      );
+        );
+      }
+      // Reset scanner agar bisa pindai ulang langsung
       _isProcessing = false;
+      _scannerKey.currentState?.resetScanner();
       return;
     }
 
@@ -189,7 +195,9 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
           _step = 2;
         });
       }
+      // Selalu reset scanner setelah dialog ditutup agar bisa scan lagi
       _isProcessing = false;
+      _scannerKey.currentState?.resetScanner();
     } else {
       // Step 2: Scan Anorganik QR
 
@@ -242,7 +250,9 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
       );
 
       if (processConfirm != true) {
+        // User batal → reset agar bisa scan ulang
         _isProcessing = false;
+        _scannerKey.currentState?.resetScanner();
         return;
       }
 
@@ -258,6 +268,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
           builder: (_) => const Center(
             child: CircularProgressIndicator(color: AppColors.primaryGreen),
           ),
+
         );
       }
 
@@ -293,11 +304,11 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
           );
         }
 
-        // Invalidate state agar Warga & Tempat Sampah langsung ter-update di Mahasiswa dan Warga
+        // Refresh di background, tidak diawait agar UI tidak tertahan
         ref.invalidate(mahasiswaControllerProvider);
         ref.invalidate(mahasiswaNotificationsProvider);
-        await ref.read(mahasiswaControllerProvider.notifier).fetchAll();
-        await ref.read(aktivasiWargaProvider.notifier).refresh();
+        ref.read(mahasiswaControllerProvider.notifier).fetchAll();
+        ref.read(aktivasiWargaProvider.notifier).refresh();
 
         // Tampilkan Full Dialog Modal Berhasil Aktivasi
         if (mounted) {
@@ -369,19 +380,18 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
             ),
           );
 
+          // Langsung keluar dari halaman aktivasi setelah dialog ditutup
+          if (mounted) Navigator.pop(context);
+
+          // Rating dialog di background (tidak blocking)
           if (mounted) {
-            // Rating dialog 1-5 bintang (hanya muncul 1x saat pertama kali berhasil aktivasi warga binaan)
-            await showFeatureRatingOnceIfNeeded(
+            showFeatureRatingOnceIfNeeded(
               context: context,
               featureKey: 'mahasiswa_aktivasi_warga',
               featureTitle: 'Aktivasi Warga Berhasil! ⭐',
               featureSubtitle: 'Bagaimana pengalaman Anda saat pertama kali membantu proses aktivasi tempat sampah warga binaan?',
               roleTag: 'Mahasiswa KKN',
             );
-
-            if (mounted) {
-              Navigator.pop(context);
-            }
           }
         }
       } else if (mounted) {
@@ -439,12 +449,14 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         children: [
           // ─── Full Camera Screen QR Scanner Widget ──────────────────────────
           QrScannerWidget(
+            key: _scannerKey,
             isFullScreen: true,
             hint: _step == 1 ? 'Scan QR Tempat Sampah Organik' : 'Scan QR Tempat Sampah Anorganik',
             overlayColor: _step == 1 ? const Color(0xFF10B981) : const Color(0xFFFFB800),
             onQrDetected: (qrCode) async {
               await _handleQrDetected(qrCode, wargaId, wargaName);
-              return true;
+              // Kembalikan false agar QrScannerWidget tidak auto-reset (kita kelola via _scannerKey)
+              return false;
             },
           ),
 
