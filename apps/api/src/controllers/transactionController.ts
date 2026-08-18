@@ -12,9 +12,9 @@ export const transactionController = {
   getDeposits: async (req: Request, res: Response) => {
     try {
       const { binCode } = req.query;
-      const deposits = await transactionService.getDeposits(binCode as string);
+      const { otomatisList, manualList } = await transactionService.getDeposits(binCode as string);
 
-      const mappedDeposits = deposits.map((d: any) => {
+      const mappedOtomatis = (otomatisList || []).map((d: any) => {
         let wargaName = d.warga?.name || "Warga Coblong";
         wargaName = wargaName
           .replace(/^Warga\s+Binaan\s+/i, "")
@@ -22,36 +22,60 @@ export const transactionController = {
           .trim();
         if (!wargaName) wargaName = "Warga Coblong";
 
-        const confVal = d.confidenceAi
-          ? Number(d.confidenceAi) <= 1
-            ? Math.round(Number(d.confidenceAi) * 100)
-            : Math.round(Number(d.confidenceAi))
-          : 90 + (Math.abs(d.id.charCodeAt(0) || 5) % 9);
+        const rawConf = d.confidenceAi !== null && d.confidenceAi !== undefined ? Number(d.confidenceAi) : null;
+        const confVal = rawConf !== null ? (rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf)) : null;
         const isOrg = (d.hasilKlasifikasiAi || "").toLowerCase() === "organik";
-        const organikPercent = isOrg
-          ? Math.min(100, Math.max(55, confVal))
-          : Math.max(0, Math.min(45, 100 - confVal));
+        const organikPercent = confVal !== null ? (isOrg ? confVal : 100 - confVal) : (isOrg ? 100 : 0);
 
         return {
           id: d.id,
           warga: wargaName,
           phone: d.warga?.phone || "-",
-          rw: d.warga?.rw?.name || "RT 01 / RW 01",
-          kelurahan: d.warga?.rw?.kelurahan?.name || "Coblong",
+          rw: d.warga?.rw?.name || d.bin?.rw?.name || "RW 01",
+          kelurahan: d.warga?.rw?.kelurahan?.name || d.bin?.rw?.kelurahan?.name || "Coblong",
           jenis: isOrg ? "Organik" : "Anorganik",
           berat: Number(d.berat),
-          poin: Math.round(Number(d.poin)),
+          poin: Math.round(Number(d.poin || 0)),
           waktu: d.createdAt,
-          status: "Selesai",
+          status: d.status || "ACCEPTED",
           lokasi: `Tempat Sampah: ${d.bin?.qrCode || "QR-001"}`,
           confidence: confVal,
           organikPercent,
           anorganikPercent: 100 - organikPercent,
-          fotoUrl: d.fotoSampahUrl || d.fotoUrl || null,
+          fotoUrl: d.fotoSampahUrl || null,
+          fotoProfil: d.warga?.fotoProfil || null,
+          isManual: false,
         };
       });
 
-      res.status(200).json({ success: true, data: mappedDeposits });
+      const mappedManual = (manualList || []).map((m: any) => {
+        return {
+          id: m.id,
+          warga: `Petugas: ${m.petugas?.name || "Petugas Residu"}`,
+          phone: m.petugas?.phone || "-",
+          rw: m.rw?.name || `RW ${m.rwId}`,
+          kelurahan: m.rw?.kelurahan?.name || "Coblong",
+          jenis: "Residu",
+          berat: Number(m.berat),
+          poin: 0,
+          waktu: m.createdAt,
+          status: m.status || "ACCEPTED",
+          lokasi: "Posko Penimbangan Lapangan",
+          confidence: null,
+          organikPercent: 0,
+          anorganikPercent: 0,
+          fotoUrl: m.fotoResiduUrl || null,
+          fotoProfil: m.petugas?.fotoProfil || null,
+          isManual: true,
+        };
+      });
+
+      // Combine and sort by date descending
+      const combined = [...mappedOtomatis, ...mappedManual].sort(
+        (a, b) => new Date(b.waktu).getTime() - new Date(a.waktu).getTime()
+      );
+
+      res.status(200).json({ success: true, data: combined });
     } catch (error) {
       console.error("[TransactionController] getDeposits error:", error);
       res.status(500).json({ success: false, message: "Gagal mengambil data setoran" });
@@ -80,7 +104,7 @@ export const transactionController = {
           pointsAwarded: poinVal,
           waktu: d.createdAt,
           createdAt: d.createdAt,
-          status: "Selesai",
+          status: d.status || "ACCEPTED",
           lokasi: addr,
           address: addr,
           rw: areaName || null,
@@ -171,28 +195,60 @@ export const transactionController = {
         res.status(404).json({ success: false, message: "Setoran tidak ditemukan" });
         return;
       }
-      const confVal = Number(deposit.confidenceAi || 95);
-      const isOrg = (deposit.hasilKlasifikasiAi || "").toLowerCase() === "organik";
-      const organikPercent = isOrg
-        ? Math.min(100, Math.max(55, Math.round(confVal <= 1 ? confVal * 100 : confVal)))
-        : Math.max(0, Math.min(45, Math.round(100 - (confVal <= 1 ? confVal * 100 : confVal))));
+
+      const dep = deposit as any;
+
+      if (dep.isManual) {
+        const mappedManual = {
+          id: dep.id,
+          warga: `Petugas: ${dep.petugas?.name || "Petugas Residu"}`,
+          phone: dep.petugas?.phone || "-",
+          rw: dep.rw?.name || `RW ${dep.rwId}`,
+          kelurahan: dep.rw?.kelurahan?.name || "Coblong",
+          jenis: "Residu",
+          berat: Number(dep.berat),
+          poin: 0,
+          waktu: dep.createdAt,
+          status: dep.status || "ACCEPTED",
+          lokasi: "Posko Penimbangan Lapangan",
+          confidence: null,
+          organikPercent: 0,
+          anorganikPercent: 0,
+          gps: dep.lokasiGps,
+          fotoUrl: dep.fotoResiduUrl,
+          fotoProfil: dep.petugas?.fotoProfil || null,
+          isManual: true,
+          catatanPenolakan: dep.catatanPenolakan || null,
+        };
+        res.status(200).json({ success: true, data: mappedManual });
+        return;
+      }
+
+      const rawConf = dep.confidenceAi !== null && dep.confidenceAi !== undefined ? Number(dep.confidenceAi) : null;
+      const confVal = rawConf !== null ? (rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf)) : null;
+      const isOrg = (dep.hasilKlasifikasiAi || "").toLowerCase() === "organik";
+      const organikPercent = confVal !== null ? (isOrg ? confVal : 100 - confVal) : (isOrg ? 100 : 0);
 
       const mappedDeposit = {
-        id: deposit.id,
-        warga: deposit.warga?.name || "Unknown",
-        phone: deposit.warga?.phone || "",
-        rw: deposit.bin?.rw?.name || "",
+        id: dep.id,
+        warga: dep.warga?.name || "Warga Coblong",
+        phone: dep.warga?.phone || "",
+        rw: dep.bin?.rw?.name || dep.warga?.rw?.name || "RW 01",
+        kelurahan: dep.bin?.rw?.kelurahan?.name || dep.warga?.rw?.kelurahan?.name || "Coblong",
         jenis: isOrg ? "Organik" : "Anorganik",
-        berat: Number(deposit.berat),
-        poin: Number(deposit.poin),
-        waktu: deposit.createdAt,
-        status: "Selesai",
-        lokasi: `Tempat Sampah: ${deposit.bin?.qrCode}`,
-        confidence: confVal <= 1 ? Math.round(confVal * 100) : Math.round(confVal),
+        berat: Number(dep.berat),
+        poin: Math.round(Number(dep.poin || 0)),
+        waktu: dep.createdAt,
+        status: dep.status || "ACCEPTED",
+        lokasi: `Tempat Sampah: ${dep.bin?.qrCode || "QR-001"}`,
+        confidence: confVal,
         organikPercent,
         anorganikPercent: 100 - organikPercent,
-        gps: deposit.lokasiGps,
-        fotoUrl: deposit.fotoSampahUrl,
+        gps: dep.lokasiGps,
+        fotoUrl: dep.fotoSampahUrl,
+        fotoProfil: dep.warga?.fotoProfil || null,
+        isManual: false,
+        catatanPenolakan: dep.catatanPenolakan || null,
       };
       res.status(200).json({ success: true, data: mappedDeposit });
     } catch (error) {

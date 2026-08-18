@@ -1,39 +1,65 @@
 import { prisma } from "../lib/prisma.js";
-/**
- * Project: TrashCare
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
+import { websocketService } from "./websocketService.js";
 import { v4 as uuidv4 } from "uuid";
 
 export class TransactionService {
   async getDeposits(binCode?: string) {
-    return prisma.setoranOtomatis.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        warga: {
-          select: {
-            name: true,
-            phone: true,
-            rw: {
-              include: {
-                kelurahan: true,
+    const [otomatisList, manualList] = await Promise.all([
+      prisma.setoranOtomatis.findMany({
+        orderBy: { createdAt: "desc" },
+        include: {
+          warga: {
+            select: {
+              name: true,
+              phone: true,
+              fotoProfil: true,
+              rw: {
+                include: {
+                  kelurahan: true,
+                },
+              },
+            },
+          },
+          bin: {
+            include: {
+              rw: {
+                include: {
+                  kelurahan: true,
+                },
               },
             },
           },
         },
-        bin: true,
-      },
-      where: binCode
-        ? {
-            bin: {
-              qrCode: binCode,
+        where: binCode
+          ? {
+              bin: {
+                qrCode: binCode,
+              },
+            }
+          : undefined,
+      }),
+      binCode
+        ? []
+        : prisma.setoranManual.findMany({
+            orderBy: { createdAt: "desc" },
+            include: {
+              petugas: {
+                select: {
+                  name: true,
+                  phone: true,
+                  fotoProfil: true,
+                },
+              },
+              rw: {
+                include: {
+                  kelurahan: true,
+                },
+              },
             },
-          }
-        : undefined,
-    });
+          }),
+    ]);
+
+    return { otomatisList, manualList };
   }
 
   async getMyDeposits(userId: string) {
@@ -55,22 +81,56 @@ export class TransactionService {
   }
 
   async getDepositDetails(id: string) {
-    return prisma.setoranOtomatis.findUnique({
+    const deposit = await prisma.setoranOtomatis.findUnique({
       where: { id },
       include: {
         warga: {
           select: {
             name: true,
             phone: true,
+            fotoProfil: true,
+            rw: {
+              include: {
+                kelurahan: true,
+              },
+            },
           },
         },
         bin: {
           include: {
-            rw: true,
+            rw: {
+              include: {
+                kelurahan: true,
+              },
+            },
           },
         },
       },
     });
+
+    if (deposit) return { ...deposit, isManual: false };
+
+    const manualDeposit = await prisma.setoranManual.findUnique({
+      where: { id },
+      include: {
+        petugas: {
+          select: {
+            name: true,
+            phone: true,
+            fotoProfil: true,
+          },
+        },
+        rw: {
+          include: {
+            kelurahan: true,
+          },
+        },
+      },
+    });
+
+    if (manualDeposit) return { ...manualDeposit, isManual: true };
+
+    return null;
   }
 
   async createManualDeposit(
@@ -86,6 +146,7 @@ export class TransactionService {
       if (!finalRwId) {
         const area = await tx.rw.findFirst({
           where: { petugasResiduId: petugasResiduId },
+          include: { kelurahan: true },
         });
         if (!area) throw new Error("PETUGAS_RESIDU_NOT_ASSIGNED_TO_ANY_RW");
         finalRwId = area.id;
@@ -101,8 +162,36 @@ export class TransactionService {
           unit: "Kg",
           lokasiGps,
           kategori: "residu",
+          status: "ACCEPTED",
+        },
+        include: {
+          petugas: { select: { name: true, phone: true, fotoProfil: true } },
+          rw: { include: { kelurahan: true } },
         },
       });
+
+      // Broadcast real-time live event to monitoring dashboard
+      try {
+        websocketService.broadcastDeposit({
+          id: log.id,
+          warga: log.petugas?.name || "Petugas Residu",
+          phone: log.petugas?.phone || "-",
+          rw: log.rw?.name || `RW ${finalRwId}`,
+          kelurahan: log.rw?.kelurahan?.name || "Coblong",
+          jenis: "Residu",
+          berat: Number(log.berat),
+          poin: 0,
+          waktu: log.createdAt,
+          status: log.status || "ACCEPTED",
+          lokasi: "Posko Penimbangan Lapangan",
+          confidence: null,
+          fotoUrl: log.fotoResiduUrl,
+          fotoProfil: log.petugas?.fotoProfil || null,
+          isManual: true,
+        });
+      } catch (wsErr) {
+        console.error("[TransactionService] websocket broadcast error:", wsErr);
+      }
 
       return log;
     });

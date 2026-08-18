@@ -1065,6 +1065,13 @@ export const dplService = {
     const rerataKehadiran =
       totalStudents > 0 ? Math.round((totalAttRateSum / totalStudents) * 100) / 100 : 0;
 
+    const allProkers = groups.flatMap((g) => g.programKerja || []);
+    const totalProkers = allProkers.length;
+    const totalProkerDisetujui = allProkers.filter((p) => p.status === "DITERIMA").length;
+    const totalProkerTidakDisetujui = allProkers.filter((p) => p.status === "DITOLAK").length;
+    const totalProkerSedangDilaksanakan = allProkers.filter((p) => p.status === "SEDANG_BERJALAN").length;
+    const totalProkerSelesai = allProkers.filter((p) => p.status === "SELESAI").length;
+
     return {
       groups: groups.map((g) => ({
         id: g.id,
@@ -1072,12 +1079,22 @@ export const dplService = {
         kelurahan: g.kelurahan || null,
         totalProker: g.programKerja.length,
         prokerDisetujui: g.programKerja.filter((p) => p.status === "DITERIMA").length,
+        prokerTidakDisetujui: g.programKerja.filter((p) => p.status === "DITOLAK").length,
+        prokerSedangDilaksanakan: g.programKerja.filter((p) => p.status === "SEDANG_BERJALAN").length,
+        prokerSelesai: g.programKerja.filter((p) => p.status === "SELESAI").length,
       })),
       students: allStudentsList,
       stats: {
         totalStudents,
         rerataNilai,
         rerataKehadiran,
+        proker: {
+          total: totalProkers,
+          disetujui: totalProkerDisetujui,
+          tidakDisetujui: totalProkerTidakDisetujui,
+          sedangDilaksanakan: totalProkerSedangDilaksanakan,
+          selesai: totalProkerSelesai,
+        },
       },
     };
   },

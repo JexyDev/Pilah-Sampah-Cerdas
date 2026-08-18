@@ -11,12 +11,14 @@ import {
   Pencil,
   Trash2,
   CheckCircle2,
-  Clock,
+  CheckCheck,
   Search,
   Download,
   Loader2,
   X,
-  Wallet,
+  XCircle,
+  PlayCircle,
+  Coins,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
@@ -330,19 +332,30 @@ export const ProgramKerjaKkn: React.FC = () => {
     return filteredProkers.slice(start, start + itemsPerPage);
   }, [filteredProkers, currentPage, itemsPerPage]);
 
-  // Metric KPI Computations
+  // Metric KPI Computations Sesuai Standar PT Makerindo
   const totalCount = prokerList.length;
-  const diterimaCount = prokerList.filter(
+  const disetujuiCount = prokerList.filter(
     (p) => (p.status as string) === "DITERIMA" || (p.status as string) === "DISETUJUI"
   ).length;
-  const diterimaPct = totalCount > 0 ? ((diterimaCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
+  const disetujuiPct = totalCount > 0 ? ((disetujuiCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
 
-  const menungguCount = prokerList.filter(
-    (p) => (p.status as string) === "BELUM_DISETUJUI" || (p.status as string) === "PENDING" || !p.status
+  const tidakDisetujuiCount = prokerList.filter(
+    (p) => (p.status as string) === "DITOLAK" || (p.status as string) === "TIDAK_DISETUJUI"
   ).length;
-  const menungguPct = totalCount > 0 ? ((menungguCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
+  const tidakDisetujuiPct = totalCount > 0 ? ((tidakDisetujuiCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
+
+  const sedangDilaksanakanCount = prokerList.filter(
+    (p) => (p.status as string) === "SEDANG_BERJALAN" || (p.status as string) === "SEDANG_DILAKSANAKAN"
+  ).length;
+  const sedangDilaksanakanPct = totalCount > 0 ? ((sedangDilaksanakanCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
+
+  const selesaiDilaksanakanCount = prokerList.filter(
+    (p) => (p.status as string) === "SELESAI" || (p.status as string) === "SELESAI_DILAKSANAKAN"
+  ).length;
+  const selesaiDilaksanakanPct = totalCount > 0 ? ((selesaiDilaksanakanCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
 
   const totalBiaya = prokerList.reduce((acc, p) => acc + (Number(p.kebutuhanBiaya) || 0), 0);
+  void totalBiaya;
 
   const handleExportCsv = () => {
     if (filteredProkers.length === 0) {
@@ -481,7 +494,7 @@ export const ProgramKerjaKkn: React.FC = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-100">
-      {/* Header Sesuai Gambar 4 */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Program Kerja KKN</h1>
@@ -491,6 +504,10 @@ export const ProgramKerjaKkn: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          <div className="hidden sm:flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 px-3.5 py-2 rounded-xl text-xs font-bold shadow-2xs">
+            <Coins size={14} className="text-emerald-600 dark:text-emerald-400" />
+            <span>Estimasi Biaya: Rp {totalBiaya.toLocaleString("id-ID")}</span>
+          </div>
           <button
             onClick={handleExportCsv}
             className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 px-4 py-2 rounded-xl font-bold text-xs shadow-2xs transition-all cursor-pointer"
@@ -510,55 +527,75 @@ export const ProgramKerjaKkn: React.FC = () => {
         </div>
       </div>
 
-      {/* 4 Stat Cards Sesuai Gambar 4 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 5 Stat Cards Metrik Utama Program Kerja */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
         {/* Card 1: Total Program Kerja */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100 shadow-2xs">
-            <FileSpreadsheet size={22} />
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold">Total Proker</span>
+            <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0">
+              <FileSpreadsheet size={16} />
+            </div>
           </div>
-          <div>
-            <span className="text-xs text-slate-500 font-bold block">Total Program Kerja</span>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{totalCount}</h3>
-            <span className="text-[10.5px] text-slate-400 font-medium">Semua rencana kegiatan</span>
-          </div>
-        </div>
-
-        {/* Card 2: Disetujui / Diterima */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100 shadow-2xs">
-            <CheckCircle2 size={22} />
-          </div>
-          <div>
-            <span className="text-xs text-slate-500 font-bold block">Disetujui / Diterima</span>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{diterimaCount}</h3>
-            <span className="text-[10.5px] text-slate-400 font-medium">{diterimaPct}% dari total program</span>
+          <div className="mt-2">
+            <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100">{totalCount}</h3>
+            <span className="text-[10px] text-slate-400 font-medium">Semua rencana kegiatan</span>
           </div>
         </div>
 
-        {/* Card 3: Menunggu Review DPL */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0 border border-amber-100 shadow-2xs">
-            <Clock size={22} />
+        {/* Card 2: Disetujui */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold">Disetujui</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-800/40">
+              <CheckCircle2 size={16} />
+            </div>
           </div>
-          <div>
-            <span className="text-xs text-slate-500 font-bold block">Menunggu Review DPL</span>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{menungguCount}</h3>
-            <span className="text-[10.5px] text-slate-400 font-medium">{menungguPct}% dari total program</span>
+          <div className="mt-2">
+            <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{disetujuiCount}</h3>
+            <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 font-medium">{disetujuiPct}% dari total</span>
           </div>
         </div>
 
-        {/* Card 4: Total Kebutuhan Biaya */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100 shadow-2xs">
-            <Wallet size={22} />
+        {/* Card 3: Tidak Disetujui */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-rose-700 dark:text-rose-400 font-bold">Tidak Disetujui</span>
+            <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-100 dark:border-rose-800/40">
+              <XCircle size={16} />
+            </div>
           </div>
-          <div className="min-w-0">
-            <span className="text-xs text-slate-500 font-bold block">Total Kebutuhan Biaya</span>
-            <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">
-              Rp {totalBiaya.toLocaleString("id-ID")}
-            </h3>
-            <span className="text-[10.5px] text-slate-400 font-medium">Estimasi seluruh program</span>
+          <div className="mt-2">
+            <h3 className="text-2xl font-black text-rose-600 dark:text-rose-400">{tidakDisetujuiCount}</h3>
+            <span className="text-[10px] text-rose-600/80 dark:text-rose-400/80 font-medium">{tidakDisetujuiPct}% dari total</span>
+          </div>
+        </div>
+
+        {/* Card 4: Sedang Dilaksanakan */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/30 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-blue-700 dark:text-blue-400 font-bold">Sedang Dilaksanakan</span>
+            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-800/40">
+              <PlayCircle size={16} />
+            </div>
+          </div>
+          <div className="mt-2">
+            <h3 className="text-2xl font-black text-blue-600 dark:text-blue-400">{sedangDilaksanakanCount}</h3>
+            <span className="text-[10px] text-blue-600/80 dark:text-blue-400/80 font-medium">{sedangDilaksanakanPct}% dari total</span>
+          </div>
+        </div>
+
+        {/* Card 5: Selesai Dilaksanakan */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-teal-100 dark:border-teal-900/30 shadow-xs flex flex-col justify-between col-span-2 sm:col-span-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-teal-700 dark:text-teal-400 font-bold">Selesai Dilaksanakan</span>
+            <div className="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0 border border-teal-100 dark:border-teal-800/40">
+              <CheckCheck size={16} />
+            </div>
+          </div>
+          <div className="mt-2">
+            <h3 className="text-2xl font-black text-teal-600 dark:text-teal-400">{selesaiDilaksanakanCount}</h3>
+            <span className="text-[10px] text-teal-600/80 dark:text-teal-400/80 font-medium">{selesaiDilaksanakanPct}% dari total</span>
           </div>
         </div>
       </div>

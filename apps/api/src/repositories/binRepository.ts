@@ -1,11 +1,5 @@
 import { prisma } from "../lib/prisma.js";
-/**
- * Project: TrashCare
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
+import { websocketService } from "../services/websocketService.js";
 import {
   Bin,
   SetoranOtomatis,
@@ -13,7 +7,6 @@ import {
   Notification,
   BinStatus,
 } from "@prisma/client";
-
 
 export class BinRepository {
   /**
@@ -323,6 +316,38 @@ export class BinRepository {
           }
         }
       }
+
+      // Broadcast real-time live event to monitoring dashboard
+      const isOrg = categoryName.toLowerCase().includes("organik");
+      const confVal = aiConfidence !== undefined && aiConfidence !== null ? Math.round(Number(aiConfidence)) : null;
+
+      tx.user
+        .findUnique({
+          where: { id: userId },
+          include: { rw: { include: { kelurahan: true } } },
+        })
+        .then((userData) => {
+          websocketService.broadcastDeposit({
+            id: setoranOtomatis.id,
+            warga: userData?.name || "Warga Coblong",
+            phone: userData?.phone || "-",
+            rw: userData?.rw?.name || "RW 01",
+            kelurahan: userData?.rw?.kelurahan?.name || "Coblong",
+            jenis: isOrg ? "Organik" : "Anorganik",
+            berat: weightKg,
+            poin: Math.round(pointsAwarded),
+            waktu: setoranOtomatis.createdAt,
+            status: setoranOtomatis.status || "ACCEPTED",
+            lokasi: `Tempat Sampah: ${binId}`,
+            confidence: confVal,
+            organikPercent: isOrg ? confVal || 100 : 100 - (confVal || 0),
+            anorganikPercent: isOrg ? 100 - (confVal || 100) : confVal || 100,
+            fotoUrl: evidencePhotoUrl || null,
+            fotoProfil: userData?.fotoProfil || null,
+            isManual: false,
+          });
+        })
+        .catch((e) => console.error("[BinRepository] ws broadcast error:", e));
 
       return { setoranOtomatis, points, notification };
     });

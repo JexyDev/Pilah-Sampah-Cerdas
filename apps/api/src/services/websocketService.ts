@@ -1,11 +1,4 @@
 import { prisma } from "../lib/prisma.js";
-/**
- * Project: TrashCare
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
- */
-
 import { WebSocketServer, WebSocket } from "ws";
 import { Server } from "http";
 import { verifyAccessToken } from "../utils/jwtUtils.js";
@@ -15,6 +8,7 @@ import { getDistanceMeters } from "../utils/haversineUtils.js";
 
 // Map to store connected clients by userId
 const clients = new Map<string, WebSocket>();
+const allSockets = new Set<WebSocket>();
 
 export const websocketService = {
   init: (server: Server) => {
@@ -27,6 +21,7 @@ export const websocketService = {
     });
 
     wss.on("connection", (ws: WebSocket) => {
+      allSockets.add(ws);
       let clientUserId: string | null = null;
 
       ws.on("message", async (messageStr: string) => {
@@ -68,6 +63,14 @@ export const websocketService = {
       });
 
       ws.on("close", () => {
+        allSockets.delete(ws);
+        if (clientUserId) {
+          clients.delete(clientUserId);
+        }
+      });
+
+      ws.on("error", () => {
+        allSockets.delete(ws);
         if (clientUserId) {
           clients.delete(clientUserId);
         }
@@ -126,14 +129,33 @@ export const websocketService = {
    */
   broadcastAuditLog: (logData: any) => {
     const message = JSON.stringify({
-      type: 'NEW_AUDIT_LOG',
+      type: "NEW_AUDIT_LOG",
       data: logData,
     });
 
-    clients.forEach((ws, userId) => {
-      // In a real scenario, you'd check if the user has the 'DEVELOPER' or 'ADMIN' role
+    allSockets.forEach((ws) => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(message);
+      }
+    });
+  },
+
+  /**
+   * Broadcast a newly created waste deposit to all monitoring dashboards
+   */
+  broadcastDeposit: (depositData: any) => {
+    const message = JSON.stringify({
+      type: "NEW_DEPOSIT",
+      data: depositData,
+    });
+
+    allSockets.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(message);
+        } catch (err) {
+          console.error("[WebSocketService] broadcastDeposit send error:", err);
+        }
       }
     });
   },
