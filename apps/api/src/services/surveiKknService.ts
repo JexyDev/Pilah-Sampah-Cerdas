@@ -645,7 +645,7 @@ export async function updateSurvey(
     const allowedKelurahans = kelompokDpl.map((k) => k.kelurahan).filter(Boolean);
 
     if (!allowedKelurahans.includes(existing.namaKelurahan)) {
-      throw new Error("UNAUTHORIZED_ACCESS_SCOPE");
+      throw new Error("FORBIDDEN_SCOPE");
     }
   }
 

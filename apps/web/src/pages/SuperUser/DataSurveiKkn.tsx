@@ -38,19 +38,12 @@ export default function DataSurveiKkn({ type: propType }: DataSurveiKknProps) {
     setIsLoading(true);
     try {
       if (isEndline) {
-        const response = await api.get(`/evaluasi-dampak/endline`);
-        if (response.data.success && Array.isArray(response.data.data)) {
-          let data = response.data.data;
-          if (search) {
-            data = data.filter((d: any) =>
-              (d.namaKelurahan || "").toLowerCase().includes(search.toLowerCase())
-            );
-          }
-          const total = data.length;
-          const totalPages = Math.ceil(total / limit) || 1;
-          const paginated = data.slice((page - 1) * limit, page * limit);
-          setSurveys(paginated);
-          setMeta({ page, limit, total, totalPages });
+        const response = await api.get(`/evaluasi-dampak/endline`, {
+          params: { page, limit, search },
+        });
+        if (response.data.success) {
+          setSurveys(response.data.data);
+          setMeta(response.data.meta);
         }
       } else {
         const response = await api.get(`/survei-kkn`, {

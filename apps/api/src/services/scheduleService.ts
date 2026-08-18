@@ -10,28 +10,52 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export const scheduleService = {
-  getAllSchedules: async (dplUserId?: string) => {
+  getAllSchedules: async (userId?: string, role?: string) => {
     try {
-      let kelompokIds: string[] | null = null;
-      if (dplUserId) {
+      let kelompokIds: string[] | null = null; // null means global (fetch all)
+      
+      const userRole = role?.toUpperCase() || "";
+
+      if (userRole === "MAHASISWA_KKN" && userId) {
+        // Mahasiswa only sees their own group + global schedules
+        const studentProfile = await prisma.studentProfile.findUnique({
+          where: { userId: userId },
+          select: { kelompokId: true }
+        });
+        kelompokIds = studentProfile?.kelompokId ? [studentProfile.kelompokId] : [];
+      } else if (["DPL", "DOSEN_PEMBIMBING"].includes(userRole) && userId) {
+        // DPL sees all their groups + global schedules
         const kelompokBinaan = await prisma.kelompokKkn.findMany({
           where: {
             OR: [
-              { dplId: dplUserId },
-              { dpl: { id: dplUserId } },
+              { dplId: userId },
+              { dpl: { id: userId } },
             ],
           },
           select: { id: true },
         });
         kelompokIds = kelompokBinaan.map((k) => k.id);
+      } else if (["SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "PEMIMPIN"].includes(userRole)) {
+        // Global viewers see everything
+        kelompokIds = null;
+      } else if (userId) {
+        // Other users (warga, rw, lurah) currently not specifically scoped for schedules,
+        // or they might only see global ones? By default, let's say they see nothing unless global.
+        kelompokIds = [];
       }
 
-      const whereClause: any =
-        kelompokIds !== null && kelompokIds.length > 0
-          ? {
-              OR: [{ kelompokId: { in: kelompokIds } }, { kelompokId: null }],
-            }
-          : {};
+      let whereClause: any = {};
+      
+      if (kelompokIds !== null) {
+        if (kelompokIds.length === 0) {
+          // If they have no groups, they can ONLY see global schedules (kelompokId = null)
+          whereClause = { kelompokId: null };
+        } else {
+          whereClause = {
+            OR: [{ kelompokId: { in: kelompokIds } }, { kelompokId: null }],
+          };
+        }
+      }
 
       return await prisma.schedule.findMany({
         where: whereClause,
@@ -43,16 +67,8 @@ export const scheduleService = {
         orderBy: { date: "asc" },
       });
     } catch (err: any) {
-      console.error("[scheduleService.getAllSchedules] Error querying schedules with relation:", err);
-      // Fallback query without include
-      try {
-        return await prisma.schedule.findMany({
-          orderBy: { date: "asc" },
-        });
-      } catch (fallbackErr) {
-        console.error("[scheduleService.getAllSchedules] Fallback error:", fallbackErr);
-        return [];
-      }
+      console.error("[scheduleService.getAllSchedules] Error querying schedules:", err);
+      throw err;
     }
   },
 

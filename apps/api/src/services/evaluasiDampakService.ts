@@ -71,22 +71,43 @@ export const evaluasiDampakService = {
   /**
    * Mengambil data endline (EndlineSurveiKelurahan) beserta relasi child.
    */
-  getEndlineData: async (userId: string, userRole: string) => {
-    const whereClause = await buildKelurahanScope(userId, userRole);
+  getEndlineData: async (userId: string, userRole: string, page: number = 1, limit: number = 10, search: string = "") => {
+    const baseWhereClause = await buildKelurahanScope(userId, userRole);
+    
+    // Add search condition
+    const whereClause = {
+      ...baseWhereClause,
+      ...(search ? { namaKelurahan: { contains: search, mode: 'insensitive' as const } } : {})
+    };
 
-    const data = await prisma.endlineSurveiKelurahan.findMany({
-      where: whereClause,
-      include: {
-        pemilahanSampah: true,
-        volumeSampah: true,
-        bankSampahPengolahan: true,
-        catatanKesimpulan: true,
-        validasiDpl: { select: { id: true, name: true } },
-      },
-      orderBy: { kelurahanId: "asc" },
-    });
+    const skip = (page - 1) * limit;
 
-    return data;
+    const [data, total] = await Promise.all([
+      prisma.endlineSurveiKelurahan.findMany({
+        where: whereClause,
+        include: {
+          pemilahanSampah: true,
+          volumeSampah: true,
+          bankSampahPengolahan: true,
+          catatanKesimpulan: true,
+          validasiDpl: { select: { id: true, name: true } },
+        },
+        orderBy: { kelurahanId: "asc" },
+        skip,
+        take: limit,
+      }),
+      prisma.endlineSurveiKelurahan.count({ where: whereClause })
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   },
 
   /**

@@ -62,8 +62,12 @@ export const evaluasiDampakController = {
    */
   getEndlineData: async (req: Request, res: Response): Promise<void> => {
     try {
-      const data = await evaluasiDampakService.getEndlineData(getUserId(req), getUserRole(req));
-      res.json({ success: true, data });
+      const page = parseInt(req.query.page as string, 10) || 1;
+      const limit = parseInt(req.query.limit as string, 10) || 10;
+      const search = (req.query.search as string) || "";
+
+      const result = await evaluasiDampakService.getEndlineData(getUserId(req), getUserRole(req), page, limit, search);
+      res.json({ success: true, ...result });
     } catch (error: any) {
       console.error("[evaluasiDampakController.getEndlineData] error:", error);
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });

@@ -11,10 +11,10 @@ import { scheduleService } from "../services/scheduleService.js";
 export const scheduleController = {
   getAllSchedules: async (req: Request, res: Response) => {
     try {
-      const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(String(req.user?.role || "").toUpperCase());
-      const dplUserId = isDpl ? (req.user?.userId || (req.user as any)?.id) : undefined;
+      const userRole = String(req.user?.role || "").toUpperCase();
+      const userId = req.user?.userId || (req.user as any)?.id;
 
-      const schedules = await scheduleService.getAllSchedules(dplUserId);
+      const schedules = await scheduleService.getAllSchedules(userId, userRole);
       res.status(200).json({
         success: true,
         data: schedules,
@@ -49,17 +49,33 @@ export const scheduleController = {
       }
 
       let resolvedKelompokId = kelompokId || undefined;
-      const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(
-        String(req.user?.role || "").toUpperCase()
-      );
-      if (isDpl && !resolvedKelompokId && req.user?.userId) {
-        const { PrismaClient } = await import("@prisma/client");
-        const prisma = new PrismaClient();
-        const dplGroup = await prisma.kelompokKkn.findFirst({
-          where: { OR: [{ dplId: req.user.userId }, { dpl: { id: req.user.userId } }] },
-        });
-        if (dplGroup) {
-          resolvedKelompokId = dplGroup.id;
+      const userRole = String(req.user?.role || "").toUpperCase();
+      const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
+      const isMahasiswa = userRole === "MAHASISWA_KKN";
+
+      if (req.user?.userId) {
+        if (isDpl && !resolvedKelompokId) {
+          const { PrismaClient } = await import("@prisma/client");
+          const prisma = new PrismaClient();
+          const dplGroup = await prisma.kelompokKkn.findFirst({
+            where: { OR: [{ dplId: req.user.userId }, { dpl: { id: req.user.userId } }] },
+          });
+          if (dplGroup) {
+            resolvedKelompokId = dplGroup.id;
+          }
+        } else if (isMahasiswa && !resolvedKelompokId) {
+          const { PrismaClient } = await import("@prisma/client");
+          const prisma = new PrismaClient();
+          const studentProfile = await prisma.studentProfile.findUnique({
+            where: { userId: req.user.userId },
+            select: { kelompokId: true }
+          });
+          if (studentProfile?.kelompokId) {
+            resolvedKelompokId = studentProfile.kelompokId;
+          } else {
+            res.status(403).json({ success: false, message: "Mahasiswa tidak memiliki kelompok KKN, tidak dapat membuat jadwal" });
+            return;
+          }
         }
       }
 
@@ -89,6 +105,40 @@ export const scheduleController = {
   deleteSchedule: async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
+      const userRole = String(req.user?.role || "").toUpperCase();
+      const userId = req.user?.userId || (req.user as any)?.id;
+
+      if (["MAHASISWA_KKN", "DPL", "DOSEN_PEMBIMBING"].includes(userRole)) {
+        const { PrismaClient } = await import("@prisma/client");
+        const prisma = new PrismaClient();
+        const schedule = await prisma.schedule.findUnique({ where: { id } });
+        if (!schedule) {
+          res.status(404).json({ success: false, message: "Jadwal tidak ditemukan" });
+          return;
+        }
+        if (!schedule.kelompokId) {
+          res.status(403).json({ success: false, message: "FORBIDDEN_SCOPE", error: "Tidak dapat menghapus jadwal acara bersama" });
+          return;
+        }
+        // Verify ownership
+        if (userRole === "MAHASISWA_KKN") {
+          const studentProfile = await prisma.studentProfile.findUnique({ where: { userId } });
+          if (schedule.kelompokId !== studentProfile?.kelompokId) {
+            res.status(403).json({ success: false, message: "FORBIDDEN_SCOPE" });
+            return;
+          }
+        } else {
+          const kelompokBinaan = await prisma.kelompokKkn.findMany({
+            where: { OR: [{ dplId: userId }, { dpl: { id: userId } }] },
+            select: { id: true },
+          });
+          if (!kelompokBinaan.some((k) => k.id === schedule.kelompokId)) {
+            res.status(403).json({ success: false, message: "FORBIDDEN_SCOPE" });
+            return;
+          }
+        }
+      }
+
       await scheduleService.deleteSchedule(id);
       res.status(200).json({
         success: true,
@@ -105,6 +155,41 @@ export const scheduleController = {
       const { id } = req.params;
       const { title, date, time, category, location, latitude, longitude, radius, polygon, kelompokId, isActive } =
         req.body;
+
+      const userRole = String(req.user?.role || "").toUpperCase();
+      const userId = req.user?.userId || (req.user as any)?.id;
+
+      if (["MAHASISWA_KKN", "DPL", "DOSEN_PEMBIMBING"].includes(userRole)) {
+        const { PrismaClient } = await import("@prisma/client");
+        const prisma = new PrismaClient();
+        const schedule = await prisma.schedule.findUnique({ where: { id } });
+        if (!schedule) {
+          res.status(404).json({ success: false, message: "Jadwal tidak ditemukan" });
+          return;
+        }
+        if (!schedule.kelompokId) {
+          res.status(403).json({ success: false, message: "FORBIDDEN_SCOPE", error: "Tidak dapat mengedit jadwal acara bersama" });
+          return;
+        }
+        // Verify ownership
+        if (userRole === "MAHASISWA_KKN") {
+          const studentProfile = await prisma.studentProfile.findUnique({ where: { userId } });
+          if (schedule.kelompokId !== studentProfile?.kelompokId) {
+            res.status(403).json({ success: false, message: "FORBIDDEN_SCOPE" });
+            return;
+          }
+        } else {
+          const kelompokBinaan = await prisma.kelompokKkn.findMany({
+            where: { OR: [{ dplId: userId }, { dpl: { id: userId } }] },
+            select: { id: true },
+          });
+          if (!kelompokBinaan.some((k) => k.id === schedule.kelompokId)) {
+            res.status(403).json({ success: false, message: "FORBIDDEN_SCOPE" });
+            return;
+          }
+        }
+      }
+
       let parsedDate;
       if (date) {
         parsedDate = new Date(date);
@@ -118,7 +203,7 @@ export const scheduleController = {
         }
       }
 
-      const schedule = await scheduleService.updateSchedule(id, {
+      const updatedSchedule = await scheduleService.updateSchedule(id, {
         title,
         date: parsedDate,
         time,
@@ -134,7 +219,7 @@ export const scheduleController = {
 
       res.status(200).json({
         success: true,
-        data: schedule,
+        data: updatedSchedule,
       });
     } catch (error) {
       console.error("[ScheduleController] updateSchedule error:", error);

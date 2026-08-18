@@ -82,7 +82,7 @@ export class KknController {
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[KknController] getWargaDetail error:", error);
-      const code = error.message === "UNAUTHORIZED_ACCESS_SCOPE" ? 403 : 500;
+      const code = error.message === "FORBIDDEN_SCOPE" ? 403 : 500;
       res.status(code).json({ success: false, message: error.message });
     }
   }

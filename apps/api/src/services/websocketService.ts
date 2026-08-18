@@ -121,4 +121,21 @@ export const websocketService = {
       }
     }
   },
+
+  /**
+   * Broadcast an audit log to connected developer clients
+   */
+  broadcastAuditLog: (logData: any) => {
+    const message = JSON.stringify({
+      type: 'NEW_AUDIT_LOG',
+      data: logData,
+    });
+
+    clients.forEach((ws, userId) => {
+      // In a real scenario, you'd check if the user has the 'DEVELOPER' or 'ADMIN' role
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(message);
+      }
+    });
+  },
 };

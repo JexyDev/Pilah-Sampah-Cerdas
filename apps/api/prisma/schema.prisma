@@ -728,15 +728,39 @@ model SystemConfig {
 }
 
 model AuditTrail {
-  id        String   @id @default(uuid())
-  action    String
-  userId    String?  @map("id_pengguna")
-  timestamp DateTime @default(now())
-  oldValue  Json?    @map("nilai_lama")
-  newValue  Json?    @map("nilai_baru")
-  user      User?    @relation(fields: [userId], references: [id])
+  id              String   @id @default(uuid())
+  action          String
+  userId          String?  @map("id_pengguna")
+  roleName        String?  @map("nama_peran")
+  featureCategory String?  @map("kategori_fitur")
+  endpoint        String?  @map("endpoint")
+  ipAddress       String?  @map("alamat_ip")
+  timestamp       DateTime @default(now())
+  oldValue        Json?    @map("nilai_lama")
+  newValue        Json?    @map("nilai_baru")
+  hash            String?  @map("hash")
+  previousHash    String?  @map("hash_sebelumnya")
+  user            User?    @relation(fields: [userId], references: [id])
 
   @@map("jejak_audit")
+}
+
+model AuditTrailArchive {
+  id              String   @id
+  action          String
+  userId          String?  @map("id_pengguna")
+  roleName        String?  @map("nama_peran")
+  featureCategory String?  @map("kategori_fitur")
+  endpoint        String?  @map("endpoint")
+  ipAddress       String?  @map("alamat_ip")
+  timestamp       DateTime
+  oldValue        Json?    @map("nilai_lama")
+  newValue        Json?    @map("nilai_baru")
+  hash            String?  @map("hash")
+  previousHash    String?  @map("hash_sebelumnya")
+  archivedAt      DateTime @default(now()) @map("diarsipkan_pada")
+
+  @@map("jejak_audit_arsip")
 }
 
 model SocialFeed {

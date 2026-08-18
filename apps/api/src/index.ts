@@ -49,6 +49,8 @@ import penilaianKknRouter from "./routes/penilaianKknRoutes.js";
 
 import { setupSwagger } from "./swagger.js";
 import { readOnlyGuard } from "./middlewares/readOnlyGuard.js";
+import { auditMiddleware } from "./middlewares/audit.middleware.js";
+import "./workers/audit.worker.js";
 
 dotenv.config();
 
@@ -82,6 +84,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(cookieParser());
 app.use(readOnlyGuard);
+app.use(auditMiddleware("Global"));
 
 // Create uploads folder if not exists
 fs.mkdirSync("uploads", { recursive: true });
@@ -178,7 +181,9 @@ websocketService.init(server);
 
 // Initialize Cron Scheduler Service
 import { cronService } from "./services/cronService.js";
+import { archiveAuditLogsCron } from "./cron/archive.cron.js";
 cronService.start();
+archiveAuditLogsCron.start();
 
 // Auto-migrate missing database columns on startup
 (async () => {

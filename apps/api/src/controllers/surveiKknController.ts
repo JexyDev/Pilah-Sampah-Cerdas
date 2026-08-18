@@ -298,12 +298,8 @@ export class SurveiKknController {
       });
     } catch (error: any) {
       console.error("[surveiKknController] updateSurvey error:", error);
-      if (error.message === "UNAUTHORIZED_ACCESS_SCOPE") {
-        res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Anda tidak memiliki akses untuk mengubah data kelurahan ini",
-        });
+      if (error.message === "FORBIDDEN_SCOPE") {
+        res.status(403).json({ success: false, message: "Akses ditolak: Survei ini bukan milik kelompok KKN Anda." });
         return;
       }
       if (error.message === "NOT_FOUND") {
