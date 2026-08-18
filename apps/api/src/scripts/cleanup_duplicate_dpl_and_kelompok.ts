@@ -1,11 +1,10 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Cleanup Script: De-duplicate DPL Users and Kelompok KKN in PostgreSQL
  * Ensures EXACTLY 32 Real DPL Users and EXACTLY 32 Real Kelompok KKN with standardized names exist.
  */
-import { PrismaClient } from "@prisma/client";
 import { REAL_32_DPL_STANDARDIZED } from "./sync_real_dpl.js";
 
-const prisma = new PrismaClient();
 
 async function cleanup() {
   console.log("=== START CLEANUP DUPLICATE DPL & KELOMPOK (STANDARDIZED) ===");

@@ -1,5 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma.js";
 import { convexHull, Point } from "../utils/geoUtils.js";
 
 export class PolygonService {

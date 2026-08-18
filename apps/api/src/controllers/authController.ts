@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -8,11 +9,9 @@
 import { Request, Response } from "express";
 import { z } from "zod";
 import { authService } from "../services/authService.js";
-import { PrismaClient } from "@prisma/client";
 import { clearLoginAttempts } from "../middlewares/rateLimiter.js";
 import { strongPasswordSchema } from "../utils/passwordValidator.js";
 
-const prisma = new PrismaClient();
 
 /**
  * Normalize phone: 08xxx → +628xxx, 628xxx → +628xxx

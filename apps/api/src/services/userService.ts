@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -9,9 +10,7 @@ import { userRepository } from "../repositories/userRepository.js";
 import { hashPassword } from "../utils/hashUtils.js";
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { getRandomDefaultAvatar } from "../utils/avatarUtils.js";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 function formatTitleCaseName(name?: string): string {
   if (!name) return "";

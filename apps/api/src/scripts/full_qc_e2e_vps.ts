@@ -1,10 +1,9 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Script Pengujian Kritis & Audit Kualitas End-to-End (QC E2E) VPS
  * Memeriksa seluruh 12 Role Pengguna, Relasi DPL & Mahasiswa, dan Master Data Wilayah & Tempat Sampah.
  */
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 async function runE2E_QC() {
   console.log("=========================================================");

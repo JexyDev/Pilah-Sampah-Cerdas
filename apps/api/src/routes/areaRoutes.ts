@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -8,11 +9,9 @@
  */
 
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
 import { binController } from "../controllers/binController.js";
 import { optionalAuthMiddleware } from "../middlewares/authMiddleware.js";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // ─────────────────────────────────────────────

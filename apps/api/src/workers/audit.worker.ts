@@ -1,9 +1,7 @@
 import { Worker, Job } from 'bullmq';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma.js';
 import crypto from 'crypto';
 import { websocketService } from '../services/websocketService.js';
-
-const prisma = new PrismaClient();
 
 // Configuration for Redis connection
 const connection = {
@@ -19,9 +17,9 @@ try {
     async (job: Job) => {
       const { action, userId, roleName, featureCategory, endpoint, ipAddress, oldValue, newValue } = job.data;
 
-      // Use a transaction to ensure we get the absolute latest hash and insert without race conditions
+      // Process audit hash and creation in transaction with ReadCommitted isolation
       await prisma.$transaction(async (tx) => {
-        // 1. Get the last audit log to get the previousHash
+        // 1. Get the last audit log to get the previousHash (using index on timestamp)
         const lastLog = await tx.auditTrail.findFirst({
           orderBy: { timestamp: 'desc' },
           select: { hash: true },
@@ -63,15 +61,14 @@ try {
         // 4. Broadcast the new log via WebSocket
         websocketService.broadcastAuditLog(newLog);
       }, {
-        // Set isolation level to Serializable to strictly prevent race conditions during hash calculation
-        isolationLevel: 'Serializable',
+        isolationLevel: 'ReadCommitted',
       });
     },
-    { connection, concurrency: 1 } // concurrency: 1 ensures logs are processed strictly sequentially
+    { connection, concurrency: 1 }
   );
 
   auditWorker.on('completed', (_job) => {
-    // Optional: Add debug logging if needed
+    // Audit log job completed
   });
 
   auditWorker.on('error', (err) => {

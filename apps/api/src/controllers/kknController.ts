@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -7,9 +8,7 @@
 
 import { Request, Response } from "express";
 import { kknService } from "../services/kknService.js";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 export class KknController {
   async validateQrMaster(req: Request, res: Response): Promise<void> {

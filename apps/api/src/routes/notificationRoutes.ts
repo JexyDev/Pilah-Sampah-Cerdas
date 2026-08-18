@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -6,11 +7,9 @@
  */
 
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Helper to map DB Notification to Frontend format
 const mapNotification = (n: any) => {

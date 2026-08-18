@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -7,11 +8,9 @@
 
 import { Request, Response } from "express";
 import { z } from "zod";
-import { PrismaClient } from "@prisma/client";
 import { binService } from "../services/binService.js";
 import { generateNextQrCode } from "../utils/qrGenerator.js";
 
-const prisma = new PrismaClient();
 
 const scanSchema = z.object({
   qrCode: z.string().min(1, "QR Code diperlukan"),

@@ -1,11 +1,10 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Script untuk menyelaraskan 32 Data Dosen Pembimbing Lapangan (DPL) Real
  * dengan NIP, Program Studi, dan nama kelompok baku sesuai dokumen resmi UNIKOM.
  */
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
 
 export const REAL_32_DPL_STANDARDIZED = [
   { no: 1, name: "Muhammad Aksan Ipaenin, S.T. M.Sc", phone: "+6285294754801", rawPhone: "085294754801", nip: "4127.99.90.268", prodi: "S1 Teknik Sipil", kelompok: "Kelompok 1 Lebak Gede", kelurahan: "Lebak Gede" },

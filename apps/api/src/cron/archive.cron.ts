@@ -1,7 +1,6 @@
+import { prisma } from "../lib/prisma.js";
 import cron from 'node-cron';
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
 
 // Run at 00:00 on the 1st of every month
 export const archiveAuditLogsCron = cron.schedule('0 0 1 * *', async () => {

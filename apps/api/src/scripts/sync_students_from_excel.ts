@@ -1,12 +1,11 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Script untuk Meringkas & Menyambungkan 500+ Mahasiswa ke 32 Kelompok KKN Baku
  * berdasarkan data komprehensif dari Excel raw_data_kkn_2026.xlsx.
  */
-import { PrismaClient } from "@prisma/client";
 import XLSX from "xlsx";
 import path from "path";
 
-const prisma = new PrismaClient();
 
 const EXCEL_PATHS = [
   path.resolve(process.cwd(), "raw_data_kkn_2026.xlsx"),

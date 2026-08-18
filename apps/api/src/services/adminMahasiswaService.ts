@@ -1,8 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../lib/prisma.js";
 import bcrypt from "bcryptjs";
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
 
-const prisma = new PrismaClient();
 
 export const adminMahasiswaService = {
   getAllMahasiswa: async (page = 1, limit = 10, search = "") => {

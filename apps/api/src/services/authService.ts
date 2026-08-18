@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -10,10 +11,8 @@ import { authRepository } from "../repositories/authRepository.js";
 import { comparePassword, hashPassword } from "../utils/hashUtils.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwtUtils.js";
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
-import { PrismaClient } from "@prisma/client";
 import crypto from "crypto";
 
-const prisma = new PrismaClient();
 
 export class AuthService {
   /**

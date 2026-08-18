@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -5,11 +6,9 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import { PrismaClient } from "@prisma/client";
 import { configService } from "./configService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 
-const prisma = new PrismaClient();
 
 export class ResiduService {
   async recordViolation(

@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -7,10 +8,8 @@
  * Setelah verifikasi: resetPassword (hash baru, simpan ke DB)
  */
 
-import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../utils/hashUtils.js";
 
-const prisma = new PrismaClient();
 
 /** ─── In-memory OTP store (fallback jika Redis offline) ─── */
 const memStore = new Map<string, { value: string; expiresAt: number }>();

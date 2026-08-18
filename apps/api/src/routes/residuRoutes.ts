@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -10,12 +11,10 @@ import { residuController } from "../controllers/residuController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 
-import { PrismaClient } from "@prisma/client";
 
 import { uploadResiduImage } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
-const prisma = new PrismaClient();
 
 const verifiedPetugasGuard = async (req: any, res: any, next: any) => {
   if (req.user?.role === "PETUGAS_RESIDU") {

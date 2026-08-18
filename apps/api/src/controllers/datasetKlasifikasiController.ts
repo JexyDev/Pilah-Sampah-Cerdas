@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -6,10 +7,8 @@
  */
 
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
 import { vpsHealthService } from "../services/vpsHealthService.js";
 
-const prisma = new PrismaClient();
 
 export class DatasetKlasifikasiController {
   /**

@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -6,9 +7,8 @@
 
 import { describe, it, expect, beforeAll } from "vitest";
 import { pengangkutanService } from "./pengangkutanService.js";
-import { PrismaClient, DispatchStatus } from "@prisma/client";
+import { DispatchStatus } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 describe("Pengangkutan Service CRUD Tests", () => {
   let bin: any;

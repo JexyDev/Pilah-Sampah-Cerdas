@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -17,9 +18,7 @@ declare global {
   }
 }
 
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 export const authMiddleware = async (
   req: Request,

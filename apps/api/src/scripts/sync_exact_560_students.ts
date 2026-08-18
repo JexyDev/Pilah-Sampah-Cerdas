@@ -1,13 +1,12 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Script Presisi Tinggi untuk Menyelaraskan TEPAT 560 Mahasiswa dari raw_new_data.xlsx
  * dengan 32 Kelompok KKN Standar "Kelompok [Nomor] [Kelurahan]".
  */
-import { PrismaClient } from "@prisma/client";
 import XLSX from "xlsx";
 import path from "path";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
 
 const EXCEL_PATHS = [
   path.resolve(process.cwd(), "docs/raw_new_data.xlsx"),

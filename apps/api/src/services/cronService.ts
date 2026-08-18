@@ -1,8 +1,6 @@
+import { prisma } from "../lib/prisma.js";
 import cron from "node-cron";
-import { PrismaClient } from "@prisma/client";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
-
-const prisma = new PrismaClient();
 
 export class CronService {
   public start() {
@@ -45,7 +43,37 @@ export class CronService {
       this.checkMahasiswaGeofence();
     });
 
-    console.log("[CronService] Escalation cron jobs started.");
+    // Cleanup expired tokens, OTPs, and stale logs daily at 02:00 AM
+    cron.schedule("0 2 * * *", () => {
+      this.cleanupStaleData();
+    });
+
+    console.log("[CronService] Escalation and optimization cron jobs started.");
+  }
+
+  public async cleanupStaleData() {
+    try {
+      const now = new Date();
+      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+      const deletedOtp = await prisma.otpCode.deleteMany({
+        where: {
+          OR: [
+            { expiresAt: { lt: now } },
+            { used: true, createdAt: { lt: oneHourAgo } },
+          ],
+        },
+      });
+
+      const deletedTokens = await prisma.refreshToken.deleteMany({
+        where: {
+          expiresAt: { lt: now },
+        },
+      });
+
+      console.log(`[CronService] Cleanup completed: ${deletedOtp.count} OTPs, ${deletedTokens.count} tokens purged.`);
+    } catch (e) {
+      console.error("[CronService] cleanupStaleData error:", e);
+    }
   }
 
   private async triggerScheduleNotifications(window: "MORNING" | "EVENING") {
@@ -139,7 +167,7 @@ export class CronService {
         });
 
         if (count === 0) {
-          const penaltyPercent = 15; // standard penalty
+          const penaltyPercent = 15;
           const newScore = Math.max(0, Number(petugas.kpiScore) - penaltyPercent);
 
           await prisma.petugasResidu.update({
@@ -164,12 +192,11 @@ export class CronService {
   private async checkEscalations(window: "MORNING" | "EVENING") {
     try {
       console.log(`[CronService] Checking escalations for ${window} window...`);
-      // Find bins that requested pickup (e.g., via DispatchTask) and are still PENDING
       const pendingTasks = await prisma.dispatchTask.findMany({
         where: {
           status: "PENDING",
           createdAt: {
-            lte: new Date(Date.now() - 1000 * 60 * 60 * 2), // Older than 2 hours to be considered missed for the window
+            lte: new Date(Date.now() - 1000 * 60 * 60 * 2),
           },
         },
         include: {
@@ -186,21 +213,14 @@ export class CronService {
       });
 
       for (const task of pendingTasks) {
-        // Escalate hierarchy: RW -> Lurah -> Camat -> Admin DLH
-        // 1. RW Notification
         await this.notifyHierarchy("RW", task.bin.rwId, task.bin.qrCode);
 
-        // 2. Lurah Notification
         if (task.bin.rw?.kelurahanId) {
           await this.notifyHierarchy("LURAH", task.bin.rw.kelurahanId, task.bin.qrCode);
         }
 
-        // 3. Camat Notification (removed since no kecamatan)
-
-        // 4. Admin DLH Notification (global)
         await this.notifyHierarchy("ADMIN_DLH", "GLOBAL", task.bin.qrCode);
 
-        // Mark task as escalated
         await prisma.dispatchTask.update({
           where: { id: task.id },
           data: { status: "ESCALATED" as any },
@@ -212,13 +232,10 @@ export class CronService {
     }
   }
 
-  private async notifyHierarchy(role: string, areaId: any, qrCode: string) {
-    // Find users with specific roles and area
+  private async notifyHierarchy(role: string, _areaId: any, qrCode: string) {
     const users = await prisma.user.findMany({
       where: {
-        role: role as any,
-        // Depending on schema, area associations could be mapped here.
-        // For simplicity, we just broadcast to users with this role in the area.
+        role: { name: role },
       },
     });
 
@@ -269,14 +286,14 @@ export class CronService {
           if (!hasSubmittedOnDay) {
             absenceStreak++;
             dayOffset++;
-            if (dayOffset > 30) break; // Limit check to 30 days
+            if (dayOffset > 30) break;
           } else {
             break;
           }
         }
 
         if (absenceStreak > 0) {
-          const penaltyAmount = absenceStreak; // day 1 is -1, day 2 is -2, etc.
+          const penaltyAmount = absenceStreak;
 
           const pointSumObj = await prisma.pointHistory.aggregate({
             where: { userId: warga.id },
@@ -299,7 +316,6 @@ export class CronService {
             );
           }
 
-          // Always send notification
           const title = "Penalti Absen Buang Sampah";
           const msg = `Anda belum menyetor sampah selama ${absenceStreak} hari berturut-turut. Poin Anda berkurang -${penaltyAmount} hari ini. Ayo segera setor dan pilah sampah Anda!`;
           await prisma.notification.create({
@@ -330,8 +346,6 @@ export class CronService {
       });
 
       const now = new Date();
-
-      // Define window start/end hours
       const startHour = window === "MORNING" ? 6 : 16;
       const endHour = window === "MORNING" ? 8 : 18;
 
@@ -360,7 +374,6 @@ export class CronService {
       const penaltyAmount = penaltyConfig ? Math.abs(Number(penaltyConfig.value)) : 5;
 
       for (const warga of wargaList) {
-        // Check if citizens have active bins first (if no active bins, do not penalize them yet!)
         const activeBinsCount = await prisma.bin.count({
           where: {
             OR: [{ userId: warga.id }, { binOwnerships: { some: { userId: warga.id } } }],
@@ -369,10 +382,9 @@ export class CronService {
         });
 
         if (activeBinsCount === 0) {
-          continue; // Warga does not have active bins yet
+          continue;
         }
 
-        // Check if warga submitted any waste log within this window today
         const hasSubmitted = await prisma.setoranOtomatis.findFirst({
           where: {
             wargaId: warga.id,
@@ -384,7 +396,6 @@ export class CronService {
         });
 
         if (!hasSubmitted) {
-          // Check current points total to not drop below zero
           const pointSumObj = await prisma.pointHistory.aggregate({
             where: { userId: warga.id },
             _sum: { points: true },
@@ -398,7 +409,7 @@ export class CronService {
                 userId: warga.id,
                 points: -deduction,
                 description: `Penalti melewatkan jadwal buang sampah ${window === "MORNING" ? "Pagi" : "Sore"}`,
-                kategori: "REDUKSI_TONASE", // standard category
+                kategori: "REDUKSI_TONASE",
               },
             });
             console.log(
@@ -406,7 +417,6 @@ export class CronService {
             );
           }
 
-          // Create notification
           await prisma.notification.create({
             data: {
               userId: warga.id,
@@ -452,7 +462,6 @@ export class CronService {
             `[CronService] Bin ${bin.qrCode} set to INACTIVE due to 30 days of inactivity.`
           );
         } else if (refDate >= thirtyDaysAgo && refDate < twentyNineDaysAgo) {
-          // Warning 24 jam sebelum kadaluarsa
           if (bin.userId) {
             await prisma.notification.create({
               data: {
@@ -475,7 +484,6 @@ export class CronService {
       console.log("[CronService] Running KKN geofence check...");
       const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
 
-      // Find all active attendances for MAHASISWA_KKN today
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
 
@@ -499,7 +507,6 @@ export class CronService {
         const centerLat = att.schedule.latitude ? Number(att.schedule.latitude) : -6.8915;
         const centerLng = att.schedule.longitude ? Number(att.schedule.longitude) : 107.6107;
 
-        // Get location logs for the last 2 hours
         const logs = await prisma.studentLocation.findMany({
           where: {
             studentId: att.studentId,

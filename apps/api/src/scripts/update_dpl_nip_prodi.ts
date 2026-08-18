@@ -1,10 +1,9 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Script Pembaruan NIP & Program Studi untuk 32 DPL Real UNIKOM
  * Berdasarkan dokumen resmi "DATA DOSEN PEMBIMBING LAPANGAN (DPL) KKN".
  */
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 const DPL_NIP_PRODI_DATA = [
   { phone: "+6285294754801", name: "Muhammad Aksan Ipaenin, S.T. M.Sc", nip: "4127.99.90.268", prodi: "S1 Teknik Sipil" },

@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Permission routes — RBAC dinamis
  * GET /api/v1/permissions → ambil semua permission per role (SUPER USER only)
@@ -6,11 +7,9 @@
  */
 
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // Cache permission per roleId (invalidate saat update)

@@ -1,3 +1,4 @@
+import { prisma } from "./lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -189,8 +190,7 @@ archiveAuditLogsCron.start();
 (async () => {
   try {
     const { PrismaClient } = await import("@prisma/client");
-    const prisma = new PrismaClient();
-
+    
     const alterStatements = [
       'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_rw" INTEGER;',
       'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_rt" INTEGER;',

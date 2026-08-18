@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -6,7 +7,6 @@
  */
 
 import {
-  PrismaClient,
   Bin,
   SetoranOtomatis,
   PointHistory,
@@ -14,7 +14,6 @@ import {
   BinStatus,
 } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 export class BinRepository {
   /**

@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -8,9 +9,7 @@
 import { Request, Response } from "express";
 import { z } from "zod";
 import { householdService } from "../services/householdService.js";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 // Validation Schema for Registration
 const registerSchema = z.object({

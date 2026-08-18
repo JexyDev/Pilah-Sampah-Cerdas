@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -6,9 +7,7 @@
  */
 
 import { Request, Response, NextFunction } from "express";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 /**
  * Middleware untuk mencegah Horizontal Privilege Escalation.

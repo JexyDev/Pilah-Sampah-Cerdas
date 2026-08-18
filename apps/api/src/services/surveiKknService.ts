@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -6,7 +7,6 @@
  */
 
 import * as XLSX from "xlsx";
-import { PrismaClient } from "@prisma/client";
 
 export enum ImportStatus {
   PENDING = "PENDING",
@@ -14,7 +14,6 @@ export enum ImportStatus {
   FAILED = "FAILED",
 }
 
-const prisma = new PrismaClient();
 
 /** Nama sheet wajib ada di workbook */
 const REQUIRED_SHEETS = [

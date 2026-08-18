@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -5,11 +6,9 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import { PrismaClient } from "@prisma/client";
 import { configService } from "./configService.js";
 import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
 
-const prisma = new PrismaClient();
 
 // Helper: Haversine Formula (meters)
 export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {

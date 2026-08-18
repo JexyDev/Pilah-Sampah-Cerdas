@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -578,8 +579,6 @@ router.get(
   kknAttendanceController.getActivityLocation
 );
 
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
 
 router.get(
   "/notifications",

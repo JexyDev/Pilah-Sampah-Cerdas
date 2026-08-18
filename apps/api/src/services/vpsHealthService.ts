@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -7,9 +8,7 @@
 
 import os from "os";
 import fs from "fs";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 export interface VpsHealthMetrics {
   timestamp: string;

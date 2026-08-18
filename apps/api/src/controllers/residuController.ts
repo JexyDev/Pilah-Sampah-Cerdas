@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -6,10 +7,8 @@
  */
 
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
 import { residuService } from "../services/residuService.js";
 
-const prisma = new PrismaClient();
 
 export class ResiduController {
   async getPendingLogs(req: Request, res: Response): Promise<void> {

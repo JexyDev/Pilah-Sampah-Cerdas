@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -5,10 +6,9 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import { PrismaClient, User, RefreshToken, Role } from "@prisma/client";
+import { User, RefreshToken, Role } from "@prisma/client";
 import { DatabaseUnavailableError } from "../utils/errors.js";
 
-const prisma = new PrismaClient();
 
 function isDatabaseConnectionError(error: any): boolean {
   const code = error?.code;

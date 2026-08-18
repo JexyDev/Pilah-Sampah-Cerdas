@@ -1,12 +1,12 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
 
-import { PrismaClient, DispatchStatus } from "@prisma/client";
+import { DispatchStatus } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 export class PengangkutanService {
   async getAll(filters?: { status?: string; rwId?: number }) {

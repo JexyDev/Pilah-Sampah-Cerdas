@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -9,10 +10,8 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { authService } from "./authService.js";
 import { systemService } from "./systemService.js";
 
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
 
 describe("E2E & Security Validation for All 8 Roles", () => {
   beforeAll(async () => {

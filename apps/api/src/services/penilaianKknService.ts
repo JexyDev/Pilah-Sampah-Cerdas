@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -7,9 +8,8 @@
  * 100% Real-time Database integration with automatic criteria detection & strict formula calculation.
  */
 
-import { PrismaClient, StatusPenilaianKkn } from "@prisma/client";
+import { StatusPenilaianKkn } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 // Helper to determine category from score
 export const calculateGradeCategory = (score: number): string => {

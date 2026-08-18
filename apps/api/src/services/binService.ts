@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -8,13 +9,11 @@
 import { v4 as uuidv4 } from "uuid";
 import { binRepository } from "../repositories/binRepository.js";
 import { getDistanceMeters } from "../utils/haversineUtils.js";
-import { PrismaClient } from "@prisma/client";
 import { configService } from "./configService.js";
 import { websocketService } from "./websocketService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { generateNextQrCode } from "../utils/qrGenerator.js";
 
-const prisma = new PrismaClient();
 
 // Density configurations (Kg per Liter)
 const DENSITY = {

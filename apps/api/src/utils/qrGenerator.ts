@@ -1,5 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma.js";
 
 export async function generateNextQrCode(categoryId: string): Promise<string> {
   const category = await prisma.wasteCategory.findUnique({

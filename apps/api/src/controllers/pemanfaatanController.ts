@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -5,10 +6,8 @@
  */
 
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
 import { pemanfaatanService } from "../services/pemanfaatanService.js";
 
-const prisma = new PrismaClient();
 
 export class PemanfaatanController {
   async create(req: Request, res: Response): Promise<void> {

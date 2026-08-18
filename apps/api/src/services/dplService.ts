@@ -1,7 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../lib/prisma.js";
 import { configService } from "./configService.js";
 
-const prisma = new PrismaClient();
 
 async function getEligiblePastSchedulesCount(groupId?: string): Promise<number> {
   try {

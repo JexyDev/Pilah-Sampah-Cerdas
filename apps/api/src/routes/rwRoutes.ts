@@ -1,9 +1,8 @@
+import { prisma } from "../lib/prisma.js";
 import { Router } from "express";
 import { rwService } from "../services/rwService.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 const router = Router();
 

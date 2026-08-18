@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -8,11 +9,9 @@
 import { WebSocketServer, WebSocket } from "ws";
 import { Server } from "http";
 import { verifyAccessToken } from "../utils/jwtUtils.js";
-import { PrismaClient } from "@prisma/client";
 import { configService } from "./configService.js";
 import { getDistanceMeters } from "../utils/haversineUtils.js";
 
-const prisma = new PrismaClient();
 
 // Map to store connected clients by userId
 const clients = new Map<string, WebSocket>();

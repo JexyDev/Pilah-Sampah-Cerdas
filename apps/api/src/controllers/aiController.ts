@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -9,9 +10,7 @@ import { Request, Response } from "express";
 import { aiService } from "../services/aiService.js";
 import { redisService } from "../services/redisService.js";
 import { WasteAiAdapterFactory } from "../infrastructure/ai/WasteAiAdapterFactory.js";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 export class AiController {
   /**

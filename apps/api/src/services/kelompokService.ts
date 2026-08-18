@@ -1,6 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../lib/prisma.js";
 
-const prisma = new PrismaClient();
 
 export const kelompokService = {
   getAllKelompok: async (page = 1, limit = 0, search = "", kelurahan = "", dplUserId = "") => {

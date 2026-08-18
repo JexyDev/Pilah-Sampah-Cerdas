@@ -1,13 +1,12 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Script Pembaruan Presisi Cakupan RW 32 Kelompok KKN & Format Nama Mahasiswa TitleCase
  * Presisi 100% Sesuai Data Excel docs/raw_new_data.xlsx.
  */
-import { PrismaClient } from "@prisma/client";
 import XLSX from "xlsx";
 import path from "path";
 import fs from "fs";
 
-const prisma = new PrismaClient();
 
 const EXCEL_PATHS = [
   path.resolve(process.cwd(), "docs/raw_new_data.xlsx"),

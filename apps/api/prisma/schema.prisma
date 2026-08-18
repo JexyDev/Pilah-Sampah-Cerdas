@@ -202,6 +202,9 @@ model User {
   penilaianKkn          PenilaianKknMahasiswa? @relation("StudentPenilaianKkn")
   penilaianKknDiberikan PenilaianKknMahasiswa[] @relation("DplPenilaianKkn")
 
+  @@index([roleId])
+  @@index([rwId])
+  @@index([rtId])
   @@map("pengguna")
 }
 
@@ -213,6 +216,8 @@ model RefreshToken {
   createdAt DateTime @default(now()) @map("dibuat_pada")
   user      User     @relation(fields: [userId], references: [id])
 
+  @@index([userId])
+  @@index([expiresAt])
   @@map("token_penyegar")
 }
 
@@ -224,6 +229,7 @@ model OtpCode {
   createdAt DateTime @default(now()) @map("dibuat_pada")
   used      Boolean  @default(false)
 
+  @@index([phone, used, expiresAt])
   @@map("kode_otp")
 }
 
@@ -340,6 +346,8 @@ model StudentKkn {
   user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   assignedRw        Rw?               @relation(fields: [assignedRwId], references: [id])
 
+  @@index([kelompokId])
+  @@index([assignedRwId])
   @@map("mahasiswa_kkn")
 }
 
@@ -359,6 +367,7 @@ model KelompokKkn {
   penilaianMahasiswa PenilaianKknMahasiswa[]
   facilities         Facility[]
 
+  @@index([dplId])
   @@map("kelompok_kkn")
 }
 
@@ -463,6 +472,8 @@ model ActivityAttendance {
   student    User      @relation("StudentAttendance", fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, scheduleId])
+  @@index([studentId, attendedAt(sort: Desc)])
+  @@index([scheduleId])
   @@map("kehadiran_kegiatan")
 }
 
@@ -583,6 +594,8 @@ model SetoranOtomatis {
   bin                Bin      @relation(fields: [qrTempatSampahId], references: [id], onDelete: Cascade)
   warga              User     @relation(fields: [wargaId], references: [id], onDelete: Cascade)
 
+  @@index([wargaId, createdAt(sort: Desc)])
+  @@index([qrTempatSampahId])
   @@map("setoran_otomatis")
 }
 
@@ -602,6 +615,7 @@ model SetoranManual {
   petugas         User     @relation("PetugasSetoranManual", fields: [petugasResiduId], references: [id], onDelete: Cascade)
   rw              Rw       @relation(fields: [rwId], references: [id], onDelete: Cascade)
 
+  @@index([petugasResiduId, createdAt(sort: Desc)])
   @@map("setoran_manual")
 }
 
@@ -746,6 +760,8 @@ model AuditTrail {
   previousHash    String?  @map("hash_sebelumnya")
   user            User?    @relation(fields: [userId], references: [id])
 
+  @@index([timestamp(sort: Desc)])
+  @@index([userId])
   @@map("jejak_audit")
 }
 
@@ -810,6 +826,7 @@ model Notification {
   createdAt DateTime @default(now()) @map("dibuat_pada")
   user      User     @relation(fields: [userId], references: [id])
 
+  @@index([userId, createdAt(sort: Desc)])
   @@map("notifikasi")
 }
 

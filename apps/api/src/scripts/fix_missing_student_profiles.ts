@@ -1,13 +1,12 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Script Perbaikan 100% Presisi untuk Mahasiswa Tanpa Profile StudentKkn
  * Menghubungkan Serena Indriani, Azzahra Fitri Ramadhanti Sutarso, dan seluruh Mahasiswa KKN.
  */
-import { PrismaClient } from "@prisma/client";
 import XLSX from "xlsx";
 import path from "path";
 import fs from "fs";
 
-const prisma = new PrismaClient();
 
 const EXCEL_PATHS = [
   path.resolve(process.cwd(), "docs/raw_new_data.xlsx"),

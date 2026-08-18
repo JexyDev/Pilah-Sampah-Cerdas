@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -6,9 +7,7 @@
  */
 
 import { householdRepository } from "../repositories/householdRepository.js";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 export class HouseholdService {
   /**

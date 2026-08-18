@@ -1,7 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../lib/prisma.js";
 import { notificationIntegrationService as notificationService } from "./notificationIntegrationService.js";
 
-const prisma = new PrismaClient();
 
 /**
  * Helper to retrieve all RtRwArea IDs under the same RW number and Kelurahan.

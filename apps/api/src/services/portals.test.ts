@@ -1,3 +1,4 @@
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -6,12 +7,10 @@
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
-import { PrismaClient } from "@prisma/client";
 import { kknService } from "./kknService.js";
 import { residuService } from "./residuService.js";
 import { authService } from "./authService.js";
 
-const prisma = new PrismaClient();
 
 describe("Portals A & B Service Integration Tests", () => {
   let kknUser: any;

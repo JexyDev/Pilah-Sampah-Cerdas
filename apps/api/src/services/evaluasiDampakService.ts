@@ -1,6 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../lib/prisma.js";
 
-const prisma = new PrismaClient();
 
 /**
  * Service layer untuk fitur Evaluasi Dampak KKN.
