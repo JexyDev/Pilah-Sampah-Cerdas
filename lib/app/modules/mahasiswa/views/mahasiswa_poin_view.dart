@@ -168,21 +168,26 @@ class MahasiswaPoinView extends ConsumerWidget {
     final user = ref.watch(authProvider).user;
     final userName = user?.name ?? '';
 
-    // Warga dampingan mahasiswa ini
+    // Warga dampingan mahasiswa ini (dari endpoint kknWargaDampingan)
     final myWargaList = mhsState.wargaList.where((w) {
-      if (w.role != 'WARGA') return false;
-      final isMyCitizen = w.pendampingName.trim().toLowerCase() == userName.trim().toLowerCase();
-      return isMyCitizen;
+      return w.role == 'WARGA' || w.role.isEmpty;
     }).toList();
 
     // Warga dampingan mahasiswa ini yang tempat sampahnya sudah aktif
     final wargaCount = myWargaList.where((w) => w.binId.isNotEmpty && w.binId != 'Belum Ada Tempat Sampah').length;
     final points = mhsState.dashboard?.contributionPoints ?? 0;
     
-    final riwayatState = ref.watch(riwayatKknControllerProvider);
+    final asyncHistory = ref.watch(pointHistoryProvider);
     int laporanCount = 0;
-    if (!riwayatState.isLoading && riwayatState.logs.isNotEmpty) {
-      laporanCount = riwayatState.logs.where((h) => h.title.toLowerCase().contains('pemanfaatan') || h.subtitle.toLowerCase().contains('pemanfaatan')).length;
+    
+    if (asyncHistory.hasValue && asyncHistory.value != null) {
+      for (final ph in asyncHistory.value!) {
+        final lowerTitle = ph.title.toLowerCase();
+        final lowerDesc = ph.description.toLowerCase();
+        if (lowerTitle.contains('pemanfaatan') || lowerDesc.contains('pemanfaatan')) {
+          laporanCount++;
+        }
+      }
     }
 
     final izinCount = ref.watch(pengajuanIzinCountProvider).value ?? 0;

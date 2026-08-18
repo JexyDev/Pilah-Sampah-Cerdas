@@ -394,22 +394,15 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
     final user = ref.watch(authProvider).user;
     final cleanUserRw = user?.rw.trim().replaceFirst(RegExp(r'^0+'), '') ?? '';
     
-    // Total Warga Dampingan Mahasiswa ini
+    // Total Warga Dampingan Mahasiswa ini (dari endpoint kknWargaDampingan)
     final myWargaList = state.wargaList.where((w) {
-      if (w.role != 'WARGA') return false;
-      
-      final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
-      
-      final isMyCitizen = w.pendampingName.trim().toLowerCase() == (user?.name ?? '').trim().toLowerCase();
-      final isMyRw = cleanUserRw.isEmpty || cleanWargaRw == cleanUserRw;
-
-      return isMyCitizen && isMyRw;
+      return w.role == 'WARGA' || w.role.isEmpty;
     }).toList();
 
     final totalWarga = myWargaList.length;
 
     // Aktivasi Tempat Sampah: Warga dampingan mahasiswa ini yang tempat sampahnya sudah aktif
-    final wargaAktif = myWargaList.where((w) => w.isActivated).length;
+    final wargaAktif = myWargaList.where((w) => w.isActivated || (w.binId.isNotEmpty && w.binId != 'Belum Ada Tempat Sampah')).length;
 
     return Row(
       children: [
