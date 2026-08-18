@@ -44,15 +44,30 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
 
     if (!_hasFetchedAktivasi) {
       _hasFetchedAktivasi = true;
-      final kelurahan = user?.kelurahan ?? '';
-      final rw = user?.rw ?? '';
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          ref.read(aktivasiWargaProvider.notifier).fetchWargaWithRegion(
-                kelurahan: kelurahan,
-                rw: rw,
-              );
+        if (!mounted) return;
+
+        // Ambil kelurahan & rw dari profil user
+        String kelurahan = user?.kelurahan ?? '';
+        String rw = user?.rw ?? '';
+
+        // Fallback: jika profil kosong, gunakan data kelompok KKN
+        // Ini terjadi pada akun bulk-insert yang tidak punya wilayah di profil
+        if (kelurahan.isEmpty) {
+          final kelompok = ref.read(kelompokKknProvider).kelompok;
+          if (kelompok != null) {
+            // poskoLocation diisi dari field kelurahan kelompok di backend
+            final loc = kelompok.poskoLocation;
+            if (loc.isNotEmpty && loc != '-') {
+              kelurahan = loc;
+            }
+          }
         }
+
+        ref.read(aktivasiWargaProvider.notifier).fetchWargaWithRegion(
+              kelurahan: kelurahan,
+              rw: rw,
+            );
       });
     }
   }
@@ -155,18 +170,27 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     final state = ref.watch(mahasiswaControllerProvider);
     final user = ref.watch(authProvider).user;
     final userKec = user?.kecamatan ?? '';
-    final userKel = user?.kelurahan ?? '';
-    final userRw = user?.rw ?? '';
+    final kelompokState = ref.watch(kelompokKknProvider);
+
+    // Ambil kelurahan & rw dari profil user. Jika kosong (akun bulk-insert),
+    // gunakan data kelompok KKN sebagai fallback.
+    String userKel = user?.kelurahan ?? '';
+    String userRw = user?.rw ?? '';
+    if (userKel.isEmpty) {
+      final loc = kelompokState.kelompok?.poskoLocation ?? '';
+      if (loc.isNotEmpty && loc != '-') userKel = loc;
+    }
 
     final isAktivasiBinMode = ModalRoute.of(context)?.settings.arguments == 'aktivasi_bin';
     
     // For ALL modes, we need to watch the aktivasi controller to get ALL warga matching the RW.
     final aktivasiState = ref.watch(aktivasiWargaProvider);
-    final kelompokState = ref.watch(kelompokKknProvider);
 
     // Fetch list of ALL warga from aktivasiState (which hits /kkn/warga-list)
     // regardless of whether we are in aktivasi_bin mode or monitoring mode.
     List<WargaDampingan> allWargaList = _getFilteredWargaAktivasi(aktivasiState.wargaList, userKec, userKel, userRw);
+
+
 
     // Remove duplicates
     final uniqueMap = <String, WargaDampingan>{};
@@ -422,67 +446,61 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                     ),
                                     if (warga.isActivated) ...[
                                       const SizedBox(height: 4),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: warga.pendampingName.isNotEmpty ? const Color(0xFFEBF5FF) : AppColors.primaryGreen.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: warga.pendampingName.isNotEmpty ? const Color(0xFF90CDF4) : AppColors.primaryGreen.withValues(alpha: 0.3)),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.verified_rounded, size: 12, color: warga.pendampingName.isNotEmpty ? AppColors.primaryBlueDark : AppColors.primaryGreen),
-                                            const SizedBox(width: 4),
-                                            Flexible(
-                                              child: Text(
-                                                warga.pendampingName.isNotEmpty
-                                                    ? 'Diaktivasi oleh: ${warga.pendampingName}'
-                                                    : 'Aktivasi Mandiri',
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: warga.pendampingName.isNotEmpty ? AppColors.primaryBlueDark : AppColors.primaryGreen,
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
+                                      Builder(builder: (_) {
+                                        String mName = warga.pendampingName;
+                                        if (mName.isEmpty && warga.mahasiswaId.isNotEmpty) {
+                                          final mem = kelompokState.kelompok?.members
+                                              .where((m) => m.userId == warga.mahasiswaId)
+                                              .firstOrNull;
+                                          if (mem != null) mName = mem.name;
+                                        }
+                                        return Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: mName.isNotEmpty
+                                                ? const Color(0xFFEBF5FF)
+                                                : AppColors.primaryGreen.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(
+                                              color: mName.isNotEmpty
+                                                  ? const Color(0xFF90CDF4)
+                                                  : AppColors.primaryGreen.withValues(alpha: 0.3),
                                             ),
-                                          ],
-                                        ),
-                                      ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.verified_rounded,
+                                                size: 12,
+                                                color: mName.isNotEmpty
+                                                    ? AppColors.primaryBlueDark
+                                                    : AppColors.primaryGreen,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Flexible(
+                                                child: Text(
+                                                  mName.isNotEmpty
+                                                      ? 'Diaktivasi oleh: $mName'
+                                                      : 'Aktivasi Mandiri',
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: mName.isNotEmpty
+                                                        ? AppColors.primaryBlueDark
+                                                        : AppColors.primaryGreen,
+                                                  ),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }),
                                     ],
                                   ],
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Builder(builder: (_) {
-                                String mName = warga.pendampingName;
-                                if (mName.isEmpty && warga.mahasiswaId.isNotEmpty) {
-                                  final mem = kelompokState.kelompok?.members.where((m) => m.userId == warga.mahasiswaId).firstOrNull;
-                                  if (mem != null) mName = mem.name;
-                                }
-                                return Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: warga.isActivated 
-                                      ? AppColors.primaryGreen.withValues(alpha: 0.1) 
-                                      : Colors.orange.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    !warga.isActivated 
-                                      ? 'Belum Aktivasi' 
-                                      : (warga.mahasiswaId.isNotEmpty 
-                                          ? 'Aktivasi oleh Mahasiswa${mName.isNotEmpty ? ' ($mName)' : ''}' 
-                                          : 'Aktivasi Mandiri'),
-                                    style: TextStyle(
-                                      color: warga.isActivated ? AppColors.primaryGreen : Colors.orange,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 10,
-                                    ),
-                                  ),
-                                );
-                              }),
                             ],
                           ),
                           const SizedBox(height: 6),
