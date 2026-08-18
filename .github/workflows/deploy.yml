@@ -98,27 +98,25 @@ jobs:
             $PM2_BIN status psc-backend
 
             echo "=== 4. Deploying Frontend Web to Nginx ==="
-            echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist /tmp/frontend-dist
-            echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/* /var/www/pilah-sampah-cerdas/frontend/dist/* /tmp/frontend-dist/*
-            echo "$VPS_PASS" | sudo -S chown -R $USER:$USER /tmp/frontend-dist
+            echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist
+            mkdir -p "$REPO_DIR/apps/web/dist"
 
             if [ -f /tmp/frontend-dist.tar.gz ] && tar -tzf /tmp/frontend-dist.tar.gz &>/dev/null; then
               echo "Extracting frontend archive from GitHub Actions..."
-              tar -xzf /tmp/frontend-dist.tar.gz -C /tmp/frontend-dist/
+              tar -xzf /tmp/frontend-dist.tar.gz -C "$REPO_DIR/apps/web/dist/"
               rm -f /tmp/frontend-dist.tar.gz
             else
               echo "Frontend archive corrupted or missing, building web frontend directly on VPS..."
               cd "$REPO_DIR"
               npm run install:web || (cd apps/web && npm install --legacy-peer-deps)
               npm run build:web
-              cp -r apps/web/dist/* /tmp/frontend-dist/
             fi
 
-            echo "$VPS_PASS" | sudo -S cp -r /tmp/frontend-dist/* /var/www/html/
-            echo "$VPS_PASS" | sudo -S cp -r /tmp/frontend-dist/* /var/www/pilah-sampah-cerdas/frontend/dist/
-            mkdir -p "$REPO_DIR/apps/web/dist" 2>/dev/null || true
-            cp -r /tmp/frontend-dist/* "$REPO_DIR/apps/web/dist/" 2>/dev/null || true
-            echo "$VPS_PASS" | sudo -S rm -rf /tmp/frontend-dist
+            test -f "$REPO_DIR/apps/web/dist/index.html" || { echo "Frontend build missing index.html"; exit 1; }
+
+            echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/* /var/www/pilah-sampah-cerdas/frontend/dist/*
+            echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/html/
+            echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/pilah-sampah-cerdas/frontend/dist/
 
             echo "=== 5. Fixing Permissions & Reloading Nginx ==="
             echo "$VPS_PASS" | sudo -S rm -f /etc/nginx/sites-enabled/pilah-sampah-cerdas 2>/dev/null || true
