@@ -1526,68 +1526,90 @@ export const DplDashboardPage: React.FC = () => {
 
             {alerts?.pendingRequests && alerts.pendingRequests.length > 0 ? (
               <div className="space-y-3">
-                {alerts.pendingRequests.map((req) => (
-                  <div
-                    key={req.id}
-                    className="p-4 border border-amber-200/80 bg-amber-50/40 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900 text-sm">{req.studentName}</span>
-                        <span
-                          className={`text-xs font-bold px-2 py-0.5 rounded ${req.type === "SAKIT" ? "bg-red-100 text-red-800" : "bg-purple-100 text-purple-800"
+                {alerts.pendingRequests.map((req) => {
+                  const hoursElapsed = (Date.now() - new Date(req.createdAt).getTime()) / (1000 * 60 * 60);
+                  const isOver24Hours = hoursElapsed >= 24;
+                  const canTakeover = ["PANITIA_TASKFORCE", "SUPER_USER", "DEVELOPER", "ADMIN_DLH"].includes(userRole);
+
+                  return (
+                    <div
+                      key={req.id}
+                      className={`p-4 border rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition ${
+                        isOver24Hours
+                          ? "border-rose-300 bg-rose-50/40 shadow-xs"
+                          : "border-amber-200/80 bg-amber-50/40"
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-slate-900 text-sm">{req.studentName}</span>
+                          <span
+                            className={`text-xs font-bold px-2 py-0.5 rounded ${
+                              req.type === "SAKIT" ? "bg-red-100 text-red-800" : "bg-purple-100 text-purple-800"
                             }`}
-                        >
-                          {req.type}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-600">
-                        <span className="font-semibold text-slate-700">Alasan / Catatan:</span> {req.reason}
-                      </p>
-                      <div className="flex items-center gap-2 flex-wrap pt-1">
-                        <p className="text-[11px] text-slate-500">
-                          Diajukan: <span className="font-medium text-slate-700">{new Date(req.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</span>
-                          {req.startDate && (
-                            <span className="ml-2 font-medium text-slate-600">
-                              (Periode: {new Date(req.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
-                              {req.endDate && req.endDate !== req.startDate ? ` - ${new Date(req.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}` : ""})
+                          >
+                            {req.type}
+                          </span>
+                          {isOver24Hours && (
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1">
+                              <Clock size={11} /> &gt;24 Jam (Siap Diambil Alih Panitia Taskforce / SU)
                             </span>
                           )}
+                        </div>
+                        <p className="text-xs text-slate-600">
+                          <span className="font-semibold text-slate-700">Alasan / Catatan:</span> {req.reason}
                         </p>
-                        {req.evidenceUrl && (
+                        <div className="flex items-center gap-2 flex-wrap pt-1">
+                          <p className="text-[11px] text-slate-500">
+                            Diajukan: <span className="font-medium text-slate-700">{new Date(req.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })} ({Math.floor(hoursElapsed)} jam lalu)</span>
+                            {req.startDate && (
+                              <span className="ml-2 font-medium text-slate-600">
+                                (Periode: {new Date(req.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                                {req.endDate && req.endDate !== req.startDate ? ` - ${new Date(req.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}` : ""})
+                              </span>
+                            )}
+                          </p>
+                          {req.evidenceUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewEvidence({ url: req.evidenceUrl!, title: `Surat Bukti ${req.type}: ${req.studentName}` })}
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-100/70 border border-emerald-300 px-2 py-0.5 rounded-md cursor-pointer transition"
+                            >
+                              <Eye size={12} /> Lihat Surat / Foto Bukti
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                        <button
+                          onClick={() => setRejectingRequestId(req.id)}
+                          className="px-3 py-1.5 bg-red-50 text-red-700 font-bold text-xs rounded-lg hover:bg-red-100 transition flex items-center gap-1 border border-red-200 cursor-pointer"
+                        >
+                          <XCircle size={14} /> {isOver24Hours && canTakeover ? "Ambil Alih & Tolak" : "Tolak"}
+                        </button>
+                        {!isOver24Hours && (
                           <button
-                            type="button"
-                            onClick={() => setPreviewEvidence({ url: req.evidenceUrl!, title: `Surat Bukti ${req.type}: ${req.studentName}` })}
-                            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-100/70 border border-emerald-300 px-2 py-0.5 rounded-md cursor-pointer transition"
+                            onClick={() => setEscalatingRequestId(req.id)}
+                            className="px-3 py-1.5 bg-amber-50 text-amber-800 font-bold text-xs rounded-lg hover:bg-amber-100 transition flex items-center gap-1 border border-amber-200 cursor-pointer"
                           >
-                            <Eye size={12} /> Lihat Surat / Foto Bukti
+                            <AlertTriangle size={14} /> Eskalasi Taskforce
                           </button>
                         )}
+                        <button
+                          onClick={() => handleDecideLeave(req.id, "APPROVED")}
+                          className={`px-3.5 py-1.5 font-bold text-xs rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer ${
+                            isOver24Hours && canTakeover
+                              ? "bg-rose-600 hover:bg-rose-700 text-white"
+                              : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                          }`}
+                        >
+                          <CheckCircle size={14} /> {isOver24Hours && canTakeover ? "Ambil Alih & Setujui" : "Setujui"}
+                        </button>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                      <button
-                        onClick={() => setRejectingRequestId(req.id)}
-                        className="px-3 py-1.5 bg-red-50 text-red-700 font-bold text-xs rounded-lg hover:bg-red-100 transition flex items-center gap-1 border border-red-200 cursor-pointer"
-                      >
-                        <XCircle size={14} /> Tolak
-                      </button>
-                      <button
-                        onClick={() => setEscalatingRequestId(req.id)}
-                        className="px-3 py-1.5 bg-amber-50 text-amber-800 font-bold text-xs rounded-lg hover:bg-amber-100 transition flex items-center gap-1 border border-amber-200 cursor-pointer"
-                      >
-                        <AlertTriangle size={14} /> Eskalasi Taskforce
-                      </button>
-                      <button
-                        onClick={() => handleDecideLeave(req.id, "APPROVED")}
-                        className="px-3.5 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-lg hover:bg-emerald-700 transition flex items-center gap-1 shadow-xs cursor-pointer"
-                      >
-                        <CheckCircle size={14} /> Setujui
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-xs text-slate-500 italic p-4 text-center bg-slate-50 rounded-xl border border-slate-100">
