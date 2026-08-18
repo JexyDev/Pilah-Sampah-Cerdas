@@ -529,20 +529,42 @@ class _PoinHistoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isAktivasi = item.description.toLowerCase().contains('aktivasi');
-    final bool isPunishment = item.points < 0 || item.description.toLowerCase().contains('penalti') || item.description.toLowerCase().contains('punishment');
-    final bool isSetorSampah = !isPunishment && !isAktivasi && !item.description.toLowerCase().contains('redeem') && !item.description.toLowerCase().contains('tukar');
+    final String descLower = item.description.toLowerCase();
+    
+    // Cek tipe transaksi berdasarkan deskripsi
+    bool isAktivasi = descLower.contains('aktivasi') || descLower.contains('activation');
+    bool isPunishment = item.points < 0 || descLower.contains('penalti') || descLower.contains('punishment');
+    bool isRedeem = descLower.contains('redeem') || descLower.contains('tukar');
+    bool isPresensi = descLower.contains('presensi') || descLower.contains('geofence');
+    
+    // Fallback: Jika deskripsi kosong atau tidak jelas, tapi poinnya tepat 10 (dan bukan penalti), 
+    // asumsikan ini adalah Aktivasi Tempat Sampah (sesuai role Warga/Mahasiswa).
+    if (!isAktivasi && !isPunishment && !isRedeem && !isPresensi) {
+      if (item.points == 10 && !descLower.contains('setor') && !descLower.contains('sampah')) {
+        isAktivasi = true;
+      }
+    }
+
+    final bool isSetorSampah = !isPunishment && !isAktivasi && !isRedeem && !isPresensi;
     final bool isOrganic = item.wasteType == WasteType.organic;
+    
     final Color color = isPunishment
         ? AppColors.dangerRed
-        : (isOrganic ? AppColors.organicColor : AppColors.nonOrganicColor);
-    final IconData iconData = isPunishment ? Icons.warning_rounded : Icons.delete_rounded;
+        : (isAktivasi || isPresensi ? Colors.blue : (isOrganic ? AppColors.organicColor : AppColors.nonOrganicColor));
+        
+    final IconData iconData = isPunishment 
+        ? Icons.warning_rounded 
+        : (isAktivasi ? Icons.qr_code_scanner_rounded : (isPresensi ? Icons.location_on_rounded : Icons.delete_rounded));
 
     String title = isOrganic ? 'Setor Sampah Organik' : 'Setor Sampah Anorganik';
     if (isAktivasi) {
       title = 'Aktivasi Tempat Sampah Berhasil';
     } else if (isPunishment) {
-      title = 'Punishment Pengurangan Poin';
+      title = 'Penalti Pengurangan Poin';
+    } else if (isPresensi) {
+      title = 'Presensi Berhasil';
+    } else if (isRedeem) {
+      title = 'Penukaran Poin';
     }
 
     return Container(
