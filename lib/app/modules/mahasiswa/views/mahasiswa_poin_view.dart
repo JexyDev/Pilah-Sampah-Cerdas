@@ -190,7 +190,7 @@ class MahasiswaPoinView extends ConsumerWidget {
         final lowerDesc = ph.description.toLowerCase();
         if (lowerDesc.contains('pemanfaatan')) {
           laporanCount++;
-        } else if (lowerDesc.contains('aktivasi tempat sampah')) {
+        } else if (lowerDesc.contains('aktivasi')) {
           wargaCount++;
         }
       }

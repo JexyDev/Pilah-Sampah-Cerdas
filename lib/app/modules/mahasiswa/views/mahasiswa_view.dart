@@ -419,7 +419,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
     if (asyncHistory.hasValue && asyncHistory.value != null) {
       for (final ph in asyncHistory.value!) {
         final lowerTitle = ph.description.toLowerCase();
-        if (lowerTitle.contains('aktivasi tempat sampah')) {
+        if (lowerTitle.contains('aktivasi')) {
           wargaAktif++;
         }
       }
