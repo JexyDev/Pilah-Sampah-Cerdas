@@ -61,14 +61,30 @@ export class AuthService {
       if (found) matchedKelurahan = found;
     }
 
+    let kelompokRwName = "";
+    const cRw = anyUser.studentProfile?.kelompok?.cakupanRw;
+    if (cRw) {
+      if (Array.isArray(cRw)) {
+        kelompokRwName = cRw.map((r: any) => String(r).replace(/^RW\s*/i, "").trim()).join(", ");
+      } else if (typeof cRw === "string" || typeof cRw === "number") {
+        kelompokRwName = String(cRw).replace(/^RW\s*/i, "").trim();
+      }
+    }
+
     let kelurahanName =
       anyUser.rw?.kelurahan?.name ||
       anyUser.studentProfile?.assignedRw?.kelurahan?.name ||
       anyUser.studentProfile?.kelompok?.kelurahan ||
+      anyUser.households?.[0]?.rw?.kelurahan?.name ||
       matchedKelurahan ||
       "";
 
-    let rwName = anyUser.rw?.name || anyUser.studentProfile?.assignedRw?.name || "";
+    let rwName =
+      anyUser.rw?.name ||
+      anyUser.studentProfile?.assignedRw?.name ||
+      kelompokRwName ||
+      anyUser.households?.[0]?.rw?.name ||
+      "";
     let dplAssignment = "";
 
     let dplGroupsList: any[] = [];
@@ -357,15 +373,31 @@ export class AuthService {
       if (found) matchedKelurahan = found;
     }
 
+    let kelompokRwName = "";
+    const cRw = user.studentProfile?.kelompok?.cakupanRw;
+    if (cRw) {
+      if (Array.isArray(cRw)) {
+        kelompokRwName = cRw.map((r: any) => String(r).replace(/^RW\s*/i, "").trim()).join(", ");
+      } else if (typeof cRw === "string" || typeof cRw === "number") {
+        kelompokRwName = String(cRw).replace(/^RW\s*/i, "").trim();
+      }
+    }
+
     let kelurahanName =
       (isDpl && dplKelurahanNames.length > 0 ? dplKelurahanNames.join(", ") : "") ||
       user.rw?.kelurahan?.name ||
       user.studentProfile?.assignedRw?.kelurahan?.name ||
       user.studentProfile?.kelompok?.kelurahan ||
+      user.households?.[0]?.rw?.kelurahan?.name ||
       matchedKelurahan ||
       "";
 
-    let rwName = user.rw?.name || user.studentProfile?.assignedRw?.name || "";
+    let rwName =
+      user.rw?.name ||
+      user.studentProfile?.assignedRw?.name ||
+      kelompokRwName ||
+      user.households?.[0]?.rw?.name ||
+      "";
     if (roleName === "LURAH") {
       rwName = "Seluruh RW";
     } else if (roleName === "CAMAT") {
