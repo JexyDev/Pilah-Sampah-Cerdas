@@ -1844,7 +1844,7 @@ export class KknService {
     // Fetch target duration dynamically from Rule Engine as the single source of truth!
     const ruleConfigs = await configService.getRuleEngineConfigs();
     const ruleTargetMinutes = (ruleConfigs.attendanceMinDurationHours * 60) + ruleConfigs.attendanceMinDurationMinutes + (ruleConfigs.attendanceMinDurationSeconds / 60);
-    const targetDurationMinutes = ruleTargetMinutes > 0 ? ruleTargetMinutes : 120;
+    const targetDurationMinutes = ruleTargetMinutes > 0 ? ruleTargetMinutes : 2;
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -2029,7 +2029,7 @@ export class KknService {
         }
       }
     }
-    const finalTargetDurationMinutes = scheduleDurationMinutes > 0 ? scheduleDurationMinutes : targetDurationMinutes;
+    const finalTargetDurationMinutes = targetDurationMinutes;
 
     // Jika ada jadwal kegiatan spesifik untuk kelompoknya, gunakan data & koordinat jadwal tersebut!
     if (activeSchedule) {

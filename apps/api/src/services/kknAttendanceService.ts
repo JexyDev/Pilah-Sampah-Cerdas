@@ -202,7 +202,7 @@ export class KknAttendanceService {
 
     const ruleConfigs = await configService.getRuleEngineConfigs();
     const ruleTargetMinutes = (ruleConfigs.attendanceMinDurationHours * 60) + ruleConfigs.attendanceMinDurationMinutes + (ruleConfigs.attendanceMinDurationSeconds / 60);
-    const targetDurationMinutes = scheduleDurationMinutes > 0 ? scheduleDurationMinutes : (ruleTargetMinutes > 0 ? ruleTargetMinutes : 120);
+    const targetDurationMinutes = ruleTargetMinutes > 0 ? ruleTargetMinutes : 2;
 
     let isAttended = false;
     let attendanceStatus: string | null = null;
