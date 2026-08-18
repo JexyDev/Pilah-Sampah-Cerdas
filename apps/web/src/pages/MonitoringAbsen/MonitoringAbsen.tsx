@@ -491,9 +491,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   // Dynamic Targets & Ketentuan Waktu (Managed by Super User / Taskforce / Developer)
   const [configTargets, setConfigTargets] = useState<ConfigTargets>({
     targetTotalKegiatan: 2000,
-    targetTotalJam: 200,
-    targetHarianJam: 4,
+    targetTotalJam: 100,
+    targetHarianJam: 2,
     targetHarianKegiatan: 5,
+    attendanceMinDurationHours: 2,
+    attendanceMinDurationMinutes: 0,
+    attendanceMinDurationSeconds: 0,
     hariKerja: "Senin – Jumat",
     jamKerja: "08.00 – 16.00",
     targetPekan: 10,
@@ -502,9 +505,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [configFormData, setConfigFormData] = useState<ConfigTargets>({
     targetTotalKegiatan: 2000,
-    targetTotalJam: 200,
-    targetHarianJam: 4,
+    targetTotalJam: 100,
+    targetHarianJam: 2,
     targetHarianKegiatan: 5,
+    attendanceMinDurationHours: 2,
+    attendanceMinDurationMinutes: 0,
+    attendanceMinDurationSeconds: 0,
     hariKerja: "Senin – Jumat",
     jamKerja: "08.00 – 16.00",
     targetPekan: 10,
@@ -1226,9 +1232,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     setGeofenceMode("CIRCLE");
     setStartDate(today);
     setEndDate(today);
-    const targetHours = Math.round(Number(configTargets.targetHarianJam) || 2);
-    const endHourNum = 8 + (targetHours > 0 ? targetHours : 2);
-    const endHourStr = endHourNum < 10 ? `0${endHourNum}:00` : `${endHourNum}:00`;
+    const targetHours = Number(configTargets.targetHarianJam) || 2;
+    const totalMinutes = Math.round(targetHours * 60);
+    const endTotalMinutes = (8 * 60) + totalMinutes;
+    const endHourNum = Math.floor(endTotalMinutes / 60);
+    const endMinNum = endTotalMinutes % 60;
+    const endHourStr = `${endHourNum < 10 ? `0${endHourNum}` : endHourNum}:${endMinNum < 10 ? `0${endMinNum}` : endMinNum}`;
     setStartTime("08:00");
     setEndTime(endHourStr);
     setIsCustomCategory(false);
@@ -1751,7 +1760,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   <Hourglass size={14} className="text-emerald-600" />
                   Minimal Durasi / Hari
                 </span>
-                <span className="font-extrabold text-slate-900 dark:text-slate-100">{scheduleTargetHours || configTargets.targetHarianJam || 4} Jam</span>
+                <span className="font-extrabold text-slate-900 dark:text-slate-100">{scheduleTargetHours || configTargets.targetHarianJam || 2} Jam</span>
               </div>
             </div>
           </div>
@@ -2814,7 +2823,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         <span>Durasi Minimal Presensi:</span>
                       </span>
                       <span className="font-extrabold text-emerald-950 bg-emerald-100/90 px-2.5 py-1 rounded-lg border border-emerald-300 text-[11px]">
-                        {scheduleTargetHours || Math.round(Number(configTargets.targetHarianJam) || 4)} Jam (Terpusat Rule Engine)
+                        {(configTargets.attendanceMinDurationHours !== undefined) ? `${configTargets.attendanceMinDurationHours} Jam ${configTargets.attendanceMinDurationMinutes} Menit` : `${configTargets.targetHarianJam || 2} Jam`} (Terpusat Rule Engine)
                       </span>
                     </div>
                   </div>
@@ -3171,7 +3180,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     min={1}
                     max={24}
                     required
-                    value={configFormData.targetHarianJam || 4}
+                    value={configFormData.targetHarianJam || 2}
                     onChange={(e) => {
                       const harian = Number(e.target.value) || 0;
                       setConfigFormData({
@@ -3217,7 +3226,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       setConfigFormData({
                         ...configFormData,
                         targetTotalHari: hari,
-                        targetTotalJam: hari * (configFormData.targetHarianJam || 4),
+                        targetTotalJam: hari * (configFormData.targetHarianJam || 2),
                       });
                     }}
                     className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
@@ -3231,7 +3240,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     Total Jam Kegiatan (Target Kumulatif KKN = Total Hari × Jam/Hari)
                   </label>
                   <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    {(configFormData.targetTotalHari || 50)} Hari × {(configFormData.targetHarianJam || 4)} Jam = {(configFormData.targetTotalJam || 200)} Jam
+                    {(configFormData.targetTotalHari || 50)} Hari × {(configFormData.targetHarianJam || 2)} Jam = {(configFormData.targetTotalJam || 100)} Jam
                   </span>
                 </div>
                 <input

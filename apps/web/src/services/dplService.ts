@@ -177,6 +177,9 @@ export interface ConfigTargets {
   targetTotalJam: number;
   targetHarianJam: number;
   targetHarianKegiatan: number;
+  attendanceMinDurationHours?: number;
+  attendanceMinDurationMinutes?: number;
+  attendanceMinDurationSeconds?: number;
   hariKerja?: string;
   jamKerja?: string;
   targetPekan?: number;
@@ -352,8 +355,11 @@ export const dplService = {
     return {
       targetTotalKegiatan: 2000,
       targetTotalJam: 100,
-      targetHarianJam: 4,
+      targetHarianJam: 2,
       targetHarianKegiatan: 5,
+      attendanceMinDurationHours: 2,
+      attendanceMinDurationMinutes: 0,
+      attendanceMinDurationSeconds: 0,
     };
   },
 

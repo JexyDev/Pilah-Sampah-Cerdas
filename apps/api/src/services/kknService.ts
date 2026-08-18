@@ -1843,7 +1843,7 @@ export class KknService {
 
     // Fetch target duration dynamically from Rule Engine as the single source of truth!
     const ruleConfigs = await configService.getRuleEngineConfigs();
-    const ruleTargetMinutes = (ruleConfigs.attendanceMinDurationHours * 60) + ruleConfigs.attendanceMinDurationMinutes;
+    const ruleTargetMinutes = (ruleConfigs.attendanceMinDurationHours * 60) + ruleConfigs.attendanceMinDurationMinutes + (ruleConfigs.attendanceMinDurationSeconds / 60);
     const targetDurationMinutes = ruleTargetMinutes > 0 ? ruleTargetMinutes : 120;
 
     const todayStart = new Date();
