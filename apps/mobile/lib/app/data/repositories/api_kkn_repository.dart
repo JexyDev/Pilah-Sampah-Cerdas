@@ -397,6 +397,34 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
+  Future<bool> registerPoskoKkn(RegisterPoskoRequest request) async {
+    dynamic payload;
+    if (request.fotoPath != null && request.fotoPath!.isNotEmpty) {
+      payload = FormData.fromMap({
+        ...request.toJson(),
+        'foto': await MultipartFile.fromFile(request.fotoPath!),
+      });
+    } else {
+      payload = request.toJson();
+    }
+
+    final response = await apiClient.dio.post(
+      ApiEndpoints.kknPoskoRegister,
+      data: payload,
+    );
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  @override
+  Future<bool> bantuInputFasilitas(BantuFasilitasRequest request) async {
+    final response = await apiClient.dio.post(
+      ApiEndpoints.kknBantuFasilitas,
+      data: request.toJson(),
+    );
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  @override
   Future<DampakKelurahanData> getDampakKelurahan() async {
     try {
       dynamic response;

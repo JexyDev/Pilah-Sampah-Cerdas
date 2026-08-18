@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/values/app_colors.dart';
 import '../controllers/kelompok_kkn_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -186,6 +189,128 @@ class KelompokKknView extends ConsumerWidget {
                             ),
                           ],
                         ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Card Posko KKN Kelompok & Status Verifikasi
+                Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: Container(
+                    padding: const EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: kelompokData.poskoStatus == 'APPROVED'
+                            ? AppColors.primaryGreen.withValues(alpha: 0.4)
+                            : (kelompokData.poskoStatus == 'PENDING'
+                                ? Colors.orange.withValues(alpha: 0.4)
+                                : Colors.grey.withValues(alpha: 0.3)),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: kelompokData.poskoStatus == 'APPROVED'
+                                        ? AppColors.primaryGreen.withValues(alpha: 0.1)
+                                        : (kelompokData.poskoStatus == 'PENDING'
+                                            ? Colors.orange.withValues(alpha: 0.1)
+                                            : Colors.grey.withValues(alpha: 0.1)),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.place_rounded,
+                                    color: kelompokData.poskoStatus == 'APPROVED'
+                                        ? AppColors.primaryGreen
+                                        : (kelompokData.poskoStatus == 'PENDING' ? Colors.orange : Colors.grey),
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                const Text(
+                                  'Titik Posko KKN',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: kelompokData.poskoStatus == 'APPROVED'
+                                    ? AppColors.primaryGreen.withValues(alpha: 0.15)
+                                    : (kelompokData.poskoStatus == 'PENDING'
+                                        ? Colors.orange.withValues(alpha: 0.15)
+                                        : Colors.grey.withValues(alpha: 0.15)),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                kelompokData.poskoStatus == 'APPROVED'
+                                    ? 'TERVERIFIKASI AKTIF'
+                                    : (kelompokData.poskoStatus == 'PENDING' ? 'MENUNGGU VERIFIKASI RW' : 'BELUM DIDAFTARKAN'),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: kelompokData.poskoStatus == 'APPROVED'
+                                      ? AppColors.primaryGreen
+                                      : (kelompokData.poskoStatus == 'PENDING' ? Colors.orange.shade800 : Colors.grey.shade700),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          kelompokData.poskoLocation,
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Alamat: ${kelompokData.poskoAlamat}',
+                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.gps_fixed_rounded, size: 13, color: Colors.black45),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Koordinat: ${kelompokData.latitude.toStringAsFixed(6)}, ${kelompokData.longitude.toStringAsFixed(6)}',
+                              style: const TextStyle(fontSize: 11, color: Colors.black54, fontFamily: 'monospace'),
+                            ),
+                          ],
+                        ),
+                        if (kelompokData.isUserLeader ||
+                            (user != null && membersToDisplay.any((m) => m.isLeader && m.name.toLowerCase().trim() == user.name.toLowerCase().trim()))) ...[
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () => _showRegisterPoskoDialog(context, ref, kelompokData),
+                              icon: const Icon(Icons.edit_location_alt_rounded, size: 18, color: Colors.white),
+                              label: Text(
+                                kelompokData.poskoStatus == 'UNREGISTERED'
+                                    ? 'Daftarkan Lokasi Posko (GPS HP)'
+                                    : 'Perbarui Lokasi Posko KKN',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryGreen,
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -396,6 +521,276 @@ class KelompokKknView extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void _showRegisterPoskoDialog(BuildContext context, WidgetRef ref, KelompokKknData kelompokData) {
+    final namaCtrl = TextEditingController(text: kelompokData.groupName.isNotEmpty ? 'Posko KKN ${kelompokData.groupName}' : 'Posko KKN');
+    final alamatCtrl = TextEditingController(text: kelompokData.poskoAlamat != '-' ? kelompokData.poskoAlamat : '');
+    double currentLat = kelompokData.latitude;
+    double currentLng = kelompokData.longitude;
+    File? selectedFoto;
+    bool isFetchingGps = false;
+    bool isSubmitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            Future<void> fetchLocation() async {
+              setModalState(() => isFetchingGps = true);
+              try {
+                LocationPermission permission = await Geolocator.checkPermission();
+                if (permission == LocationPermission.denied) {
+                  permission = await Geolocator.requestPermission();
+                }
+                if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
+                  final pos = await Geolocator.getCurrentPosition(
+                    locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+                  );
+                  setModalState(() {
+                    currentLat = pos.latitude;
+                    currentLng = pos.longitude;
+                    isFetchingGps = false;
+                  });
+                } else {
+                  setModalState(() => isFetchingGps = false);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Izin akses lokasi GPS ditolak.')),
+                    );
+                  }
+                }
+              } catch (e) {
+                setModalState(() => isFetchingGps = false);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Gagal mendapatkan GPS: $e')),
+                  );
+                }
+              }
+            }
+
+            Future<void> pickPhoto() async {
+              final picker = ImagePicker();
+              final source = await showModalBottomSheet<ImageSource>(
+                context: context,
+                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+                builder: (bctx) => SafeArea(
+                  child: Wrap(
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primaryGreen),
+                        title: const Text('Kamera HP'),
+                        onTap: () => Navigator.pop(bctx, ImageSource.camera),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.photo_library_rounded, color: AppColors.primaryGreen),
+                        title: const Text('Galeri HP'),
+                        onTap: () => Navigator.pop(bctx, ImageSource.gallery),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+              if (source != null) {
+                final picked = await picker.pickImage(source: source, imageQuality: 80);
+                if (picked != null) {
+                  setModalState(() {
+                    selectedFoto = File(picked.path);
+                  });
+                }
+              }
+            }
+
+            return Container(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              ),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Pendaftaran Posko KKN',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimary),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Pastikan Anda berada di lokasi fisik posko untuk merekam koordinat GPS perangkat secara akurat.',
+                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                    const Divider(height: 24),
+                    TextField(
+                      controller: namaCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Nama Posko KKN',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        prefixIcon: const Icon(Icons.apartment_rounded, color: AppColors.primaryGreen),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: alamatCtrl,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        labelText: 'Alamat Lengkap Posko',
+                        hintText: 'Misal: Jl. Cisitu Lama No. 14, RT 02 / RW 08',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        prefixIcon: const Icon(Icons.map_rounded, color: AppColors.primaryGreen),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    // GPS Box
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.my_location_rounded, color: AppColors.primaryGreen, size: 18),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Koordinat GPS',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                              TextButton.icon(
+                                onPressed: isFetchingGps ? null : fetchLocation,
+                                icon: isFetchingGps
+                                    ? const SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryGreen),
+                                      )
+                                    : const Icon(Icons.refresh_rounded, size: 16),
+                                label: Text(isFetchingGps ? 'Merekam GPS...' : 'Ambil GPS HP'),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            'Lat: ${currentLat.toStringAsFixed(6)}, Lng: ${currentLng.toStringAsFixed(6)}',
+                            style: const TextStyle(fontSize: 12, fontFamily: 'monospace', color: Colors.black87),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    // Foto Box
+                    InkWell(
+                      onTap: pickPhoto,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        height: 90,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+                        ),
+                        child: selectedFoto != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.file(selectedFoto!, fit: BoxFit.cover),
+                              )
+                            : const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.camera_alt_outlined, color: AppColors.primaryGreen, size: 28),
+                                  SizedBox(height: 4),
+                                  Text('Unggah Foto Posko (Opsional)', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                                ],
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: isSubmitting
+                            ? null
+                            : () async {
+                                if (alamatCtrl.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Alamat lengkap posko wajib diisi.')),
+                                  );
+                                  return;
+                                }
+                                setModalState(() => isSubmitting = true);
+                                final req = RegisterPoskoRequest(
+                                  nama: namaCtrl.text.trim(),
+                                  alamat: alamatCtrl.text.trim(),
+                                  latitude: currentLat,
+                                  longitude: currentLng,
+                                  fotoPath: selectedFoto?.path,
+                                );
+                                final success = await ref.read(kelompokKknProvider.notifier).registerPosko(req);
+                                setModalState(() => isSubmitting = false);
+                                if (success && context.mounted) {
+                                  Navigator.pop(context);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Posko KKN berhasil didaftarkan! Menunggu verifikasi RW setempat.'),
+                                      backgroundColor: AppColors.primaryGreen,
+                                    ),
+                                  );
+                                } else if (context.mounted) {
+                                  final err = ref.read(kelompokKknProvider).error ?? 'Gagal mendaftarkan posko.';
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(err), backgroundColor: Colors.red),
+                                  );
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: isSubmitting
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text(
+                                'Kirim Pendaftaran Posko',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

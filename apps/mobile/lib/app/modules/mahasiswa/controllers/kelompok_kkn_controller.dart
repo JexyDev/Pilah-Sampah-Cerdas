@@ -48,6 +48,24 @@ class KelompokKknNotifier extends StateNotifier<KelompokKknState> {
         error: NetworkExceptionHelper.getErrorMessage(e),
       );
     }
+  Future<bool> registerPosko(RegisterPoskoRequest request) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final repo = ref.read(kknRepositoryProvider);
+      final ok = await repo.registerPoskoKkn(request);
+      if (ok) {
+        await fetchKelompok();
+        return true;
+      }
+      state = state.copyWith(isLoading: false, error: 'Gagal mendaftarkan posko.');
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: NetworkExceptionHelper.getErrorMessage(e),
+      );
+      return false;
+    }
   }
 }
 

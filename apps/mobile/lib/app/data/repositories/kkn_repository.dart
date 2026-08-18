@@ -76,6 +76,12 @@ abstract class KknRepository {
     required String fotoPath,
   });
 
+  /// Mendaftarkan / memperbarui lokasi Posko KKN (Khusus Ketua Kelompok)
+  Future<bool> registerPoskoKkn(RegisterPoskoRequest request);
+
+  /// Mendaftarkan fasilitas GIS lingkungan baru (Rumah Maggot, Loseda, Bata Terawang, dll)
+  Future<bool> bantuInputFasilitas(BantuFasilitasRequest request);
+
   /// Mengambil data statistik dampak kelurahan (GET /api/v1/kkn/dampak-kelurahan)
   Future<DampakKelurahanData> getDampakKelurahan();
 }

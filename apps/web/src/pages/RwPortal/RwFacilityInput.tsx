@@ -118,30 +118,53 @@ export const RwFacilityInput = () => {
           {pendingFacilities.length === 0 ? (
             <p className="text-gray-500">Tidak ada pendaftaran fasilitas baru.</p>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
-              <thead>
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nama & Jenis</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">PIC</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
-                {pendingFacilities.map((fac) => (
-                  <tr key={fac.id}>
-                    <td className="px-4 py-2">
-                      <p className="font-semibold">{fac.nama}</p>
-                      <span className="text-xs bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded capitalize">{fac.jenis.replace("_", " ")}</span>
-                    </td>
-                    <td className="px-4 py-2 text-sm">{fac.pic}</td>
-                    <td className="px-4 py-2 flex gap-2">
-                      <button onClick={() => verifyFacility(fac.id, "APPROVED")} className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm">Setujui</button>
-                      <button onClick={() => verifyFacility(fac.id, "REJECTED")} className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm">Tolak</button>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
+                <thead>
+                  <tr className="bg-slate-50 dark:bg-slate-800/50">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama & Jenis</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Lokasi & GPS</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">PIC / Kontak</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi Verifikasi</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
+                  {pendingFacilities.map((fac) => (
+                    <tr key={fac.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                      <td className="px-4 py-3">
+                        <p className="font-bold text-slate-800 dark:text-slate-100">{fac.nama}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                            fac.jenis === "posko_kkn"
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300"
+                              : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                          }`}>
+                            {fac.jenis === "posko_kkn" ? "📍 Posko KKN Mahasiswa" : fac.jenis.replace("_", " ").toUpperCase()}
+                          </span>
+                          {fac.foto && (
+                            <a href={fac.foto} target="_blank" rel="noreferrer" className="text-[11px] text-primary hover:underline">Lihat Foto</a>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">
+                        <p className="font-medium">{fac.alamat || "Alamat tidak dicantumkan"}</p>
+                        <p className="text-slate-400 font-mono mt-0.5">Lat: {Number(fac.latitude).toFixed(6)}, Lng: {Number(fac.longitude).toFixed(6)}</p>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">
+                        <p className="font-medium">{fac.pic || "-"}</p>
+                        <p className="text-slate-400">{fac.kontak || "-"}</p>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex justify-center gap-2">
+                          <button onClick={() => verifyFacility(fac.id, "APPROVED")} className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 font-semibold text-xs transition-colors shadow-sm">Setujui</button>
+                          <button onClick={() => verifyFacility(fac.id, "REJECTED")} className="bg-rose-600 text-white px-3 py-1.5 rounded-lg hover:bg-rose-700 font-semibold text-xs transition-colors shadow-sm">Tolak</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

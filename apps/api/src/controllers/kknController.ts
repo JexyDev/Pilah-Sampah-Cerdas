@@ -360,6 +360,33 @@ export class KknController {
       res.status(500).json({ success: false, message: error.message });
     }
   }
+
+  async registerPosko(req: Request, res: Response): Promise<void> {
+    try {
+      const kknUserId = req.user!.userId;
+      const data = await kknService.registerPoskoKkn(kknUserId, req.body);
+      res.status(201).json({
+        success: true,
+        message: "Pendaftaran Posko KKN berhasil dikirim dan menunggu verifikasi RW.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] registerPosko error:", error);
+      const statusCode = error.statusCode || 400;
+      res.status(statusCode).json({ success: false, message: error.message });
+    }
+  }
+
+  async getMyPosko(req: Request, res: Response): Promise<void> {
+    try {
+      const kknUserId = req.user!.userId;
+      const data = await kknService.getMyPosko(kknUserId);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[KknController] getMyPosko error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
 }
 
 export const kknController = new KknController();

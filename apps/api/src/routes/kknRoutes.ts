@@ -240,9 +240,56 @@ router.get(
  *     tags: [Mahasiswa KKN]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - rwId
+ *               - nama
+ *               - jenis
+ *               - latitude
+ *               - longitude
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: ID User Warga (penanggung jawab/pemilik fasilitas)
+ *                 example: "11111111-1111-1111-1111-111111111101"
+ *               rwId:
+ *                 type: integer
+ *                 description: ID RW lokasi fasilitas
+ *                 example: 1
+ *               nama:
+ *                 type: string
+ *                 description: Nama fasilitas
+ *                 example: "Loseda Berkah RT 02"
+ *               jenis:
+ *                 type: string
+ *                 enum: [loseda, bata_terawang, rumah_maggot, bank_sampah, tps, buruan_sae, poc]
+ *                 description: Jenis fasilitas pengolahan sampah
+ *                 example: "rumah_maggot"
+ *               latitude:
+ *                 type: number
+ *                 format: float
+ *                 description: Titik koordinat latitude
+ *                 example: -6.89060000
+ *               longitude:
+ *                 type: number
+ *                 format: float
+ *                 description: Titik koordinat longitude
+ *                 example: 107.61500000
+ *               foto:
+ *                 type: string
+ *                 description: URL foto fasilitas (opsional)
+ *                 example: "https://example.com/foto-maggot.jpg"
  *     responses:
- *       200:
- *         description: Fasilitas berhasil di-input
+ *       201:
+ *         description: Fasilitas berhasil di-input (+5 Poin Mahasiswa)
+ *       400:
+ *         description: Data input tidak valid
  */
 router.post(
   "/fasilitas/bantu-input",
@@ -301,6 +348,84 @@ router.get(
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
   kknController.getMyGroup
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/posko/register:
+ *   post:
+ *     summary: Pendaftaran / perbarui lokasi Posko KKN (Khusus Ketua Kelompok KKN)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - latitude
+ *               - longitude
+ *             properties:
+ *               nama:
+ *                 type: string
+ *                 description: Nama posko (opsional, default 'Posko KKN [Nama Kelompok]')
+ *                 example: "Posko KKN Kelompok 12 Dago"
+ *               alamat:
+ *                 type: string
+ *                 description: Alamat fisik posko
+ *                 example: "Jl. Dago Asri No. 12 RT 03 / RW 08"
+ *               rwId:
+ *                 type: integer
+ *                 description: ID RW lokasi posko (opsional, default sesuai assigned RW)
+ *                 example: 3
+ *               latitude:
+ *                 type: number
+ *                 format: float
+ *                 description: Titik koordinat latitude lokasi posko
+ *                 example: -6.8851234
+ *               longitude:
+ *                 type: number
+ *                 format: float
+ *                 description: Titik koordinat longitude lokasi posko
+ *                 example: 107.6134567
+ *               foto:
+ *                 type: string
+ *                 description: URL foto posko (opsional)
+ *                 example: "https://example.com/posko.jpg"
+ *     responses:
+ *       201:
+ *         description: Posko KKN berhasil didaftarkan (Menunggu approval RW)
+ *       400:
+ *         description: Koordinat tidak valid atau bentrok radius < 30m dengan posko lain
+ *       403:
+ *         description: Ditolak karena bukan Ketua Kelompok
+ */
+router.post(
+  "/posko/register",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.registerPosko
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/posko/me:
+ *   get:
+ *     summary: Mendapatkan data Posko KKN kelompok saat ini
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Detail posko KKN ditemukan
+ */
+router.get(
+  "/posko/me",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "DPL", "SUPER_USER"]),
+  kknController.getMyPosko
 );
 
 /**

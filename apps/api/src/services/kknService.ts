@@ -1014,6 +1014,193 @@ export class KknService {
     });
   }
 
+  async registerPoskoKkn(
+    userId: string,
+    payload: {
+      nama?: string;
+      alamat?: string;
+      rwId?: number;
+      latitude: number;
+      longitude: number;
+      foto?: string;
+    }
+  ) {
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId },
+      include: {
+        user: true,
+        assignedRw: true,
+        kelompok: {
+          include: {
+            dpl: true,
+            students: { include: { user: true } },
+          },
+        },
+      },
+    });
+
+    if (!student || !student.kelompokId || !student.kelompok) {
+      throw new Error("Mahasiswa belum terdaftar dalam kelompok KKN.");
+    }
+
+    if (!student.isKetua) {
+      const err: any = new Error("Akses ditolak: Hanya Ketua Kelompok KKN yang berhak mendaftarkan atau memperbarui lokasi posko.");
+      err.statusCode = 403;
+      throw err;
+    }
+
+    const lat = Number(payload.latitude);
+    const lng = Number(payload.longitude);
+    if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
+      throw new Error("Koordinat GPS lokasi HP (latitude & longitude) wajib valid dan tidak boleh kosong.");
+    }
+
+    // Overlap Proximity Check: Tidak boleh berdekatan < 30 meter dari posko kelompok lain
+    const otherPoskos = await prisma.facility.findMany({
+      where: {
+        jenis: "posko_kkn",
+        kelompokId: { not: student.kelompokId },
+        statusApproval: { in: ["APPROVED", "PENDING"] },
+      },
+    });
+
+    const R = 6371e3;
+    for (const op of otherPoskos) {
+      const phi1 = (lat * Math.PI) / 180;
+      const phi2 = (Number(op.latitude) * Math.PI) / 180;
+      const deltaPhi = ((Number(op.latitude) - lat) * Math.PI) / 180;
+      const deltaLambda = ((Number(op.longitude) - lng) * Math.PI) / 180;
+      const a =
+        Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+        Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+      const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      if (dist < 30) {
+        throw new Error(
+          `Titik lokasi Posko bertabrakan dengan ${op.nama} (jarak hanya ${Math.round(dist)} meter). Mohon geser titik koordinat agar tidak menumpuk antar kelompok.`
+        );
+      }
+    }
+
+    let targetRwId = payload.rwId || student.assignedRwId || student.user.rwId;
+    if (!targetRwId && student.kelompok.cakupanRw) {
+      try {
+        const parsed = typeof student.kelompok.cakupanRw === "string" ? JSON.parse(student.kelompok.cakupanRw) : student.kelompok.cakupanRw;
+        if (Array.isArray(parsed) && parsed.length > 0) targetRwId = Number(parsed[0]);
+      } catch (_) {}
+    }
+    if (!targetRwId) {
+      const firstRw = await prisma.rw.findFirst();
+      targetRwId = firstRw?.id || 1;
+    }
+
+    const existingPosko = await prisma.facility.findFirst({
+      where: {
+        kelompokId: student.kelompokId,
+        jenis: "posko_kkn",
+      },
+    });
+
+    const poskoName = payload.nama || `Posko KKN ${student.kelompok.name}`;
+    const picName = `${student.user.name} (${student.nim || "Ketua Kelompok"})`;
+    const kontak = student.noWa || student.user.phone || "-";
+
+    let posko;
+    if (existingPosko) {
+      posko = await prisma.facility.update({
+        where: { id: existingPosko.id },
+        data: {
+          nama: poskoName,
+          alamat: payload.alamat || existingPosko.alamat,
+          rwId: targetRwId,
+          latitude: lat,
+          longitude: lng,
+          foto: payload.foto || existingPosko.foto,
+          pic: picName,
+          kontak,
+          statusApproval: "PENDING",
+        },
+      });
+    } else {
+      posko = await prisma.facility.create({
+        data: {
+          nama: poskoName,
+          jenis: "posko_kkn",
+          alamat: payload.alamat,
+          rwId: targetRwId,
+          kelompokId: student.kelompokId,
+          latitude: lat,
+          longitude: lng,
+          foto: payload.foto,
+          pic: picName,
+          kontak,
+          statusApproval: "PENDING",
+        },
+      });
+    }
+
+    // Kirim notifikasi ke Ketua RW terkait
+    if (targetRwId) {
+      const rwUsers = await prisma.user.findMany({
+        where: {
+          rwId: targetRwId,
+          role: { name: "RW" },
+        },
+      });
+      for (const rwUser of rwUsers) {
+        await prisma.notification.create({
+          data: {
+            userId: rwUser.id,
+            title: "Pengajuan Posko KKN Baru",
+            message: `Kelompok ${student.kelompok.name} mengajukan titik Posko KKN di wilayah RW Anda dan menunggu verifikasi.`,
+          },
+        });
+      }
+    }
+
+    await prisma.auditTrail.create({
+      data: {
+        userId,
+        action: "REGISTER_POSKO_KKN",
+        newValue: {
+          poskoId: posko.id,
+          kelompokId: student.kelompokId,
+          latitude: lat,
+          longitude: lng,
+          status: "PENDING",
+        },
+      },
+    });
+
+    return posko;
+  }
+
+  async getMyPosko(userId: string) {
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId },
+      include: { kelompok: true, user: true },
+    });
+
+    if (!student || !student.kelompokId) {
+      return null;
+    }
+
+    const posko = await prisma.facility.findFirst({
+      where: {
+        kelompokId: student.kelompokId,
+        jenis: "posko_kkn",
+      },
+      include: { rw: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return {
+      posko,
+      isUserLeader: Boolean(student.isKetua),
+      kelompokId: student.kelompokId,
+    };
+  }
+
   async getMyGroup(userId: string) {
     const student = await prisma.studentKkn.findUnique({
       where: { userId },
@@ -1065,16 +1252,41 @@ export class KknService {
 
     const totalGroupPoints = members.reduce((sum, m) => sum + m.individualPoints, 0);
 
-    const poskoLat = student.assignedRw?.latitude ? Number(student.assignedRw.latitude) : -6.975412;
-    const poskoLng = student.assignedRw?.longitude
+    const registeredPosko = await prisma.facility.findFirst({
+      where: {
+        kelompokId: group.id,
+        jenis: "posko_kkn",
+      },
+      include: { rw: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const isUserLeader = Boolean(student.isKetua);
+    const poskoLat = registeredPosko?.latitude
+      ? Number(registeredPosko.latitude)
+      : student.assignedRw?.latitude
+      ? Number(student.assignedRw.latitude)
+      : -6.8906;
+    const poskoLng = registeredPosko?.longitude
+      ? Number(registeredPosko.longitude)
+      : student.assignedRw?.longitude
       ? Number(student.assignedRw.longitude)
-      : 107.632145;
+      : 107.6123;
+    const poskoLocationName =
+      registeredPosko?.nama ||
+      (student.assignedRw?.name ? `RW ${student.assignedRw.name}` : `Kel. ${group.kelurahan || "Coblong"}`);
+    const poskoStatus = registeredPosko?.statusApproval || "UNREGISTERED";
 
     return {
       groupId: group.id,
       groupName: group.name,
       dosenPembimbing: group.dpl?.name || "Dr. Ir. Ahmad Sudrajat, M.T.",
-      poskoLocation: student.assignedRw?.name || "Kel. Bojongsoang RT 03 / RW 08",
+      poskoLocation: poskoLocationName,
+      poskoAlamat: registeredPosko?.alamat || student.assignedRw?.name || "-",
+      poskoFoto: registeredPosko?.foto || null,
+      poskoStatus,
+      poskoFacilityId: registeredPosko?.id || null,
+      isUserLeader,
       latitude: poskoLat,
       longitude: poskoLng,
       poskoLatitude: poskoLat,

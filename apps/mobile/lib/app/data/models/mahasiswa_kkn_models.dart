@@ -478,6 +478,14 @@ class KelompokKknData extends Equatable {
     required this.poskoLocation,
     required this.totalGroupPoints,
     required this.members,
+    this.poskoAlamat = '-',
+    this.poskoFoto,
+    this.poskoStatus = 'UNREGISTERED',
+    this.poskoFacilityId,
+    this.isUserLeader = false,
+    this.latitude = -6.8906,
+    this.longitude = 107.6123,
+    this.radiusMeter = 100,
   });
 
   final String groupId;
@@ -486,6 +494,14 @@ class KelompokKknData extends Equatable {
   final String poskoLocation;
   final int totalGroupPoints;
   final List<KelompokMemberData> members;
+  final String poskoAlamat;
+  final String? poskoFoto;
+  final String poskoStatus;
+  final String? poskoFacilityId;
+  final bool isUserLeader;
+  final double latitude;
+  final double longitude;
+  final int radiusMeter;
 
   /// Penjumlahan Poin Kelompok (Fallback Client-Side Sum)
   int get calculatedTotalPoints {
@@ -521,11 +537,78 @@ class KelompokKknData extends Equatable {
       poskoLocation: json['poskoLocation']?.toString() ?? json['lokasiPosko']?.toString() ?? json['kelurahan']?.toString() ?? '-',
       totalGroupPoints: (json['totalGroupPoints'] as num?)?.toInt() ?? (json['totalPoints'] as num?)?.toInt() ?? 0,
       members: membersList,
+      poskoAlamat: json['poskoAlamat']?.toString() ?? '-',
+      poskoFoto: json['poskoFoto']?.toString(),
+      poskoStatus: json['poskoStatus']?.toString() ?? 'UNREGISTERED',
+      poskoFacilityId: json['poskoFacilityId']?.toString(),
+      isUserLeader: json['isUserLeader'] == true,
+      latitude: (json['latitude'] as num?)?.toDouble() ?? (json['poskoLatitude'] as num?)?.toDouble() ?? -6.8906,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? (json['poskoLongitude'] as num?)?.toDouble() ?? 107.6123,
+      radiusMeter: (json['radiusMeter'] as num?)?.toInt() ?? 100,
     );
   }
 
   @override
-  List<Object?> get props => [groupId, groupName, totalGroupPoints, members];
+  List<Object?> get props => [groupId, groupName, totalGroupPoints, members, poskoStatus, isUserLeader, poskoFacilityId];
+}
+
+class RegisterPoskoRequest {
+  final String? nama;
+  final String alamat;
+  final int? rwId;
+  final double latitude;
+  final double longitude;
+  final String? fotoPath;
+  final String? fotoUrl;
+
+  const RegisterPoskoRequest({
+    this.nama,
+    required this.alamat,
+    this.rwId,
+    required this.latitude,
+    required this.longitude,
+    this.fotoPath,
+    this.fotoUrl,
+  });
+
+  Map<String, dynamic> toJson() => {
+        if (nama != null && nama!.isNotEmpty) 'nama': nama,
+        'alamat': alamat,
+        if (rwId != null) 'rwId': rwId,
+        'latitude': latitude,
+        'longitude': longitude,
+        if (fotoUrl != null && fotoUrl!.isNotEmpty) 'foto': fotoUrl,
+      };
+}
+
+class BantuFasilitasRequest {
+  final String nama;
+  final String jenis;
+  final String? picUserId;
+  final int rwId;
+  final double latitude;
+  final double longitude;
+  final String? fotoUrl;
+
+  const BantuFasilitasRequest({
+    required this.nama,
+    required this.jenis,
+    this.picUserId,
+    required this.rwId,
+    required this.latitude,
+    required this.longitude,
+    this.fotoUrl,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'nama': nama,
+        'jenis': jenis,
+        'userId': picUserId ?? 'warga-kkn',
+        'rwId': rwId,
+        'latitude': latitude,
+        'longitude': longitude,
+        if (fotoUrl != null) 'foto': fotoUrl,
+      };
 }
 
 /// ─────────────────────────────────────────────────────────────────────────────

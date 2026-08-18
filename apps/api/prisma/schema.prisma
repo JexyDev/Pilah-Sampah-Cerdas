@@ -357,6 +357,7 @@ model KelompokKkn {
   schedules          Schedule[]
   programKerja       ProgramKerjaKkn[]
   penilaianMahasiswa PenilaianKknMahasiswa[]
+  facilities         Facility[]
 
   @@map("kelompok_kkn")
 }
@@ -535,9 +536,12 @@ model Facility {
   createdAt      DateTime                @default(now()) @map("dibuat_pada")
   updatedAt      DateTime                @updatedAt @map("diperbarui_pada")
   rwId           Int?                    @map("id_rw")
+  kelompokId     String?                 @map("id_kelompok")
+  alamat         String?                 @map("alamat")
   statusApproval String                  @default("PENDING") @map("status_persetujuan")
   productionLogs FacilityProductionLog[]
   rw             Rw?                     @relation(fields: [rwId], references: [id])
+  kelompok       KelompokKkn?            @relation(fields: [kelompokId], references: [id], onDelete: SetNull)
 
   @@map("fasilitas")
 }

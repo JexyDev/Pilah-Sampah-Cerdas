@@ -357,15 +357,36 @@ export const rwService = {
     userRole?: string
   ) => {
     const areaIds = await getRwAreaIds(rwId, userRole);
-    const facilityCheck = await prisma.facility.findUnique({ where: { id: facilityId } });
+    const facilityCheck = await prisma.facility.findUnique({
+      where: { id: facilityId },
+      include: { kelompok: { include: { students: true } } },
+    });
     if (!facilityCheck || !facilityCheck.rwId || !areaIds.includes(facilityCheck.rwId)) {
       throw new Error("Fasilitas tidak ditemukan atau tidak berada di wilayah RW Anda");
     }
 
-    return prisma.facility.update({
+    const updated = await prisma.facility.update({
       where: { id: facilityId },
       data: { statusApproval: action },
     });
+
+    // Jika fasilitas adalah posko_kkn, kirim notifikasi ke mahasiswa kelompok terkait
+    if (facilityCheck.jenis === "posko_kkn" && facilityCheck.kelompok?.students) {
+      const isApproved = action === "APPROVED";
+      for (const student of facilityCheck.kelompok.students) {
+        await prisma.notification.create({
+          data: {
+            userId: student.userId,
+            title: isApproved ? "Posko KKN Disetujui! 📍" : "Pengajuan Posko KKN Ditolak",
+            message: isApproved
+              ? `Lokasi Posko KKN kelompok Anda telah disetujui oleh RW ${rwId} dan kini aktif sebagai titik geofence presensi.`
+              : `Pengajuan lokasi Posko KKN kelompok Anda ditolak oleh RW ${rwId}. Silakan koordinasi dan daftarkan kembali.`,
+          },
+        });
+      }
+    }
+
+    return updated;
   },
 
   getFacilities: async (rwId: number, userRole?: string) => {
