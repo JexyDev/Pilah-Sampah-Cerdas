@@ -299,7 +299,7 @@ export class KknAttendanceService {
   /**
    * Get location details for an activity, with default fallback if not configured.
    */
-  async getActivityLocation(scheduleId: string) {
+  async getActivityLocation(scheduleId: string, studentId?: string) {
     const schedule = await prisma.schedule.findUnique({
       where: { id: scheduleId },
     });
@@ -322,6 +322,31 @@ export class KknAttendanceService {
     const ruleTargetMinutes = (ruleConfigs.attendanceMinDurationHours * 60) + ruleConfigs.attendanceMinDurationMinutes;
     const targetDurationMinutes = ruleTargetMinutes > 0 ? ruleTargetMinutes : 120;
 
+    let isAttended = false;
+    let attendanceStatus: string | null = null;
+    let checkInTime: Date | null = null;
+    let checkOutTime: Date | null = null;
+    let method: string | null = null;
+
+    if (studentId) {
+      const attendance = await prisma.activityAttendance.findUnique({
+        where: {
+          studentId_scheduleId: {
+            studentId,
+            scheduleId,
+          },
+        },
+      });
+
+      if (attendance) {
+        isAttended = true;
+        attendanceStatus = (attendance.status === "DALAM_RADIUS" || attendance.status === "LEPAS_RADIUS") ? "HADIR" : attendance.status;
+        checkInTime = attendance.attendedAt;
+        checkOutTime = attendance.checkOutAt;
+        method = attendance.method;
+      }
+    }
+
     return {
       scheduleId: schedule.id,
       title: schedule.title,
@@ -332,6 +357,12 @@ export class KknAttendanceService {
       durationMinutes: targetDurationMinutes,
       polygon: schedule.polygon,
       isConfigured: schedule.latitude !== null && schedule.longitude !== null,
+      isAttended,
+      attendanceStatus: attendanceStatus || "BELUM_ABSEN",
+      status: attendanceStatus || "BELUM_ABSEN",
+      checkInTime,
+      checkOutTime,
+      method,
     };
   }
 

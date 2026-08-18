@@ -75,7 +75,8 @@ export const kknAttendanceController = {
         return;
       }
 
-      const result = await kknAttendanceService.getActivityLocation(id);
+      const userId = (req as any).user?.userId;
+      const result = await kknAttendanceService.getActivityLocation(id, userId);
       res.status(200).json({
         success: true,
         data: result,
