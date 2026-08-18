@@ -386,7 +386,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             <tr><td class="text-center">6</td><td>Bukti Kegiatan</td><td class="text-center">7%</td><td class="text-center">${scores.skorMitraBuktiKegiatan}</td><td class="text-right">${nilaiAspekMitra.buktiKegiatan.toFixed(2)}</td></tr>
             <tr><td class="text-center">7</td><td>Dampak kepada Masyarakat</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraDampak}</td><td class="text-right">${nilaiAspekMitra.dampak.toFixed(2)}</td></tr>
             <tr><td class="text-center">8</td><td>Inisiatif & Problem Solving</td><td class="text-center">7%</td><td class="text-center">${scores.skorMitraInisiatif}</td><td class="text-right">${nilaiAspekMitra.inisiatif.toFixed(2)}</td></tr>
-            <tr class="subtotal-row"><td colspan="4" style="text-align: right;">SUBTOTAL MITRA (70%):</td><td class="text-right">${subtotalMitra.toFixed(2)} / 70.00</td></tr>
+            <tr class="subtotal-row"><td colspan="4" style="text-align: right;">SUBTOTAL MITRA (70%):</td><td class="text-right">${subtotalMitra.toFixed(2)}</td></tr>
           </tbody>
         </table>
 
@@ -409,7 +409,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             <tr><td class="text-center">4</td><td>Analisis Masalah & Solusi</td><td class="text-center">5%</td><td class="text-center">${scores.skorDplAnalisis}</td><td class="text-right">${nilaiAspekDpl.analisis.toFixed(2)}</td></tr>
             <tr><td class="text-center">5</td><td>Output, Outcome, & Dampak</td><td class="text-center">5%</td><td class="text-center">${scores.skorDplOutput}</td><td class="text-right">${nilaiAspekDpl.output.toFixed(2)}</td></tr>
             <tr><td class="text-center">6</td><td>Laporan Akhir, Evaluasi, & Refleksi</td><td class="text-center">5%</td><td class="text-center">${scores.skorDplLaporanAkhir}</td><td class="text-right">${nilaiAspekDpl.laporanAkhir.toFixed(2)}</td></tr>
-            <tr class="subtotal-row"><td colspan="4" style="text-align: right;">SUBTOTAL DPL (30%):</td><td class="text-right">${subtotalDpl.toFixed(2)} / 30.00</td></tr>
+            <tr class="subtotal-row"><td colspan="4" style="text-align: right;">SUBTOTAL DPL (30%):</td><td class="text-right">${subtotalDpl.toFixed(2)}</td></tr>
           </tbody>
         </table>
 
@@ -518,7 +518,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             <span className="text-xl font-black text-amber-700">
               {studentsRekap.length > 0
                 ? (studentsRekap.reduce((acc, s) => acc + (s.subtotalDpl || 0), 0) / studentsRekap.length).toFixed(1)
-                : "0"} / 30
+                : "0"}
             </span>
           </div>
         </div>
@@ -532,7 +532,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             <span className="text-xl font-black text-emerald-700">
               {studentsRekap.length > 0
                 ? (studentsRekap.reduce((acc, s) => acc + (s.subtotalMitra || 0), 0) / studentsRekap.length).toFixed(1)
-                : "0"} / 70
+                : "0"}
             </span>
           </div>
         </div>
@@ -546,7 +546,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             <span className="text-xl font-black text-blue-700">
               {studentsRekap.length > 0
                 ? (studentsRekap.reduce((acc, s) => acc + (s.nilaiAkhir || 0), 0) / studentsRekap.length).toFixed(1)
-                : "0"} / 100
+                : "0"}
             </span>
           </div>
         </div>
@@ -759,12 +759,12 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                 <div className="flex items-center gap-6 flex-wrap">
                   <div>
                     <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Subtotal DPL (30%)</span>
-                    <span className="text-lg font-black text-amber-700">{subtotalDpl.toFixed(2)} / 30</span>
+                    <span className="text-lg font-black text-amber-700">{subtotalDpl.toFixed(2)}</span>
                   </div>
                   <span className="text-slate-300 text-xl font-light">+</span>
                   <div>
                     <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Subtotal Mitra (70%)</span>
-                    <span className="text-lg font-black text-emerald-700">{subtotalMitra.toFixed(2)} / 70</span>
+                    <span className="text-lg font-black text-emerald-700">{subtotalMitra.toFixed(2)}</span>
                   </div>
                   <span className="text-slate-300 text-xl font-light">=</span>
                   <div>
@@ -987,7 +987,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
                   <div className="p-3 bg-amber-50/70 border-t border-slate-200 flex justify-between items-center text-xs">
                     <span className="font-extrabold text-amber-900">Subtotal DPL:</span>
-                    <span className="text-base font-black text-amber-700">{subtotalDpl.toFixed(2)} / 30.00</span>
+                    <span className="text-base font-black text-amber-700">{subtotalDpl.toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -1254,7 +1254,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
                   <div className="p-3 bg-emerald-50/70 border-t border-slate-200 flex justify-between items-center text-xs">
                     <span className="font-extrabold text-emerald-900">Subtotal Mitra:</span>
-                    <span className="text-base font-black text-emerald-700">{subtotalMitra.toFixed(2)} / 70.00</span>
+                    <span className="text-base font-black text-emerald-700">{subtotalMitra.toFixed(2)}</span>
                   </div>
                 </div>
               </div>

@@ -65,19 +65,19 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge }) => {
       to={to}
       className={`relative flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-200 ease-out text-[13px] group overflow-hidden transform-gpu ${
         isCurrentActive
-          ? "bg-emerald-50/90 text-[#009966] font-semibold shadow-[0_2px_10px_rgba(0,153,102,0.12)] border border-[#009966]/15 scale-[1.01]"
-          : "text-slate-600 hover:text-[#009966] hover:bg-slate-50 hover:translate-x-1.5 font-medium active:scale-[0.98]"
+          ? "bg-emerald-50/90 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-semibold shadow-[0_2px_10px_rgba(0,153,102,0.12)] border border-[#009966]/15 dark:border-emerald-700/30 scale-[1.01]"
+          : "text-slate-600 dark:text-slate-400 hover:text-[#009966] dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:translate-x-1.5 font-medium active:scale-[0.98]"
       }`}
     >
       {/* Left Curved Green Accent Indicator */}
       {isCurrentActive && (
-        <span className="absolute left-0 top-1.5 bottom-1.5 w-1.5 bg-[#009966] rounded-r-full shadow-xs" />
+        <span className="absolute left-0 top-1.5 bottom-1.5 w-1.5 bg-[#009966] dark:bg-emerald-500 rounded-r-full shadow-xs" />
       )}
 
-      <Icon className={`shrink-0 transition-transform duration-200 ease-out ${isCurrentActive ? "text-[#009966] scale-110" : "text-slate-500 group-hover:text-[#009966] group-hover:scale-110 group-hover:-rotate-3"}`} size={19} />
+      <Icon className={`shrink-0 transition-transform duration-200 ease-out ${isCurrentActive ? "text-[#009966] dark:text-emerald-400 scale-110" : "text-slate-500 dark:text-slate-400 group-hover:text-[#009966] dark:group-hover:text-emerald-400 group-hover:scale-110 group-hover:-rotate-3"}`} size={19} />
       <span className="flex-1 truncate tracking-tight">{label}</span>
       {badge !== undefined && (
-        <span className="bg-[#009966] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs group-hover:scale-105 transition-transform">{badge}</span>
+        <span className="bg-[#009966] dark:bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs group-hover:scale-105 transition-transform">{badge}</span>
       )}
     </Link>
   );
@@ -100,12 +100,12 @@ const NavItemCollapsed: React.FC<NavItemProps> = ({ to, icon: Icon, label }) => 
       title={label}
       className={`relative w-10 h-10 rounded-2xl flex items-center justify-center my-0.5 transition-all group cursor-pointer shrink-0 ${
         isCurrentActive
-          ? "bg-[#009966] text-white shadow-md shadow-emerald-900/20 scale-105"
-          : "text-slate-500 hover:text-[#009966] hover:bg-slate-100"
+          ? "bg-[#009966] dark:bg-emerald-600 text-white shadow-md shadow-emerald-900/20 scale-105"
+          : "text-slate-500 dark:text-slate-400 hover:text-[#009966] dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800"
       }`}
     >
       <Icon size={19} />
-      <span className="absolute left-16 bg-slate-900 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-2xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[70]">
+      <span className="absolute left-16 bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-2xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[70] border border-slate-700/60">
         {label}
       </span>
     </Link>
@@ -137,23 +137,23 @@ const NavGroup: React.FC<{
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-200 text-[13px] text-left group relative overflow-hidden ${
           isAnySubActive
-            ? "bg-[#e5f7ed] text-[#009966] font-semibold"
-            : "text-slate-600 hover:text-[#009966] hover:bg-slate-50/80 font-medium"
+            ? "bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-semibold"
+            : "text-slate-600 dark:text-slate-400 hover:text-[#009966] dark:hover:text-emerald-400 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 font-medium"
         }`}
       >
         {isAnySubActive && (
-          <span className="absolute left-0 top-1.5 bottom-1.5 w-1.5 bg-[#009966] rounded-r-full" />
+          <span className="absolute left-0 top-1.5 bottom-1.5 w-1.5 bg-[#009966] dark:bg-emerald-500 rounded-r-full" />
         )}
 
-        <Icon className={`shrink-0 transition-colors ${isAnySubActive ? "text-[#009966]" : "text-slate-500 group-hover:text-[#009966]"}`} size={19} />
-        <span className="flex-1 font-semibold text-slate-700 truncate">{label}</span>
+        <Icon className={`shrink-0 transition-colors ${isAnySubActive ? "text-[#009966] dark:text-emerald-400" : "text-slate-500 dark:text-slate-400 group-hover:text-[#009966] dark:group-hover:text-emerald-400"}`} size={19} />
+        <span className="flex-1 font-semibold text-slate-700 dark:text-slate-300 truncate">{label}</span>
         <ChevronDown
           size={16}
           className={`transition-transform duration-200 text-slate-400 ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
       {isOpen && (
-        <div className="ml-4 pl-2 border-l-2 border-slate-200/80 my-1 space-y-1">
+        <div className="ml-4 pl-2 border-l-2 border-slate-200/80 dark:border-slate-800 my-1 space-y-1">
           {items.map((sub) => {
             const isActive = currentPath === sub.to || (["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"].includes(sub.to) && ["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"].includes(location.pathname) && !location.search);
             return (
@@ -163,15 +163,15 @@ const NavGroup: React.FC<{
                 title={sub.label}
                 className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-[12.5px] transition-all group ${
                   isActive
-                    ? "bg-[#e5f7ed] text-[#009966] font-semibold shadow-2xs"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-[#009966] hover:translate-x-1 font-medium active:scale-[0.98]"
+                    ? "bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-semibold shadow-2xs"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#009966] dark:hover:text-emerald-400 hover:translate-x-1 font-medium active:scale-[0.98]"
                 }`}
               >
                 <span
                   className={`w-2 h-2 rounded-full shrink-0 transition-all ${
                     isActive
-                      ? "bg-[#009966] scale-125 ring-2 ring-emerald-200"
-                      : "bg-slate-300 group-hover:bg-[#009966]"
+                      ? "bg-[#009966] dark:bg-emerald-400 scale-125 ring-2 ring-emerald-200 dark:ring-emerald-800"
+                      : "bg-slate-300 dark:bg-slate-600 group-hover:bg-[#009966] dark:group-hover:bg-emerald-400"
                   }`}
                 />
                 <span className="truncate leading-normal">{sub.label}</span>
@@ -185,7 +185,7 @@ const NavGroup: React.FC<{
 };
 
 const SectionHeader: React.FC<{ label: string }> = ({ label }) => (
-  <div className="px-4 pt-4 pb-1.5 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
+  <div className="px-4 pt-4 pb-1.5 text-[10.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
     {label}
   </div>
 );
@@ -650,7 +650,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       <aside
         className={`${
           isCollapsed ? "w-[84px]" : "w-[280px]"
-        } h-screen fixed left-0 top-0 bg-white border-r border-slate-200/80 flex flex-col z-50 transition-all duration-300 ease-in-out transform lg:translate-x-0 ${
+        } h-screen fixed left-0 top-0 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 flex flex-col z-50 transition-all duration-300 ease-in-out transform lg:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -658,10 +658,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         {isCollapsed ? (
           <div className="flex flex-col h-full items-center justify-between py-3">
             {/* Top Brand Logo & Clock */}
-            <div className="flex flex-col items-center w-full border-b border-slate-100 pb-2 mb-1 gap-2 shrink-0">
+            <div className="flex flex-col items-center w-full border-b border-slate-100 dark:border-slate-800 pb-2 mb-1 gap-2 shrink-0">
               <div
                 title="TrashCare"
-                className="w-12 h-12 rounded-2xl bg-[#e5f7ed] border border-[#009966]/20 flex items-center justify-center p-1.5 shadow-sm hover:scale-105 transition-all cursor-pointer"
+                className="w-12 h-12 rounded-2xl bg-[#e5f7ed] dark:bg-emerald-950/60 border border-[#009966]/20 dark:border-emerald-700/30 flex items-center justify-center p-1.5 shadow-sm hover:scale-105 transition-all cursor-pointer"
               >
                 <img
                   src="/image/trashcare-icon.png"
@@ -673,23 +673,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               {/* Collapsed Clock Button */}
               <div
                 title={timeStr ? `${dateStr} - ${timeStr}` : "Jam Sistem"}
-                className="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-200/80 text-slate-600 flex items-center justify-center relative group cursor-pointer hover:bg-slate-100 transition-all"
+                className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 flex items-center justify-center relative group cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-all"
               >
-                <Clock size={17} className="text-[#009966]" />
-                <span className="absolute left-16 bg-slate-900 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[60]">
+                <Clock size={17} className="text-[#009966] dark:text-emerald-400" />
+                <span className="absolute left-16 bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[60] border border-slate-700/60">
                   {dateStr ? `${dateStr} • ${timeStr}` : timeStr || "Jam Sistem"}
                 </span>
               </div>
             </div>
 
             {/* Centered Icons Navigation List */}
-            <nav className="flex-1 overflow-y-auto w-full px-2 py-2 space-y-1 flex flex-col items-center scrollbar-thin scrollbar-thumb-slate-200">
+            <nav className="flex-1 overflow-y-auto w-full px-2 py-2 space-y-1 flex flex-col items-center scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
               {menuSections.map((sec, idx) => {
                 const visibleItems = sec.items.filter((item) => hasAccess(item.allowed));
                 if (visibleItems.length === 0) return null;
                 return (
                   <React.Fragment key={sec.header}>
-                    {idx > 0 && <div className="w-6 h-px bg-slate-200/80 my-1.5 mx-auto shrink-0" />}
+                    {idx > 0 && <div className="w-6 h-px bg-slate-200/80 dark:bg-slate-800 my-1.5 mx-auto shrink-0" />}
                     {visibleItems.map((item: any) =>
                       item.type === "group" ? (
                         <NavItemCollapsed
@@ -713,11 +713,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             </nav>
 
             {/* Bottom Actions for Collapsed Mode */}
-            <div className="flex flex-col items-center pt-2 border-t border-slate-100 w-full px-2 shrink-0">
+            <div className="flex flex-col items-center pt-2 border-t border-slate-100 dark:border-slate-800 w-full px-2 shrink-0">
               <button
                 onClick={handleLogout}
                 title="Keluar Sistem"
-                className="w-10 h-10 rounded-2xl text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-all relative group cursor-pointer"
+                className="w-10 h-10 rounded-2xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center transition-all relative group cursor-pointer"
               >
                 <LogOut size={18} />
               </button>
@@ -727,12 +727,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           /* Render Full Sidebar */
           <div className="flex flex-col h-full justify-between overflow-hidden">
             {/* Top Brand Logo Header Section with Real-Time Clock */}
-            <div className="pt-4 pb-3 px-3.5 border-b border-slate-100/80 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-emerald-50/20 via-transparent to-transparent shrink-0 group">
+            <div className="pt-4 pb-3 px-3.5 border-b border-slate-100/80 dark:border-slate-800 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-emerald-50/20 dark:from-emerald-950/20 via-transparent to-transparent shrink-0 group">
               {/* Four Animated Eco Background Watermarks */}
-              <Sprout size={16} className="absolute top-3 left-4 text-[#009966]/40 animate-pulse [animation-duration:2.5s] transition-transform group-hover:scale-110" />
-              <Tags size={16} className="absolute top-3 right-4 text-[#009966]/40 animate-pulse [animation-duration:3s] transition-transform group-hover:scale-110" />
-              <Recycle size={16} className="absolute bottom-3 left-4 text-[#009966]/40 animate-spin [animation-duration:12s] transition-transform group-hover:scale-110" />
-              <Trash2 size={16} className="absolute bottom-3 right-4 text-[#0284c7]/40 animate-pulse [animation-duration:2.8s] transition-transform group-hover:scale-110" />
+              <Sprout size={16} className="absolute top-3 left-4 text-[#009966]/40 dark:text-emerald-500/30 animate-pulse [animation-duration:2.5s] transition-transform group-hover:scale-110" />
+              <Tags size={16} className="absolute top-3 right-4 text-[#009966]/40 dark:text-emerald-500/30 animate-pulse [animation-duration:3s] transition-transform group-hover:scale-110" />
+              <Recycle size={16} className="absolute bottom-3 left-4 text-[#009966]/40 dark:text-emerald-500/30 animate-spin [animation-duration:12s] transition-transform group-hover:scale-110" />
+              <Trash2 size={16} className="absolute bottom-3 right-4 text-[#0284c7]/40 dark:text-sky-500/30 animate-pulse [animation-duration:2.8s] transition-transform group-hover:scale-110" />
 
               <Link to="/dasbor" className="flex flex-col items-center group cursor-pointer relative z-10 mb-3">
                 <img
@@ -741,27 +741,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                   className="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105 mb-1"
                 />
                 <span className="text-lg font-black tracking-tight leading-none">
-                  <span className="text-[#0284c7]">Trash</span>
-                  <span className="text-[#009966]">Care</span>
+                  <span className="text-[#0284c7] dark:text-sky-400">Trash</span>
+                  <span className="text-[#009966] dark:text-emerald-400">Care</span>
                 </span>
               </Link>
 
               {/* Real-time System Clock Card (Placed at top) */}
-              <div className="w-full bg-slate-50/90 hover:bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs text-center space-y-0.5 transition-all relative z-10">
-                <div className="flex items-center justify-center gap-1.5 text-slate-500 mb-0.5">
-                  <Clock size={12} className="text-[#009966]" />
-                  <p className="text-[10.5px] font-black text-slate-500 truncate">
+              <div className="w-full bg-slate-50/90 dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xs text-center space-y-0.5 transition-all relative z-10">
+                <div className="flex items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400 mb-0.5">
+                  <Clock size={12} className="text-[#009966] dark:text-emerald-400" />
+                  <p className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 truncate">
                     {dateStr || "Jumat, 14 Agustus 2026"}
                   </p>
                 </div>
-                <p className="text-sm font-black text-slate-900 tracking-wider font-mono">
+                <p className="text-sm font-black text-slate-900 dark:text-slate-100 tracking-wider font-mono">
                   {timeStr || "02.59.16 WIB"}
                 </p>
               </div>
             </div>
 
             {/* Scrollable Navigation Sections */}
-            <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1 scrollbar-thin scrollbar-thumb-slate-200">
+            <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
               {menuSections.map((sec) => {
                 const visibleItems = sec.items.filter((item) => hasAccess(item.allowed));
                 if (visibleItems.length === 0) return null;
@@ -804,13 +804,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             </nav>
 
             {/* Bottom Section: Logout Link */}
-            <div className="p-3 border-t border-slate-100 bg-white shrink-0">
+            <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center justify-start gap-3 px-4 py-2.5 rounded-2xl hover:bg-rose-50 text-rose-600 transition-all cursor-pointer group font-semibold text-[13px]"
+                className="w-full flex items-center justify-start gap-3 px-4 py-2.5 rounded-2xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 transition-all cursor-pointer group font-semibold text-[13px]"
               >
-                <LogOut size={18} className="text-rose-500 shrink-0 group-hover:-translate-x-0.5 transition-transform" />
-                <span className="text-rose-600 font-bold text-xs">Keluar Sistem</span>
+                <LogOut size={18} className="text-rose-500 dark:text-rose-400 shrink-0 group-hover:-translate-x-0.5 transition-transform" />
+                <span className="text-rose-600 dark:text-rose-400 font-bold text-xs">Keluar Sistem</span>
               </button>
             </div>
           </div>
@@ -820,20 +820,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       {/* Logout Confirmation Modal */}
       {showLogoutModal && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col p-6 space-y-4 text-center border border-slate-200 animate-in zoom-in-95 duration-200">
-            <div className="w-14 h-14 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto shadow-2xs">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col p-6 space-y-4 text-center border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-2xs">
               <LogOut size={26} />
             </div>
             <div className="space-y-1">
-              <h3 className="text-base font-black text-slate-900">Konfirmasi Sesi Keluar</h3>
-              <p className="text-xs font-semibold text-slate-500 leading-relaxed">
+              <h3 className="text-base font-black text-slate-900 dark:text-slate-100">Konfirmasi Sesi Keluar</h3>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 leading-relaxed">
                 Apakah Anda yakin ingin mengakhiri sesi dan keluar dari sistem TrashCare?
               </p>
             </div>
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setShowLogoutModal(false)}
-                className="flex-1 py-2.5 rounded-xl font-bold text-xs border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl font-bold text-xs border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
               >
                 Batal
               </button>

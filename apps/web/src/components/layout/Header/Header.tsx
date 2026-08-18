@@ -268,26 +268,26 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
   };
 
   return (
-    <header className="bg-white/85 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-30 transition-all shadow-2xs">
+    <header className="bg-white/85 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-30 transition-all shadow-2xs">
       {/* Left Section: Sidebar Toggle & Dynamic Breadcrumb Pills */}
       <div className="flex items-center gap-2 min-w-0">
         {/* Toggle Sidebar Button (Green Squircle Icon Button) */}
         <button
           onClick={onToggleSidebar}
           title={isCollapsed ? "Perluas Sidebar" : "Ciutkan Sidebar"}
-          className="w-10 h-10 rounded-2xl bg-[#e5f7ed] text-[#009966] hover:bg-[#d0f2df] active:scale-95 transition-all flex items-center justify-center border border-[#009966]/10 cursor-pointer shadow-2xs shrink-0"
+          className="w-10 h-10 rounded-2xl bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 hover:bg-[#d0f2df] dark:hover:bg-emerald-900/60 active:scale-95 transition-all flex items-center justify-center border border-[#009966]/10 dark:border-emerald-700/20 cursor-pointer shadow-2xs shrink-0"
         >
           <LayoutGrid size={19} />
         </button>
 
         {breadcrumbItems.map((item, idx) => (
           <React.Fragment key={idx}>
-            <ChevronRight size={14} className="text-slate-300 shrink-0" />
+            <ChevronRight size={14} className="text-slate-300 dark:text-slate-600 shrink-0" />
             <span
               className={`text-xs px-3.5 py-1.5 rounded-full border transition-all truncate max-w-[140px] sm:max-w-[200px] ${
                 idx === breadcrumbItems.length - 1
-                  ? "bg-white text-slate-800 border-slate-200/90 font-black shadow-2xs"
-                  : "bg-slate-50/90 text-slate-600 border-slate-200/80 font-extrabold"
+                  ? "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-200/90 dark:border-slate-700 font-black shadow-2xs"
+                  : "bg-slate-50/90 dark:bg-slate-850 text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-slate-800 font-extrabold"
               }`}
             >
               {item}
