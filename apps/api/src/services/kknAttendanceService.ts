@@ -266,15 +266,15 @@ export class KknAttendanceService {
     const { studentId, scheduleId, latitude, longitude, method, nim: inputNim, namaMahasiswa: inputNama, kodeZona: inputKodeZona } = params;
     const isAutoAlpa = method?.toUpperCase() === "ALPA_AUTO" || method?.toUpperCase() === "ALPA";
 
-    // 0. Validate operational hours (06:00 - 18:00 WIB)
+    // 0. Validate operational hours (05:00 - 23:59 WIB)
     if (!isAutoAlpa) {
       const now = new Date();
       // WIB is UTC + 7
       const utcHours = now.getUTCHours();
       const wibHours = (utcHours + 7) % 24;
-      if (wibHours < 6 || wibHours >= 18) {
+      if (wibHours < 5 || wibHours >= 24) {
         throw new Error(
-          "OUT_OF_OPERATIONAL_HOURS: Presensi kegiatan KKN hanya dapat dilakukan pada jam operasional 06:00 - 18:00 WIB."
+          "OUT_OF_OPERATIONAL_HOURS: Presensi kegiatan KKN hanya dapat dilakukan pada jam operasional 05:00 - 23:59 WIB."
         );
       }
     }

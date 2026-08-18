@@ -78,7 +78,13 @@ export class AuthRepository {
                   },
                 },
               },
-              kelompok: true,
+              kelompok: {
+                include: {
+                  dpl: {
+                    select: { id: true, name: true, phone: true },
+                  },
+                },
+              },
             },
           },
           dplKelompok: {

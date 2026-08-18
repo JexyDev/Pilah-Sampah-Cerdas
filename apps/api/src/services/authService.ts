@@ -358,6 +358,30 @@ export class AuthService {
     const roleName = user.role.name;
     const isDpl = roleName === "DPL" || roleName === "DOSEN_PEMBIMBING";
 
+    let studentProfile = user.studentProfile;
+    if (!studentProfile && roleName === "MAHASISWA_KKN") {
+      try {
+        studentProfile = await prisma.studentKkn.findUnique({
+          where: { userId: user.id },
+          include: { kelompok: { include: { dpl: true } } },
+        });
+        if (!studentProfile) {
+          studentProfile = await prisma.studentKkn.create({
+            data: {
+              userId: user.id,
+              nim: `120${Date.now().toString().slice(-4)}`,
+              jurusan: "Teknik Lingkungan",
+              fakultas: "Fakultas Teknik",
+              noWa: user.phone || "08123456789",
+              startDate: new Date(),
+              endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+            },
+            include: { kelompok: { include: { dpl: true } } },
+          });
+        }
+      } catch (_) {}
+    }
+
     let dplKelurahanNames: string[] = [];
     if (user.dplKelompok && Array.isArray(user.dplKelompok) && user.dplKelompok.length > 0) {
       dplKelurahanNames = Array.from(
@@ -432,12 +456,12 @@ export class AuthService {
       kecamatan: kecamatanName,
       kelurahan: kelurahanName,
       rw: rwName,
-      nim: user.studentProfile?.nim || null,
-      jurusan: user.studentProfile?.jurusan || null,
-      fakultas: user.studentProfile?.fakultas || null,
-      kelompokId: user.studentProfile?.kelompok?.id || null,
-      kelompokName: user.studentProfile?.kelompok?.name || null,
-      dplName: user.studentProfile?.kelompok?.dpl?.name || user.studentProfile?.kelompok?.dosenPembimbing || null,
+      nim: studentProfile?.nim || null,
+      jurusan: studentProfile?.jurusan || null,
+      fakultas: studentProfile?.fakultas || null,
+      kelompokId: studentProfile?.kelompok?.id || null,
+      kelompokName: studentProfile?.kelompok?.name || null,
+      dplName: studentProfile?.kelompok?.dpl?.name || studentProfile?.kelompok?.dosenPembimbing || null,
       dplKelompok: user.dplKelompok || [],
       streakInfo,
       pendamping,
