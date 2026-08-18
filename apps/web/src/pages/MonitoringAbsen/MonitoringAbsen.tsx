@@ -130,6 +130,25 @@ const createActivePresenceIcon = (studentName: string) => {
   });
 };
 
+const formatDurationUnits = (totalMinutes: number): string => {
+  if (!totalMinutes || totalMinutes <= 0) return "0 Menit";
+  const totalSeconds = Math.round(totalMinutes * 60);
+  const hours = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+
+  const parts: string[] = [];
+  if (hours > 0) parts.push(`${hours} Jam`);
+  if (mins > 0) parts.push(`${mins} Menit`);
+  if (secs > 0) parts.push(`${secs} Detik`);
+  return parts.length > 0 ? parts.join(" ") : "0 Menit";
+};
+
+const formatHoursToUnits = (hoursDecimal: number): string => {
+  if (!hoursDecimal || hoursDecimal <= 0) return "0 Menit";
+  return formatDurationUnits(hoursDecimal * 60);
+};
+
 interface StudentLoc {
   id: string;
   studentId: string;
@@ -2131,9 +2150,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       <th className="py-3.5 px-4 text-center">Status Kehadiran</th>
                       <th className="py-3.5 px-4 text-center">Jam Masuk</th>
                       <th className="py-3.5 px-4 text-center">Jam Pulang</th>
-                      <th className="py-3.5 px-4 text-center">Durasi (Jam)</th>
+                      <th className="py-3.5 px-4 text-center">Durasi</th>
                       <th className="py-3.5 px-4 text-center">
-                        {activeSchedule ? "Aktual / Target (Jam)" : "Total Akumulasi Jam"}
+                        {activeSchedule ? "Aktual / Target" : "Total Akumulasi"}
                       </th>
                       <th className="py-3.5 px-4 text-center">Poin Dampingan</th>
                       <th className="py-3.5 px-4 text-center">Lokasi Kegiatan</th>
@@ -2160,14 +2179,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
                       const isHadir = isAttended && !isTanpaKeterangan && !isBelumAdaJadwal && !isIzin && !isSakit && !isIzinPending && !isSakitPending;
 
-                      const durationHours = durationMins > 0 ? (durationMins / 60) : 0;
-                      const formattedHours = durationHours > 0
-                        ? `${durationHours % 1 === 0 ? durationHours : durationHours.toFixed(2).replace(/\.?0+$/, "").replace(".", ",")} jam`
-                        : "-";
+                      const formattedHours = durationMins > 0 ? formatDurationUnits(durationMins) : "-";
 
                       const formattedActualTarget = rec.totalHours !== undefined
-                        ? `${rec.totalHours} / 100 jam`
-                        : `${durationHours > 0 ? (durationHours % 1 === 0 ? durationHours : durationHours.toFixed(2).replace(/\.?0+$/, "").replace(".", ",")) : 0} / ${scheduleTargetHours} jam`;
+                        ? `${formatHoursToUnits(rec.totalHours)} / ${formatHoursToUnits(configTargets.targetTotalJam)}`
+                        : `${durationMins > 0 ? formatDurationUnits(durationMins) : "0 Menit"} / ${formatHoursToUnits(scheduleTargetHours)}`;
 
                       let poinDampingan = 0;
                       if (durationMins >= scheduleTargetHours * 60) {
@@ -2466,9 +2482,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             }`}
                           >
                             {rec.totalHours !== undefined
-                              ? `${rec.totalHours} Jam`
+                              ? formatHoursToUnits(rec.totalHours)
                               : isAttended
-                              ? formatDurationText(durationMins)
+                              ? formatDurationUnits(durationMins)
                               : "0 Menit"}
                           </span>
                         </div>
