@@ -6,14 +6,21 @@ import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/models/waste_log_entity.dart';
 import '../../../data/models/bin_entity.dart';
+import '../../../data/models/notification_entity.dart';
 import '../../riwayat/controllers/riwayat_controller.dart';
+import '../../notifikasi/controllers/warga_notifikasi_controller.dart';
 import '../../shared/widgets/skeleton_loading.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/weight_text.dart';
 import '../../shared/controllers/connectivity_controller.dart';
-
-
 import 'pemilahan_monitoring_dashboard_view.dart';
+
+class RiwayatItemData {
+  final DateTime date;
+  final WasteLogEntity? wasteLog;
+  final NotificationEntity? notif;
+  RiwayatItemData({required this.date, this.wasteLog, this.notif});
+}
 
 /// Halaman riwayat pemilahan — sesuai desain:
 /// Filter tabs, summary kg organik+anorganik, list TERVALIDASI.
@@ -25,7 +32,7 @@ class RiwayatView extends ConsumerStatefulWidget {
 }
 
 class _RiwayatViewState extends ConsumerState<RiwayatView> {
-  int _categoryFilterIndex = 0; // 0=Semua, 1=Organik, 2=Non-Organik
+  int _categoryFilterIndex = 0; // 0=Semua, 1=Organik, 2=Non-Organik, 3=Pengajuan, 4=Info
   int _timeFilterIndex = 0; // 0=Semua Waktu, 1=Hari Ini, 2=Minggu Ini, 3=Bulan Ini
 
   @override
@@ -34,30 +41,63 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
       return const PemilahanMonitoringDashboardView();
     }
     final logsAsync = ref.watch(wasteLogsProvider);
+    final notifsAsync = ref.watch(wargaNotificationsProvider);
+
+    // Combine data if both are ready
+    List<RiwayatItemData>? combinedData;
+    bool isLoading = logsAsync.isLoading || notifsAsync.isLoading;
+    bool hasError = logsAsync.hasError || notifsAsync.hasError;
+
+    if (logsAsync.value != null && notifsAsync.value != null) {
+      combinedData = [];
+      for (var l in logsAsync.value!) {
+        combinedData.add(RiwayatItemData(date: l.createdAt.toLocal(), wasteLog: l));
+      }
+      for (var n in notifsAsync.value!) {
+        final type = n.type.toUpperCase();
+        if (!type.contains('POIN') && !type.contains('PUNISHMENT')) {
+          DateTime dt;
+          try {
+            dt = DateTime.parse(n.time).toLocal();
+          } catch (_) {
+            dt = DateTime.now();
+          }
+          combinedData.add(RiwayatItemData(date: dt, notif: n));
+        }
+      }
+      combinedData.sort((a, b) => b.date.compareTo(a.date));
+    }
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(title: const Text('Riwayat Pemilahan')),
       body: Column(
         children: [
-          // Header Bar Filter (Row 1: Chips, Row 2: Dropdown Periode)
+          // Header Bar Filter
           Container(
             color: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Column(
               children: [
                 // Baris 1: Tab Filter Kategori
-                Row(
-                  children: [
-                    _filterTab('Semua', 0),
-                    const SizedBox(width: 8),
-                    _filterTab('Organik', 1),
-                    const SizedBox(width: 8),
-                    _filterTab('Non-Organik', 2),
-                  ],
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _filterTab('Semua', 0),
+                      const SizedBox(width: 8),
+                      _filterTab('Organik', 1),
+                      const SizedBox(width: 8),
+                      _filterTab('Non-Organik', 2),
+                      const SizedBox(width: 8),
+                      _filterTab('Pengajuan', 3),
+                      const SizedBox(width: 8),
+                      _filterTab('Info', 4),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 12),
-                // Baris 2: Filter Waktu (Label & Dropdown)
+                // Baris 2: Filter Waktu
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -116,34 +156,39 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
                   return;
                 }
                 ref.invalidate(wasteLogsProvider);
+                ref.invalidate(wargaNotificationsProvider);
                 await Future.delayed(const Duration(milliseconds: 500));
               },
               color: AppColors.primaryGreen,
-              child: logsAsync.when(skipLoadingOnReload: true, data: (logs) {
-                  final filtered = _applyFilter(logs);
-                  return filtered.isEmpty
-                      ? _buildEmpty()
-                      : _buildContent(filtered);
-                },
-                loading: () => ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: 4,
-                  itemBuilder: (_, __) => const Padding(
-                    padding: EdgeInsets.only(bottom: 12),
-                    child: SkeletonLoading(
-                      height: 80,
-                      width: double.infinity,
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                    ),
-                  ),
-                ),
-                error: (_, __) => EmptyState(
-                  message: 'Gagal memuat riwayat. Cek koneksi Anda.',
-                  icon: Icons.error_outline_rounded,
-                  buttonText: 'Coba Lagi',
-                  onButtonPressed: () => ref.invalidate(wasteLogsProvider),
-                ),
-              ),
+              child: hasError
+                  ? EmptyState(
+                      message: 'Gagal memuat riwayat. Cek koneksi Anda.',
+                      icon: Icons.error_outline_rounded,
+                      buttonText: 'Coba Lagi',
+                      onButtonPressed: () {
+                        ref.invalidate(wasteLogsProvider);
+                        ref.invalidate(wargaNotificationsProvider);
+                      },
+                    )
+                  : isLoading || combinedData == null
+                      ? ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: 4,
+                          itemBuilder: (_, __) => const Padding(
+                            padding: EdgeInsets.only(bottom: 12),
+                            child: SkeletonLoading(
+                              height: 80,
+                              width: double.infinity,
+                              borderRadius: BorderRadius.all(Radius.circular(12)),
+                            ),
+                          ),
+                        )
+                      : (() {
+                          final filtered = _applyFilter(combinedData!);
+                          return filtered.isEmpty
+                              ? _buildEmpty()
+                              : _buildContent(filtered);
+                        })(),
             ),
           ),
         ],
@@ -151,14 +196,28 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
     );
   }
 
-  List<WasteLogEntity> _applyFilter(List<WasteLogEntity> logs) {
-    List<WasteLogEntity> result = List.from(logs);
+  List<RiwayatItemData> _applyFilter(List<RiwayatItemData> items) {
+    List<RiwayatItemData> result = List.from(items);
 
     // 1. Filter Kategori
-    if (_categoryFilterIndex == 1) {
-      result = result.where((l) => l.wasteType == WasteType.organic).toList();
-    } else if (_categoryFilterIndex == 2) {
-      result = result.where((l) => l.wasteType == WasteType.nonOrganic).toList();
+    if (_categoryFilterIndex == 1) { // Organik
+      result = result.where((l) => l.wasteLog != null && l.wasteLog!.wasteType == WasteType.organic).toList();
+    } else if (_categoryFilterIndex == 2) { // Non-Organik
+      result = result.where((l) => l.wasteLog != null && l.wasteLog!.wasteType == WasteType.nonOrganic).toList();
+    } else if (_categoryFilterIndex == 3) { // Pengajuan
+      result = result.where((l) {
+        if (l.notif == null) return false;
+        final typeUpper = l.notif!.type.toUpperCase();
+        final titleLower = l.notif!.title.toLowerCase();
+        return typeUpper.contains('PENGAJUAN') || typeUpper.contains('PENGOSONGAN') || typeUpper.contains('RESET') || titleLower.contains('pengajuan') || titleLower.contains('pengosongan');
+      }).toList();
+    } else if (_categoryFilterIndex == 4) { // Info / Lainnya
+      result = result.where((l) {
+        if (l.notif == null) return false;
+        final typeUpper = l.notif!.type.toUpperCase();
+        final titleLower = l.notif!.title.toLowerCase();
+        return !(typeUpper.contains('PENGAJUAN') || typeUpper.contains('PENGOSONGAN') || typeUpper.contains('RESET') || titleLower.contains('pengajuan') || titleLower.contains('pengosongan'));
+      }).toList();
     }
 
     // 2. Filter Waktu (Dropdown)
@@ -167,21 +226,18 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
     if (_timeFilterIndex == 1) {
       // Hari Ini
       result = result.where((l) {
-        final dt = l.createdAt.toLocal();
-        return dt.year == now.year && dt.month == now.month && dt.day == now.day;
+        return l.date.year == now.year && l.date.month == now.month && l.date.day == now.day;
       }).toList();
     } else if (_timeFilterIndex == 2) {
       // Minggu Ini
       final weekStart = todayStart.subtract(Duration(days: now.weekday - 1));
       result = result.where((l) {
-        final dt = l.createdAt.toLocal();
-        return !dt.isBefore(weekStart);
+        return !l.date.isBefore(weekStart);
       }).toList();
     } else if (_timeFilterIndex == 3) {
       // Bulan Ini
       result = result.where((l) {
-        final dt = l.createdAt.toLocal();
-        return dt.month == now.month && dt.year == now.year;
+        return l.date.month == now.month && l.date.year == now.year;
       }).toList();
     }
 
@@ -222,24 +278,26 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
     );
   }
 
-  Widget _buildContent(List<WasteLogEntity> logs) {
-    // Hitung total kg
+  Widget _buildContent(List<RiwayatItemData> items) {
+    // Hitung total kg (hanya dari wasteLog)
     double organicKg = 0;
     double nonOrganicKg = 0;
-    for (final log in logs) {
-      if (log.wasteType == WasteType.organic) {
-        organicKg += log.weightKg;
-      } else {
-        nonOrganicKg += log.weightKg;
+    for (final l in items) {
+      if (l.wasteLog != null) {
+        if (l.wasteLog!.wasteType == WasteType.organic) {
+          organicKg += l.wasteLog!.weightKg;
+        } else {
+          nonOrganicKg += l.wasteLog!.weightKg;
+        }
       }
     }
 
     // Group by date label
-    final Map<String, List<WasteLogEntity>> grouped = {};
+    final Map<String, List<RiwayatItemData>> grouped = {};
     final now = DateTime.now();
-    for (final log in logs) {
-      final String key = _groupLabel(log.createdAt.toLocal(), now);
-      grouped.putIfAbsent(key, () => []).add(log);
+    for (final item in items) {
+      final String key = _groupLabel(item.date, now);
+      grouped.putIfAbsent(key, () => []).add(item);
     }
 
     final List<dynamic> flatList = [];
@@ -250,12 +308,10 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: flatList.length + 1,
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 80, top: 16),
+      itemCount: flatList.length,
       itemBuilder: (context, index) {
-        if (index == flatList.length) {
-          return const SizedBox(height: 80);
-        }
         final item = flatList[index];
 
         if (item == 'SUMMARY') {
@@ -267,37 +323,21 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
                     child: _SummaryCard(
                       icon: Icons.delete_rounded,
                       iconColor: AppColors.organicColor,
-                      bgColor: AppColors.organicColor.withValues(alpha: 0.12),
+                      bgColor: AppColors.organicColor.withValues(alpha: 0.1),
                       label: 'Organik',
-                      valueWidget: WeightText(
-                        organicKg,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      value: '',
-                      valueColor: AppColors.organicColor,
+                      value: '${organicKg.toStringAsFixed(1)} KG',
+                      valueColor: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _SummaryCard(
                       icon: Icons.delete_rounded,
-                      iconColor: AppColors.nonOrganicColor,
-                      bgColor: AppColors.nonOrganicColor.withValues(alpha: 0.12),
+                      iconColor: AppColors.warningYellow,
+                      bgColor: AppColors.warningYellow.withValues(alpha: 0.15),
                       label: 'Anorganik',
-                      valueWidget: WeightText(
-                        nonOrganicKg,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      value: '',
-                      valueColor: AppColors.nonOrganicColor,
+                      value: '${nonOrganicKg.toStringAsFixed(1)} KG',
+                      valueColor: AppColors.textPrimary,
                     ),
                   ),
                 ],
@@ -323,10 +363,12 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
               ],
             ),
           );
-        } else if (item is WasteLogEntity) {
+        } else if (item is RiwayatItemData) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: _RiwayatItem(log: item),
+            child: item.wasteLog != null 
+                ? _RiwayatItem(log: item.wasteLog!)
+                : _NotificationHistoryItem(notif: item.notif!),
           );
         }
         return const SizedBox.shrink();
@@ -371,7 +413,6 @@ class _SummaryCard extends StatelessWidget {
     required this.label,
     required this.value,
     required this.valueColor,
-    this.valueWidget,
   });
 
   final IconData icon;
@@ -380,7 +421,6 @@ class _SummaryCard extends StatelessWidget {
   final String label;
   final String value;
   final Color valueColor;
-  final Widget? valueWidget;
 
   @override
   Widget build(BuildContext context) {
@@ -412,7 +452,7 @@ class _SummaryCard extends StatelessWidget {
                   color: AppColors.textSecondary,
                 ),
               ),
-              valueWidget ?? Text(
+              Text(
                 value,
                 style: TextStyle(
                   fontSize: 15,
@@ -503,71 +543,87 @@ class _RiwayatItem extends ConsumerWidget {
               ],
             ),
           ),
-          // Points & Schedule badge
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '+${log.pointsAwarded.abs()} pts',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.warningYellow,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              if (log.pointsAwarded > 0) ...[
-                const SizedBox(height: 6),
-                _buildScheduleBadge(log.createdAt.toLocal()),
-              ],
-            ],
-          ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildScheduleBadge(DateTime date) {
-    final hour = date.hour;
-    // Window Pagi: 06:00-08:59, Window Sore: 15:00-17:59
-    final isFullPoin = (hour >= 6 && hour < 9) || (hour >= 15 && hour < 18);
-    
-    if (isFullPoin) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: AppColors.primaryGreen.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.35), width: 0.5),
-        ),
-        child: const Text(
-          'FULL POIN',
-          style: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.w800,
-            color: AppColors.primaryGreen,
-            letterSpacing: 0.2,
-          ),
-        ),
-      );
-    } else {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: AppColors.warningYellow.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.35), width: 0.5),
-        ),
-        child: const Text(
-          'SEBAGIAN',
-          style: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.w800,
-            color: AppColors.warningYellow,
-            letterSpacing: 0.2,
-          ),
-        ),
-      );
+class _NotificationHistoryItem extends StatelessWidget {
+  const _NotificationHistoryItem({required this.notif});
+  final NotificationEntity notif;
+
+  @override
+  Widget build(BuildContext context) {
+    final isPengajuan = notif.type.toUpperCase().contains('PENGAJUAN') || notif.type.toUpperCase().contains('RESET');
+    final color = isPengajuan ? Colors.blue : AppColors.textSecondary;
+    final icon = isPengajuan ? Icons.mark_email_unread_rounded : Icons.info_outline_rounded;
+    DateTime dt;
+    try {
+      dt = DateTime.parse(notif.time).toLocal();
+    } catch(_) {
+      dt = DateTime.now();
     }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  notif.title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  notif.desc,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_today_outlined,
+                      size: 11,
+                      color: AppColors.textHint,
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      DateFormat('d MMM, HH:mm', 'id_ID').format(dt),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textHint,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
