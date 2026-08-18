@@ -475,12 +475,18 @@ export class KknAttendanceService {
    * Get all student locations recorded in the last 24 hours.
    * If dplUserId is provided, filters to students in DPL's assigned kelompok.
    */
-  async getActiveStudentsLocations(dplUserId?: string) {
+  async getActiveStudentsLocations(dplUserId?: string, kelompokId?: string) {
     const cutoff = new Date(Date.now() - 12 * 60 * 60 * 1000);
 
-    // If DPL, find student user IDs belonging to DPL's kelompok
+    // If DPL or specific kelompokId provided, find student user IDs
     let targetStudentIds: string[] | null = null;
-    if (dplUserId) {
+    if (kelompokId && kelompokId !== "ALL") {
+      const students = await prisma.studentKkn.findMany({
+        where: { kelompokId },
+        select: { userId: true },
+      });
+      targetStudentIds = students.map((s) => s.userId);
+    } else if (dplUserId) {
       const kelompokBinaan = await prisma.kelompokKkn.findMany({
         where: { OR: [{ dplId: dplUserId }, { dpl: { id: dplUserId } }] },
         select: { id: true },
@@ -641,6 +647,13 @@ export class KknAttendanceService {
                 nim: true,
                 jurusan: true,
                 isKetua: true,
+                kelompok: {
+                  select: {
+                    id: true,
+                    name: true,
+                    kelurahan: true,
+                  },
+                },
               },
             },
           },
@@ -756,6 +769,13 @@ export class KknAttendanceService {
             nim: true,
             jurusan: true,
             isKetua: true,
+            kelompok: {
+              select: {
+                id: true,
+                name: true,
+                kelurahan: true,
+              },
+            },
           },
         },
       },

@@ -170,8 +170,9 @@ export const kknAttendanceController = {
       const roleName = String(typeof rawRole === "object" ? rawRole?.name : rawRole || "").toUpperCase();
       const isDpl = roleName === "DPL" || roleName === "DOSEN_PEMBIMBING";
       const dplUserId = isDpl ? ((req as any).user?.userId || (req as any).user?.id) : undefined;
+      const kelompokId = (req.query.kelompokId as string) || undefined;
 
-      const result = await kknAttendanceService.getActiveStudentsLocations(dplUserId);
+      const result = await kknAttendanceService.getActiveStudentsLocations(dplUserId, kelompokId);
       res.status(200).json({
         success: true,
         data: result,
