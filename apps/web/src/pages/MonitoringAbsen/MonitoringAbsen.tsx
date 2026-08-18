@@ -54,6 +54,7 @@ import { dplService, type ConfigTargets } from "../../services/dplService";
 import {
   KELURAHAN_GEODATA,
   createKknMhsIcon as createStudentIcon,
+  createMhsClusterIcon,
   createFacilityIcon,
   formatKelompokDisplayName,
 } from "../../constants/coblongGeoData";
@@ -73,12 +74,12 @@ const createActivityMarkerIcon = () => {
   return L.divIcon({
     className: "custom-activity-icon",
     html: `
-      <div style="background-color: #059669; color: white; border-radius: 8px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.3);">
-        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+      <div style="background-color: #059669; color: white; border-radius: 6px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
       </div>
     `,
-    iconSize: [30, 30],
-    iconAnchor: [15, 15],
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
   });
 };
 
@@ -88,14 +89,14 @@ const createActivePresenceIcon = (studentName: string) => {
     className: "custom-active-student-presence",
     html: `
       <div style="position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-        <div style="position: absolute; width: 42px; height: 42px; border-radius: 50%; background-color: #10b981; opacity: 0.35; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-        <div style="background: linear-gradient(135deg, #059669, #10b981); color: white; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 4px 12px rgba(16,185,129,0.45); font-weight: 900; font-size: 12px;">
+        <div style="position: absolute; inset: -4px; border-radius: 50%; background-color: #10b981; opacity: 0.35; animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+        <div style="background: linear-gradient(135deg, #059669, #10b981); color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 8px rgba(16,185,129,0.5); font-weight: 900; font-size: 10px; font-family: sans-serif;">
           ${initial}
         </div>
       </div>
     `,
-    iconSize: [42, 42],
-    iconAnchor: [21, 21],
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
   });
 };
 
@@ -865,68 +866,154 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     });
   }, [attendance, attendanceFilterTab, studentSearch]);
 
-  // Active student markers with glowing pulse
+  // Active student markers with smart clustering (Anti-Numpuk)
   const activeStudentMarkers = useMemo(() => {
-    const items: React.ReactNode[] = [];
+    type GroupedStudent = {
+      key: string;
+      centerLat: number;
+      centerLng: number;
+      students: Array<{
+        loc: StudentLoc;
+        record: any;
+        isActivePresence: boolean;
+      }>;
+    };
+
+    const groups: Record<string, GroupedStudent> = {};
+
     studentLocations.forEach((loc) => {
       const lat = Number(loc.latitude);
       const lng = Number(loc.longitude);
-      if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-        const studentRecord = attendance.find(
-          (a) => a.studentId === loc.studentId
-        );
-        const isActivePresence =
-          studentRecord &&
-          Boolean(studentRecord.attendedAt) &&
-          !studentRecord.completedAt;
+      if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
 
+      const studentRecord = attendance.find(
+        (a) => a.studentId === loc.studentId
+      );
+      const isActivePresence = Boolean(
+        studentRecord && studentRecord.attendedAt && !studentRecord.completedAt
+      );
+
+      // Grid key rounded to 4 decimals (~11m spatial proximity)
+      const gridKey = `${lat.toFixed(4)}_${lng.toFixed(4)}`;
+
+      if (!groups[gridKey]) {
+        groups[gridKey] = {
+          key: gridKey,
+          centerLat: lat,
+          centerLng: lng,
+          students: [],
+        };
+      }
+      groups[gridKey].students.push({
+        loc,
+        record: studentRecord,
+        isActivePresence,
+      });
+    });
+
+    const items: React.ReactNode[] = [];
+
+    Object.values(groups).forEach((grp) => {
+      const count = grp.students.length;
+      const activeCount = grp.students.filter((s) => s.isActivePresence).length;
+
+      if (count === 1) {
+        // Single student pin
+        const s = grp.students[0];
         items.push(
           <Marker
-            key={`student-${loc.studentId}`}
-            position={[lat, lng]}
+            key={`student-single-${s.loc.studentId}`}
+            position={[grp.centerLat, grp.centerLng]}
             icon={
-              isActivePresence
-                ? createActivePresenceIcon(loc.student.name)
-                : createStudentIcon("in_radius" as any)
+              s.isActivePresence
+                ? createActivePresenceIcon(s.loc.student.name)
+                : createStudentIcon("in_radius")
             }
           >
             <Popup>
-              <div className="p-2 font-sans space-y-1">
-                <div className="flex items-center gap-1.5 mb-1">
+              <div className="p-2 font-sans space-y-1 text-xs min-w-[200px]">
+                <div className="flex items-center justify-between gap-1.5 mb-1">
                   <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
-                    {loc.student.name}
+                    {s.loc.student.name}
                   </span>
-                  {isActivePresence && (
-                    <span className="bg-emerald-100 text-emerald-800 font-black text-[9px] px-1.5 py-0.5 rounded-full border border-emerald-300">
+                  {s.isActivePresence ? (
+                    <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-black text-[9px] px-1.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700">
                       AKTIF DI LAPANGAN
+                    </span>
+                  ) : (
+                    <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-[9px] px-1.5 py-0.5 rounded-full">
+                      STANDBY
                     </span>
                   )}
                 </div>
                 <p className="text-[11px] text-slate-500 font-mono">
-                  NIM: {loc.student.studentProfile?.nim || "-"}
+                  NIM: {s.loc.student.studentProfile?.nim || "-"}
                 </p>
-                <p className="text-[11px] text-slate-500">
-                  Update GPS:{" "}
-                  {new Date(loc.recordedAt).toLocaleTimeString("id-ID")}
+                <p className="text-[10.5px] text-slate-500">
+                  Update GPS: {new Date(s.loc.recordedAt).toLocaleTimeString("id-ID")}
                 </p>
-                {isActivePresence && studentRecord?.attendedAt && (
-                  <div className="mt-2 p-1.5 bg-emerald-50 rounded-lg border border-emerald-200 text-[10px] text-emerald-800 font-extrabold">
-                    Waktu Masuk:{" "}
-                    {new Date(studentRecord.attendedAt).toLocaleTimeString(
-                      "id-ID"
-                    )}{" "}
-                    | Durasi:{" "}
-                    {formatDurationText(
-                      calculateDurationMinutes(studentRecord.attendedAt)
-                    )}
+                {s.isActivePresence && s.record?.attendedAt && (
+                  <div className="mt-1.5 p-1.5 bg-emerald-50 dark:bg-emerald-950/40 rounded-lg border border-emerald-200 dark:border-emerald-800/60 text-[10px] text-emerald-800 dark:text-emerald-300 font-bold">
+                    Waktu Masuk: {new Date(s.record.attendedAt).toLocaleTimeString("id-ID")} | Durasi: {formatDurationText(calculateDurationMinutes(s.record.attendedAt))}
                   </div>
                 )}
               </div>
             </Popup>
           </Marker>
         );
+      } else {
+        // Multi-student Cluster Pin (Anti-Numpuk)
+        items.push(
+          <Marker
+            key={`student-cluster-${grp.key}`}
+            position={[grp.centerLat, grp.centerLng]}
+            icon={createMhsClusterIcon(count, activeCount)}
+          >
+            <Popup>
+              <div className="p-2 font-sans space-y-2 text-xs min-w-[240px] max-w-[280px] max-h-[260px] overflow-y-auto">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-black text-[10px] px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700">
+                      🎓 {count} Mahasiswa di Lokasi Ini
+                    </span>
+                  </div>
+                  {activeCount > 0 && (
+                    <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">
+                      {activeCount} Aktif
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-1.5 divide-y divide-slate-100 dark:divide-slate-800">
+                  {grp.students.map((s, sIdx) => (
+                    <div key={s.loc.studentId || sIdx} className="pt-1.5 first:pt-0 space-y-0.5">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="font-bold text-slate-900 dark:text-slate-100 text-[11px] truncate">
+                          {s.loc.student.name}
+                        </span>
+                        {s.isActivePresence ? (
+                          <span className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-bold text-[8.5px] px-1 py-0.2 rounded border border-emerald-200 dark:border-emerald-800">
+                            Aktif Lapangan
+                          </span>
+                        ) : (
+                          <span className="bg-slate-100 dark:bg-slate-800 text-slate-500 text-[8.5px] px-1 py-0.2 rounded">
+                            Standby
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                        <span>NIM: {s.loc.student.studentProfile?.nim || "-"}</span>
+                        <span>{new Date(s.loc.recordedAt).toLocaleTimeString("id-ID")}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Popup>
+          </Marker>
+        );
       }
     });
+
     return items;
   }, [studentLocations, attendance]);
 

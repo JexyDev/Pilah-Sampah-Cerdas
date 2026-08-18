@@ -63,21 +63,21 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge }) => {
   return (
     <Link
       to={to}
-      className={`relative flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-200 ease-out text-[13px] group overflow-hidden transform-gpu ${
+      className={`relative flex items-center gap-2.5 px-3.5 py-2 rounded-xl transition-all duration-200 ease-out text-[12.5px] group overflow-hidden transform-gpu ${
         isCurrentActive
           ? "bg-emerald-50/90 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-semibold shadow-[0_2px_10px_rgba(0,153,102,0.12)] border border-[#009966]/15 dark:border-emerald-700/30 scale-[1.01]"
-          : "text-slate-600 dark:text-slate-400 hover:text-[#009966] dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:translate-x-1.5 font-medium active:scale-[0.98]"
+          : "text-slate-600 dark:text-slate-400 hover:text-[#009966] dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:translate-x-1 font-medium active:scale-[0.98]"
       }`}
     >
       {/* Left Curved Green Accent Indicator */}
       {isCurrentActive && (
-        <span className="absolute left-0 top-1.5 bottom-1.5 w-1.5 bg-[#009966] dark:bg-emerald-500 rounded-r-full shadow-xs" />
+        <span className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-[#009966] dark:bg-emerald-500 rounded-r-full shadow-xs" />
       )}
 
-      <Icon className={`shrink-0 transition-transform duration-200 ease-out ${isCurrentActive ? "text-[#009966] dark:text-emerald-400 scale-110" : "text-slate-500 dark:text-slate-400 group-hover:text-[#009966] dark:group-hover:text-emerald-400 group-hover:scale-110 group-hover:-rotate-3"}`} size={19} />
+      <Icon className={`shrink-0 transition-transform duration-200 ease-out ${isCurrentActive ? "text-[#009966] dark:text-emerald-400 scale-105" : "text-slate-500 dark:text-slate-400 group-hover:text-[#009966] dark:group-hover:text-emerald-400 group-hover:scale-105"}`} size={16} />
       <span className="flex-1 truncate tracking-tight">{label}</span>
       {badge !== undefined && (
-        <span className="bg-[#009966] dark:bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs group-hover:scale-105 transition-transform">{badge}</span>
+        <span className="bg-[#009966] dark:bg-emerald-600 text-white text-[9.5px] font-bold px-1.5 py-0.2 rounded-full shadow-2xs group-hover:scale-105 transition-transform">{badge}</span>
       )}
     </Link>
   );
@@ -98,14 +98,14 @@ const NavItemCollapsed: React.FC<NavItemProps> = ({ to, icon: Icon, label }) => 
     <Link
       to={to}
       title={label}
-      className={`relative w-10 h-10 rounded-2xl flex items-center justify-center my-0.5 transition-all group cursor-pointer shrink-0 ${
+      className={`relative w-9 h-9 rounded-xl flex items-center justify-center my-0.5 transition-all group cursor-pointer shrink-0 ${
         isCurrentActive
           ? "bg-[#009966] dark:bg-emerald-600 text-white shadow-md shadow-emerald-900/20 scale-105"
           : "text-slate-500 dark:text-slate-400 hover:text-[#009966] dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800"
       }`}
     >
-      <Icon size={19} />
-      <span className="absolute left-16 bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-2xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[70] border border-slate-700/60">
+      <Icon size={16} />
+      <span className="absolute left-14 bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-2xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[70] border border-slate-700/60">
         {label}
       </span>
     </Link>
@@ -149,25 +149,25 @@ const NavGroup: React.FC<{
     <div className="space-y-0.5">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-200 text-[13px] text-left group relative overflow-hidden ${
+        className={`w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl transition-all duration-200 text-[12.5px] text-left group relative overflow-hidden ${
           isAnySubActive
             ? "bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-semibold"
             : "text-slate-600 dark:text-slate-400 hover:text-[#009966] dark:hover:text-emerald-400 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 font-medium"
         }`}
       >
         {isAnySubActive && (
-          <span className="absolute left-0 top-1.5 bottom-1.5 w-1.5 bg-[#009966] dark:bg-emerald-500 rounded-r-full" />
+          <span className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-[#009966] dark:bg-emerald-500 rounded-r-full" />
         )}
 
-        <Icon className={`shrink-0 transition-colors ${isAnySubActive ? "text-[#009966] dark:text-emerald-400" : "text-slate-500 dark:text-slate-400 group-hover:text-[#009966] dark:group-hover:text-emerald-400"}`} size={19} />
+        <Icon className={`shrink-0 transition-colors ${isAnySubActive ? "text-[#009966] dark:text-emerald-400" : "text-slate-500 dark:text-slate-400 group-hover:text-[#009966] dark:group-hover:text-emerald-400"}`} size={16} />
         <span className="flex-1 font-semibold text-slate-700 dark:text-slate-300 truncate">{label}</span>
         <ChevronDown
-          size={16}
+          size={14}
           className={`transition-transform duration-200 text-slate-400 ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
       {isOpen && (
-        <div className="ml-4 pl-2 border-l-2 border-slate-200/80 dark:border-slate-800 my-1 space-y-1">
+        <div className="ml-3.5 pl-2 border-l-2 border-slate-200/80 dark:border-slate-800 my-0.5 space-y-0.5">
           {items.map((sub, idx) => {
             const isActive = isSubActive(sub.to, idx);
             return (
@@ -175,20 +175,20 @@ const NavGroup: React.FC<{
                 key={sub.to}
                 to={sub.to}
                 title={sub.label}
-                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-[12.5px] transition-all group ${
+                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[12px] transition-all group ${
                   isActive
                     ? "bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-semibold shadow-2xs"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#009966] dark:hover:text-emerald-400 hover:translate-x-1 font-medium active:scale-[0.98]"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#009966] dark:hover:text-emerald-400 hover:translate-x-0.5 font-medium active:scale-[0.98]"
                 }`}
               >
                 <span
-                  className={`w-2 h-2 rounded-full shrink-0 transition-all ${
+                  className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all ${
                     isActive
                       ? "bg-[#009966] dark:bg-emerald-400 scale-125 ring-2 ring-emerald-200 dark:ring-emerald-800"
                       : "bg-slate-300 dark:bg-slate-600 group-hover:bg-[#009966] dark:group-hover:bg-emerald-400"
                   }`}
                 />
-                <span className="truncate leading-normal">{sub.label}</span>
+                <span className="truncate">{sub.label}</span>
               </NavLink>
             );
           })}

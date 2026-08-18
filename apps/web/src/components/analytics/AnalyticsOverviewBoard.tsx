@@ -120,13 +120,13 @@ const TableSection: React.FC<TableSectionProps> = ({
   return (
     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col justify-between space-y-3">
       {/* Header & Search */}
-      <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-2xl ${iconBgColor} ${iconTextColor} flex items-center justify-center border shrink-0 font-bold`}>
-            <Icon size={20} />
+      <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className={`w-8 h-8 rounded-xl ${iconBgColor} ${iconTextColor} flex items-center justify-center border shrink-0 font-bold`}>
+            <Icon size={16} />
           </div>
           <div>
-            <h3 className="font-extrabold text-base text-slate-800 dark:text-slate-100 tracking-tight">
+            <h3 className="font-extrabold text-sm sm:text-base text-slate-800 dark:text-slate-100 tracking-tight">
               {title}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">

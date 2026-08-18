@@ -169,20 +169,41 @@ export const createKelurahanPinIcon = (kelName: string, rwCount: number) => {
   });
 };
 
-export const createKknMhsIcon = (status: "PRESENT" | "SICK" | "PERMIT" | "ABSENT") => {
-  let color = "#10b981";
-  if (status === "SICK" || status === "PERMIT") color = "#f59e0b";
-  if (status === "ABSENT") color = "#ef4444";
+export const createKknMhsIcon = (status: "PRESENT" | "SICK" | "PERMIT" | "ABSENT" | "in_radius" | "out_radius" | string) => {
+  let color = "#10b981"; // Emerald
+  if (status === "SICK" || status === "PERMIT" || status === "out_radius") color = "#f59e0b"; // Amber
+  if (status === "ABSENT") color = "#ef4444"; // Rose/Red
 
   return L.divIcon({
     className: "custom-mhs-icon",
     html: `
-      <div style="background-color: ${color}; width: 28px; height: 28px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; color: white;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+      <div style="background: linear-gradient(135deg, ${color}, #047857); width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; color: white;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
       </div>
     `,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+  });
+};
+
+export const createMhsClusterIcon = (count: number, activeCount: number = 0) => {
+  const isAllActive = activeCount > 0 && activeCount === count;
+  const hasSomeActive = activeCount > 0;
+  const bgColor = isAllActive ? "linear-gradient(135deg, #059669, #10b981)" : hasSomeActive ? "linear-gradient(135deg, #0d9488, #059669)" : "linear-gradient(135deg, #334155, #475569)";
+
+  return L.divIcon({
+    className: "custom-mhs-cluster-icon",
+    html: `
+      <div style="position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer; transform: scale(1); transition: transform 0.15s ease;">
+        ${hasSomeActive ? `<div style="position: absolute; inset: -3px; border-radius: 50%; background-color: #10b981; opacity: 0.3; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>` : ""}
+        <div style="background: ${bgColor}; color: white; border-radius: 12px; height: 22px; min-width: 22px; padding: 0 5px; display: flex; align-items: center; justify-content: center; gap: 3px; border: 2px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.35); font-weight: 900; font-size: 10px; font-family: sans-serif; white-space: nowrap;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          <span>${count}</span>
+        </div>
+      </div>
+    `,
+    iconSize: [26, 22],
+    iconAnchor: [13, 11],
   });
 };
 

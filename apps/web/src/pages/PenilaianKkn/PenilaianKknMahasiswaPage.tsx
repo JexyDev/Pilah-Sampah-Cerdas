@@ -467,23 +467,23 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
       {/* KPI Cards Ringkasan Nilai Angkatan */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-black shrink-0">
-            <Users size={20} />
+        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center font-black shrink-0">
+            <Users size={16} />
           </div>
           <div>
-            <span className="text-[11px] text-slate-400 font-bold block uppercase">Total Mahasiswa</span>
-            <span className="text-xl font-black text-slate-900 dark:text-slate-100">{studentsRekap.length} Orang</span>
+            <span className="text-[10px] text-slate-400 font-bold block uppercase">Total Mahasiswa</span>
+            <span className="text-lg font-black text-slate-900 dark:text-slate-100">{studentsRekap.length} Orang</span>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-black shrink-0">
-            <GraduationCap size={20} />
+        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center font-black shrink-0">
+            <GraduationCap size={16} />
           </div>
           <div>
-            <span className="text-[11px] text-slate-400 font-bold block uppercase">Rerata Nilai DPL (30%)</span>
-            <span className="text-xl font-black text-amber-700">
+            <span className="text-[10px] text-slate-400 font-bold block uppercase">Rerata Nilai DPL (30%)</span>
+            <span className="text-lg font-black text-amber-700">
               {studentsRekap.length > 0
                 ? (studentsRekap.reduce((acc, s) => acc + (s.subtotalDpl || 0), 0) / studentsRekap.length).toFixed(1)
                 : "0"}
@@ -491,13 +491,13 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-black shrink-0">
-            <ClipboardList size={20} />
+        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-black shrink-0">
+            <ClipboardList size={16} />
           </div>
           <div>
-            <span className="text-[11px] text-slate-400 font-bold block uppercase">Rerata Nilai Mitra (70%)</span>
-            <span className="text-xl font-black text-emerald-700">
+            <span className="text-[10px] text-slate-400 font-bold block uppercase">Rerata Nilai Mitra (70%)</span>
+            <span className="text-lg font-black text-emerald-700">
               {studentsRekap.length > 0
                 ? (studentsRekap.reduce((acc, s) => acc + (s.subtotalMitra || 0), 0) / studentsRekap.length).toFixed(1)
                 : "0"}
@@ -505,13 +505,13 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-black shrink-0">
-            <Award size={20} />
+        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center font-black shrink-0">
+            <Award size={16} />
           </div>
           <div>
-            <span className="text-[11px] text-slate-400 font-bold block uppercase">Rerata Nilai Akhir</span>
-            <span className="text-xl font-black text-blue-700">
+            <span className="text-[10px] text-slate-400 font-bold block uppercase">Rerata Nilai Akhir</span>
+            <span className="text-lg font-black text-blue-700">
               {studentsRekap.length > 0
                 ? (studentsRekap.reduce((acc, s) => acc + (s.nilaiAkhir || 0), 0) / studentsRekap.length).toFixed(1)
                 : "0"}
