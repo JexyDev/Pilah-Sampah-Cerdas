@@ -4,7 +4,7 @@
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Lock,
@@ -23,7 +23,6 @@ import {
   Download,
 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
-import { useThemeStore } from "../../store/useThemeStore";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 
