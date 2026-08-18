@@ -6,10 +6,11 @@
  * Halaman Registrasi Terpadu TrashCare (Default: Warga, Opsi: Mahasiswa KKN & Petugas Residu)
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { User, Phone, Lock, Eye, EyeOff, MapPin, GraduationCap, Truck, ArrowRight, ShieldCheck, RefreshCcw, CheckCircle2, Smartphone } from "lucide-react";
+import { useThemeStore } from "../../store/useThemeStore";
 import api from "../../utils/api";
 
 // Exact Vector SVG Icon matching the TrashCare logo
@@ -50,6 +51,28 @@ const TrashCareLogoIcon: React.FC<{ className?: string }> = ({ className = "w-10
 export const Register: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  // Force clean light mode on Register page unconditionally
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.remove("dark");
+    root.setAttribute("data-theme", "light");
+    root.style.colorScheme = "light";
+
+    return () => {
+      // Restore user preference when navigating away
+      const currentTheme = useThemeStore.getState().theme;
+      if (currentTheme === "dark") {
+        root.classList.add("dark");
+        root.setAttribute("data-theme", "dark");
+        root.style.colorScheme = "dark";
+      } else {
+        root.classList.remove("dark");
+        root.setAttribute("data-theme", "light");
+        root.style.colorScheme = "light";
+      }
+    };
+  }, []);
 
   // Role State (Default: WARGA)
   const initialRole = (searchParams.get("role") || "WARGA").toUpperCase();
