@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
-import '../../../data/models/point_history_entity.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
-import '../../riwayat/controllers/riwayat_controller.dart';
+import '../controllers/riwayat_kkn_controller.dart';
+import '../views/riwayat_kkn_view.dart' show KknHistoryLog, KknHistoryType;
 
 final pengajuanIzinCountProvider = FutureProvider.autoDispose<int>((ref) async {
   try {
@@ -37,7 +37,7 @@ class MahasiswaPoinView extends ConsumerWidget {
         onRefresh: () async {
           await ref.read(mahasiswaControllerProvider.notifier).fetchAll();
           if (user != null) {
-            ref.invalidate(pointHistoryProvider);
+            await ref.read(riwayatKknControllerProvider.notifier).refresh();
             ref.invalidate(pengajuanIzinCountProvider);
           }
         },
@@ -68,7 +68,7 @@ class MahasiswaPoinView extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   if (user != null)
-                    _buildPoinHistoryList(ref.watch(pointHistoryProvider))
+                    _buildPoinHistoryList(ref.watch(riwayatKknControllerProvider))
                   else
                     const SizedBox.shrink(),
                   const SizedBox(height: 40),
@@ -177,11 +177,10 @@ class MahasiswaPoinView extends ConsumerWidget {
     final wargaCount = myWargaList.where((w) => w.binId.isNotEmpty && w.binId != 'Belum Ada Tempat Sampah').length;
     final points = mhsState.dashboard?.contributionPoints ?? 0;
     
-    final asyncHistory = ref.watch(pointHistoryProvider);
+    final riwayatState = ref.watch(riwayatKknControllerProvider);
     int laporanCount = 0;
-    if (asyncHistory.value != null) {
-      final list = asyncHistory.value!;
-      laporanCount = list.where((h) => h.description.toLowerCase().contains('pemanfaatan')).length;
+    if (!riwayatState.isLoading && riwayatState.logs.isNotEmpty) {
+      laporanCount = riwayatState.logs.where((h) => h.title.toLowerCase().contains('pemanfaatan') || h.subtitle.toLowerCase().contains('pemanfaatan')).length;
     }
 
     final izinCount = ref.watch(pengajuanIzinCountProvider).value ?? 0;
@@ -334,14 +333,18 @@ class MahasiswaPoinView extends ConsumerWidget {
     );
   }
 
-  Widget _buildPoinHistoryList(AsyncValue<List<PointHistoryEntity>> asyncHistory) {
-    return asyncHistory.when(skipLoadingOnReload: true, loading: () => const Padding(
+  Widget _buildPoinHistoryList(RiwayatKknState state) {
+    if (state.isLoading && state.logs.isEmpty) {
+      return const Padding(
         padding: EdgeInsets.all(32),
         child: Center(
           child: CircularProgressIndicator(color: AppColors.primaryGreen),
         ),
-      ),
-      error: (err, _) => Container(
+      );
+    }
+
+    if (state.errorMessage != null && state.logs.isEmpty) {
+      return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -353,44 +356,46 @@ class MahasiswaPoinView extends ConsumerWidget {
             const Icon(Icons.error_outline, size: 40, color: AppColors.dangerRed),
             const SizedBox(height: 8),
             Text(
-              'Gagal memuat riwayat poin.\n$err',
+              'Gagal memuat riwayat poin.\n${state.errorMessage}',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
             ),
           ],
         ),
-      ),
-      data: (history) {
-        if (history.isEmpty) {
-          return Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: const Column(
-              children: [
-                Icon(Icons.monetization_on_outlined, size: 40, color: AppColors.textHint),
-                SizedBox(height: 8),
-                Text(
-                  'Belum ada riwayat perolehan poin.',
-                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-          );
-        }
+      );
+    }
 
-        return Column(
-          children: history
-              .map((item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: _PoinHistoryItem(item: item),
-                  ))
-              .toList(),
-        );
-      },
+    // Filter logs that actually have points awarded for the Poin View
+    final pointLogs = state.logs.where((log) => log.points != null && log.points! > 0).toList();
+
+    if (pointLogs.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: const Column(
+          children: [
+            Icon(Icons.monetization_on_outlined, size: 40, color: AppColors.textHint),
+            SizedBox(height: 8),
+            Text(
+              'Belum ada riwayat perolehan poin.',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: pointLogs
+          .map((item) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _PoinHistoryItem(item: item),
+              ))
+          .toList(),
     );
   }
 }
@@ -459,11 +464,11 @@ class _StatCard extends StatelessWidget {
 class _PoinHistoryItem extends StatelessWidget {
   const _PoinHistoryItem({required this.item});
 
-  final PointHistoryEntity item;
+  final KknHistoryLog item;
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(item.createdAt.toLocal());
+    final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(item.timestamp.toLocal());
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -480,8 +485,8 @@ class _PoinHistoryItem extends StatelessWidget {
               color: AppColors.primaryGreen.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.add_circle_outline_rounded,
+            child: Icon(
+              item.type == KknHistoryType.gps ? Icons.location_on_rounded : Icons.check_circle_outline_rounded,
               color: AppColors.primaryGreen,
               size: 20,
             ),
@@ -492,7 +497,7 @@ class _PoinHistoryItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.description,
+                  item.title,
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -513,7 +518,7 @@ class _PoinHistoryItem extends StatelessWidget {
             ),
           ),
           Text(
-            '+${item.points} PTS',
+            '+${item.points ?? 0} PTS',
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,
