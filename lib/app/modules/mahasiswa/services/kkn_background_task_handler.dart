@@ -536,8 +536,13 @@ Future<ServiceRequestResult> startKknForegroundService({
     double.tryParse(targetData['longitude']?.toString() ?? targetData['lng']?.toString() ?? '0') ?? 0.0);
   await prefs.setDouble(KknBgPrefKeys.targetRadius, 
     double.tryParse(targetData['radius']?.toString() ?? '150') ?? 150.0);
-  await prefs.setInt(KknBgPrefKeys.targetDuration, 
-    int.tryParse(targetData['targetDurationMinutes']?.toString() ?? '2') ?? 2);
+  final double rawDurationMins = double.tryParse(targetData['targetDurationMinutes']?.toString() ?? '') ?? 2.0;
+  int durationMins = rawDurationMins.ceil();
+  if (rawDurationMins > 0 && rawDurationMins < 1.0) {
+    durationMins = (rawDurationMins * 60).ceil();
+  }
+  if (durationMins <= 0) durationMins = 1;
+  await prefs.setInt(KknBgPrefKeys.targetDuration, durationMins);
   
   if (targetData['scheduleId'] != null || targetData['id'] != null) {
     await prefs.setString(KknBgPrefKeys.scheduleId, 

@@ -1,7 +1,9 @@
 import 'dart:async';
-
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../data/providers/repository_providers.dart';
 
@@ -19,6 +21,7 @@ class LocationPingState {
     this.gpsEnabled = false,
     this.errorMessage,
     this.detectedZoneArea,
+    this.pendingOfflineCount = 0,
   });
 
   final bool isTracking;
@@ -29,6 +32,7 @@ class LocationPingState {
   final bool gpsEnabled;
   final String? errorMessage;
   final String? detectedZoneArea;
+  final int pendingOfflineCount;
 
   LocationPingState copyWith({
     bool? isTracking,
@@ -39,6 +43,7 @@ class LocationPingState {
     bool? gpsEnabled,
     String? errorMessage,
     String? detectedZoneArea,
+    int? pendingOfflineCount,
   }) {
     return LocationPingState(
       isTracking: isTracking ?? this.isTracking,
@@ -47,8 +52,9 @@ class LocationPingState {
       lastPingTime: lastPingTime ?? this.lastPingTime,
       permissionGranted: permissionGranted ?? this.permissionGranted,
       gpsEnabled: gpsEnabled ?? this.gpsEnabled,
-      errorMessage: errorMessage,
+      errorMessage: errorMessage ?? this.errorMessage,
       detectedZoneArea: detectedZoneArea ?? this.detectedZoneArea,
+      pendingOfflineCount: pendingOfflineCount ?? this.pendingOfflineCount,
     );
   }
 }
@@ -58,53 +64,95 @@ class LocationPingState {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class LocationPingNotifier extends StateNotifier<LocationPingState> {
-  LocationPingNotifier(this._ref) : super(const LocationPingState());
+  LocationPingNotifier(this._ref) : super(const LocationPingState()) {
+    _loadOfflineQueue();
+  }
 
   final Ref _ref;
   Timer? _timer;
+  List<Map<String, dynamic>> _offlineQueue = [];
+  static const String _offlineStorageKey = 'kkn_offline_location_queue';
 
   /// Interval pengiriman ping ke backend: 15 detik (real-time continuous tracking).
   static const Duration pingInterval = Duration(seconds: 15);
 
-  /// Mulai tracking lokasi.
-  Future<void> startTracking() async {
-    // 1. Cek GPS service aktif
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      state = state.copyWith(
-        gpsEnabled: false,
-        errorMessage: 'GPS tidak aktif. Aktifkan lokasi di pengaturan perangkat.',
-      );
-      return;
+  Future<void> _loadOfflineQueue() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedStr = prefs.getString(_offlineStorageKey);
+      if (savedStr != null && savedStr.isNotEmpty) {
+        final List<dynamic> decoded = jsonDecode(savedStr);
+        _offlineQueue = decoded.map((e) => Map<String, dynamic>.from(e)).toList();
+        if (mounted) {
+          state = state.copyWith(pendingOfflineCount: _offlineQueue.length);
+        }
+      }
+    } catch (e) {
+      debugPrint('[LocationPing] Load offline queue error: $e');
     }
+  }
 
-    // 2. Cek & minta permission
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        state = state.copyWith(
-          permissionGranted: false,
-          errorMessage: 'Izin lokasi ditolak.',
-        );
-        return;
+  Future<void> _saveOfflineQueue() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_offlineStorageKey, jsonEncode(_offlineQueue));
+      if (mounted) {
+        state = state.copyWith(pendingOfflineCount: _offlineQueue.length);
+      }
+    } catch (e) {
+      debugPrint('[LocationPing] Save offline queue error: $e');
+    }
+  }
+
+  Future<void> _flushOfflineQueue() async {
+    if (_offlineQueue.isEmpty) return;
+    final List<Map<String, dynamic>> itemsToSend = List.from(_offlineQueue);
+    _offlineQueue.clear();
+    await _saveOfflineQueue();
+
+    final repo = _ref.read(kknRepositoryProvider);
+    for (final item in itemsToSend) {
+      try {
+        final lat = (item['lat'] as num).toDouble();
+        final lng = (item['lng'] as num).toDouble();
+        await repo.sendLocationPing(lat, lng);
+      } catch (e) {
+        // Jika jaringan gagal lagi saat flushing, kembalikan item yang tersisa ke antrean
+        _offlineQueue.add(item);
+        await _saveOfflineQueue();
       }
     }
+  }
 
-    if (permission == LocationPermission.deniedForever) {
+  /// Mulai tracking lokasi.
+  Future<void> startTracking() async {
+    if (state.isTracking) return;
+
+    // 1. Cek izin lokasi
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    final hasPermission = permission == LocationPermission.whileInUse ||
+        permission == LocationPermission.always;
+
+    if (!hasPermission) {
       state = state.copyWith(
         permissionGranted: false,
-        errorMessage:
-            'Izin lokasi ditolak secara permanen. Aktifkan di pengaturan.',
+        errorMessage: 'Izin lokasi ditolak. Aktifkan izin lokasi untuk presensi.',
       );
       return;
     }
 
-    // Attempt to request background permission if only whileInUse is granted
-    if (permission == LocationPermission.whileInUse) {
-       // Request background permission explicitly (if the library supports it directly or rely on the system prompt)
-       // Note: in Geolocator, calling requestPermission again might prompt for "Allow all the time" in Android 10+
-       // But for simplicity, we will just proceed, as background execution usually requires "always" or a foreground service.
+    // 2. Cek apakah GPS aktif
+    final isGpsEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!isGpsEnabled) {
+      state = state.copyWith(
+        gpsEnabled: false,
+        errorMessage: 'GPS/Layanan lokasi tidak aktif. Harap aktifkan GPS.',
+      );
+      return;
     }
 
     state = state.copyWith(
@@ -114,7 +162,7 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
       errorMessage: null,
     );
 
-    // 3. Kirim ping pertama segera
+    // 3. Kirim ping pertama
     await _sendPing();
 
     // 4. Mulai timer periodic
@@ -131,6 +179,14 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
 
   /// Kirim satu kali ping lokasi ke backend.
   Future<void> _sendPing() async {
+    // Flush antrean offline terlebih dahulu jika ada sinyal
+    if (_offlineQueue.isNotEmpty) {
+      await _flushOfflineQueue();
+    }
+
+    double lat = 0;
+    double lng = 0;
+
     try {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
@@ -138,16 +194,18 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
           distanceFilter: 0,
         ),
       );
+      lat = position.latitude;
+      lng = position.longitude;
 
       final repo = _ref.read(kknRepositoryProvider);
-      final pingResponse = await repo.sendLocationPing(position.latitude, position.longitude);
+      final pingResponse = await repo.sendLocationPing(lat, lng);
       final data = pingResponse['data'] as Map<String, dynamic>?;
       final poskoArea = data?['poskoArea']?.toString() ?? data?['kelurahan']?.toString();
 
       if (mounted) {
         state = state.copyWith(
-          lastLatitude: position.latitude,
-          lastLongitude: position.longitude,
+          lastLatitude: lat,
+          lastLongitude: lng,
           lastPingTime: DateTime.now(),
           detectedZoneArea: poskoArea,
           errorMessage: null,

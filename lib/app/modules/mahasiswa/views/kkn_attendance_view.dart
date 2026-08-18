@@ -32,10 +32,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
           _selectedKelurahan = user.kelurahan;
         }
       }
-      // Hapus auto-start: User harus menekan tombol "Mulai Tracking" secara manual
-      // if (!ref.read(kknLocationProvider).isTracking) {
-      //   ref.read(kknLocationProvider.notifier).startTracking(context);
-      // }
+      ref.read(kelompokKknProvider.notifier).fetchKelompok();
     });
   }
   
@@ -108,7 +105,12 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
     if (user == null) return;
     
     final kelompokState = ref.read(kelompokKknProvider);
-    final kelompokName = kelompokState.kelompok?.groupName ?? '-';
+    final kelompokName = (kelompokState.kelompok?.groupName != null && kelompokState.kelompok!.groupName.isNotEmpty)
+        ? kelompokState.kelompok!.groupName
+        : (user.kelompokName.isNotEmpty ? user.kelompokName : 'Kelompok 1 Cipaganti');
+    final dplName = (kelompokState.kelompok?.dosenPembimbing != null && kelompokState.kelompok!.dosenPembimbing.isNotEmpty)
+        ? kelompokState.kelompok!.dosenPembimbing
+        : (user.dplName.isNotEmpty ? user.dplName : 'DPL KKN');
 
     final bool confirm = await showDialog<bool>(
       context: context,
@@ -133,11 +135,11 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
               const SizedBox(height: 8),
               _buildPopupRow('Nama', user.name),
               const SizedBox(height: 8),
-              _buildPopupRow('NIM', user.nim),
+              _buildPopupRow('NIM', user.nim.isNotEmpty ? user.nim : '-'),
               const SizedBox(height: 8),
               _buildPopupRow('Kelompok', kelompokName),
               const SizedBox(height: 8),
-              _buildPopupRow('DPL', kelompokState.kelompok?.dosenPembimbing ?? '-'),
+              _buildPopupRow('DPL', dplName),
               const SizedBox(height: 16),
               const Text('Apakah Anda yakin ingin melakukan absensi sekarang?', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
             ],

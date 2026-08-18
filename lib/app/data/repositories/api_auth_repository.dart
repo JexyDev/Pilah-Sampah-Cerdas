@@ -915,6 +915,8 @@ class ApiAuthRepository implements AuthRepository {
       universitas: universitas,
       jenjangPendidikan: jenjang,
       pendampingName: userMap['pendampingName']?.toString() ?? userMap['mahasiswaPendamping']?.toString(),
+      kelompokName: userMap['kelompokName']?.toString() ?? userMap['kelompok']?['name']?.toString() ?? '',
+      dplName: userMap['dplName']?.toString() ?? userMap['kelompok']?['dpl']?['name']?.toString() ?? userMap['kelompok']?['dosenPembimbing']?.toString() ?? '',
       familySize: int.tryParse(userMap['familySize']?.toString() ?? '') ??
                   int.tryParse(userMap['jumlahAnggotaKeluarga']?.toString() ?? '') ?? 
                   int.tryParse(userMap['jumlah_anggota_keluarga']?.toString() ?? '') ?? 1,

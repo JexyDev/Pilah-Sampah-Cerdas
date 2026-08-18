@@ -237,9 +237,14 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
                   .toLowerCase();
           final bool isAttended = activeZone['isAttended'] == true || status == 'hadir';
 
-          final int targetMins = int.tryParse(activeZone['targetDurationMinutes']?.toString() ?? '') ??
-              int.tryParse(activeZone['durationMinutes']?.toString() ?? '') ??
-              2;
+          final double rawTargetMins = double.tryParse(activeZone['targetDurationMinutes']?.toString() ?? '') ??
+              double.tryParse(activeZone['durationMinutes']?.toString() ?? '') ??
+              2.0;
+          int targetMins = rawTargetMins.ceil();
+          if (rawTargetMins > 0 && rawTargetMins < 1.0) {
+            targetMins = (rawTargetMins * 60).ceil();
+          }
+          if (targetMins <= 0) targetMins = 1;
 
           if (isAttended || status == 'hadir') {
             _accumulatedSeconds = targetMins * 60;
