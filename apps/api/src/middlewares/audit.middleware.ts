@@ -27,16 +27,18 @@ export const auditMiddleware = (featureCategory: string) => {
       // But we can store the request payload as `newValue` for creation/updates.
       
       try {
-        await auditQueue.add('log-action', {
-          action,
-          userId,
-          roleName,
-          featureCategory,
-          endpoint,
-          ipAddress,
-          oldValue: null, // Would be populated by specific service methods if needed
-          newValue: payload,
-        });
+        if (auditQueue) {
+          await auditQueue.add('log-action', {
+            action,
+            userId,
+            roleName,
+            featureCategory,
+            endpoint,
+            ipAddress,
+            oldValue: null, // Would be populated by specific service methods if needed
+            newValue: payload,
+          });
+        }
       } catch (error) {
         console.error('[Audit Middleware] Failed to enqueue audit log:', error);
       }

@@ -11,39 +11,26 @@ const connection = {
   port: parseInt(process.env.REDIS_PORT || '6379', 10),
 };
 
-export const auditWorker = new Worker(
-  'audit-log-queue',
-  async (job: Job) => {
-    const { action, userId, roleName, featureCategory, endpoint, ipAddress, oldValue, newValue } = job.data;
+let auditWorker: Worker | null = null;
 
-    // Use a transaction to ensure we get the absolute latest hash and insert without race conditions
-    await prisma.$transaction(async (tx) => {
-      // 1. Get the last audit log to get the previousHash
-      const lastLog = await tx.auditTrail.findFirst({
-        orderBy: { timestamp: 'desc' },
-        select: { hash: true },
-      });
+try {
+  auditWorker = new Worker(
+    'audit-log-queue',
+    async (job: Job) => {
+      const { action, userId, roleName, featureCategory, endpoint, ipAddress, oldValue, newValue } = job.data;
 
-      const previousHash = lastLog?.hash || 'GENESIS_HASH';
+      // Use a transaction to ensure we get the absolute latest hash and insert without race conditions
+      await prisma.$transaction(async (tx) => {
+        // 1. Get the last audit log to get the previousHash
+        const lastLog = await tx.auditTrail.findFirst({
+          orderBy: { timestamp: 'desc' },
+          select: { hash: true },
+        });
 
-      // 2. Calculate the new hash
-      const payloadString = JSON.stringify({
-        action,
-        userId,
-        roleName,
-        featureCategory,
-        endpoint,
-        ipAddress,
-        oldValue,
-        newValue,
-        previousHash
-      });
+        const previousHash = lastLog?.hash || 'GENESIS_HASH';
 
-      const hash = crypto.createHash('sha256').update(payloadString).digest('hex');
-
-      // 3. Insert the new audit log
-      const newLog = await tx.auditTrail.create({
-        data: {
+        // 2. Calculate the new hash
+        const payloadString = JSON.stringify({
           action,
           userId,
           roleName,
@@ -52,26 +39,50 @@ export const auditWorker = new Worker(
           ipAddress,
           oldValue,
           newValue,
-          hash,
-          previousHash,
-        },
+          previousHash
+        });
+
+        const hash = crypto.createHash('sha256').update(payloadString).digest('hex');
+
+        // 3. Insert the new audit log
+        const newLog = await tx.auditTrail.create({
+          data: {
+            action,
+            userId,
+            roleName,
+            featureCategory,
+            endpoint,
+            ipAddress,
+            oldValue,
+            newValue,
+            hash,
+            previousHash,
+          },
+        });
+
+        // 4. Broadcast the new log via WebSocket
+        websocketService.broadcastAuditLog(newLog);
+      }, {
+        // Set isolation level to Serializable to strictly prevent race conditions during hash calculation
+        isolationLevel: 'Serializable',
       });
+    },
+    { connection, concurrency: 1 } // concurrency: 1 ensures logs are processed strictly sequentially
+  );
 
-      // 4. Broadcast the new log via WebSocket
-      websocketService.broadcastAuditLog(newLog);
-    }, {
-      // Set isolation level to Serializable to strictly prevent race conditions during hash calculation
-      isolationLevel: 'Serializable',
-    });
-  },
-  { connection, concurrency: 1 } // concurrency: 1 ensures logs are processed strictly sequentially
-);
+  auditWorker.on('completed', (_job) => {
+    // Optional: Add debug logging if needed
+  });
 
-auditWorker.on('completed', (job) => {
-  // Optional: Add debug logging if needed
-  // console.log(`[Audit Worker] Job ${job.id} has completed!`);
-});
+  auditWorker.on('error', (err) => {
+    console.warn(`[Audit Worker Error] ${err.message}`);
+  });
 
-auditWorker.on('failed', (job, err) => {
-  console.error(`[Audit Worker] Job ${job?.id} has failed with ${err.message}`);
-});
+  auditWorker.on('failed', (job, err) => {
+    console.error(`[Audit Worker] Job ${job?.id} has failed with ${err.message}`);
+  });
+} catch (err: any) {
+  console.warn(`[Audit Worker Init Warning] Failed to initialize audit worker: ${err.message}`);
+}
+
+export { auditWorker };

@@ -5,4 +5,12 @@ const connection = {
   port: parseInt(process.env.REDIS_PORT || '6379', 10),
 };
 
-export const auditQueue = new Queue('audit-log-queue', { connection });
+let auditQueue: Queue | null = null;
+
+try {
+  auditQueue = new Queue('audit-log-queue', { connection });
+} catch (err: any) {
+  console.warn(`[Audit Queue Init Warning] Failed to initialize audit queue: ${err.message}`);
+}
+
+export { auditQueue };
