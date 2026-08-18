@@ -212,20 +212,20 @@ const ResiduDashboard: React.FC = () => {
       )}
 
       {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
         {/* Tier 1: Title & Status Badge */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
               Portal Pengawasan Residu
             </h1>
-            <p className="text-xs text-slate-500 font-medium">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               Pusat validasi berat timbangan fisik hilir, rute penjemputan &amp; pelaporan residu
             </p>
           </div>
 
           <div className="self-start sm:self-center flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200/80 shadow-2xs">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200/80 dark:border-rose-700/40 shadow-2xs">
               <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
               Zona Residu Aktif
             </span>
@@ -233,15 +233,15 @@ const ResiduDashboard: React.FC = () => {
         </div>
 
         {/* Tier 2: Petugas Info & Action Buttons */}
-        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex flex-wrap items-center gap-2.5 text-slate-600 font-medium">
-            <span className="font-bold text-slate-800">Petugas:</span>
-            <span className="px-2.5 py-1 bg-slate-100 rounded-lg text-slate-700 font-semibold">
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-2.5 text-slate-600 dark:text-slate-300 font-medium">
+            <span className="font-bold text-slate-800 dark:text-slate-200">Petugas:</span>
+            <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700">
               {user?.name || "Petugas Residu"}
             </span>
             <span className="text-slate-400">•</span>
-            <span className="font-bold text-slate-800">Zona Tugas:</span>
-            <span className="px-2.5 py-1 bg-slate-100 rounded-lg text-slate-700 font-semibold">
+            <span className="font-bold text-slate-800 dark:text-slate-200">Zona Tugas:</span>
+            <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700">
               {summary?.assignedZone || "Semua Zona"}
             </span>
           </div>
@@ -268,58 +268,58 @@ const ResiduDashboard: React.FC = () => {
       {/* KPI Stats widgets */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Violations Count Card */}
-        <div className="bg-white p-5 rounded-2xl border border-outline-variant shadow-sm flex flex-col gap-3">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col gap-3">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-on-surface-variant font-bold">CATATAN HARI INI</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase">CATATAN HARI INI</span>
             <AlertTriangle className="text-red-500 w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-2xl font-black">{summary?.totalViolationsToday} Laporan</h3>
-            <p className="text-[10px] text-on-surface-variant mt-0.5">
+            <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100">{summary?.totalViolationsToday} Laporan</h3>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
               Pelanggaran residu tercampur hari ini
             </p>
           </div>
         </div>
 
         {/* KPI Score Card */}
-        <div className="bg-white p-5 rounded-2xl border border-outline-variant shadow-sm flex flex-col gap-3">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col gap-3">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-on-surface-variant font-bold">SKOR KPI PETUGAS</span>
-            <CheckCircle className="text-primary w-5 h-5" />
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase">SKOR KPI PETUGAS</span>
+            <CheckCircle className="text-emerald-500 w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-2xl font-black text-primary">{summary?.kpiScore} pts</h3>
-            <p className="text-[10px] text-on-surface-variant mt-0.5">
+            <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{summary?.kpiScore} pts</h3>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
               Status target kinerja: Sangat Baik
             </p>
           </div>
         </div>
 
         {/* Total residu tonnage mock / stats */}
-        <div className="bg-white p-5 rounded-2xl border border-outline-variant shadow-sm flex flex-col gap-3">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col gap-3">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-on-surface-variant font-bold">ZONA OPERASIONAL</span>
-            <Map className="text-indigo-600 w-5 h-5" />
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase">ZONA OPERASIONAL</span>
+            <Map className="text-indigo-600 dark:text-indigo-400 w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-2xl font-black text-indigo-600">{summary?.assignedZone}</h3>
-            <p className="text-[10px] text-on-surface-variant mt-0.5">
+            <h3 className="text-2xl font-black text-indigo-600 dark:text-indigo-400">{summary?.assignedZone}</h3>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
               Sektor monitoring residu hilir
             </p>
           </div>
         </div>
 
         {/* Schedule Summary widget */}
-        <div className="bg-white p-5 rounded-2xl border border-outline-variant shadow-sm flex flex-col gap-3">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col gap-3">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-on-surface-variant font-bold">PROGRES HARIAN</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase">PROGRES HARIAN</span>
             <AlertTriangle className="text-amber-500 w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-2xl font-black text-amber-600">
+            <h3 className="text-2xl font-black text-amber-600 dark:text-amber-400">
               {summary?.tugasSelesaiHariIni || 0} / {(summary?.tugasSelesaiHariIni || 0) + jadwal.length}
             </h3>
-            <div className="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden">
+            <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full mt-2 overflow-hidden border border-slate-200 dark:border-slate-700">
               <div
                 className="bg-amber-500 h-full rounded-full transition-all"
                 style={{
@@ -335,13 +335,13 @@ const ResiduDashboard: React.FC = () => {
       <div className="grid grid-cols-12 gap-6">
         {/* Schedule List */}
         <div className="col-span-12 lg:col-span-8 space-y-6">
-          <div className="bg-white p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4">
-            <h3 className="font-extrabold text-lg flex items-center gap-1.5">
-              <Map className="text-primary w-5 h-5" />
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            <h3 className="font-extrabold text-lg text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+              <Map className="text-emerald-600 dark:text-emerald-400 w-5 h-5" />
               Estimasi Tugas Harian (Jemput &gt;70%)
             </h3>
             {jadwal.length === 0 ? (
-              <div className="text-center text-slate-500 text-sm py-4">Tidak ada tugas jemput mendesak hari ini.</div>
+              <div className="text-center text-slate-500 dark:text-slate-400 text-sm py-4">Tidak ada tugas jemput mendesak hari ini.</div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {jadwal.map(j => {
@@ -349,11 +349,11 @@ const ResiduDashboard: React.FC = () => {
                   const max = Number(j.maxCapacityLiter);
                   const percentage = max > 0 ? (vol/max)*100 : 0;
                   return (
-                    <div key={j.id} className="p-4 border border-slate-100 rounded-xl flex justify-between items-center shadow-sm">
+                    <div key={j.id} className="p-4 border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl flex justify-between items-center shadow-sm">
                       <div>
-                        <p className="font-bold text-sm text-slate-800">{j.rtRw?.name}</p>
-                        <p className="text-xs text-slate-500 mt-1">QR: {j.qrCode}</p>
-                        <p className="text-xs text-slate-500">Pemilik: {j.user?.name || "-"}</p>
+                        <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{j.rtRw?.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">QR: {j.qrCode}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Pemilik: {j.user?.name || "-"}</p>
                       </div>
                       <div className="text-right">
                         <span className={`text-lg font-black ${percentage > 90 ? 'text-red-500' : 'text-amber-500'}`}>
@@ -369,76 +369,42 @@ const ResiduDashboard: React.FC = () => {
           </div>
           
           {/* Chart volume residu aggregate */}
-          <div className="bg-white p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4">
-            <h3 className="font-extrabold text-lg flex items-center gap-1.5">
-              <Map className="text-primary w-5 h-5" />
-              Estimasi Tugas Harian (Jemput &gt;70%)
-            </h3>
-            {jadwal.length === 0 ? (
-              <div className="text-center text-slate-500 text-sm py-4">Tidak ada tugas jemput mendesak hari ini.</div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {jadwal.map(j => {
-                  const vol = Number(j.currentVolumeLiter);
-                  const max = Number(j.maxCapacityLiter);
-                  const percentage = max > 0 ? (vol/max)*100 : 0;
-                  return (
-                    <div key={j.id} className="p-4 border border-slate-100 rounded-xl flex justify-between items-center shadow-sm">
-                      <div>
-                        <p className="font-bold text-sm text-slate-800">{j.rtRw?.name}</p>
-                        <p className="text-xs text-slate-500 mt-1">QR: {j.qrCode}</p>
-                        <p className="text-xs text-slate-500">Pemilik: {j.user?.name || "-"}</p>
-                      </div>
-                      <div className="text-right">
-                        <span className={`text-lg font-black ${percentage > 90 ? 'text-red-500' : 'text-amber-500'}`}>
-                          {percentage.toFixed(0)}%
-                        </span>
-                        <p className="text-[10px] font-bold text-slate-400 mt-0.5">{vol}L / {max}L</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-          
-          {/* Chart volume residu aggregate */}
-          <div className="bg-white p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4">
-            <h3 className="font-extrabold text-lg flex items-center gap-1.5">
-              <BarChart2 className="text-primary w-5 h-5" />
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            <h3 className="font-extrabold text-lg text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+              <BarChart2 className="text-emerald-600 dark:text-emerald-400 w-5 h-5" />
               Volume Residu Agregat Mingguan (Kg)
             </h3>
             <div className="flex items-end gap-3 h-48 pt-4">
               {analytics?.trend.map((t: any) => (
                 <div key={t.date} className="flex-1 flex flex-col items-center gap-2">
                   <div
-                    className="w-full bg-red-100 rounded-t-lg relative"
+                    className="w-full bg-red-100 dark:bg-red-950/40 rounded-t-lg relative"
                     style={{ height: `${(t.weightKg / 200) * 140}px` }}
                   >
                     <div
                       className="bg-red-500 absolute bottom-0 left-0 right-0 rounded-t-lg transition-all duration-300"
                       style={{ height: "100%" }}
                     ></div>
-                    <div className="absolute top-[-20px] left-0 right-0 text-center font-bold text-[9px] text-red-700">
+                    <div className="absolute top-[-20px] left-0 right-0 text-center font-bold text-[9px] text-red-700 dark:text-red-400">
                       {Math.round(Number(t.weightKg || 0))} Kg
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold text-on-surface-variant">{t.date}</span>
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{t.date}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Zones Compliance list */}
-          <div className="bg-white p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4">
-            <h3 className="font-extrabold text-lg flex items-center gap-1.5">
-              <FileText className="text-indigo-600 w-5 h-5" />
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            <h3 className="font-extrabold text-lg text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+              <FileText className="text-indigo-600 dark:text-indigo-400 w-5 h-5" />
               Tabel Kepatuhan Rukun Warga
             </h3>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-outline-variant/30 text-on-surface-variant">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
                     <th className="pb-2 font-bold">Rukun Warga (RW)</th>
                     <th className="pb-2 font-bold">Tingkat Kepatuhan</th>
                     <th className="pb-2 font-bold">Total Pelanggaran</th>
@@ -448,17 +414,17 @@ const ResiduDashboard: React.FC = () => {
                   {analytics?.zones.map((z: any) => (
                     <tr
                       key={z.id}
-                      className="border-b border-outline-variant/30 hover:bg-slate-50 transition-colors"
+                      className="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                     >
-                      <td className="py-2.5 font-bold text-slate-700">{z.region}</td>
+                      <td className="py-2.5 font-bold text-slate-700 dark:text-slate-300">{z.region}</td>
                       <td className="py-2.5">
                         <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${z.complianceScore >= 70 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${z.complianceScore >= 70 ? "bg-green-100 dark:bg-emerald-950/60 text-green-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40" : "bg-red-100 dark:bg-rose-950/60 text-red-700 dark:text-rose-400 border border-rose-200 dark:border-rose-700/40"}`}
                         >
                           {z.complianceScore}% Patuh
                         </span>
                       </td>
-                      <td className="py-2.5 font-semibold text-slate-600">
+                      <td className="py-2.5 font-semibold text-slate-600 dark:text-slate-300">
                         {z.violationsCount} Pelanggaran
                       </td>
                     </tr>
@@ -470,8 +436,8 @@ const ResiduDashboard: React.FC = () => {
         </div>
 
         {/* Petugas own recorded violations log */}
-        <div className="col-span-4 bg-white p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4">
-          <h3 className="font-extrabold text-lg">Riwayat Catatan Laporan</h3>
+        <div className="col-span-12 lg:col-span-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+          <h3 className="font-extrabold text-lg text-slate-900 dark:text-slate-100">Riwayat Catatan Laporan</h3>
           <div
             className="space-y-3 max-h-[460px] overflow-y-auto pr-1"
             style={{ scrollbarWidth: "thin" }}
@@ -480,25 +446,25 @@ const ResiduDashboard: React.FC = () => {
               summary.recentViolations.map((v: any) => (
                 <div
                   key={v.id}
-                  className="p-3 rounded-xl border border-slate-100 bg-slate-50/50 flex flex-col gap-2 text-xs"
+                  className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col gap-2 text-xs"
                 >
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-slate-800">{v.wargaName}</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{v.wargaName}</span>
                     <span
-                      className={`px-2 py-0.5 rounded-[5px] text-[9px] font-bold ${v.severity === "SEVERE" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}
+                      className={`px-2 py-0.5 rounded-[5px] text-[9px] font-bold ${v.severity === "SEVERE" ? "bg-red-100 dark:bg-rose-950/60 text-red-700 dark:text-rose-400 border border-rose-200 dark:border-rose-700/40" : "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40"}`}
                     >
                       {v.severity}
                     </span>
                   </div>
-                  <div className="text-[10px] text-slate-500 font-mono">Bin ID: {v.binCode}</div>
-                  <div className="text-slate-600 mt-1">{v.type}</div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Bin ID: {v.binCode}</div>
+                  <div className="text-slate-600 dark:text-slate-300 mt-1">{v.type}</div>
                   <div className="text-[9px] text-slate-400 mt-1 text-right">
                     {new Date(v.createdAt).toLocaleString("id-ID")}
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-xs text-slate-500 text-center py-6">
+              <p className="text-xs text-slate-500 dark:text-slate-400 text-center py-6">
                 Belum ada laporan pelanggaran dicatat.
               </p>
             )}

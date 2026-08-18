@@ -11,14 +11,14 @@ interface KelurahanMetrics {
   totalPoints: number;
 }
 
-const DEFAULT_KELURAHANS: KelurahanMetrics[] = [
-  { name: "Sekeloa", color: "bg-emerald-500", logo: "🌿", tonaseKg: 42.5, compliancePct: 94, totalPoints: 420 },
-  { name: "Cipaganti", color: "bg-blue-500", logo: "♻️", tonaseKg: 38.2, compliancePct: 91, totalPoints: 380 },
-  { name: "Sadang Serang", color: "bg-amber-500", logo: "🏡", tonaseKg: 35.0, compliancePct: 88, totalPoints: 350 },
-  { name: "Lebak Siliwangi", color: "bg-purple-500", logo: "✨", tonaseKg: 29.8, compliancePct: 85, totalPoints: 290 },
-  { name: "Lebak Gede", color: "bg-indigo-500", logo: "💧", tonaseKg: 24.1, compliancePct: 82, totalPoints: 240 },
-  { name: "Dago", color: "bg-rose-500", logo: "🍃", tonaseKg: 18.6, compliancePct: 78, totalPoints: 180 },
-];
+const KEL_STYLE_MAP: Record<string, { color: string; logo: string }> = {
+  sekeloa: { color: "bg-emerald-500", logo: "🌿" },
+  cipaganti: { color: "bg-blue-500", logo: "♻️" },
+  "sadang serang": { color: "bg-amber-500", logo: "🏡" },
+  "lebak siliwangi": { color: "bg-purple-500", logo: "✨" },
+  "lebak gede": { color: "bg-indigo-500", logo: "💧" },
+  dago: { color: "bg-rose-500", logo: "🍃" },
+};
 
 export const BarChartRace: React.FC = () => {
   const [metricTab, setMetricTab] = useState<"TONASE" | "KEPATUHAN" | "POIN">("TONASE");
@@ -30,16 +30,21 @@ export const BarChartRace: React.FC = () => {
       try {
         setLoading(true);
         const res = await api.get("/gamification/leaderboard");
-        if (res.data?.success && res.data.data?.regions && Array.isArray(res.data.data.regions) && res.data.data.regions.length > 0) {
+        if (res.data?.success && res.data.data?.regions && Array.isArray(res.data.data.regions)) {
           const regions = res.data.data.regions;
-          const mapped: KelurahanMetrics[] = regions.map((r: any, idx: number) => ({
-            name: r.kelurahanName || r.name || DEFAULT_KELURAHANS[idx % DEFAULT_KELURAHANS.length].name,
-            color: DEFAULT_KELURAHANS[idx % DEFAULT_KELURAHANS.length].color,
-            logo: DEFAULT_KELURAHANS[idx % DEFAULT_KELURAHANS.length].logo,
-            tonaseKg: parseFloat(Number(r.totalWeightKg || r.totalWeight || (r.totalPoints ? r.totalPoints * 0.1 : 0)).toFixed(1)),
-            compliancePct: Math.min(100, Math.max(0, Math.round(Number(r.complianceRate ?? r.compliance ?? (r.totalPoints ? Math.min(100, r.totalPoints * 2) : 0))))),
-            totalPoints: Math.round(Number(r.totalPoints || 0)),
-          }));
+          const mapped: KelurahanMetrics[] = regions.map((r: any) => {
+            const rawName = r.kelurahanName || r.name || "Kelurahan";
+            const cleanKey = rawName.toLowerCase().replace(/^kelurahan\s*/i, "").replace(/^kel\.\s*/i, "").trim();
+            const style = KEL_STYLE_MAP[cleanKey] || { color: "bg-emerald-500", logo: "📍" };
+            return {
+              name: rawName.startsWith("Kel") ? rawName : `Kel. ${rawName}`,
+              color: style.color,
+              logo: style.logo,
+              tonaseKg: parseFloat(Number(r.totalWeightKg || r.totalWeight || (r.totalPoints ? r.totalPoints * 0.1 : 0)).toFixed(1)),
+              compliancePct: Math.min(100, Math.max(0, Math.round(Number(r.complianceRate ?? r.compliance ?? 0)))),
+              totalPoints: Math.round(Number(r.totalPoints || 0)),
+            };
+          });
           setKelurahanData(mapped);
         }
       } catch (err) {

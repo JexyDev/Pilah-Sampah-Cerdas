@@ -103,6 +103,7 @@ export async function getScopingFilters(user: {
           { bin: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } },
           { bin: { kelurahanId: { in: kelurahanIds } } },
           { bin: { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } } },
+          { warga: { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } } },
         ],
       },
     };
@@ -121,9 +122,20 @@ export async function getScopingFilters(user: {
     }
     return {
       userFilter: { rw: { kelurahan: { kecamatanId } } },
-      binFilter: { kelurahan: { kecamatanId } },
+      binFilter: {
+        OR: [
+          { kelurahan: { kecamatanId } },
+          { rw: { kelurahan: { kecamatanId } } },
+        ],
+      },
       householdFilter: { rw: { kelurahan: { kecamatanId } } },
-      wasteLogFilter: { bin: { kelurahan: { kecamatanId } } },
+      wasteLogFilter: {
+        OR: [
+          { bin: { kelurahan: { kecamatanId } } },
+          { bin: { rw: { kelurahan: { kecamatanId } } } },
+          { warga: { rw: { kelurahan: { kecamatanId } } } },
+        ],
+      },
     };
   }
 
@@ -140,9 +152,20 @@ export async function getScopingFilters(user: {
     }
     return {
       userFilter: { rw: { kelurahanId } },
-      binFilter: { kelurahanId },
+      binFilter: {
+        OR: [
+          { kelurahanId },
+          { rw: { kelurahanId } },
+        ],
+      },
       householdFilter: { rw: { kelurahanId } },
-      wasteLogFilter: { bin: { kelurahanId } },
+      wasteLogFilter: {
+        OR: [
+          { bin: { kelurahanId } },
+          { bin: { rw: { kelurahanId } } },
+          { warga: { rw: { kelurahanId } } },
+        ],
+      },
     };
   }
 

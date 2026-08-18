@@ -129,7 +129,43 @@ export const dashboardController = {
 
   getTrend: async (req: Request, res: Response) => {
     try {
-      const { weeks, wilayah } = req.query;
+      let { weeks, wilayah } = req.query;
+      const user = req.user;
+
+      const isAllWilayah = (w: any) =>
+        !w ||
+        w === "ALL" ||
+        w === "Semua Kelurahan" ||
+        w === "Kecamatan Coblong" ||
+        w === "semua" ||
+        w === "all";
+
+      if (user && (user.role === "DPL" || user.role === "DOSEN_PEMBIMBING")) {
+        const { PrismaClient } = await import("@prisma/client");
+        const prisma = new PrismaClient();
+        const dplGroups = await prisma.kelompokKkn.findMany({
+          where: { dplId: user.userId || (user as any).id },
+          select: { kelurahan: true },
+        });
+        const dplKelurahans = Array.from(
+          new Set(dplGroups.map((g) => g.kelurahan).filter(Boolean))
+        ) as string[];
+
+        if (isAllWilayah(wilayah) && dplKelurahans.length > 0) {
+          wilayah = dplKelurahans.join(",");
+        }
+      } else if (!wilayah && user && user.role === "LURAH" && user.rwId) {
+        const { PrismaClient } = await import("@prisma/client");
+        const prisma = new PrismaClient();
+        const userArea = await prisma.rw.findUnique({
+          where: { id: user.rwId },
+          include: { kelurahan: true },
+        });
+        if (userArea?.kelurahan?.name) {
+          wilayah = userArea.kelurahan.name;
+        }
+      }
+
       const parsedWeeks = weeks ? parseInt(weeks as string) : 8;
       const trend = await dashboardService.getTrend(parsedWeeks, wilayah as string);
       res.status(200).json({

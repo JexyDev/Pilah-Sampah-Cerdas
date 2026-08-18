@@ -59,25 +59,25 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
 
   const variantStyles = {
     emerald: {
-      btn: "bg-emerald-50/90 border-emerald-200/90 text-emerald-900 hover:bg-emerald-100/90 hover:border-emerald-300 shadow-xs",
-      label: "text-emerald-700 font-bold",
-      selectedItem: "bg-emerald-100/80 text-emerald-900 font-bold shadow-2xs",
-      hoverItem: "hover:bg-emerald-50 hover:text-emerald-800",
-      checkIcon: "text-emerald-600",
+      btn: "bg-emerald-50/90 dark:bg-emerald-950/60 border-emerald-200/90 dark:border-emerald-700/30 text-emerald-900 dark:text-emerald-300 hover:bg-emerald-100/90 dark:hover:bg-emerald-900/60 hover:border-emerald-300 shadow-xs",
+      label: "text-emerald-700 dark:text-emerald-400 font-bold",
+      selectedItem: "bg-emerald-100/80 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200 font-bold shadow-2xs",
+      hoverItem: "hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-800 dark:hover:text-emerald-300",
+      checkIcon: "text-emerald-600 dark:text-emerald-400",
     },
     slate: {
-      btn: "bg-slate-50 border-slate-200/90 text-slate-800 hover:bg-slate-100 hover:border-slate-300 shadow-xs",
-      label: "text-slate-500 font-bold",
-      selectedItem: "bg-slate-100 text-slate-900 font-bold shadow-2xs",
-      hoverItem: "hover:bg-slate-50 hover:text-slate-900",
-      checkIcon: "text-slate-600",
+      btn: "bg-slate-50 dark:bg-slate-800/90 border-slate-200/90 dark:border-slate-700/80 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700/80 hover:border-slate-300 shadow-xs",
+      label: "text-slate-500 dark:text-slate-400 font-bold",
+      selectedItem: "bg-slate-100 dark:bg-slate-700/80 text-slate-900 dark:text-slate-100 font-bold shadow-2xs",
+      hoverItem: "hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-slate-100",
+      checkIcon: "text-slate-600 dark:text-slate-300",
     },
     primary: {
-      btn: "bg-primary/5 border-primary/20 text-primary-dark hover:bg-primary/10 shadow-xs",
-      label: "text-primary font-bold",
-      selectedItem: "bg-primary/10 text-primary-dark font-bold shadow-2xs",
-      hoverItem: "hover:bg-primary/5 hover:text-primary-dark",
-      checkIcon: "text-primary",
+      btn: "bg-primary/5 dark:bg-emerald-950/40 border-primary/20 dark:border-emerald-700/30 text-primary-dark dark:text-emerald-300 hover:bg-primary/10 dark:hover:bg-emerald-900/50 shadow-xs",
+      label: "text-primary dark:text-emerald-400 font-bold",
+      selectedItem: "bg-primary/10 dark:bg-emerald-900/60 text-primary-dark dark:text-emerald-200 font-bold shadow-2xs",
+      hoverItem: "hover:bg-primary/5 dark:hover:bg-emerald-950/40 hover:text-primary-dark dark:hover:text-emerald-300",
+      checkIcon: "text-primary dark:text-emerald-400",
     },
   };
 
@@ -91,7 +91,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         disabled={disabled}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all duration-200 select-none ${
-          disabled ? "opacity-90 cursor-not-allowed bg-slate-100 border-slate-200 text-slate-700" : `cursor-pointer ${style.btn}`
+          disabled ? "opacity-90 cursor-not-allowed bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-400" : `cursor-pointer ${style.btn}`
         }`}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
@@ -112,7 +112,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       {/* Dropdown Popover */}
       {isOpen && (
         <div
-          className={`absolute left-0 mt-1.5 w-64 bg-white/95 backdrop-blur-lg border border-slate-200/90 rounded-2xl shadow-xl z-50 p-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-150`}
+          className={`absolute left-0 mt-1.5 w-64 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xl z-50 p-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-150`}
         >
           {/* Scrollable Container with max height & custom scrollbar */}
           <div
@@ -134,14 +134,14 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                     setIsOpen(false);
                   }}
                   className={`px-3 py-2 rounded-xl text-xs flex items-center justify-between cursor-pointer transition-all duration-150 ${
-                    isSelected ? style.selectedItem : `${style.hoverItem} text-slate-700`
+                    isSelected ? style.selectedItem : `${style.hoverItem} text-slate-700 dark:text-slate-300`
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0 pr-2">
                     {opt.icon && <span className="flex-shrink-0 opacity-80">{opt.icon}</span>}
                     <div className="truncate">
-                      <div className="font-bold truncate">{opt.label}</div>
-                      {opt.sublabel && <div className="text-[10px] text-slate-400 font-normal truncate">{opt.sublabel}</div>}
+                      <div className="font-bold truncate text-slate-900 dark:text-slate-100">{opt.label}</div>
+                      {opt.sublabel && <div className="text-[10px] text-slate-400 dark:text-slate-500 font-normal truncate">{opt.sublabel}</div>}
                     </div>
                   </div>
 

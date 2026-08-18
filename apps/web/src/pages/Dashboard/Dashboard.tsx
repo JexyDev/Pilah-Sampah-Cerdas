@@ -104,71 +104,71 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
-      <div className="bg-white rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden border border-emerald-500/30 animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh] text-slate-800">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden border border-emerald-500/30 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh] text-slate-800 dark:text-slate-100">
         {/* Modal Header */}
-        <div className="p-6 border-b border-slate-200 bg-emerald-50/60 flex justify-between items-start shrink-0 relative overflow-hidden">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-emerald-50/60 dark:bg-emerald-950/30 flex justify-between items-start shrink-0 relative overflow-hidden">
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              <span className="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                 Kecamatan Coblong
               </span>
-              <span className="bg-cyan-100 text-cyan-700 border border-cyan-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="bg-cyan-100 dark:bg-cyan-950/80 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-700/40 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></span> Stream Real-Time
               </span>
             </div>
-            <h3 className="font-black text-2xl tracking-tight text-slate-900 flex items-center gap-2.5">
-              <LineChart className="text-cyan-600" size={24} />
+            <h3 className="font-black text-2xl tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
+              <LineChart className="text-cyan-600 dark:text-cyan-400" size={24} />
               Indeks Kepatuhan Pemilahan Sampah
             </h3>
-            <p className="text-xs text-slate-500 mt-1 font-medium max-w-xl">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium max-w-xl">
               Persentase keaktifan rumah tangga dan tingkat kepatuhan pemilahan sampah terdata pada tiap Rukun Warga (RW) di wilayah Kecamatan Coblong.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white hover:bg-emerald-100 text-slate-500 hover:text-emerald-700 flex items-center justify-center border border-slate-200 hover:border-emerald-300 transition-colors cursor-pointer shrink-0 z-10"
+            className="w-9 h-9 rounded-full bg-white dark:bg-slate-800 hover:bg-emerald-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-slate-200 flex items-center justify-center border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer shrink-0 z-10"
           >
             <X size={20} />
           </button>
         </div>
 
         {/* Quick Stats Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-50 border-b border-slate-200 shrink-0">
-          <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-50 dark:bg-slate-850 border-b border-slate-200 dark:border-slate-800 shrink-0">
+          <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Rata-rata Kepatuhan</span>
-            <span className="text-lg font-black text-slate-900 mt-0.5 block">{avgPatuh}%</span>
+            <span className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 block">{avgPatuh}%</span>
           </div>
-          <div className="bg-slate-50 p-3 rounded-2xl border border-emerald-500/30">
-            <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block">Patuh Tinggi (≥85%)</span>
-            <span className="text-lg font-black text-emerald-600 mt-0.5 block">{highPatuhCount} RW</span>
+          <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-emerald-500/30">
+            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">Patuh Tinggi (≥85%)</span>
+            <span className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">{highPatuhCount} RW</span>
           </div>
-          <div className="bg-slate-50 p-3 rounded-2xl border border-amber-500/30">
-            <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider block">Sedang (60-84%)</span>
-            <span className="text-lg font-black text-amber-600 mt-0.5 block">{medPatuhCount} RW</span>
+          <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-amber-500/30">
+            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider block">Sedang (60-84%)</span>
+            <span className="text-lg font-black text-amber-600 dark:text-amber-400 mt-0.5 block">{medPatuhCount} RW</span>
           </div>
-          <div className="bg-slate-50 p-3 rounded-2xl border border-rose-500/30">
-            <span className="text-[10px] font-bold text-rose-600 uppercase tracking-wider block">Perlu Perhatian (&lt;60%)</span>
-            <span className="text-lg font-black text-rose-600 mt-0.5 block">{lowPatuhCount} RW</span>
+          <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-rose-500/30">
+            <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider block">Perlu Perhatian (&lt;60%)</span>
+            <span className="text-lg font-black text-rose-600 dark:text-rose-400 mt-0.5 block">{lowPatuhCount} RW</span>
           </div>
         </div>
 
         {/* Filter Controls Bar */}
-        <div className="p-4 bg-white border-b border-slate-200 space-y-3 shrink-0">
+        <div className="p-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 space-y-3 shrink-0">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             {/* Search Input */}
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Cari nama Rukun Warga (RW) atau Kelurahan..."
-                className="w-full bg-slate-50 border border-slate-300 pl-10 pr-8 py-2 rounded-xl text-xs font-medium text-slate-700 placeholder-slate-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 pl-10 pr-8 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
               />
               {search && (
                 <button
                   onClick={() => setSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600 cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                 >
                   <X size={14} />
                 </button>
@@ -180,7 +180,7 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
               <select
                 value={kelurahanFilter}
                 onChange={(e) => setKelurahanFilter(e.target.value)}
-                className="bg-slate-50 border border-slate-300 text-xs font-bold text-slate-600 px-3 py-2 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-200 px-3 py-2 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
               >
                 <option value="SEMUA">Semua Kelurahan</option>
                 {uniqueKelurahan.map((kel) => (
@@ -191,7 +191,7 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-slate-50 border border-slate-300 text-xs font-bold text-slate-600 px-3 py-2 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-200 px-3 py-2 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
               >
                 <option value="ALL">Semua Kepatuhan</option>
                 <option value="HIGH">Tinggi (≥85%)</option>
@@ -202,7 +202,7 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-slate-50 border border-slate-300 text-xs font-bold text-slate-600 px-3 py-2 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-200 px-3 py-2 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
               >
                 <option value="HIGHEST">Kepatuhan Tertinggi</option>
                 <option value="LOWEST">Kepatuhan Terendah</option>
@@ -214,15 +214,15 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
         </div>
 
         {/* Modal List Body */}
-        <div className="p-6 space-y-3 overflow-y-auto flex-1 bg-slate-50">
+        <div className="p-6 space-y-3 overflow-y-auto flex-1 bg-slate-50 dark:bg-slate-950">
           {filteredLocations.length === 0 ? (
             <div className="py-12 text-center flex flex-col items-center justify-center space-y-3">
-              <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-300">
+              <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 border border-slate-300 dark:border-slate-700">
                 <Search size={28} />
               </div>
               <div>
-                <h4 className="font-extrabold text-sm text-slate-700">Data RW Tidak Ditemukan</h4>
-                <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                <h4 className="font-extrabold text-sm text-slate-700 dark:text-slate-200">Data RW Tidak Ditemukan</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
                   Tidak ada data wilayah yang sesuai dengan filter atau kata kunci pencarian Anda.
                 </p>
               </div>
@@ -242,19 +242,19 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
               return (
                 <div
                   key={loc.id || `${loc.rw}-${loc.kelurahan}`}
-                  className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:border-emerald-500/40 transition-all space-y-3 group"
+                  className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-emerald-500/40 transition-all space-y-3 group"
                 >
                   <div className="flex justify-between items-start gap-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="font-black text-sm text-slate-900 group-hover:text-emerald-600 transition">
+                        <h4 className="font-black text-sm text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition">
                           {loc.rw}
                         </h4>
-                        <span className="text-[10px] font-extrabold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-md border border-cyan-200">
+                        <span className="text-[10px] font-extrabold text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/60 px-2 py-0.5 rounded-md border border-cyan-200 dark:border-cyan-700/40">
                           {loc.kelurahan}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-400 font-medium mt-1 flex items-center gap-2">
+                      <p className="text-[11px] text-slate-400 dark:text-slate-400 font-medium mt-1 flex items-center gap-2">
                         <span>{loc.titikCount || 0} Titik Tempat Sampah</span>
                       </p>
                     </div>
@@ -263,18 +263,18 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
                       <span
                         className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold shadow-2xs ${
                           isHigh
-                            ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.2)]"
+                            ? "bg-emerald-500/10 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.2)]"
                             : isMed
-                            ? "bg-amber-500/10 text-amber-600 border border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
-                            : "bg-rose-500/10 text-rose-600 border border-rose-500/30 shadow-[0_0_12px_rgba(244,63,94,0.2)]"
+                            ? "bg-amber-500/10 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+                            : "bg-rose-500/10 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-500/30 shadow-[0_0_12px_rgba(244,63,94,0.2)]"
                         }`}
                       >
                         {isHigh ? (
-                          <CheckCircle2 size={13} className="text-emerald-600" />
+                          <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400" />
                         ) : isMed ? (
-                          <Sparkles size={13} className="text-amber-600" />
+                          <Sparkles size={13} className="text-amber-600 dark:text-amber-400" />
                         ) : (
-                          <AlertTriangle size={13} className="text-rose-600" />
+                          <AlertTriangle size={13} className="text-rose-600 dark:text-rose-400" />
                         )}
                         {patuh}% Patuh
                       </span>
@@ -283,11 +283,11 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
 
                   {/* Progress Bar */}
                   <div className="space-y-1">
-                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-200">
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-200 dark:border-slate-700">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
                           isHigh
-                            ? "bg-emerald-600"
+                            ? "bg-emerald-600 dark:bg-emerald-500"
                             : isMed
                             ? "bg-amber-500"
                             : "bg-rose-500"
@@ -303,11 +303,11 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-slate-200 bg-white flex justify-between items-center text-xs text-slate-400 shrink-0">
-          <span>Menampilkan <strong className="text-slate-900">{filteredLocations.length}</strong> dari <strong className="text-slate-900">{locations.length}</strong> Rukun Warga (RW)</span>
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-between items-center text-xs text-slate-400 shrink-0">
+          <span>Menampilkan <strong className="text-slate-900 dark:text-slate-100">{filteredLocations.length}</strong> dari <strong className="text-slate-900 dark:text-slate-100">{locations.length}</strong> Rukun Warga (RW)</span>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl transition cursor-pointer border border-slate-300"
+            className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-extrabold rounded-xl transition cursor-pointer border border-slate-300 dark:border-slate-700"
           >
             Tutup
           </button>
@@ -1502,7 +1502,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
   const styles = KPI_COLOR_STYLES[color];
   const content = (
     <div
-      className={`bg-white shadow-xs rounded-2xl p-5 border border-slate-200 border-t-4 ${styles.border} flex flex-col justify-between h-full hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group ${linkTo ? "cursor-pointer" : ""}`}
+      className={`bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-5 border border-slate-200 dark:border-slate-800 border-t-4 ${styles.border} flex flex-col justify-between h-full hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group ${linkTo ? "cursor-pointer" : ""}`}
     >
       <div className="flex items-center gap-3">
         <div
@@ -1511,23 +1511,23 @@ const KpiCard: React.FC<KpiCardProps> = ({
           {renderKpiIcon(iconName)}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] text-slate-500 font-extrabold uppercase tracking-wider truncate">{label}</p>
-          <h4 className="text-[24px] font-black text-slate-900 tracking-tight mt-0.5 leading-none">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-wider truncate">{label}</p>
+          <h4 className="text-[24px] font-black text-slate-900 dark:text-slate-100 tracking-tight mt-0.5 leading-none">
             {value !== undefined ? value : "-"}
           </h4>
         </div>
       </div>
       {(trend || trendLabel) && (
-        <div className="flex items-center gap-1.5 mt-3 border-t border-slate-100 pt-2.5">
+        <div className="flex items-center gap-1.5 mt-3 border-t border-slate-100 dark:border-slate-800 pt-2.5">
           {trendUp !== undefined && (
             trendUp ? (
-              <TrendingUp size={14} className="text-emerald-600 shrink-0" />
+              <TrendingUp size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
             ) : (
-              <TrendingDown size={14} className="text-rose-600 shrink-0" />
+              <TrendingDown size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
             )
           )}
           <span
-            className={`text-[10.5px] font-bold ${trendUp === true ? "text-emerald-600" : trendUp === false ? "text-rose-600" : "text-slate-500"}`}
+            className={`text-[10.5px] font-bold ${trendUp === true ? "text-emerald-600 dark:text-emerald-400" : trendUp === false ? "text-rose-600 dark:text-rose-400" : "text-slate-500 dark:text-slate-400"}`}
           >
             {trend && trendLabel ? `${trend} • ${trendLabel}` : trend || trendLabel}
           </span>
@@ -1751,9 +1751,16 @@ const Dashboard: React.FC = () => {
         if (binsSettled.status === "fulfilled") {
           let binsData = binsSettled.value.data?.data ?? binsSettled.value.data ?? [];
           if (!isDistrictScope) {
-            const cleanWil = effectiveWilayah.replace(/^Kel\.\s*/i, "").toLowerCase();
+            const cleanWil = effectiveWilayah.replace(/^Kel\.\s*/i, "").trim().toLowerCase();
             binsData = binsData.filter((b: any) => {
-              const binKelName = (b.kelurahan?.name || b.rtRw?.kelurahan?.name || (typeof b.rtRw === "string" ? b.rtRw : b.rtRw?.name || "")).toLowerCase();
+              const binKelName = (
+                b.kelurahanName ||
+                b.kelurahan?.name ||
+                b.rtRw?.kelurahan?.name ||
+                (typeof b.rtRw === "string" ? b.rtRw : b.rtRw?.name || "") ||
+                b.lokasi ||
+                ""
+              ).toLowerCase();
               return binKelName.includes(cleanWil);
             });
           }
@@ -1858,22 +1865,22 @@ const Dashboard: React.FC = () => {
   void KpiCard;
 
   return (
-    <div className="space-y-6 pb-12 text-slate-800 font-sans relative">
+    <div className="space-y-6 pb-12 text-slate-800 dark:text-slate-100 font-sans relative">
       {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
         {/* Top Tier: Title & Live Badge */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
               Dasbor Monitoring TrashCare
             </h1>
-            <p className="text-xs text-slate-500 font-medium">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               Pusat komando pemantauan pemilahan sampah cerdas, sektor kebersihan &amp; residu Rukun Warga (RW)
             </p>
           </div>
 
           <div className="self-start sm:self-center">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-[#009966] border border-emerald-200/80 shadow-2xs">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-700/40 shadow-2xs">
               <span className="w-2 h-2 rounded-full bg-[#009966] animate-pulse" />
               Real-Time Monitoring
             </span>
@@ -1881,7 +1888,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Bottom Tier: Filter Controls & Action Button */}
-        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2.5">
             <CustomSelect
               value={
@@ -1932,7 +1939,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* 2. KPI Section (5 Cards for TrashCare Domain) */}
-      <div className="px-1 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
+      <div className="px-1 text-[10.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
         Ringkasan Operasional Pemilahan Sampah
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 relative z-10">
@@ -1995,25 +2002,25 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* 3. Charts & Komposisi Grid (2 Columns, 6 cols each) */}
-      <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
+      <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
         Analitik Tren Setoran &amp; Komposisi Sampah
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
         {/* Left Column (6 cols): Trend Setoran Chart */}
-        <div className="lg:col-span-6 bg-white shadow-xs rounded-3xl p-6 border border-slate-200/80 relative overflow-hidden flex flex-col justify-between space-y-4">
+        <div className="lg:col-span-6 bg-white dark:bg-slate-900 shadow-xs rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 relative overflow-hidden flex flex-col justify-between space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div className="space-y-1">
-              <h4 className="font-bold text-[18px] text-slate-900">
+              <h4 className="font-bold text-[18px] text-slate-900 dark:text-slate-100">
                 Grafik Tren Setoran Sampah (Real-Time)
               </h4>
               <div className="flex gap-4 text-[11px] font-bold">
-                <span className="flex items-center gap-1.5 text-emerald-600">
+                <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#34d399] shadow-[0_0_8px_#34d399]"></span> Organik
                 </span>
-                <span className="flex items-center gap-1.5 text-amber-600">
+                <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#fbbf24] shadow-[0_0_8px_#fbbf24]"></span> Anorganik
                 </span>
-                <span className="flex items-center gap-1.5 text-rose-600">
+                <span className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#fb7185] shadow-[0_0_8px_#fb7185]"></span> Residu
                 </span>
               </div>
@@ -2021,7 +2028,7 @@ const Dashboard: React.FC = () => {
             <select
               value={weeks}
               onChange={(e) => setWeeks(parseInt(e.target.value))}
-              className="bg-slate-50 px-3.5 py-2 rounded-xl text-[12px] border border-slate-300 text-slate-700 focus:outline-none cursor-pointer font-bold shadow-2xs hover:border-emerald-500/50 transition-all"
+              className="bg-slate-50 dark:bg-slate-800 px-3.5 py-2 rounded-xl text-[12px] border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer font-bold shadow-2xs hover:border-emerald-500/50 transition-all"
             >
               <option value={1}>Hari Ini (24 Jam)</option>
               <option value={2}>7 Hari Terakhir</option>
@@ -2052,7 +2059,7 @@ const Dashboard: React.FC = () => {
                   </linearGradient>
                 </defs>
 
-                <text x="10" y="20" fill="#64748b" fontSize="10" fontWeight="bold">
+                <text x="10" y="20" fill="#94a3b8" fontSize="10" fontWeight="bold">
                   Berat (kg)
                 </text>
 
@@ -2060,12 +2067,12 @@ const Dashboard: React.FC = () => {
                   const y = 280 - (pct / 100) * 240;
                   return (
                     <g key={pct}>
-                      <line x1="60" y1={y} x2="680" y2={y} stroke="#e2e8f0" strokeWidth="1" strokeDasharray={pct === 0 ? "none" : "3,3"} />
+                      <line x1="60" y1={y} x2="680" y2={y} stroke="#334155" strokeWidth="1" strokeDasharray={pct === 0 ? "none" : "3,3"} opacity="0.6" />
                       <text
                         x="52"
                         y={y + 3}
                         textAnchor="end"
-                        fill="#64748b"
+                        fill="#94a3b8"
                         fontSize="9"
                         fontWeight="bold"
                       >
@@ -2075,7 +2082,7 @@ const Dashboard: React.FC = () => {
                   );
                 })}
 
-                <line x1="60" y1="40" x2="60" y2="280" stroke="#cbd5e1" strokeWidth="1.5" />
+                <line x1="60" y1="40" x2="60" y2="280" stroke="#475569" strokeWidth="1.5" />
                 <path d={trendOrganicAreaPath} fill="url(#orgGradDark)" />
                 <path d={trendInorganicAreaPath} fill="url(#inorgGradDark)" />
                 <path d={trendResiduAreaPath} fill="url(#residuGradDark)" />
@@ -2101,7 +2108,7 @@ const Dashboard: React.FC = () => {
                       x={p.x}
                       y="305"
                       textAnchor="middle"
-                      fill={hoveredTrendIndex === i ? "#009966" : "#64748b"}
+                      fill={hoveredTrendIndex === i ? "#10b981" : "#94a3b8"}
                       fontSize="9.5"
                       fontWeight="bold"
                     >
@@ -2138,15 +2145,15 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Right Column (6 cols): Komposisi Sampah Card */}
-        <div className="lg:col-span-6 bg-white shadow-xs rounded-3xl p-6 border border-slate-200/80 flex flex-col justify-between relative overflow-hidden">
+        <div className="lg:col-span-6 bg-white dark:bg-slate-900 shadow-xs rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between relative overflow-hidden">
           <div className="flex justify-between items-center mb-3">
             <div>
-              <h4 className="font-bold text-[18px] text-slate-900">Komposisi Sampah</h4>
-              <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+              <h4 className="font-bold text-[18px] text-slate-900 dark:text-slate-100">Komposisi Sampah</h4>
+              <p className="text-[11px] text-slate-400 dark:text-slate-400 font-medium mt-0.5">
                 Akumulasi Real-time Hasil Pemilahan &amp; Residu
               </p>
             </div>
-            <span className="text-[10px] font-extrabold bg-emerald-50 text-[#009966] border border-emerald-200 px-3 py-1 rounded-full uppercase tracking-wider">
+            <span className="text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 px-3 py-1 rounded-full uppercase tracking-wider">
               Persentase Volume
             </span>
           </div>
@@ -2180,23 +2187,23 @@ const Dashboard: React.FC = () => {
 
             let dominantLabel = "Residu";
             let dominantPct = pctResidu;
-            let dominantColor = "text-rose-600";
+            let dominantColor = "text-rose-600 dark:text-rose-400";
 
             if (pctOrg >= pctAnorg && pctOrg >= pctResidu) {
               dominantLabel = "Organik";
               dominantPct = pctOrg;
-              dominantColor = "text-emerald-600";
+              dominantColor = "text-emerald-600 dark:text-emerald-400";
             } else if (pctAnorg >= pctOrg && pctAnorg >= pctResidu) {
               dominantLabel = "Anorganik";
               dominantPct = pctAnorg;
-              dominantColor = "text-amber-600";
+              dominantColor = "text-amber-600 dark:text-amber-400";
             }
 
             return (
               <div className="flex-1 flex flex-col items-center justify-between my-1">
                 <div className="w-40 h-40 relative flex items-center justify-center my-2 group cursor-pointer">
                   <svg className="w-40 h-40 transform -rotate-90">
-                    <circle cx="80" cy="80" r="50" fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
+                    <circle cx="80" cy="80" r="50" fill="transparent" stroke="#f1f5f9" className="dark:stroke-slate-800" strokeWidth="12" />
                     {pctOrg > 0 && (
                       <circle
                         cx="80"
@@ -2244,25 +2251,25 @@ const Dashboard: React.FC = () => {
                     <span className="text-[10px] text-slate-400 uppercase font-extrabold tracking-wider mt-1 block">
                       {dominantLabel}
                     </span>
-                    <span className="text-[9px] text-slate-500 font-bold block mt-0.5 font-mono">
+                    <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold block mt-0.5 font-mono">
                       {totalKg.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg Total
                     </span>
                   </div>
                 </div>
 
-                <div className="mt-3 w-full space-y-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                <div className="mt-3 w-full space-y-3 bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/80">
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs">
-                      <div className="flex items-center gap-1.5 font-extrabold text-slate-600">
+                      <div className="flex items-center gap-1.5 font-extrabold text-slate-600 dark:text-slate-300">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#34d399] shadow-[0_0_8px_#34d399] inline-block"></span>
                         Organik
                       </div>
-                      <div className="font-mono font-bold text-slate-700">
+                      <div className="font-mono font-bold text-slate-700 dark:text-slate-200">
                         {rawOrg.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg{" "}
-                        <span className="text-emerald-600 font-extrabold ml-1">({pctOrg}%)</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">({pctOrg}%)</span>
                       </div>
                     </div>
-                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-[#34d399] rounded-full transition-all duration-500"
                         style={{ width: `${pctOrg}%` }}
@@ -2272,16 +2279,16 @@ const Dashboard: React.FC = () => {
 
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs">
-                      <div className="flex items-center gap-1.5 font-extrabold text-slate-600">
+                      <div className="flex items-center gap-1.5 font-extrabold text-slate-600 dark:text-slate-300">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#fbbf24] shadow-[0_0_8px_#fbbf24] inline-block"></span>
                         Anorganik
                       </div>
-                      <div className="font-mono font-bold text-slate-700">
+                      <div className="font-mono font-bold text-slate-700 dark:text-slate-200">
                         {rawAnorg.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg{" "}
-                        <span className="text-amber-600 font-extrabold ml-1">({pctAnorg}%)</span>
+                        <span className="text-amber-600 dark:text-amber-400 font-extrabold ml-1">({pctAnorg}%)</span>
                       </div>
                     </div>
-                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-[#fbbf24] rounded-full transition-all duration-500"
                         style={{ width: `${pctAnorg}%` }}
@@ -2291,16 +2298,16 @@ const Dashboard: React.FC = () => {
 
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs">
-                      <div className="flex items-center gap-1.5 font-extrabold text-slate-600">
+                      <div className="flex items-center gap-1.5 font-extrabold text-slate-600 dark:text-slate-300">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#fb7185] shadow-[0_0_8px_#fb7185] inline-block"></span>
                         Residu
                       </div>
-                      <div className="font-mono font-bold text-slate-700">
+                      <div className="font-mono font-bold text-slate-700 dark:text-slate-200">
                         {rawResidu.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg{" "}
-                        <span className="text-rose-600 font-extrabold ml-1">({pctResidu}%)</span>
+                        <span className="text-rose-600 dark:text-rose-400 font-extrabold ml-1">({pctResidu}%)</span>
                       </div>
                     </div>
-                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-[#fb7185] rounded-full transition-all duration-500"
                         style={{ width: `${pctResidu}%` }}
@@ -2314,7 +2321,7 @@ const Dashboard: React.FC = () => {
 
           <button
             onClick={() => setShowCompositionDetail(true)}
-            className="mt-3 w-full py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-extrabold transition-all border border-slate-200 cursor-pointer shadow-2xs"
+            className="mt-3 w-full py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-extrabold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer shadow-2xs"
           >
             Lihat Detail Komposisi
           </button>
@@ -2322,23 +2329,23 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* 3.5 Card Tingkat Kepatuhan Pemilahan Sampah (Verifikasi AI vs Kategori Tempat Sampah) */}
-      <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
+      <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
         Verifikasi AI vs Kategori Tempat Sampah
       </div>
-      <div className="bg-white shadow-xs rounded-3xl p-6 border border-slate-200/80 relative overflow-hidden z-10 space-y-5">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
+      <div className="bg-white dark:bg-slate-900 shadow-xs rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 relative overflow-hidden z-10 space-y-5">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-[#009966] flex items-center justify-center border border-emerald-200 shrink-0 font-bold">
+            <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-700/40 shrink-0 font-bold">
               <span className="material-symbols-outlined text-2xl">verified</span>
             </div>
             <div>
-              <h4 className="font-extrabold text-[18px] text-slate-900 tracking-tight flex items-center gap-2">
+              <h4 className="font-extrabold text-[18px] text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
                 Tingkat Kepatuhan Pemilahan Sampah
-                <span className="text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                <span className="text-[10px] font-black bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                   Real-Time AI Match
                 </span>
               </h4>
-              <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                 Kesesuaian antara kategori tempat sampah (Organik/Anorganik/Residu) dengan hasil klasifikasi AI dari setoran warga.
               </p>
             </div>
@@ -2347,12 +2354,12 @@ const Dashboard: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className={`px-3 py-1.5 rounded-xl text-xs font-black border flex items-center gap-1.5 ${
               (stats?.kepatuhanPemilahan?.totalCount ?? 0) === 0
-                ? "bg-slate-100 text-slate-600 border-slate-200"
+                ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                 : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 80
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/40"
                 : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 60
-                ? "bg-amber-50 text-amber-700 border-amber-200"
-                : "bg-rose-50 text-rose-700 border-rose-200"
+                ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/40"
+                : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-700/40"
             }`}>
               <span className={`w-2 h-2 rounded-full ${
                 (stats?.kepatuhanPemilahan?.totalCount ?? 0) === 0
@@ -2378,16 +2385,16 @@ const Dashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
           {/* Gauge / Rating Circle (4 cols) */}
-          <div className="md:col-span-4 bg-slate-50/70 p-5 rounded-2xl border border-slate-200 flex flex-col items-center justify-center text-center relative overflow-hidden">
+          <div className="md:col-span-4 bg-slate-50/70 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 flex flex-col items-center justify-center text-center relative overflow-hidden">
             <div className="relative w-36 h-36 flex items-center justify-center">
               <svg className="w-36 h-36 transform -rotate-90">
-                <circle cx="72" cy="72" r="54" fill="transparent" stroke="#e2e8f0" strokeWidth="10" />
+                <circle cx="72" cy="72" r="54" fill="transparent" stroke="#e2e8f0" className="dark:stroke-slate-700" strokeWidth="10" />
                 <circle
                   cx="72"
                   cy="72"
                   r="54"
                   fill="transparent"
-                  stroke={(stats?.kepatuhanPemilahan?.rate ?? 0) >= 80 ? "#10b981" : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 60 ? "#f59e0b" : (stats?.kepatuhanPemilahan?.totalCount ?? 0) === 0 ? "#cbd5e1" : "#ef4444"}
+                  stroke={(stats?.kepatuhanPemilahan?.rate ?? 0) >= 80 ? "#10b981" : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 60 ? "#f59e0b" : (stats?.kepatuhanPemilahan?.totalCount ?? 0) === 0 ? "#64748b" : "#ef4444"}
                   strokeWidth="10"
                   strokeDasharray={`${(((stats?.kepatuhanPemilahan?.rate ?? 0)) / 100) * (2 * Math.PI * 54)} ${2 * Math.PI * 54}`}
                   strokeLinecap="round"
@@ -2395,25 +2402,25 @@ const Dashboard: React.FC = () => {
                 />
               </svg>
               <div className="absolute text-center flex flex-col items-center">
-                <span className="text-3xl font-black text-slate-800 leading-none">
+                <span className="text-3xl font-black text-slate-800 dark:text-slate-100 leading-none">
                   {stats?.kepatuhanPemilahan?.rate ?? 0}%
                 </span>
-                <span className="text-[10px] text-slate-400 font-extrabold uppercase mt-1">
+                <span className="text-[10px] text-slate-400 uppercase font-extrabold mt-1">
                   Skor Kepatuhan
                 </span>
               </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-2 w-full text-center pt-2 border-t border-slate-200/80">
-              <div className="bg-white p-2 rounded-xl border border-emerald-100 shadow-2xs">
+            <div className="mt-3 grid grid-cols-2 gap-2 w-full text-center pt-2 border-t border-slate-200/80 dark:border-slate-700/80">
+              <div className="bg-white dark:bg-slate-800 p-2 rounded-xl border border-emerald-100 dark:border-emerald-700/30 shadow-2xs">
                 <span className="text-[10px] text-slate-400 font-bold uppercase block">Patuh (Sesuai)</span>
-                <span className="text-sm font-black text-emerald-600">
+                <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
                   {stats?.kepatuhanPemilahan?.compliantCount ?? 0} <span className="text-[10px] font-normal text-slate-400">setoran</span>
                 </span>
               </div>
-              <div className="bg-white p-2 rounded-xl border border-rose-100 shadow-2xs">
+              <div className="bg-white dark:bg-slate-800 p-2 rounded-xl border border-rose-100 dark:border-rose-700/30 shadow-2xs">
                 <span className="text-[10px] text-slate-400 font-bold uppercase block">Salah Tempat Sampah</span>
-                <span className="text-sm font-black text-rose-600">
+                <span className="text-sm font-black text-rose-600 dark:text-rose-400">
                   {stats?.kepatuhanPemilahan?.nonCompliantCount ?? 0} <span className="text-[10px] font-normal text-slate-400">setoran</span>
                 </span>
               </div>
@@ -2422,72 +2429,72 @@ const Dashboard: React.FC = () => {
 
           {/* Breakdown Per Kategori Tempat Sampah (4 cols) */}
           <div className="md:col-span-4 space-y-4">
-            <h5 className="font-extrabold text-xs text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm text-emerald-600">pie_chart</span>
+            <h5 className="font-extrabold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-sm text-emerald-600 dark:text-emerald-400">pie_chart</span>
               Kesesuaian Per Kategori Tempat Sampah
             </h5>
 
             {/* Organik Bin */}
-            <div className="bg-emerald-50/60 p-3.5 rounded-2xl border border-emerald-100 space-y-1.5">
+            <div className="bg-emerald-50/60 dark:bg-emerald-950/40 p-3.5 rounded-2xl border border-emerald-100 dark:border-emerald-700/30 space-y-1.5">
               <div className="flex justify-between items-center text-xs">
-                <span className="font-extrabold text-emerald-900 flex items-center gap-1.5">
+                <span className="font-extrabold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-xs" />
                   Tempat Sampah Organik
                 </span>
-                <span className="font-black text-emerald-700 font-mono">
+                <span className="font-black text-emerald-700 dark:text-emerald-400 font-mono">
                   {stats?.kepatuhanPemilahan?.organikRate ?? 0}% Sesuai
                 </span>
               </div>
-              <div className="h-2 w-full bg-emerald-200/50 rounded-full overflow-hidden">
+              <div className="h-2 w-full bg-emerald-200/50 dark:bg-emerald-900/50 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-emerald-500 rounded-full transition-all duration-500"
                   style={{ width: `${stats?.kepatuhanPemilahan?.organikRate ?? 0}%` }}
                 />
               </div>
-              <p className="text-[10px] text-emerald-700/80 font-medium leading-tight">
+              <p className="text-[10px] text-emerald-700/80 dark:text-emerald-300/80 font-medium leading-tight">
                 Kesesuaian hasil AI terdeteksi Organik pada Tempat Sampah berkategori Organik ({stats?.kepatuhanPemilahan?.organikBinTotal ?? 0} Tempat Sampah terdata).
               </p>
             </div>
 
             {/* Anorganik Bin */}
-            <div className="bg-amber-50/60 p-3.5 rounded-2xl border border-amber-100 space-y-1.5">
+            <div className="bg-amber-50/60 dark:bg-amber-950/40 p-3.5 rounded-2xl border border-amber-100 dark:border-amber-700/30 space-y-1.5">
               <div className="flex justify-between items-center text-xs">
-                <span className="font-extrabold text-amber-900 flex items-center gap-1.5">
+                <span className="font-extrabold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-xs" />
                   Tempat Sampah Anorganik
                 </span>
-                <span className="font-black text-amber-700 font-mono">
+                <span className="font-black text-amber-700 dark:text-amber-400 font-mono">
                   {stats?.kepatuhanPemilahan?.anorganikRate ?? 0}% Sesuai
                 </span>
               </div>
-              <div className="h-2 w-full bg-amber-200/50 rounded-full overflow-hidden">
+              <div className="h-2 w-full bg-amber-200/50 dark:bg-amber-900/50 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-amber-500 rounded-full transition-all duration-500"
                   style={{ width: `${stats?.kepatuhanPemilahan?.anorganikRate ?? 0}%` }}
                 />
               </div>
-              <p className="text-[10px] text-amber-700/80 font-medium leading-tight">
+              <p className="text-[10px] text-amber-700/80 dark:text-amber-300/80 font-medium leading-tight">
                 Kesesuaian hasil AI terdeteksi Anorganik pada Tempat Sampah berkategori Anorganik ({stats?.kepatuhanPemilahan?.anorganikBinTotal ?? 0} Tempat Sampah terdata).
               </p>
             </div>
           </div>
 
           {/* Edukasi & Deteksi Kontaminasi (4 cols) */}
-          <div className="md:col-span-4 bg-white text-slate-800 p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3 flex flex-col justify-between h-full">
+          <div className="md:col-span-4 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs space-y-3 flex flex-col justify-between h-full">
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-amber-700 font-extrabold text-xs">
-                <span className="material-symbols-outlined text-base text-amber-600">warning</span>
+              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-extrabold text-xs">
+                <span className="material-symbols-outlined text-base text-amber-600 dark:text-amber-400">warning</span>
                 Deteksi Kontaminasi &amp; Edukasi
               </div>
-              <p className="text-[11px] text-slate-600 font-normal leading-relaxed">
-                Jika tempat sampah berkategori <strong className="text-emerald-700 font-bold">Organik</strong> tetapi hasil deteksi AI setoran warga teridentifikasi didominasi <strong className="text-amber-700 font-bold">Anorganik/Residu</strong>, maka tingkat kepatuhan pada lokasi tersebut dianggap <strong className="text-rose-600 font-bold">Rendah (Tercampur)</strong>.
+              <p className="text-[11px] text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
+                Jika tempat sampah berkategori <strong className="text-emerald-700 dark:text-emerald-400 font-bold">Organik</strong> tetapi hasil deteksi AI setoran warga teridentifikasi didominasi <strong className="text-amber-700 dark:text-amber-400 font-bold">Anorganik/Residu</strong>, maka tingkat kepatuhan pada lokasi tersebut dianggap <strong className="text-rose-600 dark:text-rose-400 font-bold">Rendah (Tercampur)</strong>.
               </p>
             </div>
 
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
-              <span className="text-slate-500 font-medium">Auto-Audit AI TrashCare</span>
-              <span className="text-emerald-700 font-bold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-600" />
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10.5px]">
+              <span className="text-slate-500 dark:text-slate-400 font-medium">Auto-Audit AI TrashCare</span>
+              <span className="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400" />
                 Aktif
               </span>
             </div>
@@ -2506,24 +2513,24 @@ const Dashboard: React.FC = () => {
       </div>
       <div className="grid grid-cols-12 gap-6 relative z-10">
         {/* Data Tempat Sampah Terbaru */}
-        <div className="col-span-12 lg:col-span-6 bg-white shadow-sm rounded-3xl p-6 border border-slate-200 flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-200">
+        <div className="col-span-12 lg:col-span-6 bg-white dark:bg-slate-900 shadow-sm rounded-3xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+          <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-600 border border-emerald-500/30">
+              <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                 <Trash2 size={16} />
               </div>
               <div>
-                <h4 className="font-extrabold text-[16px] text-slate-900 tracking-tight">
+                <h4 className="font-extrabold text-[16px] text-slate-900 dark:text-slate-100 tracking-tight">
                   Data Tempat Sampah Terbaru
                 </h4>
-                <p className="text-[11px] text-slate-400 font-medium leading-none mt-0.5">
+                <p className="text-[11px] text-slate-400 dark:text-slate-400 font-medium leading-none mt-0.5">
                   Monitoring Kapasitas &amp; Status QR Tempat Sampah Terdaftar
                 </p>
               </div>
             </div>
             <Link
               to="/master-data/manajemen-tempat-sampah"
-              className="text-xs font-extrabold text-emerald-600 hover:text-emerald-300 transition-colors flex items-center gap-1 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-xl border border-emerald-500/30"
+              className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors flex items-center gap-1 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-xl border border-emerald-500/30"
             >
               Lihat Semua <ChevronRight size={14} />
             </Link>
@@ -2532,7 +2539,7 @@ const Dashboard: React.FC = () => {
           <div className="overflow-x-auto min-h-[300px]">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-200 bg-slate-50">
+                <tr className="text-[11px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60">
                   <th className="py-2.5 px-3 rounded-l-lg">ID &amp; Jenis</th>
                   <th className="py-2.5 px-3">Lokasi</th>
                   <th className="py-2.5 px-3">Kapasitas Tempat Sampah</th>
@@ -2540,10 +2547,10 @@ const Dashboard: React.FC = () => {
                   <th className="py-2.5 px-3 text-right rounded-r-lg">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 text-xs">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
                 {recentBins.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-500 font-medium">
+                    <td colSpan={5} className="py-8 text-center text-slate-500 dark:text-slate-400 font-medium">
                       Belum ada data tempat sampah terdaftar.
                     </td>
                   </tr>
@@ -2566,24 +2573,24 @@ const Dashboard: React.FC = () => {
                     return (
                       <tr
                         key={bin.id || bin.kode || i}
-                        className="hover:bg-slate-50 transition-all duration-150 group"
+                        className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all duration-150 group"
                       >
                         <td className="py-3 px-3">
                           <div className="flex flex-col">
-                            <span className="font-mono font-extrabold text-slate-900 text-[13px] group-hover:text-emerald-600 transition-colors">
+                            <span className="font-mono font-extrabold text-slate-900 dark:text-slate-100 text-[13px] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                               {bin.qrCode || bin.kode || (bin.id ? bin.id.substring(0, 8) : "BIN")}
                             </span>
                             <div className="flex items-center gap-1 mt-0.5">
                               {isOrganik ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/30">
                                   <Leaf size={11} /> Organik
                                 </span>
                               ) : isAnorganik ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/30">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/30">
                                   <Recycle size={11} /> Anorganik
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
                                   {bin.category?.name || bin.categoryId || "Umum"}
                                 </span>
                               )}
@@ -2593,10 +2600,10 @@ const Dashboard: React.FC = () => {
 
                         <td className="py-3 px-3">
                           <div className="flex flex-col min-w-[110px]">
-                            <span className="font-bold text-slate-700 text-[12px]">
+                            <span className="font-bold text-slate-700 dark:text-slate-300 text-[12px]">
                               {bin.rtRw?.kelurahan?.name || bin.kelurahan || "Coblong"}
                             </span>
-                            <span className="text-[10px] text-slate-400 font-medium">
+                            <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium">
                               {(() => {
                                 const rwStr = typeof bin.rtRw === "string" ? bin.rtRw : bin.rtRw?.name;
                                 if (!rwStr || rwStr === "-") return "RW -";
@@ -2609,11 +2616,11 @@ const Dashboard: React.FC = () => {
                         <td className="py-3 px-3 min-w-[120px]">
                           <div className="flex flex-col gap-1">
                             <div className="flex justify-between items-center text-[10px] font-bold">
-                              <span className={isHighCap ? "text-rose-600 font-black" : "text-emerald-600 font-extrabold"}>
+                              <span className={isHighCap ? "text-rose-600 dark:text-rose-400 font-black" : "text-emerald-600 dark:text-emerald-400 font-extrabold"}>
                                 {isHighCap ? `${cap}% Terisi (Penuh)` : `${cap}% Terisi (Aman)`}
                               </span>
                             </div>
-                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                            <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700">
                               <div
                                 className={`h-full rounded-full transition-all duration-500 ${
                                   isHighCap ? "bg-rose-500 animate-pulse shadow-[0_0_8px_#f43f5e]" : "bg-emerald-400 shadow-[0_0_8px_#34d399]"
@@ -2625,7 +2632,7 @@ const Dashboard: React.FC = () => {
                         </td>
 
                         <td className="py-3 px-3 text-center">
-                          <span className="font-extrabold text-amber-600 font-mono text-[13px] bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/30">
+                          <span className="font-extrabold text-amber-600 dark:text-amber-400 font-mono text-[13px] bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/30">
                             {bin.category?.pointsPerKg || 10}
                           </span>
                         </td>
@@ -2634,21 +2641,21 @@ const Dashboard: React.FC = () => {
                           <div className="flex justify-end items-center gap-1">
                             <button
                               onClick={() => setSelectedBinForDetail(bin)}
-                              className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-500/10 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors cursor-pointer"
                               title="Detail Tempat Sampah"
                             >
                               <Eye size={15} />
                             </button>
                             <button
                               onClick={() => navigate(`/master-data/manajemen-tempat-sampah?edit=${bin.id || bin.kode}`)}
-                              className="p-1.5 text-slate-400 hover:text-cyan-600 hover:bg-cyan-500/10 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors cursor-pointer"
                               title="Edit Tempat Sampah"
                             >
                               <Pencil size={15} />
                             </button>
                             <button
                               onClick={() => setDeleteBinConfirm(bin)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
                               title="Hapus Tempat Sampah"
                             >
                               <Trash2 size={15} />
@@ -2665,24 +2672,24 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Sesi Pengguna Aktif Card */}
-        <div className="col-span-12 lg:col-span-6 bg-white shadow-sm rounded-3xl p-6 border border-slate-200 flex flex-col justify-between">
+        <div className="col-span-12 lg:col-span-6 bg-white dark:bg-slate-900 shadow-sm rounded-3xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-600 border border-emerald-500/30">
+                <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                   <UserCheck size={20} />
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-[17px] text-slate-900 tracking-tight">
+                  <h4 className="font-extrabold text-[17px] text-slate-900 dark:text-slate-100 tracking-tight">
                     Sesi Pengguna Aktif
                   </h4>
-                  <p className="text-xs text-slate-400 font-medium leading-none mt-1">
+                  <p className="text-xs text-slate-400 dark:text-slate-400 font-medium leading-none mt-1">
                     Status sesi pengguna terdaftar dengan token login aktif
                   </p>
                 </div>
               </div>
               {stats?.activeSessions && (
-                <span className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_#34d399]"></span>
                   {stats.activeSessions.total ?? 0}
                 </span>
@@ -2691,65 +2698,65 @@ const Dashboard: React.FC = () => {
 
             {stats?.activeSessions ? (
               <div className="mt-4 space-y-2.5">
-                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-3 text-slate-600 text-xs font-semibold">
+                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 text-xs font-semibold">
                     <Code2 size={16} className="text-slate-400" />
                     <span>Admin / Task Force / Dev</span>
                   </div>
-                  <span className="font-black text-slate-700 text-sm bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-300">{stats.activeSessions.admin ?? 0}</span>
+                  <span className="font-black text-slate-700 dark:text-slate-200 text-sm bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-md border border-slate-300 dark:border-slate-700">{stats.activeSessions.admin ?? 0}</span>
                 </div>
 
-                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-3 text-slate-600 text-xs font-semibold">
-                    <ShieldCheck size={16} className="text-cyan-600" />
+                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 text-xs font-semibold">
+                    <ShieldCheck size={16} className="text-cyan-600 dark:text-cyan-400" />
                     <span>Operator (DLH / Camat / Lurah)</span>
                   </div>
-                  <span className="font-extrabold text-cyan-700 text-xs bg-cyan-50 border border-cyan-200 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.operator ?? 0}</span>
+                  <span className="font-extrabold text-cyan-700 dark:text-cyan-300 text-xs bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200 dark:border-cyan-700/40 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.operator ?? 0}</span>
                 </div>
 
-                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-3 text-slate-600 text-xs font-semibold">
-                    <Award size={16} className="text-amber-600" />
+                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 text-xs font-semibold">
+                    <Award size={16} className="text-amber-600 dark:text-amber-400" />
                     <span>Rukun Warga (RW)</span>
                   </div>
-                  <span className="font-extrabold text-amber-700 text-xs bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.rw ?? 0}</span>
+                  <span className="font-extrabold text-amber-700 dark:text-amber-300 text-xs bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/40 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.rw ?? 0}</span>
                 </div>
 
-                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-3 text-slate-600 text-xs font-semibold">
-                    <BookOpen size={16} className="text-emerald-600" />
+                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 text-xs font-semibold">
+                    <BookOpen size={16} className="text-emerald-600 dark:text-emerald-400" />
                     <span>Dosen DPL</span>
                   </div>
-                  <span className="font-extrabold text-emerald-700 text-xs bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.dpl ?? 0}</span>
+                  <span className="font-extrabold text-emerald-700 dark:text-emerald-300 text-xs bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/40 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.dpl ?? 0}</span>
                 </div>
 
-                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-3 text-slate-600 text-xs font-semibold">
-                    <Truck size={16} className="text-rose-600" />
+                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 text-xs font-semibold">
+                    <Truck size={16} className="text-rose-600 dark:text-rose-400" />
                     <span>Petugas Residu</span>
                   </div>
-                  <span className="font-extrabold text-rose-700 text-xs bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.residu ?? 0}</span>
+                  <span className="font-extrabold text-rose-700 dark:text-rose-300 text-xs bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-700/40 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.residu ?? 0}</span>
                 </div>
 
-                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-3 text-slate-600 text-xs font-semibold">
-                    <GraduationCap size={16} className="text-indigo-600" />
+                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 text-xs font-semibold">
+                    <GraduationCap size={16} className="text-indigo-600 dark:text-indigo-400" />
                     <span>Mahasiswa KKN</span>
                   </div>
-                  <span className="font-extrabold text-indigo-700 text-xs bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.kkn ?? 0}</span>
+                  <span className="font-extrabold text-indigo-700 dark:text-indigo-300 text-xs bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-700/40 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.kkn ?? 0}</span>
                 </div>
               </div>
             ) : (
-              <div className="mt-4 py-8 text-center text-xs text-slate-500 italic">
+              <div className="mt-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400 italic">
                 Belum ada data sesi pengguna aktif.
               </div>
             )}
           </div>
 
-          <div className="mt-6 pt-4 border-t border-slate-200">
+          <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800">
             <Link
               to="/pengguna-online"
-              className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl text-xs font-extrabold text-slate-700 hover:text-slate-900 transition-all flex items-center justify-center gap-2 group cursor-pointer"
+              className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-2 group cursor-pointer"
             >
               Kelola Pengguna Online <ChevronRight size={15} className="group-hover:translate-x-0.5 transition-transform text-slate-400" />
             </Link>
@@ -2768,15 +2775,15 @@ const Dashboard: React.FC = () => {
       {/* Composition Detail Modal */}
       {showCompositionDetail && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-emerald-500/30 animate-in fade-in zoom-in-95 duration-150 text-slate-800">
-            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h3 className="font-bold text-[20px] text-slate-900 flex items-center gap-2">
-                <BarChart className="text-cyan-600" />
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-emerald-500/30 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-100">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-850">
+              <h3 className="font-bold text-[20px] text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <BarChart className="text-cyan-600 dark:text-cyan-400" />
                 Rincian Komposisi &amp; Aliran Sampah
               </h3>
               <button
                 onClick={() => setShowCompositionDetail(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors cursor-pointer border border-slate-300 dark:border-slate-700"
               >
                 <X size={20} />
               </button>
@@ -2787,62 +2794,62 @@ const Dashboard: React.FC = () => {
               </p>
 
               <div className="space-y-3">
-                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
-                  <h4 className="font-extrabold text-emerald-700 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
+                <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-700/30">
+                  <h4 className="font-extrabold text-emerald-700 dark:text-emerald-400 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
                     <Leaf size={16} />
                     Material Organik ({stats?.komposisiSampah?.organik?.persentase || "0%"})
                   </h4>
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
-                      <span className="text-slate-500 font-medium block">Total Berat Real</span>
-                      <strong className="text-slate-900 font-bold font-mono">{Math.round(Number(stats?.komposisiSampah?.organikKg || 0)).toLocaleString("id-ID")} Kg</strong>
+                      <span className="text-slate-500 dark:text-slate-400 font-medium block">Total Berat Real</span>
+                      <strong className="text-slate-900 dark:text-slate-100 font-bold font-mono">{Math.round(Number(stats?.komposisiSampah?.organikKg || 0)).toLocaleString("id-ID")} Kg</strong>
                     </div>
                     <div>
-                      <span className="text-slate-500 font-medium block">Metode Pengolahan</span>
-                      <strong className="text-emerald-700 font-extrabold">Loseda &amp; Maggot</strong>
+                      <span className="text-slate-500 dark:text-slate-400 font-medium block">Metode Pengolahan</span>
+                      <strong className="text-emerald-700 dark:text-emerald-400 font-extrabold">Loseda &amp; Maggot</strong>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200">
-                  <h4 className="font-extrabold text-amber-700 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
+                <div className="p-4 bg-amber-50 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-700/30">
+                  <h4 className="font-extrabold text-amber-700 dark:text-amber-400 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
                     <Recycle size={16} />
                     Material Anorganik ({stats?.komposisiSampah?.anorganik?.persentase || "0%"})
                   </h4>
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
-                      <span className="text-slate-500 font-medium block">Total Berat Real</span>
-                      <strong className="text-slate-900 font-bold font-mono">{Math.round(Number(stats?.komposisiSampah?.anorganikKg || 0)).toLocaleString("id-ID")} Kg</strong>
+                      <span className="text-slate-500 dark:text-slate-400 font-medium block">Total Berat Real</span>
+                      <strong className="text-slate-900 dark:text-slate-100 font-bold font-mono">{Math.round(Number(stats?.komposisiSampah?.anorganikKg || 0)).toLocaleString("id-ID")} Kg</strong>
                     </div>
                     <div>
-                      <span className="text-slate-500 font-medium block">Metode Daur Ulang</span>
-                      <strong className="text-amber-700 font-extrabold">Bank Sampah &amp; Poin</strong>
+                      <span className="text-slate-500 dark:text-slate-400 font-medium block">Metode Daur Ulang</span>
+                      <strong className="text-amber-700 dark:text-amber-400 font-extrabold">Bank Sampah &amp; Poin</strong>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 bg-rose-50 rounded-2xl border border-rose-200">
-                  <h4 className="font-extrabold text-rose-700 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
+                <div className="p-4 bg-rose-50 dark:bg-rose-950/40 rounded-2xl border border-rose-200 dark:border-rose-700/30">
+                  <h4 className="font-extrabold text-rose-700 dark:text-rose-400 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
                     <Trash2 size={16} />
                     Material Residu Hilir ({stats?.komposisiSampah?.residu?.persentase || "0%"})
                   </h4>
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
-                      <span className="text-slate-500 font-medium block">Total Berat Hilir</span>
-                      <strong className="text-slate-900 font-bold font-mono">{Math.round(Number(stats?.komposisiSampah?.residuKg || 0)).toLocaleString("id-ID")} Kg</strong>
+                      <span className="text-slate-500 dark:text-slate-400 font-medium block">Total Berat Hilir</span>
+                      <strong className="text-slate-900 dark:text-slate-100 font-bold font-mono">{Math.round(Number(stats?.komposisiSampah?.residuKg || 0)).toLocaleString("id-ID")} Kg</strong>
                     </div>
                     <div>
-                      <span className="text-slate-500 font-medium block">Tujuan Akhir</span>
-                      <strong className="text-rose-700 font-extrabold">TPA Hilir Kota</strong>
+                      <span className="text-slate-500 dark:text-slate-400 font-medium block">Tujuan Akhir</span>
+                      <strong className="text-rose-700 dark:text-rose-400 font-extrabold">TPA Hilir Kota</strong>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+            <div className="p-4 bg-slate-50 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 flex justify-end">
               <button
                 onClick={() => setShowCompositionDetail(false)}
-                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 transition-colors border border-slate-300 cursor-pointer"
+                className="px-5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors border border-slate-300 dark:border-slate-700 cursor-pointer"
               >
                 Tutup Detail
               </button>
@@ -2854,47 +2861,47 @@ const Dashboard: React.FC = () => {
       {/* Detail Bin Modal */}
       {selectedBinForDetail && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all">
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-emerald-500/30 animate-in fade-in zoom-in-95 duration-150 text-slate-800">
-            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h3 className="font-bold text-[18px] text-slate-900">Detail Tempat Sampah Cerdas</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-emerald-500/30 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-100">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-850">
+              <h3 className="font-bold text-[18px] text-slate-900 dark:text-slate-100">Detail Tempat Sampah Cerdas</h3>
               <button
                 onClick={() => setSelectedBinForDetail(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors cursor-pointer border border-slate-300 dark:border-slate-700"
               >
                 <X size={20} />
               </button>
             </div>
             <div className="p-6 space-y-6">
               <div className="flex justify-center">
-                <div className="p-4 bg-white rounded-2xl border-2 border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.2)] flex flex-col items-center gap-2">
+                <div className="p-4 bg-white dark:bg-slate-800 rounded-2xl border-2 border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.2)] flex flex-col items-center gap-2">
                   <img
                     className="w-40 h-40"
                     alt="QR Code"
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedBinForDetail.qrCode || selectedBinForDetail.kode)}`}
                   />
-                  <span className="text-[14px] font-mono font-bold text-slate-900 tracking-widest">
+                  <span className="text-[14px] font-mono font-bold text-slate-900 dark:text-slate-100 tracking-widest">
                     {selectedBinForDetail.qrCode || selectedBinForDetail.kode}
                   </span>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <div className="flex justify-between items-center py-2 border-b border-slate-200 text-sm">
+                <div className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-800 text-sm">
                   <span className="text-slate-400">Kategori Sampah</span>
                   <span
                     className={`font-bold uppercase ${(selectedBinForDetail.category?.name || selectedBinForDetail.categoryId || "")
                         .toUpperCase()
                         .includes("ORGANIK")
-                        ? "text-emerald-600"
-                        : "text-cyan-600"
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-cyan-600 dark:text-cyan-400"
                       }`}
                   >
                     {selectedBinForDetail.category?.name || selectedBinForDetail.categoryId}
                   </span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-slate-200 text-sm">
+                <div className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-800 text-sm">
                   <span className="text-slate-400">Wilayah (Rukun Warga)</span>
-                  <span className="font-semibold text-slate-900">
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
                     {typeof selectedBinForDetail.rtRw === "string"
                       ? selectedBinForDetail.rtRw
                       : selectedBinForDetail.rtRw?.name || "-"}
@@ -2914,9 +2921,9 @@ const Dashboard: React.FC = () => {
                     )
                   );
                   return (
-                    <div className="flex justify-between items-center py-2 border-b border-slate-200 text-sm">
+                    <div className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-800 text-sm">
                       <span className="text-slate-400">Status Kapasitas</span>
-                      <span className={`font-bold ${capPct >= 90 ? "text-rose-600" : "text-emerald-600"}`}>
+                      <span className={`font-bold ${capPct >= 90 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>
                         {capPct}% {capPct >= 90 ? "Penuh" : "Tersedia"}
                         {maxCapacityLiter > 0 && (
                           <span className="text-slate-400 font-medium">
@@ -2929,7 +2936,7 @@ const Dashboard: React.FC = () => {
                 })()}
                 <div className="flex justify-between items-center py-2 text-sm">
                   <span className="text-slate-400">Poin Setoran</span>
-                  <span className="font-bold text-amber-600">
+                  <span className="font-bold text-amber-600 dark:text-amber-400">
                     {selectedBinForDetail.category?.pointsPerKg || 100} Poin / Kg
                   </span>
                 </div>
@@ -2937,7 +2944,7 @@ const Dashboard: React.FC = () => {
 
               <button
                 onClick={() => setSelectedBinForDetail(null)}
-                className="w-full py-3 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 transition-colors cursor-pointer"
+                className="w-full py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-slate-100 transition-colors cursor-pointer"
               >
                 Tutup Detail
               </button>

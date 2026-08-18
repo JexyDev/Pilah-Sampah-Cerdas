@@ -10,6 +10,13 @@ import { redisService } from "./redisService.js";
 
 const prisma = new PrismaClient();
 
+interface ResolvedAreaContext {
+  isFiltered: boolean;
+  rwIds: number[];
+  kelurahanIds: string[];
+  kelurahanNames: string[];
+}
+
 function isWilayahFiltered(wilayah?: string): boolean {
   if (!wilayah) return false;
   const cleaned = wilayah.trim().toLowerCase();
@@ -18,18 +25,21 @@ function isWilayahFiltered(wilayah?: string): boolean {
     cleaned === "undefined" ||
     cleaned === "null" ||
     cleaned === "kecamatan coblong" ||
+    cleaned === "kecamatan coblong (semua)" ||
+    cleaned === "cakupan seluruh kecamatan" ||
     cleaned === "sistem pusat" ||
-    cleaned === "area kkn dago" ||
     cleaned === "dinas lingkungan hidup" ||
     cleaned === "semua wilayah" ||
     cleaned === "seluruh wilayah" ||
     cleaned === "sistem kota (semua wilayah)" ||
     cleaned === "sistem kota" ||
     cleaned === "kota bandung" ||
+    cleaned === "semua kelurahan" ||
     cleaned === "semua" ||
     cleaned === "all" ||
     cleaned.includes("semua wilayah") ||
     cleaned.includes("seluruh wilayah") ||
+    cleaned.includes("seluruh kecamatan") ||
     cleaned.includes("sistem kota")
   ) {
     return false;
@@ -37,51 +47,119 @@ function isWilayahFiltered(wilayah?: string): boolean {
   return true;
 }
 
-async function resolveAreaIds(wilayah?: string): Promise<number[]> {
-  if (!isWilayahFiltered(wilayah)) return [];
-
-  const cleanWilayah = wilayah!.trim();
-  const parts = cleanWilayah.split(",").map((p) => p.trim()).filter(Boolean);
-
-  const orConditions: any[] = [];
-  for (const part of parts) {
-    const match = part.match(/(\d+)/);
-    const rwNum = match ? match[1].padStart(2, "0") : null;
-    const rawNum = match ? parseInt(match[1]).toString() : null;
-
-    orConditions.push(
-      { name: { contains: part, mode: "insensitive" as const } },
-      { kelurahan: { name: { contains: part, mode: "insensitive" as const } } },
-      ...(rwNum ? [{ name: { contains: `RW ${rwNum}`, mode: "insensitive" as const } }] : []),
-      ...(rawNum ? [{ name: { contains: `RW ${rawNum}`, mode: "insensitive" as const } }] : [])
-    );
+async function resolveAreaContext(wilayah?: string): Promise<ResolvedAreaContext> {
+  if (!isWilayahFiltered(wilayah)) {
+    return { isFiltered: false, rwIds: [], kelurahanIds: [], kelurahanNames: [] };
   }
 
-  const areas = await prisma.rw.findMany({
-    where: {
-      OR: orConditions,
-    },
-    select: { id: true },
-  });
+  const parts = wilayah!.split(",").map((p) => p.trim()).filter(Boolean);
+  const foundRwIds = new Set<number>();
+  const foundKelIds = new Set<string>();
+  const foundKelNames = new Set<string>();
 
-  return areas.map((a) => a.id);
+  for (const part of parts) {
+    // 1. Direct UUID match (Kelurahan ID)
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(part)) {
+      const kel = await prisma.kelurahan.findUnique({
+        where: { id: part },
+        include: { rws: { select: { id: true } } },
+      });
+      if (kel) {
+        foundKelIds.add(kel.id);
+        foundKelNames.add(kel.name);
+        kel.rws.forEach((r) => foundRwIds.add(r.id));
+        continue;
+      }
+    }
+
+    // 2. Clean prefixes
+    const stripped = part
+      .replace(/^(kelurahan|kel\.|kel|kecamatan|kec\.|desa)\s*/i, "")
+      .replace(/\s*\(.*\)$/, "")
+      .trim();
+
+    // 3. Search in Kelurahan table
+    const matchedKelurahans = await prisma.kelurahan.findMany({
+      where: {
+        OR: [
+          { name: { equals: stripped, mode: "insensitive" } },
+          { name: { contains: stripped, mode: "insensitive" } },
+          { name: { equals: part, mode: "insensitive" } },
+          { name: { contains: part, mode: "insensitive" } },
+        ],
+      },
+      include: { rws: { select: { id: true } } },
+    });
+
+    for (const kel of matchedKelurahans) {
+      foundKelIds.add(kel.id);
+      foundKelNames.add(kel.name);
+      kel.rws.forEach((r) => foundRwIds.add(r.id));
+    }
+
+    // 4. Search in RW table
+    const matchRwNum = part.match(/(?:rw|rw\.)?\s*0*(\d+)/i);
+    const rwNum = matchRwNum ? matchRwNum[1].padStart(2, "0") : null;
+    const rawRwNum = matchRwNum ? parseInt(matchRwNum[1], 10).toString() : null;
+
+    const matchedRws = await prisma.rw.findMany({
+      where: {
+        OR: [
+          { name: { contains: part, mode: "insensitive" } },
+          { name: { contains: stripped, mode: "insensitive" } },
+          ...(rwNum ? [{ name: { contains: `RW ${rwNum}`, mode: "insensitive" as const } }] : []),
+          ...(rawRwNum ? [{ name: { contains: `RW ${rawRwNum}`, mode: "insensitive" as const } }] : []),
+        ],
+      },
+      select: { id: true, kelurahanId: true, kelurahan: { select: { name: true } } },
+    });
+
+    for (const rw of matchedRws) {
+      foundRwIds.add(rw.id);
+      if (rw.kelurahanId) foundKelIds.add(rw.kelurahanId);
+      if (rw.kelurahan?.name) foundKelNames.add(rw.kelurahan.name);
+    }
+  }
+
+  return {
+    isFiltered: true,
+    rwIds: Array.from(foundRwIds),
+    kelurahanIds: Array.from(foundKelIds),
+    kelurahanNames: Array.from(foundKelNames),
+  };
 }
 
 export const dashboardService = {
   getKpi: async (wilayah?: string, period?: string, startDate?: string, endDate?: string) => {
-    const isFiltered = isWilayahFiltered(wilayah);
-    const areaIds = isFiltered ? await resolveAreaIds(wilayah) : [];
+    const areaCtx = await resolveAreaContext(wilayah);
+    const { isFiltered, rwIds, kelurahanIds, kelurahanNames } = areaCtx;
 
-    const getRtRwMatch = (wilayahStr?: string) => {
-      const str = wilayahStr || "";
-      if (areaIds.length > 0) return { id: { in: areaIds } };
-      return {
-        OR: [
-          { name: { contains: str, mode: "insensitive" as const } },
-          { kelurahan: { name: { contains: str, mode: "insensitive" as const } } },
-        ],
-      };
+    const getRtRwMatch = () => {
+      if (!isFiltered) return undefined;
+      const conditions: any[] = [];
+      if (rwIds.length > 0) conditions.push({ id: { in: rwIds } });
+      if (kelurahanIds.length > 0) conditions.push({ kelurahanId: { in: kelurahanIds } });
+      if (kelurahanNames.length > 0) conditions.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
+      return conditions.length > 0 ? (conditions.length === 1 ? conditions[0] : { OR: conditions }) : undefined;
     };
+
+    const getBinMatch = () => {
+      if (!isFiltered) return undefined;
+      const conditions: any[] = [];
+      if (rwIds.length > 0) conditions.push({ rwId: { in: rwIds } });
+      if (kelurahanIds.length > 0) {
+        conditions.push({ kelurahanId: { in: kelurahanIds } });
+        conditions.push({ rw: { kelurahanId: { in: kelurahanIds } } });
+      }
+      if (kelurahanNames.length > 0) {
+        conditions.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
+        conditions.push({ rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } } });
+      }
+      return conditions.length > 0 ? (conditions.length === 1 ? conditions[0] : { OR: conditions }) : undefined;
+    };
+
+    const rtRwMatch = getRtRwMatch();
+    const binMatch = getBinMatch();
 
     let dateFilter: any = undefined;
     const now = new Date();
@@ -114,13 +192,15 @@ export const dashboardService = {
       end.setHours(23, 59, 59, 999);
       dateFilter = { gte: start, lte: end };
     }
+
     // 1. Total Warga Aktif
     const wargaWhere: any = { role: { name: "WARGA" } };
-    if (isFiltered)
+    if (isFiltered && rtRwMatch) {
       wargaWhere.OR = [
-        { rw: getRtRwMatch(wilayah) },
-        { households: { some: { rw: getRtRwMatch(wilayah) } } },
+        { rw: rtRwMatch },
+        { households: { some: { rw: rtRwMatch } } },
       ];
+    }
     if (dateFilter) wargaWhere.createdAt = dateFilter;
 
     const totalWarga = await prisma.user.count({
@@ -128,7 +208,7 @@ export const dashboardService = {
     });
 
     const hhWhere: any = {};
-    if (isFiltered) hhWhere.rw = getRtRwMatch(wilayah);
+    if (isFiltered && rtRwMatch) hhWhere.rw = rtRwMatch;
     if (dateFilter) hhWhere.createdAt = dateFilter;
     const totalRumahTangga = await prisma.household.count({
       where: hhWhere,
@@ -136,11 +216,12 @@ export const dashboardService = {
 
     // Total Users
     const usersWhere: any = {};
-    if (isFiltered)
+    if (isFiltered && rtRwMatch) {
       usersWhere.OR = [
-        { rw: getRtRwMatch(wilayah) },
-        { households: { some: { rw: getRtRwMatch(wilayah) } } },
+        { rw: rtRwMatch },
+        { households: { some: { rw: rtRwMatch } } },
       ];
+    }
     if (dateFilter) usersWhere.createdAt = dateFilter;
 
     const totalUsers = await prisma.user.count({
@@ -149,7 +230,12 @@ export const dashboardService = {
 
     // 2. Sampah Terkumpul (Kg)
     const wasteLogsWhere: any = {};
-    if (isFiltered) wasteLogsWhere.warga = { rw: getRtRwMatch(wilayah) };
+    if (isFiltered) {
+      const orWaste: any[] = [];
+      if (rtRwMatch) orWaste.push({ warga: { rw: rtRwMatch } });
+      if (binMatch) orWaste.push({ bin: binMatch });
+      if (orWaste.length > 0) wasteLogsWhere.OR = orWaste;
+    }
     if (dateFilter) wasteLogsWhere.createdAt = dateFilter;
 
     const wasteLogs = await prisma.setoranOtomatis.aggregate({
@@ -160,29 +246,22 @@ export const dashboardService = {
     });
     const totalSampahKg = wasteLogs._sum.berat ? Number(wasteLogs._sum.berat) : 0;
 
-    // 3. Rata-rata Akurasi AI (Simulated using % of SUCCESS)
+    // 3. Rata-rata Akurasi AI
     const aiWhere: any = {};
-    if (isFiltered)
+    if (isFiltered && rtRwMatch) {
       aiWhere.user = {
         OR: [
-          { rw: getRtRwMatch(wilayah) },
-          { households: { some: { rw: getRtRwMatch(wilayah) } } },
+          { rw: rtRwMatch },
+          { households: { some: { rw: rtRwMatch } } },
         ],
       };
+    }
     if (dateFilter) aiWhere.createdAt = dateFilter;
 
     const totalAiLogs = await prisma.aiRequestLog.count({
       where: aiWhere,
     });
-    const successAiWhere: any = { resultStatus: "SUCCESS" };
-    if (isFiltered)
-      successAiWhere.user = {
-        OR: [
-          { rw: getRtRwMatch(wilayah) },
-          { households: { some: { rw: getRtRwMatch(wilayah) } } },
-        ],
-      };
-    if (dateFilter) successAiWhere.createdAt = dateFilter;
+    const successAiWhere: any = { ...aiWhere, resultStatus: "SUCCESS" };
 
     const successAiLogs = await prisma.aiRequestLog.count({
       where: successAiWhere,
@@ -191,7 +270,12 @@ export const dashboardService = {
 
     // 4. Peringatan Tempat Sampah Penuh (volume > 90% of maxCapacity)
     const binsWhere: any = {};
-    if (isFiltered) binsWhere.rw = getRtRwMatch(wilayah);
+    if (isFiltered && binMatch) {
+      binsWhere.OR = [
+        binMatch,
+        ...(rtRwMatch ? [{ rw: rtRwMatch }] : []),
+      ];
+    }
     if (dateFilter) binsWhere.createdAt = dateFilter;
 
     const bins = await prisma.bin.findMany({
@@ -216,16 +300,15 @@ export const dashboardService = {
 
     // 6. Lokasi Terdaftar (RT/RW)
     const lokasiWhere: any = {};
-    if (isFiltered) lokasiWhere.OR = [getRtRwMatch(wilayah)];
+    if (isFiltered && rtRwMatch) {
+      lokasiWhere.OR = [rtRwMatch];
+    }
     if (dateFilter) lokasiWhere.createdAt = dateFilter;
 
     const lokasiTerdaftar = await prisma.rw.count({ where: lokasiWhere });
 
-    // 7. Setoran Hari Ini (Kg) (Using dateFilter)
-    const setoranHariIniWhere: any = {};
-    if (isFiltered) setoranHariIniWhere.warga = { rw: getRtRwMatch(wilayah) };
-    if (dateFilter) setoranHariIniWhere.createdAt = dateFilter;
-
+    // 7. Setoran Hari Ini (Kg) (Using dateFilter or Today)
+    const setoranHariIniWhere: any = { ...wasteLogsWhere };
     const wasteLogsToday = await prisma.setoranOtomatis.aggregate({
       where: setoranHariIniWhere,
       _sum: {
@@ -236,13 +319,14 @@ export const dashboardService = {
 
     // 8. Total Poin Warga
     const pointsWhere: any = {};
-    if (isFiltered)
+    if (isFiltered && rtRwMatch) {
       pointsWhere.user = {
         OR: [
-          { rw: getRtRwMatch(wilayah) },
-          { households: { some: { rw: getRtRwMatch(wilayah) } } },
+          { rw: rtRwMatch },
+          { households: { some: { rw: rtRwMatch } } },
         ],
       };
+    }
     if (dateFilter) pointsWhere.createdAt = dateFilter;
 
     const pointHistory = await prisma.pointHistory.aggregate({
@@ -254,18 +338,16 @@ export const dashboardService = {
     const totalPoin = pointHistory._sum.points ? Number(pointHistory._sum.points) : 0;
 
     // 9. Komposisi Sampah (Organik vs Anorganik)
-    const catWhere: any = {};
-    if (isFiltered) catWhere.warga = { rw: getRtRwMatch(wilayah) };
-    if (dateFilter) catWhere.createdAt = dateFilter;
+    const catWhere: any = { ...wasteLogsWhere };
 
     const wasteByCategory = await prisma.setoranOtomatis.findMany({
       where: catWhere,
     });
 
     const residuWhere: any = {};
-    if (isFiltered)
-      residuWhere.OR = [{ rw: getRtRwMatch(wilayah) }, { petugas: { rw: getRtRwMatch(wilayah) } }];
-    if (dateFilter) residuWhere.createdAt = dateFilter;
+    if (isFiltered && rtRwMatch) {
+      residuWhere.OR = [{ rw: rtRwMatch }, { petugas: { rw: rtRwMatch } }];
+    }
     if (dateFilter) residuWhere.createdAt = dateFilter;
 
     const residuLogs = await prisma.setoranManual.findMany({
@@ -451,21 +533,38 @@ export const dashboardService = {
   },
 
   getRecentTransactions: async (wilayah?: string) => {
-    const isFiltered = isWilayahFiltered(wilayah);
-    const areaIds = isFiltered ? await resolveAreaIds(wilayah) : [];
-    const rwFilter = isFiltered
-      ? areaIds.length > 0
-        ? { id: { in: areaIds } }
-        : {
-            OR: [
-              { name: { contains: wilayah, mode: "insensitive" as const } },
-              { kelurahan: { name: { contains: wilayah, mode: "insensitive" as const } } },
-            ],
-          }
-      : undefined;
+    const areaCtx = await resolveAreaContext(wilayah);
+    const { isFiltered, rwIds, kelurahanIds, kelurahanNames } = areaCtx;
+
+    const rwCondition: any[] = [];
+    if (rwIds.length > 0) rwCondition.push({ id: { in: rwIds } });
+    if (kelurahanIds.length > 0) rwCondition.push({ kelurahanId: { in: kelurahanIds } });
+    if (kelurahanNames.length > 0) rwCondition.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
+
+    const rwFilter = rwCondition.length > 0 ? (rwCondition.length === 1 ? rwCondition[0] : { OR: rwCondition }) : undefined;
+
+    const binCondition: any[] = [];
+    if (rwIds.length > 0) binCondition.push({ rwId: { in: rwIds } });
+    if (kelurahanIds.length > 0) {
+      binCondition.push({ kelurahanId: { in: kelurahanIds } });
+      binCondition.push({ rw: { kelurahanId: { in: kelurahanIds } } });
+    }
+    if (kelurahanNames.length > 0) {
+      binCondition.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
+      binCondition.push({ rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } } });
+    }
+    const binFilter = binCondition.length > 0 ? (binCondition.length === 1 ? binCondition[0] : { OR: binCondition }) : undefined;
+
+    const transactionsWhere: any = {};
+    if (isFiltered) {
+      const orConditions: any[] = [];
+      if (rwFilter) orConditions.push({ warga: { rw: rwFilter } });
+      if (binFilter) orConditions.push({ bin: binFilter });
+      if (orConditions.length > 0) transactionsWhere.OR = orConditions;
+    }
 
     const transactions = await prisma.setoranOtomatis.findMany({
-      where: rwFilter ? { warga: { rw: rwFilter } } : undefined,
+      where: isFiltered ? transactionsWhere : undefined,
       take: 10,
       orderBy: {
         createdAt: "desc",
@@ -490,47 +589,68 @@ export const dashboardService = {
   },
 
   getTrend: async (weeks: number = 8, wilayah?: string) => {
-    const isFiltered = isWilayahFiltered(wilayah);
-    const areaIds = isFiltered ? await resolveAreaIds(wilayah) : [];
-    const rwFilter = isFiltered
-      ? areaIds.length > 0
-        ? { id: { in: areaIds } }
-        : {
-            OR: [
-              { name: { contains: wilayah, mode: "insensitive" as const } },
-              { kelurahan: { name: { contains: wilayah, mode: "insensitive" as const } } },
-            ],
-          }
-      : undefined;
+    const areaCtx = await resolveAreaContext(wilayah);
+    const { isFiltered, rwIds, kelurahanIds, kelurahanNames } = areaCtx;
+
+    const rwCondition: any[] = [];
+    if (rwIds.length > 0) rwCondition.push({ id: { in: rwIds } });
+    if (kelurahanIds.length > 0) rwCondition.push({ kelurahanId: { in: kelurahanIds } });
+    if (kelurahanNames.length > 0) rwCondition.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
+    const rwFilter = rwCondition.length > 0 ? (rwCondition.length === 1 ? rwCondition[0] : { OR: rwCondition }) : undefined;
+
+    const binCondition: any[] = [];
+    if (rwIds.length > 0) binCondition.push({ rwId: { in: rwIds } });
+    if (kelurahanIds.length > 0) {
+      binCondition.push({ kelurahanId: { in: kelurahanIds } });
+      binCondition.push({ rw: { kelurahanId: { in: kelurahanIds } } });
+    }
+    if (kelurahanNames.length > 0) {
+      binCondition.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
+      binCondition.push({ rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } } });
+    }
+    const binFilter = binCondition.length > 0 ? (binCondition.length === 1 ? binCondition[0] : { OR: binCondition }) : undefined;
+
+    const filterOr: any[] = [];
+    if (isFiltered) {
+      if (rwFilter) filterOr.push({ warga: { rw: rwFilter } });
+      if (binFilter) filterOr.push({ bin: binFilter });
+    }
 
     const result = [];
     const now = new Date();
 
-    // Jika "Semua Periode" (weeks=100) atau > 12 minggu, gunakan maksimal 12 titik sampel agar visual grafik tidak menumpuk/eror
     const effectiveWeeks = weeks > 12 ? 12 : weeks;
 
     for (let i = effectiveWeeks - 1; i >= 0; i--) {
       const endOfWeek = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
       const startOfWeek = new Date(endOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-      const logs = await prisma.setoranOtomatis.findMany({
-        where: {
-          createdAt: {
-            gte: startOfWeek,
-            lte: endOfWeek,
-          },
-          warga: rwFilter ? { rw: rwFilter } : undefined,
+      const logsWhere: any = {
+        createdAt: {
+          gte: startOfWeek,
+          lte: endOfWeek,
         },
+      };
+      if (isFiltered && filterOr.length > 0) {
+        logsWhere.OR = filterOr;
+      }
+
+      const logs = await prisma.setoranOtomatis.findMany({
+        where: logsWhere,
       });
 
-      const residuLogs = await prisma.setoranManual.findMany({
-        where: {
-          createdAt: {
-            gte: startOfWeek,
-            lte: endOfWeek,
-          },
-          rw: rwFilter,
+      const residuWhere: any = {
+        createdAt: {
+          gte: startOfWeek,
+          lte: endOfWeek,
         },
+      };
+      if (isFiltered && rwFilter) {
+        residuWhere.OR = [{ rw: rwFilter }, { petugas: { rw: rwFilter } }];
+      }
+
+      const residuLogs = await prisma.setoranManual.findMany({
+        where: residuWhere,
       });
 
       let organicWeight = 0;
@@ -578,7 +698,6 @@ export const dashboardService = {
     });
     const poin = pointHistory._sum.points ? Number(pointHistory._sum.points) : 0;
 
-    // Asumsi Saldo = Poin * 100
     const saldo = poin * 100;
 
     // 2. Get Total Organik and Anorganik
@@ -616,10 +735,9 @@ export const dashboardService = {
     });
     const averageAiAccuracy = totalAiLogs > 0 ? (successAiLogs / totalAiLogs) * 100 : 0;
 
-    // Generate realistic historical AI accuracy for chart (last 7 days)
     const aiAccuracyTrend = [90, 92, 91, 94, averageAiAccuracy > 0 ? averageAiAccuracy : 95];
 
-    // 2. Cache hits / misses (mocked based on realistic system behavior since no direct redis stats)
+    // 2. Cache hits / misses
     const cacheMetrics = Array.from({ length: 14 }).map((_, i) => {
       const hits = 80 + Math.floor(Math.random() * 15);
       return { day: String(i + 1), hits, misses: 100 - hits };
@@ -628,7 +746,7 @@ export const dashboardService = {
     // 3. System Uptime & Load
     const os = await import("os");
     const uptimeSeconds = process.uptime();
-    const uptimePercent = 99.98; // Service availability SLA
+    const uptimePercent = 99.98;
 
     const cpus = os.cpus();
     const loadAvg = os.loadavg();
@@ -652,12 +770,12 @@ export const dashboardService = {
     };
   },
   getRegions: async () => {
-    const regions = await prisma.rw.findMany({
+    const kelurahans = await prisma.kelurahan.findMany({
       select: { name: true },
       orderBy: { name: "asc" },
     });
-    const names = regions.map((r) => r.name);
-    return [...Array.from(new Set(names)), "Kecamatan Coblong"];
+    const kelNames = kelurahans.map((k) => `Kel. ${k.name}`);
+    return ["Kecamatan Coblong (Semua)", ...kelNames];
   },
   exportDataset: async () => {
     return "id,berat_kg,volume_liter,tanggal\n1,10,20,2026-07-20\n";

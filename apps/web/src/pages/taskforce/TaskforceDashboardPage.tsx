@@ -198,22 +198,22 @@ export const TaskforceDashboardPage: React.FC = () => {
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Card 1: Kelompok KKN */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:shadow-md transition">
           <div className="flex items-center justify-between">
-            <span className="text-xs uppercase font-extrabold text-teal-600 tracking-wider">
+            <span className="text-xs uppercase font-extrabold text-teal-600 dark:text-teal-400 tracking-wider">
               Kelompok KKN
             </span>
-            <div className="p-2.5 bg-teal-50 text-teal-600 rounded-xl">
+            <div className="p-2.5 bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 rounded-xl">
               <GraduationCap size={20} />
             </div>
           </div>
           <div className="mt-4">
-            <h3 className="text-3xl font-black text-slate-900">{totalKelompok}</h3>
-            <div className="flex items-center justify-between text-xs text-slate-500 font-bold mt-2 pt-2 border-t border-slate-100">
-              <span className="text-emerald-600 flex items-center gap-1">
+            <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{totalKelompok}</h3>
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-bold mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                 <CheckCircle2 size={13} /> {kelompokWithLeader} Ada Ketua
               </span>
-              <span className="text-amber-600 flex items-center gap-1">
+              <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1">
                 <AlertCircle size={13} /> {kelompokWithoutLeader} Tanpa Ketua
               </span>
             </div>
@@ -221,56 +221,56 @@ export const TaskforceDashboardPage: React.FC = () => {
         </div>
 
         {/* Card 2: Dosen Pendamping Lapangan (DPL) */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:shadow-md transition">
           <div className="flex items-center justify-between">
-            <span className="text-xs uppercase font-extrabold text-indigo-600 tracking-wider">
+            <span className="text-xs uppercase font-extrabold text-indigo-600 dark:text-indigo-400 tracking-wider">
               DPL Terdaftar
             </span>
-            <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
+            <div className="p-2.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-xl">
               <Award size={20} />
             </div>
           </div>
           <div className="mt-4">
-            <h3 className="text-3xl font-black text-slate-900">{totalDplCount}</h3>
-            <p className="text-xs text-slate-500 font-medium mt-2 pt-2 border-t border-slate-100">
+            <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{totalDplCount}</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               Terhubung 1-to-1 ke 32 Kelompok KKN
             </p>
           </div>
         </div>
 
         {/* Card 3: Total Mahasiswa KKN */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:shadow-md transition">
           <div className="flex items-center justify-between">
-            <span className="text-xs uppercase font-extrabold text-emerald-600 tracking-wider">
+            <span className="text-xs uppercase font-extrabold text-emerald-600 dark:text-emerald-400 tracking-wider">
               Mahasiswa KKN
             </span>
-            <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
+            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-xl">
               <Users size={20} />
             </div>
           </div>
           <div className="mt-4">
-            <h3 className="text-3xl font-black text-slate-900">{totalStudentsCount}</h3>
-            <p className="text-xs text-slate-500 font-medium mt-2 pt-2 border-t border-slate-100">
+            <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{totalStudentsCount}</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               Terdaftar &amp; Tersebar di {totalSurveiKelurahan > 0 ? totalSurveiKelurahan : safeKelompokList.length > 0 ? new Set(safeKelompokList.map(k => k.kelurahan).filter(Boolean)).size : "-"} Kelurahan
             </p>
           </div>
         </div>
 
         {/* Card 4: Survei & Evaluasi */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:shadow-md transition">
           <div className="flex items-center justify-between">
-            <span className="text-xs uppercase font-extrabold text-amber-600 tracking-wider">
+            <span className="text-xs uppercase font-extrabold text-amber-600 dark:text-amber-400 tracking-wider">
               Survei Kelurahan
             </span>
-            <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl">
+            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-xl">
               <FileText size={20} />
             </div>
           </div>
           <div className="mt-4">
-            <h3 className="text-3xl font-black text-slate-900">
+            <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">
               {loading ? "..." : totalSurveiKelurahan > 0 ? `${totalSurveiKelurahan} Kelurahan` : "Belum Ada Data"}
             </h3>
-            <p className="text-xs text-slate-500 font-medium mt-2 pt-2 border-t border-slate-100">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               Baseline vs Endline KKN
             </p>
           </div>
@@ -281,15 +281,15 @@ export const TaskforceDashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Link
           to="/manajemen-ekosistem-kkn"
-          className="bg-white border border-slate-200 p-4 rounded-2xl hover:border-teal-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl hover:border-teal-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-teal-50 text-teal-600 rounded-xl group-hover:bg-teal-600 group-hover:text-white transition">
+            <div className="p-2.5 bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 rounded-xl group-hover:bg-teal-600 group-hover:text-white transition">
               <GraduationCap size={20} />
             </div>
             <div>
-              <h4 className="font-extrabold text-sm text-slate-900">Ekosistem KKN</h4>
-              <p className="text-[11px] text-slate-500">Plotting Kelompok & DPL</p>
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Ekosistem KKN</h4>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Plotting Kelompok &amp; DPL</p>
             </div>
           </div>
           <ChevronRight size={18} className="text-slate-400 group-hover:translate-x-1 transition" />
@@ -297,15 +297,15 @@ export const TaskforceDashboardPage: React.FC = () => {
 
         <Link
           to="/monitoring-absen"
-          className="bg-white border border-slate-200 p-4 rounded-2xl hover:border-indigo-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl hover:border-indigo-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition">
+            <div className="p-2.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition">
               <ClipboardCheck size={20} />
             </div>
             <div>
-              <h4 className="font-extrabold text-sm text-slate-900">Presensi Mahasiswa</h4>
-              <p className="text-[11px] text-slate-500">Audit Absensi & Izin</p>
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Presensi Mahasiswa</h4>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Audit Absensi &amp; Izin</p>
             </div>
           </div>
           <ChevronRight size={18} className="text-slate-400 group-hover:translate-x-1 transition" />
@@ -313,15 +313,15 @@ export const TaskforceDashboardPage: React.FC = () => {
 
         <Link
           to="/superUser/data-survei-kkn"
-          className="bg-white border border-slate-200 p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition">
+            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition">
               <FileText size={20} />
             </div>
             <div>
-              <h4 className="font-extrabold text-sm text-slate-900">Data Survei</h4>
-              <p className="text-[11px] text-slate-500">Edit & Impor Survei</p>
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Data Survei</h4>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Edit &amp; Impor Survei</p>
             </div>
           </div>
           <ChevronRight size={18} className="text-slate-400 group-hover:translate-x-1 transition" />
@@ -329,15 +329,15 @@ export const TaskforceDashboardPage: React.FC = () => {
 
         <Link
           to="/evaluasi-dampak-kkn"
-          className="bg-white border border-slate-200 p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition">
+            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition">
               <BarChart3 size={20} />
             </div>
             <div>
-              <h4 className="font-extrabold text-sm text-slate-900">Evaluasi Dampak</h4>
-              <p className="text-[11px] text-slate-500">Validasi Baseline vs Endline</p>
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Evaluasi Dampak</h4>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Validasi Baseline vs Endline</p>
             </div>
           </div>
           <ChevronRight size={18} className="text-slate-400 group-hover:translate-x-1 transition" />
@@ -345,16 +345,16 @@ export const TaskforceDashboardPage: React.FC = () => {
       </div>
 
       {/* Main Table Section: Kelola Kelompok KKN */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
         {/* Table Top Controls: Title, Search & Multi-Filters */}
-        <div className="p-6 border-b border-slate-100 space-y-4">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-800 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
-                <Layers size={20} className="text-teal-600" />
+              <h2 className="text-lg font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Layers size={20} className="text-teal-600 dark:text-teal-400" />
                 <span>Daftar Pengelolaan Kelompok KKN ({filteredGroups.length})</span>
               </h2>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Pantau DPL pengampu, status ketua kelompok, dan alokasi mahasiswa di seluruh kelompok KKN.
               </p>
             </div>
@@ -369,15 +369,15 @@ export const TaskforceDashboardPage: React.FC = () => {
                   setCurrentPage(1);
                 }}
                 placeholder="Cari kelompok, kelurahan, atau DPL..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white transition"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-teal-500 focus:bg-white dark:focus:bg-slate-800 transition"
               />
             </div>
           </div>
 
           {/* Multi-Filter Bar */}
-          <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100">
-            <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-500 uppercase tracking-wider mr-1">
-              <Filter size={14} className="text-teal-600" />
+          <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mr-1">
+              <Filter size={14} className="text-teal-600 dark:text-teal-400" />
               <span>Filter:</span>
             </div>
 
@@ -388,7 +388,7 @@ export const TaskforceDashboardPage: React.FC = () => {
                 setSelectedKelurahan(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-teal-500 cursor-pointer"
+              className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-teal-500 cursor-pointer"
             >
               <option value="SEMUA">Semua Kelurahan</option>
               {Array.from(new Set(safeKelompokList.map((k) => k.kelurahan).filter(Boolean)))
@@ -407,7 +407,7 @@ export const TaskforceDashboardPage: React.FC = () => {
                 setSelectedStatusKetua(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-teal-500 cursor-pointer"
+              className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-teal-500 cursor-pointer"
             >
               <option value="SEMUA">Semua Status Ketua</option>
               <option value="ADA_KETUA">Ada Ketua</option>
@@ -415,7 +415,7 @@ export const TaskforceDashboardPage: React.FC = () => {
             </select>
 
             {/* Items Per Page Select */}
-            <div className="ml-auto flex items-center gap-2 text-xs font-bold text-slate-600">
+            <div className="ml-auto flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400">
               <span>Tampilkan:</span>
               <select
                 value={itemsPerPage}
@@ -423,7 +423,7 @@ export const TaskforceDashboardPage: React.FC = () => {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-2.5 py-1.5 text-xs font-bold focus:outline-none focus:border-teal-500 cursor-pointer"
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold focus:outline-none focus:border-teal-500 cursor-pointer"
               >
                 <option value={5}>5 Per Halaman</option>
                 <option value={10}>10 Per Halaman</option>
@@ -438,15 +438,15 @@ export const TaskforceDashboardPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-100">
-                <th className="px-6 py-4">Kelompok & Wilayah</th>
+              <tr className="bg-slate-50/80 dark:bg-slate-800/80 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                <th className="px-6 py-4">Kelompok &amp; Wilayah</th>
                 <th className="px-6 py-4">DPL Pengampu</th>
                 <th className="px-6 py-4">Ketua Kelompok</th>
                 <th className="px-6 py-4 text-center">Jumlah Mahasiswa</th>
                 <th className="px-6 py-4 text-right">Aksi Manajerial</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
               {loading ? (
                 <tr>
                   <td colSpan={5} className="text-center py-16 text-slate-400 font-semibold">
@@ -456,7 +456,7 @@ export const TaskforceDashboardPage: React.FC = () => {
                 </tr>
               ) : paginatedGroups.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-12 text-slate-500 font-semibold">
+                  <td colSpan={5} className="text-center py-12 text-slate-500 dark:text-slate-400 font-semibold">
                     Tidak ada kelompok KKN yang cocok dengan filter atau kata kunci pencarian.
                   </td>
                 </tr>
@@ -469,42 +469,42 @@ export const TaskforceDashboardPage: React.FC = () => {
                   const rwCoverage = group.cakupanRw && Array.isArray(group.cakupanRw) ? group.cakupanRw.join(", ") : "-";
 
                   return (
-                    <tr key={group.id} className="hover:bg-slate-50/70 transition">
+                    <tr key={group.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition">
                       <td className="px-6 py-4">
-                        <span className="font-extrabold text-slate-900 block text-sm">{group.name}</span>
-                        <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1 mt-0.5">
-                          <MapPin size={12} className="text-teal-600" />
+                        <span className="font-extrabold text-slate-900 dark:text-slate-100 block text-sm">{group.name}</span>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1 mt-0.5">
+                          <MapPin size={12} className="text-teal-600 dark:text-teal-400" />
                           Kel. {group.kelurahan} (RW {rwCoverage})
                         </span>
                       </td>
 
                       <td className="px-6 py-4">
-                        <span className="font-bold text-slate-800 block">{dplName}</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200 block">{dplName}</span>
                         <span className="text-[10px] text-slate-400 font-medium">NIP: {dplNip}</span>
                       </td>
 
                       <td className="px-6 py-4">
                         {leaderStudent ? (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[11px] border border-emerald-200">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 font-bold text-[11px] border border-emerald-200 dark:border-emerald-700/40">
                             <UserCheck size={12} />
                             {leaderName}
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-700 font-bold text-[11px] border border-amber-200">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 font-bold text-[11px] border border-amber-200 dark:border-amber-700/40">
                             <AlertCircle size={12} />
                             Tanpa Ketua / Lepas
                           </span>
                         )}
                       </td>
 
-                      <td className="px-6 py-4 text-center font-extrabold text-slate-800 text-sm">
+                      <td className="px-6 py-4 text-center font-extrabold text-slate-800 dark:text-slate-200 text-sm">
                         {group.students?.length || 0} Mhs
                       </td>
 
                       <td className="px-6 py-4 text-right">
                         <Link
                           to="/manajemen-ekosistem-kkn"
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-teal-600 hover:text-white text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-teal-600 hover:text-white dark:hover:bg-teal-600 dark:hover:text-white text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition cursor-pointer border border-slate-200 dark:border-slate-700"
                         >
                           <span>Kelola / Plotting</span>
                           <ArrowRight size={13} />
@@ -520,9 +520,9 @@ export const TaskforceDashboardPage: React.FC = () => {
 
         {/* Table Footer: Pagination Bar */}
         {!loading && filteredGroups.length > 0 && (
-          <div className="p-4 bg-slate-50/70 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-slate-600">
+          <div className="p-4 bg-slate-50/70 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-slate-600 dark:text-slate-300">
             <div>
-              Menampilkan <span className="font-black text-slate-900">{startRecord}</span> - <span className="font-black text-slate-900">{endRecord}</span> dari <span className="font-black text-slate-900">{filteredGroups.length}</span> data kelompok
+              Menampilkan <span className="font-black text-slate-900 dark:text-slate-100">{startRecord}</span> - <span className="font-black text-slate-900 dark:text-slate-100">{endRecord}</span> dari <span className="font-black text-slate-900 dark:text-slate-100">{filteredGroups.length}</span> data kelompok
             </div>
 
             {itemsPerPage > 0 && totalPages > 1 && (
@@ -530,7 +530,7 @@ export const TaskforceDashboardPage: React.FC = () => {
                 <button
                   onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                   disabled={safeCurrentPage === 1}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white transition flex items-center gap-1 cursor-pointer font-bold"
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-slate-800 transition flex items-center gap-1 cursor-pointer font-bold text-slate-700 dark:text-slate-300"
                 >
                   <ChevronLeft size={14} /> Prev
                 </button>
@@ -546,7 +546,7 @@ export const TaskforceDashboardPage: React.FC = () => {
                         className={`w-7 h-7 rounded-lg text-xs font-black transition cursor-pointer ${
                           isActive
                             ? "bg-teal-600 text-white shadow-xs"
-                            : "hover:bg-slate-200 text-slate-700"
+                            : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
                         }`}
                       >
                         {pageNum}
@@ -558,7 +558,7 @@ export const TaskforceDashboardPage: React.FC = () => {
                 <button
                   onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                   disabled={safeCurrentPage === totalPages}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white transition flex items-center gap-1 cursor-pointer font-bold"
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-slate-800 transition flex items-center gap-1 cursor-pointer font-bold text-slate-700 dark:text-slate-300"
                 >
                   Next <ChevronRight size={14} />
                 </button>

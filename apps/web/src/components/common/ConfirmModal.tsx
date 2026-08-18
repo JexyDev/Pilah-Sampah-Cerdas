@@ -47,8 +47,8 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20";
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 transform transition-all animate-scaleUp">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 transform transition-all animate-scaleUp text-slate-800 dark:text-slate-100">
         
         {/* Header Icon & Close Button */}
         <div className="flex items-center justify-between mb-4">
@@ -61,7 +61,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X size={18} />
           </button>
@@ -69,17 +69,17 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
         {/* Title & Message */}
         <div className="space-y-2 mb-6">
-          <h3 className="text-lg font-black text-slate-900 tracking-tight">{title}</h3>
-          <p className="text-xs text-slate-500 leading-relaxed font-medium">{message}</p>
+          <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight">{title}</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">{message}</p>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+        <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
           <button
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 h-11 text-xs font-extrabold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+            className="px-4 h-11 text-xs font-extrabold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-all cursor-pointer"
           >
             {cancelText}
           </button>

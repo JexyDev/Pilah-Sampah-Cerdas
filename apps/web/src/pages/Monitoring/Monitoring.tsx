@@ -106,10 +106,10 @@ const Monitoring: React.FC = () => {
   const apiFilterWilayah = useMemo(() => {
     if (user?.peran === "RW") return user?.wilayah || "RW 06 Dago";
     if (isLurah) return userKelurahan || "Cipaganti";
+    if (selectedMapKelurahan && selectedMapKelurahan !== "Semua Kelurahan" && selectedMapKelurahan !== "Semua Kelurahan Binaan" && selectedMapKelurahan !== "Semua") {
+      return selectedMapKelurahan;
+    }
     if (isDpl) {
-      if (selectedMapKelurahan !== "Semua Kelurahan" && selectedMapKelurahan !== "Semua Kelurahan Binaan") {
-        return selectedMapKelurahan;
-      }
       return dplKelurahans.length > 0 ? dplKelurahans.join(",") : user?.kelurahan || "Dago";
     }
     if (user?.peran === "CAMAT") return "Kecamatan Coblong";

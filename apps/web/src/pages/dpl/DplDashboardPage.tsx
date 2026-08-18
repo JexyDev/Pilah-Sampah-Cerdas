@@ -642,20 +642,20 @@ export const DplDashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-200">
       {/* Clean Academic Portal Header */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs font-bold text-emerald-700">
+          <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400">
             <GraduationCap size={16} />
-            <span>Portal Akademik & Dosen Pendamping Lapangan</span>
-            <span className="text-slate-300">•</span>
-            <span className="text-slate-500 font-normal">Kecamatan Coblong</span>
+            <span>Portal Akademik &amp; Dosen Pendamping Lapangan</span>
+            <span className="text-slate-300 dark:text-slate-600">•</span>
+            <span className="text-slate-500 dark:text-slate-400 font-normal">Kecamatan Coblong</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
             Dasbor
           </h1>
-          <p className="text-slate-500 text-xs sm:text-sm max-w-2xl">
+          <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl">
             Rekapitulasi portofolio mahasiswa KKN, verifikasi presensi lapangan, dan penilaian akademik wilayah Kecamatan Coblong.
           </p>
         </div>
@@ -664,7 +664,7 @@ export const DplDashboardPage: React.FC = () => {
           {alerts && alerts.pendingApprovalsCount > 0 && (
             <Link
               to="/monitoring-absen"
-              className="bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-amber-100 transition cursor-pointer shadow-xs animate-pulse"
+              className="bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/40 text-amber-800 dark:text-amber-300 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition cursor-pointer shadow-xs animate-pulse"
             >
               <AlertTriangle size={14} className="text-amber-600 shrink-0" />
               <span>{alerts.pendingApprovalsCount} Pengajuan Izin / Sakit</span>
@@ -675,7 +675,7 @@ export const DplDashboardPage: React.FC = () => {
 
       {/* Modern Segmented Navigation Tabs (Hanya untuk Developer) */}
       {isDeveloper && (
-        <div className="bg-slate-100/90 p-1.5 rounded-xl border border-slate-200/80 flex items-center gap-1 overflow-x-auto scrollbar-none">
+        <div className="bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1 overflow-x-auto scrollbar-none">
           {(
             [
               { key: "OVERVIEW" as TabType, label: "Ringkasan Eksekutif", icon: LayoutDashboard },
@@ -692,11 +692,11 @@ export const DplDashboardPage: React.FC = () => {
                 onClick={() => setActiveTab(t.key)}
                 className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer whitespace-nowrap ${
                   isActive
-                    ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                    ? "bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60"
                 }`}
               >
-                <Icon size={14} className={isActive ? "text-emerald-600" : "text-slate-400"} />
+                <Icon size={14} className={isActive ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"} />
                 <span>{t.label}</span>
                 {t.badge && t.badge > 0 ? (
                   <span className="bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
@@ -713,36 +713,36 @@ export const DplDashboardPage: React.FC = () => {
       {activeTab === "OVERVIEW" && (
         <div className="space-y-6">
           {/* Card Terpadu: Hierarki Wilayah 3-Tingkat & Ringkasan Kinerja Dampingan */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200 shrink-0">
-                  <MapPin size={20} className="text-emerald-600" />
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-700/40 shrink-0">
+                  <MapPin size={20} className="text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900">
-                    Hierarki Wilayah & Ekosistem Dampingan KKN
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
+                    Hierarki Wilayah &amp; Ekosistem Dampingan KKN
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                     Struktur 3 tingkatan wilayah binaan KKN terintegrasi di Kecamatan Coblong.
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 flex-wrap text-xs">
-                <span className="px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg font-extrabold flex items-center gap-1.5">
+                <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 rounded-lg font-extrabold flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
                   Tingkat 1: Kecamatan Coblong
                 </span>
                 <span
                   title={dplKelurahanList.length > 0 ? dplKelurahanList.map((k) => `Kelurahan ${k}`).join(", ") : undefined}
-                  className="px-3 py-1 bg-blue-50 text-blue-800 border border-blue-200 rounded-lg font-extrabold"
+                  className="px-3 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-700/40 rounded-lg font-extrabold"
                 >
                   {kelurahanBadgeLabel}
                 </span>
                 <span
                   title={dplRwList.length > 0 ? dplRwList.map((r) => `RW ${r}`).join(", ") : undefined}
-                  className="px-3 py-1 bg-indigo-50 text-indigo-800 border border-indigo-200 rounded-lg font-extrabold"
+                  className="px-3 py-1 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700/40 rounded-lg font-extrabold"
                 >
                   {rwBadgeLabel}
                 </span>
@@ -751,48 +751,48 @@ export const DplDashboardPage: React.FC = () => {
 
             {/* Grid 4 Metrik Kunci Terpadu */}
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-              <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/70 flex flex-col justify-between">
-                <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Mahasiswa Dampingan</span>
+              <div className="bg-slate-50/80 dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Mahasiswa Dampingan</span>
                 <div className="mt-1">
-                  <span className="text-2xl font-black text-slate-900">{totalAllStudents}</span>
-                  <span className="text-xs font-bold text-slate-600 ml-1.5">Orang</span>
+                  <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{totalAllStudents}</span>
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1.5">Orang</span>
                 </div>
-                <span className="text-[10.5px] text-emerald-700 font-bold mt-1">
+                <span className="text-[10.5px] text-emerald-700 dark:text-emerald-400 font-bold mt-1">
                   {groups.reduce((acc, g) => acc + ((g as any).activeTodayCount || 0), 0)} Aktif Hari Ini
                 </span>
               </div>
 
-              <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/70 flex flex-col justify-between">
-                <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Tempat Sampah Organik</span>
+              <div className="bg-slate-50/80 dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Tempat Sampah Organik</span>
                 <div className="mt-1">
-                  <span className="text-2xl font-black text-emerald-700">
+                  <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400">
                     {groups.reduce((acc, g) => acc + (g.organikBinsCount || 0), 0)}
                   </span>
-                  <span className="text-xs font-bold text-slate-600 ml-1.5">Tempat Sampah</span>
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1.5">Tempat Sampah</span>
                 </div>
-                <span className="text-[10.5px] text-slate-400 font-medium mt-1">Teraktivasi & Terdata</span>
+                <span className="text-[10.5px] text-slate-400 font-medium mt-1">Teraktivasi &amp; Terdata</span>
               </div>
 
-              <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/70 flex flex-col justify-between">
-                <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Tempat Sampah Anorganik</span>
+              <div className="bg-slate-50/80 dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Tempat Sampah Anorganik</span>
                 <div className="mt-1">
-                  <span className="text-2xl font-black text-blue-700">
+                  <span className="text-2xl font-black text-blue-700 dark:text-blue-400">
                     {groups.reduce((acc, g) => acc + (g.anorganikBinsCount || 0), 0)}
                   </span>
-                  <span className="text-xs font-bold text-slate-600 ml-1.5">Tempat Sampah</span>
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1.5">Tempat Sampah</span>
                 </div>
-                <span className="text-[10.5px] text-slate-400 font-medium mt-1">Teraktivasi & Terdata</span>
+                <span className="text-[10.5px] text-slate-400 font-medium mt-1">Teraktivasi &amp; Terdata</span>
               </div>
 
-              <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/70 flex flex-col justify-between">
-                <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Sampah Terpilah</span>
+              <div className="bg-slate-50/80 dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Sampah Terpilah</span>
                 <div className="mt-1">
-                  <span className="text-2xl font-black text-slate-900">
+                  <span className="text-2xl font-black text-slate-900 dark:text-slate-100">
                     {groups.reduce((acc, g) => acc + (g.totalWasteWeight || 0), 0).toFixed(1)}
                   </span>
-                  <span className="text-xs font-bold text-slate-600 ml-1.5">Kg</span>
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1.5">Kg</span>
                 </div>
-                <span className="text-[10.5px] text-indigo-700 font-bold mt-1">
+                <span className="text-[10.5px] text-indigo-700 dark:text-indigo-400 font-bold mt-1">
                   Capaian {groups.reduce((acc, g) => acc + ((g as any).actualHours || 0), 0).toFixed(1)} Jam
                 </span>
               </div>
@@ -802,43 +802,43 @@ export const DplDashboardPage: React.FC = () => {
           {/* Metrik Agregat Kehadiran & Program Kerja yang Diusulkan */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Left: Metrik Kehadiran Mahasiswa */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between space-y-4">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
               <div>
-                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1">Presensi Lapangan</h4>
-                <h3 className="text-base font-extrabold text-slate-900">Tingkat Kehadiran Mahasiswa</h3>
-                <p className="text-xs text-slate-500 mt-1">Persentase rerata kehadiran mahasiswa pada kegiatan KKN di kelompok bimbingan Anda.</p>
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Presensi Lapangan</h4>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">Tingkat Kehadiran Mahasiswa</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Persentase rerata kehadiran mahasiswa pada kegiatan KKN di kelompok bimbingan Anda.</p>
               </div>
 
-              <div className="flex items-center gap-4 bg-emerald-50/70 border border-emerald-200 p-4 rounded-xl">
+              <div className="flex items-center gap-4 bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-700/40 p-4 rounded-xl">
                 <div className="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-extrabold shadow-sm shrink-0">
                   <CalendarCheck size={24} />
                 </div>
                 <div>
-                  <span className="text-2xl font-black text-emerald-900">
+                  <span className="text-2xl font-black text-emerald-900 dark:text-emerald-300">
                     {groups.length > 0 ? avgOverallAttendance : 0}%
                   </span>
-                  <p className="text-[11px] text-emerald-700 font-bold">Rerata Kehadiran</p>
+                  <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold">Rerata Kehadiran</p>
                 </div>
               </div>
 
               {/* Presensi Sesi Aggregates (Hanya Sakit, Izin, Tanpa Keterangan) */}
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 flex flex-wrap items-center justify-around gap-1 text-xs font-medium">
-                <span className="text-blue-700 font-bold">{gradeDistribution.totalSakit} Sakit</span>
-                <span className="text-slate-300">•</span>
-                <span className="text-purple-700 font-bold">{gradeDistribution.totalIzin} Izin</span>
-                <span className="text-slate-300">•</span>
-                <span className="text-rose-700 font-bold">{gradeDistribution.totalAlpha} Tanpa Keterangan</span>
+              <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700 flex flex-wrap items-center justify-around gap-1 text-xs font-medium">
+                <span className="text-blue-700 dark:text-blue-400 font-bold">{gradeDistribution.totalSakit} Sakit</span>
+                <span className="text-slate-300 dark:text-slate-600">•</span>
+                <span className="text-purple-700 dark:text-purple-400 font-bold">{gradeDistribution.totalIzin} Izin</span>
+                <span className="text-slate-300 dark:text-slate-600">•</span>
+                <span className="text-rose-700 dark:text-rose-400 font-bold">{gradeDistribution.totalAlpha} Tanpa Keterangan</span>
               </div>
             </div>
 
             {/* Right: Program Kerja yang Diusulkan Widget */}
-            <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div>
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
-                    Rencana & Eksekusi Lapangan
+                    Rencana &amp; Eksekusi Lapangan
                   </span>
-                  <h3 className="text-base font-extrabold text-slate-900 mt-0.5">
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 mt-0.5">
                     Program Kerja yang Diusulkan
                   </h3>
                 </div>
@@ -847,7 +847,7 @@ export const DplDashboardPage: React.FC = () => {
               {/* List of Prokers */}
               <div className="space-y-2.5">
                 {groups.flatMap((g: any) => g.programKerja || []).length === 0 ? (
-                  <div className="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-xs">
+                  <div className="p-6 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
                     Belum ada program kerja yang diusulkan oleh mahasiswa di kelompok dampingan.
                   </div>
                 ) : (
@@ -855,44 +855,44 @@ export const DplDashboardPage: React.FC = () => {
                     return (
                       <div
                         key={p.id}
-                        className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/80 flex items-center justify-between gap-3 text-xs"
+                        className="p-3 bg-slate-50/80 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700 flex items-center justify-between gap-3 text-xs"
                       >
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="font-bold text-slate-900 truncate">{p.deskripsi}</p>
+                            <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{p.deskripsi}</p>
                             {p.kategori && (
-                              <span className="px-1.5 py-0.5 rounded text-[9.5px] font-extrabold border bg-slate-100 text-slate-700 border-slate-200">
+                              <span className="px-1.5 py-0.5 rounded text-[9.5px] font-extrabold border bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600">
                                 {p.kategori}
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-slate-500 mt-0.5">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                             Kebutuhan: Rp {Number(p.kebutuhanBiaya || 0).toLocaleString("id-ID")}
                           </p>
                         </div>
                         <div className="shrink-0 flex items-center gap-1.5">
                           {(p.status === "DITERIMA" || p.status === "DISETUJUI") && (
-                            <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-bold text-[10px]">
+                            <span className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 rounded-full font-bold text-[10px]">
                               Disetujui
                             </span>
                           )}
                           {(p.status === "SEDANG_BERJALAN" || p.status === "SEDANG_DILAKSANAKAN") && (
-                            <span className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-bold text-[10px]">
+                            <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-full font-bold text-[10px]">
                               Sedang Dilaksanakan
                             </span>
                           )}
                           {(p.status === "SELESAI" || p.status === "SELESAI_DILAKSANAKAN") && (
-                            <span className="px-2.5 py-1 bg-teal-50 text-teal-700 border border-teal-200 rounded-full font-bold text-[10px]">
+                            <span className="px-2.5 py-1 bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-700/40 rounded-full font-bold text-[10px]">
                               Selesai Dilaksanakan
                             </span>
                           )}
                           {(p.status === "DITOLAK" || p.status === "TIDAK_DISETUJUI") && (
-                            <span className="px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full font-bold text-[10px]">
+                            <span className="px-2.5 py-1 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-700/40 rounded-full font-bold text-[10px]">
                               Tidak Disetujui
                             </span>
                           )}
                           {(p.status === "BELUM_DISETUJUI" || p.status === "PENDING" || !p.status) && (
-                            <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-bold text-[10px]">
+                            <span className="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40 rounded-full font-bold text-[10px]">
                               Belum Disetujui
                             </span>
                           )}
@@ -904,23 +904,23 @@ export const DplDashboardPage: React.FC = () => {
               </div>
 
               {/* Status Breakdown Proker Sesuai Standar PT Makerindo */}
-              <div className="pt-3 border-t border-slate-100 space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-500 flex-wrap gap-2">
-                  <span>Total Proker: <strong className="text-slate-800">{groups.flatMap((g: any) => g.programKerja || []).length} Kegiatan</strong></span>
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 flex-wrap gap-2">
+                  <span>Total Proker: <strong className="text-slate-800 dark:text-slate-200">{groups.flatMap((g: any) => g.programKerja || []).length} Kegiatan</strong></span>
                   <div className="flex items-center gap-1.5 flex-wrap text-[10.5px]">
-                    <span className="px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-md font-bold">
+                    <span className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40 rounded-md font-bold">
                       Belum Disetujui: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "BELUM_DISETUJUI" || p.status === "PENDING" || !p.status).length}
                     </span>
-                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md font-bold">
+                    <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 rounded-md font-bold">
                       Disetujui: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "DITERIMA" || p.status === "DISETUJUI").length}
                     </span>
-                    <span className="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-md font-bold">
+                    <span className="px-2 py-0.5 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-700/40 rounded-md font-bold">
                       Tidak Disetujui: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "DITOLAK" || p.status === "TIDAK_DISETUJUI").length}
                     </span>
-                    <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-md font-bold">
+                    <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-md font-bold">
                       Sedang Dilaksanakan: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "SEDANG_BERJALAN" || p.status === "SEDANG_DILAKSANAKAN").length}
                     </span>
-                    <span className="px-2 py-0.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-md font-bold">
+                    <span className="px-2 py-0.5 bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-700/40 rounded-md font-bold">
                       Selesai Dilaksanakan: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "SELESAI" || p.status === "SELESAI_DILAKSANAKAN").length}
                     </span>
                   </div>
@@ -933,15 +933,15 @@ export const DplDashboardPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Link
               to="/manajemen-ekosistem-kkn"
-              className="bg-white border border-slate-200/80 p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+              className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-teal-50 text-teal-700 rounded-xl group-hover:bg-teal-600 group-hover:text-white transition">
+                <div className="p-2.5 bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-400 rounded-xl group-hover:bg-teal-600 group-hover:text-white transition">
                   <Users size={20} />
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-xs text-slate-900">Kelompok & Mahasiswa</h4>
-                  <p className="text-[10.5px] text-slate-500">Kelola kelompok & profil anggota</p>
+                  <h4 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">Kelompok &amp; Mahasiswa</h4>
+                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400">Kelola kelompok &amp; profil anggota</p>
                 </div>
               </div>
               <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
@@ -949,10 +949,10 @@ export const DplDashboardPage: React.FC = () => {
 
             <Link
               to="/monitoring-absen"
-              className="bg-white border border-slate-200/80 p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer text-left w-full"
+              className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer text-left w-full"
             >
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-amber-50 text-amber-700 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition relative">
+                <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition relative">
                   <ClipboardCheck size={20} />
                   {alerts && alerts.pendingApprovalsCount > 0 && (
                     <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
@@ -961,8 +961,8 @@ export const DplDashboardPage: React.FC = () => {
                   )}
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-xs text-slate-900">Presensi Mahasiswa</h4>
-                  <p className="text-[10.5px] text-slate-500">Validasi surat izin/sakit & log hadir</p>
+                  <h4 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">Presensi Mahasiswa</h4>
+                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400">Validasi surat izin/sakit &amp; log hadir</p>
                 </div>
               </div>
               <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
@@ -970,15 +970,15 @@ export const DplDashboardPage: React.FC = () => {
 
             <Link
               to="/program-kerja-kkn"
-              className="bg-white border border-slate-200/80 p-4 rounded-2xl hover:border-blue-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+              className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl hover:border-blue-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-blue-50 text-blue-700 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition">
+                <div className="p-2.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition">
                   <FileText size={20} />
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-xs text-slate-900">Program Kerja KKN</h4>
-                  <p className="text-[10.5px] text-slate-500">Matriks usulan proker & biaya</p>
+                  <h4 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">Program Kerja KKN</h4>
+                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400">Matriks usulan proker &amp; biaya</p>
                 </div>
               </div>
               <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
@@ -986,15 +986,15 @@ export const DplDashboardPage: React.FC = () => {
 
             <Link
               to="/penilaian-kkn/mahasiswa"
-              className="bg-white border border-slate-200/80 p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+              className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition">
+                <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition">
                   <Award size={20} />
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-xs text-slate-900">Penilaian Mahasiswa</h4>
-                  <p className="text-[10.5px] text-slate-500">Form asesmen DPL (30%) & Mitra (70%)</p>
+                  <h4 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">Penilaian Mahasiswa</h4>
+                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400">Form asesmen DPL (30%) &amp; Mitra (70%)</p>
                 </div>
               </div>
               <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
@@ -1003,16 +1003,16 @@ export const DplDashboardPage: React.FC = () => {
 
           {/* Action Callout if pending approvals exist */}
           {alerts?.pendingRequests && alerts.pendingRequests.length > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-700/40 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-amber-100 text-amber-800 rounded-xl">
+                <div className="p-2.5 bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 rounded-xl">
                   <AlertTriangle size={20} />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-amber-950">
+                  <h4 className="text-sm font-bold text-amber-950 dark:text-amber-200">
                     Membutuhkan Persetujuan ({alerts.pendingRequests.length} Pengajuan)
                   </h4>
-                  <p className="text-xs text-amber-800">
+                  <p className="text-xs text-amber-800 dark:text-amber-400">
                     Beberapa mahasiswa bimbingan mengajukan surat izin / sakit yang memerlukan validasi DPL.
                   </p>
                 </div>
@@ -1027,20 +1027,20 @@ export const DplDashboardPage: React.FC = () => {
           )}
 
           {/* Tabel Rekapitulasi Nilai Mahasiswa di Dasbor DPL */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
               <div>
                 <div className="flex items-center gap-2">
-                  <Award size={18} className="text-emerald-600" />
-                  <h3 className="text-base font-extrabold text-slate-900">Nilai Mahasiswa</h3>
+                  <Award size={18} className="text-emerald-600 dark:text-emerald-400" />
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">Nilai Mahasiswa</h3>
                 </div>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Pemantauan nilai asesmen DPL, evaluasi lapangan, dan huruf mutu mahasiswa bimbingan.
                 </p>
               </div>
               <Link
                 to="/penilaian-kkn/mahasiswa"
-                className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 self-start sm:self-auto"
+                className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-1 self-start sm:self-auto"
               >
                 <span>Buka Form Penilaian Lengkap</span>
                 <ChevronRight size={14} />
@@ -1048,14 +1048,14 @@ export const DplDashboardPage: React.FC = () => {
             </div>
 
             {students.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-xs">
+              <div className="p-8 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
                 Belum ada data mahasiswa bimbingan yang terdaftar.
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-slate-100">
+              <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-50/90 text-slate-600 font-extrabold uppercase text-[10.5px] tracking-wider border-b border-slate-200">
+                    <tr className="bg-slate-50/90 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 font-extrabold uppercase text-[10.5px] tracking-wider border-b border-slate-200 dark:border-slate-700">
                       <th className="py-3 px-3 text-center w-10">No</th>
                       <th className="py-3 px-3">NIM</th>
                       <th className="py-3 px-3">Nama Mahasiswa</th>
@@ -1067,20 +1067,20 @@ export const DplDashboardPage: React.FC = () => {
                       <th className="py-3 px-3 text-center">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                     {students.slice(0, 6).map((st, idx) => {
                       const grade = getGradeBadge(st.assessmentScore);
                       return (
-                        <tr key={st.id} className="hover:bg-slate-50/70 transition">
+                        <tr key={st.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition">
                           <td className="py-2.5 px-3 text-center font-bold text-slate-400">{idx + 1}</td>
-                          <td className="py-2.5 px-3 font-mono font-bold text-slate-800">{st.nim || "-"}</td>
-                          <td className="py-2.5 px-3 font-bold text-slate-900">{st.name}</td>
-                          <td className="py-2.5 px-3 text-slate-600">{st.jurusan || "-"}</td>
-                          <td className="py-2.5 px-3 text-slate-600">{st.kelompokName || "-"}</td>
-                          <td className="py-2.5 px-3 text-center font-bold text-emerald-700">
+                          <td className="py-2.5 px-3 font-mono font-bold text-slate-800 dark:text-slate-200">{st.nim || "-"}</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-slate-100">{st.name}</td>
+                          <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">{st.jurusan || "-"}</td>
+                          <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">{st.kelompokName || "-"}</td>
+                          <td className="py-2.5 px-3 text-center font-bold text-emerald-700 dark:text-emerald-400">
                             {st.attendanceRate ? `${st.attendanceRate}%` : "0%"}
                           </td>
-                          <td className="py-2.5 px-3 text-center font-black text-slate-900">
+                          <td className="py-2.5 px-3 text-center font-black text-slate-900 dark:text-slate-100">
                             {st.assessmentScore !== null && st.assessmentScore !== undefined && st.assessmentScore > 0
                               ? st.assessmentScore
                               : <span className="text-slate-400 font-normal">Belum Dinilai</span>}
@@ -1093,7 +1093,7 @@ export const DplDashboardPage: React.FC = () => {
                           <td className="py-2.5 px-3 text-center">
                             <Link
                               to="/penilaian-kkn/mahasiswa"
-                              className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1"
+                              className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1"
                             >
                               <Award size={12} />
                               <span>Beri Nilai</span>
@@ -1115,30 +1115,30 @@ export const DplDashboardPage: React.FC = () => {
         <div className="space-y-4">
           {/* Summary Stat Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
-              <span className="text-slate-500 text-[11px] font-semibold block">Total Kelompok Binaan</span>
-              <span className="text-xl font-extrabold text-slate-900 mt-0.5 block">{groups.length} Kelompok</span>
+            <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold block">Total Kelompok Binaan</span>
+              <span className="text-xl font-extrabold text-slate-900 dark:text-slate-100 mt-0.5 block">{groups.length} Kelompok</span>
             </div>
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
-              <span className="text-slate-500 text-[11px] font-semibold block">Total Mahasiswa Dampingan</span>
-              <span className="text-xl font-extrabold text-slate-900 mt-0.5 block">{students.length} Orang</span>
+            <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold block">Total Mahasiswa Dampingan</span>
+              <span className="text-xl font-extrabold text-slate-900 dark:text-slate-100 mt-0.5 block">{students.length} Orang</span>
             </div>
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
-              <span className="text-slate-500 text-[11px] font-semibold block">Tempat Sampah Aktif</span>
-              <span className="text-xl font-extrabold text-blue-600 mt-0.5 block">
+            <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold block">Tempat Sampah Aktif</span>
+              <span className="text-xl font-extrabold text-blue-600 dark:text-blue-400 mt-0.5 block">
                 {groups.reduce((acc, g) => acc + (g.activatedBinsCount || 0), 0)} Bin
               </span>
             </div>
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
-              <span className="text-slate-500 text-[11px] font-semibold block">Rerata Presensi</span>
-              <span className="text-xl font-extrabold text-emerald-600 mt-0.5 block">
+            <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold block">Rerata Presensi</span>
+              <span className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5 block">
                 {groups.length > 0 ? Math.round(groups.reduce((acc, g) => acc + (g.avgAttendanceRate || 0), 0) / groups.length) : 0}%
               </span>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-            <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 w-full sm:w-80 text-xs">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 w-full sm:w-80 text-xs">
               <Search size={16} className="text-slate-400" />
               <input
                 type="text"
@@ -1148,24 +1148,24 @@ export const DplDashboardPage: React.FC = () => {
                   setSearchQuery(e.target.value);
                   setKelompokPage(1);
                 }}
-                className="w-full outline-none bg-transparent"
+                className="w-full outline-none bg-transparent text-slate-800 dark:text-slate-100 placeholder-slate-400"
               />
             </div>
 
-            <div className="text-xs text-slate-500 font-medium">
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               Menampilkan {filteredKelompok.length} Kelompok Bimbingan
             </div>
           </div>
 
           {/* Table Rekap Kelompok */}
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs whitespace-nowrap">
-                <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-[10.5px]">
+                <thead className="bg-slate-50 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider text-[10.5px]">
                   <tr>
                     <th className="px-4 py-3.5 text-center w-12">No</th>
                     <th className="px-4 py-3.5">Nama Kelompok</th>
-                    <th className="px-4 py-3.5">Kelurahan & Wilayah RW</th>
+                    <th className="px-4 py-3.5">Kelurahan &amp; Wilayah RW</th>
                     <th className="px-4 py-3.5 text-center">Jumlah Mahasiswa</th>
                     <th className="px-4 py-3.5 text-center">Tempat Sampah Aktif</th>
                     <th className="px-4 py-3.5 text-center">Rerata Presensi (%)</th>
@@ -1173,41 +1173,41 @@ export const DplDashboardPage: React.FC = () => {
                     <th className="px-4 py-3.5 text-center">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {paginatedKelompok.map((grp, idx) => (
-                    <tr key={grp.id} className="hover:bg-slate-50/80 transition">
+                    <tr key={grp.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
                       <td className="px-4 py-3.5 text-center font-bold text-slate-400">
                         {(kelompokPage - 1) * ITEMS_PER_PAGE + idx + 1}
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className="font-bold text-slate-900 block text-sm">{grp.name}</span>
+                        <span className="font-bold text-slate-900 dark:text-slate-100 block text-sm">{grp.name}</span>
                         <span className="text-[11px] text-slate-400 font-mono">ID: {grp.id.slice(0, 8)}</span>
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-md text-[11px] inline-block mb-1">
+                        <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/40 px-2.5 py-0.5 rounded-md text-[11px] inline-block mb-1">
                           {grp.kelurahan || "Coblong"}
                         </span>
-                        <p className="text-[11px] text-slate-500 font-mono">
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
                           RW: {formatCakupanRw(grp.cakupanRw)}
                         </p>
                       </td>
-                      <td className="px-4 py-3.5 text-center font-bold text-slate-800">
-                        <span className="bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 inline-block min-w-[36px]">
+                      <td className="px-4 py-3.5 text-center font-bold text-slate-800 dark:text-slate-200">
+                        <span className="bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 inline-block min-w-[36px]">
                           {grp.studentCount} Orang
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-center font-bold text-blue-700">
-                        <span className="bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 inline-block min-w-[36px]">
+                      <td className="px-4 py-3.5 text-center font-bold text-blue-700 dark:text-blue-400">
+                        <span className="bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-700/40 inline-block min-w-[36px]">
                           {grp.activatedBinsCount} Tempat Sampah
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-center">
-                        <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg inline-block">
+                        <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/40 px-2.5 py-1 rounded-lg inline-block">
                           {grp.avgAttendanceRate}%
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-center font-bold text-purple-700">
-                        <span className="font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                      <td className="px-4 py-3.5 text-center font-bold text-purple-700 dark:text-purple-400">
+                        <span className="font-extrabold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/40 px-2 py-0.5 rounded-md">
                           {grp.totalGroupPoints}
                         </span>
                       </td>
@@ -1217,7 +1217,7 @@ export const DplDashboardPage: React.FC = () => {
                             setSelectedGroupFilter(grp.name);
                             setActiveTab("MAHASISWA");
                           }}
-                          className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-bold rounded-lg transition inline-flex items-center gap-1.5 border border-emerald-200 cursor-pointer shadow-2xs"
+                          className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-xs font-bold rounded-lg transition inline-flex items-center gap-1.5 border border-emerald-200 dark:border-emerald-700/40 cursor-pointer shadow-2xs"
                         >
                           <Eye size={13} />
                           <span>Detail Mahasiswa</span>
@@ -1239,22 +1239,22 @@ export const DplDashboardPage: React.FC = () => {
 
             {/* Pagination Controls */}
             {totalKelompokPages > 1 && (
-              <div className="flex items-center justify-between bg-slate-50 px-4 py-3 border-t border-slate-200 text-xs">
-                <span className="text-slate-500 font-medium">
+              <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/80 px-4 py-3 border-t border-slate-200 dark:border-slate-700 text-xs">
+                <span className="text-slate-500 dark:text-slate-400 font-medium">
                   Halaman {kelompokPage} dari {totalKelompokPages}
                 </span>
                 <div className="flex gap-2">
                   <button
                     disabled={kelompokPage === 1}
                     onClick={() => setKelompokPage((p) => Math.max(1, p - 1))}
-                    className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 transition"
+                    className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                   >
                     Sebelumnya
                   </button>
                   <button
                     disabled={kelompokPage === totalKelompokPages}
                     onClick={() => setKelompokPage((p) => Math.min(totalKelompokPages, p + 1))}
-                    className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 transition"
+                    className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                   >
                     Selanjutnya
                   </button>
@@ -1270,25 +1270,25 @@ export const DplDashboardPage: React.FC = () => {
         <div className="space-y-4">
           {/* Summary Stat Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
-              <span className="text-slate-500 text-[11px] font-semibold block">Total Mahasiswa</span>
-              <span className="text-xl font-extrabold text-slate-900 mt-0.5 block">{students.length} Mahasiswa</span>
+            <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold block">Total Mahasiswa</span>
+              <span className="text-xl font-extrabold text-slate-900 dark:text-slate-100 mt-0.5 block">{students.length} Mahasiswa</span>
             </div>
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
-              <span className="text-slate-500 text-[11px] font-semibold block">Sudah Terasesmen</span>
-              <span className="text-xl font-extrabold text-emerald-700 mt-0.5 block">
+            <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold block">Sudah Terasesmen</span>
+              <span className="text-xl font-extrabold text-emerald-700 dark:text-emerald-400 mt-0.5 block">
                 {students.filter(s => s.assessmentScore !== null && s.assessmentScore !== undefined).length} Mahasiswa
               </span>
             </div>
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
-              <span className="text-slate-500 text-[11px] font-semibold block">Belum Terasesmen</span>
-              <span className="text-xl font-extrabold text-amber-600 mt-0.5 block">
+            <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold block">Belum Terasesmen</span>
+              <span className="text-xl font-extrabold text-amber-600 dark:text-amber-400 mt-0.5 block">
                 {students.filter(s => s.assessmentScore === null || s.assessmentScore === undefined).length} Mahasiswa
               </span>
             </div>
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
-              <span className="text-slate-500 text-[11px] font-semibold block">Rerata Skor DPL</span>
-              <span className="text-xl font-extrabold text-blue-700 mt-0.5 block">
+            <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold block">Rerata Skor DPL</span>
+              <span className="text-xl font-extrabold text-blue-700 dark:text-blue-400 mt-0.5 block">
                 {(() => {
                   const assessed = students.filter(s => s.assessmentScore !== null && s.assessmentScore !== undefined);
                   return assessed.length > 0 ? (assessed.reduce((acc, s) => acc + (s.assessmentScore || 0), 0) / assessed.length).toFixed(1) : "-";
@@ -1298,8 +1298,8 @@ export const DplDashboardPage: React.FC = () => {
           </div>
 
           {/* Controls Filter & Search */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-            <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 w-full sm:w-80 text-xs">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 w-full sm:w-80 text-xs">
               <Search size={16} className="text-slate-400" />
               <input
                 type="text"
@@ -1309,13 +1309,13 @@ export const DplDashboardPage: React.FC = () => {
                   setSearchQuery(e.target.value);
                   setMahasiswaPage(1);
                 }}
-                className="w-full outline-none bg-transparent"
+                className="w-full outline-none bg-transparent text-slate-800 dark:text-slate-100 placeholder-slate-400"
               />
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-              <span className="bg-emerald-50 text-emerald-800 text-xs font-bold px-3 py-2 rounded-lg border border-emerald-200 flex items-center gap-1.5 whitespace-nowrap">
-                <Users size={14} className="text-emerald-600" />
+              <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-xs font-bold px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-700/40 flex items-center gap-1.5 whitespace-nowrap">
+                <Users size={14} className="text-emerald-600 dark:text-emerald-400" />
                 {groups.length} Kelompok KKN
               </span>
               <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -1326,7 +1326,7 @@ export const DplDashboardPage: React.FC = () => {
                     setSelectedGroupFilter(e.target.value);
                     setMahasiswaPage(1);
                   }}
-                  className="text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none w-full sm:w-auto cursor-pointer"
+                  className="text-xs font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg px-3 py-2 outline-none w-full sm:w-auto cursor-pointer"
                 >
                   <option value="">Semua Kelompok KKN</option>
                   {groups.map((g) => (
@@ -1348,10 +1348,10 @@ export const DplDashboardPage: React.FC = () => {
           </div>
 
           {/* Table Rekap Mahasiswa */}
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs whitespace-nowrap">
-                <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-[10.5px]">
+                <thead className="bg-slate-50 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider text-[10.5px]">
                   <tr>
                     <th className="px-3 py-3.5 text-center w-12">No</th>
                     <th className="px-4 py-3.5">NIM</th>
@@ -1365,28 +1365,28 @@ export const DplDashboardPage: React.FC = () => {
                     <th className="px-4 py-3.5 text-center min-w-[180px]">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {paginatedStudents.map((st, idx) => {
                     const grade = getGradeBadge(st.assessmentScore);
                     const hasScore = st.assessmentScore !== null && st.assessmentScore !== undefined && st.assessmentScore > 0;
                     return (
-                      <tr key={st.id} className="hover:bg-slate-50/80 transition">
+                      <tr key={st.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
                         <td className="px-3 py-3.5 text-center font-bold text-slate-400">
                           {(mahasiswaPage - 1) * ITEMS_PER_PAGE + idx + 1}
                         </td>
-                        <td className="px-4 py-3.5 font-mono font-bold text-slate-700">
+                        <td className="px-4 py-3.5 font-mono font-bold text-slate-700 dark:text-slate-300">
                           {st.nim || "-"}
                         </td>
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black flex items-center justify-center text-xs border border-emerald-200 shrink-0 shadow-2xs">
+                            <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-black flex items-center justify-center text-xs border border-emerald-200 dark:border-emerald-700 shrink-0 shadow-2xs">
                               {st.name.substring(0, 2).toUpperCase()}
                             </div>
                             <div>
-                              <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                              <div className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                                 <span>{st.name}</span>
                                 {st.isKetua && (
-                                  <span className="bg-amber-100 text-amber-900 text-[9px] px-1.5 py-0.2 rounded font-extrabold border border-amber-200">
+                                  <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 text-[9px] px-1.5 py-0.2 rounded font-extrabold border border-amber-200 dark:border-amber-700/40">
                                     Ketua
                                   </span>
                                 )}
@@ -1395,11 +1395,11 @@ export const DplDashboardPage: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-4 py-3.5">
-                          <span className="font-semibold text-slate-800 block">{st.jurusan || "-"}</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 block">{st.jurusan || "-"}</span>
                           {st.fakultas && <span className="text-[10px] text-slate-400 block">{st.fakultas}</span>}
                         </td>
                         <td className="px-4 py-3.5">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 font-bold text-[11px] border border-slate-200">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-[11px] border border-slate-200 dark:border-slate-700">
                             {st.kelompokName}
                           </span>
                         </td>
@@ -1407,30 +1407,30 @@ export const DplDashboardPage: React.FC = () => {
                           <div className="inline-flex items-center gap-2">
                             <span className={`font-extrabold px-2 py-0.5 rounded text-xs border ${
                               st.attendanceRate >= 80
-                                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/40"
                                 : st.attendanceRate >= 60
-                                ? "bg-amber-50 text-amber-800 border-amber-200"
-                                : "bg-rose-50 text-rose-800 border-rose-200"
+                                ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700/40"
+                                : "bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-700/40"
                             }`}>
                               {st.attendanceRate}%
                             </span>
                             <span 
                               title={`Rincian: ${st.attendedCount} Hadir, ${st.sickCount} Sakit, ${st.izinCount} Izin, ${st.alphaCount} Tanpa Keterangan`}
-                              className="text-[11px] text-slate-500 font-mono font-medium cursor-help hover:text-slate-900"
+                              className="text-[11px] text-slate-500 dark:text-slate-400 font-mono font-medium cursor-help hover:text-slate-900 dark:hover:text-slate-200"
                             >
                               ({st.attendedCount}H / {st.sickCount}S / {st.izinCount}I / {st.alphaCount}TK)
                             </span>
                           </div>
                         </td>
                         <td className="px-4 py-3.5 text-center">
-                          <span className="font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg text-xs inline-block">
+                          <span className="font-extrabold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/40 px-2.5 py-1 rounded-lg text-xs inline-block">
                             {st.individualPoints ?? 0}
                           </span>
                         </td>
                         <td className="px-4 py-3.5 text-center">
                           {hasScore ? (
                             <div className="inline-flex items-center gap-1.5">
-                              <span className="font-black text-slate-900 text-sm">{st.assessmentScore}</span>
+                              <span className="font-black text-slate-900 dark:text-slate-100 text-sm">{st.assessmentScore}</span>
                               <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${grade.bg}`}>
                                 {grade.letter}
                               </span>
@@ -1441,12 +1441,12 @@ export const DplDashboardPage: React.FC = () => {
                         </td>
                         <td className="px-4 py-3.5 text-center">
                           {hasScore ? (
-                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full text-[11px] font-bold">
-                              <CheckCircle size={12} className="text-emerald-600" /> Sudah Dinilai
+                            <span className="inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 px-2.5 py-1 rounded-full text-[11px] font-bold">
+                              <CheckCircle size={12} className="text-emerald-600 dark:text-emerald-400" /> Sudah Dinilai
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full text-[11px] font-bold">
-                              <AlertTriangle size={12} className="text-amber-600" /> Belum Dinilai
+                            <span className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40 px-2.5 py-1 rounded-full text-[11px] font-bold">
+                              <AlertTriangle size={12} className="text-amber-600 dark:text-amber-400" /> Belum Dinilai
                             </span>
                           )}
                         </td>
@@ -1454,14 +1454,14 @@ export const DplDashboardPage: React.FC = () => {
                           <div className="inline-flex items-center gap-2">
                             <button
                               onClick={() => handleOpenAssessModal(st)}
-                              className="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold rounded-lg transition flex items-center gap-1.5 text-xs border border-blue-200 cursor-pointer shadow-2xs"
+                              className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 font-bold rounded-lg transition flex items-center gap-1.5 text-xs border border-blue-200 dark:border-blue-700/40 cursor-pointer shadow-2xs"
                               title="Beri / Edit Skor Penilaian DPL"
                             >
                               <FileCheck size={13} /> <span>Penilaian</span>
                             </button>
                             <button
                               onClick={() => handleOpenCitizensDrilldown(st)}
-                              className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold rounded-lg transition flex items-center gap-1.5 text-xs border border-emerald-200 cursor-pointer shadow-2xs"
+                              className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 font-bold rounded-lg transition flex items-center gap-1.5 text-xs border border-emerald-200 dark:border-emerald-700/40 cursor-pointer shadow-2xs"
                               title="Detail Portofolio Pendampingan Warga"
                             >
                               <QrCode size={13} /> <span>Portofolio</span>
@@ -1485,22 +1485,22 @@ export const DplDashboardPage: React.FC = () => {
 
             {/* Pagination Controls */}
             {totalStudentPages > 1 && (
-              <div className="flex items-center justify-between bg-slate-50 px-4 py-3 border-t border-slate-200 text-xs">
-                <span className="text-slate-500 font-medium">
+              <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/80 px-4 py-3 border-t border-slate-200 dark:border-slate-700 text-xs">
+                <span className="text-slate-500 dark:text-slate-400 font-medium">
                   Mahasiswa {(mahasiswaPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(mahasiswaPage * ITEMS_PER_PAGE, filteredStudents.length)} dari {filteredStudents.length}
                 </span>
                 <div className="flex gap-2">
                   <button
                     disabled={mahasiswaPage === 1}
                     onClick={() => setMahasiswaPage((p) => Math.max(1, p - 1))}
-                    className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 transition"
+                    className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                   >
                     Sebelumnya
                   </button>
                   <button
                     disabled={mahasiswaPage === totalStudentPages}
                     onClick={() => setMahasiswaPage((p) => Math.min(totalStudentPages, p + 1))}
-                    className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 transition"
+                    className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                   >
                     Selanjutnya
                   </button>
@@ -1515,12 +1515,12 @@ export const DplDashboardPage: React.FC = () => {
       {activeTab === "APPROVAL" && (
         <div className="space-y-6">
           {/* Pending Approval Requests */}
-          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <FileCheck size={18} className="text-amber-500" /> Permohonan Ketidakhadiran Menunggu Verifikasi DPL
               </h3>
-              <span className="bg-amber-100 text-amber-900 text-xs font-bold px-2.5 py-0.5 rounded-full">
+              <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40 text-xs font-bold px-2.5 py-0.5 rounded-full">
                 {alerts?.pendingRequests?.length || 0} Menunggu Verifikasi
               </span>
             </div>
@@ -1537,34 +1537,34 @@ export const DplDashboardPage: React.FC = () => {
                       key={req.id}
                       className={`p-4 border rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition ${
                         isOver24Hours
-                          ? "border-rose-300 bg-rose-50/40 shadow-xs"
-                          : "border-amber-200/80 bg-amber-50/40"
+                          ? "border-rose-300 dark:border-rose-700/60 bg-rose-50/40 dark:bg-rose-950/30 shadow-xs"
+                          : "border-amber-200/80 dark:border-amber-700/60 bg-amber-50/40 dark:bg-amber-950/30"
                       }`}
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-slate-900 text-sm">{req.studentName}</span>
+                          <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">{req.studentName}</span>
                           <span
                             className={`text-xs font-bold px-2 py-0.5 rounded ${
-                              req.type === "SAKIT" ? "bg-red-100 text-red-800" : "bg-purple-100 text-purple-800"
+                              req.type === "SAKIT" ? "bg-red-100 dark:bg-rose-950 text-red-800 dark:text-rose-300 border border-red-200 dark:border-rose-700" : "bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-700"
                             }`}
                           >
                             {req.type}
                           </span>
                           {isOver24Hours && (
-                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1">
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700 flex items-center gap-1">
                               <Clock size={11} /> &gt;24 Jam (Siap Diambil Alih Panitia Taskforce / SU)
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-600">
-                          <span className="font-semibold text-slate-700">Alasan / Catatan:</span> {req.reason}
+                        <p className="text-xs text-slate-600 dark:text-slate-300">
+                          <span className="font-semibold text-slate-700 dark:text-slate-200">Alasan / Catatan:</span> {req.reason}
                         </p>
                         <div className="flex items-center gap-2 flex-wrap pt-1">
-                          <p className="text-[11px] text-slate-500">
-                            Diajukan: <span className="font-medium text-slate-700">{new Date(req.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })} ({Math.floor(hoursElapsed)} jam lalu)</span>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Diajukan: <span className="font-medium text-slate-700 dark:text-slate-300">{new Date(req.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })} ({Math.floor(hoursElapsed)} jam lalu)</span>
                             {req.startDate && (
-                              <span className="ml-2 font-medium text-slate-600">
+                              <span className="ml-2 font-medium text-slate-600 dark:text-slate-300">
                                 (Periode: {new Date(req.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
                                 {req.endDate && req.endDate !== req.startDate ? ` - ${new Date(req.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}` : ""})
                               </span>
@@ -1574,7 +1574,7 @@ export const DplDashboardPage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => setPreviewEvidence({ url: req.evidenceUrl!, title: `Surat Bukti ${req.type}: ${req.studentName}` })}
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-100/70 border border-emerald-300 px-2 py-0.5 rounded-md cursor-pointer transition"
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700/60 px-2 py-0.5 rounded-md cursor-pointer transition"
                             >
                               <Eye size={12} /> Lihat Surat / Foto Bukti
                             </button>
@@ -1585,14 +1585,14 @@ export const DplDashboardPage: React.FC = () => {
                       <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                         <button
                           onClick={() => setRejectingRequestId(req.id)}
-                          className="px-3 py-1.5 bg-red-50 text-red-700 font-bold text-xs rounded-lg hover:bg-red-100 transition flex items-center gap-1 border border-red-200 cursor-pointer"
+                          className="px-3 py-1.5 bg-red-50 dark:bg-rose-950/60 text-red-700 dark:text-rose-400 font-bold text-xs rounded-lg hover:bg-red-100 dark:hover:bg-rose-900/60 transition flex items-center gap-1 border border-red-200 dark:border-rose-700/40 cursor-pointer"
                         >
                           <XCircle size={14} /> {isOver24Hours && canTakeover ? "Ambil Alih & Tolak" : "Tolak"}
                         </button>
                         {!isOver24Hours && (
                           <button
                             onClick={() => setEscalatingRequestId(req.id)}
-                            className="px-3 py-1.5 bg-amber-50 text-amber-800 font-bold text-xs rounded-lg hover:bg-amber-100 transition flex items-center gap-1 border border-amber-200 cursor-pointer"
+                            className="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold text-xs rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/60 transition flex items-center gap-1 border border-amber-200 dark:border-amber-700/40 cursor-pointer"
                           >
                             <AlertTriangle size={14} /> Eskalasi Taskforce
                           </button>
@@ -1613,16 +1613,16 @@ export const DplDashboardPage: React.FC = () => {
                 })}
               </div>
             ) : (
-              <p className="text-xs text-slate-500 italic p-4 text-center bg-slate-50 rounded-xl border border-slate-100">
+              <p className="text-xs text-slate-500 dark:text-slate-400 italic p-4 text-center bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800">
                 Tidak ada permohonan sakit/izin yang membutuhkan verifikasi saat ini.
               </p>
             )}
           </div>
 
           {/* Riwayat Approval Log */}
-          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <h3 className="text-base font-bold text-slate-900">Riwayat Validasi Ketidakhadiran Mahasiswa</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Riwayat Validasi Ketidakhadiran Mahasiswa</h3>
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <select
@@ -1631,7 +1631,7 @@ export const DplDashboardPage: React.FC = () => {
                     setSelectedApprovalStatus(e.target.value);
                     setApprovalPage(1);
                   }}
-                  className="text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 outline-none"
+                  className="text-xs font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg px-3 py-1.5 outline-none"
                 >
                   <option value="ALL">Semua Keputusan</option>
                   <option value="APPROVED">Disetujui</option>
@@ -1642,7 +1642,7 @@ export const DplDashboardPage: React.FC = () => {
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs whitespace-nowrap">
-                <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-[10.5px]">
+                <thead className="bg-slate-50 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider text-[10.5px]">
                   <tr>
                     <th className="px-4 py-3.5">Nama Mahasiswa</th>
                     <th className="px-4 py-3.5">Jenis Ketidakhadiran</th>
@@ -1651,31 +1651,31 @@ export const DplDashboardPage: React.FC = () => {
                     <th className="px-4 py-3.5">Waktu Verifikasi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {paginatedApprovalHistory.map((log) => (
-                    <tr key={log.id} className="hover:bg-slate-50/80 transition">
-                      <td className="px-4 py-3.5 font-bold text-slate-900">{log.studentName}</td>
+                    <tr key={log.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
+                      <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-slate-100">{log.studentName}</td>
                       <td className="px-4 py-3.5">
                         <span className={`px-2 py-0.5 rounded font-bold text-[11px] border ${
-                          log.type === "SAKIT" ? "bg-red-50 text-red-700 border-red-200" : "bg-purple-50 text-purple-700 border-purple-200"
+                          log.type === "SAKIT" ? "bg-red-50 dark:bg-rose-950 text-red-700 dark:text-rose-300 border-red-200 dark:border-rose-700" : "bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700"
                         }`}>
                           {log.type}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-slate-600 max-w-xs truncate">{log.reason}</td>
+                      <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300 max-w-xs truncate">{log.reason}</td>
                       <td className="px-4 py-3.5 text-center">
                         <span
                           className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${
                             log.status === "APPROVED"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : "bg-red-50 text-red-700 border-red-200"
+                              ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700/40"
+                              : "bg-red-50 dark:bg-rose-950/60 text-red-700 dark:text-rose-400 border-red-200 dark:border-rose-700/40"
                           }`}
                         >
                           {log.status === "APPROVED" ? <CheckCircle size={12} /> : <XCircle size={12} />}
                           {log.status === "APPROVED" ? "Disetujui" : "Ditolak"}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-slate-500 font-mono text-[11px]">
+                      <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
                         {log.reviewedAt ? new Date(log.reviewedAt).toLocaleString("id-ID") : "-"}
                       </td>
                     </tr>
@@ -1694,22 +1694,22 @@ export const DplDashboardPage: React.FC = () => {
 
             {/* Pagination Controls */}
             {totalApprovalPages > 1 && (
-              <div className="flex items-center justify-between bg-slate-50 px-4 py-3 border-t border-slate-200/80 text-xs">
-                <span className="text-slate-500 font-medium">
+              <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/80 px-4 py-3 border-t border-slate-200/80 dark:border-slate-700 text-xs">
+                <span className="text-slate-500 dark:text-slate-400 font-medium">
                   Halaman {approvalPage} dari {totalApprovalPages}
                 </span>
                 <div className="flex gap-2">
                   <button
                     disabled={approvalPage === 1}
                     onClick={() => setApprovalPage((p) => Math.max(1, p - 1))}
-                    className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 transition"
+                    className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                   >
                     Sebelumnya
                   </button>
                   <button
                     disabled={approvalPage === totalApprovalPages}
                     onClick={() => setApprovalPage((p) => Math.min(totalApprovalPages, p + 1))}
-                    className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 transition"
+                    className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                   >
                     Selanjutnya
                   </button>
@@ -1722,30 +1722,30 @@ export const DplDashboardPage: React.FC = () => {
 
       {/* VIEW 5: PETA SEBARAN (KHUSUS DEVELOPER) */}
       {activeTab === "MAP" && isDeveloper && (
-        <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
             <div>
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <MapPin size={18} className="text-emerald-600" /> Peta Sebaran Wilayah Bimbingan & Tempat Sampah
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <MapPin size={18} className="text-emerald-600 dark:text-emerald-400" /> Peta Sebaran Wilayah Bimbingan &amp; Tempat Sampah
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Pilih Kelurahan untuk melihat detail titik RW dampingan dan lokasi tempat sampah warga.
               </p>
             </div>
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
-              <span className="flex items-center gap-1 text-emerald-700">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-xl">
+              <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
                 {mapCoverage?.rwAreas.length || 0} Wilayah RW
               </span>
               <span>•</span>
-              <span className="flex items-center gap-1 text-blue-700">
+              <span className="flex items-center gap-1 text-blue-700 dark:text-blue-400">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span>
                 {mapCoverage?.bins.length || 0} Titik Sampah
               </span>
             </div>
           </div>
 
-          <div className="h-[520px] w-full rounded-2xl overflow-hidden border border-slate-200 shadow-inner relative z-0">
+          <div className="h-[520px] w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner relative z-0">
             {/* Top Floating Control Bar */}
             <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
               {selectedKelurahanMap ? (
@@ -1973,62 +1973,62 @@ export const DplDashboardPage: React.FC = () => {
       {/* MODAL 1: DRILLDOWN DAMPAK WARGA DIBANTU */}
       {selectedStudentForCitizens && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto border border-slate-200">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-3">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800">
+            <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
-                <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-700/40">
                   Dampak Pendampingan Warga
                 </span>
-                <h3 className="text-base font-bold text-slate-900 mt-1">
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-1">
                   Warga Dibantu: {selectedStudentForCitizens.name}
                 </h3>
               </div>
               <button
                 onClick={() => setSelectedStudentForCitizens(null)}
-                className="text-slate-400 hover:text-slate-600 font-bold"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold"
               >
                 ✕
               </button>
             </div>
 
             {loadingCitizens ? (
-              <div className="py-12 text-center text-xs text-slate-500 animate-pulse">
-                Memuat data warga & pola buang sampah...
+              <div className="py-12 text-center text-xs text-slate-500 dark:text-slate-400 animate-pulse">
+                Memuat data warga &amp; pola buang sampah...
               </div>
             ) : assistedCitizensData && assistedCitizensData.citizens.length > 0 ? (
               <div className="space-y-3">
-                <div className="bg-slate-50 p-3 rounded-lg flex items-center justify-between text-xs text-slate-700 border border-slate-200/60">
+                <div className="bg-slate-50 dark:bg-slate-800/80 p-3 rounded-lg flex items-center justify-between text-xs text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
                   <span>Total Warga Didampingi: <strong>{assistedCitizensData.totalCitizensAssisted} Warga</strong></span>
                 </div>
                 {assistedCitizensData.citizens.map((c) => (
-                  <div key={c.binId} className="p-4 border border-slate-200/60 rounded-xl bg-slate-50/40 space-y-2">
+                  <div key={c.binId} className="p-4 border border-slate-200/60 dark:border-slate-800 rounded-xl bg-slate-50/40 dark:bg-slate-800/50 space-y-2">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="font-bold text-slate-900 text-xs">{c.warga?.nama || "Warga Binaan"}</p>
-                        <p className="text-[11px] text-slate-500">{c.warga?.alamat || "Alamat tercatat"}</p>
+                        <p className="font-bold text-slate-900 dark:text-slate-100 text-xs">{c.warga?.nama || "Warga Binaan"}</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">{c.warga?.alamat || "Alamat tercatat"}</p>
                       </div>
                       <span
                         className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${c.polaBuangSampah === "RUTIN"
-                            ? "bg-emerald-100 text-emerald-800"
+                            ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
                             : c.polaBuangSampah === "KURANG_RUTIN"
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-slate-200 text-slate-700"
+                              ? "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
+                              : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                           }`}
                       >
                         Pola: {c.polaBuangSampah}
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 pt-1 text-[11px] text-slate-600">
-                      <div><span className="text-slate-400 block text-[10px]">Kode QR Tempat Sampah</span> <strong className="text-slate-800">{c.qrCode}</strong></div>
-                      <div><span className="text-slate-400 block text-[10px]">Frekuensi</span> <strong className="text-slate-800">{c.totalSetoranCount}x Setor</strong></div>
-                      <div><span className="text-slate-400 block text-[10px]">Total Berat</span> <strong className="text-emerald-700">{c.totalKg} Kg</strong></div>
+                    <div className="grid grid-cols-3 gap-2 pt-1 text-[11px] text-slate-600 dark:text-slate-300">
+                      <div><span className="text-slate-400 block text-[10px]">Kode QR Tempat Sampah</span> <strong className="text-slate-800 dark:text-slate-200">{c.qrCode}</strong></div>
+                      <div><span className="text-slate-400 block text-[10px]">Frekuensi</span> <strong className="text-slate-800 dark:text-slate-200">{c.totalSetoranCount}x Setor</strong></div>
+                      <div><span className="text-slate-400 block text-[10px]">Total Berat</span> <strong className="text-emerald-700 dark:text-emerald-400">{c.totalKg} Kg</strong></div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="py-8 text-center text-xs text-slate-500 italic bg-slate-50 rounded-xl">
+              <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 italic bg-slate-50 dark:bg-slate-800 rounded-xl">
                 Mahasiswa ini belum mengaktivasi tempat sampah warga.
               </div>
             )}
@@ -2043,32 +2043,32 @@ export const DplDashboardPage: React.FC = () => {
         <div className="space-y-4">
           {/* Summary Stat Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
-              <span className="text-slate-500 text-[11px] font-semibold block">Total Ide Diajukan</span>
-              <span className="text-xl font-extrabold text-slate-900 mt-0.5 block">{ideList.length} Karya</span>
+            <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold block">Total Ide Diajukan</span>
+              <span className="text-xl font-extrabold text-slate-900 dark:text-slate-100 mt-0.5 block">{ideList.length} Karya</span>
             </div>
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
-              <span className="text-slate-500 text-[11px] font-semibold block">Disetujui / Diimplementasikan</span>
-              <span className="text-xl font-extrabold text-emerald-600 mt-0.5 block">
+            <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold block">Disetujui / Diimplementasikan</span>
+              <span className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5 block">
                 {ideList.filter((i: any) => i.status === "APPROVED" || i.status === "DISETUJUI").length} Karya
               </span>
             </div>
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
-              <span className="text-slate-500 text-[11px] font-semibold block">Menunggu Evaluasi</span>
-              <span className="text-xl font-extrabold text-amber-600 mt-0.5 block">
+            <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold block">Menunggu Evaluasi</span>
+              <span className="text-xl font-extrabold text-amber-600 dark:text-amber-400 mt-0.5 block">
                 {ideList.filter((i: any) => !i.status || i.status === "PENDING" || i.status === "MENUNGGU").length} Karya
               </span>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
-            <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
-                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   <Sparkles size={18} className="text-amber-500" />
-                  Tabel Rekapitulasi Karya & Inovasi Sampah Kelompok
+                  Tabel Rekapitulasi Karya &amp; Inovasi Sampah Kelompok
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Rekapitulasi seluruh usulan daur ulang, fasilitas pengolahan, dan karya inovasi mahasiswa bimbingan.
                 </p>
               </div>
@@ -2080,54 +2080,54 @@ export const DplDashboardPage: React.FC = () => {
                 Memuat ide kreatif mahasiswa...
               </div>
             ) : ideList.length === 0 ? (
-              <div className="text-center py-12 text-slate-400 text-xs font-semibold p-6 bg-slate-50">
+              <div className="text-center py-12 text-slate-400 text-xs font-semibold p-6 bg-slate-50 dark:bg-slate-800">
                 Belum ada ide kreatif dari kelompok mahasiswa bimbingan Anda.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs whitespace-nowrap">
-                  <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-[10.5px]">
+                  <thead className="bg-slate-50 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider text-[10.5px]">
                     <tr>
                       <th className="px-4 py-3.5 text-center w-12">No</th>
                       <th className="px-4 py-3.5">Tanggal Usulan</th>
-                      <th className="px-4 py-3.5 min-w-[180px]">Pengusul & Kelompok</th>
+                      <th className="px-4 py-3.5 min-w-[180px]">Pengusul &amp; Kelompok</th>
                       <th className="px-4 py-3.5 min-w-[200px]">Judul Inovasi</th>
                       <th className="px-4 py-3.5 min-w-[260px] whitespace-normal">Deskripsi Inovasi</th>
                       <th className="px-4 py-3.5 text-center">Status Evaluasi</th>
                       <th className="px-4 py-3.5 text-center">Dokumentasi</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {ideList.map((ide: any, idx: number) => {
                       const isApproved = ide.status === "APPROVED" || ide.status === "DISETUJUI";
                       const isRejected = ide.status === "REJECTED" || ide.status === "DITOLAK";
                       return (
-                        <tr key={ide.id || idx} className="hover:bg-slate-50/80 transition">
+                        <tr key={ide.id || idx} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
                           <td className="px-4 py-3.5 text-center font-bold text-slate-400">{idx + 1}</td>
-                          <td className="px-4 py-3.5 text-slate-500 font-mono text-[11px]">
+                          <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
                             {ide.createdAt ? new Date(ide.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "-"}
                           </td>
                           <td className="px-4 py-3.5">
-                            <span className="font-bold text-slate-900 block">{ide.user?.name || ide.userName || "Mahasiswa KKN"}</span>
-                            <span className="text-[11px] text-emerald-700 font-semibold">{ide.kelompokName || "Kelompok KKN Coblong"}</span>
+                            <span className="font-bold text-slate-900 dark:text-slate-100 block">{ide.user?.name || ide.userName || "Mahasiswa KKN"}</span>
+                            <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold">{ide.kelompokName || "Kelompok KKN Coblong"}</span>
                           </td>
-                          <td className="px-4 py-3.5 font-bold text-slate-900">
+                          <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-slate-100">
                             {ide.judul || ide.title || "Tanpa Judul"}
                           </td>
-                          <td className="px-4 py-3.5 text-slate-600 whitespace-normal max-w-[320px]">
+                          <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300 whitespace-normal max-w-[320px]">
                             <p className="line-clamp-2">{ide.deskripsi || ide.description || "-"}</p>
                           </td>
                           <td className="px-4 py-3.5 text-center">
                             {isApproved ? (
-                              <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
+                              <span className="inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
                                 <CheckCircle size={12} /> Disetujui
                               </span>
                             ) : isRejected ? (
-                              <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
+                              <span className="inline-flex items-center gap-1 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-700/40 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
                                 <XCircle size={12} /> Ditolak
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
+                              <span className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
                                 <AlertTriangle size={12} /> Menunggu Evaluasi
                               </span>
                             )}
@@ -2138,7 +2138,7 @@ export const DplDashboardPage: React.FC = () => {
                                 href={ide.foto}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs"
+                                className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-700/40 shadow-2xs"
                               >
                                 <span>Lihat Foto</span>
                               </a>
@@ -2160,28 +2160,28 @@ export const DplDashboardPage: React.FC = () => {
       {/* MODAL 3: PENOLAKAN IZIN CATATAN */}
       {rejectingRequestId && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-red-600 flex items-center gap-1.5">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-800">
+            <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-red-600 dark:text-rose-400 flex items-center gap-1.5">
                 <XCircle size={18} /> Alasan Penolakan Izin
               </h3>
-              <button onClick={() => setRejectingRequestId(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+              <button onClick={() => setRejectingRequestId(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold">✕</button>
             </div>
 
             <div className="space-y-3 text-xs">
-              <label className="block font-semibold text-slate-700">Tuliskan Alasan Penolakan untuk Mahasiswa:</label>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300">Tuliskan Alasan Penolakan untuk Mahasiswa:</label>
               <textarea
                 rows={3}
                 value={rejectionReasonInput}
                 onChange={(e) => setRejectionReasonInput(e.target.value)}
                 placeholder="Contoh: Bukti surat sakit tidak melampirkan keterangan dokter resmi..."
-                className="w-full p-2.5 border border-slate-200 rounded-lg outline-none focus:border-red-500"
+                className="w-full p-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-red-500"
               />
 
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={() => setRejectingRequestId(null)}
-                  className="flex-1 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition"
+                  className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition"
                 >
                   Batal
                 </button>
@@ -2200,45 +2200,45 @@ export const DplDashboardPage: React.FC = () => {
       {/* MODAL 4: PENILAIAN SKOR DPL MAHASISWA */}
       {selectedStudentForAssess && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-3">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-800">
+            <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
-                <h3 className="text-base font-bold text-slate-900 flex items-center gap-1.5">
-                  <FileCheck size={18} className="text-emerald-600" /> Penilaian Mahasiswa KKN
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                  <FileCheck size={18} className="text-emerald-600 dark:text-emerald-400" /> Penilaian Mahasiswa KKN
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">{selectedStudentForAssess.name} ({selectedStudentForAssess.nim})</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{selectedStudentForAssess.name} ({selectedStudentForAssess.nim})</p>
               </div>
-              <button onClick={() => setSelectedStudentForAssess(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+              <button onClick={() => setSelectedStudentForAssess(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold">✕</button>
             </div>
 
             <div className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Skor Evaluasi DPL (0 - 100):</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Skor Evaluasi DPL (0 - 100):</label>
                 <input
                   type="number"
                   min={0}
                   max={100}
                   value={assessScoreInput}
                   onChange={(e) => setAssessScoreInput(Number(e.target.value))}
-                  className="w-full p-2.5 border border-slate-200 rounded-lg outline-none focus:border-emerald-500 font-bold text-sm"
+                  className="w-full p-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-emerald-500 font-bold text-sm"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Catatan Penilaian DPL (Opsional):</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Catatan Penilaian DPL (Opsional):</label>
                 <textarea
                   rows={3}
                   value={assessNoteInput}
                   onChange={(e) => setAssessNoteInput(e.target.value)}
                   placeholder="Catatan keaktifan, kepemimpinan, dan integrasi pemilahan sampah warga..."
-                  className="w-full p-2.5 border border-slate-200 rounded-lg outline-none focus:border-emerald-500"
+                  className="w-full p-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-emerald-500"
                 />
               </div>
 
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={() => setSelectedStudentForAssess(null)}
-                  className="flex-1 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition"
+                  className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition"
                 >
                   Batal
                 </button>
@@ -2258,31 +2258,31 @@ export const DplDashboardPage: React.FC = () => {
       {/* MODAL 5: ESKALASI IZIN KE TASKFORCE */}
       {escalatingRequestId && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-amber-600 flex items-center gap-1.5">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-800">
+            <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
                 <AlertTriangle size={18} /> Eskalasi Izin ke Panitia Taskforce
               </h3>
-              <button onClick={() => setEscalatingRequestId(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+              <button onClick={() => setEscalatingRequestId(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold">✕</button>
             </div>
 
             <div className="space-y-3 text-xs">
-              <p className="text-slate-600">
+              <p className="text-slate-600 dark:text-slate-300">
                 Pengajuan izin ini akan diteruskan ke Panitia Taskforce untuk evaluasi tingkat lanjut.
               </p>
-              <label className="block font-semibold text-slate-700">Catatan / Alasan Eskalasi:</label>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300">Catatan / Alasan Eskalasi:</label>
               <textarea
                 rows={3}
                 value={escalationReasonInput}
                 onChange={(e) => setEscalationReasonInput(e.target.value)}
                 placeholder="Contoh: Izin melebihi 3 hari berturut-turut, membutuhkan keputusan panitia pusat..."
-                className="w-full p-2.5 border border-slate-200 rounded-lg outline-none focus:border-amber-500"
+                className="w-full p-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-amber-500"
               />
 
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={() => setEscalatingRequestId(null)}
-                  className="flex-1 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition"
+                  className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition"
                 >
                   Batal
                 </button>
@@ -2300,7 +2300,7 @@ export const DplDashboardPage: React.FC = () => {
       {/* MODAL PREVIEW BUKTI DOKUMEN / SURAT SAKIT */}
       {previewEvidence && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-800 text-white">
               <div className="flex items-center gap-2.5">
                 <FileCheck size={18} className="text-emerald-400" />
@@ -2314,7 +2314,7 @@ export const DplDashboardPage: React.FC = () => {
               </button>
             </div>
             <div className="p-5 flex flex-col items-center justify-center space-y-4">
-              <div className="max-h-[60vh] w-full overflow-auto rounded-2xl border border-slate-200 bg-slate-50 p-2 flex items-center justify-center">
+              <div className="max-h-[60vh] w-full overflow-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 p-2 flex items-center justify-center">
                 <img
                   src={previewEvidence.url}
                   alt={previewEvidence.title}
@@ -2330,7 +2330,7 @@ export const DplDashboardPage: React.FC = () => {
                   href={previewEvidence.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center gap-1.5"
+                  className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition flex items-center gap-1.5"
                 >
                   <Eye size={14} /> Buka Tab Baru
                 </a>
@@ -2349,7 +2349,7 @@ export const DplDashboardPage: React.FC = () => {
       {/* MODAL 6: EKSPOR REKAPITULASI KINERJA DPL DENGAN FILTER PERIODE */}
       {isExportModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-800 text-white">
               <div className="flex items-center gap-2.5">
                 <Download size={18} className="text-emerald-400" />
@@ -2364,13 +2364,13 @@ export const DplDashboardPage: React.FC = () => {
             </div>
 
             <div className="p-6 space-y-5">
-              <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200/80 text-xs text-emerald-900 font-semibold">
-                Total Mahasiswa Dampingan: <strong className="text-emerald-950">{students.length} Orang</strong> {selectedGroupFilter ? `(${selectedGroupFilter})` : "(Semua Kelompok)"}
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border border-emerald-200/80 dark:border-emerald-700/40 text-xs text-emerald-900 dark:text-emerald-300 font-semibold">
+                Total Mahasiswa Dampingan: <strong className="text-emerald-950 dark:text-emerald-200">{students.length} Orang</strong> {selectedGroupFilter ? `(${selectedGroupFilter})` : "(Semua Kelompok)"}
               </div>
 
               <div>
-                <label className="block text-xs font-black text-slate-700 mb-2 flex items-center gap-1.5">
-                  <Calendar size={14} className="text-slate-500" /> Filter Periode Laporan:
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
+                  <Calendar size={14} className="text-slate-500 dark:text-slate-400" /> Filter Periode Laporan:
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
@@ -2386,7 +2386,7 @@ export const DplDashboardPage: React.FC = () => {
                       className={`py-2 px-3 rounded-xl text-xs font-bold transition border text-left flex items-center justify-between cursor-pointer ${
                         exportPeriod === p.id
                           ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                          : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
                       }`}
                     >
                       <span>{p.label}</span>
@@ -2397,23 +2397,23 @@ export const DplDashboardPage: React.FC = () => {
               </div>
 
               {exportPeriod === "CUSTOM" && (
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 animate-in fade-in duration-200">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 animate-in fade-in duration-200">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Tanggal Mulai:</label>
+                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Tanggal Mulai:</label>
                     <input
                       type="date"
                       value={exportStartDate}
                       onChange={(e) => setExportStartDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Tanggal Selesai:</label>
+                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Tanggal Selesai:</label>
                     <input
                       type="date"
                       value={exportEndDate}
                       onChange={(e) => setExportEndDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                 </div>
@@ -2423,7 +2423,7 @@ export const DplDashboardPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsExportModalOpen(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition cursor-pointer"
+                  className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition cursor-pointer"
                 >
                   Batal
                 </button>
