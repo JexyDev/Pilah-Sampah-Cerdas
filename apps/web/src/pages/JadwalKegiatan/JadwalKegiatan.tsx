@@ -190,6 +190,8 @@ const JadwalKegiatan: React.FC = () => {
     setExpandedGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }));
   };
 
+  const [groups, setGroups] = useState<any[]>([]);
+
   const [formData, setFormData] = useState<any>({
     title: "",
     date: "",
@@ -200,7 +202,18 @@ const JadwalKegiatan: React.FC = () => {
     longitude: "",
     radius: 100,
     polygon: [] as [number, number][],
+    kelompokId: "",
   });
+
+  const fetchGroups = async () => {
+    try {
+      const res = await api.get("/kelompok?limit=0");
+      const list = res.data?.groups || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+      setGroups(list);
+    } catch {
+      // ignore
+    }
+  };
 
   const fetchSchedules = async () => {
     try {
@@ -219,6 +232,7 @@ const JadwalKegiatan: React.FC = () => {
 
   useEffect(() => {
     fetchSchedules();
+    fetchGroups();
   }, []);
 
 
@@ -310,7 +324,7 @@ const JadwalKegiatan: React.FC = () => {
       setIsModalOpen(false);
       setEditId(null);
       fetchSchedules();
-      setFormData({ title: "", date: "", time: "", category: "Pengangkutan", location: "", latitude: "", longitude: "", radius: 100, polygon: [] });
+      setFormData({ title: "", date: "", time: "", category: "Pengangkutan", location: "", latitude: "", longitude: "", radius: 100, polygon: [], kelompokId: "" });
       setGeofenceMode("CIRCLE");
       setManualLat("");
       setManualLng("");
@@ -346,6 +360,7 @@ const JadwalKegiatan: React.FC = () => {
       longitude: schedule.longitude || "",
       radius: schedule.radius || 100,
       polygon: schedule.polygon || (schedule.latitude && schedule.longitude ? [[Number(schedule.latitude), Number(schedule.longitude)]] : []),
+      kelompokId: schedule.kelompokId || "",
     });
     setModalStep(1);
     setIsModalOpen(true);
@@ -1566,6 +1581,24 @@ const JadwalKegiatan: React.FC = () => {
                         <option value="Rapat">Rapat</option>
                         <option value="Monitoring">Monitoring Lapangan</option>
                         <option value="Lainnya">Lainnya</option>
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-black text-slate-800 dark:text-slate-100">
+                        Kelompok KKN Terkait (Opsional)
+                      </label>
+                      <select
+                        value={formData.kelompokId || ""}
+                        onChange={(e) => setFormData({ ...formData, kelompokId: e.target.value || undefined })}
+                        className="px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-emerald-600 w-full text-xs font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900"
+                      >
+                        <option value="">-- Semua Kelompok (Jadwal Global / Bersama) --</option>
+                        {groups.map((g: any) => (
+                          <option key={g.id} value={g.id}>
+                            {g.name} ({g.kelurahan || "Coblong"})
+                          </option>
+                        ))}
                       </select>
                     </div>
 

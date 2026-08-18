@@ -979,13 +979,18 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kelurahan</label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: Sekeloa"
+                  <select
                     value={kelompokForm.kelurahan}
                     onChange={(e) => setKelompokForm({ ...kelompokForm, kelurahan: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                  />
+                    className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white dark:bg-slate-900"
+                  >
+                    <option value="">Pilih Kelurahan...</option>
+                    {["Sekeloa", "Sadang Serang", "Lebak Gede", "Lebak Siliwangi", "Dago", "Cipaganti"].map((kel) => (
+                      <option key={kel} value={kel}>
+                        Kel. {kel}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cakupan RW</label>

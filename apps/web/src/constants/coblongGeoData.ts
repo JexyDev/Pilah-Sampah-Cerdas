@@ -186,6 +186,48 @@ export const createKknMhsIcon = (status: "PRESENT" | "SICK" | "PERMIT" | "ABSENT
   });
 };
 
+export const createHouseholdPinIcon = (
+  hasOrganik: boolean,
+  hasAnorganik: boolean,
+  isPenuh: boolean,
+  isSedang: boolean,
+  isRusak: boolean
+) => {
+  let mainColor = "#059669"; // Emerald-600
+  let pulseRing = "";
+
+  if (isRusak) {
+    mainColor = "#e11d48"; // Rose-600
+  } else if (isPenuh) {
+    mainColor = "#dc2626"; // Red-600
+    pulseRing = `<div style="position: absolute; inset: -4px; border-radius: 50%; border: 2px solid #ef4444; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite; opacity: 0.75;"></div>`;
+  } else if (isSedang) {
+    mainColor = "#d97706"; // Amber-600
+  }
+
+  return L.divIcon({
+    className: "custom-household-pin-icon",
+    html: `
+      <div style="position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.15s ease;">
+        ${pulseRing}
+        <div style="background: ${mainColor}; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.35); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; position: relative; z-index: 2;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </div>
+        <!-- Dual Badge Indicator (O: Organik, A: Anorganik) -->
+        <div style="display: flex; gap: 2px; margin-top: -6px; z-index: 3;">
+          <span style="background: #10b981; color: white; font-size: 8px; font-weight: 900; font-family: monospace; padding: 1px 3.5px; border-radius: 4px; border: 1px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">O</span>
+          <span style="background: #f59e0b; color: white; font-size: 8px; font-weight: 900; font-family: monospace; padding: 1px 3.5px; border-radius: 4px; border: 1px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">A</span>
+        </div>
+      </div>
+    `,
+    iconSize: [30, 36],
+    iconAnchor: [15, 18],
+  });
+};
+
 export const createRealBinIcon = (categoryName: string, status: string, isPenuh: boolean, isRusak: boolean) => {
   const cat = (categoryName || "").toLowerCase();
   let bgColor = "#10b981"; // Emerald Green for Organik

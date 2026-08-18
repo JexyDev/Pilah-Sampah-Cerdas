@@ -6,8 +6,6 @@ import { prisma } from "../lib/prisma.js";
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-
-
 export const scheduleService = {
   getAllSchedules: async (userId?: string, role?: string) => {
     try {
@@ -34,12 +32,11 @@ export const scheduleService = {
           select: { id: true },
         });
         kelompokIds = kelompokBinaan.map((k) => k.id);
-      } else if (["SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "PEMIMPIN"].includes(userRole)) {
+      } else if (["SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "PEMIMPIN", "DEVELOPER"].includes(userRole)) {
         // Global viewers see everything
         kelompokIds = null;
       } else if (userId) {
-        // Other users (warga, rw, lurah) currently not specifically scoped for schedules,
-        // or they might only see global ones? By default, let's say they see nothing unless global.
+        // Other users (warga, rw, lurah)
         kelompokIds = [];
       }
 

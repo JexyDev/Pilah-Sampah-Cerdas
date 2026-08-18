@@ -22,6 +22,7 @@ import L from "leaflet";
 import {
   KELURAHAN_GEODATA,
   createRealBinIcon,
+  createHouseholdPinIcon,
 } from "../../constants/coblongGeoData";
 
 // Fix default Leaflet icon issue
@@ -262,6 +263,95 @@ const ManajemenTempatSampah: React.FC = () => {
       return true;
     });
   }, [verifiedMapBins, selectedMapKelurahan, mapCategoryFilter, mapStatusFilter, mapSearchInput]);
+
+  // Group Filtered Bins by Household (1 Single Pin per House)
+  const householdMapGroups = React.useMemo(() => {
+    const map = new Map<string, {
+      householdKey: string;
+      userId?: string;
+      wargaName: string;
+      wargaPhone?: string;
+      address: string;
+      rtRw: string;
+      kelurahan: string;
+      latitude: number;
+      longitude: number;
+      organikBin: any | null;
+      anorganikBin: any | null;
+      residuBin: any | null;
+      allBins: any[];
+      isPenuh: boolean;
+      isSedang: boolean;
+      isRusak: boolean;
+      lastActivity?: string;
+    }>();
+
+    for (const bin of filteredMapBins) {
+      const lat = Number(bin.latitude);
+      const lng = Number(bin.longitude);
+      if (!lat || !lng || isNaN(lat) || isNaN(lng)) continue;
+
+      const ownerName = bin.wargaName || bin.user?.name || "Warga Terdaftar";
+      const ownerPhone = bin.wargaPhone || bin.user?.phone || bin.phone || "";
+      const userId = bin.userId || bin.user?.id || "";
+      const key = userId ? `user-${userId}` : ownerPhone ? `phone-${ownerPhone}` : `loc-${lat.toFixed(5)}_${lng.toFixed(5)}`;
+
+      const vol = Number(bin.currentVolumeLiter || 0);
+      const max = Number(bin.maxCapacityLiter || 25);
+      const pct = bin.kapasitas !== undefined ? bin.kapasitas : (max > 0 ? Math.round((vol / max) * 100) : 0);
+      const isRusak = bin.status === "Rusak" || bin.realStatus === "BROKEN";
+      const isPenuh = bin.status === "Penuh" || pct >= 90;
+      const isSedang = bin.status === "Sedang" || (pct >= 70 && pct < 90);
+
+      const catLower = (bin.category?.name || bin.lokasi || "").toLowerCase();
+      const isAnorganik = catLower.includes("anorganik") || catLower.includes("non_organic");
+      const isResidu = catLower.includes("residu") || catLower.includes("b3");
+      const isOrganik = !isAnorganik && !isResidu;
+
+      let group = map.get(key);
+      if (!group) {
+        group = {
+          householdKey: key,
+          userId,
+          wargaName: ownerName,
+          wargaPhone: ownerPhone,
+          address: bin.user?.address || bin.lokasi || "Kecamatan Coblong",
+          rtRw: bin.rw || "Wilayah Coblong",
+          kelurahan: bin.kelurahan?.name || bin.user?.kelurahan?.name || "",
+          latitude: lat,
+          longitude: lng,
+          organikBin: null,
+          anorganikBin: null,
+          residuBin: null,
+          allBins: [],
+          isPenuh: false,
+          isSedang: false,
+          isRusak: false,
+          lastActivity: bin.lastActivityLog || bin.verifiedAt,
+        };
+        map.set(key, group);
+      }
+
+      group.allBins.push(bin);
+      if (isRusak) group.isRusak = true;
+      if (isPenuh) group.isPenuh = true;
+      if (isSedang) group.isSedang = true;
+
+      if (isOrganik && !group.organikBin) {
+        group.organikBin = bin;
+      } else if (isAnorganik && !group.anorganikBin) {
+        group.anorganikBin = bin;
+      } else if (isResidu && !group.residuBin) {
+        group.residuBin = bin;
+      } else if (!group.organikBin) {
+        group.organikBin = bin;
+      } else if (!group.anorganikBin) {
+        group.anorganikBin = bin;
+      }
+    }
+
+    return Array.from(map.values());
+  }, [filteredMapBins]);
 
   // Search Bar Candidate Results (Limit 5 items)
   const mapSearchResults = React.useMemo(() => {

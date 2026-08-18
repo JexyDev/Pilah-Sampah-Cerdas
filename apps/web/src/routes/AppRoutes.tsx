@@ -168,7 +168,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/monitoring-absen"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
               <MonitoringAbsen />
             </ProtectedRoute>
           }
@@ -440,7 +440,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/dashboard-kkn"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
               <KknDashboard />
             </ProtectedRoute>
           }
@@ -448,7 +448,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/simulasi-model-ai"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DEVELOPER"]}>
               <SimulasiModelAI />
             </ProtectedRoute>
           }
@@ -457,7 +457,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/manajemen-ekosistem-kkn"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
               <ManajemenEkosistemKkn />
             </ProtectedRoute>
           }
@@ -465,7 +465,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/program-kerja-kkn"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN"]}>
               <ProgramKerjaKkn />
             </ProtectedRoute>
           }

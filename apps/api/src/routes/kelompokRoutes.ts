@@ -13,8 +13,8 @@ router.get("/dpls", kelompokController.getDpls);
 router.get("/", kelompokController.getAll);
 router.get("/:id", kelompokController.getById);
 
-// ── WRITE: SUPER_USER, PEMIMPIN, PANITIA_TASKFORCE ──────────────────────────
-const KKN_WRITE_ROLES = ["SUPER_USER", "PEMIMPIN", "PANITIA_TASKFORCE"];
+// ── WRITE: SUPER_USER, DEVELOPER, PEMIMPIN, PANITIA_TASKFORCE ──────────────────────────
+const KKN_WRITE_ROLES = ["SUPER_USER", "DEVELOPER", "PEMIMPIN", "PANITIA_TASKFORCE"];
 
 router.post("/", roleMiddleware(KKN_WRITE_ROLES), kelompokController.create);
 router.put("/:id", roleMiddleware(KKN_WRITE_ROLES), kelompokController.update);

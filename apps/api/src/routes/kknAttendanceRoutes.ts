@@ -122,7 +122,7 @@ router.post(
 router.get(
   "/mahasiswa/lokasi-aktif",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]),
   kknAttendanceController.getActiveStudentsLocations
 );
 
@@ -147,7 +147,7 @@ router.get(
 router.get(
   "/kegiatan/:id/absen",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]),
   kknAttendanceController.getAttendanceList
 );
 

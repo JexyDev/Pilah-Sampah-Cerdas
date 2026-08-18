@@ -950,25 +950,71 @@ export class KknService {
         });
       }
 
-      const qrCodes = [data.binQrCode, data.binQrCodeOrganic, data.binQrCodeInorganic].filter(
-        Boolean
-      );
+      // Extract coordinates from GPS payload
+      const latVal = data.latitude !== undefined && data.latitude !== null
+        ? Number(data.latitude)
+        : data.lat !== undefined && data.lat !== null
+        ? Number(data.lat)
+        : -6.8903;
+      const lngVal = data.longitude !== undefined && data.longitude !== null
+        ? Number(data.longitude)
+        : data.lng !== undefined && data.lng !== null
+        ? Number(data.lng)
+        : data.lon !== undefined && data.lon !== null
+        ? Number(data.lon)
+        : 107.611;
+
+      let household = await tx.household.findFirst({ where: { userId: warga.id } });
+      if (!household) {
+        household = await tx.household.create({
+          data: {
+            userId: warga.id,
+            address: data.address || warga.address || "Bandung, Jawa Barat",
+            rwId: resolvedRwId || 1,
+            latitude: latVal,
+            longitude: lngVal,
+          },
+        });
+      } else {
+        household = await tx.household.update({
+          where: { id: household.id },
+          data: {
+            latitude: latVal,
+            longitude: lngVal,
+            address: data.address || household.address,
+            rwId: resolvedRwId || household.rwId,
+          },
+        });
+      }
+
+      const qrCodes = [
+        data.binQrCode,
+        data.binQrCodeOrganic,
+        data.binQrCodeInorganic,
+        ...(Array.isArray(data.qrCodes) ? data.qrCodes : []),
+      ].filter(Boolean);
 
       for (const qr of qrCodes) {
         let bin = await tx.bin.findUnique({ where: { qrCode: qr } });
         const maxCapacityLiter = data.maxCapacityLiter ? Number(data.maxCapacityLiter) : 50;
 
+        const qrLower = qr.toLowerCase();
+        const isAnorg = qrLower.includes("anorganik") || qrLower.includes("non_organic") || qrLower.includes("anorg");
+        const categoryTarget = isAnorg ? "NON_ORGANIC" : "ORGANIC";
+
         if (!bin) {
-          let category = await tx.wasteCategory.findFirst({ where: { name: "ORGANIC" } });
+          let category = await tx.wasteCategory.findFirst({ where: { name: categoryTarget } });
           if (!category) category = await tx.wasteCategory.findFirst();
 
           bin = await tx.bin.create({
             data: {
               qrCode: qr,
-              status: "PENDING_APPROVAL",
+              status: "ACTIVE_BOUND",
               categoryId: category?.id,
               userId: warga.id,
-              rwId: resolvedRwId,
+              rwId: resolvedRwId || household.rwId,
+              latitude: latVal,
+              longitude: lngVal,
               maxCapacityLiter,
               registeredByStudentId: kknUserId,
             },
@@ -983,8 +1029,10 @@ export class KknService {
             where: { id: bin.id },
             data: {
               userId: warga.id,
-              rwId: resolvedRwId,
-              status: "PENDING_APPROVAL",
+              rwId: resolvedRwId || household.rwId,
+              latitude: latVal,
+              longitude: lngVal,
+              status: "ACTIVE_BOUND",
               maxCapacityLiter,
               registeredByStudentId: kknUserId,
             },
@@ -1006,6 +1054,14 @@ export class KknService {
           userId: kknUserId,
           points: 10,
           description: `Pendampingan Registrasi Warga (${warga.name})`,
+        },
+      });
+
+      await tx.pointHistory.create({
+        data: {
+          userId: warga.id,
+          points: 10,
+          description: `Bonus Registrasi Tempat Sampah`,
         },
       });
 
