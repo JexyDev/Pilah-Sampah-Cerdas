@@ -118,17 +118,13 @@ class AppPages {
     }
   }
 
-  static PageRouteBuilder<dynamic> _buildRoute(
+  static Route<dynamic> _buildRoute(
     Widget page,
     RouteSettings settings,
   ) {
-    return PageRouteBuilder(
+    return MaterialPageRoute(
       settings: settings,
-      pageBuilder: (_, __, ___) => page,
-      transitionsBuilder: (_, animation, __, child) {
-        return FadeTransition(opacity: animation, child: child);
-      },
-      transitionDuration: const Duration(milliseconds: 200),
+      builder: (_) => page,
     );
   }
 }

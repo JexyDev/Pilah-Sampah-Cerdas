@@ -472,6 +472,13 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
       statusTitle = 'Memeriksa Lokasi...';
       statusDesc = 'Sedang mencari kordinat GPS Anda.';
       textColor = AppColors.primaryBlueDark;
+    } else if (kknState.activeActivity == null || kknState.activeActivity!.isEmpty) {
+      boxColor = Colors.grey.withValues(alpha: 0.1);
+      borderColor = Colors.grey.withValues(alpha: 0.5);
+      iconData = Icons.info_outline_rounded;
+      statusTitle = 'Tidak Ada Kegiatan Aktif';
+      statusDesc = 'Jadwal KKN belum tersedia atau belum aktif.';
+      textColor = Colors.grey[700]!;
     } else if (isOn) {
       boxColor = AppColors.success.withValues(alpha: 0.1);
       borderColor = AppColors.success.withValues(alpha: 0.3);
@@ -542,11 +549,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
               ],
             ),
           ),
-          Icon(
-            iconData,
-            color: textColor.withValues(alpha: 0.7),
-            size: 24,
-          )
         ],
       ),
     );
