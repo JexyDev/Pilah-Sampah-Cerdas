@@ -726,7 +726,7 @@ export const PenggunaOnline: React.FC = () => {
           >
             <div className="bg-gradient-to-r from-rose-600 to-red-600 p-5 flex items-center justify-between relative overflow-hidden">
               <div className="flex items-center gap-3 relative z-10">
-                <div className="w-11 h-11 rounded-2xl bg-white text-rose-600 flex items-center justify-center font-black shadow-lg animate-pulse">
+                <div className="w-11 h-11 rounded-2xl bg-white dark:bg-slate-900 text-rose-600 flex items-center justify-center font-black shadow-lg animate-pulse">
                   <ShieldAlert size={26} />
                 </div>
                 <div>

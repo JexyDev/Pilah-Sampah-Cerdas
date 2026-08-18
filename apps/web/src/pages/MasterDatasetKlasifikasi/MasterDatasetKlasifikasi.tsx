@@ -246,7 +246,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
             className={star <= rating ? "text-amber-400 fill-amber-400" : "text-slate-200"}
           />
         ))}
-        <span className="ml-1 text-[11px] font-black text-slate-700">({rating}.0)</span>
+        <span className="ml-1 text-[11px] font-black text-slate-700 dark:text-slate-300">({rating}.0)</span>
       </div>
     );
   };
@@ -274,19 +274,19 @@ const MasterDatasetKlasifikasi: React.FC = () => {
       {/* 2. AI MODEL SPECIFICATION & LIVE VPS METRICS WIDGET */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Model Spec Card */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
-          <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+          <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-[#009966] flex items-center justify-center font-bold">
               <Zap size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-slate-800">Spesifikasi Model AI (ONNX)</h3>
+              <h3 className="text-sm font-black text-slate-800 dark:text-slate-100">Spesifikasi Model AI (ONNX)</h3>
               <p className="text-[11px] font-semibold text-slate-400">Model: {modelInfo?.architecture || "YOLOv8s-seg ONNX Engine"}</p>
             </div>
           </div>
 
-          <div className="space-y-2.5 text-xs font-semibold text-slate-700">
-            <div className="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl">
+          <div className="space-y-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl">
               <span className="text-slate-500 font-extrabold">Kelas Output (2 Kelas):</span>
               <div className="flex gap-1">
                 <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10.5px] font-black">0: ORGANIK</span>
@@ -313,14 +313,14 @@ const MasterDatasetKlasifikasi: React.FC = () => {
         </div>
 
         {/* Live VPS Metrics Summary */}
-        <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
                 <Server size={20} />
               </div>
               <div>
-                <h3 className="text-sm font-black text-slate-800">Status Server VPS Real-Time Stream</h3>
+                <h3 className="text-sm font-black text-slate-800 dark:text-slate-100">Status Server VPS Real-Time Stream</h3>
                 <p className="text-[11px] font-semibold text-slate-400">Host: {vpsData?.os.hostname || "localhost"} ({vpsData?.os.platform || "Linux"})</p>
               </div>
             </div>
@@ -333,27 +333,27 @@ const MasterDatasetKlasifikasi: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1">
+            <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
               <span className="text-[10px] font-black uppercase text-slate-400">CPU Server</span>
-              <p className="text-xl font-black text-slate-800">{vpsData?.cpu.usagePercent || 5.7}%</p>
+              <p className="text-xl font-black text-slate-800 dark:text-slate-100">{vpsData?.cpu.usagePercent || 5.7}%</p>
               <p className="text-[10px] text-slate-400 font-bold">{vpsData?.cpu.cores || 4} Cores Load</p>
             </div>
 
-            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1">
+            <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
               <span className="text-[10px] font-black uppercase text-slate-400">RAM Server</span>
-              <p className="text-xl font-black text-slate-800">{vpsData?.memory.usagePercent || 65.4}%</p>
+              <p className="text-xl font-black text-slate-800 dark:text-slate-100">{vpsData?.memory.usagePercent || 65.4}%</p>
               <p className="text-[10px] text-slate-400 font-bold">{vpsData?.memory.usedMb || 5232} MB Used</p>
             </div>
 
-            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1">
+            <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
               <span className="text-[10px] font-black uppercase text-slate-400">Storage Disk</span>
-              <p className="text-xl font-black text-slate-800">{vpsData?.storage.usagePercent || 34.5}%</p>
+              <p className="text-xl font-black text-slate-800 dark:text-slate-100">{vpsData?.storage.usagePercent || 34.5}%</p>
               <p className="text-[10px] text-slate-400 font-bold">{vpsData?.storage.usedGb || 27.6} GB Used</p>
             </div>
 
-            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1">
+            <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
               <span className="text-[10px] font-black uppercase text-slate-400">PostgreSQL DB</span>
-              <p className="text-xl font-black text-slate-800">{vpsData?.database.queryLatencyMs || 62} ms</p>
+              <p className="text-xl font-black text-slate-800 dark:text-slate-100">{vpsData?.database.queryLatencyMs || 62} ms</p>
               <p className="text-[10px] text-emerald-600 font-bold">Connected Active</p>
             </div>
           </div>
@@ -362,63 +362,63 @@ const MasterDatasetKlasifikasi: React.FC = () => {
 
       {/* 3. DATASET STATS SUMMARY CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs flex items-center gap-4">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-[#009966] flex items-center justify-center shrink-0 font-bold">
             <FileSpreadsheet size={24} />
           </div>
           <div>
             <p className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Total Sampel Dataset</p>
-            <h3 className="text-2xl font-black text-slate-800">{summary?.totalDatasetCount || datasetList.length} Upload</h3>
+            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{summary?.totalDatasetCount || datasetList.length} Upload</h3>
             <p className="text-[10px] font-bold text-emerald-600 mt-0.5">Real-time dari aplikasi mobile</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs flex items-center gap-4">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 font-bold">
             <LeafIcon size={24} />
           </div>
           <div>
             <p className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Sampel Organik</p>
-            <h3 className="text-2xl font-black text-slate-800">{summary?.organikCount || 4} Items</h3>
+            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{summary?.organikCount || 4} Items</h3>
             <p className="text-[10px] font-bold text-slate-400 mt-0.5">Kelas 0: ORGANIC</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs flex items-center gap-4">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 font-bold">
             <Layers size={24} />
           </div>
           <div>
             <p className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Sampel Anorganik</p>
-            <h3 className="text-2xl font-black text-slate-800">{summary?.anorganikCount || 2} Items</h3>
+            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{summary?.anorganikCount || 2} Items</h3>
             <p className="text-[10px] font-bold text-slate-400 mt-0.5">Kelas 1: NON_ORGANIC</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs flex items-center gap-4">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 font-bold">
             <Award size={24} />
           </div>
           <div>
             <p className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Rating Akurasi Warga</p>
-            <h3 className="text-2xl font-black text-slate-800">{summary?.avgRating || 4.9} / 5.0 ⭐</h3>
+            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{summary?.avgRating || 4.9} / 5.0 ⭐</h3>
             <p className="text-[10px] font-bold text-emerald-600 mt-0.5">{summary?.accuracyRatePercent || 98.0}% Akurasi Umpan Balik</p>
           </div>
         </div>
       </div>
 
       {/* 4. READ-ONLY DATASET CLASSIFICATION TABLE */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden space-y-4">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden space-y-4">
         {/* Table Control Header */}
-        <div className="p-5 sm:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
+        <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-[#009966] flex items-center justify-center font-bold shrink-0">
               <Smartphone size={20} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-black text-slate-800">Daftar Hasil Klasifikasi AI (Data Mobile Stream)</h3>
-                <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10.5px] font-black flex items-center gap-1 border border-slate-200">
+                <h3 className="text-base font-black text-slate-800 dark:text-slate-100">Daftar Hasil Klasifikasi AI (Data Mobile Stream)</h3>
+                <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10.5px] font-black flex items-center gap-1 border border-slate-200 dark:border-slate-800">
                   <Lock size={10} /> READ-ONLY AUDIT
                 </span>
               </div>
@@ -441,7 +441,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3.5 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966] transition-all"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#009966] transition-all"
               />
             </div>
 
@@ -452,7 +452,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                 setSelectedCategory(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:border-[#009966] cursor-pointer"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#009966] cursor-pointer"
             >
               <option value="SEMUA">Semua Kategori (2 Kelas)</option>
               <option value="ORGANIK">Organik (Class 0)</option>
@@ -466,7 +466,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                 setSelectedRating(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:border-[#009966] cursor-pointer"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#009966] cursor-pointer"
             >
               <option value="SEMUA">Semua Rating</option>
               <option value="5">5 Bintang (Sangat Akurat ⭐⭐⭐⭐⭐)</option>
@@ -480,7 +480,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-white text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-100">
+              <tr className="bg-white dark:bg-slate-900 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-100 dark:border-slate-800">
                 <th className="py-4 px-4 text-center w-12">No.</th>
                 <th className="py-4 px-4">Nama Lengkap</th>
                 <th className="py-4 px-4">No. HP</th>
@@ -493,7 +493,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                 <th className="py-4 px-4 text-center">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700 bg-white">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900">
               {loading ? (
                 <tr>
                   <td colSpan={10} className="py-12 text-center text-slate-400 font-bold">
@@ -545,7 +545,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                             </span>
                           )}
                         </div>
-                        <span className="font-extrabold text-slate-800 text-xs">{item.warga.nama}</span>
+                        <span className="font-extrabold text-slate-800 dark:text-slate-100 text-xs">{item.warga.nama}</span>
                       </div>
                     </td>
 
@@ -553,7 +553,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                     <td className="py-4 px-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
                         <Phone size={13} className="text-[#009966] shrink-0" />
-                        <span className="font-extrabold text-slate-700 text-xs">{item.warga.phone || "-"}</span>
+                        <span className="font-extrabold text-slate-700 dark:text-slate-300 text-xs">{item.warga.phone || "-"}</span>
                       </div>
                     </td>
 
@@ -564,7 +564,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                           Kecamatan {item.warga.kecamatan}
                         </span>
                       ) : (
-                        <span className="inline-block bg-slate-100 text-slate-400 font-bold text-xs px-3 py-0.5 rounded-xl border border-slate-200">
+                        <span className="inline-block bg-slate-100 dark:bg-slate-800 text-slate-400 font-bold text-xs px-3 py-0.5 rounded-xl border border-slate-200 dark:border-slate-800">
                           -
                         </span>
                       )}
@@ -577,7 +577,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                           Kel. {item.warga.kelurahan}
                         </span>
                       ) : (
-                        <span className="inline-block bg-slate-100 text-slate-400 font-bold text-xs px-3 py-0.5 rounded-xl border border-slate-200">
+                        <span className="inline-block bg-slate-100 dark:bg-slate-800 text-slate-400 font-bold text-xs px-3 py-0.5 rounded-xl border border-slate-200 dark:border-slate-800">
                           -
                         </span>
                       )}
@@ -590,7 +590,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                           {item.warga.rw}
                         </span>
                       ) : (
-                        <span className="inline-block bg-slate-100 text-slate-400 font-bold text-xs px-3 py-0.5 rounded-xl border border-slate-200">
+                        <span className="inline-block bg-slate-100 dark:bg-slate-800 text-slate-400 font-bold text-xs px-3 py-0.5 rounded-xl border border-slate-200 dark:border-slate-800">
                           -
                         </span>
                       )}
@@ -600,7 +600,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                     <td className="py-4 px-4">
                       <div
                         onClick={() => setPreviewImageUrl(item.fotoSampahUrl)}
-                        className="w-12 h-12 rounded-xl overflow-hidden border border-slate-200 shadow-2xs relative group cursor-pointer"
+                        className="w-12 h-12 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xs relative group cursor-pointer"
                       >
                         <img
                           src={item.fotoSampahUrl}
@@ -628,7 +628,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                               <span className="text-emerald-700">🌱 Organik: {org}%</span>
                               <span className="text-amber-700">📦 Anorganik: {inorg}%</span>
                             </div>
-                            <div className="w-full h-2 rounded-full bg-slate-100 flex overflow-hidden border border-slate-200/80 shadow-2xs">
+                            <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 flex overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-2xs">
                               <div
                                 className="bg-emerald-500 h-full transition-all duration-300"
                                 style={{ width: `${org}%` }}
@@ -658,7 +658,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                           setIsDetailModalOpen(true);
                         }}
                         title="Inspeksi Detail Data Mobile"
-                        className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 mx-auto flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                        className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-400 mx-auto flex items-center justify-center transition-all cursor-pointer active:scale-95"
                       >
                         <Eye size={15} />
                       </button>
@@ -687,17 +687,17 @@ const MasterDatasetKlasifikasi: React.FC = () => {
       {/* INSPECTION DETAIL MODAL (READ-ONLY AUDIT) */}
       {isDetailModalOpen && selectedItemForDetail && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-xl w-full overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 max-w-xl w-full overflow-hidden">
             {/* Modal Header */}
-            <div className="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-[#009966] flex items-center justify-center font-bold">
                   <Eye size={20} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base font-black text-slate-800">Inspeksi Datapoint Klasifikasi AI</h3>
-                    <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black border border-slate-200 flex items-center gap-1">
+                    <h3 className="text-base font-black text-slate-800 dark:text-slate-100">Inspeksi Datapoint Klasifikasi AI</h3>
+                    <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-black border border-slate-200 dark:border-slate-800 flex items-center gap-1">
                       <Lock size={10} /> READ-ONLY
                     </span>
                   </div>
@@ -706,7 +706,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
               </div>
               <button
                 onClick={() => setIsDetailModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-all cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-all cursor-pointer"
               >
                 <X size={16} />
               </button>
@@ -715,7 +715,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
             {/* Modal Body */}
             <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
               {/* Image Preview & Timestamp */}
-              <div className="w-full h-56 rounded-2xl overflow-hidden border border-slate-200 relative group shadow-2xs">
+              <div className="w-full h-56 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 relative group shadow-2xs">
                 <img
                   src={selectedItemForDetail.fotoSampahUrl}
                   alt="Foto Sampah Mobile"
@@ -728,9 +728,9 @@ const MasterDatasetKlasifikasi: React.FC = () => {
               </div>
 
               {/* Composition Breakdown (Organik % & Anorganik %) */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 space-y-2.5">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-black text-slate-800">Hasil Klasifikasi Model ONNX (YOLOv8s-seg)</span>
+                  <span className="text-xs font-black text-slate-800 dark:text-slate-100">Hasil Klasifikasi Model ONNX (YOLOv8s-seg)</span>
                   {renderCategoryBadge(selectedItemForDetail.hasilKlasifikasiAi)}
                 </div>
 
@@ -758,25 +758,25 @@ const MasterDatasetKlasifikasi: React.FC = () => {
 
               {/* Details Grid */}
               <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1">
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
                   <span className="text-[10px] font-black uppercase text-slate-400">Pengirim Mobile</span>
-                  <p className="font-extrabold text-slate-800">{selectedItemForDetail.warga.nama}</p>
+                  <p className="font-extrabold text-slate-800 dark:text-slate-100">{selectedItemForDetail.warga.nama}</p>
                   <p className="text-slate-500 font-semibold">{selectedItemForDetail.warga.phone}</p>
                 </div>
 
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1">
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
                   <span className="text-[10px] font-black uppercase text-slate-400">Wilayah Penugasan</span>
-                  <p className="font-extrabold text-slate-800">Kec. {selectedItemForDetail.warga.kecamatan}</p>
+                  <p className="font-extrabold text-slate-800 dark:text-slate-100">Kec. {selectedItemForDetail.warga.kecamatan}</p>
                   <p className="text-slate-500 font-semibold">Kel. {selectedItemForDetail.warga.kelurahan}, {selectedItemForDetail.warga.rw}</p>
                 </div>
 
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1">
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
                   <span className="text-[10px] font-black uppercase text-slate-400">Metadata VPS Host</span>
-                  <p className="font-extrabold text-slate-800">{vpsData?.os.hostname || "TrashCare VPS"}</p>
+                  <p className="font-extrabold text-slate-800 dark:text-slate-100">{vpsData?.os.hostname || "TrashCare VPS"}</p>
                   <p className="text-emerald-700 font-bold">PostgreSQL DB: {vpsData?.database.queryLatencyMs || 62} ms</p>
                 </div>
 
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1">
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
                   <span className="text-[10px] font-black uppercase text-slate-400">Umpan Balik Rating</span>
                   <div>{renderStars(selectedItemForDetail.ratingWarga)}</div>
                   <p className="text-slate-500 font-semibold">Status: {selectedItemForDetail.statusDataset}</p>
@@ -806,7 +806,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
             />
             <button
               onClick={() => setPreviewImageUrl(null)}
-              className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-white text-slate-900 font-bold flex items-center justify-center shadow-xl cursor-pointer hover:bg-slate-100"
+              className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold flex items-center justify-center shadow-xl cursor-pointer hover:bg-slate-100"
             >
               <X size={20} />
             </button>

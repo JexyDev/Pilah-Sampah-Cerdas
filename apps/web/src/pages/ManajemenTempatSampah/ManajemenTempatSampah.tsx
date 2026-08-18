@@ -1082,8 +1082,8 @@ const ManajemenTempatSampah: React.FC = () => {
                         {/* HOVER TOOLTIP (Shows instantly on hover with last deposit log!) */}
                         <Tooltip permanent={false} direction="top" offset={[0, -12]} className="custom-bin-hover-tooltip">
                           <div className="p-2 min-w-[210px] space-y-1.5 font-sans">
-                            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1">
-                              <span className="font-mono font-black text-slate-900 text-xs">{bin.kode}</span>
+                            <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-1">
+                              <span className="font-mono font-black text-slate-900 dark:text-slate-100 text-xs">{bin.kode}</span>
                               <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
                                 isResiduCat
                                   ? "bg-slate-200 text-slate-800"
@@ -1095,19 +1095,19 @@ const ManajemenTempatSampah: React.FC = () => {
                               </span>
                             </div>
 
-                            <div className="text-xs text-slate-700 space-y-0.5">
-                              <div className="font-extrabold text-slate-900">{ownerName}</div>
+                            <div className="text-xs text-slate-700 dark:text-slate-300 space-y-0.5">
+                              <div className="font-extrabold text-slate-900 dark:text-slate-100">{ownerName}</div>
                               {ownerPhone && <div className="text-[11px] font-mono text-emerald-700 font-bold">{formatPhone(ownerPhone)}</div>}
                             </div>
 
-                            <div className="pt-1 border-t border-slate-100 space-y-1">
+                            <div className="pt-1 border-t border-slate-100 dark:border-slate-800 space-y-1">
                               <div className="flex justify-between text-[10.5px] font-bold">
                                 <span className="text-slate-500">Volume Terisi:</span>
                                 <span className={pct >= 90 ? "text-rose-600" : pct >= 70 ? "text-amber-600" : "text-emerald-600"}>
                                   {vol}/{max}L ({pct}%)
                                 </span>
                               </div>
-                              <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                              <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
                                 <div
                                   className={`h-full rounded-full ${pct >= 90 ? "bg-rose-500" : pct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
                                   style={{ width: `${Math.min(pct, 100)}%` }}
@@ -1116,11 +1116,11 @@ const ManajemenTempatSampah: React.FC = () => {
                             </div>
 
                             {/* Log Aktivitas Terakhir Laporan Pemilahan Sampah */}
-                            <div className="pt-1 border-t border-slate-100">
+                            <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
                               <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block mb-0.5">
                                 Log Aktivitas Terakhir:
                               </span>
-                              <div className="text-[10.5px] font-bold text-slate-800 leading-tight">
+                              <div className="text-[10.5px] font-bold text-slate-800 dark:text-slate-100 leading-tight">
                                 {bin.lastActivityLog || bin.verifiedAt || "-"}
                               </div>
                             </div>
@@ -1132,7 +1132,7 @@ const ManajemenTempatSampah: React.FC = () => {
                           <div className="p-2 min-w-[250px] space-y-2.5 font-sans">
                             <div className="flex items-center justify-between border-b pb-1.5">
                               <div>
-                                <span className="font-mono font-black text-slate-900 text-xs block">{bin.kode}</span>
+                                <span className="font-mono font-black text-slate-900 dark:text-slate-100 text-xs block">{bin.kode}</span>
                                 <span className="text-[10px] text-slate-400 font-bold">{bin.rw || "Wilayah Coblong"}</span>
                               </div>
                               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
@@ -1149,7 +1149,7 @@ const ManajemenTempatSampah: React.FC = () => {
                             {/* Owner details */}
                             <div className="bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-100 space-y-1">
                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pemilik Terverifikasi</span>
-                              <div className="font-extrabold text-slate-900 text-xs">{ownerName}</div>
+                              <div className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">{ownerName}</div>
                               {ownerPhone && (
                                 <div className="mt-1">
                                   {renderPhoneCell(ownerPhone)}
@@ -1160,12 +1160,12 @@ const ManajemenTempatSampah: React.FC = () => {
                             {/* Capacity Status */}
                             <div className="space-y-1">
                               <div className="flex justify-between text-xs font-bold">
-                                <span className="text-slate-600">Kapasitas Terisi</span>
+                                <span className="text-slate-600 dark:text-slate-400">Kapasitas Terisi</span>
                                 <span className={pct >= 90 ? "text-rose-600" : pct >= 70 ? "text-amber-600" : "text-emerald-600"}>
                                   {vol}/{max} Liter ({pct}%)
                                 </span>
                               </div>
-                              <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/60">
+                              <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-200/60">
                                 <div
                                   className={`h-full rounded-full ${pct >= 90 ? "bg-rose-500" : pct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
                                   style={{ width: `${Math.min(pct, 100)}%` }}
@@ -1174,19 +1174,19 @@ const ManajemenTempatSampah: React.FC = () => {
                             </div>
 
                             {/* Log Aktivitas Terakhir Laporan Pemilahan Sampah */}
-                            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 space-y-1">
+                            <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-800 space-y-1">
                               <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
                                 Log Aktivitas Terakhir
                               </span>
-                              <div className="text-xs font-bold text-slate-800 leading-tight">
+                              <div className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-tight">
                                 {bin.lastActivityLog || bin.verifiedAt || "-"}
                               </div>
                             </div>
 
                             {/* Verification info & GPS */}
-                            <div className="text-[10.5px] text-slate-500 space-y-0.5 pt-1 border-t border-slate-100">
-                              <div>Diverifikasi: <strong className="text-slate-700">{bin.verifiedAt}</strong></div>
-                              <div>Koordinat: <strong className="font-mono text-slate-700">{lat.toFixed(4)}, {lng.toFixed(4)}, {bin.altitude || 768} mdpl</strong></div>
+                            <div className="text-[10.5px] text-slate-500 space-y-0.5 pt-1 border-t border-slate-100 dark:border-slate-800">
+                              <div>Diverifikasi: <strong className="text-slate-700 dark:text-slate-300">{bin.verifiedAt}</strong></div>
+                              <div>Koordinat: <strong className="font-mono text-slate-700 dark:text-slate-300">{lat.toFixed(4)}, {lng.toFixed(4)}, {bin.altitude || 768} mdpl</strong></div>
                             </div>
                           </div>
                         </Popup>

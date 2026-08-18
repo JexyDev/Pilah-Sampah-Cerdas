@@ -358,26 +358,26 @@ const Leaderboard: React.FC = () => {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto animate-fade-in">
       {/* 1. HEADER BANNER */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200 shrink-0 font-bold">
             <Trophy size={24} />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
               Peringkat Warga
             </h1>
             <p className="text-xs text-slate-500 font-semibold mt-0.5">
-              Pemeringkatan berdasarkan tingkat <strong className="text-slate-600">kepatuhan pemilahan sampah</strong> di wilayah Coblong.
+              Pemeringkatan berdasarkan tingkat <strong className="text-slate-600 dark:text-slate-400">kepatuhan pemilahan sampah</strong> di wilayah Coblong.
             </p>
           </div>
         </div>
       </div>
 
       {/* 2. SYSTEM TOGGLE + SUB-TABS */}
-      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
+      <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         {/* System Toggle */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
@@ -522,40 +522,40 @@ const Leaderboard: React.FC = () => {
         <>
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-4">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-4">
               <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-black border border-amber-200">
                 <Trophy size={20} />
               </div>
               <div>
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Total Peserta</p>
-                <p className="text-xl font-black text-slate-800">{stats.total} <span className="text-xs text-slate-400 font-bold">orang</span></p>
+                <p className="text-xl font-black text-slate-800 dark:text-slate-100">{stats.total} <span className="text-xs text-slate-400 font-bold">orang</span></p>
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-4">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-4">
               <div className="w-11 h-11 rounded-xl bg-emerald-50 text-[#009966] flex items-center justify-center font-black border border-emerald-200">
                 <Recycle size={20} />
               </div>
               <div>
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Rata-rata Poin</p>
-                <p className="text-xl font-black text-slate-800">{stats.avgPoints.toLocaleString("id-ID")} <span className="text-xs text-slate-400 font-bold">poin</span></p>
+                <p className="text-xl font-black text-slate-800 dark:text-slate-100">{stats.avgPoints.toLocaleString("id-ID")} <span className="text-xs text-slate-400 font-bold">poin</span></p>
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-4">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-4">
               <div className="w-11 h-11 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center font-black border border-sky-200">
                 <TrendingUp size={20} />
               </div>
               <div>
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Akumulasi Poin</p>
-                <p className="text-xl font-black text-slate-800">{Math.round(stats.totalPoints).toLocaleString("id-ID")} <span className="text-xs text-slate-400 font-bold">poin</span></p>
+                <p className="text-xl font-black text-slate-800 dark:text-slate-100">{Math.round(stats.totalPoints).toLocaleString("id-ID")} <span className="text-xs text-slate-400 font-bold">poin</span></p>
               </div>
             </div>
           </div>
 
           {/* Page Title */}
           <div className="text-center space-y-1 py-2">
-            <h2 className="text-xl font-black text-slate-800">{pageTitle}</h2>
+            <h2 className="text-xl font-black text-slate-800 dark:text-slate-100">{pageTitle}</h2>
             <p className="text-slate-500 text-xs font-semibold">{pageSubtitle}</p>
           </div>
 
@@ -584,7 +584,7 @@ const Leaderboard: React.FC = () => {
                   >
                     <div className="absolute -top-10 z-10 flex flex-col items-center">
                       <Medal color={medalColor} size={40} className="drop-shadow-md group-hover:scale-110 transition" />
-                      <span className="font-extrabold text-slate-800 bg-white px-2.5 py-0.5 rounded-full text-[11px] shadow-sm border border-slate-200 mt-[-8px]">
+                      <span className="font-extrabold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 px-2.5 py-0.5 rounded-full text-[11px] shadow-sm border border-slate-200 dark:border-slate-800 mt-[-8px]">
                         Peringkat {u.rank}
                       </span>
                     </div>
@@ -608,14 +608,14 @@ const Leaderboard: React.FC = () => {
 
           {/* VISUAL RECHARTS BAR CHART PANEL (Bentuk Chart UI) */}
           {(viewDisplayMode === "BOTH" || viewDisplayMode === "CHART_ONLY") && top10ChartData.length > 0 && (
-            <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#009966] flex items-center justify-center border border-emerald-200 shrink-0">
                     <BarChart3 size={20} />
                   </div>
                   <div>
-                    <h3 className="font-black text-base text-slate-800 tracking-tight">
+                    <h3 className="font-black text-base text-slate-800 dark:text-slate-100 tracking-tight">
                       Grafik Perbandingan Top 10 — {pageTitle}
                     </h3>
                     <p className="text-xs text-slate-500 font-semibold">
@@ -658,29 +658,29 @@ const Leaderboard: React.FC = () => {
 
           {/* TABLE DISPLAY PANEL WITH STANDARDIZED PAGINATION */}
           {(viewDisplayMode === "BOTH" || viewDisplayMode === "GRID_TABLE") && (
-            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col justify-between">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col justify-between">
               <div>
                 {/* Search Toolbar */}
-                <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
                   <div className="relative w-full sm:w-80">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
                     <input
                       type="text"
                       placeholder="Cari nama atau wilayah..."
-                      className="w-full bg-slate-50/50 border border-slate-200 pl-10 pr-4 py-2 rounded-xl text-xs font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#009966] transition-all"
+                      className="w-full bg-slate-50/50 border border-slate-200 dark:border-slate-800 pl-10 pr-4 py-2 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-[#009966] transition-all"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
                   <div className="text-xs text-slate-500 font-semibold">
-                    Total <strong className="text-slate-800 font-black">{currentData.length}</strong> data peserta
+                    Total <strong className="text-slate-800 dark:text-slate-100 font-black">{currentData.length}</strong> data peserta
                   </div>
                 </div>
 
                 {/* Table */}
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-slate-100 text-xs text-left">
-                    <thead className="bg-slate-50/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                  <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-xs text-left">
+                    <thead className="bg-slate-50/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                       <tr>
                         <th
                           className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors w-20"
@@ -713,7 +713,7 @@ const Leaderboard: React.FC = () => {
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                       {paginatedData.length === 0 ? (
                         <EmptyTableState
                           colSpan={extraInfoHeader ? 5 : 4}
@@ -730,25 +730,25 @@ const Leaderboard: React.FC = () => {
                               key={u.id}
                               onClick={() => setSelectedItem(u)}
                               className={`transition-colors cursor-pointer ${
-                                isSelected ? "bg-amber-50/60 font-semibold" : "hover:bg-slate-50/80"
+                                isSelected ? "bg-amber-50/60 dark:bg-amber-950/40 font-semibold" : "hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
                               }`}
                             >
-                              <td className="py-3.5 px-4 font-black text-slate-700">
+                              <td className="py-3.5 px-4 font-black text-slate-700 dark:text-slate-300">
                                 <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-[11px] font-black ${
-                                  u.rank === 1 ? "bg-amber-100 text-amber-700 border border-amber-200" :
-                                  u.rank === 2 ? "bg-slate-100 text-slate-600 border border-slate-200" :
-                                  u.rank === 3 ? "bg-orange-100 text-orange-700 border border-orange-200" :
-                                  "bg-slate-50 text-slate-500"
+                                  u.rank === 1 ? "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40" :
+                                  u.rank === 2 ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700" :
+                                  u.rank === 3 ? "bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-700/40" :
+                                  "bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
                                 }`}>
                                   {u.rank}
                                 </span>
                               </td>
-                              <td className="py-3.5 px-4 font-bold text-slate-800">{u.name}</td>
-                              <td className="py-3.5 px-4 text-slate-600 font-semibold">{u.subtitle || "-"}</td>
+                              <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-100">{u.name}</td>
+                              <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 font-semibold">{u.subtitle || "-"}</td>
                               {extraInfoHeader && (
-                                <td className="py-3.5 px-4 text-slate-600 font-medium text-[11px]">{u.extraInfo || "-"}</td>
+                                <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 font-medium text-[11px]">{u.extraInfo || "-"}</td>
                               )}
-                              <td className="py-3.5 px-4 font-black text-[#009966] text-right text-sm">
+                              <td className="py-3.5 px-4 font-black text-[#009966] dark:text-emerald-400 text-right text-sm">
                                 {Math.round(u.points).toLocaleString("id-ID")}
                               </td>
                             </tr>
@@ -780,25 +780,25 @@ const Leaderboard: React.FC = () => {
       {/* MODAL DETAIL POP-UP (PREMIUM TRASHCARE UX & TYPOGRAPHY) */}
       {selectedItem && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in zoom-in-95 duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col border border-slate-200">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800">
             {/* Header Modal */}
-            <div className="p-5 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+            <div className="p-5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200/60 font-bold shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center border border-emerald-200/60 dark:border-emerald-700/40 font-bold shrink-0">
                   <Trophy size={20} />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-800 tracking-tight leading-snug">
+                  <h3 className="text-base font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">
                     Detail Peringkat Peserta
                   </h3>
-                  <p className="text-[11px] text-slate-500 font-semibold">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
                     Informasi perolehan poin &amp; posisi peringkat
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedItem(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 flex items-center justify-center transition cursor-pointer"
                 title="Tutup"
               >
                 <X size={16} />
@@ -806,56 +806,56 @@ const Leaderboard: React.FC = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-4 text-xs text-slate-700">
+            <div className="p-6 space-y-4 text-xs text-slate-700 dark:text-slate-300">
               {/* User Hero Banner */}
-              <div className="flex items-center gap-3.5 p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="flex items-center gap-3.5 p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800">
                 <div className="w-11 h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-base shadow-2xs shrink-0">
                   #{selectedItem.rank}
                 </div>
                 <div className="min-w-0">
-                  <h4 className="font-black text-slate-800 text-base truncate">{selectedItem.name}</h4>
-                  <p className="text-xs text-slate-500 font-semibold truncate">{selectedItem.subtitle}</p>
+                  <h4 className="font-black text-slate-800 dark:text-slate-100 text-base truncate">{selectedItem.name}</h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold truncate">{selectedItem.subtitle}</p>
                 </div>
               </div>
 
               {/* Data Grid Cards */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
                   <span className="text-[10.5px] font-black text-slate-400 uppercase tracking-wider block">
                     Perolehan Poin
                   </span>
-                  <span className="font-mono font-black text-[#009966] text-lg block">
+                  <span className="font-mono font-black text-[#009966] dark:text-emerald-400 text-lg block">
                     {Math.round(selectedItem.points).toLocaleString("id-ID")}{" "}
                     <span className="text-xs font-bold text-slate-400">Poin</span>
                   </span>
                 </div>
 
-                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
                   <span className="text-[10.5px] font-black text-slate-400 uppercase tracking-wider block">
                     Posisi Peringkat
                   </span>
-                  <span className="font-extrabold text-slate-800 text-sm flex items-center gap-1 mt-1">
-                    <CheckCircle2 size={15} className="text-[#009966]" /> Peringkat #{selectedItem.rank}
+                  <span className="font-extrabold text-slate-800 dark:text-slate-100 text-sm flex items-center gap-1 mt-1">
+                    <CheckCircle2 size={15} className="text-[#009966] dark:text-emerald-400" /> Peringkat #{selectedItem.rank}
                   </span>
                 </div>
               </div>
 
               {/* Extra Info (If Available) */}
               {selectedItem.extraInfo && (
-                <div className="p-3.5 bg-sky-50/60 rounded-2xl border border-sky-200/80 space-y-1">
-                  <span className="text-[10.5px] font-black text-sky-700 uppercase tracking-wider block flex items-center gap-1">
+                <div className="p-3.5 bg-sky-50/60 dark:bg-sky-950/60 rounded-2xl border border-sky-200/80 dark:border-sky-700/40 space-y-1">
+                  <span className="text-[10.5px] font-black text-sky-700 dark:text-sky-300 uppercase tracking-wider block flex items-center gap-1">
                     <FileText size={13} /> Metrik Kinerja Tambahan
                   </span>
-                  <p className="text-xs font-bold text-slate-700 leading-relaxed">{selectedItem.extraInfo}</p>
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300 leading-relaxed">{selectedItem.extraInfo}</p>
                 </div>
               )}
             </div>
 
             {/* Footer Modal */}
-            <div className="px-6 py-3.5 border-t border-slate-100 bg-slate-50/80 flex justify-end">
+            <div className="px-6 py-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 flex justify-end">
               <button
                 onClick={() => setSelectedItem(null)}
-                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black transition cursor-pointer shadow-2xs"
+                className="px-5 py-2.5 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white rounded-xl text-xs font-black transition cursor-pointer shadow-2xs"
               >
                 Tutup
               </button>

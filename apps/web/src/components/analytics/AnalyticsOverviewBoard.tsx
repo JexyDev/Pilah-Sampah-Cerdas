@@ -118,18 +118,18 @@ const TableSection: React.FC<TableSectionProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between space-y-3">
+    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col justify-between space-y-3">
       {/* Header & Search */}
-      <div className="p-5 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-2xl ${iconBgColor} ${iconTextColor} flex items-center justify-center border shrink-0 font-bold`}>
             <Icon size={20} />
           </div>
           <div>
-            <h3 className="font-extrabold text-base text-slate-800 tracking-tight">
+            <h3 className="font-extrabold text-base text-slate-800 dark:text-slate-100 tracking-tight">
               {title}
             </h3>
-            <p className="text-xs text-slate-500 font-medium">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               {subtitle}
             </p>
           </div>
@@ -140,7 +140,7 @@ const TableSection: React.FC<TableSectionProps> = ({
           <input
             type="text"
             placeholder="Cari..."
-            className="w-full bg-slate-50/70 border border-slate-200 pl-10 pr-4 py-2 rounded-xl text-xs font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#009966] transition-all"
+            className="w-full bg-slate-50/70 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 pl-10 pr-4 py-2 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] transition-all"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -149,53 +149,53 @@ const TableSection: React.FC<TableSectionProps> = ({
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-100 text-xs text-left">
-          <thead className="bg-slate-50/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+        <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-xs text-left">
+          <thead className="bg-slate-50/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider border-b border-slate-200 dark:border-slate-700">
             <tr>
               <th
-                className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors w-20"
+                className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors w-20"
                 onClick={() => toggleSort("rank")}
               >
                 <div className="flex items-center gap-1.5">Peringkat <ArrowUpDown size={12} /></div>
               </th>
               <th
-                className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 onClick={() => toggleSort("name")}
               >
                 <div className="flex items-center gap-1.5">{nameHeader} <ArrowUpDown size={12} /></div>
               </th>
               <th className="py-3.5 px-4">{subHeader}</th>
               <th
-                className="py-3.5 px-4 text-right cursor-pointer hover:bg-slate-100 transition-colors"
+                className="py-3.5 px-4 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 onClick={() => toggleSort("score")}
               >
                 <div className="flex items-center justify-end gap-1.5"><ArrowUpDown size={12} /> {scoreHeader}</div>
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
             {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={4} className="py-12 text-center text-slate-400 font-bold">
+                <td colSpan={4} className="py-12 text-center text-slate-400 dark:text-slate-500 font-bold">
                   Tidak ada data yang sesuai pencarian.
                 </td>
               </tr>
             ) : (
               paginatedData.map((item) => (
-                <tr key={item.rank} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="py-3.5 px-4 font-black text-slate-700">
+                <tr key={item.rank} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                  <td className="py-3.5 px-4 font-black text-slate-700 dark:text-slate-300">
                     <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-[11px] font-black ${
-                      item.rank === 1 ? "bg-amber-100 text-amber-700 border border-amber-200" :
-                      item.rank === 2 ? "bg-slate-100 text-slate-600 border border-slate-200" :
-                      item.rank === 3 ? "bg-orange-100 text-orange-700 border border-orange-200" :
-                      "bg-slate-50 text-slate-500"
+                      item.rank === 1 ? "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40" :
+                      item.rank === 2 ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700" :
+                      item.rank === 3 ? "bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-700/40" :
+                      "bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
                     }`}>
                       {item.rank}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4 font-bold text-slate-800">{item.name}</td>
-                  <td className="py-3.5 px-4 text-slate-500 font-semibold">{item.sub || "-"}</td>
-                  <td className="py-3.5 px-4 font-black text-[#009966] text-right text-sm">
+                  <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-100">{item.name}</td>
+                  <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 font-semibold">{item.sub || "-"}</td>
+                  <td className="py-3.5 px-4 font-black text-[#009966] dark:text-emerald-400 text-right text-sm">
                     {item.score}
                   </td>
                 </tr>
@@ -431,54 +431,54 @@ export const AnalyticsOverviewBoard: React.FC = () => {
   };
 
   return (
-    <div className="w-full space-y-6 text-slate-800 font-sans">
+    <div className="w-full space-y-6 text-slate-800 dark:text-slate-100 font-sans">
       
       {/* ----------------- TOP SECTION: 2 RECHARTS BAR CHARTS ROW ----------------- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         
         {/* Chart 1: Kepatuhan Pemilahan per Kelurahan */}
-        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#009966] flex items-center justify-center border border-emerald-200 shrink-0 font-bold">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-700/40 shrink-0 font-bold">
                 <BarChart3 size={20} />
               </div>
               <div>
-                <h3 className="font-extrabold text-base text-slate-900 leading-snug">
+                <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 leading-snug">
                   Grafik Kepatuhan Pemilahan per Kelurahan
                 </h3>
-                <p className="text-xs text-slate-500 font-medium">
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                   Persentase kepatuhan dalam pemilahan sampah
                 </p>
               </div>
             </div>
 
-            <div className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black flex items-center gap-1">
-              <span className="text-[10px] text-emerald-600 font-bold uppercase">Rata-rata</span>
-              <span className="text-emerald-700">{avgCompliance}%</span>
+            <div className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/40 text-emerald-800 dark:text-emerald-300 text-xs font-black flex items-center gap-1">
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Rata-rata</span>
+              <span className="text-emerald-700 dark:text-emerald-300">{avgCompliance}%</span>
             </div>
           </div>
 
           {/* Recharts Bar Chart */}
           <div className="h-64 w-full pt-2">
             {kepatuhanData.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-slate-400 text-xs font-bold">
+              <div className="h-full flex items-center justify-center text-slate-400 dark:text-slate-500 text-xs font-bold">
                 Memuat data kepatuhan kelurahan...
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={kepatuhanData} margin={{ top: 15, right: 15, left: -15, bottom: 25 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} vertical={false} />
                   <XAxis
                     dataKey="name"
-                    tick={{ fill: "#64748b", fontSize: 10, fontWeight: 700 }}
+                    tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 700 }}
                     interval={0}
                     angle={-20}
                     textAnchor="end"
                   />
                   <YAxis
                     domain={[0, 100]}
-                    tick={{ fill: "#64748b", fontSize: 10, fontWeight: 700 }}
+                    tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 700 }}
                     axisLine={false}
                     tickLine={false}
                     unit="%"
@@ -496,47 +496,47 @@ export const AnalyticsOverviewBoard: React.FC = () => {
         </div>
 
         {/* Chart 2: Volume Sampah per Kelurahan */}
-        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-200 shrink-0 font-bold">
+              <div className="w-10 h-10 rounded-2xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center border border-sky-200 dark:border-sky-700/40 shrink-0 font-bold">
                 <Trash2 size={20} />
               </div>
               <div>
-                <h3 className="font-extrabold text-base text-slate-900 leading-snug">
+                <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 leading-snug">
                   Grafik Volume Sampah per Kelurahan
                 </h3>
-                <p className="text-xs text-slate-500 font-medium">
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                   Total volume sampah terkumpul
                 </p>
               </div>
             </div>
 
-            <div className="px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-xs font-black flex items-center gap-1">
-              <span className="text-[10px] text-sky-600 font-bold uppercase">Total</span>
-              <span className="text-sky-700">{totalVolumeDisplay}</span>
+            <div className="px-3 py-1 rounded-full bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-700/40 text-sky-800 dark:text-sky-300 text-xs font-black flex items-center gap-1">
+              <span className="text-[10px] text-sky-600 dark:text-sky-400 font-bold uppercase">Total</span>
+              <span className="text-sky-700 dark:text-sky-300">{totalVolumeDisplay}</span>
             </div>
           </div>
 
           {/* Recharts Bar Chart */}
           <div className="h-64 w-full pt-2">
             {volumeData.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-slate-400 text-xs font-bold">
+              <div className="h-full flex items-center justify-center text-slate-400 dark:text-slate-500 text-xs font-bold">
                 Memuat data volume sampah kelurahan...
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={volumeData} margin={{ top: 15, right: 15, left: -15, bottom: 25 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} vertical={false} />
                   <XAxis
                     dataKey="name"
-                    tick={{ fill: "#64748b", fontSize: 10, fontWeight: 700 }}
+                    tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 700 }}
                     interval={0}
                     angle={-20}
                     textAnchor="end"
                   />
                   <YAxis
-                    tick={{ fill: "#64748b", fontSize: 10, fontWeight: 700 }}
+                    tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 700 }}
                     axisLine={false}
                     tickLine={false}
                   />

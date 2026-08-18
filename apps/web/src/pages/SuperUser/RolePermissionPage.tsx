@@ -198,7 +198,7 @@ const RolePermissionPage: React.FC = () => {
             <Shield className="text-purple-600" size={22} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-800">Manajemen Hak Akses (RBAC)</h1>
+            <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">Manajemen Hak Akses (RBAC)</h1>
             <p className="text-xs text-slate-500 mt-0.5">
               Atur hak akses per fitur untuk setiap role pengguna sistem.
             </p>
@@ -231,9 +231,9 @@ const RolePermissionPage: React.FC = () => {
         {/* Right: Permission Matrix */}
         <div className="col-span-9">
           {selectedRole && localPerms[selectedRole.roleId] ? (
-            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
               {/* Header */}
-              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span
                     className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
@@ -261,7 +261,7 @@ const RolePermissionPage: React.FC = () => {
               </div>
 
               {/* Column Headers */}
-              <div className="grid grid-cols-[1fr_repeat(4,_80px)] px-5 py-2 bg-slate-50 border-b border-slate-100">
+              <div className="grid grid-cols-[1fr_repeat(4,_80px)] px-5 py-2 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Fitur / Resource</span>
                 {PERMISSION_COLS.map((col) => (
                   <span key={col.key} className={`text-xs font-bold text-center uppercase tracking-wide ${col.color}`}>
@@ -305,7 +305,7 @@ const RolePermissionPage: React.FC = () => {
                               key={resource.key}
                               className="grid grid-cols-[1fr_repeat(4,_80px)] px-5 py-3 hover:bg-slate-50/80 transition items-center"
                             >
-                              <span className="text-sm text-slate-700 font-medium">{resource.label}</span>
+                              <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{resource.label}</span>
                               {PERMISSION_COLS.map((col) => {
                                 const val = perm[col.key];
                                 return (

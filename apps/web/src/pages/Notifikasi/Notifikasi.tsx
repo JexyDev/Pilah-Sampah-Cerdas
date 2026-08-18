@@ -134,14 +134,14 @@ const NotificationModal = ({
             </div>
           </div>
 
-          <div className="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden">
-            <div className="p-4 border-b border-slate-200 bg-white">
+          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
                 Detail Pengajuan
               </p>
-              <p className="text-xs text-slate-800 font-extrabold">{notif.desc}</p>
+              <p className="text-xs text-slate-800 dark:text-slate-100 font-extrabold">{notif.desc}</p>
             </div>
-            <div className="p-4 bg-slate-50 flex flex-col gap-2">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 flex flex-col gap-2">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
                 Foto Bukti dari Warga
               </p>
@@ -149,10 +149,10 @@ const NotificationModal = ({
                 <img
                   src={evidencePhoto}
                   alt="Bukti tempat sampah penuh"
-                  className="w-full h-48 object-cover rounded-xl border border-slate-200 shadow-2xs"
+                  className="w-full h-48 object-cover rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs"
                 />
               ) : (
-                <div className="w-full h-36 bg-slate-100 rounded-xl flex flex-col items-center justify-center text-slate-400 border border-dashed border-slate-200">
+                <div className="w-full h-36 bg-slate-100 dark:bg-slate-800 rounded-xl flex flex-col items-center justify-center text-slate-400 border border-dashed border-slate-200 dark:border-slate-800">
                   <ImageOff size={32} />
                   <p className="text-xs text-slate-400 font-semibold mt-1">Foto bukti belum diunggah oleh warga</p>
                 </div>
@@ -191,13 +191,13 @@ const NotificationModal = ({
             </div>
           </div>
 
-          <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center bg-slate-50">
+          <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col items-center justify-center text-center bg-slate-50 dark:bg-slate-800/60">
             {photo ? (
               <div className="relative w-full">
                 <img
                   src={photo}
                   alt="Bukti tempat sampah penuh"
-                  className="w-full h-48 object-cover rounded-xl border border-slate-200"
+                  className="w-full h-48 object-cover rounded-xl border border-slate-200 dark:border-slate-800"
                 />
                 <button
                   onClick={() => {
@@ -206,15 +206,15 @@ const NotificationModal = ({
                   }}
                   className="absolute top-2 right-2 bg-white/80 p-1.5 rounded-full hover:bg-white shadow-sm transition-colors cursor-pointer"
                 >
-                  <X size={16} className="text-slate-700" />
+                  <X size={16} className="text-slate-700 dark:text-slate-300" />
                 </button>
               </div>
             ) : (
               <>
-                <div className="bg-white p-3 rounded-2xl shadow-2xs mb-3 text-[#009966]">
+                <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl shadow-2xs mb-3 text-[#009966]">
                   <Camera size={24} />
                 </div>
-                <p className="text-xs font-black text-slate-800 mb-0.5">Unggah Foto Bukti tempat Sampah</p>
+                <p className="text-xs font-black text-slate-800 dark:text-slate-100 mb-0.5">Unggah Foto Bukti tempat Sampah</p>
                 <p className="text-[11px] text-slate-400 font-semibold mb-4">Format JPG, PNG, WEBP max 2MB</p>
                 <input
                   type="file"
@@ -226,7 +226,7 @@ const NotificationModal = ({
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="bg-white border border-slate-200 hover:border-[#009966] hover:text-[#009966] text-slate-700 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-2xs cursor-pointer"
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-[#009966] hover:text-[#009966] text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-2xs cursor-pointer"
                 >
                   <Upload size={15} /> Buka Kamera / Pilih File
                 </button>
@@ -302,7 +302,7 @@ const NotificationModal = ({
     }
 
     return (
-      <div className="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs font-semibold text-slate-700 leading-relaxed">
+      <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 leading-relaxed">
         {notif.desc}
       </div>
     );
@@ -310,7 +310,7 @@ const NotificationModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 border border-slate-200">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 border border-slate-200 dark:border-slate-800">
         <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-[#009966] text-white">
           <div className="flex items-center gap-2">
             <h3 className="font-black text-white text-base">Detail Notifikasi</h3>
@@ -348,14 +348,14 @@ const NotificationModal = ({
               <Bell size={20} />
             </div>
             <div>
-              <h4 className="text-sm font-black text-slate-800 leading-tight mb-0.5">
+              <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 leading-tight mb-0.5">
                 {notif.title}
               </h4>
               <p className="text-[11px] text-slate-400 font-bold">{notif.time}</p>
             </div>
           </div>
 
-          <p className="text-xs font-semibold text-slate-600 leading-relaxed">{notif.desc}</p>
+          <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 leading-relaxed">{notif.desc}</p>
 
           {renderContent()}
         </div>
@@ -536,12 +536,12 @@ const Notifikasi: React.FC = () => {
   });
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-100">
       {/* 1. CLEAN FLAT HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Pusat Notifikasi</h1>
+            <h1 className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">Pusat Notifikasi</h1>
             {unreadCount > 0 && (
               <span className="px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
                 {unreadCount} Belum Dibaca
@@ -556,13 +556,13 @@ const Notifikasi: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             onClick={handleMarkAllRead}
-            className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-2 shadow-2xs transition-all cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center gap-2 shadow-2xs transition-all cursor-pointer"
           >
             <CheckCheck size={15} /> Tandai Dibaca Semua
           </button>
           <button
             onClick={handleClearAll}
-            className="px-4 py-2.5 rounded-xl bg-white border border-rose-200 hover:bg-rose-50 text-rose-700 text-xs font-bold flex items-center gap-2 shadow-2xs transition-all cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-rose-200 hover:bg-rose-50 text-rose-700 text-xs font-bold flex items-center gap-2 shadow-2xs transition-all cursor-pointer"
           >
             <Trash2 size={15} /> Hapus Semua
           </button>
@@ -571,53 +571,53 @@ const Notifikasi: React.FC = () => {
 
       {/* 2. STATS HIGHLIGHT CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs flex items-center gap-4">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-[#009966] flex items-center justify-center shrink-0 font-bold">
             <Bell size={24} />
           </div>
           <div>
             <p className="text-[10.5px] font-black uppercase text-slate-400 tracking-wider">Total Notifikasi</p>
-            <h3 className="text-2xl font-black text-slate-800">{notifications.length}</h3>
+            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{notifications.length}</h3>
             <p className="text-[10px] font-bold text-emerald-600 mt-0.5">Tercatat di Sistem</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs flex items-center gap-4">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center shrink-0 font-bold">
             <Info size={24} />
           </div>
           <div>
             <p className="text-[10.5px] font-black uppercase text-slate-400 tracking-wider">Belum Dibaca</p>
-            <h3 className="text-2xl font-black text-slate-800">{unreadCount}</h3>
+            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{unreadCount}</h3>
             <p className="text-[10px] font-bold text-sky-600 mt-0.5">Perlu Ditinjau</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs flex items-center gap-4">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 font-bold">
             <AlertCircle size={24} />
           </div>
           <div>
             <p className="text-[10.5px] font-black uppercase text-slate-400 tracking-wider">Peristiwa Kritis</p>
-            <h3 className="text-2xl font-black text-slate-800">{criticalCount}</h3>
+            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{criticalCount}</h3>
             <p className="text-[10px] font-bold text-rose-600 mt-0.5">Kapasitas Tempat Sampah &gt;90%</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs flex items-center gap-4">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 font-bold">
             <Truck size={24} />
           </div>
           <div>
             <p className="text-[10.5px] font-black uppercase text-slate-400 tracking-wider">Informasi Layanan</p>
-            <h3 className="text-2xl font-black text-slate-800">{infoCount}</h3>
+            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{infoCount}</h3>
             <p className="text-[10px] font-bold text-indigo-600 mt-0.5">Jadwal &amp; Poin Insentif</p>
           </div>
         </div>
       </div>
 
       {/* 3. FILTER TABS & SEARCH BAR */}
-      <div className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <button
             onClick={() => setFilterTab("SEMUA")}
@@ -653,7 +653,7 @@ const Notifikasi: React.FC = () => {
       </div>
 
       {/* 4. NOTIFICATION ITEMS LIST */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-4 space-y-3 min-h-[380px]">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-4 space-y-3 min-h-[380px]">
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3 font-bold text-xs">
             <Loader2 className="animate-spin text-[#009966]" size={32} />

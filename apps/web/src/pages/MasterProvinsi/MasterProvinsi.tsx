@@ -183,7 +183,7 @@ const MasterProvinsi: React.FC = () => {
             <Globe2 size={24} />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
               Provinsi
             </h1>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
@@ -206,12 +206,12 @@ const MasterProvinsi: React.FC = () => {
 
       {/* 2. Top Summary KPI Cards matching Manajemen Tempat Sampah */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">
               TOTAL PROVINSI DATABASE
             </span>
-            <h3 className="text-2xl font-black text-slate-900">
+            <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100">
               {provinsiList.length} <span className="text-xs font-bold text-slate-500">Wilayah</span>
             </h3>
           </div>
@@ -220,7 +220,7 @@ const MasterProvinsi: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">
               PROVINSI UTAMA WILAYAH
@@ -232,7 +232,7 @@ const MasterProvinsi: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">
               INTEGRASI BACKEND API
@@ -246,7 +246,7 @@ const MasterProvinsi: React.FC = () => {
       </div>
 
       {/* 3. Search Bar Container */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="relative w-full sm:w-80">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
@@ -257,7 +257,7 @@ const MasterProvinsi: React.FC = () => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-9 pr-4 py-2 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#009966] focus:bg-white transition-all"
+            className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#009966] focus:bg-white transition-all"
           />
           {searchTerm && (
             <button
@@ -270,22 +270,22 @@ const MasterProvinsi: React.FC = () => {
         </div>
 
         <div className="text-xs font-bold text-slate-400 self-end sm:self-auto">
-          Menampilkan <span className="text-slate-800">{filteredProvinsi.length}</span> Provinsi
+          Menampilkan <span className="text-slate-800 dark:text-slate-100">{filteredProvinsi.length}</span> Provinsi
         </div>
       </div>
 
       {/* 4. Main Data Table matching Manajemen Tempat Sampah (Gambar Referensi User) */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+              <tr className="bg-slate-50/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                 <th className="py-3.5 px-4 text-center w-16 whitespace-nowrap">NO</th>
                 <th className="py-3.5 px-4 whitespace-nowrap">PROVINSI</th>
                 {!isReadOnly && <th className="py-3.5 px-4 text-center w-32 whitespace-nowrap">AKSI</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loading ? (
                 <tr>
                   <td colSpan={3} className="py-16 text-center">
@@ -293,7 +293,7 @@ const MasterProvinsi: React.FC = () => {
                       <div className="w-10 h-10 rounded-2xl bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20">
                         <Loader2 className="animate-spin text-[#009966]" size={22} />
                       </div>
-                      <p className="text-xs font-black text-slate-800">Memuat Data Provinsi Real-Time...</p>
+                      <p className="text-xs font-black text-slate-800 dark:text-slate-100">Memuat Data Provinsi Real-Time...</p>
                     </div>
                   </td>
                 </tr>
@@ -305,7 +305,7 @@ const MasterProvinsi: React.FC = () => {
                       <p>{error}</p>
                       <button
                         onClick={fetchProvinsi}
-                        className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs hover:bg-slate-200 transition cursor-pointer"
+                        className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs hover:bg-slate-200 transition cursor-pointer"
                       >
                         Coba Lagi
                       </button>
@@ -319,7 +319,7 @@ const MasterProvinsi: React.FC = () => {
                   return (
                     <tr
                       key={prov.id}
-                      className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors text-xs text-slate-700 font-medium whitespace-nowrap"
+                      className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/80 transition-colors text-xs text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap"
                     >
                       {/* NO */}
                       <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-500 whitespace-nowrap">
@@ -332,7 +332,7 @@ const MasterProvinsi: React.FC = () => {
                           <div className="w-8 h-8 rounded-full bg-teal-50 text-teal-700 border border-teal-200/80 flex items-center justify-center shrink-0 shadow-2xs">
                             <Globe2 size={15} />
                           </div>
-                          <span className="font-extrabold text-slate-900 text-xs">
+                          <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
                             {prov.nama}
                           </span>
                         </div>
@@ -397,13 +397,13 @@ const MasterProvinsi: React.FC = () => {
       {/* 5. Modal Tambah / Edit Provinsi */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-800 space-y-5 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-[#009966]/10 text-[#009966] flex items-center justify-center font-bold">
                   <Globe2 size={18} />
                 </div>
-                <h3 className="font-black text-slate-900 text-base">
+                <h3 className="font-black text-slate-900 dark:text-slate-100 text-base">
                   {modalType === "add" ? "Tambah Provinsi Baru" : "Edit Data Provinsi"}
                 </h3>
               </div>
@@ -417,7 +417,7 @@ const MasterProvinsi: React.FC = () => {
 
             <form onSubmit={handleSubmitForm} className="space-y-4">
               <div>
-                <label className="text-xs font-extrabold text-slate-700 block mb-1">
+                <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 block mb-1">
                   Nama Provinsi <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -426,15 +426,15 @@ const MasterProvinsi: React.FC = () => {
                   placeholder="Contoh: Jawa Barat"
                   value={formData.nama}
                   onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#009966] focus:bg-white transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#009966] focus:bg-white transition-all"
                 />
               </div>
 
-              <div className="flex gap-3 pt-3 border-t border-slate-100">
+              <div className="flex gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-2.5 border border-slate-200 text-slate-700 font-extrabold text-xs rounded-xl hover:bg-slate-50 transition cursor-pointer"
+                  className="flex-1 py-2.5 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl hover:bg-slate-50 transition cursor-pointer"
                 >
                   Batal
                 </button>
@@ -455,20 +455,20 @@ const MasterProvinsi: React.FC = () => {
       {/* 6. Modal Hapus Provinsi */}
       {isDeleteModalOpen && provToDelete && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center space-y-4 animate-in zoom-in-95 duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 dark:border-slate-800 text-center space-y-4 animate-in zoom-in-95 duration-150">
             <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mx-auto border border-rose-100">
               <Trash2 size={24} />
             </div>
             <div>
-              <h3 className="font-black text-lg text-slate-900">Konfirmasi Hapus</h3>
+              <h3 className="font-black text-lg text-slate-900 dark:text-slate-100">Konfirmasi Hapus</h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Apakah Anda yakin ingin menghapus provinsi <span className="font-bold text-slate-800">"{provToDelete.nama}"</span>?
+                Apakah Anda yakin ingin menghapus provinsi <span className="font-bold text-slate-800 dark:text-slate-100">"{provToDelete.nama}"</span>?
               </p>
             </div>
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="flex-1 py-2.5 border border-slate-200 text-slate-700 font-extrabold text-xs rounded-xl hover:bg-slate-50 transition cursor-pointer"
+                className="flex-1 py-2.5 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl hover:bg-slate-50 transition cursor-pointer"
               >
                 Batal
               </button>

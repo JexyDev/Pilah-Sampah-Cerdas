@@ -56,26 +56,26 @@ export const BantuFasilitasForm = ({ onSuccess }: { onSuccess: () => void }) => 
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mt-6">
-      <h3 className="font-bold text-lg mb-4 text-green-700">Bantu Input Fasilitas GIS Warga</h3>
-      <p className="text-sm text-gray-500 mb-4">Input fasilitas seperti Bata Terawang atau Loseda ke dalam peta (GPS otomatis direkam).</p>
+    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 text-slate-800 dark:text-slate-100 mt-6">
+      <h3 className="font-bold text-lg mb-4 text-emerald-700 dark:text-emerald-400">Bantu Input Fasilitas GIS Warga</h3>
+      <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">Input fasilitas seperti Bata Terawang atau Loseda ke dalam peta (GPS otomatis direkam).</p>
       
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">ID Warga / Nama Pemilik</label>
-          <input type="text" name="userId" required value={formData.userId} onChange={handleChange} className="mt-1 block w-full rounded-md border p-2" placeholder="Nama Warga" />
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">ID Warga / Nama Pemilik</label>
+          <input type="text" name="userId" required value={formData.userId} onChange={handleChange} className="mt-1 block w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-slate-900 dark:text-slate-100" placeholder="Nama Warga" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">ID Wilayah RT/RW</label>
-          <input type="number" name="rtRwId" required value={formData.rtRwId} onChange={handleChange} className="mt-1 block w-full rounded-md border p-2" placeholder="Cth: 1" />
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">ID Wilayah RT/RW</label>
+          <input type="number" name="rtRwId" required value={formData.rtRwId} onChange={handleChange} className="mt-1 block w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-slate-900 dark:text-slate-100" placeholder="Cth: 1" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Nama Fasilitas</label>
-          <input type="text" name="nama" required value={formData.nama} onChange={handleChange} className="mt-1 block w-full rounded-md border p-2" placeholder="Loseda Pak Budi" />
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Nama Fasilitas</label>
+          <input type="text" name="nama" required value={formData.nama} onChange={handleChange} className="mt-1 block w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-slate-900 dark:text-slate-100" placeholder="Loseda Pak Budi" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Jenis Fasilitas</label>
-          <select name="jenis" value={formData.jenis} onChange={handleChange} className="mt-1 block w-full rounded-md border p-2 bg-white">
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Jenis Fasilitas</label>
+          <select name="jenis" value={formData.jenis} onChange={handleChange} className="mt-1 block w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-slate-900 dark:text-slate-100">
             <option value="BATA_TERAWANG">Bata Terawang</option>
             <option value="LOSEDA">Loseda (Kompos Pipa)</option>
             <option value="RUMAH_MAGGOT">Rumah Maggot</option>
@@ -87,31 +87,31 @@ export const BantuFasilitasForm = ({ onSuccess }: { onSuccess: () => void }) => 
         </div>
         
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700">Foto Fasilitas (Wajib)</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Foto Fasilitas (Wajib)</label>
           {formData.photoUrl ? (
             <div className="mt-2 relative inline-block">
-              <img src={formData.photoUrl} alt="Preview" className="h-32 rounded-lg object-cover border" />
+              <img src={formData.photoUrl} alt="Preview" className="h-32 rounded-lg object-cover border border-slate-200 dark:border-slate-700" />
               <button 
                 type="button" 
                 onClick={() => setFormData({ ...formData, photoUrl: "" })}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs cursor-pointer"
               >✕</button>
             </div>
           ) : (
             <button 
               type="button" 
               onClick={handleTakePhoto}
-              className="mt-2 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 flex items-center gap-2"
+              className="mt-2 px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-md text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
             >
-              <Camera className="w-5 h-5 text-gray-400" />
+              <Camera className="w-5 h-5 text-gray-400 dark:text-slate-500" />
               Ambil/Unggah Foto
             </button>
           )}
         </div>
         
         <div className="md:col-span-2 mt-4">
-          {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
-          <button type="submit" disabled={loading} className="w-full bg-green-700 text-white py-3 rounded-lg hover:bg-green-800 disabled:opacity-50">
+          {error && <p className="text-red-500 dark:text-red-400 text-sm mb-2">{error}</p>}
+          <button type="submit" disabled={loading} className="w-full bg-emerald-700 hover:bg-emerald-800 text-white py-3 rounded-lg disabled:opacity-50 font-bold transition-colors cursor-pointer">
             {loading ? "Menyimpan & Merekam GPS..." : "Simpan Fasilitas & Rekam Lokasi"}
           </button>
         </div>

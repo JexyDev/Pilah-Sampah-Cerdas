@@ -57,7 +57,7 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
     }
     if (rank === 2) {
       return (
-        <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-800 font-bold text-[11px] flex items-center justify-center shadow-2xs border border-slate-200 shrink-0">
+        <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-[11px] flex items-center justify-center shadow-2xs border border-slate-200 dark:border-slate-800 shrink-0">
           🥈
         </span>
       );
@@ -595,7 +595,7 @@ export const LeaderboardWidget: React.FC = () => {
             <GraduationCap size={16} />
           </div>
           <div>
-            <h3 className="font-extrabold text-[15px] text-slate-800 tracking-tight leading-tight">
+            <h3 className="font-extrabold text-[15px] text-slate-800 dark:text-slate-100 tracking-tight leading-tight">
               Top 10 Akademik &amp; Pendampingan
             </h3>
             <p className="text-[11px] text-slate-500 leading-none mt-0.5">

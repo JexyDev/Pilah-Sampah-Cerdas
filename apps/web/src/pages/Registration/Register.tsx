@@ -187,7 +187,7 @@ export const Register: React.FC = () => {
       )}
 
       {/* Main Container */}
-      <div className="w-full max-w-[920px] bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden grid grid-cols-1 md:grid-cols-12 z-10">
+      <div className="w-full max-w-[920px] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden grid grid-cols-1 md:grid-cols-12 z-10">
         
         {/* Left Side: Eco Feature Showcase */}
         <div className="hidden md:flex md:col-span-5 bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white p-8 flex-col justify-between relative overflow-hidden">
@@ -247,7 +247,7 @@ export const Register: React.FC = () => {
         </div>
 
         {/* Right Side: Registration Form */}
-        <div className="col-span-12 md:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-white space-y-6">
+        <div className="col-span-12 md:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-white dark:bg-slate-900 space-y-6">
           <div className="space-y-6">
             
             {/* Header */}
@@ -266,7 +266,7 @@ export const Register: React.FC = () => {
             </div>
 
             <div className="space-y-3 text-left">
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Pendaftaran Akun</h1>
+              <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Pendaftaran Akun</h1>
               
               {/* Mobile App Redirect Notice */}
               <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 space-y-2">
@@ -291,7 +291,7 @@ export const Register: React.FC = () => {
 
             {/* Role Selection Dropdown/Tabs (Default: Warga) */}
             <div className="space-y-1.5 text-left">
-              <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+              <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                 PILIH PERAN
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -341,7 +341,7 @@ export const Register: React.FC = () => {
               
               {/* Nama Lengkap */}
               <div className="space-y-1">
-                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                   NAMA LENGKAP
                 </label>
                 <div className="relative">
@@ -352,14 +352,14 @@ export const Register: React.FC = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Masukkan nama lengkap Anda..."
-                    className="w-full pl-10 pr-4 h-11 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:border-emerald-600 focus:ring-1 outline-none transition-all"
+                    className="w-full pl-10 pr-4 h-11 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium focus:border-emerald-600 focus:ring-1 outline-none transition-all"
                   />
                 </div>
               </div>
 
               {/* Nomor Telepon */}
               <div className="space-y-1">
-                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                   NOMOR TELEPON (WHATSAPP)
                 </label>
                 <div className="relative">
@@ -370,7 +370,7 @@ export const Register: React.FC = () => {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="081234567890"
-                    className="w-full pl-10 pr-4 h-11 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:border-emerald-600 focus:ring-1 outline-none transition-all"
+                    className="w-full pl-10 pr-4 h-11 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium focus:border-emerald-600 focus:ring-1 outline-none transition-all"
                   />
                 </div>
               </div>
@@ -381,7 +381,7 @@ export const Register: React.FC = () => {
               {role === "WARGA" && (
                 <>
                   <div className="space-y-1">
-                    <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                    <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                       ALAMAT RUMAH
                     </label>
                     <div className="relative">
@@ -392,33 +392,33 @@ export const Register: React.FC = () => {
                         value={alamat}
                         onChange={(e) => setAlamat(e.target.value)}
                         placeholder="Jl. Dipatiukur No. 10..."
-                        className="w-full pl-10 pr-4 h-11 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:border-emerald-600 focus:ring-1 outline-none transition-all"
+                        className="w-full pl-10 pr-4 h-11 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium focus:border-emerald-600 focus:ring-1 outline-none transition-all"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                      <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                         KECAMATAN
                       </label>
                       <select
                         value={kecamatan}
                         onChange={(e) => setKecamatan(e.target.value)}
-                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:border-emerald-600 outline-none"
+                        className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:border-emerald-600 outline-none"
                       >
                         <option value="Kecamatan Coblong">Kecamatan Coblong</option>
                       </select>
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                      <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                         KELURAHAN
                       </label>
                       <select
                         value={kelurahan}
                         onChange={(e) => setKelurahan(e.target.value)}
-                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:border-emerald-600 outline-none"
+                        className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:border-emerald-600 outline-none"
                       >
                         <option value="Dago">Kel. Dago</option>
                         <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
@@ -432,23 +432,23 @@ export const Register: React.FC = () => {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">RT</label>
+                      <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">RT</label>
                       <input
                         type="text"
                         value={rt}
                         onChange={(e) => setRt(e.target.value)}
                         placeholder="RT 01"
-                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none"
+                        className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">RW</label>
+                      <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">RW</label>
                       <input
                         type="text"
                         value={rw}
                         onChange={(e) => setRw(e.target.value)}
                         placeholder="RW 06"
-                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none"
+                        className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none"
                       />
                     </div>
                   </div>
@@ -460,50 +460,50 @@ export const Register: React.FC = () => {
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">NIM</label>
+                      <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">NIM</label>
                       <input
                         type="text"
                         required
                         value={nim}
                         onChange={(e) => setNim(e.target.value)}
                         placeholder="10121001"
-                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none"
+                        className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">EMAIL</label>
+                      <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">EMAIL</label>
                       <input
                         type="email"
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="mhs@univ.ac.id"
-                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none"
+                        className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">JURUSAN</label>
+                      <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">JURUSAN</label>
                       <input
                         type="text"
                         required
                         value={jurusan}
                         onChange={(e) => setJurusan(e.target.value)}
                         placeholder="Teknik Lingkungan"
-                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none"
+                        className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">FAKULTAS</label>
+                      <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">FAKULTAS</label>
                       <input
                         type="text"
                         required
                         value={fakultas}
                         onChange={(e) => setFakultas(e.target.value)}
                         placeholder="FTSL"
-                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none"
+                        className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none"
                       />
                     </div>
                   </div>
@@ -513,7 +513,7 @@ export const Register: React.FC = () => {
               {/* PETUGAS RESIDU FIELDS */}
               {role === "PETUGAS_RESIDU" && (
                 <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                  <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     NIP / KODE PETUGAS (OPSIONAL)
                   </label>
                   <input
@@ -521,7 +521,7 @@ export const Register: React.FC = () => {
                     value={nip}
                     onChange={(e) => setNip(e.target.value)}
                     placeholder="PTG-001"
-                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none"
+                    className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none"
                   />
                 </div>
               )}
@@ -529,7 +529,7 @@ export const Register: React.FC = () => {
               {/* Password Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">KATA SANDI</label>
+                  <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">KATA SANDI</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                     <input
@@ -538,7 +538,7 @@ export const Register: React.FC = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Min. 8 karakter"
-                      className="w-full pl-9 pr-8 h-11 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none"
+                      className="w-full pl-9 pr-8 h-11 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium outline-none"
                     />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
                       {showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}
@@ -547,7 +547,7 @@ export const Register: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">KONFIRMASI SANDI</label>
+                  <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">KONFIRMASI SANDI</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                     <input
@@ -556,15 +556,15 @@ export const Register: React.FC = () => {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Ulangi kata sandi"
-                      className="w-full pl-9 pr-3 h-11 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none"
+                      className="w-full pl-9 pr-3 h-11 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium outline-none"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Password Requirements Indicator */}
-              <div className="text-[10px] text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-2.5 space-y-1">
-                <p className="font-extrabold text-slate-700 uppercase tracking-wider mb-1">Ketentuan Kata Sandi (Wajib):</p>
+              <div className="text-[10px] text-slate-500 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 space-y-1">
+                <p className="font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Ketentuan Kata Sandi (Wajib):</p>
                 <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
                   <p className={password.length >= 8 ? "text-emerald-600 font-bold" : "text-slate-400"}>
                     {password.length >= 8 ? "✓" : "○"} Minimal 8 karakter
@@ -597,7 +597,7 @@ export const Register: React.FC = () => {
 
           </div>
 
-          <div className="pt-4 border-t border-slate-100 text-center text-xs text-slate-500">
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-center text-xs text-slate-500">
             Sudah memiliki akun?{" "}
             <Link to="/login" className="text-emerald-600 font-extrabold hover:underline">
               Masuk

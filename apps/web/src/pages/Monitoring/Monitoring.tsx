@@ -395,7 +395,7 @@ const Monitoring: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-slate-400">
         <Loader2 className="animate-spin text-[#009966]" size={32} />
-        <p className="text-xs font-bold text-slate-600">Memuat geospasial real-time monitoring wilayah...</p>
+        <p className="text-xs font-bold text-slate-600 dark:text-slate-400">Memuat geospasial real-time monitoring wilayah...</p>
       </div>
     );
   }
@@ -403,11 +403,11 @@ const Monitoring: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
       {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
         {/* Tier 1: Title & Status Badge */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
               Monitoring Wilayah &amp; Peta GIS
             </h1>
             <p className="text-xs text-slate-500 font-medium">
@@ -423,7 +423,7 @@ const Monitoring: React.FC = () => {
             <button
               type="button"
               onClick={() => loadData()}
-              className="p-2 text-slate-400 hover:text-[#009966] hover:bg-emerald-50 rounded-xl transition-all border border-slate-200/80 shadow-2xs cursor-pointer"
+              className="p-2 text-slate-400 hover:text-[#009966] hover:bg-emerald-50 rounded-xl transition-all border border-slate-200/80 dark:border-slate-800 shadow-2xs cursor-pointer"
               title="Perbarui Data Realtime"
             >
               <RefreshCw size={15} />
@@ -432,10 +432,10 @@ const Monitoring: React.FC = () => {
         </div>
 
         {/* Tier 2: Metadata & Role Scope Information */}
-        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 font-medium">
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
           <div className="flex items-center gap-2">
             <span className="text-slate-400">Cakupan Wilayah:</span>
-            <strong className="text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60">
+            <strong className="text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200/60">
               {getScopeLabel()}
             </strong>
           </div>
@@ -452,19 +452,19 @@ const Monitoring: React.FC = () => {
 
         {/* Summary KPI Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
               TERVERIFIKASI GPS
             </span>
             <div className="flex items-baseline justify-between">
-              <h3 className="text-xl sm:text-2xl font-black text-slate-900">{verifiedMapBins.length}</h3>
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100">{verifiedMapBins.length}</h3>
               <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                 Aktif
               </span>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
               ORGANIK
             </span>
@@ -476,7 +476,7 @@ const Monitoring: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
               ANORGANIK
             </span>
@@ -488,7 +488,7 @@ const Monitoring: React.FC = () => {
             </div>
           </div>
 
-          <div className="col-span-2 sm:col-span-1 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+          <div className="col-span-2 sm:col-span-1 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
               PENUH
             </span>
@@ -507,10 +507,10 @@ const Monitoring: React.FC = () => {
         </div>
 
         {/* Geospatial Map Container with Live Sync Toolbar */}
-        <div ref={mapContainerRef} className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 sm:p-5 space-y-4 flex-1 flex flex-col min-h-0">
+        <div ref={mapContainerRef} className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 space-y-4 flex-1 flex flex-col min-h-0">
 
           {/* Toolbar Top Bar */}
-          <div className="space-y-3 pb-3 border-b border-slate-100">
+          <div className="space-y-3 pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20 shrink-0 shadow-2xs">
@@ -518,7 +518,7 @@ const Monitoring: React.FC = () => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-extrabold text-base text-slate-900 tracking-tight">
+                    <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 tracking-tight">
                       Peta Sebaran Real-Time Tempat Sampah Terverifikasi
                     </h3>
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -567,8 +567,8 @@ const Monitoring: React.FC = () => {
                     }}
                     className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold shadow-2xs transition-all focus:outline-none ${
                       isKelurahanLocked
-                        ? "bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed opacity-90 pr-7"
-                        : "bg-slate-50 border-slate-200 text-slate-700 cursor-pointer hover:bg-slate-100"
+                        ? "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 cursor-not-allowed opacity-90 pr-7"
+                        : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700"
                     }`}
                   >
                     {isDpl ? (
@@ -615,8 +615,8 @@ const Monitoring: React.FC = () => {
                     onChange={(e) => setSelectedRukunWarga(e.target.value)}
                     className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold shadow-2xs transition-all focus:outline-none ${
                       isRwLocked
-                        ? "bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed opacity-90 pr-7"
-                        : "bg-slate-50 border-slate-200 text-slate-700 bg-slate-50 cursor-pointer hover:bg-slate-100"
+                        ? "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 cursor-not-allowed opacity-90 pr-7"
+                        : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700"
                     }`}
                   >
                     {isRwLocked ? (
@@ -641,7 +641,7 @@ const Monitoring: React.FC = () => {
                 <select
                   value={mapCategoryFilter}
                   onChange={(e) => setMapCategoryFilter(e.target.value)}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-extrabold text-slate-700 bg-slate-50 shadow-2xs cursor-pointer hover:bg-slate-100 transition-all focus:outline-none"
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 shadow-2xs cursor-pointer hover:bg-slate-100 transition-all focus:outline-none"
                 >
                   <option value="Semua">Semua Kategori</option>
                   <option value="Organik">Organik</option>
@@ -652,7 +652,7 @@ const Monitoring: React.FC = () => {
                 <select
                   value={mapStatusFilter}
                   onChange={(e) => setMapStatusFilter(e.target.value)}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-extrabold text-slate-700 bg-slate-50 shadow-2xs cursor-pointer hover:bg-slate-100 transition-all focus:outline-none"
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 shadow-2xs cursor-pointer hover:bg-slate-100 transition-all focus:outline-none"
                 >
                   <option value="Semua">Semua Status</option>
                   <option value="Aman">Aman (&lt;70%)</option>
@@ -678,7 +678,7 @@ const Monitoring: React.FC = () => {
                   <span>Batas Wilayah</span>
                 </button>
 
-                <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+                <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800">
                   <button
                     type="button"
                     onClick={() => setMapTileProvider("google_vector")}
@@ -718,25 +718,25 @@ const Monitoring: React.FC = () => {
           </div>
 
           {/* Map Canvas Viewport */}
-          <div className={`w-full rounded-2xl overflow-hidden border border-slate-200/90 relative ${isMapFullscreen ? "h-[calc(100vh-180px)]" : "h-[520px]"}`}>
+          <div className={`w-full rounded-2xl overflow-hidden border border-slate-200/90 dark:border-slate-800 relative ${isMapFullscreen ? "h-[calc(100vh-180px)]" : "h-[520px]"}`}>
 
             {/* Floating Top-Left Search Bar */}
             <div className="absolute top-4 left-4 z-20 pointer-events-auto">
-              <div className="relative w-64 sm:w-80 shadow-2xl rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-md">
+              <div className="relative w-64 sm:w-80 shadow-2xl rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
                 <div className="flex items-center px-3.5 py-2">
-                  <Search size={15} className="text-[#009966] shrink-0 mr-2.5" />
+                  <Search size={15} className="text-[#009966] dark:text-emerald-400 shrink-0 mr-2.5" />
                   <input
                     type="text"
                     placeholder="Cari kode tempat sampah..."
                     value={mapSearchInput}
                     onChange={(e) => setMapSearchInput(e.target.value)}
-                    className="w-full bg-transparent text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none"
+                    className="w-full bg-transparent text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none"
                   />
                   {mapSearchInput && (
                     <button
                       type="button"
                       onClick={() => setMapSearchInput("")}
-                      className="text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
                     >
                       <X size={13} />
                     </button>
@@ -745,7 +745,7 @@ const Monitoring: React.FC = () => {
 
                 {/* Search Results Dropdown */}
                 {(mapSearchInput || "").trim() && (
-                  <div className="border-t border-slate-100 max-h-60 overflow-y-auto rounded-b-2xl bg-white shadow-xl">
+                  <div className="border-t border-slate-100 dark:border-slate-800 max-h-60 overflow-y-auto rounded-b-2xl bg-white dark:bg-slate-900 shadow-xl">
                     {mapSearchResults.length > 0 ? (
                       mapSearchResults.map((bin) => {
                         const binCode = (bin as any).kode || bin.qrCode || bin.id;
@@ -766,18 +766,18 @@ const Monitoring: React.FC = () => {
                                 });
                               }
                             }}
-                            className="px-3.5 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-0 cursor-pointer transition-colors flex items-center justify-between"
+                            className="px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 last:border-0 cursor-pointer transition-colors flex items-center justify-between"
                           >
                             <div>
-                              <span className="font-mono font-black text-xs text-slate-900 block">{binCode}</span>
-                              <span className="text-[10.5px] text-slate-500 font-semibold">{bin.wargaName || (bin as any).user?.name || "Warga Terdaftar"}</span>
+                              <span className="font-mono font-black text-xs text-slate-900 dark:text-slate-100 block">{binCode}</span>
+                              <span className="text-[10.5px] text-slate-500 dark:text-slate-400 font-semibold">{bin.wargaName || (bin as any).user?.name || "Warga Terdaftar"}</span>
                             </div>
                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
                               isResidu
-                                ? "bg-slate-100 text-slate-700 border border-slate-200"
+                                ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                                 : isAnorganic
-                                ? "bg-amber-50 text-amber-800 border border-amber-200"
-                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40"
+                                : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40"
                             }`}>
                               {catName}
                             </span>
@@ -785,7 +785,7 @@ const Monitoring: React.FC = () => {
                         );
                       })
                     ) : (
-                      <div className="px-3.5 py-3 text-xs text-slate-400 font-medium text-center">
+                      <div className="px-3.5 py-3 text-xs text-slate-400 dark:text-slate-500 font-medium text-center">
                         Tidak ada tempat sampah yang cocok
                       </div>
                     )}
@@ -803,7 +803,7 @@ const Monitoring: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsLegendOpen(true)}
-                  className="bg-white/95 backdrop-blur-md shadow-xl rounded-2xl px-3.5 py-2 border border-slate-200/90 flex items-center gap-2 text-xs font-black text-slate-800 hover:bg-emerald-50 hover:text-[#009966] transition-all cursor-pointer group"
+                  className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-xl rounded-2xl px-3.5 py-2 border border-slate-200/90 dark:border-slate-800 flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 hover:text-[#009966] transition-all cursor-pointer group"
                   title="Tampilkan Legenda Peta"
                 >
                   <Layers className="w-4 h-4 text-[#009966] group-hover:scale-110 transition-transform" />
@@ -811,32 +811,32 @@ const Monitoring: React.FC = () => {
                   <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
                 </button>
               ) : (
-                <div className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-3.5 border border-slate-200/90 flex flex-col gap-2.5 min-w-[230px] max-w-[280px] sm:max-w-[300px]">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-2xl rounded-2xl p-3.5 border border-slate-200/90 dark:border-slate-800 flex flex-col gap-2.5 min-w-[230px] max-w-[280px] sm:max-w-[300px]">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
                     <div className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider">
+                      <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">
                         Legenda Monitoring
                       </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setIsLegendOpen(false)}
-                      className="text-slate-400 hover:text-slate-700 p-0.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                      className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-0.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                       title="Sembunyikan Legenda"
                     >
                       <ChevronDown className="w-4 h-4" />
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-100/90 rounded-xl border border-slate-200/60">
+                  <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-100/90 dark:bg-slate-800/90 rounded-xl border border-slate-200/60 dark:border-slate-700">
                     <button
                       type="button"
                       onClick={() => setActiveLegendTab("sampah")}
                       className={`py-1 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer ${
                         activeLegendTab === "sampah"
-                          ? "bg-white text-slate-900 shadow-2xs"
-                          : "text-slate-500 hover:text-slate-800"
+                          ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
                       }`}
                     >
                       Tempat Sampah
@@ -846,8 +846,8 @@ const Monitoring: React.FC = () => {
                       onClick={() => setActiveLegendTab("fasilitas_wilayah")}
                       className={`py-1 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer ${
                         activeLegendTab === "fasilitas_wilayah"
-                          ? "bg-white text-slate-900 shadow-2xs"
-                          : "text-slate-500 hover:text-slate-800"
+                          ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
                       }`}
                     >
                       Fasilitas &amp; Wilayah
@@ -860,7 +860,7 @@ const Monitoring: React.FC = () => {
                         <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
                           Kategori Tempat Sampah
                         </span>
-                        <div className="grid grid-cols-3 gap-1 text-[11px] font-bold text-slate-700">
+                        <div className="grid grid-cols-3 gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300">
                           <div className="flex items-center gap-1.5">
                             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white shadow-2xs" />
                             <span>Organik</span>
@@ -876,11 +876,11 @@ const Monitoring: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="space-y-1 border-t border-slate-100 pt-2">
+                      <div className="space-y-1 border-t border-slate-100 dark:border-slate-800 pt-2">
                         <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
                           Status Volume &amp; Okupansi
                         </span>
-                        <div className="grid grid-cols-1 gap-1 text-[11px] font-semibold text-slate-700">
+                        <div className="grid grid-cols-1 gap-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
                           <div className="flex items-center gap-2">
                             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100 shadow-2xs" />
                             <span>Aman (&lt; 70% Terisi)</span>
@@ -909,32 +909,32 @@ const Monitoring: React.FC = () => {
                         <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10.5px]">
                           <div className="flex items-center gap-1.5">
                             <span className="w-2.5 h-2.5 rounded-xs bg-green-600 shrink-0" />
-                            <span className="font-bold text-slate-700 truncate">Bata Terawang</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Bata Terawang</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="w-2.5 h-2.5 rounded-xs bg-emerald-600 shrink-0" />
-                            <span className="font-bold text-slate-700 truncate">Loseda</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Loseda</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="w-2.5 h-2.5 rounded-xs bg-amber-600 shrink-0" />
-                            <span className="font-bold text-slate-700 truncate">Rumah Maggot</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Rumah Maggot</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="w-2.5 h-2.5 rounded-xs bg-blue-600 shrink-0" />
-                            <span className="font-bold text-slate-700 truncate">Bank Sampah</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Bank Sampah</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="w-2.5 h-2.5 rounded-xs bg-teal-600 shrink-0" />
-                            <span className="font-bold text-slate-700 truncate">TPS</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate">TPS</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="w-2.5 h-2.5 rounded-xs bg-orange-600 shrink-0" />
-                            <span className="font-bold text-slate-700 truncate">Incinerator</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Incinerator</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="space-y-1 border-t border-slate-100 pt-2">
+                      <div className="space-y-1 border-t border-slate-100 dark:border-slate-800 pt-2">
                         <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
                           Batas 6 Kelurahan Coblong
                         </span>
@@ -945,7 +945,7 @@ const Monitoring: React.FC = () => {
                                 className="w-2.5 h-2.5 rounded-xs shrink-0 border border-black/10 shadow-2xs"
                                 style={{ backgroundColor: kg.color }}
                               />
-                              <span className="font-bold text-slate-700 truncate">{kg.name}</span>
+                              <span className="font-bold text-slate-700 dark:text-slate-300 truncate">{kg.name}</span>
                             </div>
                           ))}
                         </div>
@@ -953,7 +953,7 @@ const Monitoring: React.FC = () => {
                     </div>
                   )}
 
-                  <div className="border-t border-slate-100 pt-2 flex items-center justify-between text-[10px] text-slate-400 font-medium">
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-2 flex items-center justify-between text-[10px] text-slate-400 font-medium">
                     <span>Diperbarui: {lastSyncTime.toLocaleTimeString("id-ID")}</span>
                     <span className="text-emerald-600 font-bold flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -1050,8 +1050,8 @@ const Monitoring: React.FC = () => {
                     >
                       <Tooltip permanent={false} direction="top" offset={[0, -12]} className="custom-bin-hover-tooltip">
                         <div className="p-2 min-w-[210px] space-y-1.5 font-sans">
-                          <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1">
-                            <span className="font-mono font-black text-slate-900 text-xs">{binCode}</span>
+                          <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-1">
+                            <span className="font-mono font-black text-slate-900 dark:text-slate-100 text-xs">{binCode}</span>
                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
                               isResiduCat
                                 ? "bg-slate-200 text-slate-800"
@@ -1063,19 +1063,19 @@ const Monitoring: React.FC = () => {
                             </span>
                           </div>
 
-                          <div className="text-xs text-slate-700 space-y-0.5">
-                            <div className="font-extrabold text-slate-900">{ownerName}</div>
+                          <div className="text-xs text-slate-700 dark:text-slate-300 space-y-0.5">
+                            <div className="font-extrabold text-slate-900 dark:text-slate-100">{ownerName}</div>
                             {ownerPhone && <div className="text-[11px] font-mono text-emerald-700 font-bold">{ownerPhone}</div>}
                           </div>
 
-                          <div className="pt-1 border-t border-slate-100 space-y-1">
+                          <div className="pt-1 border-t border-slate-100 dark:border-slate-800 space-y-1">
                             <div className="flex justify-between text-[10.5px] font-bold">
                               <span className="text-slate-500">Volume Terisi:</span>
                               <span className={pct >= 90 ? "text-rose-600" : pct >= 70 ? "text-amber-600" : "text-emerald-600"}>
                                 {vol}/{max}L ({pct}%)
                               </span>
                             </div>
-                            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
                               <div
                                 className={`h-full rounded-full ${pct >= 90 ? "bg-rose-500" : pct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
                                 style={{ width: `${Math.min(pct, 100)}%` }}
@@ -1083,11 +1083,11 @@ const Monitoring: React.FC = () => {
                             </div>
                           </div>
 
-                          <div className="pt-1 border-t border-slate-100">
+                          <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
                             <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block mb-0.5">
                               Log Aktivitas Terakhir:
                             </span>
-                            <div className="text-[10.5px] font-bold text-slate-800 leading-tight">
+                            <div className="text-[10.5px] font-bold text-slate-800 dark:text-slate-100 leading-tight">
                               {(bin as any).lastActivityLog || (bin as any).verifiedAt || "Terverifikasi Real-Time"}
                             </div>
                           </div>
@@ -1098,7 +1098,7 @@ const Monitoring: React.FC = () => {
                         <div className="p-2 min-w-[250px] space-y-2.5 font-sans">
                           <div className="flex items-center justify-between border-b pb-1.5">
                             <div>
-                              <span className="font-mono font-black text-slate-900 text-xs block">{binCode}</span>
+                              <span className="font-mono font-black text-slate-900 dark:text-slate-100 text-xs block">{binCode}</span>
                               <span className="text-[10px] text-slate-400 font-bold">{bin.rtRw || (bin as any).rw?.name || "Wilayah Coblong"}</span>
                             </div>
                             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
@@ -1114,7 +1114,7 @@ const Monitoring: React.FC = () => {
 
                           <div className="bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-100 space-y-1">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pemilik Terverifikasi</span>
-                            <div className="font-extrabold text-slate-900 text-xs">{ownerName}</div>
+                            <div className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">{ownerName}</div>
                             {ownerPhone && (
                               <div className="text-[11px] font-mono text-emerald-700 font-bold mt-0.5">{ownerPhone}</div>
                             )}
@@ -1122,12 +1122,12 @@ const Monitoring: React.FC = () => {
 
                           <div className="space-y-1">
                             <div className="flex justify-between text-xs font-bold">
-                              <span className="text-slate-600">Kapasitas Terisi</span>
+                              <span className="text-slate-600 dark:text-slate-400">Kapasitas Terisi</span>
                               <span className={pct >= 90 ? "text-rose-600" : pct >= 70 ? "text-amber-600" : "text-emerald-600"}>
                                 {vol}/{max} Liter ({pct}%)
                               </span>
                             </div>
-                            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/60">
+                            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-200/60">
                               <div
                                 className={`h-full rounded-full ${pct >= 90 ? "bg-rose-500" : pct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
                                 style={{ width: `${Math.min(pct, 100)}%` }}
@@ -1135,18 +1135,18 @@ const Monitoring: React.FC = () => {
                             </div>
                           </div>
 
-                          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 space-y-1">
+                          <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-800 space-y-1">
                             <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
                               Log Aktivitas Terakhir
                             </span>
-                            <div className="text-xs font-bold text-slate-800 leading-tight">
+                            <div className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-tight">
                               {(bin as any).lastActivityLog || (bin as any).verifiedAt || "Terverifikasi Real-Time"}
                             </div>
                           </div>
 
-                          <div className="text-[10.5px] text-slate-500 space-y-0.5 pt-1 border-t border-slate-100">
-                            <div>Diverifikasi: <strong className="text-slate-700">{(bin as any).verifiedAt || "Sistem Real-Time"}</strong></div>
-                            <div>Koordinat: <strong className="font-mono text-slate-700">{lat.toFixed(4)}, {lng.toFixed(4)} mdpl</strong></div>
+                          <div className="text-[10.5px] text-slate-500 space-y-0.5 pt-1 border-t border-slate-100 dark:border-slate-800">
+                            <div>Diverifikasi: <strong className="text-slate-700 dark:text-slate-300">{(bin as any).verifiedAt || "Sistem Real-Time"}</strong></div>
+                            <div>Koordinat: <strong className="font-mono text-slate-700 dark:text-slate-300">{lat.toFixed(4)}, {lng.toFixed(4)} mdpl</strong></div>
                           </div>
 
                           <button
@@ -1167,19 +1167,19 @@ const Monitoring: React.FC = () => {
         </div>
 
         {/* 3. Real-Time Verified Bin Data Table Section */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden space-y-4 p-5 sm:p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden space-y-4 p-5 sm:p-6">
           {/* Table Header & Search Toolbar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#009966] flex items-center justify-center border border-emerald-200/60 shrink-0 shadow-2xs">
                 <TableIcon size={20} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-black text-lg text-slate-900 tracking-tight">
+                  <h3 className="font-black text-lg text-slate-900 dark:text-slate-100 tracking-tight">
                     Tabel Data Tempat Sampah Terverifikasi
                   </h3>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-slate-100 text-slate-700 border border-slate-200">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800">
                     {filteredTableBins.length} Unit
                   </span>
                 </div>
@@ -1201,7 +1201,7 @@ const Monitoring: React.FC = () => {
                     setTableSearchInput(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full pl-9 pr-8 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#009966] bg-slate-50/70"
+                  className="w-full pl-9 pr-8 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#009966] bg-slate-50/70"
                 />
                 {tableSearchInput && (
                   <button
@@ -1220,7 +1220,7 @@ const Monitoring: React.FC = () => {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50/70 cursor-pointer focus:outline-none"
+                className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-50/70 cursor-pointer focus:outline-none"
               >
                 <option value={10}>10 Baris</option>
                 <option value={25}>25 Baris</option>
@@ -1230,10 +1230,10 @@ const Monitoring: React.FC = () => {
           </div>
 
           {/* Table Container */}
-          <div className="overflow-x-auto w-full rounded-xl border border-slate-100">
+          <div className="overflow-x-auto w-full rounded-xl border border-slate-100 dark:border-slate-800">
             <table className="w-full text-left border-collapse min-w-[1000px]">
               <thead>
-                <tr className="bg-slate-50 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 whitespace-nowrap">
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                   <th className="py-3.5 px-4 text-center">QR Code</th>
                   <th className="py-3.5 px-4">Kode Tempat Sampah</th>
                   <th className="py-3.5 px-4">Kategori</th>
@@ -1245,7 +1245,7 @@ const Monitoring: React.FC = () => {
                   <th className="py-3.5 px-4 text-center">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {paginatedBins.length > 0 ? (
                   paginatedBins.map((bin) => {
                     const binCode = (bin as any).kode || bin.qrCode || bin.id;
@@ -1272,13 +1272,13 @@ const Monitoring: React.FC = () => {
                     return (
                       <tr
                         key={`tbl-bin-${bin.id || binCode}`}
-                        className="hover:bg-slate-50/80 transition-colors text-xs text-slate-700 font-medium"
+                        className="hover:bg-slate-50/80 transition-colors text-xs text-slate-700 dark:text-slate-300 font-medium"
                       >
                         {/* 1. QR CODE */}
                         <td className="py-3 px-4 text-center whitespace-nowrap">
                           <div
                             onClick={() => setSelectedBinDetail(bin)}
-                            className="inline-flex items-center justify-center p-1 bg-white rounded-xl border border-slate-200 shadow-2xs hover:border-[#009966] hover:scale-105 transition-all cursor-pointer"
+                            className="inline-flex items-center justify-center p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs hover:border-[#009966] hover:scale-105 transition-all cursor-pointer"
                             title="Lihat Detail &amp; QR Code"
                           >
                             <img
@@ -1294,7 +1294,7 @@ const Monitoring: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => setSelectedBinDetail(bin)}
-                            className="font-mono font-black text-slate-900 text-xs bg-slate-100 hover:bg-[#009966]/10 hover:text-[#009966] px-2.5 py-1 rounded-lg border border-slate-200 transition-colors cursor-pointer"
+                            className="font-mono font-black text-slate-900 dark:text-slate-100 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-[#009966]/10 hover:text-[#009966] px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
                           >
                             {binCode}
                           </button>
@@ -1316,7 +1316,7 @@ const Monitoring: React.FC = () => {
                         {/* 4. PEMILIK */}
                         <td className="py-3 px-4 whitespace-nowrap">
                           <div>
-                            <div className="font-extrabold text-slate-900 text-xs">{ownerName}</div>
+                            <div className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">{ownerName}</div>
                             <div className="text-[11px] text-slate-500 font-medium">{areaText}</div>
                             {ownerPhone && (
                               <div className="text-[10.5px] font-mono text-emerald-700 font-bold">{ownerPhone}</div>
@@ -1328,12 +1328,12 @@ const Monitoring: React.FC = () => {
                         <td className="py-3 px-4 whitespace-nowrap">
                           <div className="space-y-1 min-w-[130px]">
                             <div className="flex justify-between text-[11px] font-bold">
-                              <span className="text-slate-600">{vol}/{max} Liter</span>
+                              <span className="text-slate-600 dark:text-slate-400">{vol}/{max} Liter</span>
                               <span className={pct >= 90 ? "text-rose-600" : pct >= 70 ? "text-amber-600" : "text-emerald-600"}>
                                 {pct}%
                               </span>
                             </div>
-                            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
                               <div
                                 className={`h-full rounded-full ${pct >= 90 ? "bg-rose-500" : pct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
                                 style={{ width: `${Math.min(pct, 100)}%` }}
@@ -1361,14 +1361,14 @@ const Monitoring: React.FC = () => {
                         </td>
 
                         {/* 7. DIVERIFIKASI */}
-                        <td className="py-3 px-4 whitespace-nowrap text-slate-600 text-[11px]">
+                        <td className="py-3 px-4 whitespace-nowrap text-slate-600 dark:text-slate-400 text-[11px]">
                           {(bin as any).verifiedAt || "Sistem Real-Time"}
                         </td>
 
                         {/* 8. GPS */}
                         <td className="py-3 px-4 whitespace-nowrap">
                           {lat && lng ? (
-                            <div className="text-[11px] font-mono text-slate-700">
+                            <div className="text-[11px] font-mono text-slate-700 dark:text-slate-300">
                               <div>{lat.toFixed(4)}, {lng.toFixed(4)}</div>
                               <div className="text-[10px] text-slate-400">Elevasi: {(bin as any).altitude || 768} mdpl</div>
                             </div>
@@ -1383,7 +1383,7 @@ const Monitoring: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleFlyToBin(bin)}
-                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#009966]/10 text-slate-600 hover:text-[#009966] transition-all cursor-pointer"
+                              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#009966]/10 text-slate-600 dark:text-slate-400 hover:text-[#009966] transition-all cursor-pointer"
                               title="Lihat di Peta"
                             >
                               <Navigation size={14} />
@@ -1391,7 +1391,7 @@ const Monitoring: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => setSelectedBinDetail(bin)}
-                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#009966]/10 text-slate-600 hover:text-[#009966] transition-all cursor-pointer"
+                              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#009966]/10 text-slate-600 dark:text-slate-400 hover:text-[#009966] transition-all cursor-pointer"
                               title="Buka Detail"
                             >
                               <Eye size={14} />
@@ -1405,7 +1405,7 @@ const Monitoring: React.FC = () => {
                   <tr>
                     <td colSpan={9} className="py-12 text-center text-slate-400 space-y-2">
                       <AlertTriangle className="mx-auto text-slate-300" size={28} />
-                      <p className="text-xs font-bold text-slate-600">Tidak ada tempat sampah yang sesuai filter</p>
+                      <p className="text-xs font-bold text-slate-600 dark:text-slate-400">Tidak ada tempat sampah yang sesuai filter</p>
                       <button
                         type="button"
                         onClick={() => {
@@ -1428,7 +1428,7 @@ const Monitoring: React.FC = () => {
 
           {/* Table Pagination */}
           {filteredTableBins.length > itemsPerPage && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs font-bold text-slate-600">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400">
               <div>
                 Menampilkan <strong>{Math.min((currentPage - 1) * itemsPerPage + 1, filteredTableBins.length)}</strong> - <strong>{Math.min(currentPage * itemsPerPage, filteredTableBins.length)}</strong> dari <strong>{filteredTableBins.length}</strong> Tempat Sampah
               </div>
@@ -1438,7 +1438,7 @@ const Monitoring: React.FC = () => {
                   type="button"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                 >
                   <ChevronLeft size={15} />
                 </button>
@@ -1456,7 +1456,7 @@ const Monitoring: React.FC = () => {
                         className={`w-8 h-8 rounded-xl text-xs font-black transition-all cursor-pointer ${
                           currentPage === p
                             ? "bg-[#009966] text-white shadow-2xs"
-                            : "border border-slate-200 hover:bg-slate-50 text-slate-700"
+                            : "border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
                         }`}
                       >
                         {p}
@@ -1468,7 +1468,7 @@ const Monitoring: React.FC = () => {
                   type="button"
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                  className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                 >
                   <ChevronRight size={15} />
                 </button>
@@ -1481,18 +1481,18 @@ const Monitoring: React.FC = () => {
       {/* 4. Modal Detail Tempat Sampah */}
       {selectedBinDetail && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 space-y-5 animate-in zoom-in-95 duration-150">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#009966] flex items-center justify-center border border-emerald-200/60 font-bold">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 flex items-center justify-center border border-emerald-200/60 dark:border-emerald-700/40 font-bold">
                   <QrCode size={20} />
                 </div>
                 <div>
-                  <h3 className="font-black text-base text-slate-900">
+                  <h3 className="font-black text-base text-slate-900 dark:text-slate-100">
                     Detail Tempat Sampah
                   </h3>
-                  <span className="font-mono text-xs text-slate-500 font-bold">
+                  <span className="font-mono text-xs text-slate-500 dark:text-slate-400 font-bold">
                     {(selectedBinDetail as any).kode || selectedBinDetail.qrCode || selectedBinDetail.id}
                   </span>
                 </div>
@@ -1501,7 +1501,7 @@ const Monitoring: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSelectedBinDetail(null)}
-                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+                className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -1510,36 +1510,36 @@ const Monitoring: React.FC = () => {
             {/* Modal Body */}
             <div className="space-y-4">
               {/* QR Code & Basic Specs */}
-              <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200/70">
+              <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
                 <img
-                  className="w-24 h-24 rounded-xl bg-white p-1 border border-slate-200 shadow-2xs object-contain"
+                  className="w-24 h-24 rounded-xl bg-white dark:bg-slate-900 p-1 border border-slate-200 dark:border-slate-800 shadow-2xs object-contain"
                   alt="QR Code Besar"
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
                     (selectedBinDetail as any).kode || selectedBinDetail.qrCode || selectedBinDetail.id
                   )}`}
                 />
-                <div className="space-y-1.5 text-xs text-slate-600 w-full">
+                <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400 w-full">
                   <div className="flex justify-between">
                     <span className="text-slate-400 font-semibold">Kategori:</span>
-                    <span className="font-black text-slate-900">
+                    <span className="font-black text-slate-900 dark:text-slate-100">
                       {selectedBinDetail.category?.name || (selectedBinDetail.lokasi?.includes("Organik") ? "Organik" : "Anorganik")}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400 font-semibold">Status Fisik:</span>
-                    <span className="font-black text-emerald-700">
+                    <span className="font-black text-emerald-700 dark:text-emerald-400">
                       {selectedBinDetail.status || "Normal (Aktif Terverifikasi)"}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400 font-semibold">Wilayah:</span>
-                    <span className="font-bold text-slate-800">
+                    <span className="font-bold text-slate-800 dark:text-slate-100">
                       {selectedBinDetail.rtRw || (selectedBinDetail as any).rw?.name || "Kecamatan Coblong"}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400 font-semibold">Kapasitas:</span>
-                    <span className="font-bold text-slate-800">
+                    <span className="font-bold text-slate-800 dark:text-slate-100">
                       {selectedBinDetail.currentVolumeLiter || 0} / {selectedBinDetail.maxCapacityLiter || 25} Liter
                     </span>
                   </div>
@@ -1547,42 +1547,42 @@ const Monitoring: React.FC = () => {
               </div>
 
               {/* Owner Info */}
-              <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100 space-y-2 text-xs">
+              <div className="bg-emerald-50/60 dark:bg-emerald-950/40 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-800/60 space-y-2 text-xs">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
                   Informasi Pemilik Terdaftar
                 </span>
                 <div className="flex justify-between items-center">
-                  <span className="font-extrabold text-slate-900 text-sm">
+                  <span className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">
                     {selectedBinDetail.wargaName || (selectedBinDetail as any).user?.name || "Warga Terdaftar"}
                   </span>
                   {((selectedBinDetail as any).user?.phone || (selectedBinDetail as any).wargaPhone || (selectedBinDetail as any).phone) && (
-                    <span className="font-mono text-emerald-800 font-extrabold bg-emerald-100/80 px-2.5 py-0.5 rounded-full text-xs">
+                    <span className="font-mono text-emerald-800 dark:text-emerald-300 font-extrabold bg-emerald-100/80 dark:bg-emerald-900/60 px-2.5 py-0.5 rounded-full text-xs">
                       {((selectedBinDetail as any).user?.phone || (selectedBinDetail as any).wargaPhone || (selectedBinDetail as any).phone)}
                     </span>
                   )}
                 </div>
-                <p className="text-[11.5px] text-slate-600">
+                <p className="text-[11.5px] text-slate-600 dark:text-slate-400">
                   {(selectedBinDetail as any).user?.address || selectedBinDetail.lokasi || "Kecamatan Coblong, Kota Bandung"}
                 </p>
               </div>
 
               {/* GPS Coordinates & Activity */}
-              <div className="space-y-2 text-xs text-slate-600 bg-slate-50 p-4 rounded-2xl border border-slate-200/70">
+              <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400 font-semibold">Koordinat GPS:</span>
-                  <span className="font-mono font-bold text-slate-900">
+                  <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
                     {selectedBinDetail.latitude ? `${Number(selectedBinDetail.latitude).toFixed(5)}, ${Number(selectedBinDetail.longitude).toFixed(5)}` : "Belum terikat"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400 font-semibold">Waktu Verifikasi:</span>
-                  <span className="font-bold text-slate-800">
+                  <span className="font-bold text-slate-800 dark:text-slate-100">
                     {(selectedBinDetail as any).verifiedAt || "Terverifikasi Otomatis"}
                   </span>
                 </div>
-                <div className="pt-2 border-t border-slate-200/60">
+                <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
                   <span className="text-slate-400 font-semibold block mb-0.5">Log Terakhir:</span>
-                  <p className="font-bold text-slate-800 text-[11.5px]">
+                  <p className="font-bold text-slate-800 dark:text-slate-100 text-[11.5px]">
                     {(selectedBinDetail as any).lastActivityLog || "Setoran sampah aktif terpantau real-time."}
                   </p>
                 </div>
@@ -1604,7 +1604,7 @@ const Monitoring: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSelectedBinDetail(null)}
-                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition-colors cursor-pointer"
               >
                 Tutup
               </button>

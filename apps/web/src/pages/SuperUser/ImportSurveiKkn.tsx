@@ -102,13 +102,13 @@ const SheetDetailModal: React.FC<{
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col animate-in"
+        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col animate-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-800">
           <div>
-            <h3 className="text-lg font-bold text-gray-900">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100">
               {SHEET_DISPLAY_NAMES[sheetName] || sheetName}
             </h3>
             <p className="text-sm text-gray-500">{data.length} baris data</p>
@@ -129,10 +129,10 @@ const SheetDetailModal: React.FC<{
               <p className="mt-3 text-sm">Sheet ini tidak memiliki data</p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-800">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50">
+                  <tr className="bg-gray-50 dark:bg-slate-800/60">
                     <th className="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b">#</th>
                     {columns.map((col) => (
                       <th key={col} className="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b whitespace-nowrap">
@@ -141,12 +141,12 @@ const SheetDetailModal: React.FC<{
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                   {paginatedData.map((row, idx) => (
                     <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-3 py-2 text-gray-400 font-mono text-xs">{(currentPage - 1) * rowsPerPage + idx + 1}</td>
                       {columns.map((col) => (
-                        <td key={col} className="px-3 py-2 text-gray-700 whitespace-nowrap max-w-[200px] truncate">
+                        <td key={col} className="px-3 py-2 text-gray-700 dark:text-slate-300 whitespace-nowrap max-w-[200px] truncate">
                           {row[col] === null || row[col] === undefined ? (
                             <span className="text-gray-300 italic">null</span>
                           ) : typeof row[col] === "boolean" ? (
@@ -166,7 +166,7 @@ const SheetDetailModal: React.FC<{
 
         {/* Modal Footer with Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl">
+          <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 rounded-b-2xl">
             <p className="text-sm text-gray-500">
               Halaman {currentPage} dari {totalPages}
             </p>
@@ -174,14 +174,14 @@ const SheetDetailModal: React.FC<{
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
               >
                 Sebelumnya
               </button>
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
               >
                 Selanjutnya
               </button>
@@ -418,19 +418,19 @@ const ImportSurveiKkn: React.FC = () => {
       {/* ═══════ CARD 1: Header & Tab Switcher ═══════ */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight flex items-center gap-3">
             <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[#009966]/10 text-[#009966]">
               <FileSpreadsheet size={22} />
             </span>
             Impor Data Survei KKN
           </h1>
           <p className="text-sm text-gray-500 mt-1 ml-[52px]">
-            Upload file <code className="bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded text-xs font-mono">.xlsx</code> hasil survei lapangan KKN untuk diimpor ke database.
+            Upload file <code className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 px-1.5 py-0.5 rounded text-xs font-mono">.xlsx</code> hasil survei lapangan KKN untuk diimpor ke database.
           </p>
         </div>
         <button
           onClick={handleDownloadTemplate}
-          className="btn-polish inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl text-sm shadow-sm hover:border-[#009966] hover:text-[#009966]"
+          className="btn-polish inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 font-semibold rounded-xl text-sm shadow-sm hover:border-[#009966] hover:text-[#009966]"
         >
           <Download size={16} />
           Unduh Template
@@ -438,7 +438,7 @@ const ImportSurveiKkn: React.FC = () => {
       </div>
 
       {/* Tab Switcher: Tab 1 Baseline vs Tab 2 Endline */}
-      <div className="flex bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200 w-fit gap-1 shadow-xs">
+      <div className="flex bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 w-fit gap-1 shadow-xs">
         <button
           type="button"
           onClick={() => {
@@ -472,9 +472,9 @@ const ImportSurveiKkn: React.FC = () => {
       </div>
 
       {/* ═══════ CARD 2: Upload Drop-zone ═══════ */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-50">
-          <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
+          <h2 className="text-base font-bold text-gray-800 dark:text-slate-100 flex items-center gap-2">
             <Upload size={18} className="text-primary" />
             Upload File
           </h2>
@@ -500,7 +500,7 @@ const ImportSurveiKkn: React.FC = () => {
               <div className={`p-4 rounded-2xl mb-4 transition-colors ${isDragging ? "bg-primary/10" : "bg-gray-100 group-hover:bg-primary/10"}`}>
                 <Upload size={32} className={`transition-colors ${isDragging ? "text-primary" : "text-gray-400 group-hover:text-primary"}`} />
               </div>
-              <p className="text-sm font-semibold text-gray-700">
+              <p className="text-sm font-semibold text-gray-700 dark:text-slate-300">
                 Tarik file ke sini atau <span className="text-primary underline underline-offset-2">klik untuk memilih</span>
               </p>
               <p className="text-xs text-gray-400 mt-1">Hanya file .xlsx, maksimal 10 MB</p>
@@ -520,7 +520,7 @@ const ImportSurveiKkn: React.FC = () => {
                   <FileSpreadsheet size={22} className="text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">{file.name}</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">{file.name}</p>
                   <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
                 </div>
               </div>
@@ -538,13 +538,13 @@ const ImportSurveiKkn: React.FC = () => {
           {uploadStatus === "uploading" && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600 font-medium flex items-center gap-2">
+                <span className="text-gray-600 dark:text-slate-400 font-medium flex items-center gap-2">
                   <Loader2 size={14} className="animate-spin text-primary" />
                   Mengimpor ke database...
                 </span>
                 <span className="text-primary font-bold">{uploadProgress}%</span>
               </div>
-              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-primary to-emerald-400 rounded-full transition-all duration-300 ease-out"
                   style={{ width: `${uploadProgress}%` }}
@@ -582,9 +582,9 @@ const ImportSurveiKkn: React.FC = () => {
 
       {/* ═══════ CARD 3: Preview Data ═══════ */}
       {(isParsing || sheetSummaries.length > 0 || parseError) && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-50">
-            <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
+            <h2 className="text-base font-bold text-gray-800 dark:text-slate-100 flex items-center gap-2">
               <Eye size={18} className="text-primary" />
               Pratinjau Data
             </h2>
@@ -609,23 +609,23 @@ const ImportSurveiKkn: React.FC = () => {
             )}
 
             {!isParsing && !parseError && sheetSummaries.length > 0 && (
-              <div className="overflow-x-auto rounded-lg border border-gray-200">
+              <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-800">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-gray-50">
+                    <tr className="bg-gray-50 dark:bg-slate-800/60">
                       <th className="px-4 py-3 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b">Sheet</th>
                       <th className="px-4 py-3 text-center text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b">Jumlah Baris</th>
                       <th className="px-4 py-3 text-center text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b">Status</th>
                       <th className="px-4 py-3 text-center text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                     {sheetSummaries.map((sheet) => (
                       <tr key={sheet.name} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-4 py-3 font-medium text-gray-900">
+                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-slate-100">
                           {SHEET_DISPLAY_NAMES[sheet.name] || sheet.name}
                         </td>
-                        <td className="px-4 py-3 text-center text-gray-700 font-mono">{sheet.rowCount}</td>
+                        <td className="px-4 py-3 text-center text-gray-700 dark:text-slate-300 font-mono">{sheet.rowCount}</td>
                         <td className="px-4 py-3 text-center">
                           {sheet.valid ? (
                             <span className="inline-flex items-center gap-1 text-green-600 text-xs font-semibold">
@@ -652,8 +652,8 @@ const ImportSurveiKkn: React.FC = () => {
                   </tbody>
                   <tfoot>
                     <tr className="bg-gray-50/70 font-semibold">
-                      <td className="px-4 py-3 text-gray-700">Total</td>
-                      <td className="px-4 py-3 text-center text-gray-900 font-mono">
+                      <td className="px-4 py-3 text-gray-700 dark:text-slate-300">Total</td>
+                      <td className="px-4 py-3 text-center text-gray-900 dark:text-slate-100 font-mono">
                         {sheetSummaries.reduce((sum, s) => sum + s.rowCount, 0)}
                       </td>
                       <td className="px-4 py-3" colSpan={2}></td>
@@ -668,9 +668,9 @@ const ImportSurveiKkn: React.FC = () => {
 
       {/* ═══════ CARD 4: Hasil Impor ═══════ */}
       {(uploadStatus === "success" || uploadStatus === "error") && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-50">
-            <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
+            <h2 className="text-base font-bold text-gray-800 dark:text-slate-100 flex items-center gap-2">
               {uploadStatus === "success" ? (
                 <CheckCircle2 size={18} className="text-green-500" />
               ) : (
@@ -693,11 +693,11 @@ const ImportSurveiKkn: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                   {Object.entries(importResult.summary).map(([sheet, count]) => (
-                    <div key={sheet} className="p-3 rounded-lg bg-gray-50 border border-gray-100">
+                    <div key={sheet} className="p-3 rounded-lg bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-800">
                       <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">
                         {SHEET_DISPLAY_NAMES[sheet] || sheet}
                       </p>
-                      <p className="text-xl font-extrabold text-gray-900 mt-1">{count}</p>
+                      <p className="text-xl font-extrabold text-gray-900 dark:text-slate-100 mt-1">{count}</p>
                       <p className="text-[10px] text-gray-400">baris</p>
                     </div>
                   ))}
@@ -718,7 +718,7 @@ const ImportSurveiKkn: React.FC = () => {
 
                 <button
                   onClick={() => setShowErrors(!showErrors)}
-                  className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                  className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 transition-colors"
                 >
                   {showErrors ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                   {showErrors ? "Sembunyikan" : "Tampilkan"} detail error
@@ -741,9 +741,9 @@ const ImportSurveiKkn: React.FC = () => {
       )}
 
       {/* ═══════ CARD 5: Riwayat Impor ═══════ */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
-          <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
+          <h2 className="text-base font-bold text-gray-800 dark:text-slate-100 flex items-center gap-2">
             <Clock size={18} className="text-primary" />
             Riwayat Impor
           </h2>
@@ -766,14 +766,14 @@ const ImportSurveiKkn: React.FC = () => {
               {history.map((item) => (
                 <div
                   key={item.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-gray-100 bg-gray-50/30 hover:bg-gray-50/60 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-gray-50/30 hover:bg-gray-50/60 transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2 rounded-lg bg-gray-100 flex-shrink-0">
+                    <div className="p-2 rounded-lg bg-gray-100 dark:bg-slate-800 flex-shrink-0">
                       <FileSpreadsheet size={18} className="text-gray-500" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{item.filename}</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-slate-100 truncate">{item.filename}</p>
                       <p className="text-xs text-gray-400 mt-0.5">
                         oleh {item.user.name} · {formatDate(item.createdAt)}
                       </p>

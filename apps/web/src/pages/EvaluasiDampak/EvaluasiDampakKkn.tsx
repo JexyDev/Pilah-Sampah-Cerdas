@@ -246,12 +246,12 @@ export const EvaluasiDampakKkn: React.FC = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold w-fit mb-2 border border-indigo-100">
             <BarChart3 size={14} /> Perubahan dan Dampak KKN
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
             Perubahan dan Dampak Program KKN
           </h1>
           <p className="text-xs text-slate-500 mt-1">
@@ -271,8 +271,8 @@ export const EvaluasiDampakKkn: React.FC = () => {
       </div>
 
       {/* Tabs & Search */}
-      <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center w-full md:w-auto p-1 bg-slate-50 rounded-xl">
+      <div className="bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center w-full md:w-auto p-1 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
           <button
             onClick={() => setActiveTab("BASELINE")}
             className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-bold transition-all ${
@@ -312,7 +312,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
             placeholder="Cari kelurahan..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all font-medium"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all font-medium"
           />
         </div>
       </div>
@@ -324,11 +324,11 @@ export const EvaluasiDampakKkn: React.FC = () => {
           <p className="text-sm font-medium text-slate-500">Memuat data survei...</p>
         </div>
       ) : activeTab === "BASELINE" || activeTab === "ENDLINE" ? (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase tracking-wider">
+                <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-xs text-slate-500 uppercase tracking-wider">
                   <th className="px-4 py-3 font-bold">Kelurahan</th>
                   <th className="px-4 py-3 font-bold">Tgl Survei</th>
                   <th className="px-4 py-3 font-bold">Pemilahan</th>
@@ -338,26 +338,26 @@ export const EvaluasiDampakKkn: React.FC = () => {
                   <th className="px-4 py-3 font-bold text-center">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="text-sm divide-y divide-slate-100">
+              <tbody className="text-sm divide-y divide-slate-100 dark:divide-slate-800">
                 {(activeTab === "BASELINE" ? filteredBaseline : filteredEndline).map((item: any) => (
                   <tr key={item.kelurahanId} className="hover:bg-slate-50/50 transition">
-                    <td className="px-4 py-3 font-bold text-slate-800">
+                    <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-100">
                       Kel. {item.namaKelurahan}
                       <span className="block text-[10px] text-slate-400 font-medium">Kec. {item.kecamatan || "-"}</span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                       {item.tanggalSurvei ? new Date(item.tanggalSurvei).toLocaleDateString("id-ID") : "-"}
                       <span className="block text-[10px] text-slate-400">Oleh: {item.enumerator || "-"}</span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                       {item.pemilahanSampah?.persentasePemilahan !== null && item.pemilahanSampah?.persentasePemilahan !== undefined
                         ? `${(item.pemilahanSampah.persentasePemilahan * 100).toFixed(1)}%` 
                         : "-"}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                       {item.volumeSampah?.totalVolumeKgPerHari ? `${item.volumeSampah.totalVolumeKgPerHari} Kg` : "-"}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                       {item.bankSampahPengolahan?.bankSampahAktif !== null && item.bankSampahPengolahan?.bankSampahAktif !== undefined
                         ? `${item.bankSampahPengolahan.bankSampahAktif} Aktif` 
                         : "-"}
@@ -394,7 +394,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                       {item.statusValidasi === "VALID" && isValidator && (
                         <button
                           onClick={() => setValidatingItem({ id: item.kelurahanId, type: activeTab })}
-                          className="bg-slate-50 hover:bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border border-slate-200 cursor-pointer shadow-2xs"
+                          className="bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 text-slate-600 dark:text-slate-400 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border border-slate-200 dark:border-slate-800 cursor-pointer shadow-2xs"
                         >
                            Revisi
                         </button>
@@ -447,7 +447,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
             return (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {/* Delta 1: Kepatuhan Pemilahan */}
-                <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     <span className="text-xs uppercase font-extrabold text-indigo-600 tracking-wider">
                       1. Δ Kepatuhan Pemilahan
@@ -458,7 +458,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                   </div>
                   <div className="mt-3">
                     <div className="flex items-baseline gap-2">
-                      <h3 className="text-2xl font-black text-slate-900">
+                      <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100">
                         {avgDeltaPemilahan > 0 ? "+" : ""}
                         {(avgDeltaPemilahan * 100).toFixed(1)}%
                       </h3>
@@ -478,7 +478,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                 </div>
 
                 {/* Delta 2: Volume Sampah */}
-                <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     <span className="text-xs uppercase font-extrabold text-rose-600 tracking-wider">
                       2. Δ Volume Sampah
@@ -489,7 +489,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                   </div>
                   <div className="mt-3">
                     <div className="flex items-baseline gap-2">
-                      <h3 className="text-2xl font-black text-slate-900">
+                      <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100">
                         {avgDeltaVolume > 0 ? "+" : ""}
                         {avgDeltaVolume.toFixed(1)} Kg
                       </h3>
@@ -509,7 +509,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                 </div>
 
                 {/* Delta 3: Kegiatan Pemanfaatan Sampah */}
-                <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     <span className="text-xs uppercase font-extrabold text-emerald-600 tracking-wider">
                       3. Δ Kegiatan Pemanfaatan
@@ -520,7 +520,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                   </div>
                   <div className="mt-3">
                     <div className="flex items-baseline gap-2">
-                      <h3 className="text-2xl font-black text-slate-900">
+                      <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100">
                         {avgDeltaKegiatan > 0 ? "+" : ""}
                         {avgDeltaKegiatan.toFixed(1)} Kegiatan
                       </h3>
@@ -544,8 +544,8 @@ export const EvaluasiDampakKkn: React.FC = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Chart: Persentase Pemilahan */}
-            <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-              <h3 className="text-sm font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+              <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
                 <Percent size={16} className="text-indigo-600" /> Komparasi Kepatuhan Pemilahan (%)
               </h3>
               <div className="h-[300px] w-full">
@@ -568,8 +568,8 @@ export const EvaluasiDampakKkn: React.FC = () => {
             </div>
 
             {/* Chart: Volume Sampah */}
-            <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-              <h3 className="text-sm font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+              <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
                 <Weight size={16} className="text-rose-600" /> Komparasi Volume Sampah (Kg/Hari)
               </h3>
               <div className="h-[300px] w-full">
@@ -592,16 +592,16 @@ export const EvaluasiDampakKkn: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mt-6">
-             <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-               <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden mt-6">
+             <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50">
+               <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                  Tabel Komparasi Metrik Dampak KKN
                </h3>
              </div>
              <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-[11px] text-slate-500 uppercase tracking-wider font-bold">
+                    <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 uppercase tracking-wider font-bold">
                       <th className="px-4 py-3">Kelurahan</th>
                       <th className="px-4 py-3">Status Data</th>
                       <th className="px-4 py-3">Metrik Kepatuhan Pemilahan</th>
@@ -609,17 +609,17 @@ export const EvaluasiDampakKkn: React.FC = () => {
                       <th className="px-4 py-3">Metrik Kegiatan Pemanfaatan</th>
                     </tr>
                   </thead>
-                  <tbody className="text-sm divide-y divide-slate-100">
+                  <tbody className="text-sm divide-y divide-slate-100 dark:divide-slate-800">
                     {filteredKomparasi.map(item => (
                       <tr key={item.kelurahanId} className="hover:bg-slate-50/50 transition">
-                        <td className="px-4 py-3 font-bold text-slate-800">
+                        <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-100">
                           Kel. {item.namaKelurahan}
                         </td>
                         <td className="px-4 py-3">
                           {item.hasEndline ? (
                              <span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md text-[10px] font-bold">Lengkap</span>
                           ) : (
-                             <span className="bg-slate-100 text-slate-500 px-2 py-1 rounded-md text-[10px] font-bold">Menunggu Endline</span>
+                             <span className="bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-1 rounded-md text-[10px] font-bold">Menunggu Endline</span>
                           )}
                         </td>
                         <td className="px-4 py-3 font-semibold">
@@ -658,10 +658,10 @@ export const EvaluasiDampakKkn: React.FC = () => {
       {/* Validasi Modal */}
       {validatingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 border border-slate-100">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md p-6 border border-slate-100 dark:border-slate-800">
              <div className="flex justify-between items-start mb-4">
                <div>
-                 <h2 className="text-lg font-extrabold text-slate-800">
+                 <h2 className="text-lg font-extrabold text-slate-800 dark:text-slate-100">
                    Validasi Data {validatingItem.type === "BASELINE" ? "Baseline" : "Endline"}
                  </h2>
                  <p className="text-xs text-slate-500">Tentukan status kelayakan data survei yang disubmit.</p>
@@ -673,13 +673,13 @@ export const EvaluasiDampakKkn: React.FC = () => {
              
              <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Catatan Evaluasi / Revisi (Opsional)</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Catatan Evaluasi / Revisi (Opsional)</label>
                   <textarea 
                     value={validationNote}
                     onChange={(e) => setValidationNote(e.target.value)}
                     rows={4}
                     placeholder="Masukkan catatan jika ada revisi yang perlu dilakukan..."
-                    className="w-full border border-slate-200 rounded-xl p-3 text-sm text-slate-800 focus:outline-none focus:border-indigo-500 bg-slate-50 focus:bg-white transition"
+                    className="w-full border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 bg-slate-50 dark:bg-slate-800/60 focus:bg-white transition"
                   />
                 </div>
                 
@@ -705,7 +705,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
       {/* Export Modal with Period & Custom Date Range */}
       {isExportModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-800 text-white">
               <div className="flex items-center gap-2.5">
                 <Download size={18} className="text-emerald-400" />
@@ -725,7 +725,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-black text-slate-700 mb-2 flex items-center gap-1.5">
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
                   <Calendar size={14} className="text-slate-500" /> Pilih Filter Periode Waktu:
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -753,23 +753,23 @@ export const EvaluasiDampakKkn: React.FC = () => {
               </div>
 
               {exportPeriod === "CUSTOM" && (
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 animate-in fade-in duration-200">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 animate-in fade-in duration-200">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Tanggal Mulai:</label>
+                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Tanggal Mulai:</label>
                     <input
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Tanggal Selesai:</label>
+                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Tanggal Selesai:</label>
                     <input
                       type="date"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                 </div>
@@ -779,7 +779,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsExportModalOpen(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition"
+                  className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition"
                 >
                   Batal
                 </button>

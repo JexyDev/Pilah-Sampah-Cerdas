@@ -104,30 +104,30 @@ export const PenilaianProkerPage: React.FC = () => {
   const paginatedProkers = filteredProkers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-100">
       {/* Clean Flat Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Penilaian Program Kerja KKN</h1>
+          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">Penilaian Program Kerja KKN</h1>
           <p className="text-slate-500 text-sm mt-1">
             Evaluasi capaian output, dampak kebermanfaatan, serta akuntabilitas program kerja mahasiswa di lapangan.
           </p>
         </div>
 
-        <div className="bg-white border border-slate-200/80 px-4 py-2.5 rounded-xl text-center shadow-2xs">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-4 py-2.5 rounded-xl text-center shadow-2xs">
           <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block">Total Program Kerja</span>
-          <span className="text-lg font-extrabold text-slate-800">{prokerList.length} Proker</span>
+          <span className="text-lg font-extrabold text-slate-800 dark:text-slate-100">{prokerList.length} Proker</span>
         </div>
       </div>
 
       {/* Filter & Search */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <span className="text-xs font-bold text-slate-600">Kelompok:</span>
+          <span className="text-xs font-bold text-slate-600 dark:text-slate-400">Kelompok:</span>
           <select
             value={selectedKelompokId}
             onChange={(e) => setSelectedKelompokId(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500"
+            className="px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-emerald-500"
           >
             <option value="ALL">Semua Kelompok Binaan</option>
             {kelompokList.map((k) => (
@@ -145,13 +145,13 @@ export const PenilaianProkerPage: React.FC = () => {
             placeholder="Cari deskripsi program kerja..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500"
           />
         </div>
       </div>
 
       {/* Main Table */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
         {loading ? (
           <div className="p-12 flex flex-col items-center justify-center gap-3 text-slate-400">
             <Loader2 className="animate-spin text-emerald-600" size={32} />
@@ -169,9 +169,9 @@ export const PenilaianProkerPage: React.FC = () => {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700 border-collapse">
+            <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
               <thead>
-                <tr className="bg-slate-50/90 text-slate-500 border-b border-slate-200 text-[11px] uppercase tracking-wider font-bold">
+                <tr className="bg-slate-50/90 text-slate-500 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4 w-44">Kelompok</th>
                   <th className="py-3.5 px-4 min-w-[240px]">Rencana & Output Kegiatan</th>
@@ -181,7 +181,7 @@ export const PenilaianProkerPage: React.FC = () => {
                   <th className="py-3.5 px-4 w-28 text-center">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 {paginatedProkers.map((p, idx) => {
                   const isSaving = savingId === p.id;
 
@@ -191,14 +191,14 @@ export const PenilaianProkerPage: React.FC = () => {
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
                       <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900">{p.kelompokName}</div>
+                        <div className="font-bold text-slate-900 dark:text-slate-100">{p.kelompokName}</div>
                         <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
                           <Building size={12} className="text-slate-400" />
                           <span>Kel. {p.kelurahan}</span>
                         </div>
                       </td>
                       <td className="py-3.5 px-4">
-                        <p className="text-slate-900 font-normal leading-relaxed">{p.deskripsi}</p>
+                        <p className="text-slate-900 dark:text-slate-100 font-normal leading-relaxed">{p.deskripsi}</p>
                         <div className="text-[11px] text-slate-500 mt-1 font-mono">
                           Anggaran: Rp {Number(p.kebutuhanBiaya || 0).toLocaleString("id-ID")}
                         </div>
@@ -232,7 +232,7 @@ export const PenilaianProkerPage: React.FC = () => {
                               [p.id]: Number(e.target.value),
                             })
                           }
-                          className="w-20 px-2 py-1.5 text-center font-black text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+                          className="w-20 px-2 py-1.5 text-center font-black text-sm bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500"
                         />
                       </td>
                       <td className="py-3.5 px-4">
@@ -246,7 +246,7 @@ export const PenilaianProkerPage: React.FC = () => {
                               [p.id]: e.target.value,
                             })
                           }
-                          className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
+                          className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500"
                         />
                       </td>
                       <td className="py-3.5 px-4 text-center">

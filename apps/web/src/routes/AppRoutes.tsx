@@ -112,16 +112,16 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: Us
 
 // Placeholder page component
 const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
-  <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
-    <div className="bg-white/90 p-12 rounded-2xl shadow-sm border border-outline-variant text-center max-w-md">
+  <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-slate-800 dark:text-slate-100">
+    <div className="bg-white/90 dark:bg-slate-900/90 p-12 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 text-center max-w-md">
       <span
-        className="material-symbols-outlined text-primary text-[64px]"
+        className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-[64px]"
         style={{ fontVariationSettings: "'FILL' 1" }}
       >
         construction
       </span>
-      <h2 className="text-[22px] font-bold text-on-surface mt-4">{title}</h2>
-      <p className="text-[14px] text-on-surface-variant mt-2">
+      <h2 className="text-[22px] font-bold text-slate-900 dark:text-slate-100 mt-4">{title}</h2>
+      <p className="text-[14px] text-slate-600 dark:text-slate-400 mt-2">
         Halaman ini sedang dalam tahap pengembangan. Fitur akan segera tersedia.
       </p>
     </div>

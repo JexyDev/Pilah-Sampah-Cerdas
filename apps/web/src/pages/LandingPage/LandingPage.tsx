@@ -328,7 +328,7 @@ export const LandingPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 transition shrink-0 cursor-pointer"
+              className="lg:hidden p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 transition shrink-0 cursor-pointer"
               aria-label="Toggle Navigation Menu"
               aria-expanded={isMobileMenuOpen}
             >
@@ -341,8 +341,8 @@ export const LandingPage: React.FC = () => {
 
         {/* Mobile Navigation Drawer */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden bg-white/95 backdrop-blur-xl border-b border-slate-200/80 px-6 py-5 space-y-4 animate-in slide-in-from-top duration-300 shadow-xl">
-            <div className="flex flex-col space-y-3 font-bold text-slate-800 text-sm text-left">
+          <div className="lg:hidden bg-white/95 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800 px-6 py-5 space-y-4 animate-in slide-in-from-top duration-300 shadow-xl">
+            <div className="flex flex-col space-y-3 font-bold text-slate-800 dark:text-slate-100 text-sm text-left">
               <button
                 onClick={() => scrollToSection("#about")}
                 className={`py-2 text-left transition ${activeSection === "#about" ? "text-emerald-600 font-extrabold" : "hover:text-emerald-600"}`}
@@ -374,7 +374,7 @@ export const LandingPage: React.FC = () => {
                 FAQ
               </button>
             </div>
-            <div className="pt-3 border-t border-slate-100 flex flex-col gap-2.5">
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2.5">
               {isAuthenticated ? (
                 <button
                   onClick={() => { setIsMobileMenuOpen(false); navigate("/dasbor"); }}
@@ -396,7 +396,7 @@ export const LandingPage: React.FC = () => {
 
               <button
                 onClick={() => { setIsMobileMenuOpen(false); setShowContactModal(true); }}
-                className="w-full py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-extrabold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                className="w-full py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-sm font-extrabold text-slate-700 dark:text-slate-300 hover:bg-slate-100 transition cursor-pointer"
               >
                 Hubungi Kami
               </button>
@@ -406,17 +406,17 @@ export const LandingPage: React.FC = () => {
       </nav>
 
       {/* ----------------- HERO SECTION (FULL WEB RESPONSIF EDGE-TO-EDGE) ----------------- */}
-      <section className="relative pt-8 sm:pt-10 lg:pt-2 pb-12 lg:pb-16 bg-white overflow-hidden">
+      <section className="relative pt-8 sm:pt-10 lg:pt-2 pb-12 lg:pb-16 bg-white dark:bg-slate-900 overflow-hidden">
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
 
           {/* Hero Left Column */}
           <div className="lg:col-span-6 xl:col-span-5 space-y-6 text-left relative z-20 pl-4 sm:pl-8 lg:pl-16 xl:pl-24 pr-4 animate-fade-in-up">
-            <h1 className="text-3xl sm:text-4xl lg:text-[3rem] font-black text-slate-900 leading-[1.15] tracking-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-[3rem] font-black text-slate-900 dark:text-slate-100 leading-[1.15] tracking-tight">
               Sampah <span className="text-[#0073E6]">Terdata</span>,<br />
               Lingkungan <span className="text-[#59B828]">Tertata</span>
             </h1>
 
-            <p className="text-slate-600 text-sm sm:text-base font-medium leading-relaxed max-w-xl">
+            <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base font-medium leading-relaxed max-w-xl">
               Sistem tata kelola sampah terintegrasi dengan pendekatan kegiatan KKN berdampak yang menghubungkan warga, petugas residu, mahasiswa, dosen pendamping lapangan, pimpinan perguruan tinggi, RW, kelurahan, kecamatan, dan Dinas Lingkungan Hidup.
             </p>
 
@@ -430,7 +430,7 @@ export const LandingPage: React.FC = () => {
 
               <button
                 onClick={() => scrollToSection("#about")}
-                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-900 font-extrabold text-sm transition shadow-xs hover:shadow-md cursor-pointer"
+                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 text-slate-900 dark:text-slate-100 font-extrabold text-sm transition shadow-xs hover:shadow-md cursor-pointer"
               >
                 Pelajari Lebih Lanjut
               </button>
@@ -451,13 +451,13 @@ export const LandingPage: React.FC = () => {
 
         {/* Quick Stat Highlights (Connected to Live Database API) */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-12">
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-lg shadow-slate-200/50 p-6 sm:p-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-lg shadow-slate-200/50 p-6 sm:p-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 dark:divide-slate-800">
 
             <div className="flex flex-col items-center justify-center text-center space-y-2 pt-2 sm:pt-0 sm:px-4">
               <div className="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
                 <Icon icon="tabler:activity" className="text-xl" />
               </div>
-              <p className="text-2xl font-black text-slate-900 tracking-tight">
+              <p className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
                 {statsData ? `${statsData.kegiatanCount}+` : "25+"}
               </p>
               <p className="text-xs font-bold text-slate-500">Kegiatan Terlaksana</p>
@@ -467,7 +467,7 @@ export const LandingPage: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-sky-100/80 text-sky-700 flex items-center justify-center">
                 <Icon icon="octicon:people-16" className="text-xl" />
               </div>
-              <p className="text-2xl font-black text-slate-900 tracking-tight">
+              <p className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
                 {statsData ? `${statsData.wargaCount}+` : "500+"}
               </p>
               <p className="text-xs font-bold text-slate-500">Warga Terlibat</p>
@@ -477,7 +477,7 @@ export const LandingPage: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
                 <Icon icon="iconamoon:trash" className="text-xl" />
               </div>
-              <p className="text-2xl font-black text-slate-900 tracking-tight">
+              <p className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
                 {statsData ? `${statsData.totalSampahKg.toLocaleString("id-ID")}+ kg` : "1.250+ kg"}
               </p>
               <p className="text-xs font-bold text-slate-500">Sampah Terkelola</p>
@@ -487,7 +487,7 @@ export const LandingPage: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-teal-100/80 text-teal-700 flex items-center justify-center">
                 <Icon icon="lucide:home" className="text-xl" />
               </div>
-              <p className="text-2xl font-black text-slate-900 tracking-tight">
+              <p className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
                 {statsData ? statsData.kelurahanCount : 6}
               </p>
               <p className="text-xs font-bold text-slate-500">Kelurahan Terlibat</p>
@@ -497,7 +497,7 @@ export const LandingPage: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
                 <Icon icon="solar:chart-linear" className="text-xl" />
               </div>
-              <p className="text-2xl font-black text-slate-900 tracking-tight">
+              <p className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
                 {statsData ? `${statsData.tingkatPemilahanPercent}%` : "35%"}
               </p>
               <p className="text-xs font-bold text-slate-500">Tingkat Pemilahan</p>
@@ -508,7 +508,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* ----------------- 01. ABOUT US ----------------- */}
-      <section id="about" className="py-24 bg-white border-y border-slate-200/80 relative overflow-hidden">
+      <section id="about" className="py-24 bg-white dark:bg-slate-900 border-y border-slate-200/80 dark:border-slate-800 relative overflow-hidden">
         <div className="container-custom space-y-16">
 
           {/* About Header Narrative */}
@@ -518,7 +518,7 @@ export const LandingPage: React.FC = () => {
               <span className="text-[#59B828]">Care</span>
             </h2>
 
-            <p className="text-slate-600 text-base sm:text-lg leading-relaxed font-medium">
+            <p className="text-slate-600 dark:text-slate-400 text-base sm:text-lg leading-relaxed font-medium">
               Sistem tata kelola sampah terintegrasi dengan kegiatan KKN Berdampak yang menghubungkan warga, petugas residu, mahasiswa, dosen pendamping lapangan (DPL), pimpinan perguruan tinggi, RW, kelurahan, kecamatan, dan Dinas Lingkungan Hidup.
             </p>
           </div>
@@ -529,7 +529,7 @@ export const LandingPage: React.FC = () => {
               <span className="text-xs font-extrabold uppercase tracking-widest text-[#1D3B2F] bg-[#1D3B2F]/10 px-3.5 py-1 rounded-full">
                 Komitmen Global
               </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3 tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 mt-3 tracking-tight">
                 Sejalan dengan Tujuan Pembangunan Berkelanjutan (SDGs)
               </h2>
             </div>
@@ -538,7 +538,7 @@ export const LandingPage: React.FC = () => {
               {sdgs.map((sdg) => (
                 <div
                   key={sdg.num}
-                  className="group relative bg-white rounded-3xl p-5 md:p-6 border border-slate-200/80 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer"
+                  className="group relative bg-white dark:bg-slate-900 rounded-3xl p-5 md:p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer"
                 >
                   {/* Top Badge (Clean Tag & Number) */}
                   <div className="flex items-center justify-between mb-4">
@@ -551,7 +551,7 @@ export const LandingPage: React.FC = () => {
                   </div>
 
                   {/* SVG Icon Image Box (Fixed Height, Proportional, Non-Lonjong) */}
-                  <div className="relative rounded-2xl overflow-hidden mb-4 h-32 sm:h-36 w-full bg-slate-50 flex items-center justify-center p-3 border border-slate-100/80 group-hover:bg-white group-hover:border-slate-200 transition-colors">
+                  <div className="relative rounded-2xl overflow-hidden mb-4 h-32 sm:h-36 w-full bg-slate-50 dark:bg-slate-800/60 flex items-center justify-center p-3 border border-slate-100/80 group-hover:bg-white group-hover:border-slate-200 transition-colors">
                     <img
                       src={sdg.img}
                       alt={`SDG ${sdg.num}`}
@@ -569,7 +569,7 @@ export const LandingPage: React.FC = () => {
               ))}
             </div>
 
-            <p className="sdg-bottom-text text-center text-sm text-slate-600 font-medium mt-10 max-w-3xl mx-auto leading-relaxed">
+            <p className="sdg-bottom-text text-center text-sm text-slate-600 dark:text-slate-400 font-medium mt-10 max-w-3xl mx-auto leading-relaxed">
               Bersama <span className="font-black"><span className="text-[#0073E6]">Trash</span><span className="text-[#59B828]">Care</span></span>, pengelolaan sampah menjadi bagian dari solusi untuk lingkungan yang lebih bersih dan berkelanjutan.
             </p>
           </div>
@@ -585,7 +585,7 @@ export const LandingPage: React.FC = () => {
                     Layanan Utama
                   </p>
 
-                  <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
+                  <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 mt-1">
                     Layanan terintegrasi untuk mewujudkan ekosistem tata kelola sampah yang berkelanjutan.
                   </h2>
 
@@ -677,10 +677,10 @@ export const LandingPage: React.FC = () => {
                         className="block text-left"
                       >
                         <article
-                          className="kegiatan-card-modern group bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between cursor-pointer h-full"
+                          className="kegiatan-card-modern group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between cursor-pointer h-full"
                         >
                           {/* Thumbnail Photo Container */}
-                          <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-100">
+                          <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
                             <img
                               src={item.imageUrl || fallbackImg}
                               alt={item.title}
@@ -693,7 +693,7 @@ export const LandingPage: React.FC = () => {
 
                             {/* Floating Date Badge */}
                             <div className="absolute top-3.5 left-3.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-md border border-white/60 flex flex-col items-center justify-center text-center">
-                              <span className="text-sm font-black text-slate-900 leading-none">{day}</span>
+                              <span className="text-sm font-black text-slate-900 dark:text-slate-100 leading-none">{day}</span>
                               <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-wider leading-none mt-0.5">{month}</span>
                             </div>
 
@@ -706,13 +706,13 @@ export const LandingPage: React.FC = () => {
                           {/* Content Body */}
                           <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-4">
                             <div className="space-y-2">
-                              <h3 className="font-extrabold text-slate-900 text-base sm:text-lg leading-snug group-hover:text-emerald-600 transition-colors line-clamp-2 text-left">
+                              <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-base sm:text-lg leading-snug group-hover:text-emerald-600 transition-colors line-clamp-2 text-left">
                                 {item.title}
                               </h3>
                             </div>
 
-                            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-semibold">
-                              <span className="flex items-center gap-1.5 text-slate-600 font-medium truncate max-w-[200px]">
+                            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 font-semibold">
+                              <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 font-medium truncate max-w-[200px]">
                                 <span className="material-symbols-outlined text-base text-emerald-600 shrink-0">location_on</span>
                                 <span className="truncate">{item.location || "Kec. Coblong"}</span>
                               </span>
@@ -749,17 +749,17 @@ export const LandingPage: React.FC = () => {
               <div className="mt-3 h-1 w-12 rounded-full bg-emerald-600 mx-auto"></div>
             </div>
 
-            <h2 className="mt-4 text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
+            <h2 className="mt-4 text-3xl sm:text-5xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
               Mengapa Aplikasi Ini?
             </h2>
 
-            <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto mt-3">
+            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl mx-auto mt-3">
               Bukan sekadar mencatat sampah, TrashCare menghubungkan teknologi,
               partisipasi masyarakat, dan pengelolaan lingkungan dalam satu sistem.
             </p>
 
             {/* Clean Interactive Pills */}
-            <div className="flex flex-wrap sm:inline-flex items-center justify-center gap-2.5 p-2 sm:p-1.5 bg-white rounded-2xl sm:rounded-full border border-slate-200/80 shadow-2xs mt-4 max-w-full">
+            <div className="flex flex-wrap sm:inline-flex items-center justify-center gap-2.5 p-2 sm:p-1.5 bg-white dark:bg-slate-900 rounded-2xl sm:rounded-full border border-slate-200/80 dark:border-slate-800 shadow-2xs mt-4 max-w-full">
               <button
                 onClick={() => setWhyUsTab("points")}
                 className={`clean-interactive-tab ${whyUsTab === "points" ? "active" : ""
@@ -791,9 +791,9 @@ export const LandingPage: React.FC = () => {
             {whyUsTab === "points" ? (
 
               /* ================= POINT ================= */
-              <div className="bg-white text-slate-900 p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-md space-y-6">
+              <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-8 sm:p-10 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-md space-y-6">
 
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
                   <div className="flex items-center gap-2.5">
                     <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
                       <span className="material-symbols-outlined text-xl">
@@ -801,7 +801,7 @@ export const LandingPage: React.FC = () => {
                       </span>
                     </div>
 
-                    <span className="font-extrabold text-lg text-slate-900">
+                    <span className="font-extrabold text-lg text-slate-900 dark:text-slate-100">
                       Reward dan Audit Poin
                     </span>
                   </div>
@@ -811,13 +811,13 @@ export const LandingPage: React.FC = () => {
                   </span>
                 </div>
 
-                <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
                   Pencatatan poin warga dan mahasiswa Kuliah Kerja Nyata (KKN) menggunakan buku besar (ledger) terpisah pada basis data demi transparansi audit. Setiap setoran sampah berhadiah poin insentif, dan pengajuan ide daur ulang yang disetujui Rukun Warga memberikan hadiah tambahan (+50 poin).
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 pt-2 text-center">
 
-                  <div className="p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                  <div className="p-3.5 sm:p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-1">
                     <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
                       Warga Terdaftar
                     </span>
@@ -826,7 +826,7 @@ export const LandingPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                  <div className="p-3.5 sm:p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-1">
                     <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
                       Total Poin Terdistribusi
                     </span>
@@ -835,7 +835,7 @@ export const LandingPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                  <div className="p-3.5 sm:p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-1">
                     <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
                       Hadiah Ide Daur Ulang
                     </span>
@@ -851,9 +851,9 @@ export const LandingPage: React.FC = () => {
             ) : whyUsTab === "bins" ? (
 
               /* ================= TEMPAT SAMPAH ================= */
-              <div className="bg-white text-slate-900 p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-md space-y-6">
+              <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-8 sm:p-10 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-md space-y-6">
 
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
 
                   <div className="flex items-center gap-2.5">
 
@@ -863,7 +863,7 @@ export const LandingPage: React.FC = () => {
                       </span>
                     </div>
 
-                    <span className="font-extrabold text-lg text-slate-900">
+                    <span className="font-extrabold text-lg text-slate-900 dark:text-slate-100">
                       Aturan Tempat Sampah
                     </span>
 
@@ -875,15 +875,15 @@ export const LandingPage: React.FC = () => {
 
                 </div>
 
-                <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
                   Setiap rumah tangga berhak mendaftarkan maksimal 2 tempat sampah (1 organik dan 1 anorganik). Tempat sampah aktif selama 30 hari dan diperbarui otomatis setiap penyetoran. Penjemputan residu dipisahkan dan ditimbang secara manual oleh petugas residu.
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
 
-                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                  <div className="p-5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-black text-slate-900">
+                      <p className="text-sm font-black text-slate-900 dark:text-slate-100">
                         Total Tempat Sampah Terdaftar
                       </p>
                       <p className="text-xs text-slate-500 font-medium">
@@ -896,9 +896,9 @@ export const LandingPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                  <div className="p-5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-black text-slate-900">
+                      <p className="text-sm font-black text-slate-900 dark:text-slate-100">
                         Total Penjemputan dan Residu
                       </p>
                       <p className="text-xs text-slate-500 font-medium">
@@ -918,9 +918,9 @@ export const LandingPage: React.FC = () => {
             ) : (
 
               /* ================= IOT ================= */
-              <div className="bg-white text-slate-900 p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-md space-y-6">
+              <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-8 sm:p-10 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-md space-y-6">
 
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
 
                   <div className="flex items-center gap-2.5">
 
@@ -930,7 +930,7 @@ export const LandingPage: React.FC = () => {
                       </span>
                     </div>
 
-                    <span className="font-extrabold text-lg text-slate-900">
+                    <span className="font-extrabold text-lg text-slate-900 dark:text-slate-100">
                       Integrasi Perangkat IoT
                     </span>
 
@@ -942,20 +942,20 @@ export const LandingPage: React.FC = () => {
 
                 </div>
 
-                <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
                   TrashCare dirancang untuk dapat terintegrasi dengan perangkat Internet of Things (IoT) pada tahap pengembangan masa depan untuk memantau kondisi tempat sampah secara otomatis dan terukur guna mendukung efisiensi rute penjemputan.
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
 
-                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="p-5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-800">
                     <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mb-3">
                       <span className="material-symbols-outlined">
                         sensors
                       </span>
                     </div>
 
-                    <p className="text-sm font-black text-slate-900">
+                    <p className="text-sm font-black text-slate-900 dark:text-slate-100">
                       Smart Bin IoT
                     </p>
 
@@ -964,14 +964,14 @@ export const LandingPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="p-5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-800">
                     <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-3">
                       <span className="material-symbols-outlined">
                         monitoring
                       </span>
                     </div>
 
-                    <p className="text-sm font-black text-slate-900">
+                    <p className="text-sm font-black text-slate-900 dark:text-slate-100">
                       Tingkat Pemilahan
                     </p>
 
@@ -980,14 +980,14 @@ export const LandingPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="p-5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-800">
                     <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-3">
                       <span className="material-symbols-outlined">
                         route
                       </span>
                     </div>
 
-                    <p className="text-sm font-black text-slate-900">
+                    <p className="text-sm font-black text-slate-900 dark:text-slate-100">
                       Volume Terkelola
                     </p>
 
@@ -1008,11 +1008,11 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* ----------------- 03. HOW IT WORKS -----------------
-      <section id="how-it-works" className="py-24 bg-white border-b border-slate-200/80">
+      <section id="how-it-works" className="py-24 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800">
         <div className="container-custom space-y-16">
           <div className="text-center space-y-2">
             <span className="text-emerald-600 font-extrabold text-sm uppercase tracking-wider">03. How</span>
-            <h2 className="text-4xl font-extrabold text-slate-900">Bagaimana Cara Kerja Aplikasi</h2>
+            <h2 className="text-4xl font-extrabold text-slate-900 dark:text-slate-100">Bagaimana Cara Kerja Aplikasi</h2>
             <p className="text-slate-500 text-sm font-medium">Terintegrasi dan transparan dari hulu ke hilir</p>
           </div>
 
@@ -1025,11 +1025,11 @@ export const LandingPage: React.FC = () => {
               { icon: "account_balance_wallet", num: "5", title: "Poin Disetujui RW", desc: "Poin insentif warga bertambah atomik setelah diverifikasi RW." },
             ].map((step) => (
               <div key={step.num} className="waste-cat-card text-center space-y-3">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-slate-100">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-slate-100 dark:border-slate-800">
                   <span className="material-symbols-outlined text-3xl">{step.icon}</span>
                 </div>
                 <span className="text-xs font-black text-emerald-600 uppercase tracking-widest">Langkah {step.num}</span>
-                <h3 className="font-extrabold text-slate-900 text-base mt-1 mb-1">{step.title}</h3>
+                <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-base mt-1 mb-1">{step.title}</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">{step.desc}</p>
               </div>
             ))}
@@ -1038,7 +1038,7 @@ export const LandingPage: React.FC = () => {
       </section> */}
 
       {/* ---------- Dampak Nyata ---------- */}
-      <section className="py-24 bg-slate-50/70 border-b border-slate-200/80" id="dampak">
+      <section className="py-24 bg-slate-50/70 border-b border-slate-200/80 dark:border-slate-800" id="dampak">
         <div className="container-custom">
 
           <div className="dampak-grid">
@@ -1204,7 +1204,7 @@ export const LandingPage: React.FC = () => {
     FAQ SECTION
 ========================================================= */}
 
-      <section id="faq" className="py-24 bg-white">
+      <section id="faq" className="py-24 bg-white dark:bg-slate-900">
         <div className="container-custom">
 
           {/* Header */}
@@ -1214,11 +1214,11 @@ export const LandingPage: React.FC = () => {
               FAQ
             </div>
 
-            <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
               Pertanyaan yang Sering Ditanyakan
             </h2>
 
-            <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto mt-4">
+            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl mx-auto mt-4">
               Temukan jawaban atas pertanyaan umum mengenai TrashCare,
               pengelolaan sampah, dan cara menggunakan platform kami.
             </p>
@@ -1378,10 +1378,10 @@ export const LandingPage: React.FC = () => {
         <div className="container-custom space-y-12">
           <div className="text-center space-y-2">
             <span className="text-emerald-600 font-extrabold text-sm uppercase tracking-wider">05. What</span>
-            <h2 className="text-4xl font-extrabold text-slate-900">Pemanfaatan Hilir dan Fasilitas GIS</h2>
+            <h2 className="text-4xl font-extrabold text-slate-900 dark:text-slate-100">Pemanfaatan Hilir dan Fasilitas GIS</h2>
             <p className="text-slate-500 text-sm font-medium">Pengolahan sampah terintegrasi di wilayah Kecamatan Coblong</p>
 
-            <div className="inline-flex p-1 bg-white border border-slate-200 rounded-full mt-4">
+            <div className="inline-flex p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full mt-4">
               <button
                 onClick={() => setWhatTab("pemilahan")}
                 className={`clean-interactive-tab ${whatTab === "pemilahan" ? "active" : ""}`}
@@ -1410,7 +1410,7 @@ export const LandingPage: React.FC = () => {
                   <div className={`w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto border border-slate-100 ${cat.color}`}>
                     <span className="material-symbols-outlined text-3xl">{cat.icon}</span>
                   </div>
-                  <h4 className="font-extrabold text-slate-900 text-base">{cat.title}</h4>
+                  <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-base">{cat.title}</h4>
                   <p className="text-xs text-slate-500 leading-relaxed font-medium">{cat.desc}</p>
                 </div>
               ))}
@@ -1437,14 +1437,14 @@ export const LandingPage: React.FC = () => {
                   icon: "layers"
                 },
               ].map((item, idx) => (
-                <div key={idx} className="bg-white border border-slate-200/80 rounded-3xl p-8 space-y-4 hover:shadow-xl transition duration-300">
+                <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-8 space-y-4 hover:shadow-xl transition duration-300">
                   <div className="flex items-center justify-between">
                     <span className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                       <span className="material-symbols-outlined text-2xl">{item.icon}</span>
                     </span>
-                    <span className="text-xs font-extrabold px-3 py-1 bg-slate-100 text-slate-700 rounded-full">{item.type}</span>
+                    <span className="text-xs font-extrabold px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-full">{item.type}</span>
                   </div>
-                  <h4 className="font-extrabold text-slate-900 text-lg">{item.title}</h4>
+                  <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-lg">{item.title}</h4>
                   <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
                 </div>
               ))}
@@ -1521,15 +1521,15 @@ export const LandingPage: React.FC = () => {
       {
         showContactModal && (
           <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
                     <span className="material-symbols-outlined text-xl">contact_support</span>
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-slate-900 text-lg leading-tight">
+                    <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-lg leading-tight">
                       Hubungi Kami
                     </h3>
                     <p className="text-[11px] text-slate-500 font-semibold mt-0.5">Sistem Tata Kelola Sampah Coblong</p>
@@ -1537,7 +1537,7 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setShowContactModal(false)}
-                  className="w-9 h-9 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700 hover:bg-slate-200 flex items-center justify-center transition cursor-pointer"
+                  className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-700 hover:bg-slate-200 flex items-center justify-center transition cursor-pointer"
                   aria-label="Tutup modal"
                 >
                   <span className="material-symbols-outlined text-xl">close</span>
@@ -1545,8 +1545,8 @@ export const LandingPage: React.FC = () => {
               </div>
 
               {/* Body */}
-              <div className="space-y-4 text-xs text-slate-600">
-                <p className="font-medium text-slate-600 leading-relaxed">
+              <div className="space-y-4 text-xs text-slate-600 dark:text-slate-400">
+                <p className="font-medium text-slate-600 dark:text-slate-400 leading-relaxed">
                   Untuk informasi seputar sistem pemilahan sampah cerdas Kecamatan Coblong atau kerja sama operasional:
                 </p>
 
@@ -1557,10 +1557,10 @@ export const LandingPage: React.FC = () => {
                       <span className="material-symbols-outlined text-lg">location_on</span>
                     </div>
                     <div className="space-y-1 flex-1">
-                      <p className="font-extrabold text-slate-900 text-xs sm:text-sm">
+                      <p className="font-extrabold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
                         Universitas Komputer Indonesia
                       </p>
-                      <p className="text-slate-600 leading-relaxed font-medium text-xs">
+                      <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium text-xs">
                         Jl. Dipati Ukur No.112-116, Lebakgede, Kecamatan Coblong, Kota Bandung, Jawa Barat 40132
                       </p>
                       <a
@@ -1584,7 +1584,7 @@ export const LandingPage: React.FC = () => {
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email Resmi</p>
                       <a
                         href="mailto:cdc@unikom.ac.id"
-                        className="font-extrabold text-slate-900 hover:text-emerald-600 transition-colors text-xs sm:text-sm"
+                        className="font-extrabold text-slate-900 dark:text-slate-100 hover:text-emerald-600 transition-colors text-xs sm:text-sm"
                       >
                         cdc@unikom.ac.id
                       </a>
@@ -1602,7 +1602,7 @@ export const LandingPage: React.FC = () => {
                         href="https://wa.me/6285715516065"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-extrabold text-slate-900 hover:text-emerald-600 transition-colors text-xs sm:text-sm"
+                        className="font-extrabold text-slate-900 dark:text-slate-100 hover:text-emerald-600 transition-colors text-xs sm:text-sm"
                       >
                         +62 857-1551-6065
                       </a>
@@ -1627,9 +1627,9 @@ export const LandingPage: React.FC = () => {
       {
         showApkModal && (
           <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl max-w-md w-full p-8 space-y-6 shadow-2xl border border-slate-100">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <h3 className="font-extrabold text-slate-900 text-lg flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-8 space-y-6 shadow-2xl border border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+                <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-lg flex items-center gap-2">
                   <span className="material-symbols-outlined text-emerald-600">android</span>
                   Unduh Aplikasi Mobile
                 </h3>
@@ -1642,7 +1642,7 @@ export const LandingPage: React.FC = () => {
                 <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
                   <span className="material-symbols-outlined text-3xl">download_for_offline</span>
                 </div>
-                <h4 className="font-bold text-slate-900 text-base">TrashCare Mobile App</h4>
+                <h4 className="font-bold text-slate-900 dark:text-slate-100 text-base">TrashCare Mobile App</h4>
                 <p className="text-xs text-slate-500 leading-relaxed font-medium">
                   File instalasi rilis APK Android sedang diproses. Tautan unduhan langsung akan segera aktif.
                 </p>

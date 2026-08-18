@@ -55,8 +55,8 @@ export const PolygonGeofenceMap: React.FC<{ onSelectArea?: (area: PolygonData) =
   const isDetailedZoom = zoomLevel >= 16;
 
   return (
-    <div className="relative w-full h-[500px] rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
-      <div className="absolute top-4 right-4 z-[1000] bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-200 shadow-md text-xs font-semibold text-slate-700 flex items-center gap-2">
+    <div className="relative w-full h-[500px] rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div className="absolute top-4 right-4 z-[1000] bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-md text-xs font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
         <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
         <span>
           Geofencing Mode: {isDetailedZoom ? "Detail Sub-RW/RT Polygons" : "6 Kelurahan Overview (Lazy Loaded)"}
@@ -96,10 +96,10 @@ export const PolygonGeofenceMap: React.FC<{ onSelectArea?: (area: PolygonData) =
             >
               <Popup>
                 <div className="p-1 max-w-xs font-sans">
-                  <h4 className="font-extrabold text-sm text-slate-900 border-b pb-1 mb-2">
+                  <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100 border-b pb-1 mb-2">
                     {poly.name} ({poly.type})
                   </h4>
-                  <div className="space-y-1 text-xs text-slate-700">
+                  <div className="space-y-1 text-xs text-slate-700 dark:text-slate-300">
                     <p>📍 Status: <span className="font-semibold text-emerald-700">Ter-Geofence</span></p>
                     <p>🗑️ Total Tempat Sampah: <span className="font-semibold">{poly.stats?.totalBins || 0} unit</span></p>
                     <p>👥 Warga Aktif: <span className="font-semibold">{poly.stats?.activeWarga || 0} KK</span></p>

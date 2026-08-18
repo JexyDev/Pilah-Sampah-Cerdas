@@ -283,11 +283,11 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50">
           <div>
-            <h2 className="text-lg font-black text-slate-800">
+            <h2 className="text-lg font-black text-slate-800 dark:text-slate-100">
               Edit Data Hasil Survei: Kel. {namaKelurahan || kelurahanId}
             </h2>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
@@ -303,7 +303,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-slate-200 overflow-x-auto px-6 bg-white gap-1 scrollbar-none">
+        <div className="flex border-b border-slate-200 dark:border-slate-800 overflow-x-auto px-6 bg-white dark:bg-slate-900 gap-1 scrollbar-none">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -338,94 +338,94 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
               {activeTab === "umum" && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Nama Kelurahan</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Kelurahan</label>
                     <input
                       type="text"
                       value={namaKelurahan}
                       onChange={(e) => setNamaKelurahan(e.target.value)}
                       required
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                      className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Kecamatan</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Kecamatan</label>
                     <input
                       type="text"
                       value={kecamatan}
                       onChange={(e) => setKecamatan(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                      className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Jumlah RW</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jumlah RW</label>
                     <input
                       type="number"
                       value={jumlahRw}
                       onChange={(e) => setJumlahRw(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                      className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Jumlah RT</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jumlah RT</label>
                     <input
                       type="number"
                       value={jumlahRt}
                       onChange={(e) => setJumlahRt(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                      className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Jumlah KK</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jumlah KK</label>
                     <input
                       type="number"
                       value={jumlahKk}
                       onChange={(e) => setJumlahKk(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                      className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Jumlah Rumah Total</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jumlah Rumah Total</label>
                     <input
                       type="number"
                       value={jumlahRumahTotal}
                       onChange={(e) => setJumlahRumahTotal(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                      className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Tanggal Survei</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tanggal Survei</label>
                     <input
                       type="date"
                       value={tanggalSurvei}
                       onChange={(e) => setTanggalSurvei(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                      className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Enumerator (Petugas Survei)</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Enumerator (Petugas Survei)</label>
                     <input
                       type="text"
                       value={enumerator}
                       onChange={(e) => setEnumerator(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                      className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block font-bold text-slate-700 mb-1">Titik Kumpul Mahasiswa</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Titik Kumpul Mahasiswa</label>
                     <input
                       type="text"
                       value={titikKumpulMahasiswa}
                       onChange={(e) => setTitikKumpulMahasiswa(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                      className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block font-bold text-slate-700 mb-1">Catatan Khusus</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Catatan Khusus</label>
                     <textarea
                       rows={3}
                       value={catatanData}
                       onChange={(e) => setCatatanData(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none leading-relaxed"
+                      className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none leading-relaxed"
                     />
                   </div>
                 </div>
@@ -434,7 +434,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
               {/* TAB 2: KARAKTERISTIK WILAYAH */}
               {activeTab === "karakter" && (
                 <div className="space-y-4 text-xs">
-                  <h4 className="font-bold text-slate-700 border-b pb-2">Karakteristik & Kondisi Lingkungan</h4>
+                  <h4 className="font-bold text-slate-700 dark:text-slate-300 border-b pb-2">Karakteristik & Kondisi Lingkungan</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {[
                       { key: "padatPenduduk", label: "Kawasan Padat Penduduk" },
@@ -447,7 +447,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                     ].map((item) => (
                       <label
                         key={item.key}
-                        className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition"
+                        className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:bg-slate-100 transition"
                       >
                         <input
                           type="checkbox"
@@ -460,14 +460,14 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                           }
                           className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
                         />
-                        <span className="font-bold text-slate-800">{item.label}</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-100">{item.label}</span>
                       </label>
                     ))}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
                         Perkiraan Jumlah Kos / Kontrakan
                       </label>
                       <input
@@ -480,11 +480,11 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                             perkiraanJumlahKosKontrakan: e.target.value,
                           })
                         }
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                        className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
                         Perkiraan Jumlah UMKM / Warung
                       </label>
                       <input
@@ -497,12 +497,12 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                             perkiraanJumlahUmkmWarungKafe: e.target.value,
                           })
                         }
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                        className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                       />
                     </div>
                     {karakteristik.karakterLainnyaFlag && (
                       <div className="md:col-span-2">
-                        <label className="block font-bold text-slate-700 mb-1">
+                        <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
                           Keterangan Karakteristik Lainnya
                         </label>
                         <input
@@ -514,7 +514,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                               karakterLainnyaKeterangan: e.target.value,
                             })
                           }
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                          className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                         />
                       </div>
                     )}
@@ -527,7 +527,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                 <div className="space-y-4 text-xs">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">Jumlah Rumah Memilah</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jumlah Rumah Memilah</label>
                       <input
                         type="number"
                         value={pemilahan.jumlahRumahMemilah}
@@ -540,11 +540,11 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                             return { ...prev, jumlahRumahMemilah: val, persentasePemilahan: pct };
                           });
                         }}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                        className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">Total Rumah (Sampel Wilayah)</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Total Rumah (Sampel Wilayah)</label>
                       <input
                         type="number"
                         value={pemilahan.totalJumlahRumahDiRw}
@@ -557,11 +557,11 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                             return { ...prev, totalJumlahRumahDiRw: val, persentasePemilahan: pct };
                           });
                         }}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                        className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">Persentase Pemilahan (%)</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Persentase Pemilahan (%)</label>
                       <input
                         type="number"
                         step="0.1"
@@ -569,17 +569,17 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                         onChange={(e) =>
                           setPemilahan({ ...pemilahan, persentasePemilahan: e.target.value })
                         }
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                        className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">Tingkat Pemilahan (Kualitatif)</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tingkat Pemilahan (Kualitatif)</label>
                       <select
                         value={pemilahan.tingkatPemilahan}
                         onChange={(e) =>
                           setPemilahan({ ...pemilahan, tingkatPemilahan: e.target.value })
                         }
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                        className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                       >
                         <option value="">Pilih Tingkat Pemilahan...</option>
                         <option value="Sangat Rendah (< 20%)">Sangat Rendah (&lt; 20%)</option>
@@ -590,12 +590,12 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                       </select>
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block font-bold text-slate-700 mb-1">Catatan Pemilahan Sampah</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Catatan Pemilahan Sampah</label>
                       <textarea
                         rows={2}
                         value={pemilahan.catatan}
                         onChange={(e) => setPemilahan({ ...pemilahan, catatan: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none leading-relaxed"
+                        className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none leading-relaxed"
                       />
                     </div>
                   </div>
@@ -607,29 +607,29 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                 <div className="space-y-4 text-xs">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">Jumlah Bank Sampah Aktif</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jumlah Bank Sampah Aktif</label>
                       <input
                         type="number"
                         value={bankSampah.bankSampahAktif}
                         onChange={(e) =>
                           setBankSampah({ ...bankSampah, bankSampahAktif: e.target.value })
                         }
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                        className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">Jumlah Bank Sampah Tidak Aktif</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jumlah Bank Sampah Tidak Aktif</label>
                       <input
                         type="number"
                         value={bankSampah.bankSampahTidakAktif}
                         onChange={(e) =>
                           setBankSampah({ ...bankSampah, bankSampahTidakAktif: e.target.value })
                         }
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                        className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">Unit Komposter</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Unit Komposter</label>
                       <input
                         type="text"
                         placeholder="Contoh: 5 unit / Ada"
@@ -637,11 +637,11 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                         onChange={(e) =>
                           setBankSampah({ ...bankSampah, jumlahUnitKomposter: e.target.value })
                         }
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                        className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">Titik Maggot / BSF</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Titik Maggot / BSF</label>
                       <input
                         type="text"
                         placeholder="Contoh: 2 titik / Ada"
@@ -649,12 +649,12 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                         onChange={(e) =>
                           setBankSampah({ ...bankSampah, jumlahTitikMaggotBsf: e.target.value })
                         }
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                        className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                       />
                     </div>
                   </div>
 
-                  <h4 className="font-bold text-slate-700 border-b pb-2 pt-2">Program Pemanfaatan / Fasilitas Terintegrasi</h4>
+                  <h4 className="font-bold text-slate-700 dark:text-slate-300 border-b pb-2 pt-2">Program Pemanfaatan / Fasilitas Terintegrasi</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {[
                       { key: "bioporiLoseda", label: "Biopori / Loseda" },
@@ -665,7 +665,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                     ].map((item) => (
                       <label
                         key={item.key}
-                        className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition"
+                        className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:bg-slate-100 transition"
                       >
                         <input
                           type="checkbox"
@@ -678,20 +678,20 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                           }
                           className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
                         />
-                        <span className="font-bold text-slate-800">{item.label}</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-100">{item.label}</span>
                       </label>
                     ))}
                   </div>
 
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Keterangan Aktivitas Lainnya</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Keterangan Aktivitas Lainnya</label>
                     <input
                       type="text"
                       value={bankSampah.aktivitasLainnyaKeterangan}
                       onChange={(e) =>
                         setBankSampah({ ...bankSampah, aktivitasLainnyaKeterangan: e.target.value })
                       }
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                      className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                     />
                   </div>
                 </div>
@@ -756,7 +756,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                       />
                     </div>
                     <div className="md:col-span-3">
-                      <label className="block font-bold text-slate-700 mb-1">Total Volume Sampah (Kg/Hari)</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Total Volume Sampah (Kg/Hari)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -764,16 +764,16 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                         onChange={(e) =>
                           setVolume({ ...volume, totalVolumeKgPerHari: e.target.value })
                         }
-                        className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-black focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                        className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-slate-100 font-black focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                       />
                     </div>
                     <div className="md:col-span-3">
-                      <label className="block font-bold text-slate-700 mb-1">Catatan Volume Sampah</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Catatan Volume Sampah</label>
                       <textarea
                         rows={2}
                         value={volume.catatan}
                         onChange={(e) => setVolume({ ...volume, catatan: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none leading-relaxed"
+                        className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none leading-relaxed"
                       />
                     </div>
                   </div>
@@ -784,7 +784,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
               {activeTab === "key_player" && (
                 <div className="space-y-4 text-xs">
                   <div className="flex justify-between items-center border-b pb-2">
-                    <h4 className="font-bold text-slate-700">Daftar Aktor / Tokoh Penggerak Sampah</h4>
+                    <h4 className="font-bold text-slate-700 dark:text-slate-300">Daftar Aktor / Tokoh Penggerak Sampah</h4>
                     <button
                       type="button"
                       onClick={addKeyPlayer}
@@ -803,7 +803,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                       {keyPlayers.map((kp, idx) => (
                         <div
                           key={idx}
-                          className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl grid grid-cols-1 md:grid-cols-4 gap-2 items-center relative"
+                          className="p-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-2xl grid grid-cols-1 md:grid-cols-4 gap-2 items-center relative"
                         >
                           <div>
                             <label className="block font-bold text-slate-500 text-[10px] uppercase mb-0.5">
@@ -814,7 +814,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                               placeholder="Ketua RW / Pengelola..."
                               value={kp.jenisAktor}
                               onChange={(e) => updateKeyPlayer(idx, "jenisAktor", e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-semibold text-slate-800 outline-none focus:border-emerald-500"
+                              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 font-semibold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500"
                             />
                           </div>
                           <div>
@@ -826,7 +826,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                               placeholder="Nama lengkap"
                               value={kp.nama}
                               onChange={(e) => updateKeyPlayer(idx, "nama", e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-semibold text-slate-800 outline-none focus:border-emerald-500"
+                              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 font-semibold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500"
                             />
                           </div>
                           <div>
@@ -838,7 +838,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                               placeholder="0812..."
                               value={kp.kontak}
                               onChange={(e) => updateKeyPlayer(idx, "kontak", e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-semibold text-slate-800 outline-none focus:border-emerald-500"
+                              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 font-semibold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500"
                             />
                           </div>
                           <div className="flex items-center gap-2">
@@ -851,7 +851,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                                 placeholder="Peran"
                                 value={kp.peran}
                                 onChange={(e) => updateKeyPlayer(idx, "peran", e.target.value)}
-                                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-semibold text-slate-800 outline-none focus:border-emerald-500"
+                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 font-semibold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500"
                               />
                             </div>
                             <button
@@ -874,7 +874,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
               {activeTab === "kesimpulan" && (
                 <div className="space-y-4 text-xs">
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
                       Prioritas Intervensi Program KKN
                     </label>
                     <textarea
@@ -884,11 +884,11 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                         setKesimpulan({ ...kesimpulan, prioritasIntervensi: e.target.value })
                       }
                       placeholder="Contoh: Edukasi pemilahan anorganik di kos-kosan, pengadaan loseda di RW 03..."
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none leading-relaxed"
+                      className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none leading-relaxed"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
                       Catatan Tambahan & Risiko Sosial
                     </label>
                     <textarea
@@ -901,7 +901,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                         })
                       }
                       placeholder="Catatan kendala sosial, partisipasi masyarakat, atau risiko penolakan..."
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none leading-relaxed"
+                      className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-slate-800 dark:text-slate-100 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none leading-relaxed"
                     />
                   </div>
                 </div>
@@ -910,11 +910,11 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
           )}
 
           {/* Footer Actions */}
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 transition cursor-pointer"
+              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold text-xs hover:bg-slate-50 transition cursor-pointer"
             >
               Batal
             </button>

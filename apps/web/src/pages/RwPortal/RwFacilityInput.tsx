@@ -78,12 +78,12 @@ export const RwFacilityInput = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Fasilitas & Ide Daur Ulang</h1>
+      <h1 className="text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">Fasilitas & Ide Daur Ulang</h1>
 
       {/* Pending Ide Daur Ulang */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-          <h3 className="font-bold text-gray-800 text-sm">Ide Daur Ulang Warga (Menunggu Persetujuan)</h3>
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50">
+          <h3 className="font-bold text-gray-800 dark:text-slate-100 text-sm">Ide Daur Ulang Warga (Menunggu Persetujuan)</h3>
         </div>
         <div className="p-4">
           {pendingIde.length === 0 ? (
@@ -110,15 +110,15 @@ export const RwFacilityInput = () => {
       </div>
 
       {/* Pending Facilities */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-          <h3 className="font-bold text-gray-800 text-sm">Pendaftaran Fasilitas Lingkungan Baru</h3>
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50">
+          <h3 className="font-bold text-gray-800 dark:text-slate-100 text-sm">Pendaftaran Fasilitas Lingkungan Baru</h3>
         </div>
         <div className="p-4">
           {pendingFacilities.length === 0 ? (
             <p className="text-gray-500">Tidak ada pendaftaran fasilitas baru.</p>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
               <thead>
                 <tr>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nama & Jenis</th>
@@ -126,12 +126,12 @@ export const RwFacilityInput = () => {
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
                 {pendingFacilities.map((fac) => (
                   <tr key={fac.id}>
                     <td className="px-4 py-2">
                       <p className="font-semibold">{fac.nama}</p>
-                      <span className="text-xs bg-gray-100 px-2 py-1 rounded capitalize">{fac.jenis.replace("_", " ")}</span>
+                      <span className="text-xs bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded capitalize">{fac.jenis.replace("_", " ")}</span>
                     </td>
                     <td className="px-4 py-2 text-sm">{fac.pic}</td>
                     <td className="px-4 py-2 flex gap-2">
@@ -147,15 +147,15 @@ export const RwFacilityInput = () => {
       </div>
 
       {/* Input Fasilitas */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-          <h3 className="font-bold text-gray-800 text-sm">Input Manual Data Produksi Fasilitas</h3>
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50">
+          <h3 className="font-bold text-gray-800 dark:text-slate-100 text-sm">Input Manual Data Produksi Fasilitas</h3>
         </div>
         <div className="p-4">
           <form onSubmit={submitProduction} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Pilih Fasilitas (Aktif)</label>
-              <select value={selectedFacility} onChange={e => setSelectedFacility(e.target.value)} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-2 border">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Pilih Fasilitas (Aktif)</label>
+              <select value={selectedFacility} onChange={e => setSelectedFacility(e.target.value)} required className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 shadow-sm focus:border-primary focus:ring-primary p-2 border">
                 <option value="">Pilih...</option>
                 {facilities.map(f => (
                   <option key={f.id} value={f.id}>{f.nama} ({f.jenis.replace("_", " ")})</option>
@@ -163,20 +163,20 @@ export const RwFacilityInput = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Periode</label>
-              <input type="text" placeholder="Minggu 1 Jan 2026" required value={periode} onChange={e => setPeriode(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-2 border" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Periode</label>
+              <input type="text" placeholder="Minggu 1 Jan 2026" required value={periode} onChange={e => setPeriode(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 shadow-sm focus:border-primary focus:ring-primary p-2 border" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Material Masuk (Kg)</label>
-              <input type="number" step="0.1" required value={materialMasuk} onChange={e => setMaterialMasuk(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-2 border" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Material Masuk (Kg)</label>
+              <input type="number" step="0.1" required value={materialMasuk} onChange={e => setMaterialMasuk(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 shadow-sm focus:border-primary focus:ring-primary p-2 border" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Hasil Output (Kg)</label>
-              <input type="number" step="0.1" required value={output} onChange={e => setOutput(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-2 border" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Hasil Output (Kg)</label>
+              <input type="number" step="0.1" required value={output} onChange={e => setOutput(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 shadow-sm focus:border-primary focus:ring-primary p-2 border" />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Jenis Output (Misal: Pupuk Kompos / Maggot Pupa)</label>
-              <input type="text" required value={jenisOutput} onChange={e => setJenisOutput(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-2 border" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Jenis Output (Misal: Pupuk Kompos / Maggot Pupa)</label>
+              <input type="text" required value={jenisOutput} onChange={e => setJenisOutput(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 shadow-sm focus:border-primary focus:ring-primary p-2 border" />
             </div>
             <div className="md:col-span-2 flex justify-end">
               <button type="submit" disabled={!selectedFacility} className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-dark disabled:opacity-50">Simpan Data Produksi</button>

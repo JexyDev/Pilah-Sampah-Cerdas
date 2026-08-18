@@ -453,7 +453,7 @@ const JadwalKegiatan: React.FC = () => {
   const renderFaseBadge = (fase: string) => {
     if (fase.includes("Pra-Kegiatan")) {
       return (
-        <span className="px-2.5 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-[10.5px] font-extrabold whitespace-nowrap">
+        <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 rounded-lg text-[10.5px] font-extrabold whitespace-nowrap">
           Pra-Kegiatan
         </span>
       );
@@ -502,35 +502,35 @@ const JadwalKegiatan: React.FC = () => {
       );
     }
     return (
-      <span className="px-3 py-1 bg-slate-100 text-slate-600 border border-slate-200 rounded-full text-[10.5px] font-bold w-fit">
+      <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 rounded-full text-[10.5px] font-bold w-fit">
         Belum
       </span>
     );
   };
 
   return (
-    <div className="space-y-6 text-slate-800">
+    <div className="space-y-6 text-slate-800 dark:text-slate-100">
       {/* Top Header & View Switcher Tabs */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Time Line & Jadwal Kegiatan KKN</h1>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Time Line & Jadwal Kegiatan KKN</h1>
           <p className="text-slate-500 text-xs mt-1">
             Rencana kerja terstruktur, tahapan timeline, dan monitoring jadwal lapangan Kecamatan Coblong.
           </p>
         </div>
 
         {/* View Switcher Tabs */}
-        <div className="bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200 flex items-center gap-1">
+        <div className="bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-1">
           <button
             type="button"
             onClick={() => setActiveMainTab("TABEL_TIMELINE")}
             className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer ${
               activeMainTab === "TABEL_TIMELINE"
-                ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
             }`}
           >
-            <TableIcon size={14} className={activeMainTab === "TABEL_TIMELINE" ? "text-emerald-600" : "text-slate-400"} />
+            <TableIcon size={14} className={activeMainTab === "TABEL_TIMELINE" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"} />
             <span>Tabel Rencana Kerja</span>
           </button>
           <button
@@ -538,11 +538,11 @@ const JadwalKegiatan: React.FC = () => {
             onClick={() => setActiveMainTab("KALENDER_AGENDA")}
             className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer ${
               activeMainTab === "KALENDER_AGENDA"
-                ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
             }`}
           >
-            <CalendarDays size={14} className={activeMainTab === "KALENDER_AGENDA" ? "text-emerald-600" : "text-slate-400"} />
+            <CalendarDays size={14} className={activeMainTab === "KALENDER_AGENDA" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"} />
             <span>Kalender & Agenda</span>
           </button>
         </div>
@@ -552,18 +552,18 @@ const JadwalKegiatan: React.FC = () => {
       {activeMainTab === "TABEL_TIMELINE" && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Hero Banner: Info Timeline Resmi */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-3.5 flex-1 min-w-0">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0 shadow-2xs">
-                  <FileSpreadsheet size={24} className="text-emerald-600" />
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 flex items-center justify-center shrink-0 shadow-2xs">
+                  <FileSpreadsheet size={24} className="text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                  <h2 className="text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight">
                     {TIMELINE_KKN_HEADER.judul}
                   </h2>
-                  <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                    Tema: <strong className="text-emerald-800">"{TIMELINE_KKN_HEADER.tema}"</strong> • Pra-Kegiatan: {TIMELINE_KKN_HEADER.praKegiatan} • Penerjunan: {TIMELINE_KKN_HEADER.penerjunan}
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-0.5">
+                    Tema: <strong className="text-emerald-800 dark:text-emerald-400">"{TIMELINE_KKN_HEADER.tema}"</strong> • Pra-Kegiatan: {TIMELINE_KKN_HEADER.praKegiatan} • Penerjunan: {TIMELINE_KKN_HEADER.penerjunan}
                   </p>
                 </div>
               </div>
@@ -572,9 +572,9 @@ const JadwalKegiatan: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleExportTimelineCsv}
-                  className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-2xl text-xs font-extrabold transition flex items-center gap-2 cursor-pointer shadow-2xs"
+                  className="px-4 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-extrabold transition flex items-center gap-2 cursor-pointer shadow-2xs"
                 >
-                  <Download size={14} className="text-emerald-600" />
+                  <Download size={14} className="text-emerald-600 dark:text-emerald-400" />
                   <span>Unduh CSV</span>
                 </button>
               </div>
@@ -582,31 +582,31 @@ const JadwalKegiatan: React.FC = () => {
 
             {/* 4 Summary Stat Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-              <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/70">
-                <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">Total Kegiatan</span>
-                <span className="text-2xl font-black text-slate-900 mt-1 block">{TIMELINE_KKN_DATA.length} Tahapan</span>
+              <div className="bg-slate-50/80 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">Total Kegiatan</span>
+                <span className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 block">{TIMELINE_KKN_DATA.length} Tahapan</span>
                 <span className="text-[10.5px] text-slate-400 font-medium">Pra-kegiatan hingga penutupan</span>
               </div>
-              <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/70">
-                <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">Fase Program</span>
-                <span className="text-2xl font-black text-emerald-700 mt-1 block">4 Fase</span>
-                <span className="text-[10.5px] text-emerald-600 font-semibold">Persiapan, Pilot, Implementasi, Evaluasi</span>
+              <div className="bg-slate-50/80 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">Fase Program</span>
+                <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400 mt-1 block">4 Fase</span>
+                <span className="text-[10.5px] text-emerald-600 dark:text-emerald-400 font-semibold">Persiapan, Pilot, Implementasi, Evaluasi</span>
               </div>
-              <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/70">
-                <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">Durasi Penerjunan</span>
-                <span className="text-2xl font-black text-indigo-700 mt-1 block">12 Pekan</span>
-                <span className="text-[10.5px] text-indigo-600 font-semibold">12 Agustus – 31 Oktober 2026</span>
+              <div className="bg-slate-50/80 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">Durasi Penerjunan</span>
+                <span className="text-2xl font-black text-indigo-700 dark:text-indigo-400 mt-1 block">12 Pekan</span>
+                <span className="text-[10.5px] text-indigo-600 dark:text-indigo-400 font-semibold">12 Agustus – 31 Oktober 2026</span>
               </div>
-              <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/70">
-                <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">Wilayah Sasaran</span>
-                <span className="text-2xl font-black text-slate-900 mt-1 block">6 Kelurahan</span>
+              <div className="bg-slate-50/80 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">Wilayah Sasaran</span>
+                <span className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 block">6 Kelurahan</span>
                 <span className="text-[10.5px] text-slate-400 font-medium">Kecamatan Coblong, Bandung</span>
               </div>
             </div>
           </div>
 
           {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2 w-full md:w-auto flex-1">
               <div className="relative flex-1 max-w-md">
                 <input
@@ -614,7 +614,7 @@ const JadwalKegiatan: React.FC = () => {
                   placeholder="Cari kegiatan utama, target capaian, atau PIC..."
                   value={timelineSearch}
                   onChange={(e) => setTimelineSearch(e.target.value)}
-                  className="w-full pl-3 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-emerald-500 focus:bg-white transition font-medium"
+                  className="w-full pl-3 pr-8 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 focus:bg-white transition font-medium"
                 />
                 <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               </div>
@@ -623,7 +623,7 @@ const JadwalKegiatan: React.FC = () => {
                 <select
                   value={selectedFase}
                   onChange={(e) => setSelectedFase(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+                  className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
                 >
                   <option value="ALL">Semua Fase Program</option>
                   <option value="Pra-Kegiatan">Pra-Kegiatan</option>
@@ -636,16 +636,16 @@ const JadwalKegiatan: React.FC = () => {
             </div>
 
             <div className="text-xs font-bold text-slate-500">
-              Menampilkan <strong className="text-slate-900">{filteredTimeline.length}</strong> kegiatan
+              Menampilkan <strong className="text-slate-900 dark:text-slate-100">{filteredTimeline.length}</strong> kegiatan
             </div>
           </div>
 
           {/* Tabular Table */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700 border-collapse">
+              <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/90 text-slate-500 border-b border-slate-200 text-[11px] uppercase tracking-wider font-bold">
+                  <tr className="bg-slate-50/90 text-slate-500 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
                     <th className="py-3.5 px-4 w-12 text-center">No</th>
                     <th className="py-3.5 px-4 w-32">Tahap / Minggu</th>
                     <th className="py-3.5 px-4 w-36">Tanggal</th>
@@ -656,19 +656,19 @@ const JadwalKegiatan: React.FC = () => {
                     <th className="py-3.5 px-4 w-28 text-center">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                   {filteredTimeline.map((item, idx) => (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4 text-center font-bold text-slate-400">
                         {idx + 1}
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="font-extrabold text-slate-900 block">
+                        <span className="font-extrabold text-slate-900 dark:text-slate-100 block">
                           {item.tahapMinggu}
                         </span>
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                        <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                           <Calendar size={13} className="text-emerald-600 shrink-0" />
                           {item.tanggal}
                         </span>
@@ -676,13 +676,13 @@ const JadwalKegiatan: React.FC = () => {
                       <td className="py-3.5 px-4">
                         {renderFaseBadge(item.fase)}
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-900 leading-relaxed">
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100 leading-relaxed">
                         {item.kegiatanUtama}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-600 leading-relaxed">
+                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 leading-relaxed">
                         {item.outputTarget}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-700 font-semibold text-[11px] leading-relaxed">
+                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-semibold text-[11px] leading-relaxed">
                         {item.picKeterangan}
                       </td>
                       <td className="py-3.5 px-4 text-center">
@@ -699,11 +699,11 @@ const JadwalKegiatan: React.FC = () => {
 
       {/* VIEW 2: KALENDER & AGENDA INTERAKTIF */}
       {activeMainTab === "KALENDER_AGENDA" && (
-        <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-140px)] overflow-hidden bg-surface-container rounded-3xl border border-slate-200">
+        <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-140px)] overflow-hidden bg-surface-container rounded-3xl border border-slate-200 dark:border-slate-800">
           {/* Canvas */}
           <main className="flex-1 overflow-hidden flex flex-col lg:flex-row bg-surface p-4 lg:p-6 gap-4 lg:gap-6 relative">
             {/* Calendar Section */}
-            <div className="flex-1 min-h-[400px] lg:min-h-0 flex flex-col bg-white rounded-xl shadow-sm border border-outline-variant/50 overflow-hidden">
+            <div className="flex-1 min-h-[400px] lg:min-h-0 flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-outline-variant/50 overflow-hidden">
               {/* Calendar Header */}
               <div className="p-5 border-b border-outline-variant/30 flex justify-between items-center shrink-0">
                 <div className="flex items-center gap-4">
@@ -862,16 +862,16 @@ const JadwalKegiatan: React.FC = () => {
         </div>
 
         {/* Right Sidebar: Details */}
-        <aside className="w-full lg:w-[340px] max-h-[50vh] lg:max-h-none bg-white rounded-xl shadow-sm border border-outline-variant/50 flex flex-col shrink-0 overflow-hidden transition-all">
-          <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-2">
+        <aside className="w-full lg:w-[340px] max-h-[50vh] lg:max-h-none bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-outline-variant/50 flex flex-col shrink-0 overflow-hidden transition-all">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-[15px] font-bold text-slate-900 flex items-center gap-2">
+              <h3 className="text-[15px] font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <CalendarCheck className="text-emerald-600" size={18} />
                 Detail Agenda
               </h3>
               <button
                 onClick={() => setIsGroupedView(!isGroupedView)}
-                className="text-[10px] font-bold px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-300 transition-all flex items-center gap-1 shadow-2xs cursor-pointer"
+                className="text-[10px] font-bold px-2.5 py-1 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-emerald-700 hover:border-emerald-300 transition-all flex items-center gap-1 shadow-2xs cursor-pointer"
                 title={isGroupedView ? "Tampilkan semua individual" : "Ringkas kegiatan serupa"}
               >
                 {isGroupedView ? <Layers size={12} /> : <List size={12} />}
@@ -912,12 +912,12 @@ const JadwalKegiatan: React.FC = () => {
                 const daySchedules = getSchedulesForDay(selectedDate);
                 if (daySchedules.length === 0) {
                   return (
-                    <div className="mt-4 flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-xl text-center space-y-3">
+                    <div className="mt-4 flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center space-y-3">
                       <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
                         <CalendarDays size={24} />
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-800">
+                        <p className="text-xs font-bold text-slate-800 dark:text-slate-100">
                           Tidak ada kegiatan
                         </p>
                         <p className="text-[11px] text-slate-500 mt-0.5">
@@ -995,7 +995,7 @@ const JadwalKegiatan: React.FC = () => {
                                   {group.category}
                                 </span>
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                                  <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
                                     <Clock size={12} className="text-slate-400" />
                                     {timeDisplay}
                                   </span>
@@ -1009,7 +1009,7 @@ const JadwalKegiatan: React.FC = () => {
 
                               <div className="flex items-start justify-between gap-2">
                                 <div>
-                                  <h4 className="text-[13px] font-extrabold text-slate-900 leading-snug">
+                                  <h4 className="text-[13px] font-extrabold text-slate-900 dark:text-slate-100 leading-snug">
                                     {group.title}
                                   </h4>
                                   <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mt-1">
@@ -1019,7 +1019,7 @@ const JadwalKegiatan: React.FC = () => {
                                 </div>
 
                                 {count > 1 && (
-                                  <span className="bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
+                                  <span className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
                                     {count} Sesi
                                   </span>
                                 )}
@@ -1027,7 +1027,7 @@ const JadwalKegiatan: React.FC = () => {
 
                               {/* Single item actions */}
                               {count === 1 && canManageSchedules && (
-                                <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100 mt-1">
+                                <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 mt-1">
                                   <button
                                     onClick={(e) => handleEdit(firstItem, e)}
                                     className="text-[11px] text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1 cursor-pointer"
@@ -1046,18 +1046,18 @@ const JadwalKegiatan: React.FC = () => {
 
                             {/* Expanded items list */}
                             {count > 1 && isExpanded && (
-                              <div className="bg-slate-50 border-t border-slate-100 p-2 flex flex-col gap-1.5">
+                              <div className="bg-slate-50 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 p-2 flex flex-col gap-1.5">
                                 <div className="text-[10px] font-extrabold text-slate-400 px-2 uppercase tracking-wider">
                                   Rincian Waktu Sesi ({count}):
                                 </div>
                                 {group.items.map((item, idx) => (
                                   <div
                                     key={item.id || idx}
-                                    className="bg-white p-2 rounded-lg border border-slate-200/60 flex items-center justify-between text-[11px] hover:border-emerald-300 transition-colors"
+                                    className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/60 flex items-center justify-between text-[11px] hover:border-emerald-300 transition-colors"
                                   >
                                     <div className="flex items-center gap-2">
                                       <div className={`w-1.5 h-1.5 rounded-full ${catTheme.dot}`}></div>
-                                      <span className="font-bold text-slate-700">
+                                      <span className="font-bold text-slate-700 dark:text-slate-300">
                                         {item.time || safeFormatTime(item.date)}
                                       </span>
                                       <span className="text-slate-400">•</span>
@@ -1111,7 +1111,7 @@ const JadwalKegiatan: React.FC = () => {
                           {/* Timeline dot */}
                           <div className={`absolute -left-[14px] top-3.5 w-2.5 h-2.5 rounded-full ring-4 ring-white ${catTheme.dot}`}></div>
 
-                          <div className="p-3 border border-slate-200/80 rounded-xl bg-white hover:border-emerald-400 hover:shadow-sm transition-all relative">
+                          <div className="p-3 border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 hover:border-emerald-400 hover:shadow-sm transition-all relative">
                             {canManageSchedules && (
                               <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 p-0.5 rounded-md shadow-2xs">
                                 <button
@@ -1135,13 +1135,13 @@ const JadwalKegiatan: React.FC = () => {
                               <span className={`text-[9px] px-2 py-0.5 rounded border uppercase tracking-wider font-extrabold ${catTheme.badge}`}>
                                 {schedule.category || "Kegiatan"}
                               </span>
-                              <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
                                 <Clock size={12} className="text-slate-400" />
                                 {schedule.time || safeFormatTime(schedule.date)}
                               </span>
                             </div>
 
-                            <h4 className="text-[13px] font-extrabold text-slate-900 leading-snug">
+                            <h4 className="text-[13px] font-extrabold text-slate-900 dark:text-slate-100 leading-snug">
                               {schedule.title || "(tanpa judul)"}
                             </h4>
                             <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mt-1">
@@ -1162,11 +1162,11 @@ const JadwalKegiatan: React.FC = () => {
         {/* Modal Overlay */}
         {isModalOpen && (
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-[740px] max-w-full overflow-hidden flex flex-col transform transition-all duration-200 border border-slate-200 max-h-[90vh]">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-[740px] max-w-full overflow-hidden flex flex-col transform transition-all duration-200 border border-slate-200 dark:border-slate-800 max-h-[90vh]">
               {/* Modal Header */}
-              <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/80">
+              <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80">
                 <div>
-                  <h3 className="text-base font-black text-slate-900">
+                  <h3 className="text-base font-black text-slate-900 dark:text-slate-100">
                     {editId ? "Edit Jadwal Kegiatan" : "Buat Jadwal Kegiatan Baru"}
                   </h3>
                   <p className="text-xs font-semibold text-slate-500 mt-0.5">
@@ -1203,7 +1203,7 @@ const JadwalKegiatan: React.FC = () => {
                 {modalStep === 1 ? (
                   <div className="flex flex-col gap-4">
                     {/* Mode Selector Tabs */}
-                    <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
+                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl gap-1">
                       <button
                         type="button"
                         onClick={() => {
@@ -1217,8 +1217,8 @@ const JadwalKegiatan: React.FC = () => {
                         }}
                         className={`flex-1 py-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                           geofenceMode === "CIRCLE"
-                            ? "bg-white text-blue-700 shadow-xs"
-                            : "text-slate-600 hover:text-slate-900"
+                            ? "bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-400 shadow-xs"
+                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
                         }`}
                       >
                         <span>🔵 Radius Lingkaran (Bulat)</span>
@@ -1228,8 +1228,8 @@ const JadwalKegiatan: React.FC = () => {
                         onClick={() => setGeofenceMode("POLYGON")}
                         className={`flex-1 py-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                           geofenceMode === "POLYGON"
-                            ? "bg-white text-emerald-700 shadow-xs"
-                            : "text-slate-600 hover:text-slate-900"
+                            ? "bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 shadow-xs"
+                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
                         }`}
                       >
                         <span>🟢 Polygon Kustom (Multi-Sudut)</span>
@@ -1237,7 +1237,7 @@ const JadwalKegiatan: React.FC = () => {
                     </div>
 
                     {/* Geofence Map */}
-                    <div className="h-[280px] rounded-xl overflow-hidden border border-slate-200 relative z-0 shadow-inner">
+                    <div className="h-[280px] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 relative z-0 shadow-inner">
                       <MapContainer
                         center={
                           formData.polygon.length > 0
@@ -1259,7 +1259,7 @@ const JadwalKegiatan: React.FC = () => {
                       </MapContainer>
 
                       {/* Map overlay action buttons */}
-                      <div className="absolute bottom-3 right-3 z-[999] flex items-center gap-1.5 bg-white/95 backdrop-blur-xs p-1 rounded-xl shadow-md border border-slate-200">
+                      <div className="absolute bottom-3 right-3 z-[999] flex items-center gap-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs p-1 rounded-xl shadow-md border border-slate-200 dark:border-slate-800">
                         {geofenceMode === "POLYGON" && formData.polygon.length > 0 && (
                           <button
                             type="button"
@@ -1269,7 +1269,7 @@ const JadwalKegiatan: React.FC = () => {
                                 polygon: prev.polygon.slice(0, -1),
                               }))
                             }
-                            className="px-2.5 py-1 text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors cursor-pointer"
+                            className="px-2.5 py-1 text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 rounded-lg transition-colors cursor-pointer"
                           >
                             Hapus Titik Terakhir
                           </button>
@@ -1277,7 +1277,7 @@ const JadwalKegiatan: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setFormData((prev: any) => ({ ...prev, polygon: [] }))}
-                          className="px-2.5 py-1 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                          className="px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
                         >
                           Reset Peta
                         </button>
@@ -1286,10 +1286,10 @@ const JadwalKegiatan: React.FC = () => {
 
                     {/* Mode Specific Controls */}
                     {geofenceMode === "CIRCLE" ? (
-                      <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-4 flex flex-col gap-3">
+                      <div className="bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 rounded-xl p-4 flex flex-col gap-3">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <label className="text-xs font-black text-slate-800">
+                            <label className="text-xs font-black text-slate-800 dark:text-slate-100">
                               Radius Area Absensi:
                             </label>
                             <div className="flex items-center gap-1.5">
@@ -1302,9 +1302,9 @@ const JadwalKegiatan: React.FC = () => {
                                 onChange={(e) =>
                                   setFormData((prev: any) => ({ ...prev, radius: Math.max(30, Number(e.target.value)) }))
                                 }
-                                className="w-20 h-7 text-center font-mono font-black bg-white border border-emerald-300 rounded-lg text-emerald-950 text-xs outline-none focus:border-emerald-600 shadow-2xs"
+                                className="w-20 h-7 text-center font-mono font-black bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 rounded-lg text-emerald-950 dark:text-emerald-100 text-xs outline-none focus:border-emerald-600 shadow-2xs"
                               />
-                              <span className="text-[11px] font-bold text-slate-600">Meter</span>
+                              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Meter</span>
                               <span className="bg-emerald-700 text-white px-2 py-0.5 rounded-md text-[11px] font-mono font-bold shadow-2xs">
                                 {Number(formData.radius || 100) >= 1000
                                   ? `${(Number(formData.radius || 100) / 1000).toFixed(1).replace(/\.0$/, "")} km`
@@ -1312,7 +1312,7 @@ const JadwalKegiatan: React.FC = () => {
                               </span>
                             </div>
                           </div>
-                          <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                          <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded-full">
                             +15m Toleransi Drift GPS
                           </span>
                         </div>
@@ -1328,7 +1328,7 @@ const JadwalKegiatan: React.FC = () => {
                             onChange={(e) =>
                               setFormData((prev: any) => ({ ...prev, radius: e.target.value }))
                             }
-                            className="w-full h-2.5 bg-emerald-200 rounded-lg appearance-none cursor-pointer accent-emerald-700"
+                            className="w-full h-2.5 bg-emerald-200 dark:bg-emerald-800 rounded-lg appearance-none cursor-pointer accent-emerald-700"
                           />
                           <div className="flex justify-between text-[10px] text-slate-400 font-bold font-mono px-0.5">
                             <span>50m</span>
@@ -1339,7 +1339,7 @@ const JadwalKegiatan: React.FC = () => {
                         </div>
 
                         <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                          <span className="text-[10px] font-black text-emerald-900 uppercase mr-1">Preset Cepat:</span>
+                          <span className="text-[10px] font-black text-emerald-900 dark:text-emerald-300 uppercase mr-1">Preset Cepat:</span>
                           {[
                             { val: 100, label: "100m (RW)" },
                             { val: 500, label: "500m (Sub-Kelurahan)" },
@@ -1356,7 +1356,7 @@ const JadwalKegiatan: React.FC = () => {
                               className={`px-2.5 py-1 text-[11px] font-black rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
                                 Number(formData.radius) === preset.val
                                   ? "bg-emerald-700 text-white shadow-2xs ring-1 ring-emerald-800"
-                                  : "bg-white border border-emerald-200 text-emerald-950 hover:bg-emerald-100"
+                                  : "bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-700/40 text-emerald-950 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-slate-700"
                               }`}
                             >
                               <span>📍</span>
@@ -1366,11 +1366,11 @@ const JadwalKegiatan: React.FC = () => {
                         </div>
 
                         {/* Titik Pusat Koordinat */}
-                        <div className="pt-2 border-t border-emerald-200/60 flex items-center justify-between text-xs">
-                          <span className="text-slate-700 font-semibold">
+                        <div className="pt-2 border-t border-emerald-200/60 dark:border-emerald-800/60 flex items-center justify-between text-xs">
+                          <span className="text-slate-700 dark:text-slate-300 font-semibold">
                             Titik Pusat:{" "}at:{" "}
                             {formData.polygon.length > 0 ? (
-                              <strong className="font-mono text-slate-900">
+                              <strong className="font-mono text-slate-900 dark:text-slate-100">
                                 {formData.polygon[0][0].toFixed(6)},{" "}
                                 {formData.polygon[0][1].toFixed(6)}
                               </strong>
@@ -1408,7 +1408,7 @@ const JadwalKegiatan: React.FC = () => {
                             placeholder="Latitude (cth: -6.8915)"
                             value={manualLat}
                             onChange={(e) => setManualLat(e.target.value)}
-                            className="flex-1 px-3 py-1.5 text-xs bg-white border border-emerald-200 rounded-lg focus:outline-none focus:border-emerald-600"
+                            className="flex-1 px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-emerald-200 rounded-lg focus:outline-none focus:border-emerald-600"
                           />
                           <input
                             type="number"
@@ -1416,7 +1416,7 @@ const JadwalKegiatan: React.FC = () => {
                             placeholder="Longitude (cth: 107.6107)"
                             value={manualLng}
                             onChange={(e) => setManualLng(e.target.value)}
-                            className="flex-1 px-3 py-1.5 text-xs bg-white border border-emerald-200 rounded-lg focus:outline-none focus:border-emerald-600"
+                            className="flex-1 px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-emerald-200 rounded-lg focus:outline-none focus:border-emerald-600"
                           />
                           <button
                             type="button"
@@ -1443,7 +1443,7 @@ const JadwalKegiatan: React.FC = () => {
 
                         {/* Coordinate Points Table */}
                         {formData.polygon.length > 0 && (
-                          <div className="max-h-[120px] overflow-y-auto rounded-lg border border-emerald-200 bg-white">
+                          <div className="max-h-[120px] overflow-y-auto rounded-lg border border-emerald-200 bg-white dark:bg-slate-900">
                             <table className="w-full text-left text-[11px]">
                               <thead className="bg-emerald-100/70 text-emerald-950 font-bold sticky top-0">
                                 <tr>
@@ -1459,10 +1459,10 @@ const JadwalKegiatan: React.FC = () => {
                                     <td className="px-2.5 py-1 font-bold text-slate-500">
                                       {idx + 1}
                                     </td>
-                                    <td className="px-2.5 py-1 font-mono text-slate-800">
+                                    <td className="px-2.5 py-1 font-mono text-slate-800 dark:text-slate-100">
                                       {Number(p[0]).toFixed(6)}
                                     </td>
-                                    <td className="px-2.5 py-1 font-mono text-slate-800">
+                                    <td className="px-2.5 py-1 font-mono text-slate-800 dark:text-slate-100">
                                       {Number(p[1]).toFixed(6)}
                                     </td>
                                     <td className="px-2.5 py-1 text-right">
@@ -1503,21 +1503,21 @@ const JadwalKegiatan: React.FC = () => {
                     )}
 
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-black text-slate-800">
+                      <label className="text-xs font-black text-slate-800 dark:text-slate-100">
                         Nama Kegiatan <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        className="px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-600 w-full text-xs font-bold text-slate-800"
+                        className="px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-emerald-600 w-full text-xs font-bold text-slate-800 dark:text-slate-100"
                         placeholder="Contoh: Sosialisasi Pemilahan Sampah Organik RW 03"
                       />
                     </div>
 
                     <div className="flex gap-3">
                       <div className="flex-1 flex flex-col gap-1.5">
-                        <label className="text-xs font-black text-slate-800">
+                        <label className="text-xs font-black text-slate-800 dark:text-slate-100">
                           Tanggal <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
@@ -1529,12 +1529,12 @@ const JadwalKegiatan: React.FC = () => {
                             type="date"
                             value={formData.date}
                             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                            className="pl-9 pr-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-600 w-full text-xs font-bold text-slate-800"
+                            className="pl-9 pr-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-emerald-600 w-full text-xs font-bold text-slate-800 dark:text-slate-100"
                           />
                         </div>
                       </div>
                       <div className="flex-1 flex flex-col gap-1.5">
-                        <label className="text-xs font-black text-slate-800">
+                        <label className="text-xs font-black text-slate-800 dark:text-slate-100">
                           Waktu Pelaksanaan <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
@@ -1546,20 +1546,20 @@ const JadwalKegiatan: React.FC = () => {
                             type="time"
                             value={formData.time}
                             onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                            className="pl-9 pr-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-600 w-full text-xs font-bold text-slate-800"
+                            className="pl-9 pr-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-emerald-600 w-full text-xs font-bold text-slate-800 dark:text-slate-100"
                           />
                         </div>
                       </div>
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-black text-slate-800">
+                      <label className="text-xs font-black text-slate-800 dark:text-slate-100">
                         Kategori Kegiatan <span className="text-red-500">*</span>
                       </label>
                       <select
                         value={formData.category}
                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        className="px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-600 w-full text-xs font-bold text-slate-800 bg-white"
+                        className="px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-emerald-600 w-full text-xs font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900"
                       >
                         <option value="Pengangkutan">Pengangkutan</option>
                         <option value="Sosialisasi">Sosialisasi</option>
@@ -1570,14 +1570,14 @@ const JadwalKegiatan: React.FC = () => {
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-black text-slate-800">
+                      <label className="text-xs font-black text-slate-800 dark:text-slate-100">
                         Lokasi Deskriptif (Opsional)
                       </label>
                       <input
                         type="text"
                         value={formData.location}
                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                        className="px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-600 w-full text-xs text-slate-800 font-medium"
+                        className="px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-emerald-600 w-full text-xs text-slate-800 dark:text-slate-100 font-medium"
                         placeholder="Contoh: Balai Pertemuan RW 04 Kelurahan Dago"
                       />
                     </div>
@@ -1586,12 +1586,12 @@ const JadwalKegiatan: React.FC = () => {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-4 border-t border-slate-100 bg-slate-50/80 flex justify-end gap-2.5">
+              <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 flex justify-end gap-2.5">
                 {modalStep === 1 ? (
                   <>
                     <button
                       type="button"
-                      className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
+                      className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
                       onClick={() => {
                         setIsModalOpen(false);
                         setEditId(null);
@@ -1617,7 +1617,7 @@ const JadwalKegiatan: React.FC = () => {
                   <>
                     <button
                       type="button"
-                      className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
+                      className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
                       onClick={() => setModalStep(1)}
                     >
                       Kembali ke Peta

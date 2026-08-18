@@ -125,11 +125,11 @@ const PoinWarga: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
       {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
         {/* Tier 1: Title & Status Badge */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
               Gamifikasi &amp; Poin Warga
             </h1>
             <p className="text-xs text-slate-500 font-medium">
@@ -146,9 +146,9 @@ const PoinWarga: React.FC = () => {
         </div>
 
         {/* Tier 2: Stats & Information */}
-        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 font-medium">
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
           <div>
-            Aturan: <strong className="text-slate-800">+10 Poin Registrasi Tempat Sampah • +50 Poin Ide Daur Ulang Disetujui</strong>
+            Aturan: <strong className="text-slate-800 dark:text-slate-100">+10 Poin Registrasi Tempat Sampah • +50 Poin Ide Daur Ulang Disetujui</strong>
           </div>
 
           <div className="flex items-center gap-2">
@@ -265,7 +265,7 @@ const PoinWarga: React.FC = () => {
                         <img
                           src={leader.fotoProfil || "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80"}
                           alt={leader.nama}
-                          className="w-10 h-10 rounded-full object-cover border border-slate-200"
+                          className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-800"
                           onError={(e: any) => {
                             e.target.src = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80";
                           }}
@@ -325,7 +325,7 @@ const PoinWarga: React.FC = () => {
 
         {/* POIN-01: Detail Panel */}
         {selectedUser && (
-          <section className="xl:col-span-4 bg-white rounded-xl shadow-sm border border-outline-variant/50 flex flex-col overflow-hidden sticky top-4">
+          <section className="xl:col-span-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-outline-variant/50 flex flex-col overflow-hidden sticky top-4">
             <div className="p-4 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-low/30">
               <h3 className="text-[16px] font-bold text-on-surface">Detail Profil</h3>
               <button
@@ -442,9 +442,9 @@ const PoinWarga: React.FC = () => {
       {/* Modal Penyesuaian Poin Manual */}
       {isAdjustModalOpen && selectedUser && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col border border-slate-200">
-            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h3 className="text-[18px] font-extrabold text-slate-800 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800">
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/60">
+              <h3 className="text-[18px] font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                 <Star className="text-amber-500" size={20} /> Penyesuaian Poin Warga
               </h3>
               <button
@@ -455,12 +455,12 @@ const PoinWarga: React.FC = () => {
               </button>
             </div>
             <form onSubmit={handleAdjustPointsSubmit} className="p-6 space-y-4">
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
-                <span className="font-bold text-slate-600">Penerima Poin:</span>
-                <span className="font-extrabold text-slate-900">{selectedUser.nama} ({selectedUser.rtRw})</span>
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                <span className="font-bold text-slate-600 dark:text-slate-400">Penerima Poin:</span>
+                <span className="font-extrabold text-slate-900 dark:text-slate-100">{selectedUser.nama} ({selectedUser.rtRw})</span>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Jumlah Poin (Gunakan nilai negatif (-) untuk pengurangan)
                 </label>
                 <input
@@ -469,11 +469,11 @@ const PoinWarga: React.FC = () => {
                   value={adjustPointsVal}
                   onChange={(e) => setAdjustPointsVal(Number(e.target.value))}
                   placeholder="Contoh: 50 atau -20"
-                  className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-black text-slate-800 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-sm font-black text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Keterangan / Alasan Penyesuaian
                 </label>
                 <textarea
@@ -482,14 +482,14 @@ const PoinWarga: React.FC = () => {
                   value={adjustDesc}
                   onChange={(e) => setAdjustDesc(e.target.value)}
                   placeholder="Contoh: Bonus partisipasi acara kebersihan RW"
-                  className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-xs font-medium text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 />
               </div>
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200">
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsAdjustModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl font-bold text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer"
                 >
                   Batal
                 </button>

@@ -321,7 +321,7 @@ const KknDashboard: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] gap-4">
         <Loader2 className="animate-spin text-emerald-600 w-12 h-12" />
-        <p className="text-slate-600 font-bold text-sm">Memuat Portal & Dashboard KKN...</p>
+        <p className="text-slate-600 dark:text-slate-400 font-bold text-sm">Memuat Portal & Dashboard KKN...</p>
       </div>
     );
   }
@@ -1054,10 +1054,10 @@ const KknDashboard: React.FC = () => {
                   >
                     <Popup className="custom-popup">
                       <div className="p-2 space-y-1">
-                        <h4 className="font-extrabold text-sm text-slate-900 border-b pb-1">
+                        <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100 border-b pb-1">
                           Kelurahan {kel.name}
                         </h4>
-                        <p className="text-xs text-slate-600">
+                        <p className="text-xs text-slate-600 dark:text-slate-400">
                           Skor Kepatuhan Rata-rata:{" "}
                           <strong className="text-emerald-600 font-bold">{score}%</strong>
                         </p>
@@ -1095,12 +1095,12 @@ const KknDashboard: React.FC = () => {
                     <Popup className="custom-popup">
                       <div className="p-2 space-y-1 text-xs">
                         <div className="flex items-center justify-between gap-2 border-b pb-1">
-                          <strong className="text-slate-900">{warga.name || warga.wargaName}</strong>
+                          <strong className="text-slate-900 dark:text-slate-100">{warga.name || warga.wargaName}</strong>
                           <span className="font-mono text-[10px] text-emerald-600 font-bold">
                             {warga.binCode || "TS"}
                           </span>
                         </div>
-                        <p className="text-slate-600 text-[11px]">{warga.address || "Coblong"}</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-[11px]">{warga.address || "Coblong"}</p>
                         <div className="flex justify-between items-center pt-1 text-[11px]">
                           <span className="text-slate-400">Kepatuhan:</span>
                           <span className="font-bold text-emerald-600">{compliance} Pts</span>

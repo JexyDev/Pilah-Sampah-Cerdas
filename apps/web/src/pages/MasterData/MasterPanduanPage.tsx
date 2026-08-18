@@ -159,13 +159,13 @@ export const MasterPanduanPage: React.FC = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold mb-2">
             <BookOpen size={14} />
             Master Data Edukasi & Dokumentasi
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Manajemen Buku Panduan</h1>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Manajemen Buku Panduan</h1>
           <p className="text-xs text-slate-500 mt-1">
             Kelola arsip dokumen SOP, buku petunjuk teknis KKN, dan materi edukasi pemilahan sampah per peran.
           </p>
@@ -180,16 +180,16 @@ export const MasterPanduanPage: React.FC = () => {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <span className="text-xs font-bold text-slate-600 shrink-0">Filter Peran:</span>
+          <span className="text-xs font-bold text-slate-600 dark:text-slate-400 shrink-0">Filter Peran:</span>
           <select
             value={selectedRoleFilter}
             onChange={(e) => {
               setSelectedRoleFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500"
+            className="px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-emerald-500"
           >
             {ROLE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -209,13 +209,13 @@ export const MasterPanduanPage: React.FC = () => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500"
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500"
           />
         </div>
       </div>
 
       {/* Main Table */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
         {loading ? (
           <div className="p-12 flex flex-col items-center justify-center gap-3 text-slate-400">
             <Loader2 className="animate-spin text-emerald-600" size={32} />
@@ -224,16 +224,16 @@ export const MasterPanduanPage: React.FC = () => {
         ) : filteredData.length === 0 ? (
           <div className="p-12 text-center text-slate-500 space-y-2">
             <FileText className="mx-auto text-slate-300" size={48} />
-            <h3 className="text-sm font-bold text-slate-700">Belum Ada Dokumen Panduan</h3>
+            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Belum Ada Dokumen Panduan</h3>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
               Belum ada panduan yang terdaftar untuk kategori peran ini. Silakan klik tombol Tambah.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700 border-collapse">
+            <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
               <thead>
-                <tr className="bg-slate-50/90 text-slate-500 border-b border-slate-200 text-[11px] uppercase tracking-wider font-bold">
+                <tr className="bg-slate-50/90 text-slate-500 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4 min-w-[200px]">Judul Dokumen</th>
                   <th className="py-3.5 px-4 w-40 text-center">Target Peran</th>
@@ -242,14 +242,14 @@ export const MasterPanduanPage: React.FC = () => {
                   <th className="py-3.5 px-4 w-28 text-center">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 {paginatedData.map((item, idx) => (
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-3.5 px-4 text-center font-bold text-slate-400">
                       {(currentPage - 1) * itemsPerPage + idx + 1}
                     </td>
                     <td className="py-3.5 px-4">
-                      <span className="font-bold text-slate-900 block text-sm">{item.judul}</span>
+                      <span className="font-bold text-slate-900 dark:text-slate-100 block text-sm">{item.judul}</span>
                       <span className="text-[10.5px] text-slate-400">
                         Diperbarui: {new Date(item.updatedAt).toLocaleDateString("id-ID")}
                       </span>
@@ -260,7 +260,7 @@ export const MasterPanduanPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-3.5 px-4">
-                      <p className="text-slate-600 line-clamp-2">{item.deskripsi || "-"}</p>
+                      <p className="text-slate-600 dark:text-slate-400 line-clamp-2">{item.deskripsi || "-"}</p>
                     </td>
                     <td className="py-3.5 px-4 text-center">
                       <div className="flex items-center justify-center gap-1.5">
@@ -295,7 +295,7 @@ export const MasterPanduanPage: React.FC = () => {
                       <div className="flex items-center justify-center gap-1.5">
                         <button
                           onClick={() => handleOpenEdit(item)}
-                          className="p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition cursor-pointer"
+                          className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition cursor-pointer"
                           title="Edit Panduan"
                         >
                           <Pencil size={14} />
@@ -304,7 +304,7 @@ export const MasterPanduanPage: React.FC = () => {
                           onClick={() =>
                             setDeleteModal({ isOpen: true, id: item.id, judul: item.judul })
                           }
-                          className="p-1.5 rounded-lg bg-slate-100 text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                          className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-rose-600 hover:bg-rose-50 transition cursor-pointer"
                           title="Hapus Panduan"
                         >
                           <Trash2 size={14} />
@@ -318,7 +318,7 @@ export const MasterPanduanPage: React.FC = () => {
           </div>
         )}
 
-        <div className="p-4 border-t border-slate-100 flex items-center justify-between">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -333,9 +333,9 @@ export const MasterPanduanPage: React.FC = () => {
       {/* Modal Add / Edit Form */}
       {isFormOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-slate-100 dark:border-slate-800 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <BookOpen size={18} className="text-emerald-600" />
                 {formMode === "add" ? "Tambah Dokumen Panduan" : "Edit Dokumen Panduan"}
               </h3>
@@ -349,7 +349,7 @@ export const MasterPanduanPage: React.FC = () => {
 
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Judul Dokumen <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -358,18 +358,18 @@ export const MasterPanduanPage: React.FC = () => {
                   placeholder="Contoh: Panduan Operasional Tempat Sampah Pintar"
                   value={formData.judul}
                   onChange={(e) => setFormData({ ...formData, judul: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Kategori Peran Sasaran <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={formData.kategoriRole}
                   onChange={(e) => setFormData({ ...formData, kategoriRole: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value="WARGA">Warga</option>
                   <option value="MAHASISWA_KKN">Mahasiswa KKN</option>
@@ -381,7 +381,7 @@ export const MasterPanduanPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Tautan File / Dokumen (URL)
                 </label>
                 <input
@@ -389,12 +389,12 @@ export const MasterPanduanPage: React.FC = () => {
                   placeholder="https://drive.google.com/... atau tautan file PDF"
                   value={formData.linkUrl}
                   onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Deskripsi / Ringkasan Panduan
                 </label>
                 <textarea
@@ -402,15 +402,15 @@ export const MasterPanduanPage: React.FC = () => {
                   placeholder="Jelaskan ringkasan materi panduan..."
                   value={formData.deskripsi}
                   onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                 >
                   Batal
                 </button>

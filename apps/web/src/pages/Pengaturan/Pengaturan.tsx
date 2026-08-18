@@ -264,9 +264,9 @@ const Pengaturan: React.FC = () => {
   ];
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-100">
       <div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Pengaturan Profil</h1>
+        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">Pengaturan Profil</h1>
         <p className="text-slate-500 text-sm mt-1">
           Kelola profil pengguna, keamanan akun, peranan wilayah, serta preferensi sistem.
         </p>
@@ -297,38 +297,38 @@ const Pengaturan: React.FC = () => {
           })}
 
           {/* Info Peran & Domisili di Kolom Kiri */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 space-y-3 shadow-2xs">
-            <div className="flex items-center gap-2 text-xs font-black text-slate-800 pb-2 border-b border-slate-100">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 space-y-3 shadow-2xs">
+            <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100 pb-2 border-b border-slate-100 dark:border-slate-800">
               <ShieldCheck size={16} className="text-[#009966]" />
               <span>Peran & Domisili</span>
             </div>
             <div className="space-y-2 text-xs">
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/60">
                 <span className="text-[10px] font-black uppercase text-slate-400 block">Tingkat Akses / Role</span>
                 <p className="font-black text-[#009966] uppercase mt-0.5">{profileData.role}</p>
               </div>
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/60">
                 <span className="text-[10px] font-black uppercase text-slate-400 block">Wilayah Tugas</span>
-                <p className="font-bold text-slate-800 mt-0.5">Kel. {profileData.kelurahan}</p>
+                <p className="font-bold text-slate-800 dark:text-slate-100 mt-0.5">Kel. {profileData.kelurahan}</p>
                 <p className="text-[11px] text-slate-500">Kec. {profileData.kecamatan} • {profileData.rw}</p>
               </div>
             </div>
           </div>
 
           {/* Keamanan & Sandi di Kolom Kiri */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 space-y-3 shadow-2xs">
-            <div className="flex items-center gap-2 text-xs font-black text-slate-800 pb-2 border-b border-slate-100">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 space-y-3 shadow-2xs">
+            <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100 pb-2 border-b border-slate-100 dark:border-slate-800">
               <Lock size={16} className="text-amber-600" />
               <span>Keamanan Kata Sandi</span>
             </div>
-            <form onSubmit={handlePasswordSubmit} className="space-y-2.5 text-xs font-bold text-slate-700">
+            <form onSubmit={handlePasswordSubmit} className="space-y-2.5 text-xs font-bold text-slate-700 dark:text-slate-300">
               <div className="space-y-1">
                 <label className="block text-[11px] font-black">Kata Sandi Saat Ini</label>
                 <input
                   type="password"
                   required
                   placeholder="••••••••"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-amber-500 text-xs font-mono"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-amber-500 text-xs font-mono"
                   value={passwordData.currentPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
                 />
@@ -339,7 +339,7 @@ const Pengaturan: React.FC = () => {
                   type="password"
                   required
                   placeholder="Min. 8 karakter"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-amber-500 text-xs font-mono"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-amber-500 text-xs font-mono"
                   value={passwordData.newPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
                 />
@@ -350,7 +350,7 @@ const Pengaturan: React.FC = () => {
                   type="password"
                   required
                   placeholder="Ketik ulang sandi"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-amber-500 text-xs font-mono"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-amber-500 text-xs font-mono"
                   value={passwordData.confirmPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
                 />
@@ -378,24 +378,24 @@ const Pengaturan: React.FC = () => {
         </div>
 
         {/* PANEL KONTEN KANAN */}
-        <div className="flex-1 w-full bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6 sm:p-8 min-h-[600px] space-y-6">
+        <div className="flex-1 w-full bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-6 sm:p-8 min-h-[600px] space-y-6">
 
           {/* TAB 1: PROFIL */}
           {activeTab === "profil" && (
             <div className="space-y-6 animate-fade-in">
               <div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Informasi Profil Akun</h2>
+                <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Informasi Profil Akun</h2>
                 <p className="text-xs text-slate-500 font-medium mt-1">Perbarui data profil, kontak WhatsApp, dan foto resmi pengguna.</p>
               </div>
 
               {/* Form Profil Utama */}
-              <div className="bg-[#f8fafc] rounded-2xl border border-slate-200/80 p-5 sm:p-6 space-y-6">
-                <div className="flex items-center gap-2.5 text-slate-800 pb-3 border-b border-slate-200/80">
+              <div className="bg-[#f8fafc] rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 space-y-6">
+                <div className="flex items-center gap-2.5 text-slate-800 dark:text-slate-100 pb-3 border-b border-slate-200/80 dark:border-slate-800">
                   <div className="w-8 h-8 rounded-xl bg-emerald-100 text-[#009966] flex items-center justify-center font-bold">
                     <User size={18} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-slate-900 tracking-tight">Profil Utama</h3>
+                    <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 tracking-tight">Profil Utama</h3>
                     <p className="text-[11.5px] font-medium text-slate-500">Pembaruan foto dan informasi kontak</p>
                   </div>
                 </div>
@@ -440,12 +440,12 @@ const Pengaturan: React.FC = () => {
                       </div>
 
                       {/* Form Input */}
-                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full text-xs font-bold text-slate-700">
+                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full text-xs font-bold text-slate-700 dark:text-slate-300">
                         <div className="space-y-1.5 sm:col-span-2">
                           <label className="block text-xs font-black">Nama Lengkap</label>
                           <div className="relative">
                             <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input type="text" required className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-[#009966] transition-all" value={profileData.name} onChange={(e) => setProfileData({ ...profileData, name: e.target.value })} />
+                            <input type="text" required className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-[#009966] transition-all" value={profileData.name} onChange={(e) => setProfileData({ ...profileData, name: e.target.value })} />
                           </div>
                         </div>
 
@@ -453,13 +453,13 @@ const Pengaturan: React.FC = () => {
                           <label className="block text-xs font-black">Nomor WhatsApp (+62)</label>
                           <div className="relative">
                             <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input type="tel" className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-[#009966] transition-all font-mono" placeholder="+628xxx" value={profileData.phone} onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })} />
+                            <input type="tel" className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-[#009966] transition-all font-mono" placeholder="+628xxx" value={profileData.phone} onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })} />
                           </div>
                         </div>
 
                         <div className="space-y-1.5">
                           <label className="block text-xs font-black">Peran / Hak Akses</label>
-                          <input type="text" disabled className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 font-extrabold uppercase cursor-not-allowed" value={profileData.role} />
+                          <input type="text" disabled className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-600 dark:text-slate-400 font-extrabold uppercase cursor-not-allowed" value={profileData.role} />
                         </div>
 
                         {profileData.role === "WARGA" && (
@@ -468,7 +468,7 @@ const Pengaturan: React.FC = () => {
                               <label className="block text-xs font-black">Jumlah Anggota Keluarga</label>
                               <div className="relative">
                                 <Users size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input type="number" min={1} max={20} className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-[#009966] transition-all" value={profileData.jumlahAnggotaKeluarga} onChange={(e) => setProfileData({ ...profileData, jumlahAnggotaKeluarga: e.target.value })} />
+                                <input type="number" min={1} max={20} className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-[#009966] transition-all" value={profileData.jumlahAnggotaKeluarga} onChange={(e) => setProfileData({ ...profileData, jumlahAnggotaKeluarga: e.target.value })} />
                               </div>
                             </div>
 
@@ -476,7 +476,7 @@ const Pengaturan: React.FC = () => {
                               <label className="block text-xs font-black">Alamat Lengkap Domisili</label>
                               <div className="relative">
                                 <Home size={16} className="absolute left-3.5 top-3 text-slate-400" />
-                                <textarea rows={2} className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:border-[#009966] transition-all" value={profileData.address} onChange={(e) => setProfileData({ ...profileData, address: e.target.value })} />
+                                <textarea rows={2} className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-[#009966] transition-all" value={profileData.address} onChange={(e) => setProfileData({ ...profileData, address: e.target.value })} />
                               </div>
                             </div>
                           </>
@@ -500,34 +500,34 @@ const Pengaturan: React.FC = () => {
             <div className="space-y-6 animate-fade-in">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-black text-slate-900 tracking-tight">Telemetri & Basis Data</h2>
+                  <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Telemetri & Basis Data</h2>
                   <p className="text-xs text-slate-500 font-medium mt-1">Metrik real-time CPU, RAM, PostgreSQL, dan Redis.</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-                <div className="bg-[#f8fafc] p-4 rounded-2xl border border-slate-200 space-y-1">
+                <div className="bg-[#f8fafc] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1">
                   <div className="flex items-center justify-between text-slate-400 mb-1">
                     <span className="text-[10px] font-black uppercase">PostgreSQL</span> <Database size={16} className="text-[#009966]" />
                   </div>
                   <p className="font-extrabold text-emerald-700 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />{vpsHealth?.database.status || "TERHUBUNG"}</p>
                   <p className="text-slate-500 font-medium">Latensi: {vpsHealth?.database.queryLatencyMs || 62} ms</p>
                 </div>
-                <div className="bg-[#f8fafc] p-4 rounded-2xl border border-slate-200 space-y-1">
+                <div className="bg-[#f8fafc] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1">
                   <div className="flex items-center justify-between text-slate-400 mb-1">
                     <span className="text-[10px] font-black uppercase">Beban CPU</span> <Cpu size={16} className="text-[#009966]" />
                   </div>
-                  <p className="font-extrabold text-slate-800">{vpsHealth?.cpu.usagePercent || 18.5}%</p>
+                  <p className="font-extrabold text-slate-800 dark:text-slate-100">{vpsHealth?.cpu.usagePercent || 18.5}%</p>
                   <p className="text-slate-500 font-medium">{vpsHealth?.cpu.cores || 4} Core</p>
                 </div>
-                <div className="bg-[#f8fafc] p-4 rounded-2xl border border-slate-200 space-y-1">
+                <div className="bg-[#f8fafc] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1">
                   <div className="flex items-center justify-between text-slate-400 mb-1">
                     <span className="text-[10px] font-black uppercase">Memori (RAM)</span> <HardDrive size={16} className="text-[#009966]" />
                   </div>
-                  <p className="font-extrabold text-slate-800">{vpsHealth?.memory.usedGb || 2.4} / {vpsHealth?.memory.totalGb || 8} GB</p>
+                  <p className="font-extrabold text-slate-800 dark:text-slate-100">{vpsHealth?.memory.usedGb || 2.4} / {vpsHealth?.memory.totalGb || 8} GB</p>
                   <p className="text-slate-500 font-medium">{vpsHealth?.memory.usagePercent || 30}% Terpakai</p>
                 </div>
-                <div className="bg-[#f8fafc] p-4 rounded-2xl border border-slate-200 space-y-1">
+                <div className="bg-[#f8fafc] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1">
                   <div className="flex items-center justify-between text-slate-400 mb-1">
                     <span className="text-[10px] font-black uppercase">Tembolok Redis</span> <Server size={16} className="text-[#009966]" />
                   </div>
@@ -537,17 +537,17 @@ const Pengaturan: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div className="p-5 rounded-2xl bg-[#f8fafc] border border-slate-200 space-y-3">
-                  <h4 className="text-sm font-black text-slate-900">Cadangkan Basis Data</h4>
+                <div className="p-5 rounded-2xl bg-[#f8fafc] border border-slate-200 dark:border-slate-800 space-y-3">
+                  <h4 className="text-sm font-black text-slate-900 dark:text-slate-100">Cadangkan Basis Data</h4>
                   <p className="text-xs font-medium text-slate-500">Buat salinan data (SQL Dump) terbaru secara langsung.</p>
                   <button onClick={() => handleSystemAction("/system/backup", "Cadangan berhasil dibuat!", setIsBackingUp)} disabled={isBackingUp} className="px-4 py-2.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white font-extrabold text-xs flex items-center gap-2 disabled:opacity-50 transition-all">
                     {isBackingUp ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Proses Cadangan
                   </button>
                 </div>
-                <div className="p-5 rounded-2xl bg-[#f8fafc] border border-slate-200 space-y-3">
-                  <h4 className="text-sm font-black text-slate-900">Bersihkan Tembolok Redis</h4>
+                <div className="p-5 rounded-2xl bg-[#f8fafc] border border-slate-200 dark:border-slate-800 space-y-3">
+                  <h4 className="text-sm font-black text-slate-900 dark:text-slate-100">Bersihkan Tembolok Redis</h4>
                   <p className="text-xs font-medium text-slate-500">Hapus cache sementara untuk sinkronisasi performa.</p>
-                  <button onClick={() => handleSystemAction("/system/clear-cache", "Tembolok dibersihkan!", setIsClearingCache)} disabled={isClearingCache} className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-extrabold text-xs flex items-center gap-2 disabled:opacity-50 transition-all">
+                  <button onClick={() => handleSystemAction("/system/clear-cache", "Tembolok dibersihkan!", setIsClearingCache)} disabled={isClearingCache} className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 text-slate-800 dark:text-slate-100 font-extrabold text-xs flex items-center gap-2 disabled:opacity-50 transition-all">
                     {isClearingCache ? <Loader2 size={15} className="animate-spin text-[#009966]" /> : <Brush size={15} className="text-[#009966]" />} Bersihkan Tembolok
                   </button>
                 </div>
@@ -559,10 +559,10 @@ const Pengaturan: React.FC = () => {
           {activeTab === "rbac" && isDeveloper && (
             <div className="animate-fade-in space-y-4">
               <div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Hak Akses (RBAC)</h2>
+                <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Hak Akses (RBAC)</h2>
                 <p className="text-xs text-slate-500 font-medium mt-1">Kelola hierarki peran dan matriks izin kontrol aplikasi.</p>
               </div>
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-2">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-2">
                 <RolePermissionPage />
               </div>
             </div>

@@ -666,7 +666,7 @@ export default function RekapSetoran() {
             />
             <button
               onClick={() => setPreviewImageUrl(null)}
-              className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-white text-slate-900 font-bold flex items-center justify-center shadow-xl cursor-pointer hover:bg-slate-100"
+              className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold flex items-center justify-center shadow-xl cursor-pointer hover:bg-slate-100"
             >
               <X size={20} />
             </button>

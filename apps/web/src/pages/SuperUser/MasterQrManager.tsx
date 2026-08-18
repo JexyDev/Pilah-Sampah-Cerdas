@@ -434,7 +434,7 @@ export const MasterQrManager: React.FC = () => {
                         <td className="px-6 py-4">
                           <div className="flex flex-col items-center gap-1 bg-slate-50 dark:bg-slate-800 p-2 rounded-xl border border-slate-200/80 dark:border-slate-700 w-fit shadow-2xs">
                             <img
-                              className="w-14 h-14 bg-white p-1 rounded-lg"
+                              className="w-14 h-14 bg-white dark:bg-slate-900 p-1 rounded-lg"
                               alt="QR Code"
                               src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(q.qrCode)}`}
                             />

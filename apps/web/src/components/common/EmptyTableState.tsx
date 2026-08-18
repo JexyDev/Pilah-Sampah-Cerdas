@@ -64,13 +64,13 @@ export const EmptyTableState: React.FC<EmptyTableStateProps> = ({
 
   const content = (
     <div className={`py-12 px-6 flex flex-col items-center justify-center text-center select-none ${className}`}>
-      <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center border border-slate-200/80 mb-3 shadow-2xs">
-        <IconComponent size={24} className="text-slate-400" />
+      <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center border border-slate-200/80 dark:border-slate-700 mb-3 shadow-2xs">
+        <IconComponent size={24} className="text-slate-400 dark:text-slate-500" />
       </div>
-      <h4 className="font-extrabold text-sm sm:text-base text-slate-800 tracking-tight">
+      <h4 className="font-extrabold text-sm sm:text-base text-slate-800 dark:text-slate-100 tracking-tight">
         {displayTitle}
       </h4>
-      <p className="text-xs text-slate-500 font-medium max-w-sm mt-1 leading-relaxed">
+      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium max-w-sm mt-1 leading-relaxed">
         {displayDescription}
       </p>
 
@@ -79,7 +79,7 @@ export const EmptyTableState: React.FC<EmptyTableStateProps> = ({
         <button
           type="button"
           onClick={onResetSearch}
-          className="mt-3.5 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold transition-all shadow-2xs cursor-pointer border border-slate-200"
+          className="mt-3.5 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-extrabold transition-all shadow-2xs cursor-pointer border border-slate-200 dark:border-slate-700"
         >
           <RotateCcw size={13} />
           <span>Reset Pencarian</span>

@@ -445,7 +445,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Kelompok Dampingan KKN</h1>
+          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">Kelompok Dampingan KKN</h1>
           <p className="text-slate-500 text-sm mt-1">
             Pengelolaan kelompok mahasiswa KKN, alokasi wilayah dampingan, dan struktur dosen pendamping lapangan.
           </p>
@@ -453,7 +453,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-slate-200">
+      <div className="border-b border-slate-200 dark:border-slate-800">
         <nav className="-mb-px flex space-x-8" aria-label="Tabs">
           {(isDpl
             ? [{ id: "kelompok", label: `Kelompok Saya (${kelompokList.length})`, icon: GraduationCap }]
@@ -483,7 +483,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-xs">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs">
         {activeTab === "kelompok" && (
           <div className="space-y-6">
             {/* Filter & Search Bar */}
@@ -497,7 +497,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     placeholder="Cari kelompok, DPL, ketua, kelurahan..."
                     value={searchKelompok}
                     onChange={(e) => setSearchKelompok(e.target.value)}
-                    className="pl-10 pr-4 py-2.5 w-full border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-slate-50/50 hover:bg-white"
+                    className="pl-10 pr-4 py-2.5 w-full border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-slate-50/50 hover:bg-white"
                   />
                   {searchKelompok && (
                     <button
@@ -517,7 +517,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                       value={filterKelurahan}
                       onChange={(e) => setFilterKelurahan(e.target.value)}
                       aria-label="Filter Kelurahan"
-                      className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer"
+                      className="px-3 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer"
                     >
                       <option value="ALL">Semua Kelurahan</option>
                       {kelurahanOptions.map((kel) => (
@@ -538,7 +538,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     value={rowsPerPage}
                     onChange={(e) => setRowsPerPage(Number(e.target.value))}
                     aria-label="Jumlah baris per halaman"
-                    className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-bold bg-white text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer"
+                    className="px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
                   >
                     <option value={10}>10</option>
                     <option value={25}>25</option>
@@ -567,27 +567,27 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 <p className="text-slate-500 font-medium">Memuat data kelompok KKN...</p>
               </div>
             ) : filteredKelompokList.length === 0 ? (
-              <div className="text-center py-16 text-slate-500 font-medium border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+              <div className="text-center py-16 text-slate-500 font-medium border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50">
                 <Users size={40} className="mx-auto text-slate-300 mb-2" />
                 Tidak ada data kelompok KKN yang sesuai dengan filter pencarian.
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-2xs">
+                <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800 shadow-2xs">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-100">
-                        <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider">Nama Kelompok</th>
-                        <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider">Wilayah / Kelurahan</th>
-                        <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider">Ketua Kelompok</th>
-                        <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider">Dosen Pendamping (DPL)</th>
-                        <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider text-center">Anggota</th>
+                      <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800">
+                        <th className="p-4 font-bold text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wider">Nama Kelompok</th>
+                        <th className="p-4 font-bold text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wider">Wilayah / Kelurahan</th>
+                        <th className="p-4 font-bold text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wider">Ketua Kelompok</th>
+                        <th className="p-4 font-bold text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wider">Dosen Pendamping (DPL)</th>
+                        <th className="p-4 font-bold text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wider text-center">Anggota</th>
                         {(!isReadOnly || isDpl) && (
-                          <th className="p-4 font-bold text-xs text-slate-600 uppercase tracking-wider text-center">Aksi</th>
+                          <th className="p-4 font-bold text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wider text-center">Aksi</th>
                         )}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
                       {paginatedKelompok.map((k) => {
                         const ketuaMhs = k.students?.find((s: any) => s.isKetua);
                         const cakupanRw = Array.isArray(k.cakupanRw) ? k.cakupanRw.join(", ") : k.cakupanRw;
@@ -596,7 +596,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                             <td className="p-4">
                               <button
                                 onClick={() => handleOpenDetailKelompok(k)}
-                                className="font-bold text-slate-900 hover:text-emerald-600 text-left transition flex items-center gap-1.5 cursor-pointer group"
+                                className="font-bold text-slate-900 dark:text-slate-100 hover:text-emerald-600 text-left transition flex items-center gap-1.5 cursor-pointer group"
                                 title="Klik untuk melihat detail lengkap kelompok"
                               >
                                 <span className="group-hover:underline">{k.name}</span>
@@ -617,7 +617,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                             </td>
                             <td className="p-4">
                               <div className="flex flex-col gap-0.5">
-                                <span className="font-semibold text-slate-800 text-xs flex items-center gap-1">
+                                <span className="font-semibold text-slate-800 dark:text-slate-100 text-xs flex items-center gap-1">
                                   <MapPin size={13} className="text-emerald-600" />
                                   Kel. {k.kelurahan || "Coblong"}
                                 </span>
@@ -641,14 +641,14 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                             <td className="p-4">
                               {k.dpl?.name ? (
                                 <div className="flex flex-col">
-                                  <span className="font-medium text-slate-800">{k.dpl.name}</span>
+                                  <span className="font-medium text-slate-800 dark:text-slate-100">{k.dpl.name}</span>
                                   {k.dpl.phone && <span className="text-[11px] text-slate-400 font-mono">{k.dpl.phone}</span>}
                                 </div>
                               ) : (
                                 <span className="text-slate-400 italic text-xs">Belum ditentukan</span>
                               )}
                             </td>
-                            <td className="p-4 text-center font-bold text-slate-700">
+                            <td className="p-4 text-center font-bold text-slate-700 dark:text-slate-300">
                               <button
                                 onClick={() => handleOpenMembersModal(k)}
                                 className="inline-flex items-center gap-1.5 px-3 py-1 bg-teal-50 text-teal-800 border border-teal-200/80 hover:bg-teal-100 rounded-full text-xs font-bold transition-all cursor-pointer shadow-2xs"
@@ -707,19 +707,19 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 </div>
 
                 {/* Pagination Controls */}
-                <div className="p-4 border border-slate-100 bg-slate-50/70 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <p className="text-xs font-semibold text-slate-600">
+                <div className="p-4 border border-slate-100 dark:border-slate-800 bg-slate-50/70 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
                     Menampilkan{" "}
-                    <span className="font-bold text-slate-900">
+                    <span className="font-bold text-slate-900 dark:text-slate-100">
                       {filteredKelompokList.length === 0
                         ? 0
                         : (currentPage - 1) * rowsPerPage + 1}
                     </span>{" "}
                     sampai{" "}
-                    <span className="font-bold text-slate-900">
+                    <span className="font-bold text-slate-900 dark:text-slate-100">
                       {Math.min(currentPage * rowsPerPage, filteredKelompokList.length)}
                     </span>{" "}
-                    dari <span className="font-bold text-slate-900">{filteredKelompokList.length}</span> kelompok
+                    dari <span className="font-bold text-slate-900 dark:text-slate-100">{filteredKelompokList.length}</span> kelompok
                     {filteredKelompokList.length !== kelompokList.length && (
                       <span className="text-slate-400 ml-1">(difilter dari {kelompokList.length} total)</span>
                     )}
@@ -730,7 +730,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                       <button
                         onClick={() => setCurrentPage(1)}
                         disabled={currentPage === 1}
-                        className="p-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-30 rounded-lg transition-all cursor-pointer"
+                        className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 disabled:opacity-30 rounded-lg transition-all cursor-pointer"
                         title="Halaman Pertama"
                       >
                         <ChevronsLeft size={15} />
@@ -738,7 +738,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                       <button
                         onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                         disabled={currentPage === 1}
-                        className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 disabled:opacity-30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
                       >
                         <ChevronLeft size={14} /> Sebelumnya
                       </button>
@@ -769,14 +769,14 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                       <button
                         onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                         disabled={currentPage === totalPages}
-                        className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 disabled:opacity-30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
                       >
                         Selanjutnya <ChevronRight size={14} />
                       </button>
                       <button
                         onClick={() => setCurrentPage(totalPages)}
                         disabled={currentPage === totalPages}
-                        className="p-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-30 rounded-lg transition-all cursor-pointer"
+                        className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 disabled:opacity-30 rounded-lg transition-all cursor-pointer"
                         title="Halaman Terakhir"
                       >
                         <ChevronsRight size={15} />
@@ -802,7 +802,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     setSearchDpl(e.target.value);
                     setDplPage(1);
                   }}
-                  className="pl-10 pr-4 py-2.5 w-full border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-slate-50/50 hover:bg-white"
+                  className="pl-10 pr-4 py-2.5 w-full border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-slate-50/50 hover:bg-white"
                 />
                 {searchDpl && (
                   <button
@@ -831,7 +831,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 <p className="text-slate-500 font-medium">Memuat data DPL...</p>
               </div>
             ) : filteredDplList.length === 0 ? (
-              <div className="text-center py-16 text-slate-500 font-medium border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+              <div className="text-center py-16 text-slate-500 font-medium border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50">
                 <User size={40} className="mx-auto text-slate-300 mb-2" />
                 Tidak ada data DPL yang sesuai pencarian.
               </div>
@@ -841,22 +841,22 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   {paginatedDpl.map((dp) => (
                     <div
                       key={dp.id}
-                      className="p-5 rounded-2xl border border-slate-100 bg-slate-50/50 flex flex-col justify-between hover:shadow-xs transition-shadow"
+                      className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 flex flex-col justify-between hover:shadow-xs transition-shadow"
                     >
                       <div>
                         <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-bold text-slate-800 text-base leading-snug">{dp.name}</h3>
+                          <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base leading-snug">{dp.name}</h3>
                           <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0">
                             DPL
                           </span>
                         </div>
-                        {dp.nip && <p className="text-xs text-slate-600 font-mono mt-1">NIP: {dp.nip}</p>}
+                        {dp.nip && <p className="text-xs text-slate-600 dark:text-slate-400 font-mono mt-1">NIP: {dp.nip}</p>}
                         <p className="text-xs text-slate-500 mt-1">{dp.email || "Email tidak tersedia"}</p>
                         <p className="text-xs text-slate-500 font-mono mt-0.5">{dp.phone || "No HP tidak tersedia"}</p>
                       </div>
-                      <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-600 font-medium">
+                      <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-medium">
                         <span>Universitas Mitra</span>
-                        <span className="font-bold text-slate-800">UNIKOM</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-100">UNIKOM</span>
                       </div>
                     </div>
                   ))}
@@ -864,23 +864,23 @@ export const ManajemenEkosistemKkn: React.FC = () => {
 
                 {/* DPL Pagination */}
                 {totalDplPages > 1 && (
-                  <div className="p-4 border border-slate-100 bg-slate-50/70 rounded-xl flex items-center justify-between">
-                    <p className="text-xs font-semibold text-slate-600">
-                      Halaman <span className="font-bold text-slate-900">{dplPage}</span> dari{" "}
-                      <span className="font-bold text-slate-900">{totalDplPages}</span> ({filteredDplList.length} DPL total)
+                  <div className="p-4 border border-slate-100 dark:border-slate-800 bg-slate-50/70 rounded-xl flex items-center justify-between">
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                      Halaman <span className="font-bold text-slate-900 dark:text-slate-100">{dplPage}</span> dari{" "}
+                      <span className="font-bold text-slate-900 dark:text-slate-100">{totalDplPages}</span> ({filteredDplList.length} DPL total)
                     </p>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setDplPage((p) => Math.max(p - 1, 1))}
                         disabled={dplPage === 1}
-                        className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 disabled:opacity-30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
                       >
                         <ChevronLeft size={14} /> Sebelumnya
                       </button>
                       <button
                         onClick={() => setDplPage((p) => Math.min(p + 1, totalDplPages))}
                         disabled={dplPage === totalDplPages}
-                        className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 disabled:opacity-30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
                       >
                         Selanjutnya <ChevronRight size={14} />
                       </button>
@@ -901,7 +901,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   placeholder="Nama Universitas Mitra Baru..."
                   value={newUniName}
                   onChange={(e) => setNewUniName(e.target.value)}
-                  className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  className="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 />
                 <button
                   type="submit"
@@ -914,10 +914,10 @@ export const ManajemenEkosistemKkn: React.FC = () => {
 
             <div className="space-y-3">
               <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Daftar Universitas Mitra</h2>
-              <div className="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden bg-slate-50/20">
+              <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/20">
                 {uniList.map((uni) => (
                   <div key={uni} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                    <span className="font-semibold text-slate-700 text-sm">{uni}</span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{uni}</span>
                     {!isReadOnly && (
                       <button
                         onClick={() => handleRemoveUni(uni)}
@@ -937,9 +937,9 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       {/* Kelompok Modal */}
       {isKelompokModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-100">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-slate-900">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-100 dark:border-slate-800">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                 {kelompokModalType === "add" ? "Tambah Kelompok KKN" : "Edit Kelompok KKN"}
               </h3>
               <button onClick={() => setIsKelompokModalOpen(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
@@ -955,7 +955,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   placeholder="Contoh: Kelompok 1 Sekeloa"
                   value={kelompokForm.name}
                   onChange={(e) => setKelompokForm({ ...kelompokForm, name: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 />
               </div>
 
@@ -965,7 +965,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   value={kelompokForm.dplId}
                   onChange={(e) => setKelompokForm({ ...kelompokForm, dplId: e.target.value })}
                   aria-label="Pilih Dosen Pendamping (DPL)"
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white cursor-pointer"
+                  className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white dark:bg-slate-900 cursor-pointer"
                 >
                   <option value="">Pilih DPL (Opsional)</option>
                   {dplList.map((dp) => (
@@ -984,7 +984,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     placeholder="Contoh: Sekeloa"
                     value={kelompokForm.kelurahan}
                     onChange={(e) => setKelompokForm({ ...kelompokForm, kelurahan: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                   />
                 </div>
                 <div>
@@ -994,7 +994,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     placeholder="Contoh: 01, 02, 05"
                     value={kelompokForm.cakupanRw}
                     onChange={(e) => setKelompokForm({ ...kelompokForm, cakupanRw: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                   />
                 </div>
               </div>
@@ -1007,7 +1007,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     placeholder="https://drive.google.com/drive/folders/..."
                     value={kelompokForm.linkGoogleDrive || ""}
                     onChange={(e) => setKelompokForm({ ...kelompokForm, linkGoogleDrive: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-mono text-xs"
+                    className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-mono text-xs"
                   />
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
@@ -1022,7 +1022,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     value={kelompokForm.ketuaStudentId}
                     onChange={(e) => setKelompokForm({ ...kelompokForm, ketuaStudentId: e.target.value })}
                     aria-label="Pilih Ketua Kelompok (Mahasiswa)"
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white cursor-pointer"
+                    className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white dark:bg-slate-900 cursor-pointer"
                   >
                     <option value="">-- Tanpa Ketua / Lepas Ketua --</option>
                     {currentKelompokStudents.map((st) => (
@@ -1038,7 +1038,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsKelompokModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 cursor-pointer"
                 >
                   Batal
                 </button>
@@ -1059,9 +1059,9 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       {/* DPL Modal */}
       {isDplModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-100">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-slate-900">Registrasi DPL Baru</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-100 dark:border-slate-800">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Registrasi DPL Baru</h3>
               <button onClick={() => setIsDplModalOpen(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X size={20} />
               </button>
@@ -1075,7 +1075,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   placeholder="Nama Lengkap Beserta Gelar"
                   value={dplForm.name}
                   onChange={(e) => setDplForm({ ...dplForm, name: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 />
               </div>
 
@@ -1087,7 +1087,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   placeholder="dpl@univ.ac.id"
                   value={dplForm.email}
                   onChange={(e) => setDplForm({ ...dplForm, email: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 />
               </div>
 
@@ -1099,7 +1099,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   placeholder="081234567890"
                   value={dplForm.phone}
                   onChange={(e) => setDplForm({ ...dplForm, phone: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 />
               </div>
 
@@ -1111,7 +1111,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   placeholder="Minimal 8 karakter (Huruf & Angka)"
                   value={dplForm.password}
                   onChange={(e) => setDplForm({ ...dplForm, password: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 />
               </div>
 
@@ -1122,7 +1122,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   placeholder="Nomor Induk Pegawai / Dosen"
                   value={dplForm.nip}
                   onChange={(e) => setDplForm({ ...dplForm, nip: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 />
               </div>
 
@@ -1130,7 +1130,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsDplModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 cursor-pointer"
                 >
                   Batal
                 </button>
@@ -1151,11 +1151,11 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       {/* DPL Modal: Tunjuk Ketua Kelompok */}
       {isLeaderModalOpen && selectedLeaderKelompok && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-scale-up">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-amber-50/50">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-scale-up">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-amber-50/50">
               <div className="flex items-center gap-2">
                 <Crown className="text-amber-600" size={20} />
-                <h3 className="text-lg font-extrabold text-slate-900">
+                <h3 className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
                   Tunjuk Ketua {selectedLeaderKelompok.name}
                 </h3>
               </div>
@@ -1187,10 +1187,10 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                       onChange={() => setSelectedLeaderStudentId("")}
                       className="text-red-600 focus:ring-red-500"
                     />
-                    <span className="text-sm text-slate-700 italic">-- Tanpa Ketua / Lepas Ketua --</span>
+                    <span className="text-sm text-slate-700 dark:text-slate-300 italic">-- Tanpa Ketua / Lepas Ketua --</span>
                   </div>
                   {!selectedLeaderKelompok?.students?.some((s: any) => s.isKetua) && (
-                    <span className="text-[10px] font-extrabold bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md uppercase">
+                    <span className="text-[10px] font-extrabold bg-slate-200 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md uppercase">
                       Saat Ini Tanpa Ketua
                     </span>
                   )}
@@ -1214,7 +1214,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                         onChange={() => setSelectedLeaderStudentId(mhs.id)}
                         className="text-amber-600 focus:ring-amber-500"
                       />
-                      <span className="text-sm text-slate-800">{mhs.user?.name || "Mahasiswa"}</span>
+                      <span className="text-sm text-slate-800 dark:text-slate-100">{mhs.user?.name || "Mahasiswa"}</span>
                     </div>
                     {mhs.isKetua && (
                       <span className="text-[10px] font-extrabold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-md uppercase">
@@ -1225,11 +1225,11 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 ))}
               </div>
 
-              <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
+              <div className="flex gap-3 justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsLeaderModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 cursor-pointer"
                 >
                   Batal
                 </button>
@@ -1251,10 +1251,10 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       {/* Members Management Modal */}
       {isMembersModalOpen && selectedGroupForMembers && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden border border-slate-100 max-h-[85vh] flex flex-col">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/70">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden border border-slate-100 dark:border-slate-800 max-h-[85vh] flex flex-col">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/70">
               <div>
-                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   <Users size={20} className="text-teal-600" />
                   <span>Kelola Anggota - {selectedGroupForMembers.name}</span>
                 </h3>
@@ -1288,7 +1288,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                         value={filterStudentQuery}
                         onChange={(e) => setFilterStudentQuery(e.target.value)}
                         placeholder="Cari nama atau NIM mahasiswa..."
-                        className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:border-teal-500"
+                        className="w-full pl-9 pr-3 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg text-xs bg-white dark:bg-slate-900 focus:outline-none focus:border-teal-500"
                       />
                     </div>
 
@@ -1296,7 +1296,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                       <select
                         value={studentToAssignId}
                         onChange={(e) => setStudentToAssignId(e.target.value)}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium bg-white focus:outline-none focus:border-teal-500"
+                        className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium bg-white dark:bg-slate-900 focus:outline-none focus:border-teal-500"
                       >
                         <option value="">-- Pilih Mahasiswa untuk Dialokasikan --</option>
                         {allStudentsList
@@ -1339,16 +1339,16 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 </h4>
 
                 {(!selectedGroupForMembers.students || selectedGroupForMembers.students.length === 0) ? (
-                  <div className="text-center py-8 text-slate-400 font-semibold text-xs border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                  <div className="text-center py-8 text-slate-400 font-semibold text-xs border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50">
                     Belum ada mahasiswa yang dialokasikan ke kelompok ini.
                   </div>
                 ) : (
-                  <div className="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden">
                     {selectedGroupForMembers.students.map((st: any) => (
-                      <div key={st.id} className="p-3 bg-white flex items-center justify-between hover:bg-slate-50/80 transition">
+                      <div key={st.id} className="p-3 bg-white dark:bg-slate-900 flex items-center justify-between hover:bg-slate-50/80 transition">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-900 text-sm">{st.user?.name || `Mahasiswa ${st.id}`}</span>
+                            <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">{st.user?.name || `Mahasiswa ${st.id}`}</span>
                             {st.isKetua && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black border border-amber-300">
                                 <Crown size={11} className="text-amber-600" /> KETUA
@@ -1379,7 +1379,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 flex justify-end">
               <button
                 type="button"
                 onClick={() => setIsMembersModalOpen(false)}
@@ -1395,20 +1395,20 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       {/* Detail Kelompok Modal */}
       {isDetailModalOpen && selectedDetailKelompok && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden animate-scale-up border border-slate-200 max-h-[90vh] flex flex-col">
-            <div className="p-5 border-b border-slate-100 flex justify-between items-start bg-slate-50/80">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden animate-scale-up border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/80">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
                     Kel. {selectedDetailKelompok.kelurahan || "Coblong"}
                   </span>
                   {selectedDetailKelompok.cakupanRw && (
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-200/80 text-slate-700">
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-200/80 text-slate-700 dark:text-slate-300">
                       RW: {Array.isArray(selectedDetailKelompok.cakupanRw) ? selectedDetailKelompok.cakupanRw.join(", ") : selectedDetailKelompok.cakupanRw}
                     </span>
                   )}
                 </div>
-                <h3 className="text-xl font-black text-slate-900 mt-1.5">{selectedDetailKelompok.name}</h3>
+                <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 mt-1.5">{selectedDetailKelompok.name}</h3>
               </div>
               <button
                 onClick={() => setIsDetailModalOpen(false)}
@@ -1418,12 +1418,12 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-5 text-xs text-slate-700 flex-1">
+            <div className="p-6 overflow-y-auto space-y-5 text-xs text-slate-700 dark:text-slate-300 flex-1">
               {/* Meta DPL & Ketua & Google Drive */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70">
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200/70">
                   <span className="text-[10.5px] font-bold text-slate-400 block uppercase">Dosen Pendamping (DPL)</span>
-                  <span className="font-extrabold text-slate-900 text-sm mt-0.5 block">
+                  <span className="font-extrabold text-slate-900 dark:text-slate-100 text-sm mt-0.5 block">
                     {selectedDetailKelompok.dpl?.name || "Belum Ditentukan"}
                   </span>
                   {selectedDetailKelompok.dpl?.phone && (
@@ -1434,7 +1434,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   )}
                 </div>
 
-                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70">
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200/70">
                   <span className="text-[10.5px] font-bold text-slate-400 block uppercase">Ketua Kelompok</span>
                   {(() => {
                     const ketua = selectedDetailKelompok.students?.find((s: any) => s.isKetua);
@@ -1454,7 +1454,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   })()}
                 </div>
 
-                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70 flex flex-col justify-between">
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200/70 flex flex-col justify-between">
                   <div>
                     <span className="text-[10.5px] font-bold text-slate-400 block uppercase">Google Drive Kelompok</span>
                     {selectedDetailKelompok.linkGoogleDrive ? (
@@ -1478,21 +1478,21 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               {/* Tabel Anggota Mahasiswa Lengkap */}
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                  <h4 className="font-black text-slate-900 dark:text-slate-100 text-sm flex items-center gap-2">
                     <Users size={16} className="text-emerald-600" />
                     <span>Daftar Anggota Mahasiswa ({selectedDetailKelompok.students?.length || 0})</span>
                   </h4>
                 </div>
 
                 {(!selectedDetailKelompok.students || selectedDetailKelompok.students.length === 0) ? (
-                  <div className="text-center py-8 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                  <div className="text-center py-8 text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50">
                     Belum ada mahasiswa yang dialokasikan ke kelompok ini.
                   </div>
                 ) : (
-                  <div className="overflow-x-auto rounded-xl border border-slate-100">
+                  <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10.5px] border-b border-slate-200">
+                        <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 font-extrabold uppercase text-[10.5px] border-b border-slate-200 dark:border-slate-800">
                           <th className="py-2.5 px-3 text-center w-8">No</th>
                           <th className="py-2.5 px-3">NIM</th>
                           <th className="py-2.5 px-3">Nama Mahasiswa</th>
@@ -1501,14 +1501,14 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                           <th className="py-2.5 px-3 text-center">Peran</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                         {selectedDetailKelompok.students.map((st: any, idx: number) => (
                           <tr key={st.id} className="hover:bg-slate-50/70 transition">
                             <td className="py-2 px-3 text-center text-slate-400 font-bold">{idx + 1}</td>
-                            <td className="py-2 px-3 font-mono font-bold text-slate-800">{st.nim || "-"}</td>
-                            <td className="py-2 px-3 font-bold text-slate-900">{st.user?.name || `Mahasiswa ${st.id.substring(0, 6)}`}</td>
-                            <td className="py-2 px-3 font-semibold text-slate-600">{st.jenjangPendidikan || "S1"}</td>
-                            <td className="py-2 px-3 text-slate-600">{st.jurusan || "-"}</td>
+                            <td className="py-2 px-3 font-mono font-bold text-slate-800 dark:text-slate-100">{st.nim || "-"}</td>
+                            <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">{st.user?.name || `Mahasiswa ${st.id.substring(0, 6)}`}</td>
+                            <td className="py-2 px-3 font-semibold text-slate-600 dark:text-slate-400">{st.jenjangPendidikan || "S1"}</td>
+                            <td className="py-2 px-3 text-slate-600 dark:text-slate-400">{st.jurusan || "-"}</td>
                             <td className="py-2 px-3 text-center">
                               {st.isKetua ? (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-black text-[10px] border border-amber-300">
@@ -1527,7 +1527,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50/70 flex justify-between items-center text-xs">
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 flex justify-between items-center text-xs">
               <span className="text-slate-400">Total {selectedDetailKelompok.students?.length || 0} Mahasiswa</span>
               <button
                 type="button"

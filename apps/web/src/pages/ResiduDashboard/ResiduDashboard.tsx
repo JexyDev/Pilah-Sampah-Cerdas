@@ -475,8 +475,8 @@ const ResiduDashboard: React.FC = () => {
       {/* INPUT VIOLATION MODAL */}
       {showViolationModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
-            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50">
               <h3 className="font-extrabold text-lg flex items-center gap-2 text-on-surface">
                 <ShieldAlert className="text-red-600 w-5 h-5" />
                 Form Laporan Ketidakpatuhan
@@ -491,7 +491,7 @@ const ResiduDashboard: React.FC = () => {
 
             <form onSubmit={handleViolationSubmit} className="p-6 space-y-4">
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   ID / QR Code tempat sampah *
                 </label>
                 <input
@@ -502,19 +502,19 @@ const ResiduDashboard: React.FC = () => {
                     setViolationForm({ ...violationForm, binQrCode: e.target.value })
                   }
                   placeholder="Scan atau ketik kode QR..."
-                  className="border border-slate-200 rounded-lg p-2.5 text-xs font-mono outline-none focus:border-primary"
+                  className="border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-xs font-mono outline-none focus:border-primary"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   Jenis Pelanggaran *
                 </label>
                 <select
                   required
                   value={violationForm.type}
                   onChange={(e) => setViolationForm({ ...violationForm, type: e.target.value })}
-                  className="border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-primary cursor-pointer"
+                  className="border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-xs outline-none focus:border-primary cursor-pointer"
                 >
                   <option value="RESIDU_TERCAMPUR_ORGANIK">Residu Tercampur di Organik</option>
                   <option value="RESIDU_TERCAMPUR_ANORGANIK">Residu Tercampur di Anorganik</option>
@@ -523,14 +523,14 @@ const ResiduDashboard: React.FC = () => {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   Tingkat Keparahan *
                 </label>
                 <select
                   required
                   value={violationForm.severity}
                   onChange={(e) => setViolationForm({ ...violationForm, severity: e.target.value })}
-                  className="border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-primary cursor-pointer"
+                  className="border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-xs outline-none focus:border-primary cursor-pointer"
                 >
                   <option value="LIGHT">Ringan (-50 Poin)</option>
                   <option value="MEDIUM">Sedang (-100 Poin)</option>
@@ -539,7 +539,7 @@ const ResiduDashboard: React.FC = () => {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   Catatan Tambahan
                 </label>
                 <textarea
@@ -547,18 +547,18 @@ const ResiduDashboard: React.FC = () => {
                   onChange={(e) => setViolationForm({ ...violationForm, notes: e.target.value })}
                   placeholder="Keterangan tambahan..."
                   rows={2}
-                  className="border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-primary resize-none"
+                  className="border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-xs outline-none focus:border-primary resize-none"
                 />
               </div>
 
               {/* Foto Bukti Pelanggaran */}
-              <div className="border border-dashed border-slate-200 rounded-xl p-4 bg-slate-50/50 flex flex-col gap-3">
+              <div className="border border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 flex flex-col gap-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-slate-700">Foto Bukti Pelanggaran *</span>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Foto Bukti Pelanggaran *</span>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <Upload className="w-3.5 h-3.5 text-slate-500" /> Ambil Foto
                   </button>
@@ -576,7 +576,7 @@ const ResiduDashboard: React.FC = () => {
                     <img
                       src={violationPhotoPreview}
                       alt="Preview Bukti"
-                      className="w-24 h-24 rounded-lg object-cover border border-slate-200"
+                      className="w-24 h-24 rounded-lg object-cover border border-slate-200 dark:border-slate-800"
                     />
                     <span className="text-xs font-semibold text-green-600 flex items-center gap-1">
                       <Check className="w-4 h-4" /> Foto Terlampir
@@ -585,11 +585,11 @@ const ResiduDashboard: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-slate-100">
+              <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowViolationModal(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold text-slate-700 transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
@@ -617,8 +617,8 @@ const ResiduDashboard: React.FC = () => {
       {/* SUBMIT LOG MODAL */}
       {showSubmitLogModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
-            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50">
               <h3 className="font-extrabold text-lg flex items-center gap-2 text-on-surface">
                 <CheckCircle className="text-indigo-600 w-5 h-5" />
                 Validasi Berat Aktual Setoran
@@ -633,7 +633,7 @@ const ResiduDashboard: React.FC = () => {
 
             <form onSubmit={handleSubmitLog} className="p-6 space-y-4">
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   Pilih Setoran (Log ID) *
                 </label>
                 <select
@@ -646,7 +646,7 @@ const ResiduDashboard: React.FC = () => {
                         classification: "RESIDU",
                       });
                   }}
-                  className="border border-slate-200 rounded-lg p-2.5 text-xs outline-none focus:border-primary cursor-pointer"
+                  className="border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-xs outline-none focus:border-primary cursor-pointer"
                 >
                   <option value="">-- Pilih Setoran --</option>
                   {pendingLogs.map((log: any) => (
@@ -658,8 +658,8 @@ const ResiduDashboard: React.FC = () => {
               </div>
 
               {submitLogForm.logId && (
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                  <h4 className="text-[11px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-200 pb-2">Info AI & Setoran</h4>
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
+                  <h4 className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 pb-2">Info AI & Setoran</h4>
                   
                   {(() => {
                      const l = pendingLogs.find((x: any) => x.id === submitLogForm.logId);
@@ -667,20 +667,20 @@ const ResiduDashboard: React.FC = () => {
                        <div className="grid grid-cols-2 gap-4 text-xs">
                           <div>
                             <p className="text-slate-500 mb-0.5">Klasifikasi AI</p>
-                            <p className="font-bold text-slate-800">{l?.aiClassification || "-"}</p>
+                            <p className="font-bold text-slate-800 dark:text-slate-100">{l?.aiClassification || "-"}</p>
                           </div>
                           <div>
                             <p className="text-slate-500 mb-0.5">Confidence AI</p>
-                            <p className="font-bold text-slate-800">{l?.aiConfidence ? `${(Number(l.aiConfidence)*100).toFixed(1)}%` : "-"}</p>
+                            <p className="font-bold text-slate-800 dark:text-slate-100">{l?.aiConfidence ? `${(Number(l.aiConfidence)*100).toFixed(1)}%` : "-"}</p>
                           </div>
                           <div className="col-span-2">
                             <p className="text-slate-500 mb-0.5">Geolokasi Saat Setor</p>
-                            <p className="font-mono text-slate-800">{l?.geolocation || "-"}</p>
+                            <p className="font-mono text-slate-800 dark:text-slate-100">{l?.geolocation || "-"}</p>
                           </div>
                           {l?.evidencePhotoUrl && (
                             <div className="col-span-2 mt-2">
                               <p className="text-slate-500 mb-1">Foto Bukti</p>
-                              <img src={l.evidencePhotoUrl} alt="Bukti" className="w-full h-32 object-cover rounded-lg border border-slate-200" />
+                              <img src={l.evidencePhotoUrl} alt="Bukti" className="w-full h-32 object-cover rounded-lg border border-slate-200 dark:border-slate-800" />
                             </div>
                           )}
                        </div>
@@ -690,22 +690,22 @@ const ResiduDashboard: React.FC = () => {
               )}
 
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   Klasifikasi Aktual Petugas *
                 </label>
-                <div className="border border-slate-200 rounded-lg p-2.5 text-xs bg-slate-100 text-slate-500 font-bold">
+                <div className="border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold">
                   Residu
                 </div>
               </div>
 
               <div className="flex flex-col gap-1">
-                <div className="border border-dashed border-slate-200 rounded-xl p-4 bg-slate-50/50 flex flex-col gap-3">
+                <div className="border border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 flex flex-col gap-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-slate-700">Foto Dokumentasi Riil *</span>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Foto Dokumentasi Riil *</span>
                     <button
                       type="button"
                       onClick={() => submitLogFileInputRef.current?.click()}
-                      className="bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer shadow-xs"
                     >
                       <Upload className="w-3.5 h-3.5 text-slate-500" /> Ambil Foto
                     </button>
@@ -729,7 +729,7 @@ const ResiduDashboard: React.FC = () => {
                       <img
                         src={submitLogPhotoPreview}
                         alt="Preview Bukti"
-                        className="w-24 h-24 rounded-lg object-cover border border-slate-200"
+                        className="w-24 h-24 rounded-lg object-cover border border-slate-200 dark:border-slate-800"
                       />
                       <span className="text-xs font-semibold text-green-600 flex items-center gap-1">
                         <Check className="w-4 h-4" /> Foto Terlampir
@@ -740,7 +740,7 @@ const ResiduDashboard: React.FC = () => {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   Berat Aktual Timbangan (Kg) *
                 </label>
                 <input
@@ -753,16 +753,16 @@ const ResiduDashboard: React.FC = () => {
                     setSubmitLogForm({ ...submitLogForm, actualWeightKg: e.target.value })
                   }
                   placeholder="0.0"
-                  className="border border-slate-200 rounded-lg p-2.5 text-xs font-mono outline-none focus:border-primary"
+                  className="border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-xs font-mono outline-none focus:border-primary"
                 />
                 <p className="text-[10px] text-slate-500">Angka manual dari pembacaan timbangan industri fisik.</p>
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-slate-100">
+              <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowSubmitLogModal(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold text-slate-700 transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
                 >
                   Batal
                 </button>

@@ -22,7 +22,7 @@ export function SegmentedTabs<T extends string = string>({
 }: SegmentedTabsProps<T>) {
   return (
     <div
-      className={`bg-slate-100/90 p-1.5 rounded-xl border border-slate-200/80 flex items-center gap-1 overflow-x-auto scrollbar-none ${className}`}
+      className={`bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1 overflow-x-auto scrollbar-none ${className}`}
     >
       {tabs.map((tab) => {
         const Icon = tab.icon;
@@ -34,14 +34,14 @@ export function SegmentedTabs<T extends string = string>({
             onClick={() => onChange(tab.key)}
             className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer whitespace-nowrap ${
               isActive
-                ? "bg-white text-emerald-800 shadow-xs border border-slate-200/80"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                ? "bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60"
             }`}
           >
             {Icon && (
               <Icon
                 size={14}
-                className={isActive ? "text-emerald-600" : "text-slate-400"}
+                className={isActive ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}
               />
             )}
             <span>{tab.label}</span>

@@ -445,16 +445,16 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-slate-50 p-4 md:p-6 space-y-6 text-slate-800">
+    <div className="min-h-[calc(100vh-64px)] bg-slate-50 dark:bg-slate-950 dark:bg-slate-800/60 p-4 md:p-6 space-y-6 text-slate-800 dark:text-slate-100">
       {/* Header Utama */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-emerald-50 text-emerald-700 rounded-xl">
               <Award size={22} />
             </div>
             <div>
-              <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
+              <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
                 Penilaian KKN Mahasiswa
               </h1>
               <p className="text-slate-500 text-xs mt-0.5">
@@ -463,54 +463,21 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Action Header */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={handlePrintPdf}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition border ${
-              isGradeComplete
-                ? "bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-2xs cursor-pointer"
-                : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
-            }`}
-            title={isGradeComplete ? "Cetak Dokumen Resmi PDF" : "Cetak PDF baru aktif setelah nilai lengkap dari kedua pihak (DPL 30% dan Mitra 70%)"}
-          >
-            <Printer size={15} className={isGradeComplete ? "text-slate-500" : "text-slate-400"} />
-            <span>Cetak PDF</span>
-            {!isGradeComplete && (
-              <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold ml-1">
-                Belum Lengkap
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleSaveScore}
-            disabled={saving || !selectedStudentId}
-            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-50"
-            title="Simpan Skor Penilaian"
-          >
-            {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-            <span>Simpan Penilaian</span>
-          </button>
-        </div>
       </div>
 
       {/* KPI Cards Ringkasan Nilai Angkatan */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-black shrink-0">
             <Users size={20} />
           </div>
           <div>
             <span className="text-[11px] text-slate-400 font-bold block uppercase">Total Mahasiswa</span>
-            <span className="text-xl font-black text-slate-900">{studentsRekap.length} Orang</span>
+            <span className="text-xl font-black text-slate-900 dark:text-slate-100">{studentsRekap.length} Orang</span>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-black shrink-0">
             <GraduationCap size={20} />
           </div>
@@ -524,7 +491,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-black shrink-0">
             <ClipboardList size={20} />
           </div>
@@ -538,7 +505,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-black shrink-0">
             <Award size={20} />
           </div>
@@ -554,10 +521,10 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
       </div>
 
       {/* SECTION 1: TABEL REKAPITULASI MAHASISWA DENGAN KOLOM MANDIRI */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
           <div>
-            <h2 className="text-base font-black text-slate-900">
+            <h2 className="text-base font-black text-slate-900 dark:text-slate-100">
               Daftar Mahasiswa & Nilai Akhir
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -567,7 +534,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
           <div className="flex items-center gap-2.5 flex-wrap">
             {/* Filter Kelompok */}
-            <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs">
+            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
               <Filter size={14} className="text-slate-400" />
               <select
                 value={filterKelompok}
@@ -575,7 +542,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   setFilterKelompok(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="bg-transparent font-semibold text-slate-700 outline-none cursor-pointer"
+                className="bg-transparent font-semibold text-slate-700 dark:text-slate-300 outline-none cursor-pointer"
               >
                 <option value="ALL">Semua Kelompok</option>
                 {uniqueKelompokList.map((k) => (
@@ -585,7 +552,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             </div>
 
             {/* Search Input */}
-            <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs w-56">
+            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs w-56">
               <Search size={14} className="text-slate-400" />
               <input
                 type="text"
@@ -607,14 +574,14 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             <Loader2 size={28} className="animate-spin text-emerald-600" />
           </div>
         ) : filteredStudents.length === 0 ? (
-          <div className="text-center py-10 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl bg-slate-50">
+          <div className="text-center py-10 text-slate-400 text-xs border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-800/60">
             Tidak ditemukan data mahasiswa yang sesuai.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-slate-100">
+          <div className="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50/90 text-slate-600 font-extrabold uppercase text-[10.5px] tracking-wider border-b border-slate-200">
+                <tr className="bg-slate-50/90 text-slate-600 dark:text-slate-400 font-extrabold uppercase text-[10.5px] tracking-wider border-b border-slate-200 dark:border-slate-800">
                   <th className="py-3 px-3 text-center w-10">No</th>
                   <th className="py-3 px-3">NIM</th>
                   <th className="py-3 px-3">Nama Mahasiswa</th>
@@ -627,7 +594,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <th className="py-3 px-3 text-center">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                 {paginatedStudents.map((st, idx) => {
                   const isSelected = st.studentId === selectedStudentId;
                   const grade = getCategory(st.nilaiAkhir);
@@ -641,22 +608,22 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                       <td className="py-3 px-3 text-center font-bold text-slate-400">
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
-                      <td className="py-3 px-3 font-mono font-bold text-slate-800">{st.nim}</td>
-                      <td className="py-3 px-3 font-extrabold text-slate-900">{st.nama}</td>
+                      <td className="py-3 px-3 font-mono font-bold text-slate-800 dark:text-slate-100">{st.nim}</td>
+                      <td className="py-3 px-3 font-extrabold text-slate-900 dark:text-slate-100">{st.nama}</td>
                       <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 font-bold text-slate-700 text-[10.5px]">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-300 text-[10.5px]">
                           {st.jenjangPendidikan || "S1"}
                         </span>
                       </td>
-                      <td className="py-3 px-3 text-slate-600">{st.jurusan || "-"}</td>
-                      <td className="py-3 px-3 text-slate-600">{st.kelompok}</td>
+                      <td className="py-3 px-3 text-slate-600 dark:text-slate-400">{st.jurusan || "-"}</td>
+                      <td className="py-3 px-3 text-slate-600 dark:text-slate-400">{st.kelompok}</td>
                       <td className="py-3 px-3 text-center font-black text-amber-700">
                         {st.subtotalDpl > 0 ? st.subtotalDpl.toFixed(2) : "-"}
                       </td>
                       <td className="py-3 px-3 text-center font-black text-emerald-700">
                         {st.subtotalMitra > 0 ? st.subtotalMitra.toFixed(2) : "-"}
                       </td>
-                      <td className="py-3 px-3 text-center font-black text-slate-900">
+                      <td className="py-3 px-3 text-center font-black text-slate-900 dark:text-slate-100">
                         {st.nilaiAkhir > 0 ? (
                           <span className="inline-flex items-center gap-1">
                             <span>{st.nilaiAkhir.toFixed(2)}</span>
@@ -702,19 +669,19 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
       {/* SECTION 2: FORM PENILAIAN ASPEK & PORTOFOLIO AKTIVITAS */}
       {selectedStudentId && studentInfo && (
-        <div id="form-penilaian-section" className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-6">
+        <div id="form-penilaian-section" className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs space-y-6">
           {/* Header Mahasiswa yang Sedang Dinilai */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-100">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
                   {studentInfo.kelompok}
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                   {studentInfo.rw ? `${studentInfo.rw}, ` : ""}Kel. {studentInfo.kelurahan || "Coblong"}
                 </span>
               </div>
-              <h2 className="text-xl font-black text-slate-900 mt-1.5 flex items-center gap-2">
+              <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 mt-1.5 flex items-center gap-2">
                 <span>{studentInfo.nama}</span>
                 <span className="font-mono text-sm text-slate-500 font-normal">({studentInfo.nim})</span>
               </h2>
@@ -748,20 +715,20 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
           <div className="space-y-6">
             {/* Summary Nilai Bar Sesuai Role */}
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-6 flex-wrap">
                 {/* Mode Tampilan DPL */}
                 {isDpl && !isSuper && (
                   <>
-                    <div className="bg-white px-3.5 py-2 rounded-xl border border-amber-200 shadow-2xs">
+                    <div className="bg-white dark:bg-slate-900 px-3.5 py-2 rounded-xl border border-amber-200 shadow-2xs">
                       <span className="text-[10px] font-bold text-amber-800 uppercase block">Subtotal DPL (Porsi Anda • 30%)</span>
                       <div className="flex items-baseline gap-1 mt-0.5">
                         <span className="text-xl font-black text-amber-700">{subtotalDpl.toFixed(2)}</span>
                       </div>
                     </div>
-                    <div className="px-3 py-1.5 rounded-xl bg-slate-100/80 border border-slate-200">
+                    <div className="px-3 py-1.5 rounded-xl bg-slate-100/80 border border-slate-200 dark:border-slate-800">
                       <span className="text-[10px] font-bold text-slate-500 uppercase block">Subtotal MPL (Porsi Lapangan • 70%)</span>
-                      <span className="text-sm font-black text-slate-700 mt-0.5 block">
+                      <span className="text-sm font-black text-slate-700 dark:text-slate-300 mt-0.5 block">
                         {subtotalMitra > 0 ? subtotalMitra.toFixed(2) : "Belum Dinilai"}
                       </span>
                     </div>
@@ -771,15 +738,15 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                 {/* Mode Tampilan Mitra / MPL */}
                 {isMitra && !isSuper && (
                   <>
-                    <div className="bg-white px-3.5 py-2 rounded-xl border border-emerald-200 shadow-2xs">
+                    <div className="bg-white dark:bg-slate-900 px-3.5 py-2 rounded-xl border border-emerald-200 shadow-2xs">
                       <span className="text-[10px] font-bold text-emerald-800 uppercase block">Subtotal MPL (Porsi Anda • 70%)</span>
                       <div className="flex items-baseline gap-1 mt-0.5">
                         <span className="text-xl font-black text-emerald-700">{subtotalMitra.toFixed(2)}</span>
                       </div>
                     </div>
-                    <div className="px-3 py-1.5 rounded-xl bg-slate-100/80 border border-slate-200">
+                    <div className="px-3 py-1.5 rounded-xl bg-slate-100/80 border border-slate-200 dark:border-slate-800">
                       <span className="text-[10px] font-bold text-slate-500 uppercase block">Subtotal DPL (Akademik • 30%)</span>
-                      <span className="text-sm font-black text-slate-700 mt-0.5 block">
+                      <span className="text-sm font-black text-slate-700 dark:text-slate-300 mt-0.5 block">
                         {subtotalDpl > 0 ? subtotalDpl.toFixed(2) : "Belum Dinilai"}
                       </span>
                     </div>
@@ -804,7 +771,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
                 <div>
                   <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Nilai Akhir Kumulatif</span>
-                  <span className="text-2xl font-black text-slate-900">{nilaiAkhir.toFixed(2)}</span>
+                  <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{nilaiAkhir.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -819,14 +786,14 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             <div className={`grid grid-cols-1 ${isSuper ? "lg:grid-cols-2" : "grid-cols-1"} gap-6`}>
               {/* TABEL DPL (30%) — Tampil untuk DPL & Super User */}
               {(canEditDpl || isSuper) && (
-                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col justify-between shadow-2xs">
-                  <div className="p-4 border-b border-slate-100 bg-amber-50/50 flex items-center justify-between">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col justify-between shadow-2xs">
+                  <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-amber-50/50 flex items-center justify-between">
                     <h3 className="text-sm font-black text-amber-950 flex items-center gap-2">
                       <GraduationCap size={17} className="text-amber-600" />
                       <span>Aspek Dosen Pendamping Lapangan (DPL) &bull; Bobot 30%</span>
                     </h3>
                     {!canEditDpl && (
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-700">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-700 dark:text-slate-300">
                         View Only
                       </span>
                     )}
@@ -835,7 +802,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px] border-b border-slate-200">
+                        <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 font-extrabold uppercase text-[10px] border-b border-slate-200 dark:border-slate-800">
                           <th className="py-2.5 px-3 text-center w-8">No</th>
                           <th className="py-2.5 px-3">Aspek Akademik DPL</th>
                           <th className="py-2.5 px-2 text-center w-12">Bobot</th>
@@ -843,12 +810,12 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                           <th className="py-2.5 px-3 text-right w-16">Nilai</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                         {/* 1. Perencanaan */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2.5 px-3 text-center font-bold text-slate-400">1</td>
-                          <td className="py-2.5 px-3 font-bold text-slate-900">Perencanaan & Pemahaman Program</td>
-                          <td className="py-2.5 px-2 text-center font-bold text-slate-700">5%</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-slate-100">Perencanaan & Pemahaman Program</td>
+                          <td className="py-2.5 px-2 text-center font-bold text-slate-700 dark:text-slate-300">5%</td>
                           <td className="py-2.5 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
                               {[0, 1, 2, 3, 4].map((num) => (
@@ -868,7 +835,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                               ))}
                             </div>
                           </td>
-                          <td className="py-2.5 px-3 text-right font-black text-slate-900">
+                          <td className="py-2.5 px-3 text-right font-black text-slate-900 dark:text-slate-100">
                             {nilaiAspekDpl.perencanaan.toFixed(2)}
                           </td>
                         </tr>
@@ -876,8 +843,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {/* 2. Kontribusi */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2.5 px-3 text-center font-bold text-slate-400">2</td>
-                          <td className="py-2.5 px-3 font-bold text-slate-900">Kontribusi Individu</td>
-                          <td className="py-2.5 px-2 text-center font-bold text-slate-700">5%</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-slate-100">Kontribusi Individu</td>
+                          <td className="py-2.5 px-2 text-center font-bold text-slate-700 dark:text-slate-300">5%</td>
                           <td className="py-2.5 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
                               {[0, 1, 2, 3, 4].map((num) => (
@@ -897,7 +864,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                               ))}
                             </div>
                           </td>
-                          <td className="py-2.5 px-3 text-right font-black text-slate-900">
+                          <td className="py-2.5 px-3 text-right font-black text-slate-900 dark:text-slate-100">
                             {nilaiAspekDpl.kontribusi.toFixed(2)}
                           </td>
                         </tr>
@@ -905,8 +872,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {/* 3. Logbook */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2.5 px-3 text-center font-bold text-slate-400">3</td>
-                          <td className="py-2.5 px-3 font-bold text-slate-900">Logbook & Dokumentasi Akademik</td>
-                          <td className="py-2.5 px-2 text-center font-bold text-slate-700">5%</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-slate-100">Logbook & Dokumentasi Akademik</td>
+                          <td className="py-2.5 px-2 text-center font-bold text-slate-700 dark:text-slate-300">5%</td>
                           <td className="py-2.5 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
                               {[0, 1, 2, 3, 4].map((num) => (
@@ -926,7 +893,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                               ))}
                             </div>
                           </td>
-                          <td className="py-2.5 px-3 text-right font-black text-slate-900">
+                          <td className="py-2.5 px-3 text-right font-black text-slate-900 dark:text-slate-100">
                             {nilaiAspekDpl.logbook.toFixed(2)}
                           </td>
                         </tr>
@@ -934,8 +901,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {/* 4. Analisis */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2.5 px-3 text-center font-bold text-slate-400">4</td>
-                          <td className="py-2.5 px-3 font-bold text-slate-900">Analisis Masalah & Solusi</td>
-                          <td className="py-2.5 px-2 text-center font-bold text-slate-700">5%</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-slate-100">Analisis Masalah & Solusi</td>
+                          <td className="py-2.5 px-2 text-center font-bold text-slate-700 dark:text-slate-300">5%</td>
                           <td className="py-2.5 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
                               {[0, 1, 2, 3, 4].map((num) => (
@@ -955,7 +922,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                               ))}
                             </div>
                           </td>
-                          <td className="py-2.5 px-3 text-right font-black text-slate-900">
+                          <td className="py-2.5 px-3 text-right font-black text-slate-900 dark:text-slate-100">
                             {nilaiAspekDpl.analisis.toFixed(2)}
                           </td>
                         </tr>
@@ -963,8 +930,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {/* 5. Output */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2.5 px-3 text-center font-bold text-slate-400">5</td>
-                          <td className="py-2.5 px-3 font-bold text-slate-900">Output, Outcome, & Dampak</td>
-                          <td className="py-2.5 px-2 text-center font-bold text-slate-700">5%</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-slate-100">Output, Outcome, & Dampak</td>
+                          <td className="py-2.5 px-2 text-center font-bold text-slate-700 dark:text-slate-300">5%</td>
                           <td className="py-2.5 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
                               {[0, 1, 2, 3, 4].map((num) => (
@@ -984,7 +951,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                               ))}
                             </div>
                           </td>
-                          <td className="py-2.5 px-3 text-right font-black text-slate-900">
+                          <td className="py-2.5 px-3 text-right font-black text-slate-900 dark:text-slate-100">
                             {nilaiAspekDpl.output.toFixed(2)}
                           </td>
                         </tr>
@@ -992,8 +959,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {/* 6. Laporan Akhir */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2.5 px-3 text-center font-bold text-slate-400">6</td>
-                          <td className="py-2.5 px-3 font-bold text-slate-900">Laporan Akhir, Evaluasi & Refleksi</td>
-                          <td className="py-2.5 px-2 text-center font-bold text-slate-700">5%</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-slate-100">Laporan Akhir, Evaluasi & Refleksi</td>
+                          <td className="py-2.5 px-2 text-center font-bold text-slate-700 dark:text-slate-300">5%</td>
                           <td className="py-2.5 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
                               {[0, 1, 2, 3, 4].map((num) => (
@@ -1013,7 +980,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                               ))}
                             </div>
                           </td>
-                          <td className="py-2.5 px-3 text-right font-black text-slate-900">
+                          <td className="py-2.5 px-3 text-right font-black text-slate-900 dark:text-slate-100">
                             {nilaiAspekDpl.laporanAkhir.toFixed(2)}
                           </td>
                         </tr>
@@ -1021,7 +988,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                     </table>
                   </div>
 
-                  <div className="p-3 bg-amber-50/70 border-t border-slate-200 flex justify-between items-center text-xs">
+                  <div className="p-3 bg-amber-50/70 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center text-xs">
                     <span className="font-extrabold text-amber-900">Subtotal DPL (30%):</span>
                     <span className="text-base font-black text-amber-700">{subtotalDpl.toFixed(2)}</span>
                   </div>
@@ -1030,14 +997,14 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
               {/* TABEL MPL (70%) — Tampil untuk Mitra & Super User */}
               {(canEditMitra || isSuper) && (
-                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col justify-between shadow-2xs">
-                  <div className="p-4 border-b border-slate-100 bg-emerald-50/50 flex items-center justify-between">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col justify-between shadow-2xs">
+                  <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-emerald-50/50 flex items-center justify-between">
                     <h3 className="text-sm font-black text-emerald-950 flex items-center gap-2">
                       <ClipboardList size={17} className="text-emerald-600" />
                       <span>Aspek Mitra Pendamping Lapangan (MPL) &bull; Bobot 70%</span>
                     </h3>
                     {!canEditMitra && (
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-700">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-700 dark:text-slate-300">
                         View Only
                       </span>
                     )}
@@ -1046,7 +1013,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px] border-b border-slate-200">
+                        <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 font-extrabold uppercase text-[10px] border-b border-slate-200 dark:border-slate-800">
                           <th className="py-2.5 px-3 text-center w-8">No</th>
                           <th className="py-2.5 px-3">Aspek Lapangan (MPL)</th>
                           <th className="py-2.5 px-2 text-center w-12">Bobot</th>
@@ -1054,12 +1021,12 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                           <th className="py-2.5 px-3 text-right w-16">Nilai</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                         {/* 1. Kehadiran */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2 px-3 text-center font-bold text-slate-400">1</td>
-                          <td className="py-2 px-3 font-bold text-slate-900">Kehadiran dan Kedisiplinan</td>
-                          <td className="py-2 px-2 text-center font-bold text-slate-700">10%</td>
+                          <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">Kehadiran dan Kedisiplinan</td>
+                          <td className="py-2 px-2 text-center font-bold text-slate-700 dark:text-slate-300">10%</td>
                           <td className="py-2 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
                               {[0, 1, 2, 3, 4].map((num) => (
@@ -1079,7 +1046,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                               ))}
                             </div>
                           </td>
-                          <td className="py-2 px-3 text-right font-black text-slate-900">
+                          <td className="py-2 px-3 text-right font-black text-slate-900 dark:text-slate-100">
                             {nilaiAspekMitra.kehadiran.toFixed(2)}
                           </td>
                         </tr>
@@ -1087,8 +1054,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {/* 2. Warga Binaan */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2 px-3 text-center font-bold text-slate-400">2</td>
-                          <td className="py-2 px-3 font-bold text-slate-900">Pembinaan Rumah Tangga / Warga Binaan</td>
-                          <td className="py-2 px-2 text-center font-bold text-slate-700">10%</td>
+                          <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">Pembinaan Rumah Tangga / Warga Binaan</td>
+                          <td className="py-2 px-2 text-center font-bold text-slate-700 dark:text-slate-300">10%</td>
                           <td className="py-2 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
                               {[0, 1, 2, 3, 4].map((num) => (
@@ -1108,7 +1075,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                               ))}
                             </div>
                           </td>
-                          <td className="py-2 px-3 text-right font-black text-slate-900">
+                          <td className="py-2 px-3 text-right font-black text-slate-900 dark:text-slate-100">
                             {nilaiAspekMitra.wargaBinaan.toFixed(2)}
                           </td>
                         </tr>
@@ -1116,8 +1083,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {/* 3. Program Kerja */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2 px-3 text-center font-bold text-slate-400">3</td>
-                          <td className="py-2 px-3 font-bold text-slate-900">Keterlibatan Program Kerja Kelompok & Lapangan</td>
-                          <td className="py-2 px-2 text-center font-bold text-slate-700">10%</td>
+                          <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">Keterlibatan Program Kerja Kelompok & Lapangan</td>
+                          <td className="py-2 px-2 text-center font-bold text-slate-700 dark:text-slate-300">10%</td>
                           <td className="py-2 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
                               {[0, 1, 2, 3, 4].map((num) => (
@@ -1137,7 +1104,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                               ))}
                             </div>
                           </td>
-                          <td className="py-2 px-3 text-right font-black text-slate-900">
+                          <td className="py-2 px-3 text-right font-black text-slate-900 dark:text-slate-100">
                             {nilaiAspekMitra.proker.toFixed(2)}
                           </td>
                         </tr>
@@ -1145,8 +1112,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {/* 4. Komunikasi */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2 px-3 text-center font-bold text-slate-400">4</td>
-                          <td className="py-2 px-3 font-bold text-slate-900">Komunikasi, Sopan Santun, & Etika Sosial</td>
-                          <td className="py-2 px-2 text-center font-bold text-slate-700">8%</td>
+                          <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">Komunikasi, Sopan Santun, & Etika Sosial</td>
+                          <td className="py-2 px-2 text-center font-bold text-slate-700 dark:text-slate-300">8%</td>
                           <td className="py-2 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
                               {[0, 1, 2, 3, 4].map((num) => (
@@ -1166,7 +1133,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                               ))}
                             </div>
                           </td>
-                          <td className="py-2 px-3 text-right font-black text-slate-900">
+                          <td className="py-2 px-3 text-right font-black text-slate-900 dark:text-slate-100">
                             {nilaiAspekMitra.komunikasi.toFixed(2)}
                           </td>
                         </tr>
@@ -1174,8 +1141,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {/* 5. Tanggung Jawab */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2 px-3 text-center font-bold text-slate-400">5</td>
-                          <td className="py-2 px-3 font-bold text-slate-900">Tanggung Jawab & Kerja Sama Tim</td>
-                          <td className="py-2 px-2 text-center font-bold text-slate-700">8%</td>
+                          <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">Tanggung Jawab & Kerja Sama Tim</td>
+                          <td className="py-2 px-2 text-center font-bold text-slate-700 dark:text-slate-300">8%</td>
                           <td className="py-2 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
                               {[0, 1, 2, 3, 4].map((num) => (
@@ -1195,7 +1162,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                               ))}
                             </div>
                           </td>
-                          <td className="py-2 px-3 text-right font-black text-slate-900">
+                          <td className="py-2 px-3 text-right font-black text-slate-900 dark:text-slate-100">
                             {nilaiAspekMitra.tanggungJawab.toFixed(2)}
                           </td>
                         </tr>
@@ -1203,8 +1170,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {/* 6. Bukti Kegiatan */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2 px-3 text-center font-bold text-slate-400">6</td>
-                          <td className="py-2 px-3 font-bold text-slate-900">Kesesuaian Bukti Kegiatan Lapangan</td>
-                          <td className="py-2 px-2 text-center font-bold text-slate-700">7%</td>
+                          <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">Kesesuaian Bukti Kegiatan Lapangan</td>
+                          <td className="py-2 px-2 text-center font-bold text-slate-700 dark:text-slate-300">7%</td>
                           <td className="py-2 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
                               {[0, 1, 2, 3, 4].map((num) => (
@@ -1224,7 +1191,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                               ))}
                             </div>
                           </td>
-                          <td className="py-2 px-3 text-right font-black text-slate-900">
+                          <td className="py-2 px-3 text-right font-black text-slate-900 dark:text-slate-100">
                             {nilaiAspekMitra.buktiKegiatan.toFixed(2)}
                           </td>
                         </tr>
@@ -1232,8 +1199,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {/* 7. Dampak */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2 px-3 text-center font-bold text-slate-400">7</td>
-                          <td className="py-2 px-3 font-bold text-slate-900">Dampak Nyata kepada Masyarakat & Wilayah</td>
-                          <td className="py-2 px-2 text-center font-bold text-slate-700">10%</td>
+                          <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">Dampak Nyata kepada Masyarakat & Wilayah</td>
+                          <td className="py-2 px-2 text-center font-bold text-slate-700 dark:text-slate-300">10%</td>
                           <td className="py-2 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
                               {[0, 1, 2, 3, 4].map((num) => (
@@ -1253,7 +1220,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                               ))}
                             </div>
                           </td>
-                          <td className="py-2 px-3 text-right font-black text-slate-900">
+                          <td className="py-2 px-3 text-right font-black text-slate-900 dark:text-slate-100">
                             {nilaiAspekMitra.dampak.toFixed(2)}
                           </td>
                         </tr>
@@ -1261,8 +1228,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {/* 8. Inisiatif */}
                         <tr className="hover:bg-slate-50/60">
                           <td className="py-2 px-3 text-center font-bold text-slate-400">8</td>
-                          <td className="py-2 px-3 font-bold text-slate-900">Inisiatif Mandiri & Problem Solving</td>
-                          <td className="py-2 px-2 text-center font-bold text-slate-700">7%</td>
+                          <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">Inisiatif Mandiri & Problem Solving</td>
+                          <td className="py-2 px-2 text-center font-bold text-slate-700 dark:text-slate-300">7%</td>
                           <td className="py-2 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
                               {[0, 1, 2, 3, 4].map((num) => (
@@ -1282,7 +1249,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                               ))}
                             </div>
                           </td>
-                          <td className="py-2 px-3 text-right font-black text-slate-900">
+                          <td className="py-2 px-3 text-right font-black text-slate-900 dark:text-slate-100">
                             {nilaiAspekMitra.inisiatif.toFixed(2)}
                           </td>
                         </tr>
@@ -1290,7 +1257,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                     </table>
                   </div>
 
-                  <div className="p-3 bg-emerald-50/70 border-t border-slate-200 flex justify-between items-center text-xs">
+                  <div className="p-3 bg-emerald-50/70 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center text-xs">
                     <span className="font-extrabold text-emerald-900">Subtotal MPL (70%):</span>
                     <span className="text-base font-black text-emerald-700">{subtotalMitra.toFixed(2)}</span>
                   </div>
@@ -1301,29 +1268,29 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             {/* Catatan Evaluator Sesuai Role */}
             <div className={`grid grid-cols-1 ${isSuper ? "md:grid-cols-2" : "grid-cols-1"} gap-4`}>
               {(canEditDpl || isSuper) && (
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Catatan Evaluasi Dosen Pendamping Lapangan (DPL):</label>
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Catatan Evaluasi Dosen Pendamping Lapangan (DPL):</label>
                   <textarea
                     rows={3}
                     value={scores.catatanDpl}
                     onChange={(e) => setScores((prev) => ({ ...prev, catatanDpl: e.target.value }))}
                     placeholder="Tuliskan catatan akademik dan bimbingan untuk mahasiswa..."
                     disabled={!canEditDpl}
-                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 outline-none focus:border-emerald-500 disabled:bg-slate-100"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 disabled:bg-slate-100"
                   />
                 </div>
               )}
 
               {(canEditMitra || isSuper) && (
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Catatan Evaluasi Mitra Pendamping Lapangan (MPL):</label>
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Catatan Evaluasi Mitra Pendamping Lapangan (MPL):</label>
                   <textarea
                     rows={3}
                     value={scores.catatanMitra}
                     onChange={(e) => setScores((prev) => ({ ...prev, catatanMitra: e.target.value }))}
                     placeholder="Tuliskan catatan etika, inisiatif, dan kinerja lapangan..."
                     disabled={!canEditMitra}
-                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 outline-none focus:border-emerald-500 disabled:bg-slate-100"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 disabled:bg-slate-100"
                   />
                 </div>
               )}
@@ -1333,7 +1300,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl">
               <div className="text-xs text-emerald-900">
                 <span className="font-extrabold block">Ringkasan Nilai Akhir:</span>
-                <span className="text-slate-600">
+                <span className="text-slate-600 dark:text-slate-400">
                   DPL (30%): <strong>{subtotalDpl.toFixed(2)}</strong> | MPL (70%): <strong>{subtotalMitra.toFixed(2)}</strong> | Total: <strong>{nilaiAkhir.toFixed(2)}</strong> ({currentCategory.label} / {currentCategory.letter})
                 </span>
               </div>

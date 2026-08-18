@@ -39,7 +39,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
       className={`flex flex-col items-center justify-center py-14 px-6 text-center select-none ${className}`}
     >
       <div className="mb-4 opacity-70">{iconNode}</div>
-      <h3 className="text-slate-600 font-semibold text-base mb-1">{title}</h3>
+      <h3 className="text-slate-600 dark:text-slate-400 font-semibold text-base mb-1">{title}</h3>
       <p className="text-slate-400 text-sm max-w-xs leading-relaxed">{description}</p>
       {action && <div className="mt-5">{action}</div>}
     </div>

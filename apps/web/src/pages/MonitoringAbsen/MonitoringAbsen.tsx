@@ -768,7 +768,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             <Popup>
               <div className="p-2 font-sans space-y-1">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <span className="font-extrabold text-slate-900 text-xs">
+                  <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
                     {loc.student.name}
                   </span>
                   {isActivePresence && (
@@ -1163,7 +1163,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
   if (loading) {
     return (
-      <div className="flex h-[calc(100vh-64px)] items-center justify-center bg-slate-50">
+      <div className="flex h-[calc(100vh-64px)] items-center justify-center bg-slate-50 dark:bg-slate-800/60">
         <Loader2 className="animate-spin text-emerald-600" size={40} />
       </div>
     );
@@ -1180,16 +1180,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const isSuperUserOrDev = ["SUPER_USER", "DEVELOPER"].includes(userRole);
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-slate-50 p-4 md:p-6 space-y-5 text-slate-800">
+    <div className="min-h-[calc(100vh-64px)] bg-slate-50 dark:bg-slate-950 dark:bg-slate-800/60 p-4 md:p-6 space-y-5 text-slate-800 dark:text-slate-100">
       {/* Header Utama: Ringkas, Informatif & Aksi Cepat */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <div className="flex items-start sm:items-center gap-3.5">
           <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0 shadow-2xs">
             <CheckCircle2 size={22} className="text-emerald-600" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg font-black text-slate-900 tracking-tight">
+              <h1 className="text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight">
                 Monitoring & Validasi Presensi Mahasiswa
               </h1>
               <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
@@ -1221,7 +1221,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           <button
             type="button"
             onClick={() => setIsExportModalOpen(true)}
-            className="px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            className="px-3 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-50 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
             title="Ekspor Rekap Presensi format CSV"
           >
             <Download size={14} className="text-emerald-600" />
@@ -1235,7 +1235,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 setConfigFormData(configTargets);
                 setIsConfigModalOpen(true);
               }}
-              className="px-3.5 py-2 rounded-xl bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
               title="Atur Hari, Jam Kerja & Target Kegiatan KKN (Khusus Developer & Super User)"
             >
               <Settings size={14} className="text-emerald-600" />
@@ -1257,8 +1257,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       </div>
 
       {/* Hero Banner: Info Kegiatan Terpilih & Switcher Kegiatan */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs space-y-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
           {/* Kegiatan Info Header */}
           <div className="flex items-center gap-3.5 flex-1 min-w-0">
             <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0 shadow-2xs">
@@ -1266,7 +1266,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                <h2 className="text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight">
                   {activeSchedule?.title || (schedules.length === 0 ? "Belum Ada Kegiatan KKN" : "-")}
                 </h2>
                 {activeSchedule?.category && (
@@ -1324,7 +1324,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               <select
                 value={selectedScheduleId}
                 onChange={(e) => setSelectedScheduleId(e.target.value)}
-                className="w-full h-11 pl-3.5 pr-8 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-extrabold text-slate-800 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer appearance-none shadow-2xs"
+                className="w-full h-11 pl-3.5 pr-8 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-extrabold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer appearance-none shadow-2xs"
               >
                 {schedules.length === 0 ? (
                   <option value="">Belum ada kegiatan</option>
@@ -1363,7 +1363,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     <button
                       type="button"
                       onClick={(e) => handleOpenEditModal(e, activeSchedule)}
-                      className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 transition cursor-pointer shadow-2xs"
+                      className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 transition cursor-pointer shadow-2xs"
                       title="Edit Jadwal Kegiatan"
                     >
                       <Pencil size={14} />
@@ -1386,13 +1386,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         {/* 2-Column Cards: Informasi Waktu Kerja & Target Kegiatan Lapangan */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Left Card: Informasi Waktu Kerja */}
-          <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/80 flex flex-col justify-between space-y-4">
+          <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-black text-slate-800">
+              <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100">
                 <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
                   <Clock size={15} />
                 </div>
-                <span className="text-sm font-bold text-slate-900">Informasi Waktu Kerja</span>
+                <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Informasi Waktu Kerja</span>
               </div>
               {isSuperUserOrDev && (
                 <button
@@ -1415,7 +1415,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   <Calendar size={14} className="text-emerald-600" />
                   Hari Kerja
                 </span>
-                <span className="font-extrabold text-slate-900">{configTargets.hariKerja || "Senin – Jumat"}</span>
+                <span className="font-extrabold text-slate-900 dark:text-slate-100">{configTargets.hariKerja || "Senin – Jumat"}</span>
               </div>
 
               <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 text-xs">
@@ -1423,7 +1423,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   <Clock size={14} className="text-emerald-600" />
                   Jam Kerja
                 </span>
-                <span className="font-extrabold text-slate-900">{activeSchedule?.time || configTargets.jamKerja || "08.00 – 16.00"}</span>
+                <span className="font-extrabold text-slate-900 dark:text-slate-100">{activeSchedule?.time || configTargets.jamKerja || "08.00 – 16.00"}</span>
               </div>
 
               <div className="flex items-center justify-between text-xs">
@@ -1431,19 +1431,19 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   <Hourglass size={14} className="text-emerald-600" />
                   Minimal Durasi / Hari
                 </span>
-                <span className="font-extrabold text-slate-900">{scheduleTargetHours || configTargets.targetHarianJam || 4} Jam</span>
+                <span className="font-extrabold text-slate-900 dark:text-slate-100">{scheduleTargetHours || configTargets.targetHarianJam || 4} Jam</span>
               </div>
             </div>
           </div>
 
           {/* Right Card: Target Kegiatan Lapangan */}
-          <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/80 flex flex-col justify-between space-y-4">
+          <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-black text-slate-800">
+              <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100">
                 <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
                   <Target size={15} />
                 </div>
-                <span className="text-sm font-bold text-slate-900">Target Kegiatan Lapangan</span>
+                <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Target Kegiatan Lapangan</span>
               </div>
               {isSuperUserOrDev && (
                 <button
@@ -1460,25 +1460,25 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               )}
             </div>
 
-            <div className="grid grid-cols-3 divide-x divide-slate-200 pt-1 text-center">
+            <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-800 pt-1 text-center">
               <div className="px-2 flex flex-col items-center justify-center">
                 <Calendar size={18} className="text-emerald-600 mb-1" />
-                <span className="text-2xl font-black text-slate-900 tracking-tight">{configTargets.targetPekan ?? 10}</span>
-                <span className="text-xs font-bold text-slate-700">Pekan</span>
+                <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{configTargets.targetPekan ?? 10}</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Pekan</span>
                 <span className="text-[10px] text-slate-400 font-medium">Periode Kegiatan</span>
               </div>
 
               <div className="px-2 flex flex-col items-center justify-center">
                 <CheckCircle2 size={18} className="text-emerald-600 mb-1" />
-                <span className="text-2xl font-black text-slate-900 tracking-tight">{configTargets.targetTotalHari ?? 50}</span>
-                <span className="text-xs font-bold text-slate-700">Hari</span>
+                <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{configTargets.targetTotalHari ?? 50}</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Hari</span>
                 <span className="text-[10px] text-slate-400 font-medium">Total Hari Kegiatan</span>
               </div>
 
               <div className="px-2 flex flex-col items-center justify-center">
                 <Clock size={18} className="text-emerald-600 mb-1" />
-                <span className="text-2xl font-black text-slate-900 tracking-tight">{configTargets.targetTotalJam ?? 100}</span>
-                <span className="text-xs font-bold text-slate-700">Jam</span>
+                <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{configTargets.targetTotalJam ?? 100}</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Jam</span>
                 <span className="text-[10px] text-slate-400 font-medium">Total Jam Kegiatan</span>
               </div>
             </div>
@@ -1489,11 +1489,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
       {/* Peta Interaktif Geofence & Lokasi GPS Mahasiswa (Dapat Ditutup / Dibuka) */}
       {showMap && (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs animate-in fade-in duration-200">
-          <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs animate-in fade-in duration-200">
+          <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70">
             <div className="flex items-center gap-2">
               <MapIcon size={16} className="text-emerald-600" />
-              <span className="text-xs font-black text-slate-800">
+              <span className="text-xs font-black text-slate-800 dark:text-slate-100">
                 Peta Wilayah Geofence Presensi & Live GPS Mahasiswa
               </span>
               {activeSchedule?.radius && (
@@ -1598,7 +1598,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     <Popup>
                       <div className="p-2 font-sans space-y-1 text-xs">
                         <div className="flex items-center gap-1.5 mb-1">
-                          <span className="font-extrabold text-slate-900 text-xs">
+                          <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
                             {fac.nama}
                           </span>
                         </div>
@@ -1606,17 +1606,17 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           {jenisLabel[fac.jenis] || fac.jenis}
                         </p>
                         {fac.pic && (
-                          <p className="text-[11px] text-slate-600">
+                          <p className="text-[11px] text-slate-600 dark:text-slate-400">
                             <span className="font-bold">PIC:</span> {fac.pic}
                           </p>
                         )}
                         {fac.kontak && (
-                          <p className="text-[11px] text-slate-600">
+                          <p className="text-[11px] text-slate-600 dark:text-slate-400">
                             <span className="font-bold">Kontak:</span> {fac.kontak}
                           </p>
                         )}
                         {fac.kapasitas && (
-                          <p className="text-[11px] text-slate-600">
+                          <p className="text-[11px] text-slate-600 dark:text-slate-400">
                             <span className="font-bold">Kapasitas:</span> {fac.kapasitas} Kg
                           </p>
                         )}
@@ -1632,33 +1632,33 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           </div>
 
           {/* Interactive Map Legend */}
-          <div className="bg-slate-50 border-t border-slate-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-1.5 font-bold text-slate-700">
+          <div className="bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
               <CheckCircle2 size={14} className="text-emerald-600" />
               <span>Legenda Fasilitas & Marker Lapangan:</span>
             </div>
-            <div className="flex items-center gap-3 flex-wrap text-[11px] font-semibold text-slate-600">
-              <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 shadow-2xs">
+            <div className="flex items-center gap-3 flex-wrap text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-emerald-200 shadow-2xs">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                 <span>Posko KKN</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-purple-200 shadow-2xs">
+              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-purple-200 shadow-2xs">
                 <span className="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
                 <span>Rumah Maggot</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs">
+              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
                 <span>Bank Sampah (Anorganik)</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-lime-300 shadow-2xs">
+              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-lime-300 shadow-2xs">
                 <span className="w-2.5 h-2.5 rounded-full bg-lime-600"></span>
                 <span>Buruan SAE (Organik)</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs">
+              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs">
                 <span className="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
                 <span>Loseda / Bata Terawang</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs">
+              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
                 <span>Live Presensi Mahasiswa</span>
               </div>
@@ -1668,7 +1668,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       )}
 
       {/* Konten Utama: Tabel & Kartu Rekapitulasi Presensi */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
         {/* Toolbar: Search, Filter Tabs, View Switcher */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {/* Search Input */}
@@ -1679,7 +1679,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               placeholder="Cari nama mahasiswa atau NIM..."
               value={studentSearch}
               onChange={(e) => setStudentSearch(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 placeholder-slate-400 outline-none focus:border-emerald-500 focus:bg-white transition"
+              className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 focus:bg-white transition"
             />
             {studentSearch && (
               <button
@@ -1694,7 +1694,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
           {/* Filter Status Chips & Mode Switcher */}
           <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200/60 text-[11px] font-bold text-slate-600">
+            <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/60 text-[11px] font-bold text-slate-600 dark:text-slate-400">
               <button
                 type="button"
                 onClick={() => setAttendanceFilterTab("ALL")}
@@ -1747,10 +1747,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         {filteredAttendance.length > 0 ? (
           displayMode === "table" ? (
             /* Mode 1: Table Pro */
-            <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-2xs">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-2xs">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-50/90 border-b border-slate-200 text-[11px] font-extrabold text-slate-600 uppercase tracking-wider">
+                  <thead className="bg-slate-50/90 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                     <tr>
                       <th className="py-3.5 px-4 w-12 text-center text-emerald-700"># No</th>
                       <th className="py-3.5 px-4 min-w-[200px]">Mahasiswa & NIM</th>
@@ -1763,7 +1763,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       <th className="py-3.5 px-4 text-center">Lokasi Kegiatan</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-semibold">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
                     {filteredAttendance.map((rec, idx) => {
                       const isAttended = Boolean(rec.attendedAt);
                       const durationMins = calculateDurationMinutes(
@@ -1816,7 +1816,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                 {rec.student.name.charAt(0).toUpperCase()}
                               </div>
                               <div>
-                                <div className="font-extrabold text-slate-900 flex items-center gap-1.5 lowercase first-letter:capitalize">
+                                <div className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 lowercase first-letter:capitalize">
                                   {rec.student.name
                                     .replace(/👑|\(Ketua Kelompok\)/g, "")
                                     .trim()}
@@ -1854,13 +1854,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                 Hadir
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
                                 <Clock size={13} className="text-slate-400" />
                                 Belum Tercatat
                               </span>
                             )}
                           </td>
-                          <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-800">
+                          <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-800 dark:text-slate-100">
                             {rec.attendedAt
                               ? new Date(rec.attendedAt).toLocaleTimeString(
                                   "id-ID",
@@ -1868,7 +1868,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                 )
                               : "-"}
                           </td>
-                          <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-800">
+                          <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-800 dark:text-slate-100">
                             {rec.completedAt
                               ? new Date(rec.completedAt).toLocaleTimeString(
                                   "id-ID",
@@ -1876,10 +1876,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                 )
                               : "-"}
                           </td>
-                          <td className="py-3.5 px-4 text-center font-bold text-slate-800">
+                          <td className="py-3.5 px-4 text-center font-bold text-slate-800 dark:text-slate-100">
                             {formattedHours}
                           </td>
-                          <td className="py-3.5 px-4 text-center font-bold text-slate-800">
+                          <td className="py-3.5 px-4 text-center font-bold text-slate-800 dark:text-slate-100">
                             {formattedActualTarget}
                           </td>
                           <td className="py-3.5 px-4 text-center font-black text-emerald-700">
@@ -1889,7 +1889,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             <button
                               type="button"
                               onClick={() => handleFocusMahasiswaMap(rec)}
-                              className="px-3 py-1.5 bg-white hover:bg-emerald-50 text-emerald-700 font-bold text-xs rounded-xl border border-emerald-300 transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
+                              className="px-3 py-1.5 bg-white dark:bg-slate-900 hover:bg-emerald-50 text-emerald-700 font-bold text-xs rounded-xl border border-emerald-300 transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
                               title="Lihat posisi GPS pada peta"
                             >
                               <MapPin size={13} className="text-emerald-600" />
@@ -1920,7 +1920,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 return (
                   <div
                     key={rec.id}
-                    className="border border-slate-200 hover:border-emerald-500 rounded-2xl p-4 bg-white hover:shadow-sm transition flex flex-col justify-between"
+                    className="border border-slate-200 dark:border-slate-800 hover:border-emerald-500 rounded-2xl p-4 bg-white dark:bg-slate-900 hover:shadow-sm transition flex flex-col justify-between"
                   >
                     <div>
                       {/* Card Header */}
@@ -1930,7 +1930,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             {rec.student.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <h4 className="text-xs font-black text-slate-900 truncate">
+                            <h4 className="text-xs font-black text-slate-900 dark:text-slate-100 truncate">
                               {rec.student.name
                                 .replace(/👑|\(Ketua Kelompok\)/g, "")
                                 .trim()}
@@ -1950,19 +1950,19 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             Selesai
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 shrink-0">
                             Belum Absen
                           </span>
                         )}
                       </div>
 
                       {/* Card Stats Grid */}
-                      <div className="grid grid-cols-3 gap-2 text-center bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-[11px] mb-3">
+                      <div className="grid grid-cols-3 gap-2 text-center bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-[11px] mb-3">
                         <div>
                           <span className="text-[9px] text-slate-400 block font-bold uppercase">
                             Masuk
                           </span>
-                          <span className="font-bold text-slate-800">
+                          <span className="font-bold text-slate-800 dark:text-slate-100">
                             {rec.attendedAt
                               ? new Date(rec.attendedAt).toLocaleTimeString(
                                   "id-ID",
@@ -1991,7 +1991,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           <span className="text-[9px] text-slate-400 block font-bold uppercase">
                             Pulang
                           </span>
-                          <span className="font-bold text-slate-800">
+                          <span className="font-bold text-slate-800 dark:text-slate-100">
                             {rec.completedAt
                               ? new Date(rec.completedAt).toLocaleTimeString(
                                   "id-ID",
@@ -2006,7 +2006,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     </div>
 
                     {/* Card Footer */}
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px]">
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px]">
                       {isAttended ? (
                         isDurationSufficient ? (
                           <span className="text-[10px] font-bold text-emerald-800">
@@ -2053,14 +2053,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       {/* Modal Add / Edit Jadwal Kegiatan KKN */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-[740px] max-w-full overflow-hidden flex flex-col transform transition-all duration-200 border border-slate-200 max-h-[90vh]">
-            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-[740px] max-w-full overflow-hidden flex flex-col transform transition-all duration-200 border border-slate-200 dark:border-slate-800 max-h-[90vh]">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/60">
               <div className="flex items-center gap-3">
                 <div className="bg-emerald-50 text-emerald-700 p-2.5 rounded-2xl border border-emerald-200">
                   <CalendarDays size={20} />
                 </div>
                 <div>
-                  <h3 className="font-black text-slate-900 text-base">
+                  <h3 className="font-black text-slate-900 dark:text-slate-100 text-base">
                     {modalMode === "add"
                       ? "Tambah Kegiatan KKN"
                       : "Edit Kegiatan KKN"}
@@ -2158,7 +2158,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               {modalStep === 1 ? (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-slate-800 font-black mb-1">
+                    <label className="block text-slate-800 dark:text-slate-100 font-black mb-1">
                       Judul Kegiatan <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -2180,7 +2180,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div>
-                      <label className="block text-slate-800 font-black mb-1">
+                      <label className="block text-slate-800 dark:text-slate-100 font-black mb-1">
                         Kategori Kegiatan <span className="text-rose-500">*</span>
                       </label>
                       <select
@@ -2200,7 +2200,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             });
                           }
                         }}
-                        className="w-full h-10 px-3 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-emerald-500 text-xs font-bold text-slate-800 outline-none cursor-pointer"
+                        className="w-full h-10 px-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800/60 focus:bg-white focus:border-emerald-500 text-xs font-bold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
                       >
                         {STANDARD_CATEGORIES.map((c) => (
                           <option key={c} value={c}>
@@ -2226,7 +2226,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     </div>
 
                     <div>
-                      <label className="block text-slate-800 font-black mb-1">
+                      <label className="block text-slate-800 dark:text-slate-100 font-black mb-1">
                         Target Kelompok KKN
                       </label>
                       {isDpl ? (
@@ -2259,7 +2259,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               title: targetGroup ? `${cat} - Kel. ${locInfo.kelurahan}${rwTag}` : prev.title,
                             }));
                           }}
-                          className="w-full h-10 px-3 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-emerald-500 text-xs font-bold text-slate-800 outline-none cursor-pointer"
+                          className="w-full h-10 px-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800/60 focus:bg-white focus:border-emerald-500 text-xs font-bold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
                         >
                           <option value="">Semua Kelompok (Kecamatan)</option>
                           {groups.map((g) => (
@@ -2272,9 +2272,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
                     <div>
-                      <label className="block text-slate-800 font-black mb-1 flex items-center gap-1.5">
+                      <label className="block text-slate-800 dark:text-slate-100 font-black mb-1 flex items-center gap-1.5">
                         <Calendar size={13} className="text-emerald-600" /> Tanggal Mulai
                       </label>
                       <input
@@ -2285,11 +2285,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           if (!endDate || e.target.value > endDate)
                             setEndDate(e.target.value);
                         }}
-                        className="w-full h-10 px-3 border border-slate-200 bg-white rounded-xl text-xs font-bold text-slate-800 outline-none"
+                        className="w-full h-10 px-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-800 font-black mb-1 flex items-center gap-1.5">
+                      <label className="block text-slate-800 dark:text-slate-100 font-black mb-1 flex items-center gap-1.5">
                         <Calendar size={13} className="text-emerald-600" /> Tanggal Selesai
                       </label>
                       <input
@@ -2297,33 +2297,33 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         value={endDate}
                         min={startDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="w-full h-10 px-3 border border-slate-200 bg-white rounded-xl text-xs font-bold text-slate-800 outline-none"
+                        className="w-full h-10 px-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none"
                       />
                     </div>
                   </div>
 
-                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-3">
+                  <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                       <div>
-                        <label className="block text-slate-800 font-black mb-1 flex items-center gap-1.5">
+                        <label className="block text-slate-800 dark:text-slate-100 font-black mb-1 flex items-center gap-1.5">
                           <Clock size={13} className="text-emerald-700" /> Waktu Mulai
                         </label>
                         <input
                           type="time"
                           value={startTime}
                           onChange={(e) => setStartTime(e.target.value)}
-                          className="w-full h-10 px-3 border border-slate-200 bg-white rounded-xl text-xs font-bold text-slate-800 outline-none"
+                          className="w-full h-10 px-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none"
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-800 font-black mb-1 flex items-center gap-1.5">
+                        <label className="block text-slate-800 dark:text-slate-100 font-black mb-1 flex items-center gap-1.5">
                           <Clock size={13} className="text-emerald-700" /> Waktu Selesai
                         </label>
                         <input
                           type="time"
                           value={endTime}
                           onChange={(e) => setEndTime(e.target.value)}
-                          className="w-full h-10 px-3 border border-slate-200 bg-white rounded-xl text-xs font-bold text-slate-800 outline-none"
+                          className="w-full h-10 px-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none"
                         />
                       </div>
                     </div>
@@ -2340,7 +2340,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   </div>
 
                   <div>
-                    <label className="block text-slate-800 font-black mb-1 flex items-center gap-1.5">
+                    <label className="block text-slate-800 dark:text-slate-100 font-black mb-1 flex items-center gap-1.5">
                       <MapPin size={13} className="text-rose-500" /> Lokasi Pelaksanaan Kegiatan
                     </label>
                     <input
@@ -2350,13 +2350,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         setFormData({ ...formData, location: e.target.value })
                       }
                       placeholder="Balai RW 03, Kelurahan Dago, Coblong"
-                      className="w-full h-10 px-3.5 border border-slate-200 bg-slate-50 focus:bg-white rounded-xl text-xs font-bold text-slate-800 outline-none"
+                      className="w-full h-10 px-3.5 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 focus:bg-white rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none"
                     />
                   </div>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
+                  <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl gap-1">
                     <button
                       type="button"
                       onClick={() => {
@@ -2401,7 +2401,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     const mapModalCenter = selectedPos.length > 0 ? selectedPos[0] : modalLocInfo.centroid;
 
                     return (
-                      <div className="h-[280px] rounded-2xl overflow-hidden border border-slate-200 relative z-0 shadow-inner">
+                      <div className="h-[280px] rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 relative z-0 shadow-inner">
                         <MapContainer
                           key={`modal-geofence-map-${modalMode}-${formData.id || "new"}-${geofenceMode}`}
                           center={mapModalCenter}
@@ -2422,7 +2422,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
                   {geofenceMode === "CIRCLE" && (
                     <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between gap-4">
-                      <label className="text-xs font-black text-slate-800">
+                      <label className="text-xs font-black text-slate-800 dark:text-slate-100">
                         Ukuran Radius Presensi:
                       </label>
                       <div className="flex items-center gap-2">
@@ -2437,9 +2437,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               radius: Number(e.target.value),
                             })
                           }
-                          className="w-24 h-8 text-center font-mono font-black bg-white border border-emerald-300 rounded-lg text-emerald-950 text-xs outline-none"
+                          className="w-24 h-8 text-center font-mono font-black bg-white dark:bg-slate-900 border border-emerald-300 rounded-lg text-emerald-950 text-xs outline-none"
                         />
-                        <span className="text-xs font-bold text-slate-600">
+                        <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
                           Meter
                         </span>
                       </div>
@@ -2448,14 +2448,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 </div>
               )}
 
-              <div className="flex justify-between items-center pt-4 border-t border-slate-100">
+              <div className="flex justify-between items-center pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => {
                     if (modalStep === 2) setModalStep(1);
                     else setIsModalOpen(false);
                   }}
-                  className="px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-bold cursor-pointer transition text-xs flex items-center gap-1.5"
+                  className="px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 font-bold cursor-pointer transition text-xs flex items-center gap-1.5"
                 >
                   {modalStep === 2 ? "← Kembali ke Detail" : "Batal"}
                 </button>
@@ -2508,7 +2508,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       {/* Modal Ekspor Presensi dengan Filter Periode */}
       {isExportModalOpen && (
         <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center px-6 py-4 bg-slate-900 text-white">
               <div className="flex items-center gap-2.5">
                 <Download size={18} className="text-emerald-400" />
@@ -2535,7 +2535,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               </div>
 
               <div>
-                <label className="block text-xs font-black text-slate-700 mb-2 flex items-center gap-1.5">
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
                   <Calendar size={14} className="text-slate-500" /> Filter Periode Laporan:
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -2565,27 +2565,27 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               </div>
 
               {exportPeriod === "CUSTOM" && (
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 animate-in fade-in duration-200">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 animate-in fade-in duration-200">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
                       Tanggal Mulai:
                     </label>
                     <input
                       type="date"
                       value={exportStartDate}
                       onChange={(e) => setExportStartDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
                       Tanggal Selesai:
                     </label>
                     <input
                       type="date"
                       value={exportEndDate}
                       onChange={(e) => setExportEndDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                 </div>
@@ -2595,7 +2595,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <button
                   type="button"
                   onClick={() => setIsExportModalOpen(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition cursor-pointer"
+                  className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition cursor-pointer"
                 >
                   Batal
                 </button>
@@ -2616,14 +2616,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       {/* Modal Pengaturan Ketentuan Waktu & Target Kegiatan KKN (Khusus Super User & Developer) */}
       {isConfigModalOpen && isSuperUserOrDev && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-slate-100 dark:border-slate-800 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
                   <Settings size={18} />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-sm text-slate-900">
+                  <h3 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
                     Atur Ketentuan Waktu & Target KKN
                   </h3>
                   <p className="text-[11px] text-slate-400 font-medium">
@@ -2643,7 +2643,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             <form onSubmit={handleSaveConfig} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Hari Kerja Operasional
                   </label>
                   <input
@@ -2657,12 +2657,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         hariKerja: e.target.value,
                       })
                     }
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Jam Kerja Operasional
                   </label>
                   <input
@@ -2676,14 +2676,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         jamKerja: e.target.value,
                       })
                     }
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Min. Durasi (Jam/Hari)
                   </label>
                   <input
@@ -2700,12 +2700,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         targetTotalJam: (configFormData.targetTotalHari || 50) * harian,
                       });
                     }}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Periode (Pekan)
                   </label>
                   <input
@@ -2719,12 +2719,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         targetPekan: Number(e.target.value),
                       })
                     }
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Total Hari Kegiatan
                   </label>
                   <input
@@ -2740,14 +2740,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         targetTotalJam: hari * (configFormData.targetHarianJam || 4),
                       });
                     }}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-slate-700">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                     Total Jam Kegiatan (Target Kumulatif KKN = Total Hari × Jam/Hari)
                   </label>
                   <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
@@ -2765,15 +2765,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       targetTotalJam: Number(e.target.value),
                     })
                   }
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsConfigModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-xl transition cursor-pointer"
                 >
                   Batal
                 </button>

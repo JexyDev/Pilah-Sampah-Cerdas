@@ -131,13 +131,13 @@ const DownloadPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-slate-900 text-slate-900 font-sans relative overflow-x-hidden selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen flex flex-col justify-between bg-slate-900 text-slate-900 dark:text-slate-100 font-sans relative overflow-x-hidden selection:bg-emerald-500 selection:text-white">
 
       {/* Main Content Wrapper - Clean White Section Scoping */}
-      <main className="flex-1 flex flex-col bg-white relative">
+      <main className="flex-1 flex flex-col bg-white dark:bg-slate-900 relative">
 
         {/* Navigation Header - Matches Landing Page Navbar Glassmorphism */}
-        <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-3.5 shadow-xs">
+        <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-8 py-3.5 shadow-xs">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2.5 group shrink-0">
               <TrashCareLogoIcon className="w-10 h-10 sm:w-11 sm:h-11 transition-transform group-hover:scale-105 shrink-0" />
@@ -150,7 +150,7 @@ const DownloadPage: React.FC = () => {
             <div className="flex items-center gap-3">
               <Link
                 to="/"
-                className="hidden sm:inline-flex items-center gap-1.5 px-4 h-9.5 rounded-xl text-slate-700 hover:text-emerald-700 hover:bg-slate-100 text-xs font-bold transition"
+                className="hidden sm:inline-flex items-center gap-1.5 px-4 h-9.5 rounded-xl text-slate-700 dark:text-slate-300 hover:text-emerald-700 hover:bg-slate-100 text-xs font-bold transition"
               >
                 <ArrowLeft size={15} />
                 <span>Beranda</span>
@@ -189,14 +189,14 @@ const DownloadPage: React.FC = () => {
                 <span className="text-emerald-700 font-bold">v{release.version}</span>
               </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight text-slate-900">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight text-slate-900 dark:text-slate-100">
                 Pilah Sampah Lebih Mudah <br />
                 <span className="text-emerald-700">
                   Dalam Genggaman.
                 </span>
               </h1>
 
-              <p className="text-sm sm:text-base text-slate-600 font-medium leading-relaxed max-w-2xl">
+              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 font-medium leading-relaxed max-w-2xl">
                 Platform layanan mobile terintegrasi bagi <strong className="text-emerald-700 font-bold">Warga</strong>, <strong className="text-emerald-700 font-bold">Mahasiswa Kuliah Kerja Nyata (KKN) Berdampak</strong>, dan <strong className="text-emerald-700 font-bold">Petugas Residu</strong> di Kecamatan Coblong.
               </p>
 
@@ -213,26 +213,26 @@ const DownloadPage: React.FC = () => {
                 </div>
 
                 {/* Release Metadata Pills */}
-                <div className="flex items-center gap-4 text-xs text-slate-600 font-medium pt-1 flex-wrap">
+                <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400 font-medium pt-1 flex-wrap">
                   <span className="flex items-center gap-1.5 text-emerald-700 font-bold">
                     <ShieldCheck size={16} />
                     Versi {release.version} (Build {release.buildNumber})
                   </span>
                   <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                  <span className="flex items-center gap-1.5 text-slate-600">
+                  <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                     <Smartphone size={16} className="text-sky-600" />
                     {release.minAndroidVersion || "Android 7.0+"}
                   </span>
                   <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                  <span className="flex items-center gap-1.5 text-slate-900 font-bold">
+                  <span className="flex items-center gap-1.5 text-slate-900 dark:text-slate-100 font-bold">
                     <HardDrive size={16} className="text-emerald-700 shrink-0" />
                     {release.formattedSize}
                   </span>
                 </div>
 
                 {/* Real-time Release Notes Alert Box */}
-                <div className="bg-white border border-emerald-200/90 rounded-2xl p-5 shadow-sm space-y-3 text-left">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div className="bg-white dark:bg-slate-900 border border-emerald-200/90 rounded-2xl p-5 shadow-sm space-y-3 text-left">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shrink-0">
                         <Sparkles size={14} />
@@ -247,12 +247,12 @@ const DownloadPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <p className="text-sm text-slate-800 font-bold leading-relaxed">
+                  <p className="text-sm text-slate-800 dark:text-slate-100 font-bold leading-relaxed">
                     "{release.releaseNotes}"
                   </p>
 
                   {lastUpdatedTime && (
-                    <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 text-[11px] text-slate-500 font-medium">
+                    <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 font-medium">
                       <span className="flex items-center gap-1.5 text-emerald-700 font-bold">
                         <RefreshCcw size={12} className="animate-spin" /> Live Sinkronisasi Backend API
                       </span>
@@ -266,11 +266,11 @@ const DownloadPage: React.FC = () => {
 
             {/* Right Column: Hero Showcase Card */}
             <div className="lg:col-span-5 relative flex justify-center">
-              <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-3xl p-6 shadow-md relative overflow-hidden group space-y-5">
+              <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200/90 rounded-3xl p-6 shadow-md relative overflow-hidden group space-y-5">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-emerald-500/20 transition-all" />
 
                 <div className="relative z-10 space-y-4 text-left">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                     <span className="text-xs font-black uppercase tracking-wider text-emerald-700 flex items-center gap-2">
                       <Smartphone size={16} /> Akses Layanan Mobile
                     </span>
@@ -289,7 +289,7 @@ const DownloadPage: React.FC = () => {
                   </div>
 
                   <div className="space-y-3 pt-1 text-left">
-                    <p className="text-xs text-slate-700 font-bold leading-relaxed">
+                    <p className="text-xs text-slate-700 dark:text-slate-300 font-bold leading-relaxed">
                       Satu aplikasi mobile untuk seluruh partisipan pengelolaan sampah di tingkat RW.
                     </p>
                     <div className="grid grid-cols-3 gap-2 text-[11px]">
@@ -312,7 +312,7 @@ const DownloadPage: React.FC = () => {
         </section>
 
         {/* Section 2: Real-Time System Statistics Strip - Pure White */}
-        <section className="py-12 bg-white border-b border-slate-200/80 w-full">
+        <section className="py-12 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 w-full">
           <div className="max-w-7xl mx-auto px-4 sm:px-8 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div className="space-y-1">
               <p className="text-2xl sm:text-3xl font-black text-emerald-600">{stats.wargaCount}</p>
@@ -338,10 +338,10 @@ const DownloadPage: React.FC = () => {
           <div className="max-w-7xl mx-auto space-y-12 text-center">
 
             <div className="space-y-3 max-w-2xl mx-auto">
-              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
                 Layanan Khusus 3 Peran Pengguna Mobile
               </h2>
-              <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
                 Dirancang khusus untuk mendukung partisipasi aktif masyarakat dan kelancaran operasional pengangkutan sampah di lapangan.
               </p>
             </div>
@@ -349,19 +349,19 @@ const DownloadPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
 
               {/* Role Card 1: Warga */}
-              <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all duration-300 hover:-translate-y-1 group">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/90 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all duration-300 hover:-translate-y-1 group">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 flex items-center justify-center shrink-0">
                   <Users size={24} />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-lg font-black text-slate-900 group-hover:text-emerald-600 transition-colors">
+                  <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors">
                     Warga
                   </h3>
-                  <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
                     Pengajuan ide daur ulang kreatif, pencatatan setoran sampah harian, dan akumulasi penukaran insentif poin warga.
                   </p>
                 </div>
-                <ul className="space-y-2.5 text-xs text-slate-700 font-semibold pt-3 border-t border-slate-100">
+                <ul className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300 font-semibold pt-3 border-t border-slate-100 dark:border-slate-800">
                   <li className="flex items-center gap-2.5">
                     <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                     <span>Setor sampah via pemindaian QR Code Tempat Sampah</span>
@@ -378,19 +378,19 @@ const DownloadPage: React.FC = () => {
               </div>
 
               {/* Role Card 2: Mahasiswa KKN */}
-              <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs hover:shadow-md hover:border-teal-300 transition-all duration-300 hover:-translate-y-1 group">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/90 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs hover:shadow-md hover:border-teal-300 transition-all duration-300 hover:-translate-y-1 group">
                 <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 border border-teal-200/60 flex items-center justify-center shrink-0">
                   <GraduationCap size={24} />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-lg font-black text-slate-900 group-hover:text-teal-600 transition-colors">
+                  <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 group-hover:text-teal-600 transition-colors">
                     Mahasiswa
                   </h3>
-                  <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
                     Pendampingan pemilahan sampah warga, verifikasi data lapangan, dan pencatatan presensi kegiatan posko KKN.
                   </p>
                 </div>
-                <ul className="space-y-2.5 text-xs text-slate-700 font-semibold pt-3 border-t border-slate-100">
+                <ul className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300 font-semibold pt-3 border-t border-slate-100 dark:border-slate-800">
                   <li className="flex items-center gap-2.5">
                     <CheckCircle2 size={16} className="text-teal-600 shrink-0" />
                     <span>Pendampingan pemetaan &amp; registrasi warga RW</span>
@@ -407,19 +407,19 @@ const DownloadPage: React.FC = () => {
               </div>
 
               {/* Role Card 3: Petugas Residu */}
-              <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs hover:shadow-md hover:border-sky-300 transition-all duration-300 hover:-translate-y-1 group">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/90 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs hover:shadow-md hover:border-sky-300 transition-all duration-300 hover:-translate-y-1 group">
                 <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 border border-sky-200/60 flex items-center justify-center shrink-0">
                   <Truck size={24} />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-lg font-black text-slate-900 group-hover:text-sky-600 transition-colors">
+                  <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 group-hover:text-sky-600 transition-colors">
                     Petugas Residu
                   </h3>
-                  <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
                     Manajemen jadwal penjemputan residu bulanan, pencatatan beban timbangan sampah, dan verifikasi lokasi warga.
                   </p>
                 </div>
-                <ul className="space-y-2.5 text-xs text-slate-700 font-semibold pt-3 border-t border-slate-100">
+                <ul className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300 font-semibold pt-3 border-t border-slate-100 dark:border-slate-800">
                   <li className="flex items-center gap-2.5">
                     <CheckCircle2 size={16} className="text-sky-600 shrink-0" />
                     <span>Jadwal pengangkutan residu bulanan terstruktur</span>
@@ -441,14 +441,14 @@ const DownloadPage: React.FC = () => {
         </section>
 
         {/* Section 4: 4-Step APK Installation Guide Section - Pure White */}
-        <section id="panduan-apk" className="py-20 px-4 sm:px-8 bg-white w-full">
+        <section id="panduan-apk" className="py-20 px-4 sm:px-8 bg-white dark:bg-slate-900 w-full">
           <div className="max-w-7xl mx-auto space-y-12 text-center">
 
             <div className="space-y-3 max-w-xl mx-auto">
-              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
                 Panduan Pemasangan Berkas APK (Android)
               </h2>
-              <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
                 4 langkah praktis untuk menginstal aplikasi TrashCare di smartphone Android Anda secara aman.
               </p>
             </div>
@@ -456,65 +456,65 @@ const DownloadPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
 
               {/* Step 1 */}
-              <div className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs relative hover:border-emerald-300 transition-all">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs relative hover:border-emerald-300 transition-all">
                 <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black text-xs flex items-center justify-center border border-emerald-200">
                   1
                 </div>
                 <div className="space-y-1.5">
-                  <h4 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                  <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     <DownloadCloud size={17} className="text-emerald-600" />
                     Unduh Berkas Installer APK
                   </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                    Tekan tombol unduh APK di atas untuk mengunduh berkas resmi <strong className="text-slate-900">TrashCare.apk</strong>.
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+                    Tekan tombol unduh APK di atas untuk mengunduh berkas resmi <strong className="text-slate-900 dark:text-slate-100">TrashCare.apk</strong>.
                   </p>
                 </div>
               </div>
 
               {/* Step 2 */}
-              <div className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs relative hover:border-emerald-300 transition-all">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs relative hover:border-emerald-300 transition-all">
                 <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black text-xs flex items-center justify-center border border-emerald-200">
                   2
                 </div>
                 <div className="space-y-1.5">
-                  <h4 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                  <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     <Settings size={17} className="text-emerald-600" />
                     Akses Pengaturan Perangkat
                   </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                    Buka menu <strong className="text-slate-900">Pengaturan ➔ Keamanan &amp; Privasi</strong> pada smartphone Anda.
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+                    Buka menu <strong className="text-slate-900 dark:text-slate-100">Pengaturan ➔ Keamanan &amp; Privasi</strong> pada smartphone Anda.
                   </p>
                 </div>
               </div>
 
               {/* Step 3 */}
-              <div className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs relative hover:border-emerald-300 transition-all">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs relative hover:border-emerald-300 transition-all">
                 <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black text-xs flex items-center justify-center border border-emerald-200">
                   3
                 </div>
                 <div className="space-y-1.5">
-                  <h4 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                  <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     <ShieldCheck size={17} className="text-emerald-600" />
                     Aktifkan Izin Sumber Lain
                   </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                    Aktifkan opsi <strong className="text-slate-900">Izinkan Pemasangan Aplikasi dari Sumber Tidak Dikenal</strong>.
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+                    Aktifkan opsi <strong className="text-slate-900 dark:text-slate-100">Izinkan Pemasangan Aplikasi dari Sumber Tidak Dikenal</strong>.
                   </p>
                 </div>
               </div>
 
               {/* Step 4 */}
-              <div className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs relative hover:border-emerald-300 transition-all">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs relative hover:border-emerald-300 transition-all">
                 <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black text-xs flex items-center justify-center border border-emerald-200">
                   4
                 </div>
                 <div className="space-y-1.5">
-                  <h4 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                  <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     <FileCheck size={17} className="text-emerald-600" />
                     Pasang &amp; Jalankan Aplikasi
                   </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                    Ketuk berkas <strong className="text-slate-900">TrashCare.apk</strong>, ikuti petunjuk pemasangan hingga selesai.
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+                    Ketuk berkas <strong className="text-slate-900 dark:text-slate-100">TrashCare.apk</strong>, ikuti petunjuk pemasangan hingga selesai.
                   </p>
                 </div>
               </div>
@@ -530,7 +530,7 @@ const DownloadPage: React.FC = () => {
                 </div>
                 <button
                   onClick={handleDownloadApk}
-                  className="px-6 h-12 bg-white hover:bg-slate-100 text-emerald-800 font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shrink-0 transition-all shadow-xs cursor-pointer"
+                  className="px-6 h-12 bg-white dark:bg-slate-900 hover:bg-slate-100 text-emerald-800 font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shrink-0 transition-all shadow-xs cursor-pointer"
                 >
                   <Download size={16} />
                   <span>Unduh APK Sekarang (v{release.version})</span>

@@ -112,11 +112,11 @@ const MasterWilayah: React.FC = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
         {/* Tier 1: Title & Status Badge */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
               Master Data Wilayah
             </h1>
             <p className="text-xs text-slate-500 font-medium">
@@ -133,7 +133,7 @@ const MasterWilayah: React.FC = () => {
         </div>
 
         {/* Tier 2: Info & Action Buttons */}
-        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
           <div className="text-xs text-slate-500 font-medium">
             Cakupan data resmi wilayah Kota Bandung &amp; Kecamatan Coblong
           </div>
@@ -142,7 +142,7 @@ const MasterWilayah: React.FC = () => {
             <div className="flex items-center gap-2 ml-auto sm:ml-0">
               <button
                 onClick={handleExportCsv}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
               >
                 <Download size={14} className="text-slate-500" />
                 <span>Ekspor CSV</span>
@@ -161,12 +161,12 @@ const MasterWilayah: React.FC = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
           <div>
             <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
               Total Wilayah
             </p>
-            <h3 className="text-2xl font-black text-slate-800 mt-1">
+            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">
               {data.length}
             </h3>
           </div>
@@ -175,7 +175,7 @@ const MasterWilayah: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
           <div>
             <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
               Status Sistem
@@ -189,12 +189,12 @@ const MasterWilayah: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
           <div>
             <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
               Tingkat Wilayah
             </p>
-            <h3 className="text-lg font-black text-slate-800 mt-1 truncate max-w-[150px]">
+            <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 mt-1 truncate max-w-[150px]">
               {TAB_LABEL_MAP[activeTab] || activeTab}
             </h3>
           </div>
@@ -205,7 +205,7 @@ const MasterWilayah: React.FC = () => {
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-3">
           {/* Search Box */}
           <div className="relative w-full md:w-80">
@@ -215,7 +215,7 @@ const MasterWilayah: React.FC = () => {
               placeholder="Cari ID, Nama Wilayah..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
             />
           </div>
 
@@ -224,7 +224,7 @@ const MasterWilayah: React.FC = () => {
             <select
               value={activeTab}
               onChange={handleTabChange}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-700 focus:outline-none cursor-pointer"
+              className="px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
             >
               <option value="kecamatan">Kecamatan</option>
               <option value="kelurahan">Kelurahan</option>
@@ -235,26 +235,26 @@ const MasterWilayah: React.FC = () => {
       </div>
 
       {/* Main Table Card */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               {activeTab === "kecamatan" ? (
-                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4">Nama Kecamatan</th>
                   <th className="py-3.5 px-4">Total Kelurahan</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
                 </tr>
               ) : activeTab === "kelurahan" ? (
-                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4">Nama Kelurahan</th>
                   <th className="py-3.5 px-4">Dibuat Pada</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
                 </tr>
               ) : (
-                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4">Nama Rukun Warga</th>
                   <th className="py-3.5 px-4">Kelurahan</th>
@@ -280,26 +280,26 @@ const MasterWilayah: React.FC = () => {
                 </tr>
               ) : paginatedData.length > 0 ? (
                 paginatedData.map((item, idx) => (
-                  <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                  <tr key={item.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 transition-colors">
                     <td className="py-3.5 px-4 text-center font-bold text-slate-400">
                       {(currentPage - 1) * rowsPerPage + idx + 1}
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-slate-900">{item.name}</td>
+                    <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">{item.name}</td>
                     
                     {activeTab === "kecamatan" && (
-                      <td className="py-3.5 px-4 text-slate-600 font-medium">
+                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 font-medium">
                         {item.kelurahans?.length || 0}
                       </td>
                     )}
                     {activeTab === "kelurahan" && (
-                      <td className="py-3.5 px-4 text-slate-600 font-medium">
+                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 font-medium">
                         {new Date(item.createdAt || Date.now()).toLocaleDateString("id-ID", {
                           day: "numeric", month: "short", year: "numeric"
                         })}
                       </td>
                     )}
                     {activeTab === "rw" && (
-                      <td className="py-3.5 px-4 text-slate-600 font-medium">
+                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 font-medium">
                         {item.kelurahan?.name || "-"}
                       </td>
                     )}

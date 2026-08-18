@@ -190,14 +190,14 @@ const MasterRuleEngine: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
       {/* Top Banner Header */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
         <div className="flex items-center gap-4 z-10">
           <div className="w-14 h-14 rounded-2xl bg-[#e5f7ed] text-[#009966] flex items-center justify-center shrink-0 border border-[#009966]/20 shadow-2xs">
             <Sliders size={28} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-black text-slate-900 tracking-tight">
+              <h1 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
                 Rule Engine
               </h1>
               <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
@@ -214,7 +214,7 @@ const MasterRuleEngine: React.FC = () => {
           <button
             onClick={handleReset}
             disabled={loading || saving}
-            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-2xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <RotateCcw size={15} />
             <span>Reset Default</span>
@@ -238,39 +238,39 @@ const MasterRuleEngine: React.FC = () => {
       {/* Top 3 Summary Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Metric 1 */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
+        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-xl bg-emerald-50 text-[#009966] flex items-center justify-center shrink-0 border border-emerald-200/60">
             <Clock size={22} />
           </div>
           <div>
             <span className="text-[10.5px] font-black text-slate-400 uppercase tracking-wider block">Jadwal Pemilahan Warga</span>
-            <span className="text-xs font-black text-slate-800">
+            <span className="text-xs font-black text-slate-800 dark:text-slate-100">
               {config.reportingWindowMorningStart}-{config.reportingWindowMorningEnd} & {config.reportingWindowEveningStart}-{config.reportingWindowEveningEnd} WIB
             </span>
           </div>
         </div>
 
         {/* Metric 2 */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
+        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-200/60">
             <AlertTriangle size={22} />
           </div>
           <div>
             <span className="text-[10.5px] font-black text-slate-400 uppercase tracking-wider block">Multiplier Penalti Poin</span>
-            <span className="text-xs font-black text-slate-800">
+            <span className="text-xs font-black text-slate-800 dark:text-slate-100">
               {config.lateSubmissionPenaltyActive ? `${Math.round(config.lateSubmissionDiscount * 100)}% (${config.lateSubmissionDiscount}x)` : "Non-Aktif (100%)"}
             </span>
           </div>
         </div>
 
         {/* Metric 3 */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
+        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-200/60">
             <Timer size={22} />
           </div>
           <div>
             <span className="text-[10.5px] font-black text-slate-400 uppercase tracking-wider block">Waktu Minimal Presensi KKN</span>
-            <span className="text-xs font-black text-slate-800">
+            <span className="text-xs font-black text-slate-800 dark:text-slate-100">
               {String(config.attendanceMinDurationHours).padStart(2, "0")}J : {String(config.attendanceMinDurationMinutes).padStart(2, "0")}M : {String(config.attendanceMinDurationSeconds).padStart(2, "0")}D
             </span>
           </div>
@@ -278,7 +278,7 @@ const MasterRuleEngine: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="bg-white rounded-3xl p-12 border border-slate-200/80 text-center space-y-3">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 border border-slate-200/80 dark:border-slate-800 text-center space-y-3">
           <div className="w-10 h-10 border-3 border-[#009966] border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-xs font-extrabold text-slate-500">Memuat konfigurasi Rule Engine dari server...</p>
         </div>
@@ -288,15 +288,15 @@ const MasterRuleEngine: React.FC = () => {
           {/* ========================================== */}
           {/* RULE 1: JADWAL PEMILAHAN SAMPAH WARGA */}
           {/* ========================================== */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 space-y-5 shadow-2xs flex flex-col justify-between">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-5 shadow-2xs flex flex-col justify-between">
             <div className="space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#009966] flex items-center justify-center border border-emerald-200/60 shrink-0">
                     <Clock size={20} />
                   </div>
                   <div>
-                    <h2 className="text-sm font-black text-slate-900">1. Jadwal Pemilahan Sampah Warga</h2>
+                    <h2 className="text-sm font-black text-slate-900 dark:text-slate-100">1. Jadwal Pemilahan Sampah Warga</h2>
                     <p className="text-[11px] font-semibold text-slate-500">Pengaturan Jendela Pemilahan Mobile Pagi & Sore</p>
                   </div>
                 </div>
@@ -305,16 +305,16 @@ const MasterRuleEngine: React.FC = () => {
                 </span>
               </div>
 
-              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
                 Atur jendela waktu pagi dan sore bagi Warga untuk menyetor sampah hasil pemilahan. Jendela ini menjadi acuan notifikasi pengingat otomatis di aplikasi mobile Warga.
               </p>
 
               {/* Grid 2 Sesi Pagi & Sore */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {/* Sesi Pagi */}
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
                       <Calendar size={14} className="text-[#009966]" /> Sesi Pagi
                     </span>
                     <span className="text-[10.5px] font-black text-[#009966] bg-emerald-100/80 px-2 py-0.5 rounded-md">
@@ -330,7 +330,7 @@ const MasterRuleEngine: React.FC = () => {
                         type="time"
                         value={config.reportingWindowMorningStart}
                         onChange={(e) => handleChange("reportingWindowMorningStart", e.target.value)}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966]"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#009966]"
                       />
                     </div>
                     <div>
@@ -341,16 +341,16 @@ const MasterRuleEngine: React.FC = () => {
                         type="time"
                         value={config.reportingWindowMorningEnd}
                         onChange={(e) => handleChange("reportingWindowMorningEnd", e.target.value)}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966]"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#009966]"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* Sesi Sore */}
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
                       <Calendar size={14} className="text-[#009966]" /> Sesi Sore
                     </span>
                     <span className="text-[10.5px] font-black text-[#009966] bg-emerald-100/80 px-2 py-0.5 rounded-md">
@@ -366,7 +366,7 @@ const MasterRuleEngine: React.FC = () => {
                         type="time"
                         value={config.reportingWindowEveningStart}
                         onChange={(e) => handleChange("reportingWindowEveningStart", e.target.value)}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966]"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#009966]"
                       />
                     </div>
                     <div>
@@ -377,7 +377,7 @@ const MasterRuleEngine: React.FC = () => {
                         type="time"
                         value={config.reportingWindowEveningEnd}
                         onChange={(e) => handleChange("reportingWindowEveningEnd", e.target.value)}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966]"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#009966]"
                       />
                     </div>
                   </div>
@@ -391,7 +391,7 @@ const MasterRuleEngine: React.FC = () => {
                     <BellRing size={16} />
                   </div>
                   <div>
-                    <span className="text-xs font-black text-slate-900 block">Notifikasi Pengingat Mobile Warga</span>
+                    <span className="text-xs font-black text-slate-900 dark:text-slate-100 block">Notifikasi Pengingat Mobile Warga</span>
                     <span className="text-[11px] text-slate-500 font-medium">Kirim notifikasi pengingat otomatis ke HP Warga sebelum sesi pemilahan</span>
                   </div>
                 </div>
@@ -407,7 +407,7 @@ const MasterRuleEngine: React.FC = () => {
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex items-center gap-2 text-[11px] text-slate-500 font-bold">
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-[11px] text-slate-500 font-bold">
               <CheckCircle2 size={14} className="text-[#009966]" />
               <span>Terintegrasi dengan sistem Notifikasi & Mobile API</span>
             </div>
@@ -416,15 +416,15 @@ const MasterRuleEngine: React.FC = () => {
           {/* ========================================== */}
           {/* RULE 2: PENGURANGAN POIN KETIDAKDISIPLINAN */}
           {/* ========================================== */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 space-y-5 shadow-2xs flex flex-col justify-between">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-5 shadow-2xs flex flex-col justify-between">
             <div className="space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200/60 shrink-0">
                     <AlertTriangle size={20} />
                   </div>
                   <div>
-                    <h2 className="text-sm font-black text-slate-900">2. Pengurangan Poin Ketidakdisiplinan</h2>
+                    <h2 className="text-sm font-black text-slate-900 dark:text-slate-100">2. Pengurangan Poin Ketidakdisiplinan</h2>
                     <p className="text-[11px] font-semibold text-slate-500">Bobot Penalti Pemilahan di Luar Jam Sesi</p>
                   </div>
                 </div>
@@ -433,15 +433,15 @@ const MasterRuleEngine: React.FC = () => {
                 </span>
               </div>
 
-              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
                 Warga yang menyetor di luar jendela jam yang ditentukan tetap diizinkan menyetor, namun perolehan poinnya dipotong sesuai faktor penalti.
               </p>
 
               {/* Toggle Penalti & Multiplier Slider */}
               <div className="space-y-4">
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
                   <div>
-                    <span className="text-xs font-black text-slate-900 block">Status Penalti Keterlambatan</span>
+                    <span className="text-xs font-black text-slate-900 dark:text-slate-100 block">Status Penalti Keterlambatan</span>
                     <span className="text-[11px] text-slate-500 font-medium">Aktifkan pemotongan poin jika terlambat menyetor</span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer shrink-0">
@@ -457,7 +457,7 @@ const MasterRuleEngine: React.FC = () => {
 
                 <div className="bg-amber-50/50 p-4.5 rounded-2xl border border-amber-200/70 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-slate-800">
+                    <span className="text-xs font-black text-slate-800 dark:text-slate-100">
                       Faktor Multiplier Poin Terlambat
                     </span>
                     <span className="text-sm font-black text-amber-800 bg-amber-100 px-3 py-0.5 rounded-lg border border-amber-300">
@@ -489,7 +489,7 @@ const MasterRuleEngine: React.FC = () => {
                   <Sparkles size={16} />
                   <span>Simulasi Perhitungan Poin Warga</span>
                 </div>
-                <div className="text-xs font-medium text-slate-700 space-y-1.5">
+                <div className="text-xs font-medium text-slate-700 dark:text-slate-300 space-y-1.5">
                   <div className="flex justify-between">
                     <span>Setoran Sampah Tepat Waktu:</span>
                     <span className="font-extrabold text-emerald-700">+{basePoints} Poin (100%)</span>
@@ -504,7 +504,7 @@ const MasterRuleEngine: React.FC = () => {
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex items-center gap-2 text-[11px] text-slate-500 font-bold">
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-[11px] text-slate-500 font-bold">
               <ShieldCheck size={14} className="text-amber-600" />
               <span>Otomatis mengkalkulasi poin saat transaksi QR discan</span>
             </div>
@@ -513,14 +513,14 @@ const MasterRuleEngine: React.FC = () => {
           {/* ========================================== */}
           {/* RULE 3: WAKTU MINIMAL DI LOKASI ABSEN KKN (FULL WIDTH BOTTOM) */}
           {/* ========================================== */}
-          <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200/80 p-6 space-y-5 shadow-2xs">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-5 shadow-2xs">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200/60 shrink-0">
                   <GraduationCap size={20} />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black text-slate-900">3. Waktu Minimal di Lokasi Absen</h2>
+                  <h2 className="text-sm font-black text-slate-900 dark:text-slate-100">3. Waktu Minimal di Lokasi Absen</h2>
                   <p className="text-[11px] font-semibold text-slate-500">Aturan Presensi Geofence Mahasiswa di Posko / Wilayah RW</p>
                 </div>
               </div>
@@ -529,14 +529,14 @@ const MasterRuleEngine: React.FC = () => {
               </span>
             </div>
 
-            <p className="text-xs text-slate-600 leading-relaxed font-medium">
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
               Atur durasi minimal (Jam, Menit, Detik) yang wajib dipenuhi Mahasiswa KKN di lokasi presensi geofence agar status absensinya dinyatakan sah dan valid oleh sistem.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Left Side: Input Jam, Menit, Detik */}
-              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-4">
-                <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-4">
+                <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
                   <Timer size={16} className="text-blue-600" /> Durasi Minimal Presensi Mahasiswa
                 </span>
 
@@ -551,7 +551,7 @@ const MasterRuleEngine: React.FC = () => {
                       max="24"
                       value={config.attendanceMinDurationHours}
                       onChange={(e) => handleChange("attendanceMinDurationHours", parseInt(e.target.value) || 0)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-black text-slate-800 focus:outline-none focus:border-blue-500 text-center"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-black text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-500 text-center"
                     />
                   </div>
                   <div>
@@ -564,7 +564,7 @@ const MasterRuleEngine: React.FC = () => {
                       max="59"
                       value={config.attendanceMinDurationMinutes}
                       onChange={(e) => handleChange("attendanceMinDurationMinutes", parseInt(e.target.value) || 0)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-black text-slate-800 focus:outline-none focus:border-blue-500 text-center"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-black text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-500 text-center"
                     />
                   </div>
                   <div>
@@ -577,7 +577,7 @@ const MasterRuleEngine: React.FC = () => {
                       max="59"
                       value={config.attendanceMinDurationSeconds}
                       onChange={(e) => handleChange("attendanceMinDurationSeconds", parseInt(e.target.value) || 0)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-black text-slate-800 focus:outline-none focus:border-blue-500 text-center"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-black text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-500 text-center"
                     />
                   </div>
                 </div>
@@ -593,10 +593,10 @@ const MasterRuleEngine: React.FC = () => {
               </div>
 
               {/* Right Side: Input Toleransi Keluar Zona */}
-              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-4 flex flex-col justify-between">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-4 flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                    <label className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
                       <MapPin size={16} className="text-blue-600" /> Toleransi Keluar Zona Geofence
                     </label>
                     <span className="text-xs font-black text-blue-700 bg-blue-100 px-2.5 py-0.5 rounded-md">
@@ -609,7 +609,7 @@ const MasterRuleEngine: React.FC = () => {
                     max="120"
                     value={config.attendanceOutOfZoneToleranceMinutes}
                     onChange={(e) => handleChange("attendanceOutOfZoneToleranceMinutes", parseInt(e.target.value) || 0)}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-500"
                   />
                   <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
                     Batas waktu toleransi jika Mahasiswa secara tidak sengaja keluar dari zona lokasi sementara (posko/RW) tanpa menghentikan akumulasi durasi presensi.
@@ -627,32 +627,32 @@ const MasterRuleEngine: React.FC = () => {
           {/* ========================================== */}
           {/* RULE 4: KALENDER KKN & PENGATURAN HARI LIBUR ABSENSI (FULL WIDTH) */}
           {/* ========================================== */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 space-y-5 shadow-2xs">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 space-y-5 shadow-2xs">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200/60 shrink-0">
                   <Calendar size={20} />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black text-slate-900">4. Kalender Periode KKN &amp; Hari Libur Absensi</h2>
+                  <h2 className="text-sm font-black text-slate-900 dark:text-slate-100">4. Kalender Periode KKN &amp; Hari Libur Absensi</h2>
                   <p className="text-[11px] font-semibold text-slate-500">
                     Kontrol Periode Aktif KKN &amp; Pengecualian Hari Libur Nasional / Weekend dari Perhitungan Alfa
                   </p>
                 </div>
               </div>
-              <span className="bg-slate-100 text-slate-800 border border-slate-200 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase shrink-0">
+              <span className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase shrink-0">
                 Kalender &amp; Libur
               </span>
             </div>
 
-            <p className="text-xs text-slate-600 leading-relaxed font-medium">
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
               Atur tanggal resmi mulai dan berakhirnya KKN serta daftar hari libur. Mahasiswa <strong>TIDAK AKAN</strong> dikenakan Alfa sebelum tanggal mulai KKN atau pada hari libur yang terdaftar.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Left Column: Periode Tanggal KKN & Toggle Weekend */}
-              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-4">
-                <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-4">
+                <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
                   <Calendar size={16} className="text-emerald-700" /> Rentang Tanggal Resmi KKN
                 </span>
 
@@ -665,7 +665,7 @@ const MasterRuleEngine: React.FC = () => {
                       type="date"
                       value={config.kknStartDate || "2026-08-20"}
                       onChange={(e) => handleChange("kknStartDate", e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966]"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#009966]"
                     />
                   </div>
                   <div>
@@ -676,16 +676,16 @@ const MasterRuleEngine: React.FC = () => {
                       type="date"
                       value={config.kknEndDate || "2026-10-20"}
                       onChange={(e) => handleChange("kknEndDate", e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966]"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#009966]"
                     />
                   </div>
                 </div>
 
                 {/* Weekend Auto-Holiday Toggle */}
                 <div className="pt-2 border-t border-slate-200/60">
-                  <label className="flex items-center justify-between cursor-pointer p-3 bg-white rounded-xl border border-slate-200 hover:border-slate-300 transition">
+                  <label className="flex items-center justify-between cursor-pointer p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 transition">
                     <div>
-                      <span className="text-xs font-black text-slate-800 block">Libur Otomatis Akhir Pekan (Sabtu &amp; Minggu)</span>
+                      <span className="text-xs font-black text-slate-800 dark:text-slate-100 block">Libur Otomatis Akhir Pekan (Sabtu &amp; Minggu)</span>
                       <span className="text-[10.5px] text-slate-500 font-medium">Sabtu &amp; Minggu tidak dihitung kewajiban presensi mahasiswa</span>
                     </div>
                     <input
@@ -702,7 +702,7 @@ const MasterRuleEngine: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleMarkTodayHoliday}
-                    className="w-full py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                    className="w-full py-2.5 px-4 bg-white dark:bg-slate-900 hover:bg-slate-100 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
                   >
                     <Calendar size={14} className="text-emerald-700" />
                     <span>Tandai Hari Ini ({new Date().toISOString().slice(0, 10)}) Sebagai Libur Massal</span>
@@ -711,33 +711,33 @@ const MasterRuleEngine: React.FC = () => {
               </div>
 
               {/* Right Column: Daftar Hari Libur Khusus / Nasional */}
-              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-4 flex flex-col justify-between">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-4 flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
                       <AlertTriangle size={16} className="text-emerald-700" /> Daftar Hari Libur Khusus &amp; Nasional
                     </span>
-                    <span className="text-xs font-black text-slate-800 bg-slate-200/80 px-2 py-0.5 rounded-md">
+                    <span className="text-xs font-black text-slate-800 dark:text-slate-100 bg-slate-200/80 px-2 py-0.5 rounded-md">
                       {(config.kknHolidays || []).length} Hari Libur
                     </span>
                   </div>
 
                   {/* Add New Holiday Form */}
-                  <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-2">
-                    <span className="text-[10.5px] font-black text-slate-700 block">Tambah Tanggal Libur Baru:</span>
+                  <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+                    <span className="text-[10.5px] font-black text-slate-700 dark:text-slate-300 block">Tambah Tanggal Libur Baru:</span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <input
                         type="date"
                         value={newHolidayDate}
                         onChange={(e) => setNewHolidayDate(e.target.value)}
-                        className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966]"
+                        className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#009966]"
                       />
                       <input
                         type="text"
                         placeholder="Keterangan (misal: HUT RI)"
                         value={newHolidayDesc}
                         onChange={(e) => setNewHolidayDesc(e.target.value)}
-                        className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966]"
+                        className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#009966]"
                       />
                     </div>
                     <button
@@ -754,13 +754,13 @@ const MasterRuleEngine: React.FC = () => {
                     {(config.kknHolidays || []).map((h) => (
                       <div
                         key={h.date}
-                        className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-200/80 text-xs hover:border-slate-300 transition"
+                        className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 text-xs hover:border-slate-300 transition"
                       >
                         <div className="flex items-center gap-2">
                           <span className="font-mono font-black text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-[11px]">
                             {h.date}
                           </span>
-                          <span className="font-bold text-slate-700">{h.description}</span>
+                          <span className="font-bold text-slate-700 dark:text-slate-300">{h.description}</span>
                         </div>
                         <button
                           type="button"

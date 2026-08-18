@@ -618,18 +618,18 @@ const WargaDashboard: React.FC = () => {
   });
 
   return (
-    <div className="space-y-6 pb-12 text-slate-800">
+    <div className="space-y-6 pb-12 text-slate-800 dark:text-slate-100">
       {/* Cards KPI Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {isLoadingSummary ? (
           Array.from({ length: 4 }).map((_, idx) => (
             <div
               key={idx}
-              className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col gap-3 animate-pulse"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm flex flex-col gap-3 animate-pulse"
             >
-              <div className="w-10 h-10 bg-slate-100 rounded-xl"></div>
-              <div className="h-6 bg-slate-100 rounded w-3/4"></div>
-              <div className="h-4 bg-slate-100 rounded w-1/2"></div>
+              <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
+              <div className="h-6 bg-slate-100 dark:bg-slate-800 rounded w-3/4"></div>
+              <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-1/2"></div>
             </div>
           ))
         ) : (
@@ -637,14 +637,14 @@ const WargaDashboard: React.FC = () => {
             {/* Card Poin */}
             <div
               onClick={() => setShowPoinModal(true)}
-              className="bg-white border border-slate-200 border-t-4 border-t-yellow-500 p-6 rounded-2xl shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 border-t-4 border-t-yellow-500 p-6 rounded-2xl shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group"
             >
               <div className="w-10 h-10 bg-yellow-500 text-white rounded-xl flex items-center justify-center shadow-sm">
                 <Star size={20} />
               </div>
               <div className="mt-3">
                 <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Poin Saya</p>
-                <h3 className="text-2xl font-black text-slate-900 mt-1">{poin.toLocaleString("id-ID")} Pts</h3>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">{poin.toLocaleString("id-ID")} Pts</h3>
                 <p className="text-[11px] text-emerald-600 font-bold mt-2 flex items-center gap-1">
                   <TrendingUp size={13} /> +{pointsEarnedToday} Poin hari ini
                 </p>
@@ -654,14 +654,14 @@ const WargaDashboard: React.FC = () => {
             {/* Card Saldo */}
             <div
               onClick={() => setShowSaldoModal(true)}
-              className="bg-white border border-slate-200 border-t-4 border-t-emerald-500 p-6 rounded-2xl shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 border-t-4 border-t-emerald-500 p-6 rounded-2xl shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group"
             >
               <div className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-sm">
                 <Banknote size={20} />
               </div>
               <div className="mt-3">
                 <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Saldo Rupiah</p>
-                <h3 className="text-2xl font-black text-slate-900 mt-1">Rp {saldo.toLocaleString("id-ID")}</h3>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">Rp {saldo.toLocaleString("id-ID")}</h3>
                 <p className="text-[11px] text-cyan-600 font-bold mt-2 flex items-center gap-1">
                   <Wallet size={13} /> Cairkan Poin ke E-Wallet Anda
                 </p>
@@ -671,14 +671,14 @@ const WargaDashboard: React.FC = () => {
             {/* Card Organik */}
             <div
               onClick={() => setShowSetoranModal(true)}
-              className="bg-white border border-slate-200 border-t-4 border-t-cyan-500 p-6 rounded-2xl shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 border-t-4 border-t-cyan-500 p-6 rounded-2xl shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group"
             >
               <div className="w-10 h-10 bg-cyan-600 text-white rounded-xl flex items-center justify-center shadow-sm">
                 <Leaf size={20} />
               </div>
               <div className="mt-3">
                 <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Organik Terpilah</p>
-                <h3 className="text-2xl font-black text-slate-900 mt-1">{organik} Kg</h3>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">{organik} Kg</h3>
                 <p className="text-[11px] text-slate-500 font-medium mt-2">Masuk Pengolahan Loseda</p>
               </div>
             </div>
@@ -686,14 +686,14 @@ const WargaDashboard: React.FC = () => {
             {/* Card Anorganik */}
             <div
               onClick={() => setShowSetoranModal(true)}
-              className="bg-white border border-slate-200 border-t-4 border-t-blue-500 p-6 rounded-2xl shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 border-t-4 border-t-blue-500 p-6 rounded-2xl shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group"
             >
               <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-sm">
                 <Recycle size={20} />
               </div>
               <div className="mt-3">
                 <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Anorganik Terpilah</p>
-                <h3 className="text-2xl font-black text-slate-900 mt-1">{anorganik} Kg</h3>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">{anorganik} Kg</h3>
                 <p className="text-[11px] text-slate-500 font-medium mt-2">Daur Ulang Bank Sampah</p>
               </div>
             </div>
@@ -711,7 +711,7 @@ const WargaDashboard: React.FC = () => {
               <span className="bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5">
                 <Zap size={13} className="text-emerald-600" /> Kuota AI Hari Ini: {quotaRemaining} / 50 Request
               </span>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Setorkan Sampah, Dapatkan Poin Instan!</h3>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Setorkan Sampah, Dapatkan Poin Instan!</h3>
               <p className="text-xs text-slate-500 max-w-lg leading-relaxed">
                 Foto jenis sampah Anda dan biarkan AI mengenali kategori secara presisi untuk langsung ditukar poin.
               </p>
@@ -725,7 +725,7 @@ const WargaDashboard: React.FC = () => {
           </div>
 
           {/* Profile Card */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row gap-6 items-center">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row gap-6 items-center">
             <div className="w-20 h-20 rounded-full flex items-center justify-center font-bold text-xl overflow-hidden border border-emerald-500/30 shrink-0 bg-emerald-500/10">
               <img
                 src={getProfilePhotoUrl(user?.fotoProfil, user?.name)}
@@ -736,7 +736,7 @@ const WargaDashboard: React.FC = () => {
             </div>
             <div className="flex-1 text-center sm:text-left space-y-1">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <h4 className="font-extrabold text-[18px] text-slate-900">{user?.name}</h4>
+                <h4 className="font-extrabold text-[18px] text-slate-900 dark:text-slate-100">{user?.name}</h4>
                 <span className="inline-block px-2 py-0.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 text-[10px] font-bold rounded-full uppercase tracking-wider w-fit mx-auto sm:mx-0">
                   WARGA PSC
                 </span>
@@ -752,7 +752,7 @@ const WargaDashboard: React.FC = () => {
             </div>
             <button
               onClick={() => navigate("/pengaturan")}
-              className="px-4 py-2 border border-slate-300 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors text-[11px] font-bold rounded-xl uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+              className="px-4 py-2 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors text-[11px] font-bold rounded-xl uppercase tracking-wider flex items-center gap-1 cursor-pointer"
             >
               <Pencil size={16} />
               Edit Profil
@@ -760,9 +760,9 @@ const WargaDashboard: React.FC = () => {
           </div>
 
           {/* Notifications Card */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
-            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
-              <h5 className="font-bold text-[15px] text-slate-900 flex items-center gap-1.5">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+              <h5 className="font-bold text-[15px] text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                 <Bell className="text-emerald-600" size={18} />
                 Notifikasi Terbaru
               </h5>
@@ -770,12 +770,12 @@ const WargaDashboard: React.FC = () => {
 
             {isLoadingNotifications ? (
               <div className="animate-pulse space-y-3">
-                <div className="h-10 bg-slate-100 rounded-xl"></div>
-                <div className="h-10 bg-slate-100 rounded-xl"></div>
+                <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
+                <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
               </div>
             ) : notifications.length === 0 ? (
               <div className="text-center py-6 text-slate-500 text-xs">
-                <Megaphone className="text-slate-700 block mb-1 mx-auto" size={32} />
+                <Megaphone className="text-slate-700 dark:text-slate-300 block mb-1 mx-auto" size={32} />
                 Belum ada notifikasi baru untuk Anda.
               </div>
             ) : (
@@ -783,7 +783,7 @@ const WargaDashboard: React.FC = () => {
                 {notifications.slice(0, 4).map((notif) => (
                   <div
                     key={notif.id}
-                    className="flex gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-emerald-500/30 transition-colors"
+                    className="flex gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/30 transition-colors"
                   >
                     <div
                       className={`w-8 h-8 rounded-full ${notif.iconBg || "bg-emerald-500/10"} ${notif.iconColor || "text-emerald-600"} flex items-center justify-center shrink-0`}
@@ -791,7 +791,7 @@ const WargaDashboard: React.FC = () => {
                       <IconRenderer name={notif.icon} size={18} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-bold text-slate-900 truncate">{notif.title}</p>
+                      <p className="text-[12px] font-bold text-slate-900 dark:text-slate-100 truncate">{notif.title}</p>
                       <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">{notif.desc}</p>
                       <span className="text-[9px] text-slate-500 font-bold block mt-1">{notif.time}</span>
                     </div>
@@ -805,9 +805,9 @@ const WargaDashboard: React.FC = () => {
         {/* Right Column */}
         <div className="xl:col-span-4 space-y-4">
           {/* Bin Capacity */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
-            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
-              <h5 className="font-bold text-[15px] text-slate-900 flex items-center gap-1.5">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+              <h5 className="font-bold text-[15px] text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                 <Trash2 className="text-emerald-600" size={18} />
                 Tempat Sampah Rukun Warga (RW) Saya
               </h5>
@@ -818,12 +818,12 @@ const WargaDashboard: React.FC = () => {
 
             {isLoadingBins ? (
               <div className="animate-pulse space-y-4">
-                <div className="h-6 bg-slate-100 rounded-xl"></div>
-                <div className="h-6 bg-slate-100 rounded-xl"></div>
+                <div className="h-6 bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
+                <div className="h-6 bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
               </div>
             ) : myBins.length === 0 ? (
               <div className="text-center py-6 text-slate-500 text-xs">
-                <AlertTriangle className="text-slate-700 block mb-1 mx-auto" size={32} />
+                <AlertTriangle className="text-slate-700 dark:text-slate-300 block mb-1 mx-auto" size={32} />
                 Tidak ada tempat sampah terdaftar di Rukun Warga (RW) Anda.
               </div>
             ) : (
@@ -831,9 +831,9 @@ const WargaDashboard: React.FC = () => {
                 {myBins.map((bin) => (
                   <div
                     key={bin.id}
-                    className="space-y-1.5 p-3 rounded-xl border border-slate-200 bg-slate-50"
+                    className="space-y-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60"
                   >
-                    <div className="flex justify-between text-[11px] font-bold text-slate-700">
+                    <div className="flex justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
                       <span className="flex items-center gap-1">
                         {bin.category === "ORGANIC" ? (
                           <Leaf size={14} className="text-emerald-600" />
@@ -863,7 +863,7 @@ const WargaDashboard: React.FC = () => {
                         </span>
                       </div>
                     ) : bin.realStatus === "TIDAK_AKTIF" ? (
-                      <div className="mt-2 p-2 bg-slate-100 rounded-xl border border-slate-300 text-center">
+                      <div className="mt-2 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 text-center">
                         <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
                           <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
                           TIDAK AKTIF (&gt;30 Hari)
@@ -871,7 +871,7 @@ const WargaDashboard: React.FC = () => {
                       </div>
                     ) : (
                       <>
-                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200">
+                        <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-200 dark:border-slate-800">
                           <div
                             className={`h-full rounded-full transition-all duration-300 ${bin.kapasitas >= 80 ? "bg-rose-500" : bin.kapasitas >= 50 ? "bg-amber-500" : "bg-emerald-400"}`}
                             style={{ width: `${bin.kapasitas}%` }}
@@ -887,7 +887,7 @@ const WargaDashboard: React.FC = () => {
                               setEditCapBinId(bin.id);
                               setShowEditCapModal(true);
                             }}
-                            className="px-2.5 py-1 text-[10px] bg-slate-100 border border-slate-300 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition-all cursor-pointer uppercase tracking-wider flex items-center gap-0.5"
+                            className="px-2.5 py-1 text-[10px] bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-200 transition-all cursor-pointer uppercase tracking-wider flex items-center gap-0.5"
                           >
                             <Settings size={12} />
                             Ubah Kapasitas
@@ -916,9 +916,9 @@ const WargaDashboard: React.FC = () => {
           </div>
 
           {/* Recent Activity */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
-            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
-              <h5 className="font-bold text-[15px] text-slate-900 flex items-center gap-1.5">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+              <h5 className="font-bold text-[15px] text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                 <History className="text-emerald-600" size={18} />
                 Setoran Terakhir
               </h5>
@@ -932,12 +932,12 @@ const WargaDashboard: React.FC = () => {
 
             {isLoadingLogs ? (
               <div className="animate-pulse space-y-3">
-                <div className="h-10 bg-slate-100 rounded-xl"></div>
-                <div className="h-10 bg-slate-100 rounded-xl"></div>
+                <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
+                <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
               </div>
             ) : wasteLogs.length === 0 ? (
               <div className="text-center py-6 text-slate-500 text-xs">
-                <Archive className="text-slate-700 block mb-1 mx-auto" size={32} />
+                <Archive className="text-slate-700 dark:text-slate-300 block mb-1 mx-auto" size={32} />
                 Belum ada riwayat setoran sampah.
               </div>
             ) : (
@@ -945,7 +945,7 @@ const WargaDashboard: React.FC = () => {
                 {wasteLogs.slice(0, 4).map((item) => (
                   <div
                     key={item.id}
-                    className="flex justify-between items-center p-3 rounded-xl border border-slate-200 bg-slate-50 hover:border-emerald-500/30 transition-all"
+                    className="flex justify-between items-center p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 hover:border-emerald-500/30 transition-all"
                   >
                     <div>
                       <p className="text-[9px] text-slate-500 font-bold">
@@ -955,7 +955,7 @@ const WargaDashboard: React.FC = () => {
                           year: "numeric",
                         })}
                       </p>
-                      <p className="text-[12px] font-bold text-slate-900 mt-0.5">
+                      <p className="text-[12px] font-bold text-slate-900 dark:text-slate-100 mt-0.5">
                         {item.jenis === "ORGANIC" ? "🌱 Organik" : "♻️ Anorganik"}{" "}
                         <span className="font-extrabold">{item.berat}</span>{" "}
                         <span className="font-normal text-[10px]">Kg</span>
@@ -983,15 +983,15 @@ const WargaDashboard: React.FC = () => {
       {/* ISSUE REPORT MODAL */}
       {showIssueModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-emerald-500/30 text-slate-800">
-            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h3 className="font-extrabold text-[18px] text-slate-900 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-emerald-500/30 text-slate-800 dark:text-slate-100">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/60">
+              <h3 className="font-extrabold text-[18px] text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <AlertTriangle className="text-emerald-600" size={20} />
                 {issueType === "EMPTY_REQUEST" ? "Lapor Tempat Sampah Penuh" : "Lapor Tempat Sampah Rusak"}
               </h3>
               <button
                 onClick={() => setShowIssueModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-400 flex items-center justify-center transition-colors cursor-pointer border border-slate-300 dark:border-slate-700"
               >
                 <X size={20} />
               </button>
@@ -1003,7 +1003,7 @@ const WargaDashboard: React.FC = () => {
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Catatan (Opsional)</label>
                   <input
                     type="text"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-700 focus:border-emerald-500 focus:outline-none"
+                    className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-700 dark:text-slate-300 focus:border-emerald-500 focus:outline-none"
                     value={issueNotes}
                     onChange={(e) => setIssueNotes(e.target.value)}
                   />
@@ -1017,11 +1017,11 @@ const WargaDashboard: React.FC = () => {
                     type="file"
                     accept="image/*"
                     onChange={handleIssuePhotoChange}
-                    className="text-xs text-slate-600"
+                    className="text-xs text-slate-600 dark:text-slate-400"
                     required={issueType === "EMPTY_REQUEST"}
                   />
                   {issuePhotoPreview && (
-                    <img src={issuePhotoPreview} alt="Preview" className="w-full max-h-48 object-contain rounded-xl border border-slate-300 mt-2" />
+                    <img src={issuePhotoPreview} alt="Preview" className="w-full max-h-48 object-contain rounded-xl border border-slate-300 dark:border-slate-700 mt-2" />
                   )}
                 </div>
 
@@ -1044,15 +1044,15 @@ const WargaDashboard: React.FC = () => {
       {/* EDIT CAPACITY MODAL */}
       {showEditCapModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-emerald-500/30 text-slate-800">
-            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h3 className="font-extrabold text-[18px] text-slate-900 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-emerald-500/30 text-slate-800 dark:text-slate-100">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/60">
+              <h3 className="font-extrabold text-[18px] text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Settings className="text-emerald-600" size={20} />
                 Ubah Kapasitas Tempat Sampah
               </h3>
               <button
                 onClick={() => setShowEditCapModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-400 flex items-center justify-center transition-colors cursor-pointer border border-slate-300 dark:border-slate-700"
               >
                 <X size={20} />
               </button>
@@ -1063,7 +1063,7 @@ const WargaDashboard: React.FC = () => {
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Opsi Kapasitas</label>
                   <select
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-700 focus:border-emerald-500 focus:outline-none"
+                    className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-700 dark:text-slate-300 focus:border-emerald-500 focus:outline-none"
                     value={editCapMode}
                     onChange={(e) => setEditCapMode(e.target.value)}
                   >
@@ -1082,7 +1082,7 @@ const WargaDashboard: React.FC = () => {
                       <input
                         type="number"
                         placeholder="Contoh: 50"
-                        className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-700 focus:border-emerald-500 focus:outline-none"
+                        className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-700 dark:text-slate-300 focus:border-emerald-500 focus:outline-none"
                         value={editCapValue}
                         onChange={(e) => setEditCapValue(e.target.value)}
                       />
@@ -1096,7 +1096,7 @@ const WargaDashboard: React.FC = () => {
                         type="file"
                         accept="image/*"
                         onChange={(e) => setEditCapPhoto(e.target.files?.[0] || null)}
-                        className="w-full text-xs text-slate-600"
+                        className="w-full text-xs text-slate-600 dark:text-slate-400"
                         required
                       />
                     </div>
@@ -1122,37 +1122,37 @@ const WargaDashboard: React.FC = () => {
       {/* POIN MODAL */}
       {showPoinModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-emerald-500/30 text-slate-800">
-            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h3 className="font-extrabold text-[18px] text-slate-900 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-emerald-500/30 text-slate-800 dark:text-slate-100">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/60">
+              <h3 className="font-extrabold text-[18px] text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Star className="text-yellow-600" size={20} />
                 Riwayat & Detail Poin
               </h3>
               <button
                 onClick={() => setShowPoinModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-400 flex items-center justify-center transition-colors cursor-pointer border border-slate-300 dark:border-slate-700"
               >
                 <X size={20} />
               </button>
             </div>
             <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 text-center">
+                <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-center">
                   <p className="text-[10px] text-slate-400 font-bold uppercase">Total Poin Diperoleh</p>
                   <p className="text-xl font-bold text-emerald-600 mt-1">+{totalPointsEarned} Pts</p>
                 </div>
-                <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 text-center">
+                <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-center">
                   <p className="text-[10px] text-slate-400 font-bold uppercase">Target Rank Selanjutnya</p>
                   <p className="text-xl font-bold text-amber-600 mt-1">Silver Rank</p>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-bold text-slate-700">
+                <div className="flex justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
                   <span>Progres Tingkat</span>
                   <span>{poin} / 1000 Poin</span>
                 </div>
-                <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
+                <div className="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden border border-slate-200 dark:border-slate-800">
                   <div
                     className="bg-emerald-500 h-full rounded-full transition-all duration-500"
                     style={{ width: `${Math.min(100, (poin / 1000) * 100)}%` }}
@@ -1169,11 +1169,11 @@ const WargaDashboard: React.FC = () => {
                 ) : pointHistory.length === 0 ? (
                   <p className="text-xs text-center py-4 text-slate-500">Belum ada transaksi poin.</p>
                 ) : (
-                  <div className="divide-y divide-slate-200 max-h-[250px] overflow-y-auto">
+                  <div className="divide-y divide-slate-200 dark:divide-slate-800 max-h-[250px] overflow-y-auto">
                     {pointHistory.map((historyItem) => (
                       <div key={historyItem.id} className="py-3 flex justify-between items-center text-xs">
                         <div>
-                          <p className="font-bold text-slate-700">{historyItem.description}</p>
+                          <p className="font-bold text-slate-700 dark:text-slate-300">{historyItem.description}</p>
                           <p className="text-[10px] text-slate-500 mt-0.5">
                             {new Date(historyItem.createdAt).toLocaleString("id-ID")}
                           </p>
@@ -1189,10 +1189,10 @@ const WargaDashboard: React.FC = () => {
                 )}
               </div>
             </div>
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 flex justify-end">
               <button
                 onClick={() => setShowPoinModal(false)}
-                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 transition-colors border border-slate-300 cursor-pointer"
+                className="px-5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors border border-slate-300 dark:border-slate-700 cursor-pointer"
               >
                 Tutup
               </button>
@@ -1204,15 +1204,15 @@ const WargaDashboard: React.FC = () => {
       {/* SALDO MODAL */}
       {showSaldoModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-emerald-500/30 text-slate-800">
-            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h3 className="font-extrabold text-[18px] text-slate-900 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-emerald-500/30 text-slate-800 dark:text-slate-100">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/60">
+              <h3 className="font-extrabold text-[18px] text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Banknote className="text-emerald-600" size={20} />
                 Cairkan Saldo E-Wallet
               </h3>
               <button
                 onClick={() => setShowSaldoModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-400 flex items-center justify-center transition-colors cursor-pointer border border-slate-300 dark:border-slate-700"
               >
                 <X size={20} />
               </button>
@@ -1223,7 +1223,7 @@ const WargaDashboard: React.FC = () => {
                 <p className="text-[11px] text-emerald-600 font-extrabold uppercase tracking-wider">
                   Sisa Saldo Dapat Dicairkan
                 </p>
-                <p className="text-3xl font-extrabold text-slate-900 mt-1">Rp {saldo.toLocaleString("id-ID")}</p>
+                <p className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 mt-1">Rp {saldo.toLocaleString("id-ID")}</p>
                 <p className="text-[10px] text-emerald-600/80 mt-1">
                   Dihitung otomatis: Poin ({poin}) x Rp 100
                 </p>
@@ -1238,7 +1238,7 @@ const WargaDashboard: React.FC = () => {
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold text-slate-400 uppercase">Poin Ditukar</label>
                     <select
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-700 focus:border-emerald-500 focus:outline-none"
+                      className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-700 dark:text-slate-300 focus:border-emerald-500 focus:outline-none"
                       value={tukarPoinAmount}
                       onChange={(e) => setTukarPoinAmount(e.target.value)}
                     >
@@ -1250,7 +1250,7 @@ const WargaDashboard: React.FC = () => {
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold text-slate-400 uppercase">Metode E-Wallet</label>
                     <select
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-700 focus:border-emerald-500 focus:outline-none"
+                      className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-700 dark:text-slate-300 focus:border-emerald-500 focus:outline-none"
                       value={ewalletType}
                       onChange={(e) => setEwalletType(e.target.value)}
                     >
@@ -1267,7 +1267,7 @@ const WargaDashboard: React.FC = () => {
                   <input
                     type="tel"
                     placeholder="contoh: 08123456789"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-700 focus:border-emerald-500 focus:outline-none"
+                    className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-700 dark:text-slate-300 focus:border-emerald-500 focus:outline-none"
                     value={ewalletPhone}
                     onChange={(e) => setEwalletPhone(e.target.value)}
                   />
@@ -1296,7 +1296,7 @@ const WargaDashboard: React.FC = () => {
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   Riwayat Pencairan Terakhir
                 </h4>
-                <div className="divide-y divide-slate-200 max-h-[180px] overflow-y-auto">
+                <div className="divide-y divide-slate-200 dark:divide-slate-800 max-h-[180px] overflow-y-auto">
                   {pointHistory.filter((p) => p.points < 0).length === 0 ? (
                     <p className="text-xs text-slate-500 py-3 text-center">
                       Belum ada riwayat pencairan saldo.
@@ -1307,7 +1307,7 @@ const WargaDashboard: React.FC = () => {
                       .map((historyItem) => (
                         <div key={historyItem.id} className="py-2.5 flex justify-between items-center text-xs">
                           <div>
-                            <p className="font-bold text-slate-700">
+                            <p className="font-bold text-slate-700 dark:text-slate-300">
                               {historyItem.description.replace("Konversi ", "")}
                             </p>
                             <p className="text-[10px] text-slate-500 mt-0.5">
@@ -1328,10 +1328,10 @@ const WargaDashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 flex justify-end">
               <button
                 onClick={() => setShowSaldoModal(false)}
-                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 transition-colors border border-slate-300 cursor-pointer"
+                className="px-5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors border border-slate-300 dark:border-slate-700 cursor-pointer"
               >
                 Tutup
               </button>
@@ -1343,15 +1343,15 @@ const WargaDashboard: React.FC = () => {
       {/* SETORAN MODAL */}
       {showSetoranModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden border border-emerald-500/30 text-slate-800">
-            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h3 className="font-extrabold text-[18px] text-slate-900 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden border border-emerald-500/30 text-slate-800 dark:text-slate-100">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/60">
+              <h3 className="font-extrabold text-[18px] text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Recycle className="text-emerald-600" size={20} />
                 Semua Riwayat Setoran Sampah
               </h3>
               <button
                 onClick={() => setShowSetoranModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-300"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-400 flex items-center justify-center transition-colors cursor-pointer border border-slate-300 dark:border-slate-700"
               >
                 <X size={20} />
               </button>
@@ -1379,11 +1379,11 @@ const WargaDashboard: React.FC = () => {
               ) : filteredLogs.length === 0 ? (
                 <p className="text-xs text-slate-500 py-6 text-center">Tidak ada data setoran.</p>
               ) : (
-                <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50">
+                <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-slate-50 dark:bg-slate-800/60">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="bg-slate-50 text-slate-400 border-b border-slate-200">
+                        <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-800">
                           <th className="p-3 font-bold">Tanggal</th>
                           <th className="p-3 font-bold">Kategori</th>
                           <th className="p-3 font-bold">Berat (Kg)</th>
@@ -1392,10 +1392,10 @@ const WargaDashboard: React.FC = () => {
                           <th className="p-3 font-bold">Titik Tempat Sampah</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-200">
+                      <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                         {filteredLogs.map((log) => (
                           <tr key={log.id} className="hover:bg-slate-50">
-                            <td className="p-3 font-medium text-slate-600">
+                            <td className="p-3 font-medium text-slate-600 dark:text-slate-400">
                               {new Date(log.waktu).toLocaleString("id-ID", {
                                 day: "numeric",
                                 month: "short",
@@ -1414,10 +1414,10 @@ const WargaDashboard: React.FC = () => {
                                 {log.jenis === "ORGANIC" ? "Organik" : "Anorganik"}
                               </span>
                             </td>
-                            <td className="p-3 font-bold text-slate-700">{log.berat}</td>
+                            <td className="p-3 font-bold text-slate-700 dark:text-slate-300">{log.berat}</td>
                             <td className="p-3 font-medium text-slate-400">{log.volume}</td>
                             <td className="p-3 font-extrabold text-emerald-600">+{log.poin} Pts</td>
-                            <td className="p-3 font-mono font-bold text-slate-600">
+                            <td className="p-3 font-mono font-bold text-slate-600 dark:text-slate-400">
                               {log.lokasi.replace("Tempat Sampah: ", "")}
                             </td>
                           </tr>
@@ -1429,10 +1429,10 @@ const WargaDashboard: React.FC = () => {
               )}
             </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 flex justify-end">
               <button
                 onClick={() => setShowSetoranModal(false)}
-                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 transition-colors border border-slate-300 cursor-pointer"
+                className="px-5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors border border-slate-300 dark:border-slate-700 cursor-pointer"
               >
                 Tutup
               </button>

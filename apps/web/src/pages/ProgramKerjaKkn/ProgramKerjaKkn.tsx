@@ -420,7 +420,7 @@ export const ProgramKerjaKkn: React.FC = () => {
       );
     }
     return (
-      <span className="px-3 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded-full font-bold text-[11px]">
+      <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 rounded-full font-bold text-[11px]">
         {kat || "Lainnya"}
       </span>
     );
@@ -480,11 +480,11 @@ export const ProgramKerjaKkn: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-100">
       {/* Header Sesuai Gambar 4 */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Program Kerja KKN</h1>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Program Kerja KKN</h1>
           <p className="text-slate-500 text-xs mt-1">
             Menampilkan rencana dan pelaksanaan program kerja mahasiswa KKN yang divalidasi oleh Dosen Pendamping Lapangan.
           </p>
@@ -493,7 +493,7 @@ export const ProgramKerjaKkn: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             onClick={handleExportCsv}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-xl font-bold text-xs shadow-2xs transition-all cursor-pointer"
+            className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 px-4 py-2 rounded-xl font-bold text-xs shadow-2xs transition-all cursor-pointer"
           >
             <Download size={14} className="text-emerald-600" />
             Ekspor CSV
@@ -513,49 +513,49 @@ export const ProgramKerjaKkn: React.FC = () => {
       {/* 4 Stat Cards Sesuai Gambar 4 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Total Program Kerja */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100 shadow-2xs">
             <FileSpreadsheet size={22} />
           </div>
           <div>
             <span className="text-xs text-slate-500 font-bold block">Total Program Kerja</span>
-            <h3 className="text-2xl font-black text-slate-900 mt-0.5">{totalCount}</h3>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{totalCount}</h3>
             <span className="text-[10.5px] text-slate-400 font-medium">Semua rencana kegiatan</span>
           </div>
         </div>
 
         {/* Card 2: Disetujui / Diterima */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100 shadow-2xs">
             <CheckCircle2 size={22} />
           </div>
           <div>
             <span className="text-xs text-slate-500 font-bold block">Disetujui / Diterima</span>
-            <h3 className="text-2xl font-black text-slate-900 mt-0.5">{diterimaCount}</h3>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{diterimaCount}</h3>
             <span className="text-[10.5px] text-slate-400 font-medium">{diterimaPct}% dari total program</span>
           </div>
         </div>
 
         {/* Card 3: Menunggu Review DPL */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0 border border-amber-100 shadow-2xs">
             <Clock size={22} />
           </div>
           <div>
             <span className="text-xs text-slate-500 font-bold block">Menunggu Review DPL</span>
-            <h3 className="text-2xl font-black text-slate-900 mt-0.5">{menungguCount}</h3>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{menungguCount}</h3>
             <span className="text-[10.5px] text-slate-400 font-medium">{menungguPct}% dari total program</span>
           </div>
         </div>
 
         {/* Card 4: Total Kebutuhan Biaya */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100 shadow-2xs">
             <Wallet size={22} />
           </div>
           <div className="min-w-0">
             <span className="text-xs text-slate-500 font-bold block">Total Kebutuhan Biaya</span>
-            <h3 className="text-xl font-black text-slate-900 mt-0.5 truncate">
+            <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">
               Rp {totalBiaya.toLocaleString("id-ID")}
             </h3>
             <span className="text-[10.5px] text-slate-400 font-medium">Estimasi seluruh program</span>
@@ -564,7 +564,7 @@ export const ProgramKerjaKkn: React.FC = () => {
       </div>
 
       {/* Toolbar Filter 5 Parameter Sesuai Gambar 4 */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 flex-1 max-w-4xl">
           {/* Filter 1: Kelompok */}
           <div>
@@ -572,7 +572,7 @@ export const ProgramKerjaKkn: React.FC = () => {
             <select
               value={selectedKelompokId}
               onChange={(e) => setSelectedKelompokId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
             >
               <option value="ALL">Semua Kelompok</option>
               {kelompokList.map((k) => (
@@ -589,7 +589,7 @@ export const ProgramKerjaKkn: React.FC = () => {
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
             >
               <option value="ALL">Semua Kategori</option>
               <option value="Pemilahan">Pemilahan</option>
@@ -607,7 +607,7 @@ export const ProgramKerjaKkn: React.FC = () => {
             <select
               value={sourceFilter}
               onChange={(e) => setSourceFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
             >
               <option value="ALL">Semua Sumber</option>
               <option value="Mahasiswa">Mahasiswa</option>
@@ -621,7 +621,7 @@ export const ProgramKerjaKkn: React.FC = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
             >
               <option value="ALL">Semua Status</option>
               <option value="BELUM_DISETUJUI">Belum Disetujui</option>
@@ -642,7 +642,7 @@ export const ProgramKerjaKkn: React.FC = () => {
               placeholder="Cari deskripsi kegiatan..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-emerald-500 focus:bg-white transition font-medium"
+              className="w-full pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 focus:bg-white transition font-medium"
             />
             <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           </div>
@@ -650,7 +650,7 @@ export const ProgramKerjaKkn: React.FC = () => {
       </div>
 
       {/* Main Table Sesuai Gambar 4 */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
         {loading ? (
           <div className="p-12 flex flex-col items-center justify-center gap-3 text-slate-400">
             <Loader2 className="animate-spin text-emerald-600" size={32} />
@@ -671,9 +671,9 @@ export const ProgramKerjaKkn: React.FC = () => {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700 border-collapse">
+            <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
               <thead>
-                <tr className="bg-slate-50/90 text-slate-500 border-b border-slate-200 text-[11px] uppercase tracking-wider font-bold">
+                <tr className="bg-slate-50/90 text-slate-500 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4 w-32 text-center">Kategori</th>
                   <th className="py-3.5 px-4 w-36 text-center">Sumber (DPL/Mahasiswa)</th>
@@ -685,7 +685,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                   {canModifyProker && <th className="py-3.5 px-4 w-20 text-center">Aksi</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 {paginatedProkers.map((p, idx) => {
                   const driveUrl = p.linkGoogleDrive || "https://drive.google.com";
 
@@ -701,12 +701,12 @@ export const ProgramKerjaKkn: React.FC = () => {
                         {renderSumberBadge(p.sumber)}
                       </td>
                       <td className="py-3.5 px-4">
-                        <p className="text-slate-900 leading-relaxed font-normal">{p.deskripsi}</p>
+                        <p className="text-slate-900 dark:text-slate-100 leading-relaxed font-normal">{p.deskripsi}</p>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-600 font-medium">
+                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 font-medium">
                         {p.waktuPelaksanaan || "-"}
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-900">
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">
                         Rp {Number(p.kebutuhanBiaya || 0).toLocaleString("id-ID")}
                       </td>
                       <td className="py-3.5 px-4 text-center">
@@ -717,7 +717,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                           href={driveUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 text-emerald-700 bg-white hover:bg-emerald-50 transition-all font-bold text-xs shadow-2xs cursor-pointer active:scale-95"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 text-emerald-700 bg-white dark:bg-slate-900 hover:bg-emerald-50 transition-all font-bold text-xs shadow-2xs cursor-pointer active:scale-95"
                           title="Buka Folder Bukti Google Drive"
                         >
                           <GoogleDriveIcon />
@@ -730,7 +730,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                             <button
                               onClick={() => handleOpenEditModal(p)}
                               title="Edit Program Kerja"
-                              className="p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition-colors cursor-pointer"
                             >
                               <Pencil size={13} />
                             </button>
@@ -743,7 +743,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                                 })
                               }
                               title="Hapus Program Kerja"
-                              className="p-1.5 rounded-lg bg-slate-100 text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                             >
                               <Trash2 size={13} />
                             </button>
@@ -773,9 +773,9 @@ export const ProgramKerjaKkn: React.FC = () => {
       {/* Modal Add / Edit Form */}
       {isFormModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-slate-100 dark:border-slate-800 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <FileSpreadsheet size={18} className="text-emerald-600" />
                 {formMode === "add" ? "Tambah Program Kerja KKN" : "Edit Program Kerja KKN"}
               </h3>
@@ -789,14 +789,14 @@ export const ProgramKerjaKkn: React.FC = () => {
 
             <form onSubmit={handleSaveForm} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Kelompok KKN Binaan <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={formData.kelompokId}
                   onChange={(e) => setFormData({ ...formData, kelompokId: e.target.value })}
                   required
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value="">Pilih Kelompok...</option>
                   {kelompokList.map((k) => (
@@ -809,13 +809,13 @@ export const ProgramKerjaKkn: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Kategori Program
                   </label>
                   <select
                     value={formData.kategori}
                     onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
                   >
                     <option value="Pemilahan">Pemilahan</option>
                     <option value="Pengangkutan">Pengangkutan</option>
@@ -827,13 +827,13 @@ export const ProgramKerjaKkn: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Sumber Pengusul
                   </label>
                   <select
                     value={formData.sumber}
                     onChange={(e) => setFormData({ ...formData, sumber: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
                   >
                     <option value="Mahasiswa">Mahasiswa</option>
                     <option value="DPL">DPL</option>
@@ -842,7 +842,7 @@ export const ProgramKerjaKkn: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Deskripsi Rencana Kegiatan <span className="text-rose-500">*</span>
                 </label>
                 <textarea
@@ -851,12 +851,12 @@ export const ProgramKerjaKkn: React.FC = () => {
                   placeholder="Contoh: Sosialisasi dan pelatihan pemilahan sampah rumah tangga di 3 RT."
                   value={formData.deskripsi}
                   onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Waktu & Tanggal Pelaksanaan (Pilih Kalender)
                 </label>
                 <div className="grid grid-cols-2 gap-2 mb-1.5">
@@ -866,7 +866,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                       type="date"
                       value={formStartDate}
                       onChange={(e) => handleDateChange(e.target.value, formEndDate)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
                   <div>
@@ -875,7 +875,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                       type="date"
                       value={formEndDate}
                       onChange={(e) => handleDateChange(formStartDate, e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
                 </div>
@@ -884,12 +884,12 @@ export const ProgramKerjaKkn: React.FC = () => {
                   placeholder="Contoh: 03 – 05 Agustus 2026"
                   value={formData.waktuPelaksanaan}
                   onChange={(e) => setFormData({ ...formData, waktuPelaksanaan: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Kebutuhan Biaya (Rp)
                 </label>
                 <input
@@ -898,12 +898,12 @@ export const ProgramKerjaKkn: React.FC = () => {
                   step={1000}
                   value={formData.kebutuhanBiaya}
                   onChange={(e) => setFormData({ ...formData, kebutuhanBiaya: Number(e.target.value) })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Tautan Bukti Google Drive (URL)
                 </label>
                 <input
@@ -911,19 +911,19 @@ export const ProgramKerjaKkn: React.FC = () => {
                   placeholder="https://drive.google.com/drive/folders/..."
                   value={formData.linkGoogleDrive}
                   onChange={(e) => setFormData({ ...formData, linkGoogleDrive: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               {formMode === "edit" && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Status Pelaksanaan
                   </label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
                   >
                     <option value="BELUM_DISETUJUI">Belum Disetujui</option>
                     <option value="DISETUJUI">Disetujui</option>
@@ -934,11 +934,11 @@ export const ProgramKerjaKkn: React.FC = () => {
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsFormModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                 >
                   Batal
                 </button>

@@ -143,16 +143,16 @@ export default function EditSurveiKkn() {
     );
 
     const TextInput = ({ name, value, onChange, type="text", placeholder="" }: any) => (
-      <input type={type} name={name} value={value || ""} onChange={onChange} placeholder={placeholder} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-slate-800" />
+      <input type={type} name={name} value={value || ""} onChange={onChange} placeholder={placeholder} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-slate-800 dark:text-slate-100" />
     );
     
     const TextArea = ({ name, value, onChange, placeholder="" }: any) => (
-      <textarea name={name} value={value || ""} onChange={onChange} placeholder={placeholder} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-slate-800" rows={4} />
+      <textarea name={name} value={value || ""} onChange={onChange} placeholder={placeholder} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-slate-800 dark:text-slate-100" rows={4} />
     );
 
     const BoolSelect = ({ value, onChange }: { value: boolean | null | undefined, onChange: (val: boolean) => void }) => (
       <div className="relative">
-        <select value={value === true ? "true" : value === false ? "false" : ""} onChange={(e) => onChange(e.target.value === "true")} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-slate-800 appearance-none">
+        <select value={value === true ? "true" : value === false ? "false" : ""} onChange={(e) => onChange(e.target.value === "true")} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-slate-800 dark:text-slate-100 appearance-none">
           <option value="" disabled>— Pilih Status —</option>
           <option value="true">Ya (Tersedia / Aktif)</option>
           <option value="false">Tidak (Belum / Kosong)</option>
@@ -168,8 +168,8 @@ export default function EditSurveiKkn() {
         return (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <h4 className="text-lg font-extrabold text-slate-800 mb-6 flex items-center gap-2">
+              <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                <h4 className="text-lg font-extrabold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-2">
                   <FileText size={20} className="text-emerald-600" /> Informasi Wilayah
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
@@ -182,8 +182,8 @@ export default function EditSurveiKkn() {
                 </div>
               </div>
               
-              <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <h4 className="text-lg font-extrabold text-slate-800 mb-6 flex items-center gap-2">
+              <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                <h4 className="text-lg font-extrabold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-2">
                   <FileText size={20} className="text-emerald-600" /> Meta Pengumpulan
                 </h4>
                 <div className="grid grid-cols-1 gap-5">
@@ -197,18 +197,18 @@ export default function EditSurveiKkn() {
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden">
-              <h4 className="text-lg font-extrabold text-slate-800 mb-6 flex items-center gap-2 relative z-10">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
+              <h4 className="text-lg font-extrabold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-2 relative z-10">
                 <FileText size={20} className="text-emerald-600" /> Taksiran / Estimasi Timbulan Sampah
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative z-10">
-                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
                   <InputLabel label="Organik (Kg/Hari)"/><TextInput type="number" name="organikKgPerHari" value={vs.organikKgPerHari} onChange={(e:any) => handleNestedNumberChange("volumeSampah", e)} />
                 </div>
-                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
                   <InputLabel label="Anorganik (Kg/Hari)"/><TextInput type="number" name="anorganikKgPerHari" value={vs.anorganikKgPerHari} onChange={(e:any) => handleNestedNumberChange("volumeSampah", e)} />
                 </div>
-                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
                   <InputLabel label="Residu (Kg/Hari)"/><TextInput type="number" name="residuKgPerHari" value={vs.residuKgPerHari} onChange={(e:any) => handleNestedNumberChange("volumeSampah", e)} />
                 </div>
                 <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100">
@@ -220,8 +220,8 @@ export default function EditSurveiKkn() {
         );
       case "karakter":
         return (
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-             <h4 className="text-lg font-extrabold text-slate-800 mb-6 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+             <h4 className="text-lg font-extrabold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-2">
                 <MapPin size={20} className="text-emerald-600" /> Profil & Karakteristik Wilayah
              </h4>
              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -233,7 +233,7 @@ export default function EditSurveiKkn() {
                 <div><InputLabel label="Bantaran Sungai"/><BoolSelect value={kw.bantaranSungai} onChange={(val) => handleNestedBoolChange("karakteristikWilayah", "bantaranSungai", val)} /></div>
              </div>
              
-             <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+             <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-100 dark:border-slate-800">
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div><InputLabel label="Perkiraan Jumlah Kos"/><TextInput name="perkiraanJumlahKosKontrakan" value={kw.perkiraanJumlahKosKontrakan} onChange={(e:any) => handleNestedTextChange("karakteristikWilayah", e)} placeholder="Cth: ~20 rumah" /></div>
                   <div><InputLabel label="Perkiraan Jumlah UMKM"/><TextInput name="perkiraanJumlahUmkmWarungKafe" value={kw.perkiraanJumlahUmkmWarungKafe} onChange={(e:any) => handleNestedTextChange("karakteristikWilayah", e)} placeholder="Cth: ~15 warung" /></div>
@@ -247,8 +247,8 @@ export default function EditSurveiKkn() {
         );
       case "pemilahan":
         return (
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-            <h4 className="text-lg font-extrabold text-slate-800 mb-6 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+            <h4 className="text-lg font-extrabold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-2">
               <Database size={20} className="text-emerald-600" /> Data Pemilahan Sampah
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -262,8 +262,8 @@ export default function EditSurveiKkn() {
         );
       case "bank_sampah":
         return (
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-             <h4 className="text-lg font-extrabold text-slate-800 mb-6 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+             <h4 className="text-lg font-extrabold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-2">
                 <Sprout size={20} className="text-emerald-600" /> Bank Sampah & Pengolahan
              </h4>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -286,11 +286,11 @@ export default function EditSurveiKkn() {
       case "key_player":
         return (
           <div className="space-y-4">
-            <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-100 shadow-sm mb-4">
+            <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm mb-4">
                 <div className="flex items-center gap-3">
                   <div className="bg-emerald-100 text-emerald-700 p-2 rounded-xl"><Users size={20} /></div>
                   <div>
-                    <h3 className="font-extrabold text-slate-800">Aktor Penggerak / Key Players</h3>
+                    <h3 className="font-extrabold text-slate-800 dark:text-slate-100">Aktor Penggerak / Key Players</h3>
                     <p className="text-sm text-slate-500 font-medium">Data penggerak kebersihan di wilayah ini.</p>
                   </div>
                 </div>
@@ -299,16 +299,16 @@ export default function EditSurveiKkn() {
                 </button>
             </div>
             {kp.length === 0 ? (
-                <div className="bg-white p-12 rounded-2xl border border-slate-200 border-dashed text-center">
+                <div className="bg-white dark:bg-slate-900 p-12 rounded-2xl border border-slate-200 dark:border-slate-800 border-dashed text-center">
                     <span className="text-slate-500 font-medium">Belum ada aktor penggerak yang didata. Klik tombol di atas untuk menambah.</span>
                 </div>
             ) : (
                 kp.map((player: any, idx: number) => (
-                <div key={idx} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative group transition-all hover:border-emerald-300">
+                <div key={idx} className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative group transition-all hover:border-emerald-300">
                     <button onClick={() => handleRemoveKeyPlayer(idx)} className="absolute top-6 right-6 p-2 bg-rose-50 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-colors" title="Hapus Aktor">
                         <Trash2 size={18} />
                     </button>
-                    <h4 className="text-sm uppercase tracking-wider font-extrabold text-emerald-600 border-b border-slate-100 pb-3 mb-5">
+                    <h4 className="text-sm uppercase tracking-wider font-extrabold text-emerald-600 border-b border-slate-100 dark:border-slate-800 pb-3 mb-5">
                       Aktor #{idx + 1}
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -324,8 +324,8 @@ export default function EditSurveiKkn() {
         );
       case "potensi_risiko":
         return (
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-            <h4 className="text-lg font-extrabold text-slate-800 mb-6 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+            <h4 className="text-lg font-extrabold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-2">
                 <AlertTriangle size={20} className="text-amber-500" /> Potensi, Risiko, & Kesimpulan
             </h4>
             <div className="grid grid-cols-1 gap-6">
@@ -345,7 +345,7 @@ export default function EditSurveiKkn() {
                   <InputLabel label="Ancaman & Risiko Eksternal"/>
                   <TextArea name="ancaman" value={pr.ancaman} onChange={(e:any) => handleNestedTextChange("catatanKesimpulan", e)} placeholder="Jelaskan ancaman dari pihak eksternal..." />
               </div>
-              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 mt-4">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 mt-4">
                   <InputLabel label="Rekomendasi / Solusi Akhir (Kesimpulan)"/>
                   <TextArea name="rekomendasi" value={pr.rekomendasi} onChange={(e:any) => handleNestedTextChange("catatanKesimpulan", e)} placeholder="Jabarkan rekomendasi langkah selanjutnya dari temuan survei ini..." />
               </div>
@@ -359,7 +359,7 @@ export default function EditSurveiKkn() {
 
   if (isLoadingDetail) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-800/60">
         <div className="text-center">
           <Loader2 className="mx-auto mb-4 animate-spin text-[#009966]" size={40} />
           <p className="text-slate-500 font-medium">Memuat formulir edit survei...</p>
@@ -370,10 +370,10 @@ export default function EditSurveiKkn() {
 
   if (!formData || !formData.kelurahanId) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-800/60">
         <div className="text-center">
           <AlertTriangle className="mx-auto mb-4 text-rose-500" size={48} />
-          <h2 className="text-xl font-bold text-slate-800 mb-2">Data Tidak Ditemukan</h2>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Data Tidak Ditemukan</h2>
           <button onClick={() => navigate("/superUser/data-survei-kkn")} className="text-[#009966] font-medium hover:underline">
             Kembali ke Daftar Survei
           </button>
@@ -383,7 +383,7 @@ export default function EditSurveiKkn() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-20">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950/50 pb-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         
         {/* Header Section */}
@@ -402,7 +402,7 @@ export default function EditSurveiKkn() {
                 <div className="bg-amber-100 text-amber-700 p-2 rounded-xl">
                   <FileText size={24} />
                 </div>
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight">Edit Survei: {formData.namaKelurahan}</h1>
+                <h1 className="text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Edit Survei: {formData.namaKelurahan}</h1>
               </div>
               <p className="text-slate-500 font-medium">Lakukan perubahan pada data survei dan jangan lupa untuk menyimpannya.</p>
             </div>
@@ -410,7 +410,7 @@ export default function EditSurveiKkn() {
             <div className="flex gap-3">
               <button
                 onClick={() => navigate(`/superUser/data-survei-kkn/${id}`)}
-                className="px-4 py-2.5 bg-white border-2 border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors"
+                className="px-4 py-2.5 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-50 transition-colors"
               >
                 Batal
               </button>
@@ -427,7 +427,7 @@ export default function EditSurveiKkn() {
         </div>
 
         {/* Tabs Navigation */}
-        <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 mb-8 overflow-x-auto custom-scrollbar">
+        <div className="bg-white dark:bg-slate-900 p-2 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 mb-8 overflow-x-auto custom-scrollbar">
           <div className="flex gap-2 min-w-max">
             {tabs.map((tab) => {
               const Icon = tab.icon;

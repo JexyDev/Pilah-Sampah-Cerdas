@@ -636,7 +636,7 @@ export const DplDashboardPage: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-sm text-slate-600 font-medium">Memuat Data Dashboard KKN...</p>
+        <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Memuat Data Dashboard KKN...</p>
       </div>
     );
   }
@@ -1831,10 +1831,10 @@ export const DplDashboardPage: React.FC = () => {
                   >
                     <Popup>
                       <div className="text-xs p-1 text-center font-sans space-y-1">
-                        <strong className="text-sm font-bold block text-slate-900">
+                        <strong className="text-sm font-bold block text-slate-900 dark:text-slate-100">
                           Kelurahan {kelGeo.name}
                         </strong>
-                        <p className="text-slate-600">
+                        <p className="text-slate-600 dark:text-slate-400">
                           {isDplZone ? (
                             <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block">
                               ✓ Wilayah Bimbingan DPL
@@ -1843,7 +1843,7 @@ export const DplDashboardPage: React.FC = () => {
                             <span className="text-slate-500 text-[11px]">Kecamatan Coblong</span>
                           )}
                         </p>
-                        <p className="text-[11px] text-slate-600">
+                        <p className="text-[11px] text-slate-600 dark:text-slate-400">
                           Total Cakupan: <strong>{kelGeo.rwCount} RW</strong>
                         </p>
                         <button
@@ -1879,10 +1879,10 @@ export const DplDashboardPage: React.FC = () => {
                     >
                       <Popup>
                         <div className="text-xs p-1 text-center font-sans space-y-1">
-                          <strong className="text-sm font-bold block text-slate-900">
+                          <strong className="text-sm font-bold block text-slate-900 dark:text-slate-100">
                             Kelurahan {kel.name}
                           </strong>
-                          <p className="text-slate-600">
+                          <p className="text-slate-600 dark:text-slate-400">
                             {isDplZone ? (
                               <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block">
                                 ✓ Wilayah Bimbingan ({rwsInKel.length} RW Aktif)
@@ -1927,10 +1927,10 @@ export const DplDashboardPage: React.FC = () => {
                         >
                           <Popup>
                             <div className="text-xs p-1 text-center font-sans">
-                              <strong className="text-sm font-bold block mb-1 text-slate-800">
+                              <strong className="text-sm font-bold block mb-1 text-slate-800 dark:text-slate-100">
                                 Wilayah {rw.name}
                               </strong>
-                              <p className="text-slate-600 mb-1">
+                              <p className="text-slate-600 dark:text-slate-400 mb-1">
                                 Kelurahan: <strong className="text-emerald-600">{rw.kelurahan}</strong>
                               </p>
                               <p className="text-[10px] text-slate-500 font-semibold italic">
@@ -1960,14 +1960,14 @@ export const DplDashboardPage: React.FC = () => {
                             <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full inline-block">
                               Tempat Sampah Aktif
                             </span>
-                            <strong className="text-sm font-bold block text-slate-900">
+                            <strong className="text-sm font-bold block text-slate-900 dark:text-slate-100">
                               {bin.qrCode}
                             </strong>
-                            <p className="text-slate-600 text-[11px]">
+                            <p className="text-slate-600 dark:text-slate-400 text-[11px]">
                               Warga: <strong>{bin.wargaNama || "Warga Binaan"}</strong>
                             </p>
                             <p className="text-[10px] text-slate-500">
-                              Status: <span className="font-bold text-slate-800">{bin.status}</span>
+                              Status: <span className="font-bold text-slate-800 dark:text-slate-100">{bin.status}</span>
                             </p>
                           </div>
                         </Popup>
