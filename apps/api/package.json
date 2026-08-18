@@ -60,5 +60,10 @@
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
+  },
+  "overrides": {
+    "bullmq": {
+      "redis": "$redis"
+    }
   }
 }
