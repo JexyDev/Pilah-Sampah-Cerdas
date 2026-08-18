@@ -165,9 +165,6 @@ class MahasiswaPoinView extends ConsumerWidget {
   }
 
   Widget _buildStatsRow(MahasiswaState mhsState, WidgetRef ref) {
-    final user = ref.watch(authProvider).user;
-    final userName = user?.name ?? '';
-
     // Warga dampingan mahasiswa ini (dari endpoint kknWargaDampingan)
     final myWargaList = mhsState.wargaList.where((w) {
       return w.role == 'WARGA' || w.role.isEmpty;
@@ -182,9 +179,8 @@ class MahasiswaPoinView extends ConsumerWidget {
     
     if (asyncHistory.hasValue && asyncHistory.value != null) {
       for (final ph in asyncHistory.value!) {
-        final lowerTitle = ph.title.toLowerCase();
         final lowerDesc = ph.description.toLowerCase();
-        if (lowerTitle.contains('pemanfaatan') || lowerDesc.contains('pemanfaatan')) {
+        if (lowerDesc.contains('pemanfaatan')) {
           laporanCount++;
         }
       }

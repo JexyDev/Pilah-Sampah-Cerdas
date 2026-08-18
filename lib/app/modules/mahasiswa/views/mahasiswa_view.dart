@@ -391,8 +391,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
 
   Widget _buildSummaryCards(MahasiswaState state) {
     final d = state.dashboard;
-    final user = ref.watch(authProvider).user;
-    final cleanUserRw = user?.rw.trim().replaceFirst(RegExp(r'^0+'), '') ?? '';
     
     // Total Warga Dampingan Mahasiswa ini (dari endpoint kknWargaDampingan)
     final myWargaList = state.wargaList.where((w) {

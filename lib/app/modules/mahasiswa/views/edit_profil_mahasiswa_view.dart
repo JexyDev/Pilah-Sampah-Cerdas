@@ -1,13 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
-import '../../../core/utils/input_sanitizer.dart';
 
 class EditProfilMahasiswaView extends ConsumerStatefulWidget {
   const EditProfilMahasiswaView({super.key});
@@ -17,12 +15,7 @@ class EditProfilMahasiswaView extends ConsumerStatefulWidget {
 }
 
 class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaView> {
-  final _formKey = GlobalKey<FormState>();
   final _passwordFormKey = GlobalKey<FormState>();
-
-  late TextEditingController _nameController;
-  late TextEditingController _phoneController;
-
 
   final _oldPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
@@ -31,7 +24,6 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
   File? _profileImage;
   final ImagePicker _picker = ImagePicker();
 
-  bool _isSubmittingProfile = false;
   bool _isSubmittingPassword = false;
   bool _obscureOld = true;
   bool _obscureNew = true;
@@ -41,17 +33,10 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
   @override
   void initState() {
     super.initState();
-    final user = ref.read(authProvider).user;
-    _nameController = TextEditingController(text: user?.name ?? '');
-    _phoneController = TextEditingController(text: user?.phone ?? '');
-
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _phoneController.dispose();
-
     _oldPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
@@ -80,53 +65,6 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
             ),
           );
         }
-      }
-    }
-  }
-
-  Future<void> _submitSaveProfile() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isSubmittingProfile = true);
-
-    final name = InputSanitizer.sanitize(_nameController.text);
-    final phone = InputSanitizer.sanitize(_phoneController.text);
-    if (name.isEmpty || phone.isEmpty) {
-      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Field wajib tidak boleh kosong.'),
-          backgroundColor: AppColors.dangerRed,
-        ),
-      );
-      setState(() => _isSubmittingProfile = false);
-      return;
-    }
-
-    // Call auth notifier to update profile
-    final success = await ref.read(authProvider.notifier).updateProfile(
-          name: name,
-          phone: phone,
-        );
-
-    setState(() => _isSubmittingProfile = false);
-
-    if (mounted) {
-      if (success) {
-        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profil Mahasiswa berhasil diperbarui!'),
-            backgroundColor: AppColors.primaryGreen,
-            duration: Duration(seconds: 3),
-          ),
-        );
-        Navigator.pop(context);
-      } else {
-        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Gagal memperbarui profil.'),
-            backgroundColor: AppColors.dangerRed,
-          ),
-        );
       }
     }
   }
@@ -309,70 +247,7 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
             ),
             const SizedBox(height: AppDimensions.lg),
 
-            // ── 3. Editable Personal Info Section ─────────────────────
-            Form(
-              key: _formKey,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.edit_note_rounded, color: AppColors.primaryGreen, size: 22),
-                        SizedBox(width: 8),
-                        Text(
-                          'INFORMASI KONTAK EDITABLE',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const Text('Nama Lengkap / Display Name', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.primaryGreen),
-                        hintText: 'Masukkan nama lengkap',
-                      ),
-                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Nama lengkap wajib diisi' : null,
-                    ),
-                    const SizedBox(height: 14),
-                    const Text('Nomor WhatsApp / No. Telepon', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.phone_iphone_rounded, color: AppColors.primaryGreen),
-                        hintText: 'Masukkan nomor WhatsApp',
-                      ),
-                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Nomor telepon wajib diisi' : null,
-                    ),
-
-
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: AppDimensions.lg),
-
-            // ── 4. Embedded Submenu Ganti Password ────────────────────
+            // ── 3. Embedded Submenu Ganti Password ────────────────────
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -399,52 +274,48 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
                             controller: _oldPasswordController,
                             obscureText: _obscureOld,
                             decoration: InputDecoration(
-                              hintText: 'Password lama',
-                              prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.textSecondary),
+                              prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primaryGreen),
                               suffixIcon: IconButton(
-                                icon: Icon(_obscureOld ? Icons.visibility_off : Icons.visibility),
+                                icon: Icon(_obscureOld ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: AppColors.textHint),
                                 onPressed: () => setState(() => _obscureOld = !_obscureOld),
                               ),
+                              hintText: 'Masukkan kata sandi lama',
                             ),
-                            validator: (v) => (v == null || v.isEmpty) ? 'Kata sandi lama wajib diisi' : null,
+                            validator: (v) => (v == null || v.trim().isEmpty) ? 'Wajib diisi' : null,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 14),
                           const Text('Kata Sandi Baru', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                           const SizedBox(height: 6),
                           TextFormField(
                             controller: _newPasswordController,
                             obscureText: _obscureNew,
                             decoration: InputDecoration(
-                              hintText: 'Password baru (min. 8 karakter)',
-                              prefixIcon: const Icon(Icons.key_outlined, color: AppColors.textSecondary),
+                              prefixIcon: const Icon(Icons.lock_rounded, color: AppColors.primaryGreen),
                               suffixIcon: IconButton(
-                                icon: Icon(_obscureNew ? Icons.visibility_off : Icons.visibility),
+                                icon: Icon(_obscureNew ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: AppColors.textHint),
                                 onPressed: () => setState(() => _obscureNew = !_obscureNew),
                               ),
+                              hintText: 'Minimal 6 karakter',
                             ),
-                            validator: (v) {
-                              if (v == null || v.isEmpty) return 'Kata sandi baru wajib diisi';
-                              if (v.length < 8) return 'Kata sandi minimal 8 karakter';
-                              return null;
-                            },
+                            validator: (v) => (v != null && v.length < 6) ? 'Minimal 6 karakter' : null,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 14),
                           const Text('Konfirmasi Kata Sandi Baru', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                           const SizedBox(height: 6),
                           TextFormField(
                             controller: _confirmPasswordController,
                             obscureText: _obscureConfirm,
                             decoration: InputDecoration(
-                              hintText: 'Ulangi password baru',
-                              prefixIcon: const Icon(Icons.check_circle_outline_rounded, color: AppColors.textSecondary),
+                              prefixIcon: const Icon(Icons.lock_rounded, color: AppColors.primaryGreen),
                               suffixIcon: IconButton(
-                                icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility),
+                                icon: Icon(_obscureConfirm ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: AppColors.textHint),
                                 onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
                               ),
+                              hintText: 'Ketik ulang kata sandi baru',
                             ),
                             validator: (v) {
-                              if (v == null || v.isEmpty) return 'Konfirmasi kata sandi wajib diisi';
-                              if (v != _newPasswordController.text) return 'Konfirmasi kata sandi tidak cocok';
+                              if (v == null || v.trim().isEmpty) return 'Wajib diisi';
+                              if (v != _newPasswordController.text) return 'Kata sandi tidak cocok';
                               return null;
                             },
                           ),
@@ -470,27 +341,6 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
                     ),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: AppDimensions.xl),
-
-            // ── 5. Main Submit Save Profile Button ─────────────────────
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: _isSubmittingProfile ? null : _submitSaveProfile,
-                icon: _isSubmittingProfile
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Icon(Icons.check_circle_rounded, color: Colors.white),
-                label: Text(
-                  _isSubmittingProfile ? 'Menyimpan...' : 'Simpan Perubahan Profil',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
               ),
             ),
             const SizedBox(height: 30),
