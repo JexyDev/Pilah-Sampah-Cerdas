@@ -552,10 +552,12 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                         color: AppColors.primaryGreen.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(
-                        Icons.notifications_outlined,
-                        color: AppColors.primaryGreen,
-                        size: 22,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Image.asset(
+                          'assets/icons/notification.png',
+                          color: AppColors.primaryGreen,
+                        ),
                       ),
                     ),
                     if (unreadCount > 0)

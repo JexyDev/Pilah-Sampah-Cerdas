@@ -232,7 +232,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
           icon: Stack(
             clipBehavior: Clip.none,
             children: [
-              const Icon(Icons.notifications_outlined, color: AppColors.primaryGreen, size: 24),
+              Image.asset('assets/icons/notification.png', color: AppColors.primaryGreen, width: 24, height: 24),
               if (unreadCount > 0)
                 Positioned(
                   top: -2,
