@@ -344,7 +344,7 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
             fontSize: 14,
             color: const Color(0xFF191C1E),
           ),
-          child: child!,
+          child: child ?? const SizedBox.shrink(),
         );
       },
 
