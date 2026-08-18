@@ -13,6 +13,24 @@ import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { wsClient } from "../../utils/websocket";
+import {
+  Scale,
+  Sparkles,
+  ShieldCheck,
+  X,
+  Phone,
+  Eye,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Leaf,
+  Layers,
+  Trash2,
+  Bot,
+  MapPin,
+  CheckCheck,
+  User,
+} from "lucide-react";
 
 interface DepositLog {
   id: string;
@@ -271,21 +289,21 @@ export default function SetorSampah() {
     const j = (jenis || "").toUpperCase();
     if (j.includes("ORGANIK")) {
       return (
-        <span className="inline-block px-2.5 py-1 text-xs font-semibold rounded bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
-          Organik
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-emerald-100/90 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 shadow-2xs">
+          <Leaf size={13} /> Organik
         </span>
       );
     }
     if (j.includes("ANORGANIK")) {
       return (
-        <span className="inline-block px-2.5 py-1 text-xs font-semibold rounded bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800">
-          Anorganik
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-amber-100/90 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700 shadow-2xs">
+          <Layers size={13} /> Anorganik
         </span>
       );
     }
     return (
-      <span className="inline-block px-2.5 py-1 text-xs font-semibold rounded bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
-        Residu
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-rose-100/90 text-rose-800 border border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-700 shadow-2xs">
+        <Trash2 size={13} /> Residu
       </span>
     );
   };
@@ -294,21 +312,21 @@ export default function SetorSampah() {
     const s = (status || "").toUpperCase();
     if (s === "ACCEPTED" || s === "SELESAI") {
       return (
-        <span className="inline-block px-2 py-0.5 text-[11px] font-medium rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-          Diterima
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800">
+          <CheckCircle2 size={12} /> Diterima
         </span>
       );
     }
     if (s === "REJECTED" || s === "DITOLAK") {
       return (
-        <span className="inline-block px-2 py-0.5 text-[11px] font-medium rounded bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
-          Ditolak
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black rounded-xl bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-800">
+          <XCircle size={12} /> Ditolak
         </span>
       );
     }
     return (
-      <span className="inline-block px-2 py-0.5 text-[11px] font-medium rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-        Pending
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black rounded-xl bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-800">
+        <Clock size={12} /> Pending
       </span>
     );
   };
@@ -661,95 +679,122 @@ export default function SetorSampah() {
 
       {/* Detail Modal */}
       {selectedLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 max-w-lg w-full overflow-hidden">
-            {/* Modal Header */}
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  Detail Transaksi Penyetoran
-                </h3>
-                <p className="text-xs text-slate-500 font-mono mt-0.5">
-                  ID: {selectedLog.id}
-                </p>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 max-w-xl w-full overflow-hidden">
+            {/* Modal Header (Emerald Gradient Light) */}
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-emerald-50/80 to-white dark:from-emerald-950/20 dark:to-slate-900">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900 text-[#009966] dark:text-emerald-400 flex items-center justify-center font-bold shrink-0">
+                  <Eye size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    Inspeksi Detail Penyetoran Sampah
+                  </h3>
+                  <p className="text-[11px] font-semibold text-slate-400">
+                    ID Transaksi: <span className="font-mono text-emerald-700 dark:text-emerald-400">{selectedLog.id}</span>
+                  </p>
+                </div>
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm font-semibold px-2 py-1"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 flex items-center justify-center transition-all cursor-pointer"
               >
-                ✕
+                <X size={16} />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
+            <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
               {/* Photo Preview if available */}
               {getRealPhotoUrl(selectedLog) && (
-                <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
+                <div
+                  onClick={() => setPreviewImageUrl(getRealPhotoUrl(selectedLog))}
+                  className="w-full h-52 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 relative group shadow-2xs cursor-pointer"
+                >
                   <img
                     src={getRealPhotoUrl(selectedLog)!}
-                    alt="Bukti Setoran Sampah"
-                    className="w-full h-48 object-cover cursor-pointer"
-                    onClick={() => setPreviewImageUrl(getRealPhotoUrl(selectedLog))}
+                    alt="Bukti Penyetoran Sampah"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
-                  <div className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-500 text-[11px] text-center">
-                    Klik foto untuk memperbesar
+                  <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                    <Eye size={20} />
+                  </div>
+                  <div className="absolute bottom-2 left-2 right-2 p-2.5 rounded-xl bg-slate-900/80 backdrop-blur-md text-white flex justify-between items-center text-xs font-bold">
+                    <span>Waktu: {new Date(selectedLog.waktu).toLocaleString("id-ID")}</span>
+                    <span className="font-mono text-emerald-300">{selectedLog.lokasi}</span>
                   </div>
                 </div>
               )}
 
-              {/* Information Grid */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Penyetor / Petugas</div>
-                  <div className="font-semibold text-slate-900 dark:text-white mt-0.5">
+              {/* Information Grid with Lucide Icons */}
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                  <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
+                    <User size={12} className="text-[#009966]" /> Penyetor / Warga
+                  </div>
+                  <div className="font-extrabold text-slate-800 dark:text-slate-100">
                     {cleanWargaName(selectedLog.warga)}
                   </div>
                   {selectedLog.phone && selectedLog.phone !== "-" && (
-                    <div className="text-[11px] text-slate-500 mt-0.5">{selectedLog.phone}</div>
+                    <div className="text-[11px] text-slate-500 font-semibold flex items-center gap-1">
+                      <Phone size={11} className="text-[#009966]" /> {selectedLog.phone}
+                    </div>
                   )}
                 </div>
 
-                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Wilayah</div>
-                  <div className="font-semibold text-slate-900 dark:text-white mt-0.5">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                  <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
+                    <MapPin size={12} className="text-[#009966]" /> Wilayah Tugas
+                  </div>
+                  <div className="font-extrabold text-slate-800 dark:text-slate-100">
                     {formatRukunWarga(selectedLog.rw || selectedLog.rtRw)}
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">
+                  <div className="text-[11px] text-slate-500 font-semibold">
                     Kel. {selectedLog.kelurahan || "Coblong"}
                   </div>
                 </div>
 
-                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Kategori Sampah</div>
-                  <div className="mt-1">{renderCategoryTag(selectedLog.jenis)}</div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                  <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
+                    <Layers size={12} className="text-[#009966]" /> Kategori Sampah
+                  </div>
+                  <div className="pt-0.5">{renderCategoryTag(selectedLog.jenis)}</div>
                 </div>
 
-                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Status Transaksi</div>
-                  <div className="mt-1">{renderStatusTag(selectedLog.status)}</div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                  <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
+                    <CheckCircle2 size={12} className="text-[#009966]" /> Status Audit
+                  </div>
+                  <div className="pt-0.5">{renderStatusTag(selectedLog.status)}</div>
                 </div>
 
-                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Berat Timbangan</div>
-                  <div className="font-bold text-slate-900 dark:text-white text-sm mt-0.5 font-mono">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                  <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
+                    <Scale size={12} className="text-[#009966]" /> Berat Timbangan
+                  </div>
+                  <div className="font-mono font-black text-[#009966] text-sm">
                     {selectedLog.berat} Kg
                   </div>
                 </div>
 
-                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Poin Diterbitkan</div>
-                  <div className="font-bold text-slate-900 dark:text-white text-sm mt-0.5 font-mono">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                  <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
+                    <Sparkles size={12} className="text-amber-500" /> Poin Terdistribusi
+                  </div>
+                  <div className="font-mono font-black text-amber-600 dark:text-amber-400 text-sm">
                     +{Math.round(selectedLog.poin)} Pts
                   </div>
                 </div>
               </div>
 
-              {/* AI Inference / Telemetry Detail */}
+              {/* AI Inference / Telemetry Breakdown Card */}
               {selectedLog.confidence !== null && selectedLog.confidence !== undefined ? (
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 space-y-2.5">
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700 space-y-2.5">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-black text-slate-800 dark:text-slate-100">Hasil Inferensi &amp; Akurasi Verifikasi AI</span>
+                    <span className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                      <Bot size={15} className="text-[#009966]" /> Hasil Inferensi &amp; Akurasi Verifikasi AI
+                    </span>
                     {renderCategoryTag(selectedLog.jenis)}
                   </div>
 
@@ -778,17 +823,21 @@ export default function SetorSampah() {
                           />
                         </div>
                         <div className="flex justify-between text-[11px] font-bold text-slate-400 dark:text-slate-400 pt-1">
-                          <span>Akurasi Confidence: {conf}%</span>
-                          <span>{selectedLog.lokasi}</span>
+                          <span className="flex items-center gap-1">
+                            <ShieldCheck size={12} className="text-[#009966]" /> Akurasi Confidence: {conf}%
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MapPin size={12} className="text-slate-400" /> {selectedLog.lokasi}
+                          </span>
                         </div>
                       </div>
                     );
                   })()}
                 </div>
               ) : selectedLog.isManual ? (
-                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg space-y-1">
-                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Metode Pencatatan</div>
-                  <div className="text-slate-700 dark:text-slate-300">
+                <div className="p-3.5 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1">
+                  <div className="text-[10px] text-slate-400 uppercase font-black tracking-wider">Metode Pencatatan</div>
+                  <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Penimbangan residu fisik manual di posko lapangan oleh Petugas Residu.
                   </div>
                 </div>
@@ -796,25 +845,26 @@ export default function SetorSampah() {
 
               {/* Rejection Note if any */}
               {selectedLog.catatanPenolakan && (
-                <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-300">
-                  <div className="font-semibold mb-0.5">Catatan Penolakan:</div>
-                  <div>{selectedLog.catatanPenolakan}</div>
+                <div className="p-3.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-2xl text-red-800 dark:text-red-300">
+                  <div className="font-extrabold text-xs mb-0.5">Catatan Penolakan:</div>
+                  <div className="text-xs font-medium">{selectedLog.catatanPenolakan}</div>
                 </div>
               )}
 
-              {/* Timestamp */}
-              <div className="text-[11px] text-slate-400 text-right">
-                Waktu Pencatatan: {new Date(selectedLog.waktu).toLocaleString("id-ID")}
+              {/* Verified Full-Stack Footer Box */}
+              <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2">
+                <CheckCheck size={16} className="text-[#009966] shrink-0" />
+                <span>Terverifikasi real-time terintegrasi penuh: Aplikasi Mobile &rarr; Backend Express API &rarr; Database PostgreSQL.</span>
               </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+            {/* Modal Action Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900 flex justify-end">
               <button
                 onClick={() => setSelectedLog(null)}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 rounded-lg text-xs font-semibold transition"
+                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 rounded-xl text-xs font-black transition cursor-pointer"
               >
-                Tutup
+                Tutup Detail
               </button>
             </div>
           </div>
