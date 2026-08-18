@@ -21,8 +21,9 @@ import '../shared/widgets/skeleton_loading.dart';
 import '../shared/widgets/empty_state.dart';
 import '../../core/utils/network_exception_helper.dart';
 import '../../core/utils/scan_guard.dart';
+import '../mahasiswa/controllers/location_ping_controller.dart';
 
-/// Halaman beranda ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â sesuai desain:
+/// Halaman beranda — sesuai desain:
 /// Header biru, avatar+nama+RW, stats card, Aksi Cepat, Riwayat.
 class BerandaView extends ConsumerStatefulWidget {
   const BerandaView({
@@ -37,6 +38,17 @@ class BerandaView extends ConsumerStatefulWidget {
 }
 
 class _BerandaViewState extends ConsumerState<BerandaView> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = ref.read(authProvider).user;
+      if (user?.role == UserRole.mahasiswaKkn) {
+        ref.read(locationPingControllerProvider.notifier).startTracking();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
