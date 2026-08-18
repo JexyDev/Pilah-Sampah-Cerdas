@@ -510,7 +510,15 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="/validasi-absensi" element={<Navigate to="/monitoring-absen" replace />} />
+        <Route
+          path="/ajuan-absensi"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN"]}>
+              <DplDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/validasi-absensi" element={<Navigate to="/ajuan-absensi" replace />} />
         <Route path="/penilaian-kkn" element={<Navigate to="/penilaian-kkn/mahasiswa" replace />} />
         <Route path="/program-kerja" element={<Navigate to="/program-kerja-kkn" replace />} />
         <Route
