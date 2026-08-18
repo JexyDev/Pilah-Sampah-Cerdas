@@ -41,7 +41,12 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
 
   Future<void> _pickPhoto() async {
     final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+    final file = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+      maxWidth: 1080,
+      maxHeight: 1080,
+    );
     if (file != null) {
       setState(() => _photoPath = file.path);
     }

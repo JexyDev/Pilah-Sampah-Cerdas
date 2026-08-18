@@ -391,6 +391,10 @@ class ApiKknRepository implements KknRepository {
     final response = await apiClient.dio.post(
       ApiEndpoints.kknPengajuanIzin,
       data: formData,
+      options: Options(
+        sendTimeout: const Duration(seconds: 120),
+        receiveTimeout: const Duration(seconds: 120),
+      ),
     );
 
     if (response.statusCode != 200 && response.statusCode != 201) {
