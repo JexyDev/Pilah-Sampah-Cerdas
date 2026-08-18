@@ -32,8 +32,6 @@ import {
   Pencil,
   Download,
   Navigation,
-  Table as TableIcon,
-  LayoutGrid,
   CheckCircle2,
   Map as MapIcon,
   ChevronDown,

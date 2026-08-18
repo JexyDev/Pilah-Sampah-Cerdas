@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useLocation } from "react-router-dom";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import {
@@ -153,16 +153,18 @@ export const DplDashboardPage: React.FC = () => {
   const isDeveloper = userRole === "DEVELOPER";
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const rawTab = (searchParams.get("tab") || "OVERVIEW").toUpperCase();
+  const location = useLocation();
+  const rawTab = (searchParams.get("tab") || (location.pathname === "/ajuan-absensi" ? "APPROVAL" : "OVERVIEW")).toUpperCase();
   // Normalize tab string alias
   const activeTab: TabType = useMemo(() => {
+    if (location.pathname === "/ajuan-absensi" && !searchParams.get("tab")) return "APPROVAL";
     if (rawTab === "STUDENTS") return "MAHASISWA";
     if (rawTab === "APPROVALS" || rawTab === "APPROVAL" || rawTab === "KETIDAKHADIRAN" || rawTab === "IZIN") return "APPROVAL";
     if (["OVERVIEW", "KELOMPOK", "MAHASISWA", "APPROVAL", "INOVASI", "MAP"].includes(rawTab)) {
       return rawTab as TabType;
     }
     return "OVERVIEW";
-  }, [rawTab]);
+  }, [rawTab, location.pathname, searchParams]);
 
   const setActiveTab = (newTab: TabType) => {
     setSearchParams({ tab: newTab });
@@ -749,7 +751,7 @@ export const DplDashboardPage: React.FC = () => {
             {/* Grid 4 Metrik Kunci Terpadu */}
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
               <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/70 flex flex-col justify-between">
-                <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Mahasiswa Binaan</span>
+                <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Mahasiswa Dampingan</span>
                 <div className="mt-1">
                   <span className="text-2xl font-black text-slate-900">{totalAllStudents}</span>
                   <span className="text-xs font-bold text-slate-600 ml-1.5">Orang</span>
@@ -1029,7 +1031,7 @@ export const DplDashboardPage: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <Award size={18} className="text-emerald-600" />
-                  <h3 className="text-base font-extrabold text-slate-900">Nilai Mahasiswa Binaan</h3>
+                  <h3 className="text-base font-extrabold text-slate-900">Nilai Mahasiswa</h3>
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Pemantauan nilai asesmen DPL, evaluasi lapangan, dan huruf mutu mahasiswa bimbingan.
@@ -1117,7 +1119,7 @@ export const DplDashboardPage: React.FC = () => {
               <span className="text-xl font-extrabold text-slate-900 mt-0.5 block">{groups.length} Kelompok</span>
             </div>
             <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
-              <span className="text-slate-500 text-[11px] font-semibold block">Total Mahasiswa Binaan</span>
+              <span className="text-slate-500 text-[11px] font-semibold block">Total Mahasiswa Dampingan</span>
               <span className="text-xl font-extrabold text-slate-900 mt-0.5 block">{students.length} Orang</span>
             </div>
             <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
