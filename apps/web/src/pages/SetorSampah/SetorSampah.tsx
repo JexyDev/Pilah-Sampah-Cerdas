@@ -747,16 +747,43 @@ export default function SetorSampah() {
 
               {/* AI Inference / Telemetry Detail */}
               {selectedLog.confidence !== null && selectedLog.confidence !== undefined ? (
-                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg space-y-1.5">
-                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Hasil Inferensi Model AI</div>
-                  <div className="flex justify-between font-medium text-slate-800 dark:text-slate-200">
-                    <span>Tingkat Keyakinan (Confidence):</span>
-                    <span className="font-semibold">{selectedLog.confidence}%</span>
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 space-y-2.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-black text-slate-800 dark:text-slate-100">Hasil Inferensi &amp; Akurasi Verifikasi AI</span>
+                    {renderCategoryTag(selectedLog.jenis)}
                   </div>
-                  <div className="flex justify-between font-medium text-slate-800 dark:text-slate-200">
-                    <span>Lokasi Wadah:</span>
-                    <span>{selectedLog.lokasi}</span>
-                  </div>
+
+                  {(() => {
+                    const jenisUpper = (selectedLog.jenis || "").toUpperCase();
+                    const isOrg = jenisUpper.includes("ORGANIK") || jenisUpper.includes("ORGANIC");
+                    const conf = Number(selectedLog.confidence) || 0;
+                    const org = selectedLog.organikPercent ?? (isOrg ? conf : 100 - conf);
+                    const inorg = selectedLog.anorganikPercent ?? (100 - org);
+                    return (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs font-black">
+                          <span className="text-emerald-700 dark:text-emerald-400">🌱 Organik: {org}%</span>
+                          <span className="text-amber-700 dark:text-amber-400">📦 Anorganik: {inorg}%</span>
+                        </div>
+                        <div className="w-full h-3 rounded-full bg-slate-200 dark:bg-slate-700 flex overflow-hidden border border-slate-300/60 dark:border-slate-600 shadow-2xs">
+                          <div
+                            className="bg-emerald-500 h-full transition-all duration-300"
+                            style={{ width: `${org}%` }}
+                            title={`Organik: ${org}%`}
+                          />
+                          <div
+                            className="bg-amber-500 h-full transition-all duration-300"
+                            style={{ width: `${inorg}%` }}
+                            title={`Anorganik: ${inorg}%`}
+                          />
+                        </div>
+                        <div className="flex justify-between text-[11px] font-bold text-slate-400 dark:text-slate-400 pt-1">
+                          <span>Akurasi Confidence: {conf}%</span>
+                          <span>{selectedLog.lokasi}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               ) : selectedLog.isManual ? (
                 <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg space-y-1">
