@@ -170,7 +170,7 @@ class MahasiswaPoinView extends ConsumerWidget {
 
     // Warga dampingan mahasiswa ini (dari endpoint kknWarga)
     final myWargaList = mhsState.wargaList.where((w) {
-      if (w.role != 'WARGA' && w.role.isNotEmpty) return false;
+      if (w.role.isNotEmpty && w.role.toUpperCase() != 'WARGA') return false;
       final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
       final isMyRw = cleanUserRw.isEmpty || cleanWargaRw == cleanUserRw;
       final isMyId = w.mahasiswaId.isNotEmpty && w.mahasiswaId == user?.id;
@@ -179,18 +179,19 @@ class MahasiswaPoinView extends ConsumerWidget {
       return isMyId || isMyName || isMyRw;
     }).toList();
 
-    // Warga dampingan mahasiswa ini yang tempat sampahnya sudah aktif
-    final wargaCount = myWargaList.where((w) => w.binId.isNotEmpty && w.binId != 'Belum Ada Tempat Sampah').length;
     final points = mhsState.dashboard?.contributionPoints ?? 0;
     
     final asyncHistory = ref.watch(pointHistoryProvider);
     int laporanCount = 0;
+    int wargaCount = 0;
     
     if (asyncHistory.hasValue && asyncHistory.value != null) {
       for (final ph in asyncHistory.value!) {
         final lowerDesc = ph.description.toLowerCase();
         if (lowerDesc.contains('pemanfaatan')) {
           laporanCount++;
+        } else if (lowerDesc.contains('aktivasi tempat sampah')) {
+          wargaCount++;
         }
       }
     }

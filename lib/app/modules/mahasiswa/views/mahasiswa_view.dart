@@ -16,6 +16,7 @@ import '../controllers/kkn_location_controller.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../shared/controllers/connectivity_controller.dart';
+import '../../riwayat/controllers/riwayat_controller.dart' show pointHistoryProvider;
 
 class MahasiswaView extends ConsumerStatefulWidget {
   const MahasiswaView({super.key});
@@ -397,7 +398,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
     
     // Total Warga Dampingan Mahasiswa ini (dari endpoint kknWarga)
     final myWargaList = state.wargaList.where((w) {
-      if (w.role != 'WARGA' && w.role.isNotEmpty) return false;
+      if (w.role.isNotEmpty && w.role.toUpperCase() != 'WARGA') return false;
       
       final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
       final isMyRw = cleanUserRw.isEmpty || cleanWargaRw == cleanUserRw;
@@ -411,8 +412,18 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
 
     final totalWarga = myWargaList.length;
 
-    // Aktivasi Tempat Sampah: Warga dampingan mahasiswa ini yang tempat sampahnya sudah aktif
-    final wargaAktif = myWargaList.where((w) => w.isActivated || (w.binId.isNotEmpty && w.binId != 'Belum Ada Tempat Sampah')).length;
+    // Aktivasi Tempat Sampah dihitung murni dari pointHistory agar 100% akurat sesuai riwayat poin pengguna
+    final asyncHistory = ref.watch(pointHistoryProvider);
+    int wargaAktif = 0;
+    
+    if (asyncHistory.hasValue && asyncHistory.value != null) {
+      for (final ph in asyncHistory.value!) {
+        final lowerTitle = ph.description.toLowerCase();
+        if (lowerTitle.contains('aktivasi tempat sampah')) {
+          wargaAktif++;
+        }
+      }
+    }
 
     return Row(
       children: [
