@@ -468,7 +468,8 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
           });
           
           final bool isFotoEmpty = _evidencePhotoPath == null;
-          final bool isPetugasInvalid = _selectedPetugasId == null || _selectedPetugasId!.isEmpty || _selectedPetugasId == 'CHANGE_REQUESTED';
+          final bool isPetugasListEmpty = ref.read(petugasPengosonganProvider).petugasWilayah.isEmpty;
+          final bool isPetugasInvalid = !isPetugasListEmpty && (_selectedPetugasId == null || _selectedPetugasId!.isEmpty || _selectedPetugasId == 'CHANGE_REQUESTED');
           
           final bool canSubmit = !isFotoEmpty && _selectedBinIds.isNotEmpty && !isPetugasInvalid;
 

@@ -332,8 +332,8 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       if (prov.isNotEmpty) addrParts.add(prov);
       
       data['address'] = addrParts.join(', ');
-      data['rw'] = _selectedRw ?? '';
-      data['rtRw'] = _selectedRw ?? '';
+      data['rw'] = _selectedRw != null ? 'RW $_selectedRw' : '';
+      data['rtRw'] = _selectedRw != null ? 'RW $_selectedRw' : '';
       data['kelurahan'] = _selectedKelurahan ?? '';
       data['jumlahAnggotaKeluarga'] = int.tryParse(_familySizeController.text) ?? 1;
       data['familySize'] = int.tryParse(_familySizeController.text) ?? 1;
@@ -352,14 +352,14 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       data['jurusan'] = dpl.isNotEmpty ? '$jur (DPL: $dpl)' : jur;
       data['prodi'] = data['jurusan'];
 
-      data['rw'] = _selectedRw ?? '';
-      data['rtRw'] = _selectedRw ?? '';
+      data['rw'] = _selectedRw != null ? 'RW $_selectedRw' : '';
+      data['rtRw'] = _selectedRw != null ? 'RW $_selectedRw' : '';
       data['kelurahan'] = _selectedKelurahan ?? '';
       if (_tglMulaiKKN != null) data['startDate'] = _tglMulaiKKN!.toIso8601String();
       if (_tglSelesaiKKN != null) data['endDate'] = _tglSelesaiKKN!.toIso8601String();
     } else if (_selectedRole == 'Petugas Pemilahan' || _selectedRole == 'Petugas') {
-      data['rw'] = _selectedRw ?? '';
-      data['rtRw'] = _selectedRw ?? '';
+      data['rw'] = _selectedRw != null ? 'RW $_selectedRw' : '';
+      data['rtRw'] = _selectedRw != null ? 'RW $_selectedRw' : '';
       data['kelurahan'] = _selectedKelurahan ?? '';
       final kel = _selectedKelurahan ?? '';
       final kec = InputSanitizer.sanitize(_kecamatanController.text);
