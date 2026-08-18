@@ -141,10 +141,16 @@ class ApiWasteLogRepository implements WasteLogRepository {
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
   WasteLogEntity _mapWasteLog(Map<String, dynamic> json, String userId) {
-    final String rawKategori = (json['wasteType'] ?? json['kategori'] ?? json['type'] ?? '').toString().toUpperCase();
-    final wasteType = (rawKategori == 'ORGANIC' || rawKategori == 'ORGANIK')
-        ? WasteType.organic
-        : WasteType.nonOrganic;
+    final String rawKategori = (json['wasteType'] ?? json['kategori'] ?? json['type'] ?? '').toString().trim().toUpperCase();
+    
+    WasteType wasteType;
+    if (rawKategori.contains('NON') || rawKategori.contains('ANORG')) {
+      wasteType = WasteType.nonOrganic;
+    } else if (rawKategori.contains('ORG')) {
+      wasteType = WasteType.organic;
+    } else {
+      wasteType = WasteType.nonOrganic; // Default fallback
+    }
 
     // berat dari backend: coba weightKg dulu, fallback ke berat/volumeLiter
     final double weightKg = double.tryParse(
