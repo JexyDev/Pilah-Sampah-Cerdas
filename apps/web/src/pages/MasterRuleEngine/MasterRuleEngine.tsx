@@ -582,10 +582,13 @@ const MasterRuleEngine: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="p-3 bg-blue-50/80 rounded-xl border border-blue-200 text-center">
-                  <span className="text-xs font-black text-blue-900">
-                    Target Minimal: {String(config.attendanceMinDurationHours).padStart(2, "0")} Jam : {String(config.attendanceMinDurationMinutes).padStart(2, "0")} Menit : {String(config.attendanceMinDurationSeconds).padStart(2, "0")} Detik
-                  </span>
+                <div className="p-3 bg-blue-50/80 rounded-xl border border-blue-200 text-center space-y-1">
+                  <div className="text-xs font-black text-blue-900">
+                    Target Minimal Harian: {String(config.attendanceMinDurationHours).padStart(2, "0")} Jam : {String(config.attendanceMinDurationMinutes).padStart(2, "0")} Menit : {String(config.attendanceMinDurationSeconds).padStart(2, "0")} Detik
+                  </div>
+                  <div className="text-[11px] font-bold text-blue-700">
+                    Akumulasi Total: {(config.kknTotalDays || 50)} Hari × {(config.attendanceMinDurationHours || 4)} Jam/Hari = <span className="underline font-black">{(config.kknTotalDays || 50) * (config.attendanceMinDurationHours || 4)} Jam Target KKN</span>
+                  </div>
                 </div>
               </div>
 
