@@ -839,7 +839,7 @@ const ManajemenTempatSampah: React.FC = () => {
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                      Menampilkan tempat sampah aktif terverifikasi ({filteredMapBins.length} dari {verifiedMapBins.length} Tempat Sampah)
+                      Menampilkan sebaran {householdMapGroups.length} Rumah Tangga ({filteredMapBins.length} Tempat Sampah aktif terhubung)
                     </p>
                   </div>
                 </div>
@@ -1179,150 +1179,198 @@ const ManajemenTempatSampah: React.FC = () => {
                   );
                 })}
 
-                {/* REAL BINS MARKERS WITH HOVER TOOLTIPS & POPUPS (ONLY VERIFIED & OWNED BINS) */}
-                {filteredMapBins.map((bin) => {
-                  const lat = Number(bin.latitude);
-                  const lng = Number(bin.longitude);
-                  const vol = Number(bin.currentVolumeLiter || 0);
-                  const max = Number(bin.maxCapacityLiter || 25);
-                  const pct = bin.kapasitas !== undefined ? bin.kapasitas : (max > 0 ? Math.round((vol / max) * 100) : 0);
+                {/* REAL HOUSEHOLD MAP MARKERS (1 Single Pin per House with 2 Bins) */}
+                {householdMapGroups.map((group) => {
+                  const lat = group.latitude;
+                  const lng = group.longitude;
+                  const circleColor = group.isRusak
+                    ? "#e11d48"
+                    : group.isPenuh
+                    ? "#ef4444"
+                    : group.isSedang
+                    ? "#f59e0b"
+                    : "#10b981";
 
-                  const catLower = (bin.category?.name || bin.lokasi || "").toLowerCase();
-                  const isResiduCat = catLower.includes("residu") || catLower.includes("b3");
-                  const isAnorganikCat = catLower.includes("anorganik");
-                  const isRusak = bin.status === "Rusak" || bin.realStatus === "BROKEN";
-                  const isPenuh = bin.status === "Penuh" || pct >= 90;
-                  const categoryTitle = isResiduCat ? "Residu" : isAnorganikCat ? "Anorganik" : "Organik";
-                  const ownerName = bin.wargaName || bin.user?.name || "Warga Terdaftar";
-                  const ownerPhone = bin.wargaPhone || bin.user?.phone || bin.phone;
-                  const circleColor = isRusak ? "#e11d48" : isPenuh ? "#ef4444" : isResiduCat ? "#64748b" : isAnorganikCat ? "#f59e0b" : "#10b981";
+                  const org = group.organikBin;
+                  const anorg = group.anorganikBin;
+
+                  const orgVol = Number(org?.currentVolumeLiter || 0);
+                  const orgMax = Number(org?.maxCapacityLiter || 25);
+                  const orgPct = org ? (org.kapasitas !== undefined ? org.kapasitas : (orgMax > 0 ? Math.round((orgVol / orgMax) * 100) : 0)) : 0;
+
+                  const anorgVol = Number(anorg?.currentVolumeLiter || 0);
+                  const anorgMax = Number(anorg?.maxCapacityLiter || 25);
+                  const anorgPct = anorg ? (anorg.kapasitas !== undefined ? anorg.kapasitas : (anorgMax > 0 ? Math.round((anorgVol / anorgMax) * 100) : 0)) : 0;
 
                   return (
-                    <React.Fragment key={`real-bin-marker-${bin.id || bin.kode}`}>
-                      {/* Radius indicator circle around active bin */}
+                    <React.Fragment key={`hh-manage-pin-${group.householdKey}`}>
+                      {/* Radius indicator circle around household */}
                       <Circle
                         center={[lat, lng]}
-                        radius={15}
+                        radius={18}
                         pathOptions={{
                           color: circleColor,
                           fillColor: circleColor,
-                          fillOpacity: 0.2,
+                          fillOpacity: 0.18,
                           weight: 1.5,
                         }}
                       />
 
                       <Marker
                         position={[lat, lng]}
-                        icon={createRealBinIcon(bin.category?.name || categoryTitle, bin.status, isPenuh, isRusak)}
+                        icon={createHouseholdPinIcon(
+                          Boolean(org),
+                          Boolean(anorg),
+                          group.isPenuh,
+                          group.isSedang,
+                          group.isRusak
+                        )}
                       >
-                        {/* HOVER TOOLTIP (Shows instantly on hover with last deposit log!) */}
-                        <Tooltip permanent={false} direction="top" offset={[0, -12]} className="custom-bin-hover-tooltip">
-                          <div className="p-2 min-w-[210px] space-y-1.5 font-sans">
+                        {/* HOVER TOOLTIP */}
+                        <Tooltip permanent={false} direction="top" offset={[0, -16]} className="custom-bin-hover-tooltip">
+                          <div className="p-2 min-w-[230px] space-y-1.5 font-sans">
                             <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-1">
-                              <span className="font-mono font-black text-slate-900 dark:text-slate-100 text-xs">{bin.kode}</span>
-                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
-                                isResiduCat
-                                  ? "bg-slate-200 text-slate-800"
-                                  : isAnorganikCat
-                                  ? "bg-amber-100 text-amber-900"
-                                  : "bg-emerald-100 text-emerald-800"
-                              }`}>
-                                {categoryTitle}
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">{group.wargaName}</span>
+                              </div>
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 uppercase">
+                                Aktif Terhubung
                               </span>
                             </div>
 
-                            <div className="text-xs text-slate-700 dark:text-slate-300 space-y-0.5">
-                              <div className="font-extrabold text-slate-900 dark:text-slate-100">{ownerName}</div>
-                              {ownerPhone && <div className="text-[11px] font-mono text-emerald-700 font-bold">{formatPhone(ownerPhone)}</div>}
+                            <div className="text-[11px] text-slate-500 space-y-0.5">
+                              <div>{group.address} - {group.rtRw}</div>
+                              {group.wargaPhone && <div className="font-mono text-emerald-700 font-bold">{group.wargaPhone}</div>}
                             </div>
 
-                            <div className="pt-1 border-t border-slate-100 dark:border-slate-800 space-y-1">
-                              <div className="flex justify-between text-[10.5px] font-bold">
-                                <span className="text-slate-500">Volume Terisi:</span>
-                                <span className={pct >= 90 ? "text-rose-600" : pct >= 70 ? "text-amber-600" : "text-emerald-600"}>
-                                  {vol}/{max}L ({pct}%)
-                                </span>
-                              </div>
-                              <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full ${pct >= 90 ? "bg-rose-500" : pct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
-                                  style={{ width: `${Math.min(pct, 100)}%` }}
-                                />
-                              </div>
-                            </div>
+                            {/* Dual Bin Status Snippet */}
+                            <div className="pt-1 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+                              {org && (
+                                <div className="space-y-0.5">
+                                  <div className="flex justify-between text-[10px] font-bold">
+                                    <span className="text-emerald-700 dark:text-emerald-400">Organik ({org.kode || org.qrCode})</span>
+                                    <span className={orgPct >= 90 ? "text-rose-600" : orgPct >= 70 ? "text-amber-600" : "text-emerald-600"}>
+                                      {orgVol}/{orgMax}L ({orgPct}%)
+                                    </span>
+                                  </div>
+                                  <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1 overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full ${orgPct >= 90 ? "bg-rose-500" : orgPct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
+                                      style={{ width: `${Math.min(orgPct, 100)}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
 
-                            {/* Log Aktivitas Terakhir Laporan Pemilahan Sampah */}
-                            <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
-                              <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block mb-0.5">
-                                Log Aktivitas Terakhir:
-                              </span>
-                              <div className="text-[10.5px] font-bold text-slate-800 dark:text-slate-100 leading-tight">
-                                {bin.lastActivityLog || bin.verifiedAt || "-"}
-                              </div>
+                              {anorg && (
+                                <div className="space-y-0.5">
+                                  <div className="flex justify-between text-[10px] font-bold">
+                                    <span className="text-amber-700 dark:text-amber-400">Anorganik ({anorg.kode || anorg.qrCode})</span>
+                                    <span className={anorgPct >= 90 ? "text-rose-600" : anorgPct >= 70 ? "text-amber-600" : "text-emerald-600"}>
+                                      {anorgVol}/{anorgMax}L ({anorgPct}%)
+                                    </span>
+                                  </div>
+                                  <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1 overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full ${anorgPct >= 90 ? "bg-rose-500" : anorgPct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
+                                      style={{ width: `${Math.min(anorgPct, 100)}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </Tooltip>
 
-                        {/* CLICK POPUP (Detailed Interactive Card) */}
+                        {/* CLICK POPUP */}
                         <Popup>
-                          <div className="p-2 min-w-[250px] space-y-2.5 font-sans">
-                            <div className="flex items-center justify-between border-b pb-1.5">
+                          <div className="p-2 min-w-[280px] max-w-[320px] space-y-3 font-sans">
+                            <div className="flex items-center justify-between border-b pb-2">
                               <div>
-                                <span className="font-mono font-black text-slate-900 dark:text-slate-100 text-xs block">{bin.kode}</span>
-                                <span className="text-[10px] text-slate-400 font-bold">{bin.rw || "Wilayah Coblong"}</span>
+                                <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs block">{group.wargaName}</span>
+                                <span className="text-[10px] text-slate-400 font-bold">{group.rtRw}</span>
                               </div>
-                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                                isResiduCat
-                                  ? "bg-slate-200 text-slate-800"
-                                  : isAnorganikCat
-                                  ? "bg-amber-100 text-amber-900"
-                                  : "bg-emerald-100 text-emerald-800"
-                              }`}>
-                                {categoryTitle}
+                              <span className="px-2 py-0.5 rounded-full text-[9.5px] font-extrabold bg-emerald-100 text-emerald-800 uppercase">
+                                Rumah Warga
                               </span>
                             </div>
 
                             {/* Owner details */}
-                            <div className="bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-100 space-y-1">
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pemilik Terverifikasi</span>
-                              <div className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">{ownerName}</div>
-                              {ownerPhone && (
-                                <div className="mt-1">
-                                  {renderPhoneCell(ownerPhone)}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Capacity Status */}
-                            <div className="space-y-1">
-                              <div className="flex justify-between text-xs font-bold">
-                                <span className="text-slate-600 dark:text-slate-400">Kapasitas Terisi</span>
-                                <span className={pct >= 90 ? "text-rose-600" : pct >= 70 ? "text-amber-600" : "text-emerald-600"}>
-                                  {vol}/{max} Liter ({pct}%)
-                                </span>
-                              </div>
-                              <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-200/60">
-                                <div
-                                  className={`h-full rounded-full ${pct >= 90 ? "bg-rose-500" : pct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
-                                  style={{ width: `${Math.min(pct, 100)}%` }}
-                                />
+                            <div className="bg-emerald-50/70 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-100 dark:border-emerald-800/50 space-y-1">
+                              <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider block">Identitas Rumah Tangga</span>
+                              <div className="text-xs text-slate-700 dark:text-slate-300 space-y-0.5">
+                                <div>Alamat: <strong className="text-slate-900 dark:text-slate-100">{group.address}</strong></div>
+                                {group.wargaPhone && (
+                                  <div>No. WhatsApp: <strong className="font-mono text-emerald-700 dark:text-emerald-400">{group.wargaPhone}</strong></div>
+                                )}
                               </div>
                             </div>
 
-                            {/* Log Aktivitas Terakhir Laporan Pemilahan Sampah */}
-                            <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-800 space-y-1">
-                              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
-                                Log Aktivitas Terakhir
+                            {/* 2 Tempat Sampah Grid Cards */}
+                            <div className="space-y-2">
+                              <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">
+                                Tempat Sampah Terhubung (2 Wadah)
                               </span>
-                              <div className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-tight">
-                                {bin.lastActivityLog || bin.verifiedAt || "-"}
+
+                              <div className="grid grid-cols-1 gap-2">
+                                {org ? (
+                                  <div className="p-2.5 rounded-xl bg-emerald-50/50 dark:bg-slate-800/80 border border-emerald-200/80 dark:border-slate-700 space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-mono font-black text-xs text-slate-900 dark:text-slate-100">{org.kode || org.qrCode}</span>
+                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 uppercase">
+                                        Organik
+                                      </span>
+                                    </div>
+                                    <div className="flex justify-between text-[11px] font-bold">
+                                      <span className="text-slate-500">Volume Terisi:</span>
+                                      <span className={orgPct >= 90 ? "text-rose-600" : orgPct >= 70 ? "text-amber-600" : "text-emerald-600"}>
+                                        {orgVol}/{orgMax}L ({orgPct}%)
+                                      </span>
+                                    </div>
+                                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                                      <div
+                                        className={`h-full rounded-full ${orgPct >= 90 ? "bg-rose-500" : orgPct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
+                                        style={{ width: `${Math.min(orgPct, 100)}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="p-2 rounded-lg bg-slate-50 text-slate-400 text-xs italic">
+                                    Tempat Sampah Organik belum terhubung
+                                  </div>
+                                )}
+
+                                {anorg ? (
+                                  <div className="p-2.5 rounded-xl bg-amber-50/50 dark:bg-slate-800/80 border border-amber-200/80 dark:border-slate-700 space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-mono font-black text-xs text-slate-900 dark:text-slate-100">{anorg.kode || anorg.qrCode}</span>
+                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-900 uppercase">
+                                        Anorganik
+                                      </span>
+                                    </div>
+                                    <div className="flex justify-between text-[11px] font-bold">
+                                      <span className="text-slate-500">Volume Terisi:</span>
+                                      <span className={anorgPct >= 90 ? "text-rose-600" : anorgPct >= 70 ? "text-amber-600" : "text-emerald-600"}>
+                                        {anorgVol}/{anorgMax}L ({anorgPct}%)
+                                      </span>
+                                    </div>
+                                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                                      <div
+                                        className={`h-full rounded-full ${anorgPct >= 90 ? "bg-rose-500" : anorgPct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
+                                        style={{ width: `${Math.min(anorgPct, 100)}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="p-2 rounded-lg bg-slate-50 text-slate-400 text-xs italic">
+                                    Tempat Sampah Anorganik belum terhubung
+                                  </div>
+                                )}
                               </div>
                             </div>
 
-                            {/* Verification info & GPS */}
-                            <div className="text-[10.5px] text-slate-500 space-y-0.5 pt-1 border-t border-slate-100 dark:border-slate-800">
-                              <div>Diverifikasi: <strong className="text-slate-700 dark:text-slate-300">{bin.verifiedAt}</strong></div>
-                              <div>Koordinat: <strong className="font-mono text-slate-700 dark:text-slate-300">{lat.toFixed(4)}, {lng.toFixed(4)}, {bin.altitude || 768} mdpl</strong></div>
+                            <div className="text-[10px] text-slate-500 pt-1 border-t border-slate-100 dark:border-slate-800">
+                              <div>Koordinat Rumah: <strong className="font-mono text-slate-700 dark:text-slate-300">{lat.toFixed(4)}, {lng.toFixed(4)}</strong></div>
                             </div>
                           </div>
                         </Popup>

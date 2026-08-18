@@ -5,9 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
-import '../../../routes/app_routes.dart';
 import '../controllers/posko_kkn_controller.dart';
-import '../controllers/kelompok_kkn_controller.dart';
 
 class RegisterPoskoView extends ConsumerStatefulWidget {
   const RegisterPoskoView({super.key});
