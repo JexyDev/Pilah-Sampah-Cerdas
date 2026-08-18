@@ -23,7 +23,7 @@ jobs:
           npm ci --prefer-offline --no-audit || npm install --silent --legacy-peer-deps
           npm run build
           test -f dist/index.html || { echo "Build failed: dist/index.html missing"; exit 1; }
-          tar -czf dist.tar.gz -C dist .
+          cd dist && tar -czf ../dist.tar.gz *
 
       - name: Install sshpass
         run: sudo apt-get update && sudo apt-get install -y sshpass
@@ -108,10 +108,10 @@ jobs:
               rm -f /tmp/frontend-dist.tar.gz
             else
               echo "Frontend archive corrupted or missing, building web frontend directly on VPS..."
-              cd "$REPO_DIR/apps/web"
-              npm install --silent --legacy-peer-deps || npm install --legacy-peer-deps
-              npm run build
-              cp -r dist/* /tmp/frontend-dist/
+              cd "$REPO_DIR"
+              npm run install:web || (cd apps/web && npm install --legacy-peer-deps)
+              npm run build:web
+              cp -r apps/web/dist/* /tmp/frontend-dist/
             fi
 
             echo "$VPS_PASS" | sudo -S cp -r /tmp/frontend-dist/* /var/www/html/
