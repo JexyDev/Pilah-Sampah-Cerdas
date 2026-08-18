@@ -438,13 +438,25 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
   /// Force immediate location & target refresh on demand (Pull-to-refresh / Button / App Resume)
   Future<void> forceLocationUpdate([BuildContext? context]) async {
-    if (!state.isTracking) {
-      await startTracking(context);
-    } else {
-      // Just fetch latest target and perform immediate location update without stopping timers
-      await _fetchTargetLocation(state.activeActivity);
-      await _performLocationUpdate();
+    if (state.isTracking) {
+      // Hard refresh: Hentikan semua service layaknya hot refresh
+      stopTracking();
+      
+      // Bersihkan state agar `startTracking` memanggil `getActiveZone` ulang dari API
+      state = state.copyWith(
+        activeActivity: null,
+        clearActivity: true,
+        zoneResetWarning: null,
+        clearWarning: true,
+      );
+      _currentTargetScheduleId = null;
+      
+      // Beri sedikit jeda agar background service benar-benar berhenti
+      await Future.delayed(const Duration(milliseconds: 300));
     }
+    
+    // Mulai ulang dari awal
+    await startTracking(context);
   }
 
   /// Set the active schedule target to calculate geofencing
