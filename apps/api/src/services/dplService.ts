@@ -748,10 +748,43 @@ export const dplService = {
             method: "IZIN_DPL",
             latitude: lat,
             longitude: lng,
-            attendedAt: new Date(),
+            attendedAt: sch.date || new Date(),
           },
           update: {
             status: attStatus,
+            method: "IZIN_DPL",
+          },
+        });
+      }
+    } else if (status === "REJECTED") {
+      // Jika ditolak, bersihkan status presensi IZIN_DPL yang mungkin sempat disetujui sebelumnya
+      const start = new Date(req.startDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(req.endDate || req.startDate);
+      end.setHours(23, 59, 59, 999);
+
+      const studentProfile = await prisma.studentKkn.findFirst({
+        where: {
+          OR: [{ userId: req.studentId }, { id: req.studentId }],
+        },
+      });
+
+      const targetStudentId = studentProfile?.userId || req.studentId;
+
+      const schedules = await prisma.schedule.findMany({
+        where: {
+          date: {
+            gte: start,
+            lte: end,
+          },
+        },
+      });
+
+      for (const sch of schedules) {
+        await prisma.activityAttendance.deleteMany({
+          where: {
+            studentId: targetStudentId,
+            scheduleId: sch.id,
             method: "IZIN_DPL",
           },
         });

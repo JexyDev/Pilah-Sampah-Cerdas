@@ -6,6 +6,7 @@
  */
 
 import React, { useEffect, useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import {
   MapContainer,
   Marker,
@@ -42,6 +43,7 @@ import {
   Thermometer,
   Settings,
   Users,
+  ExternalLink,
 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
@@ -131,6 +133,10 @@ interface AttendanceRecord {
     | "TIDAK_TERDETEKSI"
     | "BELUM_ABSEN"
     | "DI_LOKASI_BELUM_ABSEN"
+    | "IZIN_DISETUJUI"
+    | "MENUNGGU_PERSETUJUAN_IZIN"
+    | "PENGAJUAN_BATAL_IZIN"
+    | "OVERRIDDEN_HADIR"
     | string;
   student: {
     id: string;
@@ -149,6 +155,13 @@ interface AttendanceRecord {
   kelompokName?: string;
   totalHours?: number;
   totalMinutes?: number;
+  leaveRequest?: {
+    id: string;
+    type: string;
+    reason: string;
+    evidenceUrl?: string;
+    status: string;
+  };
 }
 
 interface ScheduleActivity {
@@ -360,7 +373,7 @@ const MonitoringAbsen: React.FC = () => {
 
   // Filter & Search States
   const [attendanceFilterTab, setAttendanceFilterTab] = useState<
-    "ALL" | "ACTIVE" | "COMPLETED" | "NOT_ATTENDED"
+    "ALL" | "ACTIVE" | "COMPLETED" | "IZIN_SAKIT" | "NOT_ATTENDED"
   >("ALL");
   const [studentSearch, setStudentSearch] = useState<string>("");
   const [displayMode] = useState<"table" | "cards">("table");
@@ -532,18 +545,32 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   // Attendance metrics counts
   const attendanceStats = useMemo(() => {
     const total = attendance.length;
-    const active = attendance.filter(
-      (a) => Boolean(a.attendedAt) && !a.completedAt
-    ).length;
-    const completed = attendance.filter((a) => Boolean(a.completedAt)).length;
-    const notAttended = attendance.filter((a) => !a.attendedAt).length;
+    const active = attendance.filter((a) => {
+      const st = String(a.status || "").toUpperCase();
+      const isIzinSakit = st.includes("IZIN") || st.includes("SAKIT");
+      return Boolean(a.attendedAt) && !a.completedAt && !isIzinSakit;
+    }).length;
+    const completed = attendance.filter((a) => {
+      const st = String(a.status || "").toUpperCase();
+      const isIzinSakit = st.includes("IZIN") || st.includes("SAKIT");
+      return Boolean(a.completedAt) && !isIzinSakit;
+    }).length;
+    const izinSakit = attendance.filter((a) => {
+      const st = String(a.status || "").toUpperCase();
+      return st.includes("IZIN") || st.includes("SAKIT");
+    }).length;
+    const notAttended = attendance.filter((a) => {
+      const st = String(a.status || "").toUpperCase();
+      const isIzinSakit = st.includes("IZIN") || st.includes("SAKIT");
+      return !a.attendedAt && !isIzinSakit;
+    }).length;
     const fulfilledTarget = attendance.filter((a) => {
       if (!a.completedAt) return false;
       const mins = calculateDurationMinutes(a.attendedAt, a.completedAt);
       return mins >= scheduleTargetHours * 60;
     }).length;
 
-    return { total, active, completed, notAttended, fulfilledTarget };
+    return { total, active, completed, izinSakit, notAttended, fulfilledTarget };
   }, [attendance, scheduleTargetHours]);
 
   const fetchGroups = async () => {
@@ -814,11 +841,19 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     return attendance.filter((rec) => {
       const isAttended = Boolean(rec.attendedAt);
       const isCompleted = Boolean(rec.completedAt);
-      const isActivePresence = isAttended && !isCompleted;
+      const statusUpper = String(rec.status || "").toUpperCase();
+      const isSakit = statusUpper.includes("SAKIT");
+      const isIzin = statusUpper.includes("IZIN");
+      const isIzinSakit = isIzin || isSakit;
+      const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
+      const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
+      const isHadir = isAttended && !isTanpaKeterangan && !isIzinSakit && !isBelumAdaJadwal;
+      const isActivePresence = isHadir && !isCompleted;
 
       if (attendanceFilterTab === "ACTIVE" && !isActivePresence) return false;
-      if (attendanceFilterTab === "COMPLETED" && !isCompleted) return false;
-      if (attendanceFilterTab === "NOT_ATTENDED" && isAttended) return false;
+      if (attendanceFilterTab === "COMPLETED" && (!isCompleted || isIzinSakit)) return false;
+      if (attendanceFilterTab === "IZIN_SAKIT" && !isIzinSakit) return false;
+      if (attendanceFilterTab === "NOT_ATTENDED" && (isHadir || isIzinSakit)) return false;
 
       if (studentSearch.trim()) {
         const q = studentSearch.toLowerCase();
@@ -1855,6 +1890,17 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 </button>
                 <button
                   type="button"
+                  onClick={() => setAttendanceFilterTab("IZIN_SAKIT")}
+                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                    attendanceFilterTab === "IZIN_SAKIT"
+                      ? "bg-white text-blue-800 shadow-xs font-black"
+                      : "hover:text-slate-900"
+                  }`}
+                >
+                  📋 Izin / Sakit ({attendanceStats.izinSakit || 0})
+                </button>
+                <button
+                  type="button"
                   onClick={() => setAttendanceFilterTab("NOT_ATTENDED")}
                   className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
                     attendanceFilterTab === "NOT_ATTENDED"
@@ -1933,12 +1979,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
                       const statusUpper = String(rec.status || "").toUpperCase();
                       const methodUpper = String(rec.method || "").toUpperCase();
-                      const isSakit = statusUpper.includes("SAKIT");
-                      const isIzin = statusUpper.includes("IZIN");
-                      const isOverrideDpl = methodUpper === "OVERRIDE_DPL" || statusUpper.includes("OVERRIDE");
+                      const currentStatusUpper = String(rec.currentStatus || "").toUpperCase();
+                      const isSakitPending = statusUpper === "SAKIT_PENDING" || (statusUpper.includes("SAKIT") && (statusUpper.includes("PENDING") || currentStatusUpper.includes("MENUNGGU")));
+                      const isIzinPending = statusUpper === "IZIN_PENDING" || (statusUpper.includes("IZIN") && (statusUpper.includes("PENDING") || currentStatusUpper.includes("MENUNGGU")));
+                      const isCancelRequested = statusUpper === "CANCEL_REQUESTED" || currentStatusUpper === "PENGAJUAN_BATAL_IZIN";
+                      const isSakit = (statusUpper.includes("SAKIT") || statusUpper === "SAKIT") && !isSakitPending;
+                      const isIzin = (statusUpper.includes("IZIN") || statusUpper === "IZIN") && !isIzinPending;
+                      const isOverrideDpl = methodUpper === "OVERRIDE_DPL" || statusUpper.includes("OVERRIDE") || currentStatusUpper === "OVERRIDDEN_HADIR";
                       const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
                       const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
-                      const isHadir = isAttended && !isTanpaKeterangan && !isBelumAdaJadwal;
+                      const isHadir = isAttended && !isTanpaKeterangan && !isBelumAdaJadwal && !isIzin && !isSakit && !isIzinPending && !isSakitPending;
 
                       const durationHours = durationMins > 0 ? (durationMins / 60) : 0;
                       const formattedHours = durationHours > 0
@@ -2015,15 +2065,45 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                 <CheckCircle2 size={13} className="text-cyan-600" />
                                 Hadir (Batal Izin)
                               </span>
+                            ) : isCancelRequested ? (
+                              <Link
+                                to="/ajuan-absensi"
+                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition cursor-pointer"
+                                title="Mahasiswa mengajukan pembatalan izin - Klik untuk review di menu Ajuan"
+                              >
+                                <Hourglass size={13} className="text-rose-600" />
+                                <span>Batal Izin (Menunggu)</span>
+                                <ExternalLink size={10} className="text-rose-500" />
+                              </Link>
+                            ) : isSakitPending ? (
+                              <Link
+                                to="/ajuan-absensi"
+                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition cursor-pointer"
+                                title="Pengajuan Sakit sedang menunggu persetujuan DPL - Klik untuk buka menu Ajuan"
+                              >
+                                <Hourglass size={13} className="text-amber-600 animate-pulse" />
+                                <span>Sakit (Menunggu)</span>
+                                <ExternalLink size={10} className="text-amber-600" />
+                              </Link>
+                            ) : isIzinPending ? (
+                              <Link
+                                to="/ajuan-absensi"
+                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100 transition cursor-pointer"
+                                title="Pengajuan Izin sedang menunggu persetujuan DPL - Klik untuk buka menu Ajuan"
+                              >
+                                <Hourglass size={13} className="text-sky-600 animate-pulse" />
+                                <span>Izin (Menunggu)</span>
+                                <ExternalLink size={10} className="text-sky-600" />
+                              </Link>
                             ) : isSakit ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title={rec.leaveRequest?.reason ? `Alasan: ${rec.leaveRequest.reason}` : "Sakit disetujui DPL"}>
                                 <Thermometer size={13} className="text-amber-600" />
-                                Sakit
+                                Sakit (Disetujui)
                               </span>
                             ) : isIzin ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200" title={rec.leaveRequest?.reason ? `Alasan: ${rec.leaveRequest.reason}` : "Izin disetujui DPL"}>
                                 <Info size={13} className="text-blue-600" />
-                                Izin
+                                Izin (Disetujui)
                               </span>
                             ) : isTanpaKeterangan ? (
                               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
@@ -2127,6 +2207,42 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         {isBelumAdaJadwal ? (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 shrink-0">
                             Belum Ada Jadwal
+                          </span>
+                        ) : rec.status === "IZIN_PENDING" || rec.currentStatus === "MENUNGGU_PERSETUJUAN_IZIN" ? (
+                          <Link
+                            to="/ajuan-absensi"
+                            className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100 transition shrink-0 flex items-center gap-1"
+                          >
+                            <span>Izin (Menunggu)</span>
+                            <ExternalLink size={9} />
+                          </Link>
+                        ) : rec.status === "SAKIT_PENDING" ? (
+                          <Link
+                            to="/ajuan-absensi"
+                            className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition shrink-0 flex items-center gap-1"
+                          >
+                            <span>Sakit (Menunggu)</span>
+                            <ExternalLink size={9} />
+                          </Link>
+                        ) : rec.status === "CANCEL_REQUESTED" || rec.currentStatus === "PENGAJUAN_BATAL_IZIN" ? (
+                          <Link
+                            to="/ajuan-absensi"
+                            className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition shrink-0 flex items-center gap-1"
+                          >
+                            <span>Batal Izin (Menunggu)</span>
+                            <ExternalLink size={9} />
+                          </Link>
+                        ) : rec.method === "OVERRIDE_DPL" || String(rec.status).toUpperCase().includes("OVERRIDE") ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-50 text-cyan-800 border border-cyan-200 shrink-0">
+                            Hadir (Batal Izin)
+                          </span>
+                        ) : String(rec.status).toUpperCase().includes("SAKIT") ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
+                            Sakit (Disetujui)
+                          </span>
+                        ) : String(rec.status).toUpperCase().includes("IZIN") ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200 shrink-0">
+                            Izin (Disetujui)
                           </span>
                         ) : isActivePresence ? (
                           <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">

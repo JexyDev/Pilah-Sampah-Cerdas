@@ -616,98 +616,7 @@ export class KknAttendanceService {
    * Get list of attendances for a schedule (Scoped to DPL kelompok if dplUserId provided)
    */
   async getAttendanceList(scheduleId: string, dplUserId?: string) {
-    let dplStudentUserIds: string[] | undefined;
-    if (dplUserId) {
-      const dplGroups = await prisma.kelompokKkn.findMany({
-        where: { OR: [{ dplId: dplUserId }, { dpl: { id: dplUserId } }] },
-        include: {
-          students: {
-            select: { userId: true },
-          },
-        },
-      });
-      dplStudentUserIds = dplGroups.flatMap((g) => g.students.map((s) => s.userId));
-    }
-
-    const attendanceWhere: any = { scheduleId };
-    if (dplStudentUserIds) {
-      attendanceWhere.studentId = { in: dplStudentUserIds };
-    }
-
-    const list = await prisma.activityAttendance.findMany({
-      where: attendanceWhere,
-      include: {
-        student: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-            studentProfile: {
-              select: {
-                nim: true,
-                jurusan: true,
-                isKetua: true,
-                kelompok: {
-                  select: {
-                    id: true,
-                    name: true,
-                    kelurahan: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        attendedAt: "desc",
-      },
-    });
-
-    const attendedStudentIds = new Set(list.map((a) => a.studentId));
-    const locations = await this.getActiveStudentsLocations(dplUserId);
-    const locMap = new Map(locations.map((l) => [l.studentId, l]));
-    const scheduleLoc = await this.getActivityLocation(scheduleId);
-
-    const attendedList = list.map((att) => {
-      const latestLoc = locMap.get(att.studentId);
-      let currentStatus = "TERCATAT_ABSEN";
-      if (latestLoc) {
-        let isInside = false;
-        if (
-          scheduleLoc.polygon &&
-          Array.isArray(scheduleLoc.polygon) &&
-          scheduleLoc.polygon.length >= 3
-        ) {
-          const polyPoints = (scheduleLoc.polygon as any[]).map((p) => ({
-            lat: Number(p[0]),
-            lng: Number(p[1]),
-          }));
-          isInside = isPointInPolygonWithBuffer(
-            { lat: Number(latestLoc.latitude), lng: Number(latestLoc.longitude) },
-            polyPoints,
-            15
-          );
-        } else {
-          const dist = calculateDistance(
-            Number(latestLoc.latitude),
-            Number(latestLoc.longitude),
-            scheduleLoc.latitude,
-            scheduleLoc.longitude
-          );
-          isInside = dist <= scheduleLoc.radius + 15;
-        }
-        currentStatus = isInside ? "MASIH_DI_LOKASI" : "SUDAH_MENINGGALKAN_RADIUS";
-      }
-
-      return {
-        ...att,
-        completedAt: att.checkOutAt || (att as any).completedAt || null,
-        currentStatus,
-      };
-    });
-
-    // Fetch schedule to filter students strictly by assigned Kelompok KKN
+    // 1. Fetch schedule to filter students strictly by assigned Kelompok KKN and get date range
     const schedule = await prisma.schedule.findUnique({
       where: { id: scheduleId },
       include: {
@@ -720,6 +629,19 @@ export class KknAttendanceService {
         },
       },
     });
+
+    let dplStudentUserIds: string[] | undefined;
+    if (dplUserId) {
+      const dplGroups = await prisma.kelompokKkn.findMany({
+        where: { OR: [{ dplId: dplUserId }, { dpl: { id: dplUserId } }] },
+        include: {
+          students: {
+            select: { userId: true },
+          },
+        },
+      });
+      dplStudentUserIds = dplGroups.flatMap((g) => g.students.map((s) => s.userId));
+    }
 
     let studentWhereCondition: any = { role: { name: "MAHASISWA_KKN" } };
 
@@ -781,10 +703,255 @@ export class KknAttendanceService {
       },
     });
 
-    const unAttendedList = allStudents
-      .filter((s) => !attendedStudentIds.has(s.id))
-      .map((s) => {
-        const latestLoc = locMap.get(s.id);
+    const allStudentUserIds = allStudents.map((s) => s.id);
+
+    const attendanceWhere: any = { scheduleId };
+    if (allStudentUserIds.length > 0) {
+      attendanceWhere.studentId = { in: allStudentUserIds };
+    }
+
+    const list = await prisma.activityAttendance.findMany({
+      where: attendanceWhere,
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            studentProfile: {
+              select: {
+                nim: true,
+                jurusan: true,
+                isKetua: true,
+                kelompok: {
+                  select: {
+                    id: true,
+                    name: true,
+                    kelurahan: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        attendedAt: "desc",
+      },
+    });
+
+    // Determine calendar date boundaries for this schedule
+    const schedDate = schedule?.date ? new Date(schedule.date) : new Date();
+    const startOfDay = new Date(schedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(schedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Query active & historical leave requests for all relevant students during this schedule's timeframe
+    const leaveRequests = allStudentUserIds.length > 0
+      ? await prisma.studentLeaveRequest.findMany({
+          where: {
+            studentId: { in: allStudentUserIds },
+            startDate: { lte: endOfDay },
+            endDate: { gte: startOfDay },
+            status: { in: ["PENDING", "APPROVED", "CANCEL_REQUESTED", "OVERRIDDEN_HADIR"] },
+          },
+          orderBy: { createdAt: "desc" },
+        })
+      : [];
+
+    const leaveMap = new Map<string, typeof leaveRequests[0]>();
+    for (const lr of leaveRequests) {
+      if (!leaveMap.has(lr.studentId)) {
+        leaveMap.set(lr.studentId, lr);
+      }
+    }
+
+    const locations = await this.getActiveStudentsLocations(dplUserId);
+    const locMap = new Map(locations.map((l) => [l.studentId, l]));
+    const scheduleLoc = await this.getActivityLocation(scheduleId);
+
+    const attendedStudentIds = new Set<string>();
+
+    const attendedList = list.map((att) => {
+      attendedStudentIds.add(att.studentId);
+      const latestLoc = locMap.get(att.studentId);
+      const leave = leaveMap.get(att.studentId);
+
+      let currentStatus = "TERCATAT_ABSEN";
+      if (att.method === "IZIN_DPL" || String(att.status).toUpperCase().includes("IZIN") || String(att.status).toUpperCase().includes("SAKIT")) {
+        currentStatus = "IZIN_DISETUJUI";
+      } else if (att.method === "OVERRIDE_DPL" || String(att.status).toUpperCase().includes("OVERRIDE")) {
+        currentStatus = "OVERRIDDEN_HADIR";
+      } else if (latestLoc) {
+        let isInside = false;
+        if (
+          scheduleLoc.polygon &&
+          Array.isArray(scheduleLoc.polygon) &&
+          scheduleLoc.polygon.length >= 3
+        ) {
+          const polyPoints = (scheduleLoc.polygon as any[]).map((p) => ({
+            lat: Number(p[0]),
+            lng: Number(p[1]),
+          }));
+          isInside = isPointInPolygonWithBuffer(
+            { lat: Number(latestLoc.latitude), lng: Number(latestLoc.longitude) },
+            polyPoints,
+            15
+          );
+        } else {
+          const dist = calculateDistance(
+            Number(latestLoc.latitude),
+            Number(latestLoc.longitude),
+            scheduleLoc.latitude,
+            scheduleLoc.longitude
+          );
+          isInside = dist <= scheduleLoc.radius + 15;
+        }
+        currentStatus = isInside ? "MASIH_DI_LOKASI" : "SUDAH_MENINGGALKAN_RADIUS";
+      }
+
+      return {
+        ...att,
+        completedAt: att.checkOutAt || (att as any).completedAt || null,
+        currentStatus,
+        leaveRequest: leave
+          ? {
+              id: leave.id,
+              type: leave.type,
+              reason: leave.reason,
+              evidenceUrl: leave.evidenceUrl,
+              status: leave.status,
+            }
+          : undefined,
+      };
+    });
+
+    const unAttendedList: any[] = [];
+
+    for (const s of allStudents) {
+      if (attendedStudentIds.has(s.id)) continue;
+
+      const latestLoc = locMap.get(s.id);
+      const leave = leaveMap.get(s.id);
+
+      if (leave && leave.status === "APPROVED") {
+        const attStatus = String(leave.type || "").toUpperCase().includes("SAKIT") ? "SAKIT" : "IZIN";
+        const lat = scheduleLoc.latitude ? Number(scheduleLoc.latitude) : 0;
+        const lng = scheduleLoc.longitude ? Number(scheduleLoc.longitude) : 0;
+
+        // Auto-synchronize ActivityAttendance in DB for approved leaves
+        try {
+          await prisma.activityAttendance.upsert({
+            where: {
+              studentId_scheduleId: {
+                studentId: s.id,
+                scheduleId,
+              },
+            },
+            create: {
+              studentId: s.id,
+              scheduleId,
+              status: attStatus,
+              method: "IZIN_DPL",
+              latitude: lat,
+              longitude: lng,
+              attendedAt: schedule?.date || new Date(),
+            },
+            update: {
+              status: attStatus,
+              method: "IZIN_DPL",
+            },
+          });
+        } catch (_syncErr) {
+          // Continue if already exists
+        }
+
+        unAttendedList.push({
+          id: `leave-approved-${s.id}`,
+          studentId: s.id,
+          scheduleId,
+          attendedAt: (schedule?.date || new Date()).toISOString(),
+          completedAt: null,
+          method: "IZIN_DPL",
+          latitude: lat,
+          longitude: lng,
+          status: attStatus,
+          currentStatus: "IZIN_DISETUJUI",
+          student: s,
+          leaveRequest: {
+            id: leave.id,
+            type: leave.type,
+            reason: leave.reason,
+            evidenceUrl: leave.evidenceUrl,
+            status: leave.status,
+          },
+        });
+      } else if (leave && leave.status === "PENDING") {
+        const isSakit = String(leave.type || "").toUpperCase().includes("SAKIT");
+        unAttendedList.push({
+          id: `leave-pending-${s.id}`,
+          studentId: s.id,
+          scheduleId,
+          attendedAt: null,
+          completedAt: null,
+          method: "PENGAJUAN_IZIN",
+          latitude: latestLoc ? latestLoc.latitude : scheduleLoc.latitude,
+          longitude: latestLoc ? latestLoc.longitude : scheduleLoc.longitude,
+          status: isSakit ? "SAKIT_PENDING" : "IZIN_PENDING",
+          currentStatus: "MENUNGGU_PERSETUJUAN_IZIN",
+          student: s,
+          leaveRequest: {
+            id: leave.id,
+            type: leave.type,
+            reason: leave.reason,
+            evidenceUrl: leave.evidenceUrl,
+            status: leave.status,
+          },
+        });
+      } else if (leave && leave.status === "CANCEL_REQUESTED") {
+        unAttendedList.push({
+          id: `leave-cancel-${s.id}`,
+          studentId: s.id,
+          scheduleId,
+          attendedAt: null,
+          completedAt: null,
+          method: "PEMBATALAN_IZIN",
+          latitude: latestLoc ? latestLoc.latitude : scheduleLoc.latitude,
+          longitude: latestLoc ? latestLoc.longitude : scheduleLoc.longitude,
+          status: "CANCEL_REQUESTED",
+          currentStatus: "PENGAJUAN_BATAL_IZIN",
+          student: s,
+          leaveRequest: {
+            id: leave.id,
+            type: leave.type,
+            reason: leave.reason,
+            evidenceUrl: leave.evidenceUrl,
+            status: leave.status,
+          },
+        });
+      } else if (leave && leave.status === "OVERRIDDEN_HADIR") {
+        unAttendedList.push({
+          id: `leave-override-${s.id}`,
+          studentId: s.id,
+          scheduleId,
+          attendedAt: (schedule?.date || new Date()).toISOString(),
+          completedAt: null,
+          method: "OVERRIDE_DPL",
+          latitude: latestLoc ? latestLoc.latitude : scheduleLoc.latitude,
+          longitude: latestLoc ? latestLoc.longitude : scheduleLoc.longitude,
+          status: "HADIR",
+          currentStatus: "OVERRIDDEN_HADIR",
+          student: s,
+          leaveRequest: {
+            id: leave.id,
+            type: leave.type,
+            reason: leave.reason,
+            evidenceUrl: leave.evidenceUrl,
+            status: leave.status,
+          },
+        });
+      } else {
         let currentStatus = "BELUM_ABSEN";
         if (latestLoc) {
           let isInside = false;
@@ -814,19 +981,21 @@ export class KknAttendanceService {
           currentStatus = isInside ? "DI_LOKASI_BELUM_ABSEN" : "BELUM_ABSEN";
         }
 
-        return {
+        unAttendedList.push({
           id: `unattended-${s.id}`,
           studentId: s.id,
           scheduleId,
           attendedAt: null,
+          completedAt: null,
           method: "-",
           latitude: latestLoc ? latestLoc.latitude : scheduleLoc.latitude,
           longitude: latestLoc ? latestLoc.longitude : scheduleLoc.longitude,
           status: "BELUM_ABSEN",
           currentStatus,
           student: s,
-        };
-      });
+        });
+      }
+    }
 
     const combined = [...attendedList, ...unAttendedList];
 
