@@ -124,24 +124,39 @@ const PoinWarga: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Gamifikasi & Poin Warga</h1>
-            <span className="bg-amber-50 text-amber-600 border border-amber-200 text-xs px-2.5 py-1 rounded-full font-extrabold flex items-center gap-1">
-              <Star size={13} /> Reward System
+      {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+        {/* Tier 1: Title & Status Badge */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
+              Gamifikasi &amp; Poin Warga
+            </h1>
+            <p className="text-xs text-slate-500 font-medium">
+              Pantau perolehan poin gamifikasi, riwayat apresiasi, dan peringkat setoran warga.
+            </p>
+          </div>
+
+          <div className="self-start sm:self-center flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200/80 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              Ledger Poin Aktif
             </span>
           </div>
-          <p className="text-sm text-slate-500 mt-1">
-            Pantau perolehan poin gamifikasi, riwayat apresiasi, dan peringkat setoran warga.
-          </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
-            {filteredLeaders.length} Warga Terdaftar
-          </span>
+        {/* Tier 2: Stats & Information */}
+        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 font-medium">
+          <div>
+            Aturan: <strong className="text-slate-800">+10 Poin Registrasi Tempat Sampah • +50 Poin Ide Daur Ulang Disetujui</strong>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400">Total Terdata:</span>
+            <span className="font-black text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-200/60">
+              {filteredLeaders.length} Warga
+            </span>
+          </div>
         </div>
       </div>
 

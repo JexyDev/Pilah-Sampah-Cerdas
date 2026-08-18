@@ -3,6 +3,8 @@ import { Upload, Send, Loader2, CheckCircle, XCircle, Search, Filter, Trash2, X,
 import toast from "react-hot-toast";
 import api from "../../utils/api";
 import { useAuthStore } from "../../store/useAuthStore";
+import PageHeader from "../../components/common/PageHeader";
+import { Lightbulb } from "lucide-react";
 
 interface IdeDaurUlang {
   id: string;
@@ -170,47 +172,53 @@ const IdeDaurUlang: React.FC = () => {
   const isAdmin = user?.peran === "SUPER_USER" || user?.peran === "ADMIN_DLH" || user?.peran === "RW";
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-extrabold text-gray-900">Social Feed: Ide Daur Ulang</h1>
-        <p className="text-sm text-gray-500 mt-1">Bagikan ide kreatif daur ulang dan dapatkan 50 poin jika disetujui!</p>
-      </div>
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 font-sans">
+      <PageHeader
+        icon={Lightbulb}
+        category="Kreativitas & Pemanfaatan"
+        scope="Komunitas Warga Coblong"
+        title="Ide & Inovasi Daur Ulang"
+        description="Bagikan inspirasi daur ulang sampah lingkungan. Ide yang disetujui RW mendapatkan 50 poin gamifikasi."
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Kolom Kiri: Form Submit */}
         {canSubmit && (
-          <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-fit">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">{editingId ? "Edit Ide Daur Ulang" : "Bagikan Ide Anda"}</h2>
+          <div className="lg:col-span-1 bg-white p-5 sm:p-6 rounded-2xl shadow-2xs border border-slate-200/90 h-fit space-y-4">
+            <div className="border-b border-slate-100 pb-3">
+              <h2 className="text-base font-black text-slate-900">{editingId ? "Edit Ide Daur Ulang" : "Bagikan Ide Baru"}</h2>
+              <p className="text-xs text-slate-500 font-medium">Unggah konsep kreasi pengolahan daur ulang</p>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Judul Ide</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Judul Ide</label>
                 <input
                   type="text"
                   value={judul}
                   onChange={(e) => setJudul(e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm"
-                  placeholder="Contoh: Pot Tanaman dari Botol"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966] focus:bg-white transition"
+                  placeholder="Contoh: Pot Tanaman dari Botol Plastik"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Material</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Material yang Digunakan</label>
                 <textarea
                   value={material}
                   onChange={(e) => setMaterial(e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966] focus:bg-white transition"
                   rows={3}
-                  placeholder="Contoh: Botol plastik, cat, tali"
+                  placeholder="Contoh: Botol plastik bekas, cat akrilik, tali rami"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Foto Hasil (Opsional)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Foto Dokumentasi (Opsional)</label>
                 <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg cursor-pointer transition text-sm">
-                    <Upload size={18} />
+                  <label className="flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl cursor-pointer transition text-xs font-bold border border-slate-200/80">
+                    <Upload size={15} className="text-slate-500" />
                     <span>Pilih Foto</span>
                     <input
                       type="file"
@@ -223,18 +231,18 @@ const IdeDaurUlang: React.FC = () => {
                       }}
                     />
                   </label>
-                  {foto && <span className="text-sm text-gray-500 truncate max-w-[150px]">{foto.name}</span>}
+                  {foto && <span className="text-xs font-semibold text-slate-600 truncate max-w-[150px]">{foto.name}</span>}
                 </div>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-2">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-lg font-bold hover:bg-primary-dark transition disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-emerald-700 transition disabled:opacity-50 cursor-pointer shadow-xs"
                 >
-                  {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
-                  {editingId ? "Simpan Perubahan" : "Kirim Ide"}
+                  {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                  <span>{editingId ? "Simpan Perubahan" : "Kirim Ide"}</span>
                 </button>
                 {editingId && (
                   <button
@@ -245,7 +253,7 @@ const IdeDaurUlang: React.FC = () => {
                       setMaterial("");
                       setFoto(null);
                     }}
-                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold transition text-sm"
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
                     Batal
                   </button>
@@ -259,24 +267,24 @@ const IdeDaurUlang: React.FC = () => {
         <div className={canSubmit ? "lg:col-span-2" : "lg:col-span-3"}>
           
           {/* Search & Filter Bar */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6 flex flex-col sm:flex-row gap-4 items-center">
+          <div className="bg-white rounded-2xl shadow-2xs border border-slate-200/90 p-4 mb-6 flex flex-col sm:flex-row gap-3.5 items-center">
             <div className="relative flex-1 w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
                 type="text"
                 placeholder="Cari ide, material, atau nama penulis..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm"
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966] focus:bg-white transition"
               />
             </div>
             
             <div className="flex items-center gap-2 w-full sm:w-auto min-w-[150px]">
-              <Filter size={16} className="text-gray-500" />
+              <Filter size={15} className="text-slate-400" />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full py-2.5 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-primary"
+                className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-[#009966] transition cursor-pointer"
               >
                 <option value="">Semua Status</option>
                 <option value="APPROVED">Disetujui</option>
@@ -286,70 +294,70 @@ const IdeDaurUlang: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Feed Publik</h2>
+          <div className="bg-white rounded-2xl shadow-2xs border border-slate-200/90 p-5 sm:p-6">
+            <h2 className="text-base font-black text-slate-900 mb-4">Feed Publik Inovasi</h2>
             {loading ? (
-              <div className="flex justify-center py-12"><Loader2 size={32} className="animate-spin text-primary" /></div>
+              <div className="flex justify-center py-12"><Loader2 size={28} className="animate-spin text-emerald-600" /></div>
             ) : ides.length === 0 ? (
-              <div className="text-center text-gray-400 py-12">Belum ada ide daur ulang.</div>
+              <div className="text-center text-slate-400 py-12 text-xs font-bold">Belum ada ide daur ulang.</div>
             ) : (
               <>
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {ides.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((ide) => (
-                    <div key={ide.id} className="border border-gray-100 rounded-xl p-5 hover:bg-gray-50 transition group">
-                      <div className="flex justify-between items-start mb-3">
+                    <div key={ide.id} className="border border-slate-100 rounded-xl p-4.5 hover:border-slate-200 hover:bg-slate-50/50 transition group">
+                      <div className="flex justify-between items-start mb-2.5">
                         <div>
-                          <h3 className="font-bold text-gray-900 text-lg">{ide.judul}</h3>
-                          <p className="text-xs text-gray-500">Oleh: {ide.user.name} ({ide.user.role.name}) • {new Date(ide.createdAt).toLocaleDateString()}</p>
+                          <h3 className="font-bold text-slate-900 text-base">{ide.judul}</h3>
+                          <p className="text-[11px] text-slate-500 font-medium">Oleh: {ide.user.name} ({ide.user.role.name}) • {new Date(ide.createdAt).toLocaleDateString("id-ID")}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                          {ide.statusApproval === "APPROVED" && <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">Disetujui</span>}
-                          {ide.statusApproval === "PENDING" && <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">Pending</span>}
-                          {ide.statusApproval === "REJECTED" && <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">Ditolak</span>}
+                          {ide.statusApproval === "APPROVED" && <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-lg text-[11px] font-bold">Disetujui</span>}
+                          {ide.statusApproval === "PENDING" && <span className="bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-0.5 rounded-lg text-[11px] font-bold">Menunggu</span>}
+                          {ide.statusApproval === "REJECTED" && <span className="bg-rose-50 text-rose-800 border border-rose-200 px-2.5 py-0.5 rounded-lg text-[11px] font-bold">Ditolak</span>}
 
                           {isAdmin && (
                             <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
                                 onClick={() => handleEdit(ide)}
-                                className="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                className="p-1.5 text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
                                 title="Edit Ide"
                               >
-                                <Pencil size={16} />
+                                <Pencil size={15} />
                               </button>
                               <button
                                 onClick={() => handleDeleteClick(ide.id)}
-                                className="p-1.5 text-error hover:bg-error/10 rounded-lg transition-colors"
+                                className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                                 title="Hapus Ide"
                               >
-                                <Trash2 size={16} />
+                                <Trash2 size={15} />
                               </button>
                             </div>
                           )}
                         </div>
                       </div>
-                      <p className="text-sm text-gray-700 mb-4 whitespace-pre-wrap"><span className="font-semibold text-gray-800">Material: </span>{ide.material}</p>
+                      <p className="text-xs text-slate-700 mb-3 whitespace-pre-wrap leading-relaxed"><span className="font-bold text-slate-800">Material: </span>{ide.material}</p>
                       
                       {ide.foto && (
-                        <div className="mb-4">
-                          <img src={getImageUrl(ide.foto)} alt={ide.judul} className="rounded-lg max-h-64 object-cover" />
+                        <div className="mb-3">
+                          <img src={getImageUrl(ide.foto)} alt={ide.judul} className="rounded-xl max-h-56 object-cover border border-slate-100" />
                         </div>
                       )}
 
                       {isRW && ide.statusApproval === "PENDING" && (
-                        <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+                        <div className="flex gap-2 mt-3 pt-3 border-t border-slate-100">
                           <button
                             onClick={() => handleApprove(ide.id)}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg text-sm font-bold transition"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-bold transition border border-emerald-200 cursor-pointer"
                           >
-                            <CheckCircle size={18} />
-                            Setujui (+50 Poin)
+                            <CheckCircle size={14} />
+                            <span>Setujui (+50 Poin)</span>
                           </button>
                           <button
                             onClick={() => handleReject(ide.id)}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-sm font-bold transition"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg text-xs font-bold transition border border-rose-200 cursor-pointer"
                           >
-                            <XCircle size={18} />
-                            Tolak
+                            <XCircle size={14} />
+                            <span>Tolak</span>
                           </button>
                         </div>
                       )}

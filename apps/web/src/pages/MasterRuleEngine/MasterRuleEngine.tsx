@@ -622,10 +622,10 @@ const MasterRuleEngine: React.FC = () => {
           {/* ========================================== */}
           {/* RULE 4: KALENDER KKN & PENGATURAN HARI LIBUR ABSENSI (FULL WIDTH) */}
           {/* ========================================== */}
-          <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200/80 p-6 space-y-5 shadow-2xs">
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 space-y-5 shadow-2xs">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-200/60 shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200/60 shrink-0">
                   <Calendar size={20} />
                 </div>
                 <div>
@@ -635,7 +635,7 @@ const MasterRuleEngine: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <span className="bg-purple-100 text-purple-800 border border-purple-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase shrink-0">
+              <span className="bg-slate-100 text-slate-800 border border-slate-200 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase shrink-0">
                 Kalender &amp; Libur
               </span>
             </div>
@@ -648,7 +648,7 @@ const MasterRuleEngine: React.FC = () => {
               {/* Left Column: Periode Tanggal KKN & Toggle Weekend */}
               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-4">
                 <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Calendar size={16} className="text-purple-600" /> Rentang Tanggal Resmi KKN
+                  <Calendar size={16} className="text-emerald-700" /> Rentang Tanggal Resmi KKN
                 </span>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -660,7 +660,7 @@ const MasterRuleEngine: React.FC = () => {
                       type="date"
                       value={config.kknStartDate || "2026-08-20"}
                       onChange={(e) => handleChange("kknStartDate", e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-purple-500"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966]"
                     />
                   </div>
                   <div>
@@ -671,14 +671,14 @@ const MasterRuleEngine: React.FC = () => {
                       type="date"
                       value={config.kknEndDate || "2026-10-20"}
                       onChange={(e) => handleChange("kknEndDate", e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-purple-500"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966]"
                     />
                   </div>
                 </div>
 
                 {/* Weekend Auto-Holiday Toggle */}
                 <div className="pt-2 border-t border-slate-200/60">
-                  <label className="flex items-center justify-between cursor-pointer p-3 bg-white rounded-xl border border-slate-200 hover:border-purple-300 transition">
+                  <label className="flex items-center justify-between cursor-pointer p-3 bg-white rounded-xl border border-slate-200 hover:border-slate-300 transition">
                     <div>
                       <span className="text-xs font-black text-slate-800 block">Libur Otomatis Akhir Pekan (Sabtu &amp; Minggu)</span>
                       <span className="text-[10.5px] text-slate-500 font-medium">Sabtu &amp; Minggu tidak dihitung kewajiban presensi mahasiswa</span>
@@ -687,7 +687,7 @@ const MasterRuleEngine: React.FC = () => {
                       type="checkbox"
                       checked={config.kknAutoHolidayWeekends}
                       onChange={(e) => handleChange("kknAutoHolidayWeekends", e.target.checked)}
-                      className="w-4 h-4 accent-purple-600 cursor-pointer rounded"
+                      className="w-4 h-4 accent-emerald-600 cursor-pointer rounded"
                     />
                   </label>
                 </div>
@@ -697,9 +697,9 @@ const MasterRuleEngine: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleMarkTodayHoliday}
-                    className="w-full py-2.5 px-4 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                    className="w-full py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
                   >
-                    <Calendar size={14} />
+                    <Calendar size={14} className="text-emerald-700" />
                     <span>Tandai Hari Ini ({new Date().toISOString().slice(0, 10)}) Sebagai Libur Massal</span>
                   </button>
                 </div>
@@ -710,9 +710,9 @@ const MasterRuleEngine: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                      <AlertTriangle size={16} className="text-purple-600" /> Daftar Hari Libur Khusus &amp; Nasional
+                      <AlertTriangle size={16} className="text-emerald-700" /> Daftar Hari Libur Khusus &amp; Nasional
                     </span>
-                    <span className="text-xs font-black text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md">
+                    <span className="text-xs font-black text-slate-800 bg-slate-200/80 px-2 py-0.5 rounded-md">
                       {(config.kknHolidays || []).length} Hari Libur
                     </span>
                   </div>
@@ -725,20 +725,20 @@ const MasterRuleEngine: React.FC = () => {
                         type="date"
                         value={newHolidayDate}
                         onChange={(e) => setNewHolidayDate(e.target.value)}
-                        className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-purple-500"
+                        className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966]"
                       />
                       <input
                         type="text"
                         placeholder="Keterangan (misal: HUT RI)"
                         value={newHolidayDesc}
                         onChange={(e) => setNewHolidayDesc(e.target.value)}
-                        className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-purple-500"
+                        className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#009966]"
                       />
                     </div>
                     <button
                       type="button"
                       onClick={handleAddHoliday}
-                      className="w-full py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
                     >
                       <Plus size={14} /> <span>Tambah ke Daftar Libur</span>
                     </button>
@@ -749,10 +749,10 @@ const MasterRuleEngine: React.FC = () => {
                     {(config.kknHolidays || []).map((h) => (
                       <div
                         key={h.date}
-                        className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-200/80 text-xs hover:border-purple-300 transition"
+                        className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-200/80 text-xs hover:border-slate-300 transition"
                       >
                         <div className="flex items-center gap-2">
-                          <span className="font-mono font-black text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 text-[11px]">
+                          <span className="font-mono font-black text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-[11px]">
                             {h.date}
                           </span>
                           <span className="font-bold text-slate-700">{h.description}</span>

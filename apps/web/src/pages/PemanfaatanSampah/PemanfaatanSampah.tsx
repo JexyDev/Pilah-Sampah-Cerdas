@@ -347,28 +347,28 @@ export const PemanfaatanSampah: React.FC = () => {
     const pUpper = programStr.toUpperCase();
     if (pUpper.includes("BANK")) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-2xs">
           <Recycle size={13} className="text-[#009966]" /> Bank Sampah
         </span>
       );
     }
     if (pUpper.includes("MAGGOT")) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs">
-          <Bug size={13} className="text-amber-600" /> Rumah Maggot BSF
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-800 border border-slate-200 shadow-2xs">
+          <Bug size={13} className="text-slate-600" /> Rumah Maggot BSF
         </span>
       );
     }
     if (pUpper.includes("POC")) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-purple-50 text-purple-800 border border-purple-200 shadow-2xs">
-          <FlaskConical size={13} className="text-purple-600" /> Pupuk Organik Cair (POC)
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-2xs">
+          <FlaskConical size={13} className="text-emerald-700" /> Pupuk Organik Cair (POC)
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-teal-50 text-teal-800 border border-teal-200 shadow-2xs">
-        <Sprout size={13} className="text-teal-600" /> Buruan Sae
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-800 border border-slate-200 shadow-2xs">
+        <Sprout size={13} className="text-emerald-700" /> Buruan Sae
       </span>
     );
   };
@@ -378,7 +378,7 @@ export const PemanfaatanSampah: React.FC = () => {
       {/* Clean Enterprise Page Header */}
       <PageHeader
         icon={Recycle}
-        category="Tata Kelola Daur Ulang Hilir"
+        category="Pengolahan & Pemanfaatan Sampah"
         scope={
           isDpl
             ? user?.wilayah || (user?.kelurahan ? `Kel. ${user.kelurahan}` : "Wilayah Dampingan KKN")
@@ -389,7 +389,7 @@ export const PemanfaatanSampah: React.FC = () => {
             : "Kecamatan Coblong"
         }
         title="Pengolahan & Inovasi"
-        description="Pencatatan operasional, sirkulasi bahan baku, dan monitoring konversi hasil panen daur ulang lingkungan (Buruan Sae, Maggot BSF, POC, Bank Sampah)."
+        description="Pencatatan operasional, sirkulasi bahan baku, dan monitoring konversi hasil olahan sampah daur ulang lingkungan (Buruan Sae, Maggot BSF, POC, Bank Sampah)."
         actions={
           canSubmitRecap ? (
             <button
@@ -408,8 +408,8 @@ export const PemanfaatanSampah: React.FC = () => {
 
       {/* KPI Metric Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
-        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-          <div className="p-3 bg-slate-100 text-slate-700 rounded-2xl shrink-0">
+        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
+          <div className="p-3 bg-slate-100 text-slate-700 rounded-xl shrink-0">
             <Layers className="w-5 h-5" />
           </div>
           <div>
@@ -421,12 +421,12 @@ export const PemanfaatanSampah: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl shrink-0 border border-emerald-100">
+        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
+          <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl shrink-0 border border-emerald-100">
             <Sprout className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Hasil Daur Ulang</p>
+            <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Hasil Olahan Daur</p>
             <p className="text-lg font-black text-emerald-700 mt-0.5">
               {totalHasilPemanfaatan >= 1000 ? (totalHasilPemanfaatan / 1000).toFixed(1) : totalHasilPemanfaatan.toLocaleString("id-ID", { maximumFractionDigits: 1 })}{" "}
               <span className="text-xs font-bold text-slate-500">{totalHasilPemanfaatan >= 1000 ? "Ton" : "Kg"}</span>
@@ -434,23 +434,23 @@ export const PemanfaatanSampah: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl shrink-0 border border-blue-100">
+        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
+          <div className="p-3 bg-slate-100 text-slate-700 rounded-xl shrink-0 border border-slate-200">
             <ArrowRightLeft className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Efisiensi Sirkular</p>
-            <p className="text-lg font-black text-blue-700 mt-0.5">{conversionRatio}%</p>
+            <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Efisiensi Konversi</p>
+            <p className="text-lg font-black text-slate-900 mt-0.5">{conversionRatio}%</p>
           </div>
         </div>
 
-        <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl shrink-0 border border-purple-100">
+        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
+          <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl shrink-0 border border-emerald-100">
             <MapPin className="w-5 h-5" />
           </div>
           <div>
             <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">RW Berpartisipasi</p>
-            <p className="text-lg font-black text-purple-700 mt-0.5">{activeRwCount} Wilayah</p>
+            <p className="text-lg font-black text-slate-900 mt-0.5">{activeRwCount} Wilayah</p>
           </div>
         </div>
       </div>

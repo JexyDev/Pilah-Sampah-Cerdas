@@ -1084,33 +1084,45 @@ const ManajemenPengguna: React.FC = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20 shrink-0">
-            <User size={24} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight">
+      {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+        {/* Tier 1: Title & Status Badge */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
               Manajemen Pengguna
             </h1>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
+            <p className="text-xs text-slate-500 font-medium">
               Kelola akses, daftar pengguna, peran sistem, dan otentikasi akun
             </p>
           </div>
+
+          <div className="self-start sm:self-center flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-[#009966] border border-emerald-200/80 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-[#009966] animate-pulse" />
+              RBAC Aktif
+            </span>
+          </div>
         </div>
 
-        {!isReadOnly && (
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleOpenAddModal}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#009966] hover:bg-[#008855] text-white font-extrabold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
-            >
-              <UserPlus size={15} />
-              Tambah Pengguna
-            </button>
+        {/* Tier 2: Info & Action Buttons */}
+        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs text-slate-500 font-medium">
+            Total {users.length} pengguna terdaftar di seluruh role
           </div>
-        )}
+
+          {!isReadOnly && (
+            <div className="flex items-center gap-2 ml-auto sm:ml-0">
+              <button
+                onClick={handleOpenAddModal}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#009966] hover:bg-[#008855] text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
+              >
+                <UserPlus size={15} />
+                <span>Tambah Pengguna</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Summary Cards */}

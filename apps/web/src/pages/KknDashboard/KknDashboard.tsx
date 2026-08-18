@@ -366,26 +366,49 @@ const KknDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-16 w-full max-w-[1600px] mx-auto px-2 sm:px-4">
-      {/* ---------------- 1. HEADER SECTION ---------------- */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-[11px] font-extrabold flex items-center gap-1.5 shadow-2xs">
-              <Sparkles size={13} />
-              {isSuperOrAdmin ? "Super Admin & Monitoring Terpadu" : "Portal Mahasiswa KKN"}
-            </span>
-            <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-bold">
-              Kecamatan Coblong
+      {/* ---------------- 1. HEADER SECTION (2-Tier Clean UI) ---------------- */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+        {/* Tier 1: Title & Status Badge */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-black tracking-tight text-slate-900">
+              {isSuperOrAdmin ? "Monitoring Aktivitas Mahasiswa KKN" : `Portal KKN: ${studentKkn?.nama || "Mahasiswa"}`}
+            </h1>
+            <p className="text-xs text-slate-500 font-medium">
+              {isSuperOrAdmin
+                ? `Akses ${user?.peran || "SUPER_USER"} • Memantau seluruh progres aktivasi tempat sampah dan kepatuhan 6 kelurahan di Kecamatan Coblong`
+                : "Pusat pencatatan pendampingan warga, aktivasi tempat sampah, dan logbook KKN"}
+            </p>
+          </div>
+
+          <div className="self-start sm:self-center flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-[#009966] border border-emerald-200/80 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-[#009966] animate-pulse" />
+              {isSuperOrAdmin ? "Super Admin Live" : "Mahasiswa Aktif"}
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-            {isSuperOrAdmin ? "Monitoring Aktivitas Mahasiswa KKN" : `Portal KKN: ${studentKkn?.nama || "Mahasiswa"}`}
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-            {isSuperOrAdmin
-              ? `Akses ${user?.peran || "SUPER_USER"} • Memantau seluruh progres aktivasi tempat sampah dan kepatuhan 6 kelurahan di Kecamatan Coblong.`
-              : `NIM: ${studentKkn?.nim || "-"} • Jurusan: ${studentKkn?.jurusan || "-"} • Wilayah: ${studentKkn?.assignedArea || "Coblong"}`}
-          </p>
+        </div>
+
+        {/* Tier 2: Metadata & Wilayah */}
+        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 font-medium">
+          <div className="flex flex-wrap items-center gap-3">
+            {!isSuperOrAdmin && (
+              <span className="px-2.5 py-1 bg-slate-100 rounded-lg text-slate-700 font-semibold">
+                NIM: {studentKkn?.nim || "-"} • Jurusan: {studentKkn?.jurusan || "-"}
+              </span>
+            )}
+            <span className="px-2.5 py-1 bg-slate-100 rounded-lg text-slate-700 font-semibold flex items-center gap-1.5">
+              <MapPin size={13} className="text-[#009966]" />
+              Wilayah: {studentKkn?.assignedArea || "Kecamatan Coblong"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-slate-400 font-medium">Status Program:</span>
+            <span className="font-bold text-[#009966] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60 text-[11px]">
+              {studentKkn?.whitelistStatus || "APPROVED"}
+            </span>
+          </div>
         </div>
       </div>
 

@@ -285,12 +285,12 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
                   <div className="space-y-1">
                     <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-200">
                       <div
-                        className={`h-full rounded-full transition-all duration-700 ${
+                        className={`h-full rounded-full transition-all duration-500 ${
                           isHigh
-                            ? "bg-gradient-to-r from-emerald-500 to-cyan-400 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+                            ? "bg-emerald-600"
                             : isMed
-                            ? "bg-gradient-to-r from-amber-500 to-yellow-400 shadow-[0_0_10px_rgba(245,158,11,0.5)]"
-                            : "bg-gradient-to-r from-rose-500 to-red-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]"
+                            ? "bg-amber-500"
+                            : "bg-rose-500"
                         }`}
                         style={{ width: `${Math.max(patuh, 4)}%` }}
                       ></div>
@@ -1859,72 +1859,73 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12 text-slate-800 font-sans relative">
-      {/* 1. Header Bar (Refined Reference UI Style) */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-2xl bg-[#e5f7ed] text-[#009966] flex items-center justify-center border border-[#009966]/20 shadow-2xs shrink-0">
-            <Recycle size={24} className="text-[#009966]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                Dasbor Monitoring TrashCare
-              </h1>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-[#009966] border border-emerald-200">
-                <span className="w-2 h-2 rounded-full bg-[#009966] animate-ping" />
-                REAL-TIME MONITORING
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
+      {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+        {/* Top Tier: Title & Live Badge */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+              Dasbor Monitoring TrashCare
+            </h1>
+            <p className="text-xs text-slate-500 font-medium">
               Pusat komando pemantauan pemilahan sampah cerdas, sektor kebersihan &amp; residu Rukun Warga (RW)
             </p>
           </div>
+
+          <div className="self-start sm:self-center">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-[#009966] border border-emerald-200/80 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-[#009966] animate-pulse" />
+              Real-Time Monitoring
+            </span>
+          </div>
         </div>
 
-        {/* Top Controls Right */}
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-          <CustomSelect
-            value={
-              isLurahRole
-                ? `Kel. ${userKelurahan.replace(/^Kel\.\s*/i, "") || "Cipaganti"}`
-                : selectedWilayah
-            }
-            onChange={(val) => {
-              if (!isLurahRole) {
-                handleRegionChange(val);
+        {/* Bottom Tier: Filter Controls & Action Button */}
+        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <CustomSelect
+              value={
+                isLurahRole
+                  ? `Kel. ${userKelurahan.replace(/^Kel\.\s*/i, "") || "Cipaganti"}`
+                  : selectedWilayah
               }
-            }}
-            options={
-              isLurahRole
-                ? [
-                    {
-                      value: `Kel. ${userKelurahan.replace(/^Kel\.\s*/i, "") || "Cipaganti"}`,
-                      label: `Kel. ${userKelurahan.replace(/^Kel\.\s*/i, "") || "Cipaganti"} (Terkunci - Wilayah Tugas)`,
-                      sublabel: "Wilayah Administratif Tugas Lurah",
-                    },
-                  ]
-                : wilayahOptions
-            }
-            icon={<MapPin size={15} className="text-[#009966] flex-shrink-0" />}
-            label="Wilayah:"
-            variant="emerald"
-            disabled={isLurahRole}
-          />
+              onChange={(val) => {
+                if (!isLurahRole) {
+                  handleRegionChange(val);
+                }
+              }}
+              options={
+                isLurahRole
+                  ? [
+                      {
+                        value: `Kel. ${userKelurahan.replace(/^Kel\.\s*/i, "") || "Cipaganti"}`,
+                        label: `Kel. ${userKelurahan.replace(/^Kel\.\s*/i, "") || "Cipaganti"} (Terkunci - Wilayah Tugas)`,
+                        sublabel: "Wilayah Administratif Tugas Lurah",
+                      },
+                    ]
+                  : wilayahOptions
+              }
+              icon={<MapPin size={15} className="text-[#009966] flex-shrink-0" />}
+              label="Wilayah:"
+              variant="emerald"
+              disabled={isLurahRole}
+            />
 
-          <CustomSelect
-            value={timeFilter}
-            onChange={(val) => setTimeFilter(val)}
-            options={PERIODE_OPTIONS}
-            icon={<Calendar size={15} className="text-sky-600 flex-shrink-0" />}
-            label="Periode:"
-            variant="slate"
-          />
+            <CustomSelect
+              value={timeFilter}
+              onChange={(val) => setTimeFilter(val)}
+              options={PERIODE_OPTIONS}
+              icon={<Calendar size={15} className="text-sky-600 flex-shrink-0" />}
+              label="Periode:"
+              variant="slate"
+            />
+          </div>
 
           <button
             onClick={() => setShowComplianceModal(true)}
-            className="bg-[#009966] hover:bg-[#008055] text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer uppercase tracking-wider active:scale-95"
+            className="bg-[#009966] hover:bg-[#008055] text-white font-bold text-xs px-4 py-2 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-95 ml-auto sm:ml-0"
           >
-            <LineChart size={16} />
+            <LineChart size={15} />
             <span>Indeks Kepatuhan</span>
           </button>
         </div>
@@ -2472,21 +2473,21 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Edukasi & Deteksi Kontaminasi (4 cols) */}
-          <div className="md:col-span-4 bg-gradient-to-br from-slate-900 to-slate-800 text-white p-5 rounded-2xl border border-slate-700 shadow-sm space-y-3 flex flex-col justify-between h-full">
+          <div className="md:col-span-4 bg-white text-slate-800 p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3 flex flex-col justify-between h-full">
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-amber-400 font-extrabold text-xs">
-                <span className="material-symbols-outlined text-base">warning</span>
+              <div className="flex items-center gap-2 text-amber-700 font-extrabold text-xs">
+                <span className="material-symbols-outlined text-base text-amber-600">warning</span>
                 Deteksi Kontaminasi &amp; Edukasi
               </div>
-              <p className="text-[11px] text-slate-300 font-normal leading-relaxed">
-                Jika tempat sampah berkategori <strong className="text-emerald-400">Organik</strong> tetapi hasil deteksi AI setoran warga teridentifikasi didominasi <strong className="text-amber-400">Anorganik/Residu</strong>, maka tingkat kepatuhan pada lokasi tersebut dianggap <strong className="text-rose-400">Rendah (Tercampur)</strong>.
+              <p className="text-[11px] text-slate-600 font-normal leading-relaxed">
+                Jika tempat sampah berkategori <strong className="text-emerald-700 font-bold">Organik</strong> tetapi hasil deteksi AI setoran warga teridentifikasi didominasi <strong className="text-amber-700 font-bold">Anorganik/Residu</strong>, maka tingkat kepatuhan pada lokasi tersebut dianggap <strong className="text-rose-600 font-bold">Rendah (Tercampur)</strong>.
               </p>
             </div>
 
-            <div className="pt-2 border-t border-slate-700/80 flex items-center justify-between text-[10.5px]">
-              <span className="text-slate-400 font-medium">Auto-Audit AI TrashCare</span>
-              <span className="text-emerald-400 font-bold flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
+              <span className="text-slate-500 font-medium">Auto-Audit AI TrashCare</span>
+              <span className="text-emerald-700 font-bold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-600" />
                 Aktif
               </span>
             </div>

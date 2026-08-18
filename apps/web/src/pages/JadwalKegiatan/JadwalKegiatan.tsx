@@ -115,6 +115,9 @@ const JadwalKegiatan: React.FC = () => {
     "DPL",
     "DOSEN_PEMBIMBING",
     "DEVELOPER",
+    "RW",
+    "RT",
+    "PETUGAS_RESIDU",
   ].includes(userRole);
   const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
 
@@ -727,7 +730,7 @@ const JadwalKegiatan: React.FC = () => {
                     </button>
                   </div>
                 </div>
-                {["SUPER_USER", "RW", "RT", "PETUGAS_RESIDU"].includes(user?.peran || "") && (
+                {canManageSchedules && (
                   <button
                     className="bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-bold px-4 py-2 rounded-lg flex items-center gap-2 transition-colors active:scale-95 transform shadow-sm cursor-pointer"
                     onClick={() => setIsModalOpen(true)}
@@ -920,7 +923,7 @@ const JadwalKegiatan: React.FC = () => {
                           Belum ada agenda dijadwalkan pada tanggal ini.
                         </p>
                       </div>
-                      {["SUPER_USER", "RW", "RT", "PETUGAS_RESIDU"].includes(user?.peran || "") && (
+                      {canManageSchedules && (
                         <button
                           onClick={() => {
                             const year = selectedDate.getFullYear();

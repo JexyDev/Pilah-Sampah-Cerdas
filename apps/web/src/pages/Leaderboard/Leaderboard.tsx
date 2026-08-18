@@ -779,12 +779,12 @@ const Leaderboard: React.FC = () => {
 
       {/* MODAL DETAIL POP-UP (PREMIUM TRASHCARE UX & TYPOGRAPHY) */}
       {selectedItem && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in zoom-in-95 duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col border border-slate-100">
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col border border-slate-200">
             {/* Header Modal */}
-            <div className="p-5 bg-gradient-to-r from-[#f0faf4] via-[#e5f7ed]/70 to-white border-b border-slate-100 flex justify-between items-center">
+            <div className="p-5 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20 font-bold shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200/60 font-bold shrink-0">
                   <Trophy size={20} />
                 </div>
                 <div>
@@ -808,8 +808,8 @@ const Leaderboard: React.FC = () => {
             {/* Modal Body */}
             <div className="p-6 space-y-4 text-xs text-slate-700">
               {/* User Hero Banner */}
-              <div className="flex items-center gap-3.5 p-4 bg-emerald-50/60 rounded-2xl border border-emerald-100">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-500 text-white flex items-center justify-center font-black text-lg shadow-2xs border border-white shrink-0">
+              <div className="flex items-center gap-3.5 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="w-11 h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-base shadow-2xs shrink-0">
                   #{selectedItem.rank}
                 </div>
                 <div className="min-w-0">

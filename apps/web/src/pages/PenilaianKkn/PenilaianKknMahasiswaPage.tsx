@@ -1285,6 +1285,35 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   />
                 </div>
               </div>
+
+              {/* Action Footer Bawah Form */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl">
+                <div className="text-xs text-emerald-900">
+                  <span className="font-extrabold block">Ringkasan Nilai Akhir:</span>
+                  <span className="text-slate-600">
+                    DPL (30%): <strong>{subtotalDpl.toFixed(2)}</strong> | Mitra (70%): <strong>{subtotalMitra.toFixed(2)}</strong> | Total: <strong>{nilaiAkhir.toFixed(2)}</strong> ({currentCategory.label} / {currentCategory.letter})
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <button
+                    type="button"
+                    onClick={handlePrintPdf}
+                    className="flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition border border-slate-200 shadow-2xs cursor-pointer"
+                  >
+                    <Printer size={15} className="text-slate-500" />
+                    <span>Cetak PDF</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveScore}
+                    disabled={saving || !selectedStudentId}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition shadow-xs cursor-pointer disabled:opacity-50"
+                  >
+                    {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                    <span>Simpan Penilaian</span>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 

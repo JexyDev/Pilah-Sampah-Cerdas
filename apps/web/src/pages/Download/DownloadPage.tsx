@@ -191,7 +191,7 @@ const DownloadPage: React.FC = () => {
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight text-slate-900">
                 Pilah Sampah Lebih Mudah <br />
-                <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 bg-clip-text text-transparent">
+                <span className="text-emerald-700">
                   Dalam Genggaman.
                 </span>
               </h1>
@@ -523,14 +523,14 @@ const DownloadPage: React.FC = () => {
 
             {/* Bottom CTA Banner */}
             <div className="pt-8 pb-4">
-              <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white rounded-3xl p-8 sm:p-10 max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-left shadow-xl shadow-emerald-600/20">
+              <div className="bg-emerald-800 text-white rounded-2xl p-8 sm:p-10 max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-left shadow-sm border border-emerald-700/50">
                 <div className="space-y-1">
                   <h3 className="text-xl font-extrabold text-white">Siap Berpartisipasi dalam Pilah Sampah Cerdas?</h3>
                   <p className="text-xs text-emerald-100 font-medium">Unduh aplikasinya sekarang dan kumpulkan poin insentif Anda!</p>
                 </div>
                 <button
                   onClick={handleDownloadApk}
-                  className="px-6 h-13 bg-white hover:bg-slate-100 text-emerald-800 font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shrink-0 transition-all shadow-md cursor-pointer"
+                  className="px-6 h-12 bg-white hover:bg-slate-100 text-emerald-800 font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shrink-0 transition-all shadow-xs cursor-pointer"
                 >
                   <Download size={16} />
                   <span>Unduh APK Sekarang (v{release.version})</span>

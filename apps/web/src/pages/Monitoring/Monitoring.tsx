@@ -323,19 +323,34 @@ const Monitoring: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
-      {/* 1. Main Header Title matching ManajemenTempatSampah */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-[#009966]/10 border border-[#009966]/20 text-[#009966] flex items-center justify-center shrink-0 shadow-2xs">
-            <Map size={24} />
-          </div>
-          <div>
+      {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+        {/* Tier 1: Title & Status Badge */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
-              Monitoring Wilayah
+              Monitoring Wilayah &amp; Peta GIS
             </h1>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
+            <p className="text-xs text-slate-500 font-medium">
               Pemantauan sebaran geospasial tempat sampah terverifikasi, tingkat okupansi volume, &amp; batas wilayah per Kelurahan dan Rukun Warga.
             </p>
+          </div>
+
+          <div className="self-start sm:self-center flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-[#009966] border border-emerald-200/80 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-[#009966] animate-pulse" />
+              GIS Spasial Live
+            </span>
+          </div>
+        </div>
+
+        {/* Tier 2: Metadata */}
+        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 font-medium">
+          <div>
+            Cakupan: <strong className="text-slate-800">Kecamatan Coblong (6 Kelurahan)</strong>
+          </div>
+          <div className="text-slate-400">
+            Total {verifiedMapBins.length} tempat sampah terverifikasi koordinat GPS
           </div>
         </div>
       </div>

@@ -77,33 +77,47 @@ const LaporanAnalitik: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Laporan &amp; Analitik Teknikal</h1>
-            <span className="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full font-extrabold flex items-center gap-1">
-              <LineChart size={13} /> Metrik Sistem
+      {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+        {/* Tier 1: Title & Status Badge */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
+              Laporan &amp; Analitik Teknikal
+            </h1>
+            <p className="text-xs text-slate-500 font-medium">
+              Pemantauan performa sistem, akurasi model AI, &amp; metrik teknikal secara waktu nyata.
+            </p>
+          </div>
+
+          <div className="self-start sm:self-center flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-[#009966] border border-emerald-200/80 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-[#009966] animate-pulse" />
+              Metrik Sistem Real
             </span>
           </div>
-          <p className="text-sm text-slate-500 mt-1">
-            Pemantauan performa sistem, akurasi model AI, &amp; metrik teknikal secara waktu nyata.
-          </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-xs border border-slate-200 cursor-pointer"
-          >
-            <Grid size={14} /> Ekspor CSV
-          </button>
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-white font-extrabold rounded-xl transition-all text-xs shadow-sm cursor-pointer"
-          >
-            <Download size={14} /> Ekspor Dataset AI
-          </button>
+        {/* Tier 2: Action Buttons */}
+        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs text-slate-500 font-medium">
+            Format dataset AI kompatibel dengan format standar audit DLH
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 ml-auto sm:ml-0">
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-xs border border-slate-200 cursor-pointer active:scale-95"
+            >
+              <Grid size={14} /> <span>Ekspor CSV</span>
+            </button>
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#009966] hover:bg-[#008055] text-white font-bold rounded-xl transition-all text-xs shadow-xs cursor-pointer active:scale-95"
+            >
+              <Download size={14} /> <span>Ekspor Dataset AI</span>
+            </button>
+          </div>
         </div>
       </div>
 

@@ -548,73 +548,80 @@ const ManajemenTempatSampah: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
-      {/* 1. Main Header Title & Actions matching User Screenshot */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-[#009966]/10 border border-[#009966]/20 text-[#009966] flex items-center justify-center shrink-0 shadow-2xs">
-            <Trash2 size={24} />
-          </div>
-          <div>
+      {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+        {/* Tier 1: Title & Status Badge */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
               Manajemen Tempat Sampah
             </h1>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
+            <p className="text-xs text-slate-500 font-medium">
               Kelola tempat sampah fisik, lokasi GPS, QR code, peta pemantauan, dan kategori sampah.
             </p>
           </div>
+
+          <div className="self-start sm:self-center flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-[#009966] border border-emerald-200/80 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-[#009966] animate-pulse" />
+              Inventaris Aktif
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          {!isReadOnly && activeTab === "kategori" && (
+        {/* Tier 2: Sub-Tabs & Action Buttons */}
+        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => setOpenKategoriAddSignal((prev) => prev + 1)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#009966] hover:bg-[#008055] text-white font-extrabold rounded-xl transition-all text-xs shadow-xs cursor-pointer"
+              onClick={() => handleTabChange("kodefikasi")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                activeTab === "kodefikasi"
+                  ? "bg-[#009966] text-white shadow-xs"
+                  : "bg-slate-100/80 text-slate-600 hover:bg-slate-200/80"
+              }`}
             >
-              <Plus size={16} /> Tambah Kategori
+              <QrCode size={15} />
+              <span>Kodefikasi</span>
             </button>
-          )}
-        </div>
-      </div>
+            <button
+              type="button"
+              onClick={() => handleTabChange("monitoring")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                activeTab === "monitoring"
+                  ? "bg-[#009966] text-white shadow-xs"
+                  : "bg-slate-100/80 text-slate-600 hover:bg-slate-200/80"
+              }`}
+            >
+              <Map size={15} />
+              <span>Monitoring &amp; Peta</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange("kategori")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                activeTab === "kategori"
+                  ? "bg-[#009966] text-white shadow-xs"
+                  : "bg-slate-100/80 text-slate-600 hover:bg-slate-200/80"
+              }`}
+            >
+              <Tags size={15} />
+              <span>Kategori Sampah</span>
+            </button>
+          </div>
 
-      {/* 2. Sub-Tab Switcher Bar Directly Below Title */}
-      <div className="flex items-center gap-2 border-b border-slate-200/80 pb-3">
-        <button
-          type="button"
-          onClick={() => handleTabChange("kodefikasi")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
-            activeTab === "kodefikasi"
-              ? "bg-[#009966] text-white shadow-xs"
-              : "bg-slate-100/80 text-slate-600 hover:bg-slate-200/80"
-          }`}
-        >
-          <QrCode size={16} />
-          Kodefikasi
-        </button>
-        <button
-          type="button"
-          onClick={() => handleTabChange("monitoring")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
-            activeTab === "monitoring"
-              ? "bg-[#009966] text-white shadow-xs"
-              : "bg-slate-100/80 text-slate-600 hover:bg-slate-200/80"
-          }`}
-        >
-          <Map size={16} />
-          Monitoring
-        </button>
-        <button
-          type="button"
-          onClick={() => handleTabChange("kategori")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
-            activeTab === "kategori"
-              ? "bg-[#009966] text-white shadow-xs"
-              : "bg-slate-100/80 text-slate-600 hover:bg-slate-200/80"
-          }`}
-        >
-          <Tags size={16} />
-          Kategori
-        </button>
+          <div className="flex items-center gap-2 ml-auto sm:ml-0">
+            {!isReadOnly && activeTab === "kategori" && (
+              <button
+                type="button"
+                onClick={() => setOpenKategoriAddSignal((prev) => prev + 1)}
+                className="flex items-center gap-2 px-4 py-2 bg-[#009966] hover:bg-[#008055] text-white font-bold rounded-xl transition-all text-xs shadow-xs cursor-pointer active:scale-95"
+              >
+                <Plus size={15} /> <span>Tambah Kategori</span>
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* 3. Sub-Tab Contents */}

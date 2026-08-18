@@ -55,7 +55,10 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 scratch/
+uploads/
+apps/api/uploads/
 apps/api/scripts/
+graphify-out/
 android/local.properties
 android/app/
 ios/

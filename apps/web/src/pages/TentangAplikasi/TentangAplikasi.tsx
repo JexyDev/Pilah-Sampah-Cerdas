@@ -17,7 +17,6 @@ import {
   Sparkles,
   Cpu,
   MapPin,
-  Globe,
   GraduationCap,
   Truck,
   Building2,
@@ -38,6 +37,7 @@ import {
 } from "lucide-react";
 import { APP_CONFIG } from "../../config/appConfig";
 import { useAuthStore } from "../../store/useAuthStore";
+import PageHeader from "../../components/common/PageHeader";
 
 const Informasi: React.FC = () => {
   const { user } = useAuthStore();
@@ -116,46 +116,28 @@ const Informasi: React.FC = () => {
   const RoleIcon = roleInfo.icon;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto animate-fade-in text-slate-800">
-      {/* ---------------- 1. HEADER BANNER ---------------- */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-800 via-teal-700 to-emerald-900 text-white p-6 sm:p-8 shadow-xl shadow-emerald-900/20 border border-emerald-600/30">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-10 -left-10 w-80 h-80 bg-teal-300/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-400/20 border border-emerald-300/30 text-emerald-200 text-xs font-black backdrop-blur-md">
-                <Sparkles size={14} className="animate-pulse" />
-                {isTechnicalRole ? `Sistem TrashCare v${APP_CONFIG.version}` : "Pusat Panduan & SOP"}
-              </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white text-xs font-extrabold backdrop-blur-md">
-                <Globe size={13} /> Kecamatan Coblong
-              </div>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white">
-              {isTechnicalRole ? "Informasi Sistem TrashCare" : "Pusat Panduan & Informasi Operasional"}
-            </h1>
-
-            <p className="text-emerald-100/90 text-xs sm:text-sm max-w-3xl font-medium leading-relaxed">
-              {isTechnicalRole
-                ? `Platform manajemen pemilahan sampah cerdas berbasis inferensi AI, gamifikasi insentif poin warga, serta pemantauan telemetri real-time yang terintegrasi dari aplikasi mobile hingga dashboard eksekutif.`
-                : `Pedoman resmi tata kelola pemilahan sampah cerdas terpadu di Kecamatan Coblong. Pelajari alur operasional pemilahan, standar prosedur layanan, serta panduan fitur sesuai tugas peran Anda.`}
-            </p>
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto animate-fade-in text-slate-800 font-sans">
+      {/* ---------------- 1. CLEAN ENTERPRISE PAGE HEADER ---------------- */}
+      <PageHeader
+        icon={Info}
+        category={isTechnicalRole ? `Sistem TrashCare v${APP_CONFIG.version}` : "Pusat Panduan & SOP"}
+        scope="Kecamatan Coblong"
+        title={isTechnicalRole ? "Informasi Sistem TrashCare" : "Pusat Panduan & Informasi Operasional"}
+        description={
+          isTechnicalRole
+            ? "Platform manajemen pemilahan sampah cerdas berbasis inferensi AI, gamifikasi insentif poin warga, serta pemantauan telemetri real-time yang terintegrasi dari aplikasi mobile hingga dashboard eksekutif."
+            : "Pedoman resmi pemilahan sampah cerdas terpadu di Kecamatan Coblong. Pelajari alur operasional pemilahan, standar prosedur layanan, serta panduan fitur sesuai tugas peran Anda."
+        }
+        actions={
+          <div className="bg-emerald-50 border border-emerald-200/80 px-4 py-2 rounded-xl text-center">
+            <span className="text-[10px] font-black uppercase text-slate-500 block">Status Layanan</span>
+            <span className="text-xs font-black text-emerald-800 flex items-center justify-center gap-1.5 mt-0.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-600" />
+              Operasional Aktif
+            </span>
           </div>
-
-          <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">
-            <div className="bg-white/10 border border-white/20 p-4 rounded-2xl backdrop-blur-md text-center min-w-[150px]">
-              <span className="text-[10px] font-black uppercase text-emerald-200 block">Status Layanan</span>
-              <span className="text-base font-black text-white flex items-center justify-center gap-1.5 mt-0.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-                Operasional Aktif
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* ---------------- 2. TAB NAVIGATION ---------------- */}
       {isTechnicalRole ? (

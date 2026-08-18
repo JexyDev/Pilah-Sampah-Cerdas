@@ -420,7 +420,7 @@ export const HasilPemanfaatan: React.FC = () => {
       {/* Clean Enterprise Page Header */}
       <PageHeader
         icon={Sparkles}
-        category="Tata Kelola Hilir & Hasil Olahan"
+        category="Hasil Olahan & Evaluasi"
         scope={
           user?.peran === "DPL" || user?.peran === "DOSEN_PEMBIMBING"
             ? user?.wilayah || (user?.kelurahan ? `Kel. ${user.kelurahan}` : "Wilayah Dampingan KKN")
@@ -483,8 +483,8 @@ export const HasilPemanfaatan: React.FC = () => {
         <>
           {/* KPI Metric Summary Cards - Hasil Produk */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
-            <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl shrink-0 border border-emerald-100">
+            <div className="bg-white p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl shrink-0 border border-emerald-100">
                 <Leaf className="w-5 h-5" />
               </div>
               <div>
@@ -493,33 +493,33 @@ export const HasilPemanfaatan: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-              <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl shrink-0 border border-amber-100">
+            <div className="bg-white p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-slate-100 text-slate-700 rounded-xl shrink-0 border border-slate-200">
                 <TrendingUp className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Nilai Ekonomi Daur Ulang</p>
-                <p className="text-lg font-black text-amber-600 mt-0.5">Rp {totalNilaiEkonomi.toLocaleString("id-ID")}</p>
+                <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Nilai Ekonomi Daur</p>
+                <p className="text-lg font-black text-slate-900 mt-0.5">Rp {totalNilaiEkonomi.toLocaleString("id-ID")}</p>
               </div>
             </div>
 
-            <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-              <div className="p-3 bg-sky-50 text-sky-600 rounded-2xl shrink-0 border border-sky-100">
+            <div className="bg-white p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-slate-100 text-slate-700 rounded-xl shrink-0 border border-slate-200">
                 <Boxes className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Total Bahan Terolah</p>
-                <p className="text-lg font-black text-sky-600 mt-0.5">{totalBahanMasukKg.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-400">Kg</span></p>
+                <p className="text-lg font-black text-slate-900 mt-0.5">{totalBahanMasukKg.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-400">Kg</span></p>
               </div>
             </div>
 
-            <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
-              <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl shrink-0 border border-purple-100">
+            <div className="bg-white p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5">
+              <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl shrink-0 border border-emerald-100">
                 <Building2 className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Program & Fasilitas</p>
-                <p className="text-lg font-black text-purple-700 mt-0.5">{programs.length} <span className="text-xs font-semibold text-slate-400">Titik Olahan</span></p>
+                <p className="text-lg font-black text-slate-900 mt-0.5">{programs.length} <span className="text-xs font-semibold text-slate-400">Titik Olahan</span></p>
               </div>
             </div>
           </div>
@@ -683,13 +683,13 @@ export const HasilPemanfaatan: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5 col-span-2 lg:col-span-1">
-              <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl shrink-0 border border-purple-100">
-                <Star className="w-5 h-5 fill-purple-600" />
+            <div className="bg-white p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center gap-3.5 col-span-2 lg:col-span-1">
+              <div className="p-3 bg-amber-50 text-amber-600 rounded-xl shrink-0 border border-amber-100">
+                <Star className="w-5 h-5 fill-amber-400 text-amber-500" />
               </div>
               <div>
                 <p className="text-[10.5px] text-slate-400 font-black uppercase tracking-wider">Kepuasan Warga</p>
-                <p className="text-lg font-black text-purple-700 mt-0.5">{avgRating} <span className="text-xs font-semibold text-slate-400">/ 5.0</span></p>
+                <p className="text-lg font-black text-slate-900 mt-0.5">{avgRating} <span className="text-xs font-semibold text-slate-400">/ 5.0</span></p>
               </div>
             </div>
           </div>

@@ -29,6 +29,7 @@ import showToast from "../../utils/showToast";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
+import PageHeader from "../../components/common/PageHeader";
 
 interface VpsHealthData {
   timestamp: string;
@@ -252,41 +253,23 @@ const MasterDatasetKlasifikasi: React.FC = () => {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto animate-fade-in">
-      {/* 1. PAGE HEADER (Emerald Glassmorphism Banner with VPS Specs & Stream Info) */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-800 via-teal-700 to-emerald-900 text-white p-6 sm:p-8 shadow-xl shadow-emerald-900/20 border border-emerald-600/30">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-10 -left-10 w-80 h-80 bg-teal-300/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-400/20 border border-emerald-300/30 text-emerald-200 text-xs font-black backdrop-blur-md">
-                <BrainCircuit size={14} className="animate-pulse" />
-                Live Telemetri Stream Real-Time
-              </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 border border-amber-300/30 text-amber-200 text-xs font-black backdrop-blur-md">
-                <Lock size={12} /> Khusus Peran Developer &amp; Super User (Read-Only Audit)
-              </div>
-            </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white">
-              Dataset Hasil Klasifikasi AI
-            </h1>
-            <p className="text-emerald-100/90 text-xs sm:text-sm max-w-3xl font-medium leading-relaxed">
-              Stream data telemetri real-time hasil inferensi model AI (<span className="font-bold text-white">Organik</span> &amp; <span className="font-bold text-white">Anorganik</span>) yang diunggah warga melalui aplikasi mobile TrashCare secara otomatis dan terintegrasi penuh ke sistem backend &amp; database.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <button
-              onClick={handleExportJSON}
-              className="px-4 py-2.5 rounded-2xl bg-white/20 hover:bg-white/30 border border-white/30 text-white font-extrabold text-xs flex items-center gap-2 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
-            >
-              <Download size={15} />
-              Ekspor Dataset (JSON)
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* 1. CLEAN ENTERPRISE PAGE HEADER */}
+      <PageHeader
+        icon={BrainCircuit}
+        category="Master Data & Audit Telemetri"
+        scope="Sistem Klasifikasi AI"
+        title="Dataset Hasil Klasifikasi AI"
+        description="Stream data telemetri real-time hasil inferensi model AI (Organik & Anorganik) yang diunggah warga melalui aplikasi mobile TrashCare secara otomatis dan terintegrasi penuh ke database."
+        actions={
+          <button
+            onClick={handleExportJSON}
+            className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 transition-all active:scale-95 cursor-pointer shadow-xs"
+          >
+            <Download size={15} />
+            <span>Ekspor Dataset (JSON)</span>
+          </button>
+        }
+      />
 
       {/* 2. AI MODEL SPECIFICATION & LIVE VPS METRICS WIDGET */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -706,7 +689,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fade-in">
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-xl w-full overflow-hidden">
             {/* Modal Header */}
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-emerald-50/80 to-white">
+            <div className="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-[#009966] flex items-center justify-center font-bold">
                   <Eye size={20} />

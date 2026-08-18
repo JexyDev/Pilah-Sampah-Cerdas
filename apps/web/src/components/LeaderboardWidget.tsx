@@ -50,21 +50,21 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
   const getRankBadge = (rank: number) => {
     if (rank === 1) {
       return (
-        <span className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-300 text-amber-950 font-black text-[11px] flex items-center justify-center shadow-xs border border-amber-200 shrink-0">
+        <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-900 font-bold text-[11px] flex items-center justify-center shadow-2xs border border-amber-200 shrink-0">
           🥇
         </span>
       );
     }
     if (rank === 2) {
       return (
-        <span className="w-6 h-6 rounded-full bg-gradient-to-tr from-slate-300 to-slate-100 text-slate-800 font-extrabold text-[11px] flex items-center justify-center shadow-xs border border-slate-300 shrink-0">
+        <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-800 font-bold text-[11px] flex items-center justify-center shadow-2xs border border-slate-200 shrink-0">
           🥈
         </span>
       );
     }
     if (rank === 3) {
       return (
-        <span className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-700 to-amber-600 text-white font-extrabold text-[11px] flex items-center justify-center shadow-xs border border-amber-600 shrink-0">
+        <span className="w-6 h-6 rounded-full bg-amber-50 text-amber-900 font-bold text-[11px] flex items-center justify-center shadow-2xs border border-amber-200 shrink-0">
           🥉
         </span>
       );

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { 
-  Building2, 
   Sprout, 
   Recycle, 
   TrendingUp,
@@ -61,16 +60,42 @@ export const RwDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-outline-variant shadow-sm">
-        <div>
-          <h1 className="text-2xl font-black text-slate-800 flex items-center gap-2">
-            <Building2 className="text-emerald-600 w-7 h-7" />
-            Dashboard RW (Fasilitas & GIS)
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Wilayah: {user?.address || "RW 00"} • Kecamatan Coblong
-          </p>
+      {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+        {/* Tier 1: Title & Role Badge */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+              Dasbor Monitoring RW (Fasilitas &amp; GIS)
+            </h1>
+            <p className="text-xs text-slate-500 font-medium">
+              Pusat pengelolaan fasilitas daur ulang, komposting &amp; monitoring tempat sampah wilayah RW
+            </p>
+          </div>
+
+          <div className="self-start sm:self-center flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-[#009966] border border-emerald-200/80 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-[#009966] animate-pulse" />
+              Sektor RW Aktif
+            </span>
+          </div>
+        </div>
+
+        {/* Tier 2: Wilayah & Operasional Info */}
+        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 font-medium">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-slate-800">Wilayah Tugas:</span>
+            <span className="px-2.5 py-1 bg-slate-100 rounded-lg text-slate-700 font-semibold">
+              {user?.address || "RW 00"} • Kecamatan Coblong
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-slate-400">Total Fasilitas Terdata:</span>
+            <span className="font-black text-[#009966] bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200/60">
+              {facilities.length} Unit
+            </span>
+          </div>
         </div>
       </div>
 

@@ -111,35 +111,52 @@ const MasterWilayah: React.FC = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">
-            Master Data Wilayah
-          </h1>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">
-            Kelola data hierarki wilayah Kecamatan Coblong, Kelurahan, RW, dan RT.
-          </p>
+      {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+        {/* Tier 1: Title & Status Badge */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
+              Master Data Wilayah
+            </h1>
+            <p className="text-xs text-slate-500 font-medium">
+              Kelola data hierarki wilayah Kecamatan Coblong, Kelurahan, RW, dan RT.
+            </p>
+          </div>
+
+          <div className="self-start sm:self-center flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200/80 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+              Hierarki Wilayah Aktif
+            </span>
+          </div>
         </div>
 
-        {!isReadOnly && (
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleExportCsv}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
-            >
-              <Download size={15} className="text-slate-500" />
-              Ekspor CSV
-            </button>
-            <button
-              onClick={() => toast.error("Penambahan wilayah administratif dikelola terpusat oleh Administrator Kota.")}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
-            >
-              <MapPin size={15} />
-              Tambah Wilayah
-            </button>
+        {/* Tier 2: Info & Action Buttons */}
+        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs text-slate-500 font-medium">
+            Cakupan data resmi wilayah Kota Bandung &amp; Kecamatan Coblong
           </div>
-        )}
+
+          {!isReadOnly && (
+            <div className="flex items-center gap-2 ml-auto sm:ml-0">
+              <button
+                onClick={handleExportCsv}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
+              >
+                <Download size={14} className="text-slate-500" />
+                <span>Ekspor CSV</span>
+              </button>
+              <button
+                onClick={() => toast.error("Penambahan wilayah administratif dikelola terpusat oleh Administrator Kota.")}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
+              >
+                <MapPin size={14} />
+                <span>Tambah Wilayah</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Summary Cards */}
