@@ -34,7 +34,7 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USERNAME }}
           VPS_PASS: ${{ secrets.VPS_PASSWORD }}
         run: |
-          sshpass -p "$VPS_PASS" scp -C -o StrictHostKeyChecking=no -o IPQoS=throughput apps/web/dist.tar.gz "$VPS_USER@$VPS_HOST":/tmp/frontend-dist.tar.gz
+          sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no -o IPQoS=throughput apps/web/dist.tar.gz "$VPS_USER@$VPS_HOST":/tmp/frontend-dist.tar.gz
 
       - name: Update Backend & Deploy Web on VPS
         env:
@@ -101,8 +101,18 @@ jobs:
             echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist /tmp/frontend-dist
             echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/* /var/www/pilah-sampah-cerdas/frontend/dist/* /tmp/frontend-dist/*
             echo "$VPS_PASS" | sudo -S chown -R $USER:$USER /tmp/frontend-dist
-            tar -xzf /tmp/frontend-dist.tar.gz -C /tmp/frontend-dist/
-            rm -f /tmp/frontend-dist.tar.gz
+
+            if [ -f /tmp/frontend-dist.tar.gz ] && tar -tzf /tmp/frontend-dist.tar.gz &>/dev/null; then
+              echo "Extracting frontend archive from GitHub Actions..."
+              tar -xzf /tmp/frontend-dist.tar.gz -C /tmp/frontend-dist/
+              rm -f /tmp/frontend-dist.tar.gz
+            else
+              echo "Frontend archive corrupted or missing, building web frontend directly on VPS..."
+              cd "$REPO_DIR/apps/web"
+              npm install --silent --legacy-peer-deps || npm install --legacy-peer-deps
+              npm run build
+              cp -r dist/* /tmp/frontend-dist/
+            fi
 
             echo "$VPS_PASS" | sudo -S cp -r /tmp/frontend-dist/* /var/www/html/
             echo "$VPS_PASS" | sudo -S cp -r /tmp/frontend-dist/* /var/www/pilah-sampah-cerdas/frontend/dist/
