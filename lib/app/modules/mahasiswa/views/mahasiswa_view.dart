@@ -653,32 +653,24 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView> with WidgetsBindi
 
   Widget _buildWargaSection(MahasiswaState state) {
     final user = ref.watch(authProvider).user;
-    final userKel = user?.kelurahan ?? '-';
-    final userRw = user?.rw ?? '-';
 
-    // Tampilkan warga berdasarkan RW penugasan mahasiswa.
+
+    // Tampilkan warga yang diaktivasi oleh mahasiswa ini berdasarkan mahasiswaId
+    final userId = user?.id ?? '';
     final list = state.wargaList.where((w) {
       if (!w.isActivated) return false;
-      
-      final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
-      final cleanUserRw = userRw.trim().replaceFirst(RegExp(r'^0+'), '');
-      
-      final isMyRw = cleanUserRw.isEmpty || cleanWargaRw == cleanUserRw;
-      final isMyCitizen = w.pendampingName == user?.name;
-
-      return isMyRw && isMyCitizen;
+      if (userId.isEmpty) return false;
+      return w.mahasiswaId == userId;
     }).map((w) {
-      final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RW')
-          ? w.address
-          : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $userRw, $userKel';
       return WargaDampingan(
         wargaId: w.wargaId,
         binId: w.binId,
         wargaName: w.wargaName,
-        address: displayAddr,
-        kelurahan: userKel,
-        rw: userRw,
+        address: w.address,
+        kelurahan: w.kelurahan,
+        rw: w.rw,
         mahasiswaId: w.mahasiswaId,
+        pendampingName: w.pendampingName,
         recentLogs: w.recentLogs,
         isActivated: w.isActivated,
         role: w.role,
