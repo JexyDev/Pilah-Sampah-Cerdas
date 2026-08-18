@@ -1,12 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { GraduationCap } from "lucide-react";
 import toast from "react-hot-toast";
+import { useThemeStore } from "../../store/useThemeStore";
 import api from "../../utils/api";
 
 const MahasiswaRegistration: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+
+  // Force clean light mode on mount unconditionally
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.remove("dark");
+    root.setAttribute("data-theme", "light");
+    root.style.colorScheme = "light";
+
+    return () => {
+      // Restore user preference when navigating away
+      const currentTheme = useThemeStore.getState().theme;
+      if (currentTheme === "dark") {
+        root.classList.add("dark");
+        root.setAttribute("data-theme", "dark");
+        root.style.colorScheme = "dark";
+      } else {
+        root.classList.remove("dark");
+        root.setAttribute("data-theme", "light");
+        root.style.colorScheme = "light";
+      }
+    };
+  }, []);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -39,61 +63,61 @@ const MahasiswaRegistration: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 dark:bg-slate-800/60 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background Decor */}
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-emerald-100 rounded-full blur-3xl opacity-50 z-0"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-100 rounded-full blur-3xl opacity-50 z-0"></div>
 
-      <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 max-w-xl w-full relative z-10">
+      <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 max-w-xl w-full relative z-10">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <GraduationCap className="w-8 h-8" />
           </div>
-          <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Registrasi Mahasiswa KKN</h2>
+          <h2 className="text-3xl font-bold text-slate-800">Registrasi Mahasiswa KKN</h2>
           <p className="text-slate-500 mt-2">Daftarkan diri Anda untuk menjadi fasilitator TrashCare</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nama Lengkap</label>
-              <input type="text" name="name" required value={formData.name} onChange={handleChange} className="w-full rounded-lg border-slate-300 dark:border-slate-700 focus:border-emerald-500 focus:ring-emerald-500" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
+              <input type="text" name="name" required value={formData.name} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
-              <input type="email" name="email" required value={formData.email} onChange={handleChange} className="w-full rounded-lg border-slate-300 dark:border-slate-700 focus:border-emerald-500 focus:ring-emerald-500" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+              <input type="email" name="email" required value={formData.email} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
-              <input type="password" name="password" required value={formData.password} onChange={handleChange} className="w-full rounded-lg border-slate-300 dark:border-slate-700 focus:border-emerald-500 focus:ring-emerald-500" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+              <input type="password" name="password" required value={formData.password} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">No. WhatsApp (Format 08)</label>
-              <input type="text" name="noWa" required value={formData.noWa} onChange={handleChange} className="w-full rounded-lg border-slate-300 dark:border-slate-700 focus:border-emerald-500 focus:ring-emerald-500" placeholder="0812xxxxxxxx" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">No. WhatsApp (Format 08)</label>
+              <input type="text" name="noWa" required value={formData.noWa} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" placeholder="0812xxxxxxxx" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">NIM</label>
-              <input type="text" name="nim" required value={formData.nim} onChange={handleChange} className="w-full rounded-lg border-slate-300 dark:border-slate-700 focus:border-emerald-500 focus:ring-emerald-500" placeholder="10121001" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">NIM</label>
+              <input type="text" name="nim" required value={formData.nim} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" placeholder="10121001" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">No. HP / Telepon (Format 08)</label>
-              <input type="text" name="phone" required value={formData.phone} onChange={handleChange} className="w-full rounded-lg border-slate-300 dark:border-slate-700 focus:border-emerald-500 focus:ring-emerald-500" placeholder="0812xxxxxxxx" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">No. HP / Telepon (Format 08)</label>
+              <input type="text" name="phone" required value={formData.phone} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" placeholder="0812xxxxxxxx" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Jurusan</label>
-              <input type="text" name="jurusan" required value={formData.jurusan} onChange={handleChange} className="w-full rounded-lg border-slate-300 dark:border-slate-700 focus:border-emerald-500 focus:ring-emerald-500" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Jurusan</label>
+              <input type="text" name="jurusan" required value={formData.jurusan} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Fakultas</label>
-              <input type="text" name="fakultas" required value={formData.fakultas} onChange={handleChange} className="w-full rounded-lg border-slate-300 dark:border-slate-700 focus:border-emerald-500 focus:ring-emerald-500" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Fakultas</label>
+              <input type="text" name="fakultas" required value={formData.fakultas} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tgl Mulai KKN</label>
-              <input type="date" name="startDate" required value={formData.startDate} onChange={handleChange} className="w-full rounded-lg border-slate-300 dark:border-slate-700 focus:border-emerald-500 focus:ring-emerald-500" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Tgl Mulai KKN</label>
+              <input type="date" name="startDate" required value={formData.startDate} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tgl Selesai KKN</label>
-              <input type="date" name="endDate" required value={formData.endDate} onChange={handleChange} className="w-full rounded-lg border-slate-300 dark:border-slate-700 focus:border-emerald-500 focus:ring-emerald-500" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Tgl Selesai KKN</label>
+              <input type="date" name="endDate" required value={formData.endDate} onChange={handleChange} className="w-full rounded-lg border-slate-300 focus:border-emerald-500 focus:ring-emerald-500" />
             </div>
           </div>
 
