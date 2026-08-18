@@ -753,8 +753,8 @@ const Login: React.FC = () => {
               <Link to="/" className="flex items-center gap-2.5 group">
                 <TrashCareLogoIcon className="w-10 h-10 transition-transform group-hover:scale-105 shrink-0" />
                 <span className="text-xl font-black tracking-tight leading-normal text-left relative -top-[2px]">
-                  <span className="text-[#0084DC]">Trash</span>
-                  <span className="text-[#009966]">Care</span>
+                  <span className="text-[#0073E6]">Trash</span>
+                  <span className="text-[#59B828]">Care</span>
                 </span>
               </Link>
 

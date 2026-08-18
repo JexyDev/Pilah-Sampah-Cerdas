@@ -321,8 +321,23 @@ export class AuthService {
     }
 
     let streakInfo = undefined;
+    let pendamping: any = null;
+
     if (user.role.name === "WARGA") {
       streakInfo = await this.getCitizenMotivation(userId);
+      const mentorUser = await authRepository.findCitizenMentor(userId, user.rwId);
+      if (mentorUser) {
+        pendamping = {
+          id: mentorUser.id,
+          name: mentorUser.name,
+          phone: mentorUser.phone,
+          nim: mentorUser.studentProfile?.nim || null,
+          jurusan: mentorUser.studentProfile?.jurusan || null,
+          fakultas: mentorUser.studentProfile?.fakultas || null,
+          kelompokId: mentorUser.studentProfile?.kelompok?.id || null,
+          kelompokName: mentorUser.studentProfile?.kelompok?.name || null,
+        };
+      }
     }
 
     const roleName = user.role.name;
@@ -388,6 +403,8 @@ export class AuthService {
       rw: rwName,
       dplKelompok: user.dplKelompok || [],
       streakInfo,
+      pendamping,
+      pendampingName: pendamping?.name || null,
     };
   }
 

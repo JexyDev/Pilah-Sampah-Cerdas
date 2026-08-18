@@ -10,9 +10,10 @@ html {
   --primary-emerald: #009966;
   --primary-emerald-hover: #047857;
   --primary-emerald-light: #ecfdf5;
-  --accent-blue: #0084DC;
-  --accent-blue-hover: #006ca6;
+  --accent-blue: #0073E6;
+  --accent-blue-hover: #005bb5;
   --accent-blue-light: #eaf3ff;
+  --brand-green: #59B828;
   --dark-slate: #0f172a;
   --bg-light: #f8fafc;
 }
@@ -1117,7 +1118,7 @@ html {
 ========================================================== */
 
 .sdg-bottom-text {
-  margin: 28px 0 0;
+  margin: 28px auto 0;
 
   font-family: inherit;
 
@@ -1128,6 +1129,8 @@ html {
   color: #64748b;
 
   font-weight: 600;
+
+  text-align: center;
 }
 
 /* ==========================================================

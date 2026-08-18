@@ -512,32 +512,19 @@ export const LandingPage: React.FC = () => {
         <div className="container-custom space-y-16">
 
           {/* About Header Narrative */}
-          <div className="max-w-4xl space-y-4">
-            {/* <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-black uppercase tracking-wider">
-              <span className="material-symbols-outlined text-sm text-emerald-600">nature_people</span>
-              01. About Us &amp; Ecosystem Vision
-            </div> */}
-
+          <div className="text-center max-w-3xl mx-auto space-y-4">
             <h2 className="text-4xl sm:text-5xl font-black tracking-tight leading-tight">
-              <span className="text-[#0084DC]">Trash</span>
-              <span className="text-[#009966]">Care</span>
+              <span className="text-[#0073E6]">Trash</span>
+              <span className="text-[#59B828]">Care</span>
             </h2>
 
-            <p className="text-slate-600 text-lg leading-relaxed font-medium">
+            <p className="text-slate-600 text-base sm:text-lg leading-relaxed font-medium">
               Sistem tata kelola sampah terintegrasi dengan kegiatan KKN Berdampak yang menghubungkan warga, petugas residu, mahasiswa, dosen pendamping lapangan (DPL), pimpinan perguruan tinggi, RW, kelurahan, kecamatan, dan Dinas Lingkungan Hidup.
             </p>
-
-
-
-
-
-
           </div>
 
-
-
           {/* Clean Light Sustainable Development Goals (SDGs) Grid */}
-          <div className="sdg-section py-12">
+          <div className="sdg-section py-8">
             <div className="sdg-heading text-center max-w-3xl mx-auto mb-10">
               <span className="text-xs font-extrabold uppercase tracking-widest text-[#1D3B2F] bg-[#1D3B2F]/10 px-3.5 py-1 rounded-full">
                 Komitmen Global
@@ -547,13 +534,13 @@ export const LandingPage: React.FC = () => {
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 md:gap-6 items-stretch max-w-7xl mx-auto px-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 md:gap-6 items-stretch w-full mx-auto">
               {sdgs.map((sdg) => (
                 <div
                   key={sdg.num}
                   className="group relative bg-white rounded-3xl p-5 md:p-6 border border-slate-200/80 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer"
                 >
-                  {/* Top Badge (Single Clean Badge) */}
+                  {/* Top Badge (Clean Tag & Number) */}
                   <div className="flex items-center justify-between mb-4">
                     <span className={`text-xs font-extrabold px-3 py-1 rounded-full border ${sdg.bgLight}`}>
                       {sdg.tag}
@@ -572,9 +559,9 @@ export const LandingPage: React.FC = () => {
                     />
                   </div>
 
-                  {/* KBBI Description Only (Title is inside SVG image) */}
-                  <div className="text-left flex-1 flex flex-col justify-start">
-                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                  {/* KBBI Description (Centered & Balanced) */}
+                  <div className="text-center flex-1 flex flex-col justify-start">
+                    <p className="text-xs text-slate-500 font-medium leading-relaxed">
                       {sdg.desc}
                     </p>
                   </div>
@@ -582,8 +569,8 @@ export const LandingPage: React.FC = () => {
               ))}
             </div>
 
-            <p className="sdg-bottom-text text-center text-xs text-slate-500 font-medium mt-8">
-              Bersama TrashCare, pengelolaan sampah menjadi bagian dari solusi untuk lingkungan yang lebih bersih dan berkelanjutan.
+            <p className="sdg-bottom-text text-center text-sm text-slate-600 font-medium mt-10 max-w-3xl mx-auto leading-relaxed">
+              Bersama <span className="font-black"><span className="text-[#0073E6]">Trash</span><span className="text-[#59B828]">Care</span></span>, pengelolaan sampah menjadi bagian dari solusi untuk lingkungan yang lebih bersih dan berkelanjutan.
             </p>
           </div>
 
@@ -1470,9 +1457,12 @@ export const LandingPage: React.FC = () => {
       <footer className="bg-slate-900 text-slate-400 py-16 text-sm border-t border-slate-800">
         <div className="container-custom grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="space-y-4">
-            <div className="flex items-center gap-3 text-white font-black text-xl">
-              <TrashCareLogoIcon className="w-8 h-8" />
-              <span className="text-[#0084DC] ">Trash<span className="text-emerald-400">Care</span></span>
+            <div className="flex items-center gap-2.5 text-white font-black text-xl">
+              <TrashCareLogoIcon className="w-8 h-8 shrink-0" />
+              <span className="text-xl font-black tracking-tight leading-normal text-left">
+                <span className="text-[#0073E6]">Trash</span>
+                <span className="text-[#59B828]">Care</span>
+              </span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed font-medium">
               Sistem Pemilahan dan Pengelolaan Sampah Terintegrasi.

@@ -548,9 +548,12 @@ const DownloadPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-8 grid grid-cols-1 md:grid-cols-4 gap-10">
           
           <div className="space-y-4">
-            <div className="flex items-center gap-3 text-white font-black text-xl">
-              <TrashCareLogoIcon className="w-8 h-8" />
-              <span className="text-[#0084DC]">Trash<span className="text-emerald-400">Care</span></span>
+            <div className="flex items-center gap-2.5 text-white font-black text-xl">
+              <TrashCareLogoIcon className="w-8 h-8 shrink-0" />
+              <span className="text-xl font-black tracking-tight leading-normal text-left">
+                <span className="text-[#0073E6]">Trash</span>
+                <span className="text-[#59B828]">Care</span>
+              </span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed font-medium">
               Sistem Pemilahan dan Pengelolaan Sampah Terintegrasi.

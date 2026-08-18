@@ -217,6 +217,122 @@ export class AuthRepository {
   }
 
   /**
+   * Cari data mahasiswa pendamping KKN untuk warga.
+   * Prioritas 1: Dari Tempat Sampah (Bin) yang terdaftar/terkait ke warga
+   * Prioritas 2: Dari Mahasiswa KKN aktif yang ditugaskan di RW warga
+   */
+  async findCitizenMentor(userId: string, rwId?: number | null) {
+    const ownership = await prisma.binOwnership.findFirst({
+      where: {
+        userId,
+        bin: {
+          status: { in: ["ACTIVE_BOUND", "PENDING_APPROVAL"] },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        bin: {
+          select: {
+            id: true,
+            registeredByStudent: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                studentProfile: {
+                  select: {
+                    nim: true,
+                    jurusan: true,
+                    fakultas: true,
+                    kelompok: {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (ownership?.bin?.registeredByStudent) {
+      return ownership.bin.registeredByStudent;
+    }
+
+    // Cek juga dari Bin langsung jika userId terikat di tabel Bin
+    const directBin = await prisma.bin.findFirst({
+      where: {
+        userId,
+        status: { in: ["ACTIVE_BOUND", "PENDING_APPROVAL"] },
+        registeredByStudentId: { not: null },
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        registeredByStudent: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            studentProfile: {
+              select: {
+                nim: true,
+                jurusan: true,
+                fakultas: true,
+                kelompok: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (directBin?.registeredByStudent) {
+      return directBin.registeredByStudent;
+    }
+
+    if (rwId) {
+      const activeStudent = await prisma.user.findFirst({
+        where: {
+          role: { name: "MAHASISWA_KKN" },
+          studentProfile: {
+            assignedRwId: rwId,
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          studentProfile: {
+            select: {
+              nim: true,
+              jurusan: true,
+              fakultas: true,
+              kelompok: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      return activeStudent;
+    }
+
+    return null;
+  }
+
+  /**
    * Update a user's profile information.
    */
   async updateUser(
