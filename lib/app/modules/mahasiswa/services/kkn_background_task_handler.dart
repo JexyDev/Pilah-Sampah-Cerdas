@@ -77,7 +77,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
   double _targetLat = 0.0;
   double _targetLng = 0.0;
   double _radius = 150.0;
-  int _targetDurationMinutes = 60;
+  int _targetDurationMinutes = 2;
   List<List<double>>? _polygon;
   DateTime? _targetEndTime;
   String? _scheduleId; // ignore: unused_field
@@ -118,7 +118,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
     _targetLat = prefs.getDouble(KknBgPrefKeys.targetLat) ?? 0.0;
     _targetLng = prefs.getDouble(KknBgPrefKeys.targetLng) ?? 0.0;
     _radius = prefs.getDouble(KknBgPrefKeys.targetRadius) ?? 150.0;
-    _targetDurationMinutes = prefs.getInt(KknBgPrefKeys.targetDuration) ?? 60;
+    _targetDurationMinutes = prefs.getInt(KknBgPrefKeys.targetDuration) ?? 2;
     _scheduleId = prefs.getString(KknBgPrefKeys.scheduleId);
     
     // Load polygon jika ada
@@ -537,7 +537,7 @@ Future<ServiceRequestResult> startKknForegroundService({
   await prefs.setDouble(KknBgPrefKeys.targetRadius, 
     double.tryParse(targetData['radius']?.toString() ?? '150') ?? 150.0);
   await prefs.setInt(KknBgPrefKeys.targetDuration, 
-    int.tryParse(targetData['targetDurationMinutes']?.toString() ?? '60') ?? 60);
+    int.tryParse(targetData['targetDurationMinutes']?.toString() ?? '2') ?? 2);
   
   if (targetData['scheduleId'] != null || targetData['id'] != null) {
     await prefs.setString(KknBgPrefKeys.scheduleId, 

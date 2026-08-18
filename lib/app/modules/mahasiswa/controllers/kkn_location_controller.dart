@@ -239,7 +239,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
           final int targetMins = int.tryParse(activeZone['targetDurationMinutes']?.toString() ?? '') ??
               int.tryParse(activeZone['durationMinutes']?.toString() ?? '') ??
-              120;
+              2;
 
           if (isAttended || status == 'hadir') {
             _accumulatedSeconds = targetMins * 60;
@@ -542,68 +542,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       mergedData['namaKegiatan'] ??= mergedData['title'] ?? 'Penugasan KKN';
       mergedData['radius'] ??= 100;
 
-      int duration = 120;
+      int duration = 2;
       if (mergedData['targetDurationMinutes'] != null) {
         duration =
-            int.tryParse(mergedData['targetDurationMinutes'].toString()) ?? 120;
+            int.tryParse(mergedData['targetDurationMinutes'].toString()) ?? 2;
       } else if (mergedData['durationMinutes'] != null) {
-        duration = int.tryParse(mergedData['durationMinutes'].toString()) ?? 120;
-      } else if (mergedData['time'] != null) {
-        // Parse "time" field. e.g. "1" -> 60 minutes, "60" -> 60 minutes
-        final timeStr = mergedData['time'].toString().toLowerCase().trim();
-        if (timeStr == '1') {
-          duration = 60;
-        } else if (timeStr == '2') {
-          duration = 120;
-        } else if (timeStr == '3') {
-          duration = 180;
-        } else {
-          final t = int.tryParse(timeStr);
-          if (t != null && t > 10) {
-            // e.g. "60", "120"
-            duration = t;
-          } else if (timeStr.contains('-')) {
-            // e.g. "12:40 - 14:00 WIB"
-            try {
-              final parts = timeStr.split('-');
-              final startStr = parts[0]
-                  .replaceAll(RegExp(r'[^0-9:]'), '')
-                  .trim();
-              final endStr = parts[1].replaceAll(RegExp(r'[^0-9:]'), '').trim();
-
-              if (startStr.contains(':') && endStr.contains(':')) {
-                final now = DateTime.now();
-                final startParts = startStr.split(':');
-                final endParts = endStr.split(':');
-
-                final startTime = DateTime(
-                  now.year,
-                  now.month,
-                  now.day,
-                  int.parse(startParts[0]),
-                  int.parse(startParts[1]),
-                );
-                final endTime = DateTime(
-                  now.year,
-                  now.month,
-                  now.day,
-                  int.parse(endParts[0]),
-                  int.parse(endParts[1]),
-                );
-
-                duration = endTime.difference(startTime).inMinutes;
-                if (duration <= 0) duration = 60;
-
-                mergedData['startTime'] = startTime.toIso8601String();
-                mergedData['endTime'] = endTime.toIso8601String();
-              } else {
-                duration = 60;
-              }
-            } catch (_) {
-              duration = 60;
-            }
-          }
-        }
+        duration = int.tryParse(mergedData['durationMinutes'].toString()) ?? 2;
       }
 
       final status = (mergedData['attendanceStatus'] ?? mergedData['status'] ?? mergedData['kehadiran'] ?? '')
@@ -695,7 +639,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             status == 'hadir' ||
             state.isSuccessAttendance) {
           final bool isHadir = status == 'hadir' || state.isSuccessAttendance;
-          final int targetSecs = (state.targetDurationMinutes > 0 ? state.targetDurationMinutes : 120) * 60;
+          final int targetSecs = (state.targetDurationMinutes > 0 ? state.targetDurationMinutes : 2) * 60;
           _stopZoneTimer(resetCompletely: !isHadir);
           if (isHadir) _accumulatedSeconds = targetSecs;
           state = state.copyWith(
