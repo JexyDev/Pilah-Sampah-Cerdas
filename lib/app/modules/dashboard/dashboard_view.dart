@@ -209,9 +209,14 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                 children: [
                   _navItem(
                     3,
-                    role == UserRole.petugasPemilahan ? Icons.monetization_on_rounded : Icons.stars_rounded,
-                    role == UserRole.petugasPemilahan ? Icons.monetization_on_outlined : Icons.stars_outlined,
-                    'Poin',
+                    role == UserRole.mahasiswaKkn ? Icons.analytics_rounded : 
+                    (role == UserRole.petugasPemilahan ? Icons.monetization_on_rounded : null),
+                    role == UserRole.mahasiswaKkn ? Icons.analytics_outlined : 
+                    (role == UserRole.petugasPemilahan ? Icons.monetization_on_outlined : null),
+                    role == UserRole.mahasiswaKkn ? 'Monitoring' : 
+                    (role == UserRole.petugasPemilahan ? 'Poin' : 'Poin'),
+                    activeAsset: (role == UserRole.mahasiswaKkn || role == UserRole.petugasPemilahan) ? null : 'assets/icons/medal_active.png',
+                    inactiveAsset: (role == UserRole.mahasiswaKkn || role == UserRole.petugasPemilahan) ? null : 'assets/icons/medal.png',
                   ),
                   _navItem(
                     4,
@@ -228,7 +233,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     );
   }
 
-  Widget _navItem(int index, IconData active, IconData inactive, String label) {
+  Widget _navItem(int index, IconData? active, IconData? inactive, String label, {String? activeAsset, String? inactiveAsset}) {
     final bool sel = _selectedIndex == index;
     return InkWell(
       onTap: () => _onTabTap(index),
@@ -238,11 +243,19 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              sel ? active : inactive,
-              color: sel ? AppColors.primaryGreen : AppColors.textHint,
-              size: 22,
-            ),
+            if (activeAsset != null && inactiveAsset != null)
+              Image.asset(
+                sel ? activeAsset : inactiveAsset,
+                color: sel ? AppColors.primaryGreen : AppColors.textHint,
+                width: 22,
+                height: 22,
+              )
+            else if (active != null && inactive != null)
+              Icon(
+                sel ? active : inactive,
+                color: sel ? AppColors.primaryGreen : AppColors.textHint,
+                size: 22,
+              ),
             const SizedBox(height: 2),
             Text(
               label,

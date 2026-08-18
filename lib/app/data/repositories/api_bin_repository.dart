@@ -9,6 +9,8 @@ import '../models/petugas_entity.dart';
 import '../models/petugas_status_response.dart';
 import 'bin_repository.dart';
 import '../providers/api_client.dart';
+import '../models/petugas_entity.dart';
+import '../models/petugas_status_response.dart';
 import '../../core/utils/image_compressor.dart';
 import '../../core/utils/network_exception_helper.dart';
 import '../../core/values/api_constants.dart';

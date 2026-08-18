@@ -38,7 +38,7 @@ class PetugasPemilahanView extends ConsumerWidget {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: AppColors.primaryGreen),
+            icon: Image.asset('assets/icons/notification.png', color: AppColors.primaryGreen, width: 24, height: 24),
             onPressed: () => Navigator.pushNamed(context, AppRoutes.petugasNotifikasi),
           ),
         ],

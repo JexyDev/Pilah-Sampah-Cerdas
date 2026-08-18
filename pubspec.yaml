@@ -83,11 +83,13 @@ flutter:
 
   assets:
     # Gambar Onboarding (Mockup UI)
-    - assets/on_boarding/
+    # - assets/on_boarding/
 
     # Logo aplikasi
     - assets/logos.webp
     - assets/logos.jpeg
+    - assets/icons/
+    - assets/icons/notification.png
 
     # Stitch UI — screen reference assets
     - assets/stitch_ui/aktivasi_bin.png/screen.png

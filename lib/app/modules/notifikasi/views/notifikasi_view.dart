@@ -237,7 +237,7 @@ class _NotificationTile extends StatelessWidget {
                          titleUpper.contains('TERLEWAT') || 
                          titleUpper.contains('JADWAL BUANG');
 
-    final iconData = _resolveIcon(item.icon);
+
     final iconColor = isPunishment ? const Color(0xFFEF4444) : _resolveIconColor(item.type);
     final iconBg = isPunishment ? const Color(0xFFFEE2E2) : _resolveIconBg(item.type);
 
@@ -261,7 +261,7 @@ class _NotificationTile extends StatelessWidget {
                 color: iconBg,
                 shape: BoxShape.circle,
               ),
-              child: Icon(iconData, color: iconColor, size: 22),
+              child: _buildIconWidget(item.icon, item.type, iconColor),
             ),
             const SizedBox(width: 12),
 
@@ -324,6 +324,26 @@ class _NotificationTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildIconWidget(String iconName, String type, Color iconColor) {
+    final typeUpper = type.toUpperCase();
+    if (typeUpper.contains('PUNISHMENT') || typeUpper.contains('PENALTI')) {
+      return Icon(Icons.warning_amber_rounded, color: iconColor, size: 22);
+    }
+    if (iconName == 'star' || typeUpper == 'POIN_BERTAMBAH') {
+      return Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Image.asset('assets/icons/medal.png', color: iconColor),
+      );
+    }
+    if (typeUpper.contains('PENGAJUAN') || iconName == 'local_shipping' || iconName == 'rule') {
+      return Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Image.asset('assets/icons/submission.png', color: iconColor),
+      );
+    }
+    return Icon(_resolveIcon(iconName), color: iconColor, size: 22);
   }
 
   IconData _resolveIcon(String iconName) {
