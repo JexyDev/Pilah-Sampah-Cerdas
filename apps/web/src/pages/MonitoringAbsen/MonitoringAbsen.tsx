@@ -83,6 +83,36 @@ const createActivityMarkerIcon = () => {
   });
 };
 
+const getDistanceInMeters = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+const isPointInPoly = (lat: number, lng: number, polygon: [number, number][]): boolean => {
+  let inside = false;
+  const n = polygon.length;
+  let j = n - 1;
+  for (let i = 0; i < n; i++) {
+    const xi = polygon[i][0];
+    const yi = polygon[i][1];
+    const xj = polygon[j][0];
+    const yj = polygon[j][1];
+    const intersect = ((yi > lng) !== (yj > lng)) && (lat < ((xj - xi) * (lng - yi)) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+    j = i;
+  }
+  return inside;
+};
+
 const createActivePresenceIcon = (studentName: string) => {
   const initial = (studentName || "M").charAt(0).toUpperCase();
   return L.divIcon({
@@ -876,6 +906,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         loc: StudentLoc;
         record: any;
         isActivePresence: boolean;
+        isInsideZone: boolean;
       }>;
     };
 
@@ -889,11 +920,31 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       const studentRecord = attendance.find(
         (a) => a.studentId === loc.studentId
       );
-      const isActivePresence = Boolean(
-        studentRecord && studentRecord.attendedAt && !studentRecord.completedAt
+
+      const isAttended = Boolean(
+        studentRecord && (studentRecord.status === "HADIR" || studentRecord.attendedAt || studentRecord.method)
       );
 
-      // Grid key rounded to 4 decimals (~11m spatial proximity)
+      let isInsideZone = false;
+      if (activeSchedule) {
+        if (activeSchedule.polygon && Array.isArray(activeSchedule.polygon) && activeSchedule.polygon.length >= 3) {
+          isInsideZone = isPointInPoly(lat, lng, activeSchedule.polygon);
+        } else if (activeSchedule.latitude && activeSchedule.longitude) {
+          const schedLat = Number(activeSchedule.latitude);
+          const schedLng = Number(activeSchedule.longitude);
+          const rad = activeSchedule.radius || 150;
+          if (!isNaN(schedLat) && !isNaN(schedLng) && schedLat !== 0 && schedLng !== 0) {
+            const dist = getDistanceInMeters(lat, lng, schedLat, schedLng);
+            isInsideZone = dist <= rad;
+          }
+        }
+      }
+
+      const recordedTime = new Date(loc.recordedAt).getTime();
+      const isRecentLocation = !isNaN(recordedTime) && (Date.now() - recordedTime) < 30 * 60 * 1000;
+
+      const isActivePresence = isAttended || isInsideZone || (isRecentLocation && Boolean(activeSchedule));
+
       const gridKey = `${lat.toFixed(4)}_${lng.toFixed(4)}`;
 
       if (!groups[gridKey]) {
@@ -908,6 +959,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         loc,
         record: studentRecord,
         isActivePresence,
+        isInsideZone,
       });
     });
 
@@ -918,8 +970,23 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       const activeCount = grp.students.filter((s) => s.isActivePresence).length;
 
       if (count === 1) {
-        // Single student pin
         const s = grp.students[0];
+        const isHadir = Boolean(s.record && (s.record.status === "HADIR" || s.record.attendedAt));
+
+        let badgeText = "STANDBY";
+        let badgeColorClass = "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200";
+
+        if (isHadir) {
+          badgeText = "HADIR";
+          badgeColorClass = "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700";
+        } else if (s.isInsideZone) {
+          badgeText = "DI ZONA (PRESENSI)";
+          badgeColorClass = "bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 border-teal-300 dark:border-teal-700";
+        } else if (s.isActivePresence) {
+          badgeText = "AKTIF LAPANGAN";
+          badgeColorClass = "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700";
+        }
+
         items.push(
           <Marker
             key={`student-single-${s.loc.studentId}`}
@@ -936,15 +1003,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
                     {s.loc.student.name}
                   </span>
-                  {s.isActivePresence ? (
-                    <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-black text-[9px] px-1.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700">
-                      AKTIF DI LAPANGAN
-                    </span>
-                  ) : (
-                    <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-[9px] px-1.5 py-0.5 rounded-full">
-                      STANDBY
-                    </span>
-                  )}
+                  <span className={`font-black text-[9px] px-1.5 py-0.5 rounded-full border ${badgeColorClass}`}>
+                    {badgeText}
+                  </span>
                 </div>
                 <p className="text-[11px] text-slate-500 font-mono">
                   NIM: {s.loc.student.studentProfile?.nim || "-"}
@@ -952,7 +1013,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <p className="text-[10.5px] text-slate-500">
                   Update GPS: {new Date(s.loc.recordedAt).toLocaleTimeString("id-ID")}
                 </p>
-                {s.isActivePresence && s.record?.attendedAt && (
+                {s.record?.attendedAt && (
                   <div className="mt-1.5 p-1.5 bg-emerald-50 dark:bg-emerald-950/40 rounded-lg border border-emerald-200 dark:border-emerald-800/60 text-[10px] text-emerald-800 dark:text-emerald-300 font-bold">
                     Waktu Masuk: {new Date(s.record.attendedAt).toLocaleTimeString("id-ID")} | Durasi: {formatDurationText(calculateDurationMinutes(s.record.attendedAt))}
                   </div>
@@ -962,7 +1023,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           </Marker>
         );
       } else {
-        // Multi-student Cluster Pin (Anti-Numpuk)
         items.push(
           <Marker
             key={`student-cluster-${grp.key}`}
@@ -984,28 +1044,39 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   )}
                 </div>
                 <div className="space-y-1.5 divide-y divide-slate-100 dark:divide-slate-800">
-                  {grp.students.map((s, sIdx) => (
-                    <div key={s.loc.studentId || sIdx} className="pt-1.5 first:pt-0 space-y-0.5">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="font-bold text-slate-900 dark:text-slate-100 text-[11px] truncate">
-                          {s.loc.student.name}
-                        </span>
-                        {s.isActivePresence ? (
-                          <span className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-bold text-[8.5px] px-1 py-0.2 rounded border border-emerald-200 dark:border-emerald-800">
-                            Aktif Lapangan
+                  {grp.students.map((s, sIdx) => {
+                    const isHadir = Boolean(s.record && (s.record.status === "HADIR" || s.record.attendedAt));
+                    let badgeText = "Standby";
+                    let badgeClass = "bg-slate-100 dark:bg-slate-800 text-slate-500 text-[8.5px] px-1 py-0.2 rounded";
+
+                    if (isHadir) {
+                      badgeText = "Hadir";
+                      badgeClass = "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-bold text-[8.5px] px-1 py-0.2 rounded border border-emerald-200 dark:border-emerald-800";
+                    } else if (s.isInsideZone) {
+                      badgeText = "Di Zona";
+                      badgeClass = "bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-400 font-bold text-[8.5px] px-1 py-0.2 rounded border border-teal-200 dark:border-teal-800";
+                    } else if (s.isActivePresence) {
+                      badgeText = "Aktif";
+                      badgeClass = "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-bold text-[8.5px] px-1 py-0.2 rounded border border-emerald-200 dark:border-emerald-800";
+                    }
+
+                    return (
+                      <div key={s.loc.studentId || sIdx} className="pt-1.5 first:pt-0 space-y-0.5">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-bold text-slate-900 dark:text-slate-100 text-[11px] truncate">
+                            {s.loc.student.name}
                           </span>
-                        ) : (
-                          <span className="bg-slate-100 dark:bg-slate-800 text-slate-500 text-[8.5px] px-1 py-0.2 rounded">
-                            Standby
+                          <span className={badgeClass}>
+                            {badgeText}
                           </span>
-                        )}
+                        </div>
+                        <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                          <span>NIM: {s.loc.student.studentProfile?.nim || "-"}</span>
+                          <span>{new Date(s.loc.recordedAt).toLocaleTimeString("id-ID")}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
-                        <span>NIM: {s.loc.student.studentProfile?.nim || "-"}</span>
-                        <span>{new Date(s.loc.recordedAt).toLocaleTimeString("id-ID")}</span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </Popup>
@@ -1015,7 +1086,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     });
 
     return items;
-  }, [studentLocations, attendance]);
+  }, [studentLocations, attendance, activeSchedule]);
 
   const STANDARD_CATEGORIES = [
     "Sosialisasi",
