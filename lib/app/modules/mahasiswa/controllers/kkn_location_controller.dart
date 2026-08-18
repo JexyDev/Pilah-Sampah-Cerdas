@@ -237,9 +237,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
                   .toLowerCase();
           final bool isAttended = activeZone['isAttended'] == true || status == 'hadir';
 
+          final int targetMins = int.tryParse(activeZone['targetDurationMinutes']?.toString() ?? '') ??
+              int.tryParse(activeZone['durationMinutes']?.toString() ?? '') ??
+              120;
+
           if (isAttended || status == 'hadir') {
-            final targetMins = activeZone['targetDurationMinutes'] ?? activeZone['durationMinutes'] ?? 60;
-            _accumulatedSeconds = (targetMins as num).toInt() * 60;
+            _accumulatedSeconds = targetMins * 60;
             state = state.copyWith(
               isSuccessAttendance: true,
               inZoneDurationSeconds: _accumulatedSeconds,
@@ -266,7 +269,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
               activeZone['longitude'] != null) {
             state = state.copyWith(
               activeActivity: activeZone,
-              targetDurationMinutes: activeZone['targetDurationMinutes'] ?? 60,
+              targetDurationMinutes: targetMins,
             );
           }
         }
@@ -537,12 +540,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       mergedData['namaKegiatan'] ??= mergedData['title'] ?? 'Penugasan KKN';
       mergedData['radius'] ??= 100;
 
-      int duration = 60;
+      int duration = 120;
       if (mergedData['targetDurationMinutes'] != null) {
         duration =
-            int.tryParse(mergedData['targetDurationMinutes'].toString()) ?? 60;
+            int.tryParse(mergedData['targetDurationMinutes'].toString()) ?? 120;
       } else if (mergedData['durationMinutes'] != null) {
-        duration = int.tryParse(mergedData['durationMinutes'].toString()) ?? 60;
+        duration = int.tryParse(mergedData['durationMinutes'].toString()) ?? 120;
       } else if (mergedData['time'] != null) {
         // Parse "time" field. e.g. "1" -> 60 minutes, "60" -> 60 minutes
         final timeStr = mergedData['time'].toString().toLowerCase().trim();
