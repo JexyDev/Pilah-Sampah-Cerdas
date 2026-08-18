@@ -353,7 +353,7 @@ const MonitoringAbsen: React.FC = () => {
     "ALL" | "ACTIVE" | "COMPLETED" | "NOT_ATTENDED"
   >("ALL");
   const [studentSearch, setStudentSearch] = useState<string>("");
-  const [displayMode, setDisplayMode] = useState<"table" | "cards">("table");
+  const [displayMode] = useState<"table" | "cards">("table");
   const [showMap, setShowMap] = useState<boolean>(false);
 
   // Export Modal State with Period Picker

@@ -2342,7 +2342,7 @@ export const DplDashboardPage: React.FC = () => {
 
             <div className="p-6 space-y-5">
               <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200/80 text-xs text-emerald-900 font-semibold">
-                Total Mahasiswa Binaan: <strong className="text-emerald-950">{students.length} Orang</strong> {selectedGroupFilter ? `(${selectedGroupFilter})` : "(Semua Kelompok)"}
+                Total Mahasiswa Dampingan: <strong className="text-emerald-950">{students.length} Orang</strong> {selectedGroupFilter ? `(${selectedGroupFilter})` : "(Semua Kelompok)"}
               </div>
 
               <div>
