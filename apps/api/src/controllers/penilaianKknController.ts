@@ -21,7 +21,10 @@ export const penilaianKknController = {
         return;
       }
 
-      const data = await penilaianKknService.getStudentPenilaianData(studentId);
+      const evaluatorId = req.user?.userId || (req.user as any)?.id || "";
+      const evaluatorRole = String(req.user?.role || "").toUpperCase();
+
+      const data = await penilaianKknService.getStudentPenilaianData(studentId, evaluatorId, evaluatorRole);
       res.status(200).json({
         success: true,
         data,

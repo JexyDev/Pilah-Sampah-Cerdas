@@ -31,7 +31,7 @@ export const penilaianKknService = {
   /**
    * Mengambil data lengkap mahasiswa dan penilaian aktif (beserta kalkulasi otomatis data lapangan)
    */
-  getStudentPenilaianData: async (studentId: string) => {
+  getStudentPenilaianData: async (studentId: string, evaluatorId?: string, evaluatorRole?: string) => {
     const studentUser = await prisma.user.findUnique({
       where: { id: studentId },
       include: {
@@ -69,6 +69,14 @@ export const penilaianKknService = {
     const rw = profile?.assignedRw || studentUser.rw;
     const kelurahan = rw?.kelurahan;
     const dpl = kelompok?.dpl;
+
+    // Strict Scope: Jika evaluator DPL, pastikan mahasiswa berada di bawah kelompok bimbingannya
+    if (evaluatorRole && ["DPL", "DOSEN_PEMBIMBING"].includes(evaluatorRole.toUpperCase()) && evaluatorId) {
+      const isSupervised = dpl?.id === evaluatorId || kelompok?.dplId === evaluatorId;
+      if (!isSupervised) {
+        throw new Error("Akses ditolak: Mahasiswa ini bukan bagian dari kelompok bimbingan DPL Anda");
+      }
+    }
 
     // 1. Hitung Kehadiran Real dari Database
     const pastSchedulesCount = await prisma.schedule.count({
@@ -238,7 +246,11 @@ export const penilaianKknService = {
       include: {
         studentProfile: {
           include: {
-            kelompok: true,
+            kelompok: {
+              include: {
+                dpl: true,
+              },
+            },
             assignedRw: true,
           },
         },
@@ -250,13 +262,24 @@ export const penilaianKknService = {
       throw new Error("Data mahasiswa tidak ditemukan");
     }
 
+    const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(evaluatorRole);
+    const isMitra = ["RW", "MITRA", "ADMIN_DLH", "DLH", "LURAH", "KELURAHAN"].includes(evaluatorRole);
+
+    // Strict Scope: DPL hanya dapat menilai mahasiswa di bawah bimbingannya
+    if (isDpl && evaluatorId) {
+      const isSupervised =
+        studentUser.studentProfile?.kelompok?.dplId === evaluatorId ||
+        studentUser.studentProfile?.kelompok?.dpl?.id === evaluatorId;
+      if (!isSupervised) {
+        throw new Error("Akses ditolak: Anda hanya berwenang menilai mahasiswa di bawah bimbingan DPL Anda");
+      }
+    }
+
     if (studentUser.penilaianKkn?.isFinalized && !["SUPER_USER", "DEVELOPER"].includes(evaluatorRole)) {
       throw new Error("Penilaian telah difinalisasi dan dikunci. Hubungi Administrator untuk pembukaan kunci.");
     }
 
     const prev = studentUser.penilaianKkn;
-    const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(evaluatorRole);
-    const isMitra = ["RW", "MITRA", "ADMIN_DLH", "DLH", "LURAH", "KELURAHAN"].includes(evaluatorRole);
 
     // Merge scores safely based on evaluator role
     const skorMitraKehadiran = isDpl
@@ -433,17 +456,18 @@ export const penilaianKknService = {
       role: { name: "MAHASISWA_KKN" },
     };
 
-    if (groupId) {
-      whereCondition.studentProfile = { kelompokId: groupId };
-    } else if (evaluatorRole && ["DPL", "DOSEN_PEMBIMBING"].includes(evaluatorRole.toUpperCase()) && evaluatorId) {
+    if (evaluatorRole && ["DPL", "DOSEN_PEMBIMBING"].includes(evaluatorRole.toUpperCase()) && evaluatorId) {
       whereCondition.studentProfile = {
         kelompok: {
+          id: groupId || undefined,
           OR: [
             { dplId: evaluatorId },
             { dpl: { id: evaluatorId } },
           ],
         },
       };
+    } else if (groupId) {
+      whereCondition.studentProfile = { kelompokId: groupId };
     } else if (evaluatorRole === "RW" && evaluatorId) {
       const userRw = await prisma.user.findUnique({
         where: { id: evaluatorId },

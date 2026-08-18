@@ -1,53 +1,140 @@
 @import "tailwindcss";
 
-@theme {
-  --color-outline-variant: #bccabc;
-  --color-outline: #6d7a6e;
-  --color-on-surface-variant: #3d4a3f;
-  --color-primary: #006d37;
-  --color-on-primary-fixed: #00210c;
-  --color-surface-dim: #d8dadd;
-  --color-surface-tint: #006d37;
-  --color-surface-bright: #f7f9fc;
-  --color-surface-container-highest: #e0e3e6;
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
   --color-surface: #f7f9fc;
-  --color-secondary-fixed: #cce5ff;
-  --color-surface-container: #eceef1;
-  --color-primary-fixed-dim: #61de8a;
-  --color-primary-container: #27ae60;
-  --color-surface-container-low: #f2f4f7;
-  --color-inverse-surface: #2d3133;
-  --color-tertiary-fixed-dim: #accbe0;
-  --color-secondary: #006397;
-  --color-on-tertiary-container: #143444;
-  --color-inverse-primary: #61de8a;
-  --color-tertiary: #446274;
-  --color-on-secondary-fixed-variant: #004b73;
-  --color-background: #f7f9fc;
+  --color-surface-bright: #ffffff;
+  --color-surface-dim: #d8dadd;
   --color-surface-container-lowest: #ffffff;
-  --color-on-tertiary: #ffffff;
-  --color-inverse-on-surface: #eff1f4;
-  --color-error: #ba1a1a;
-  --color-tertiary-container: #7e9cb0;
-  --color-secondary-fixed-dim: #92ccff;
-  --color-on-primary-container: #00391a;
-  --color-on-error-container: #93000a;
-  --color-tertiary-fixed: #c8e7fd;
-  --color-on-secondary-fixed: #001d31;
-  --color-secondary-container: #5cb8fd;
-  --color-on-secondary-container: #00476e;
-  --color-error-container: #ffdad6;
+  --color-surface-container-low: #f2f4f7;
+  --color-surface-container: #eceef1;
   --color-surface-container-high: #e6e8eb;
-  --color-primary-fixed: #7efba4;
-  --color-on-surface: #191c1e;
-  --color-on-primary: #ffffff;
-  --color-on-error: #ffffff;
-  --color-on-primary-fixed-variant: #005228;
-  --color-on-tertiary-fixed: #001e2d;
-  --color-on-secondary: #ffffff;
-  --color-on-background: #191c1e;
+  --color-surface-container-highest: #e0e3e6;
   --color-surface-variant: #e0e3e6;
-  --color-on-tertiary-fixed-variant: #2c4a5c;
+  --color-background: #f7f9fc;
+  --color-on-background: #0f172a;
+  --color-on-surface: #0f172a;
+  --color-on-surface-variant: #475569;
+  --color-outline: #cbd5e1;
+  --color-outline-variant: #e2e8f0;
+
+  --color-primary: #006d37;
+  --color-primary-container: #27ae60;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #00391a;
+  --color-primary-fixed: #7efba4;
+  --color-primary-fixed-dim: #61de8a;
+  --color-on-primary-fixed: #00210c;
+  --color-on-primary-fixed-variant: #005228;
+
+  --color-secondary: #006397;
+  --color-secondary-container: #5cb8fd;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #00476e;
+  --color-secondary-fixed: #cce5ff;
+  --color-secondary-fixed-dim: #92ccff;
+  --color-on-secondary-fixed: #001d31;
+  --color-on-secondary-fixed-variant: #004b73;
+
+  --color-tertiary: #446274;
+  --color-tertiary-container: #7e9cb0;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #143444;
+
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
+  --color-on-error-container: #93000a;
+}
+
+.dark {
+  --color-surface: #0b1120;
+  --color-surface-bright: #1e293b;
+  --color-surface-dim: #070b14;
+  --color-surface-container-lowest: #0f172a;
+  --color-surface-container-low: #131d31;
+  --color-surface-container: #1e293b;
+  --color-surface-container-high: #273549;
+  --color-surface-container-highest: #334155;
+  --color-surface-variant: #1e293b;
+  --color-background: #0b1120;
+  --color-on-background: #f8fafc;
+  --color-on-surface: #f8fafc;
+  --color-on-surface-variant: #94a3b8;
+  --color-outline: #334155;
+  --color-outline-variant: #1e293b;
+
+  --color-primary: #10b981;
+  --color-primary-container: #065f46;
+  --color-on-primary: #022c22;
+  --color-on-primary-container: #d1fae5;
+  --color-primary-fixed: #34d399;
+  --color-primary-fixed-dim: #10b981;
+  --color-on-primary-fixed: #064e3b;
+  --color-on-primary-fixed-variant: #047857;
+
+  --color-secondary: #38bdf8;
+  --color-secondary-container: #075985;
+  --color-on-secondary: #082f49;
+  --color-on-secondary-container: #e0f2fe;
+
+  --color-tertiary: #94a3b8;
+  --color-tertiary-container: #334155;
+  --color-on-tertiary: #f8fafc;
+  --color-on-tertiary-container: #cbd5e1;
+
+  --color-error: #f87171;
+  --color-error-container: #7f1d1d;
+  --color-on-error: #450a0a;
+  --color-on-error-container: #fee2e2;
+}
+
+@theme {
+  --color-outline-variant: var(--color-outline-variant);
+  --color-outline: var(--color-outline);
+  --color-on-surface-variant: var(--color-on-surface-variant);
+  --color-primary: var(--color-primary);
+  --color-on-primary-fixed: var(--color-on-primary-fixed);
+  --color-surface-dim: var(--color-surface-dim);
+  --color-surface-tint: var(--color-primary);
+  --color-surface-bright: var(--color-surface-bright);
+  --color-surface-container-highest: var(--color-surface-container-highest);
+  --color-surface: var(--color-surface);
+  --color-secondary-fixed: var(--color-secondary-fixed);
+  --color-surface-container: var(--color-surface-container);
+  --color-primary-fixed-dim: var(--color-primary-fixed-dim);
+  --color-primary-container: var(--color-primary-container);
+  --color-surface-container-low: var(--color-surface-container-low);
+  --color-tertiary-fixed-dim: var(--color-tertiary-fixed-dim);
+  --color-secondary: var(--color-secondary);
+  --color-on-tertiary-container: var(--color-on-tertiary-container);
+  --color-tertiary: var(--color-tertiary);
+  --color-on-secondary-fixed-variant: var(--color-on-secondary-fixed-variant);
+  --color-background: var(--color-background);
+  --color-surface-container-lowest: var(--color-surface-container-lowest);
+  --color-on-tertiary: var(--color-on-tertiary);
+  --color-error: var(--color-error);
+  --color-tertiary-container: var(--color-tertiary-container);
+  --color-secondary-fixed-dim: var(--color-secondary-fixed-dim);
+  --color-on-primary-container: var(--color-on-primary-container);
+  --color-on-error-container: var(--color-on-error-container);
+  --color-tertiary-fixed: var(--color-tertiary-fixed);
+  --color-on-secondary-fixed: var(--color-on-secondary-fixed);
+  --color-secondary-container: var(--color-secondary-container);
+  --color-on-secondary-container: var(--color-on-secondary-container);
+  --color-error-container: var(--color-error-container);
+  --color-surface-container-high: var(--color-surface-container-high);
+  --color-primary-fixed: var(--color-primary-fixed);
+  --color-on-surface: var(--color-on-surface);
+  --color-on-primary: var(--color-on-primary);
+  --color-on-error: var(--color-on-error);
+  --color-on-primary-fixed-variant: var(--color-on-primary-fixed-variant);
+  --color-on-tertiary-fixed: var(--color-on-tertiary-fixed);
+  --color-on-secondary: var(--color-on-secondary);
+  --color-on-background: var(--color-on-background);
+  --color-surface-variant: var(--color-surface-variant);
+  --color-on-tertiary-fixed-variant: var(--color-on-tertiary-fixed-variant);
 
   --font-sans: "Plus Jakarta Sans", sans-serif;
 
@@ -63,6 +150,7 @@ body {
   font-family: var(--font-sans);
   background-color: var(--color-background);
   color: var(--color-on-surface);
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 /* Custom micro-interactions & animations */
@@ -72,7 +160,7 @@ body {
 .btn-polish:hover {
   transform: translateY(-1px);
   filter: brightness(1.05);
-  box-shadow: 0 4px 12px rgba(0, 109, 55, 0.15);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
 }
 .btn-polish:active {
   transform: scale(0.97);
@@ -84,6 +172,9 @@ body {
 .card-polish:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+.dark .card-polish:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 .animate-shake {
@@ -110,6 +201,10 @@ body {
   background-size: 200% 100%;
   animation: skeleton-pulse 1.5s infinite ease-in-out;
 }
+.dark .skeleton-loading {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+}
 
 @keyframes skeleton-pulse {
   0% { background-position: 200% 0; }
@@ -118,12 +213,7 @@ body {
 
 /* ==========================================================
    GLOBAL RESPONSIVE SAFETY NET
-   Catches the common causes of horizontal overflow on mobile
-   app-wide, instead of patching each page individually.
-   ponytail: blunt instrument. If a specific page needs a
-   different treatment (e.g. an intentionally wide canvas),
-   override it locally on that page.
-========================================================== */
+   ========================================================== */
 
 html,
 body {
@@ -131,7 +221,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Media & embeds never push the viewport wider than the screen */
 img,
 video,
 canvas,
@@ -140,8 +229,6 @@ iframe {
   max-width: 100%;
 }
 
-/* Tables are the #1 overflow offender: make their wrapper scrollable
-   instead of letting the table stretch the whole page. */
 @media (max-width: 768px) {
   table {
     display: block;
@@ -150,9 +237,7 @@ iframe {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Recharts renders an absolutely-sized SVG; keep it inside its card */
   .recharts-responsive-container {
     max-width: 100%;
   }
 }
-

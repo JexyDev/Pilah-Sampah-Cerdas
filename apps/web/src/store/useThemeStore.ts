@@ -11,31 +11,52 @@ import { create } from "zustand";
 interface ThemeState {
   theme: "light" | "dark";
   toggleTheme: () => void;
+  setTheme: (theme: "light" | "dark") => void;
   initTheme: () => void;
 }
 
+const applyThemeToDOM = (theme: "light" | "dark") => {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  if (theme === "dark") {
+    root.classList.add("dark");
+    root.setAttribute("data-theme", "dark");
+    root.style.colorScheme = "dark";
+  } else {
+    root.classList.remove("dark");
+    root.setAttribute("data-theme", "light");
+    root.style.colorScheme = "light";
+  }
+};
+
 export const useThemeStore = create<ThemeState>((set, get) => ({
-  theme: (localStorage.getItem("trashcare-theme") as "light" | "dark") || "light",
+  theme: typeof window !== "undefined" && (localStorage.getItem("trashcare-theme") as "light" | "dark") === "dark" ? "dark" : "light",
   
   toggleTheme: () => {
     const current = get().theme;
     const nextTheme = current === "light" ? "dark" : "light";
     localStorage.setItem("trashcare-theme", nextTheme);
-    if (nextTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+    applyThemeToDOM(nextTheme);
     set({ theme: nextTheme });
   },
 
+  setTheme: (theme: "light" | "dark") => {
+    localStorage.setItem("trashcare-theme", theme);
+    applyThemeToDOM(theme);
+    set({ theme });
+  },
+
   initTheme: () => {
-    const saved = (localStorage.getItem("trashcare-theme") as "light" | "dark") || "light";
-    if (saved === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
+    let saved = localStorage.getItem("trashcare-theme") as "light" | "dark" | null;
+    if (!saved) {
+      // Check system preference
+      if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        saved = "dark";
+      } else {
+        saved = "light";
+      }
     }
+    applyThemeToDOM(saved);
     set({ theme: saved });
   },
 }));

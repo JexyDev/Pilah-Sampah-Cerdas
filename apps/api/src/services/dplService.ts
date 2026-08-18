@@ -273,18 +273,29 @@ export const dplService = {
         const izinCount = leaveRequests.filter(
           (r) => r.type === "IZIN" && r.status === "APPROVED"
         ).length;
+        const rejectedAbsenceCount = leaveRequests.filter(
+          (r) => r.status === "REJECTED"
+        ).length;
 
         const totalSchedules = await getEligiblePastSchedulesCount(st.kelompokId || undefined);
         const attendedCount = attendances.length;
-        const alphaCount =
+        // Alpha adalah sisa jadwal tanpa keterangan ditambah pengajuan ketidakhadiran yang ditolak
+        const rawAlpha =
           totalSchedules > 0
             ? Math.max(0, totalSchedules - attendedCount - sickCount - izinCount)
             : 0;
+        const alphaCount = Math.max(rawAlpha, rejectedAbsenceCount);
+
+        const ruleConfigs = await configService.getRuleEngineConfigs();
+        const baseScore = Number(st.assessmentScore || 0);
+        const penaltyPerAlpha = ruleConfigs.alphaPenaltyScorePercent || 5.0;
+        const finalCalculatedScore = Math.max(0, Math.round(baseScore - (alphaCount * penaltyPerAlpha)));
 
         const points = await prisma.pointHistory.aggregate({
           where: { userId: st.userId },
           _sum: { points: true },
         });
+        const netPoints = Math.max(0, (points._sum.points || 0) - (alphaCount * (ruleConfigs.alphaPenaltyPoints || 10)));
 
         return {
           id: st.id,
@@ -297,8 +308,9 @@ export const dplService = {
           fotoProfil: st.user?.fotoProfil || null,
           isKetua: Boolean(st.isKetua),
           kelompokName: st.kelompok?.name || "-",
-          assessmentScore: Number(st.assessmentScore || 0),
-          individualPoints: points._sum.points || 0,
+          assessmentScore: finalCalculatedScore,
+          baseAssessmentScore: baseScore,
+          individualPoints: netPoints,
           attendanceRate:
             totalSchedules === 0 || attendedCount === 0
               ? 0
@@ -307,6 +319,7 @@ export const dplService = {
           sickCount,
           izinCount,
           alphaCount,
+          statusKehadiranLabel: alphaCount > 0 ? `${alphaCount}x Tanpa Keterangan (Alpha)` : "Tertib Presensi",
           attendances: attendances.map((a) => ({
             id: a.id,
             scheduleTitle: a.schedule?.title || "Kegiatan KKN",

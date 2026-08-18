@@ -1469,8 +1469,11 @@ export const DplDashboardPage: React.FC = () => {
                             }`}>
                               {st.attendanceRate}%
                             </span>
-                            <span className="text-[11px] text-slate-500 font-mono font-medium">
-                              ({st.attendedCount}H / {st.sickCount}S / {st.izinCount}I / {st.alphaCount}A)
+                            <span 
+                              title={`Rincian: ${st.attendedCount} Hadir, ${st.sickCount} Sakit, ${st.izinCount} Izin, ${st.alphaCount} Tanpa Keterangan (Alpha)`}
+                              className="text-[11px] text-slate-500 font-mono font-medium cursor-help hover:text-slate-900"
+                            >
+                              ({st.attendedCount}H / {st.sickCount}S / {st.izinCount}I / {st.alphaCount} Tanpa Keterangan)
                             </span>
                           </div>
                         </td>

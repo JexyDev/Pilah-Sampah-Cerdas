@@ -18,6 +18,7 @@ import {
 import { useAuthStore } from "../../../store/useAuthStore";
 import { getProfilePhotoUrl, handleAvatarError } from "../../../utils/photoUtils";
 import api from "../../../services/api";
+import { ThemeToggle } from "../../common/ThemeToggle";
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -297,16 +298,19 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
 
       {/* Right Section: System Actions & User Profile */}
       <div className="flex items-center gap-3 shrink-0">
+        {/* Theme Toggle Button */}
+        <ThemeToggle />
+
         {/* Notifications Popover Trigger & Container */}
         <div className="relative" ref={notifRef}>
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="w-10 h-10 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-600 flex items-center justify-center relative transition-all border border-slate-200/80 cursor-pointer shadow-2xs active:scale-95"
+            className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center relative transition-all border border-slate-200/80 dark:border-slate-700/80 cursor-pointer shadow-2xs active:scale-95"
             title="Notifikasi Sistem"
           >
             <Bell size={18} />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white font-black text-[10px] rounded-full flex items-center justify-center border-2 border-white shadow-xs animate-bounce">
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white font-black text-[10px] rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-xs animate-bounce">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
@@ -314,31 +318,31 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
 
           {/* Notifications Dropdown Popover */}
           {showNotifications && (
-            <div className="absolute top-12 right-0 w-80 sm:w-96 bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute top-12 right-0 w-80 sm:w-96 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
               {/* Popover Header */}
-              <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/80">
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-850">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-xl bg-emerald-100/70 text-[#009966] flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-xl bg-emerald-100/70 dark:bg-emerald-950/70 text-[#009966] dark:text-emerald-400 flex items-center justify-center">
                     <Bell size={15} />
                   </div>
-                  <span className="text-xs font-black text-slate-800 tracking-tight">Notifikasi Sistem</span>
+                  <span className="text-xs font-black text-slate-800 dark:text-slate-100 tracking-tight">Notifikasi Sistem</span>
                 </div>
-                <span className="text-[11px] bg-[#e5f7ed] text-[#009966] px-3 py-1 rounded-full font-black border border-[#009966]/20 shrink-0">
+                <span className="text-[11px] bg-[#e5f7ed] dark:bg-emerald-950 text-[#009966] dark:text-emerald-300 px-3 py-1 rounded-full font-black border border-[#009966]/20 dark:border-emerald-700/30 shrink-0">
                   {unreadCount > 0 ? `${unreadCount} Belum Dibaca` : `${notifications.length} Peristiwa`}
                 </span>
               </div>
 
               {/* Popover List Body */}
-              <div className="divide-y divide-slate-100/80 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
+              <div className="divide-y divide-slate-100/80 dark:divide-slate-800 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
                 {loadingNotifs && notifications.length === 0 ? (
-                  <div className="p-6 text-center text-xs font-semibold text-slate-400">
+                  <div className="p-6 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">
                     Memuat notifikasi aktual...
                   </div>
                 ) : notifications.length === 0 ? (
-                  <div className="p-6 text-center text-xs font-bold text-slate-400 flex flex-col items-center gap-1.5">
-                    <Bell size={24} className="text-slate-300 mb-1" />
+                  <div className="p-6 text-center text-xs font-bold text-slate-400 dark:text-slate-500 flex flex-col items-center gap-1.5">
+                    <Bell size={24} className="text-slate-300 dark:text-slate-600 mb-1" />
                     <span>Tidak ada notifikasi baru</span>
-                    <span className="text-[10.5px] font-normal text-slate-400">Sistem dalam kondisi normal & optimal.</span>
+                    <span className="text-[10.5px] font-normal text-slate-400 dark:text-slate-500">Sistem dalam kondisi normal & optimal.</span>
                   </div>
                 ) : (
                   notifications.map((n) => {
@@ -349,38 +353,45 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
                       <div
                         key={n.id}
                         onClick={() => handleMarkNotificationRead(n.id)}
-                        className={`p-4 flex gap-3 transition-all hover:bg-slate-50/80 cursor-pointer ${
-                          !n.isRead ? "bg-emerald-50/30" : ""
+                        className={`p-4 flex gap-3 transition-all hover:bg-slate-50/80 dark:hover:bg-slate-800/80 cursor-pointer ${
+                          !n.isRead ? "bg-emerald-50/30 dark:bg-emerald-950/20" : ""
                         }`}
                       >
                         {/* Soft Squircle Icon Badge */}
                         <div
                           className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 border ${
                             isCritical
-                              ? "bg-rose-50 border-rose-100 text-rose-500"
+                              ? "bg-rose-50 dark:bg-rose-950/60 border-rose-100 dark:border-rose-900/60 text-rose-500"
                               : isSuccess
-                              ? "bg-emerald-50 border-emerald-100 text-[#009966]"
-                              : "bg-sky-50 border-sky-100 text-sky-600"
+                              ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-100 dark:border-emerald-900/60 text-[#009966] dark:text-emerald-400"
+                              : "bg-blue-50 dark:bg-sky-950/60 border-blue-100 dark:border-sky-900/60 text-blue-500 dark:text-sky-400"
                           }`}
                         >
                           {isCritical ? (
-                            <AlertTriangle size={18} />
+                            <AlertTriangle size={17} />
                           ) : isSuccess ? (
-                            <CheckCircle2 size={18} />
+                            <CheckCircle2 size={17} />
                           ) : (
-                            <Info size={18} />
+                            <Info size={17} />
                           )}
                         </div>
 
-                        {/* Text & Time Body */}
+                        {/* Text Details */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-baseline gap-2">
-                            <p className="text-xs font-black text-slate-800 truncate leading-tight">{n.title}</p>
-                            <span className="text-[10px] text-slate-400 font-semibold shrink-0">{n.time}</span>
+                          <div className="flex items-center justify-between gap-1 mb-0.5">
+                            <h4 className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
+                              {n.title}
+                            </h4>
+                            {!n.isRead && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                            )}
                           </div>
-                          <p className="text-[11px] text-slate-600 leading-relaxed mt-1 font-medium line-clamp-2">
-                            {n.desc}
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                            {n.message}
                           </p>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block">
+                            {formatTimeAgo(n.createdAt)}
+                          </span>
                         </div>
                       </div>
                     );
@@ -388,13 +399,13 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
                 )}
               </div>
 
-              {/* Popover Footer Button */}
+              {/* Popover Footer: Go to Full Inbox Page */}
               <button
                 onClick={() => {
                   setShowNotifications(false);
                   navigate("/notifikasi");
                 }}
-                className="w-full text-center py-3 bg-slate-50/90 border-t border-slate-100 text-xs font-black text-[#009966] hover:bg-emerald-50/60 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 bg-slate-50 dark:bg-slate-850 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-[#009966] dark:hover:text-emerald-400 text-xs font-black border-t border-slate-100 dark:border-slate-800 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <span>Lihat Semua Notifikasi</span>
                 <ChevronRight size={14} />
@@ -404,19 +415,19 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         </div>
 
         {/* Vertical Separator */}
-        <div className="h-6 w-px bg-slate-200 mx-0.5 shrink-0" />
+        <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-0.5 shrink-0" />
 
         {/* User Profile Pill Card (Direct Navigation to Pengaturan) */}
         <div
           onClick={() => navigate("/pengaturan")}
           title="Pengaturan Profil"
-          className="bg-gradient-to-r from-white via-emerald-50/20 to-emerald-50/60 border border-slate-200/90 hover:border-emerald-300 rounded-full pl-4 pr-1.5 py-1.5 flex items-center gap-3 cursor-pointer hover:shadow-md transition-all duration-300 group select-none shadow-2xs"
+          className="bg-gradient-to-r from-white dark:from-slate-900 via-emerald-50/20 dark:via-emerald-950/20 to-emerald-50/60 dark:to-emerald-950/40 border border-slate-200/90 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-600 rounded-full pl-4 pr-1.5 py-1.5 flex items-center gap-3 cursor-pointer hover:shadow-md transition-all duration-300 group select-none shadow-2xs"
         >
           <div className="flex flex-col items-center justify-center text-center gap-0.5">
-            <span className="text-xs font-black text-slate-900 tracking-tight leading-tight block truncate max-w-[120px]">
+            <span className="text-xs font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight block truncate max-w-[120px]">
               {user?.name || "Super User"}
             </span>
-            <span className="inline-flex items-center justify-center bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider leading-none">
+            <span className="inline-flex items-center justify-center bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800 text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider leading-none">
               {user?.peran ? (
                 user.peran === "SUPER_USER" ? "ADMIN" :
                 user.peran === "DEVELOPER" ? "DEVELOPER" :
@@ -426,7 +437,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
               ) : "ADMIN"}
             </span>
           </div>
-          <div className="w-9 h-9 rounded-full bg-[#009966] text-white font-black text-xs flex items-center justify-center border-2 border-white shadow-sm shadow-emerald-600/30 shrink-0 overflow-hidden group-hover:scale-105 transition-transform duration-300">
+          <div className="w-9 h-9 rounded-full bg-[#009966] text-white font-black text-xs flex items-center justify-center border-2 border-white dark:border-slate-800 shadow-sm shadow-emerald-600/30 shrink-0 overflow-hidden group-hover:scale-105 transition-transform duration-300">
             {user?.fotoProfil ? (
               <img
                 src={getProfilePhotoUrl(user?.fotoProfil, user?.name)}

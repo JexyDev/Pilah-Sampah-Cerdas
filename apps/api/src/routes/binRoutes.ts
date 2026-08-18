@@ -10,6 +10,7 @@ import { binController } from "../controllers/binController.js";
 import { uploadAvatarMiddleware } from "../middlewares/uploadMiddleware.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
+import { dataScopeMiddleware } from "../middlewares/dataScopeMiddleware.js";
 
 const router = Router();
 
@@ -581,6 +582,14 @@ router.get(
   authMiddleware,
   roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
   binController.listResetRequests
+);
+
+router.post(
+  "/:id/reactivate",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "RW"]),
+  dataScopeMiddleware,
+  binController.reactivateBin
 );
 
 router.put(

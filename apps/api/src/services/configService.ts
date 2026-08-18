@@ -115,6 +115,10 @@ export class ConfigService {
       kknEndDate: map["kkn_end_date"] || "2026-10-20",
       kknAutoHolidayWeekends: map["kkn_auto_holiday_weekends"] !== "false",
       kknHolidays: holidaysParsed,
+
+      // Rule 5: Penalti Alpha (Tanpa Keterangan)
+      alphaPenaltyPoints: parseInt(map["alpha_penalty_points"] || "10", 10),
+      alphaPenaltyScorePercent: parseFloat(map["alpha_penalty_score_percent"] || "5.0"),
     };
   }
 
@@ -170,6 +174,8 @@ export class ConfigService {
       { key: "kkn_start_date", value: String(data.kknStartDate ?? "2026-08-20") },
       { key: "kkn_end_date", value: String(data.kknEndDate ?? "2026-10-20") },
       { key: "kkn_auto_holiday_weekends", value: String(data.kknAutoHolidayWeekends ?? true) },
+      { key: "alpha_penalty_points", value: String(data.alphaPenaltyPoints ?? 10) },
+      { key: "alpha_penalty_score_percent", value: String(data.alphaPenaltyScorePercent ?? 5.0) },
       {
         key: "kkn_holidays",
         value: typeof data.kknHolidays === "string" ? data.kknHolidays : JSON.stringify(data.kknHolidays ?? []),
