@@ -17,6 +17,7 @@ import '../../riwayat/controllers/riwayat_controller.dart';
 import '../../shared/widgets/app_loading.dart';
 import '../../shared/widgets/inline_camera_widget.dart';
 import '../../shared/widgets/qr_scanner_widget.dart';
+import '../../shared/widgets/feature_rating_dialog.dart';
 
 /// Alur scan sampah — sesuai desain:
 /// Step 1: Kamera + bottom sheet "Pindai Sampah" + tombol "Deteksi Sampah"
@@ -46,7 +47,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
   @override
   void initState() {
     super.initState();
-    _fetchGps();
+    // Jangan panggil _fetchGps() di initState agar tidak bertabrakan dengan dialog izin kamera OS
   }
 
   @override
@@ -86,18 +87,29 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
         return;
       }
 
-      // Ambil posisi dengan akurasi medium
+      // Ambil posisi dengan akurasi tinggi (high) untuk memastikan geofencing presisi.
+      // Coba best dulu, fallback ke high kalau timeout.
       Position? pos;
       try {
         pos = await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.medium,
-            timeLimit: Duration(seconds: 5),
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 8),
           ),
         );
       } catch (_) {
-        // Timeout/gagal, coba last known
-        pos = await Geolocator.getLastKnownPosition();
+        try {
+          // Fallback ke medium jika high timeout
+          pos = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.medium,
+              timeLimit: Duration(seconds: 4),
+            ),
+          );
+        } catch (_) {
+          // Fallback terakhir ke last known position
+          pos = await Geolocator.getLastKnownPosition();
+        }
       }
 
       if (mounted) {
@@ -156,6 +168,15 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
             ref.invalidate(dailyPointsProvider);
             ref.invalidate(notificationsProvider);
             ref.invalidate(binsProvider);
+
+            // Rating dialog 1-5 bintang (hanya muncul 1x saat pertama kali berhasil setor)
+            showFeatureRatingOnceIfNeeded(
+              context: context,
+              featureKey: 'warga_setor_sampah',
+              featureTitle: 'Setoran Sampah Berhasil! ⭐',
+              featureSubtitle: 'Bagaimana kepuasan Anda saat pertama kali melakukan setoran & pemilahan sampah TrashCare?',
+              roleTag: 'Warga',
+            );
           }
         });
       }
@@ -177,7 +198,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
             _buildCameraBackground(state.currentStep),
             // Content sesuai step
             _buildStepContent(context, state, isOnline),
-            if (state.isLoading)
+            if (state.isLoading && state.currentStep != 1)
               Container(
                 color: Colors.black54,
                 child: const Center(child: AppLoading()),
@@ -399,9 +420,12 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton.icon(
-                    onPressed: () => ref
-                        .read(scanFlowProvider.notifier)
-                        .detectWaste(imagePath: _capturedImagePath),
+                    onPressed: () {
+                      _fetchGps(); // Ambil GPS di background tanpa memblokir kamera di awal
+                      ref
+                          .read(scanFlowProvider.notifier)
+                          .detectWaste(imagePath: _capturedImagePath);
+                    },
                     icon: const Icon(Icons.psychology_rounded, size: 20),
                     label: const Text(
                       'Deteksi Sampah',
@@ -561,13 +585,19 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   final s = ref.read(scanFlowProvider);
                   if (s.isLoading || s.scanResult != null || s.errorCode != null) return false;
                   
-                  ref
+                  await ref
                       .read(scanFlowProvider.notifier)
                       .scanAndCommit(
                         qrCode: qrCode,
                         userLat: _userLat ?? 0.0,
                         userLng: _userLng ?? 0.0,
                       );
+                  
+                  // if there's an error, return false to reset the scanner so the user can scan again
+                  final nextS = ref.read(scanFlowProvider);
+                  if (nextS.errorCode != null) {
+                    return false;
+                  }
                   return true;
                 },
               ),
@@ -993,6 +1023,8 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
       _showMismatchDialog(context);
     } else if (errorCode == 'BIN_OVERFLOW') {
       _showOverflowDialog(context, errorMessage);
+    } else if (errorCode == 'LOCATION_OUT_OF_RANGE') {
+      _showLocationErrorDialog(context, errorMessage);
     } else if (errorCode == 'IMAGE_UNREADABLE' || errorCode == 'AI_TIMEOUT') {
       _showScanFailedDialog(context, errorMessage, isQrError: false);
     } else {
@@ -1001,6 +1033,146 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
       final isQrError = state.currentStep == 2 || state.aiResult != null;
       _showScanFailedDialog(context, errorMessage ?? 'Terjadi kesalahan sistem.', isQrError: isQrError);
     }
+  }
+
+  /// Dialog LOCATION_OUT_OF_RANGE — Peringatan jarak lebih dari 50 meter
+  void _showLocationErrorDialog(BuildContext context, String? message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ── Ikon Lokasi ──────────────────────────────────────────
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFFDE68A), width: 2),
+                ),
+                child: const Icon(
+                  Icons.location_off_rounded,
+                  size: 38,
+                  color: Color(0xFFF59E0B),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // ── Judul ────────────────────────────────────────────────
+              const Text(
+                'Di Luar Jangkauan',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // ── Pesan ────────────────────────────────────────────────
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFFED7AA), width: 1),
+                ),
+                child: const Column(
+                  children: [
+                    Text(
+                      'Anda berada lebih dari 50 meter dari tempat sampah yang ingin dipindai.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF92400E),
+                        height: 1.5,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.info_outline_rounded, size: 13, color: Color(0xFFB45309)),
+                        SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            'Harap mendekat ke lokasi tempat sampah (radius ≤ 50 m).',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFB45309),
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // ── Tombol Coba Lagi ─────────────────────────────────────
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: const Text(
+                    'Coba Lagi',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    ref.read(scanFlowProvider.notifier).clearError();
+                    _qrScannerKey.currentState?.resetScanner();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF59E0B),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // ── Tombol Keluar ────────────────────────────────────────
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    ref.read(scanFlowProvider.notifier).reset();
+                    Navigator.of(context).pop();
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF64748B),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  child: const Text(
+                    'Kembali ke Beranda',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   /// Dialog BIN_OVERFLOW — Larangan Scan QR Tempat Sampah Penuh
@@ -1034,7 +1206,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     final aiResult = ref.read(scanFlowProvider).aiResult;
     final String detectedName = aiResult?.detectedType.displayName ?? 'Organik';
     // Tempat sampah yang salah = kebalikan dari yang terdeteksi
-    final String tempatSampahName = aiResult?.detectedType == WasteType.organic
+    final String tongName = aiResult?.detectedType == WasteType.organic
         ? 'Non-Organik'
         : 'Organik';
 
@@ -1042,7 +1214,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
       context: context,
       builder: (_) => _MismatchDialog(
         sampahType: detectedName,
-        tempatSampahType: tempatSampahName,
+        tongType: tongName,
         onScanUlang: () {
           Navigator.of(context).pop();
           ref.read(scanFlowProvider.notifier).clearError();
@@ -1074,7 +1246,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
         },
         onCancel: () {
           Navigator.of(context).pop(); // Tutup dialog
-          Navigator.of(context).pop(); // Keluar dari halaman Scan
+          Navigator.maybePop(context); // Keluar dari halaman Scan
         },
       ),
     );
@@ -1427,13 +1599,13 @@ class _AiSuccessSheet extends StatelessWidget {
 class _MismatchDialog extends StatelessWidget {
   const _MismatchDialog({
     required this.sampahType,
-    required this.tempatSampahType,
+    required this.tongType,
     required this.onScanUlang,
     required this.onBatal,
   });
 
   final String sampahType;
-  final String tempatSampahType;
+  final String tongType;
   final VoidCallback onScanUlang;
   final VoidCallback onBatal;
 
@@ -1535,7 +1707,7 @@ class _MismatchDialog extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                tempatSampahType.toUpperCase(),
+                                tongType.toUpperCase(),
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -1748,7 +1920,10 @@ class _OverflowDialog extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: onScanLain,
                 icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
-                label: const Text('Scan QR Tempat Sampah Lain', style: TextStyle(fontWeight: FontWeight.w700)),
+                label: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text('Scan QR Tempat Sampah Lain', style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -1762,7 +1937,10 @@ class _OverflowDialog extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: onAjukanReset,
                 icon: const Icon(Icons.cleaning_services_rounded, size: 18, color: AppColors.primaryGreen),
-                label: const Text('Ajukan Pengosongan Tempat Sampah', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryGreen)),
+                label: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text('Ajukan Pengosongan Tong', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryGreen)),
+                ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.primaryGreen),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -1772,7 +1950,7 @@ class _OverflowDialog extends StatelessWidget {
             const SizedBox(height: 10),
             TextButton(
               onPressed: onKeluar,
-              child: const Text('Keluar / Batal', style: TextStyle(color: AppColors.textHint)),
+              child: const Text('Batal', style: TextStyle(color: AppColors.textHint, fontWeight: FontWeight.w600)),
             ),
           ],
         ),

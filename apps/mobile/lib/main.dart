@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-
-
+import 'dart:ui';
+import 'dart:convert';
+import 'app/core/utils/safe_storage.dart';
+import 'app/core/values/app_config.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,12 +12,15 @@ import 'app/core/theme/app_theme.dart';
 import 'app/routes/app_routes.dart';
 import 'app/routes/app_pages.dart';
 import 'app/core/values/app_strings.dart';
+import 'app/core/values/app_colors.dart';
 import 'app/core/utils/platform_utils.dart';
 import 'app/modules/scan/controllers/scan_controller.dart';
 import 'app/modules/notifikasi/controllers/notifikasi_controller.dart';
 import 'app/modules/riwayat/controllers/riwayat_controller.dart';
 import 'app/data/services/local_notification_service.dart';
 import 'app/data/services/notification_engine.dart';
+import 'app/modules/mahasiswa/services/kkn_background_task_handler.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import 'app/modules/notifikasi/controllers/warga_notifikasi_controller.dart';
 import 'app/modules/mahasiswa/controllers/mahasiswa_notifikasi_controller.dart';
@@ -37,8 +42,19 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       final title = message.notification?.title ?? 'Notifikasi Baru';
       final body = message.notification?.body ?? '';
       final type = message.data['type'] ?? 'SYSTEM';
-      final role = message.data['role'] ?? 'WARGA';
-      final userId = message.data['userId'] ?? 'system';
+      
+      String role = message.data['role'] ?? 'WARGA';
+      String userId = message.data['userId'] ?? 'system';
+
+      try {
+        const storage = SafeStorage();
+        final userData = await storage.read(key: AppConfig.userDataKey);
+        if (userData != null) {
+          final decoded = jsonDecode(userData);
+          userId = decoded['id']?.toString() ?? userId;
+          role = (decoded['role'] ?? decoded['userRole'] ?? decoded['roleName'] ?? role).toString().toUpperCase();
+        }
+      } catch (_) {}
       
       await FirebaseNotificationService().saveNotification(
         userId: userId,
@@ -46,7 +62,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         title: title,
         desc: body,
         type: type,
-        id: message.messageId,
+        id: message.data['notificationId']?.toString() ?? message.messageId,
       );
     } catch (e) {
       debugPrint('[FCM Background] Save error: $e');
@@ -64,6 +80,58 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 /// Platform support: Android, iOS, Web, Windows, macOS, Linux.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inisialisasi Foreground Task untuk background GPS tracking KKN
+  FlutterForegroundTask.initCommunicationPort();
+  initKknForegroundTask();
+
+  // Mencegah "Red Screen of Death" tampil ke pengguna dan menggunakan Snackbar
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Container(
+      color: Colors.transparent,
+      child: const Center(
+        child: Icon(Icons.error_outline, color: Colors.red, size: 24),
+      ),
+    );
+  };
+
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    // Kita hapus Snackbar di sini karena error layout/tampilan yang tidak fatal 
+    // akan langsung ditangani oleh ErrorWidget.builder secara diam-diam.
+    // Menampilkan Snackbar untuk error layout hanya akan mengganggu kenyamanan pengguna.
+  };
+
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('Async Error: $error');
+    
+    final errorString = error.toString().toLowerCase();
+    final isIgnoredError = errorString.contains('networkimage') || 
+                           errorString.contains('timeout') ||
+                           errorString.contains('connection closed') ||
+                           errorString.contains('host lookup');
+
+    if (!isIgnoredError) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final context = navigatorKey.currentContext;
+        if (context != null && ScaffoldMessenger.maybeOf(context) != null) {
+          String errMsg = error.toString().replaceAll('Exception:', '').trim();
+          if (errMsg.length > 40) errMsg = '${errMsg.substring(0, 40)}...';
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text('Kendala sistem: $errMsg'),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: AppColors.dangerRed,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+        }
+      });
+    }
+    return true;
+  };
 
   // Poppins sebagai font default seluruh app (ui_ux_flow.md Â§1)
   GoogleFonts.config.allowRuntimeFetching = true;
@@ -166,7 +234,7 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         // Catat push notification ke FirebaseNotificationService & LocalCache agar tersimpan di disk Halaman Notifikasi in-app
         final user = ref.read(authProvider).user;
         if (user != null && (title.isNotEmpty || body.isNotEmpty)) {
-          final notifId = message.messageId ?? 'fcm_${DateTime.now().millisecondsSinceEpoch}';
+          final notifId = message.data['notificationId']?.toString() ?? message.messageId ?? 'fcm_${DateTime.now().millisecondsSinceEpoch}';
 
           await FirebaseNotificationService().saveNotification(
             userId: user.id,
@@ -235,25 +303,23 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
     }
   }
 
-  void _handleNotificationRoute(RemoteMessage message) {
-    final title = (message.notification?.title ?? '').toLowerCase();
-    final type = (message.data['event']?.toString() ?? '').toLowerCase();
+  void _handleNotificationRoute(RemoteMessage message) async {
+    const storage = SafeStorage();
+    final userData = await storage.read(key: AppConfig.userDataKey);
+    
+    String role = 'WARGA'; // Default
 
-    if (type.contains('kkn') || title.contains('kkn') || title.contains('dpl') || title.contains('presensi')) {
+    if (userData != null) {
+      try {
+        final decoded = jsonDecode(userData);
+        role = (decoded['role'] ?? decoded['userRole'] ?? decoded['roleName'] ?? 'WARGA').toString().toUpperCase();
+      } catch (_) {}
+    }
+
+    if (role == 'MAHASISWA_KKN' || role == 'MAHASISWA') {
       navigatorKey.currentState?.pushNamed(AppRoutes.mahasiswaNotifikasi);
-    } else if (title.contains('penuh') || 
-        title.contains('pengajuan') || 
-        title.contains('kritis') ||
-        title.contains('setuju') ||
-        title.contains('tolak') ||
-        type.contains('bin_emptied') ||
-        type.contains('reset')) {
-      navigatorKey.currentState?.pushNamed('/reset-bin');
-    } else if (title.contains('poin') || 
-               type.contains('transaction_success')) {
-      navigatorKey.currentState?.pushNamed('/poin');
-    } else if (title.contains('timbangan') || type.contains('timbangan') || type.contains('pemilahan')) {
-      navigatorKey.currentState?.pushNamed(AppRoutes.riwayatPetugasPemilahan);
+    } else if (role == 'PETUGAS_RESIDU' || role == 'PETUGAS_PEMILAHAN') {
+      navigatorKey.currentState?.pushNamed(AppRoutes.petugasNotifikasi);
     } else {
       navigatorKey.currentState?.pushNamed(AppRoutes.notifikasi);
     }
@@ -278,7 +344,7 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
             fontSize: 14,
             color: const Color(0xFF191C1E),
           ),
-          child: child!,
+          child: child ?? const SizedBox.shrink(),
         );
       },
 

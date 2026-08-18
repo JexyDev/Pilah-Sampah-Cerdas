@@ -21,20 +21,20 @@ abstract class KknRepository {
   Future<List<dynamic>?> getCachedActivityLog();
   Future<List<dynamic>> getActivityLog();
 
-  /// Mengirim ping lokasi (latitude, longitude) ke backend dan mengembalikan nama posko/wilayah zona.
-  Future<String?> sendLocationPing(double latitude, double longitude);
+  /// Mengirim ping lokasi (latitude, longitude) ke backend dan mengembalikan seluruh response (termasuk autoAttendanceTriggered).
+  Future<Map<String, dynamic>> sendLocationPing(double latitude, double longitude);
 
   /// Mengambil daftar jadwal kegiatan KKN.
   Future<List<dynamic>> getSchedules();
 
   /// Mengambil data koordinat zona penugasan aktif (GET /kkn/active-zone)
-  Future<Map<String, dynamic>> getActiveZone();
+  Future<Map<String, dynamic>> getActiveZone({double? latitude, double? longitude});
 
   /// Mengambil target lokasi kegiatan KKN.
   Future<Map<String, dynamic>> getTargetLocation(String scheduleId);
 
-  /// Mencatat absensi (radius KKN) dengan payload lengkap.
-  Future<bool> recordAttendance({
+  /// Mencatat absensi (radius KKN) dengan payload lengkap. Mengembalikan response dari server.
+  Future<Map<String, dynamic>> recordAttendance({
     required String scheduleId,
     required double latitude,
     required double longitude,
@@ -66,7 +66,7 @@ abstract class KknRepository {
   /// Mengirim laporan pemanfaatan hasil sampah ke backend
   Future<bool> submitPemanfaatanSampah(PemanfaatanSampahRequest request);
 
-  /// Mengirim pengajuan izin/sakit ke DPL (Dosen Pendamping Lapangan)
+  /// Mengirim pengajuan izin/sakit ke DPL (Dosen Pembimbing Lapangan)
   /// POST /api/v1/kkn/pengajuan-izin
   Future<void> submitPengajuanIzin({
     String? scheduleId,
@@ -76,12 +76,19 @@ abstract class KknRepository {
     required String fotoPath,
   });
 
-  /// Mendaftarkan / memperbarui lokasi Posko KKN (Khusus Ketua Kelompok)
-  Future<bool> registerPoskoKkn(RegisterPoskoRequest request);
-
-  /// Mendaftarkan fasilitas GIS lingkungan baru (Rumah Maggot, Loseda, Bata Terawang, dll)
-  Future<bool> bantuInputFasilitas(BantuFasilitasRequest request);
+  /// Mengambil riwayat pengajuan izin/sakit
+  /// GET /api/v1/kkn/pengajuan-izin
+  Future<List<dynamic>> getPengajuanIzin();
 
   /// Mengambil data statistik dampak kelurahan (GET /api/v1/kkn/dampak-kelurahan)
   Future<DampakKelurahanData> getDampakKelurahan();
+
+  /// Mendaftarkan lokasi posko KKN
+  Future<Map<String, dynamic>> registerPosko(Map<String, dynamic> data, {String? imagePath});
+
+  /// Mendapatkan detail posko me
+  Future<PoskoKknResponse?> getPoskoMe();
+
+  /// Mendaftarkan fasilitas daur ulang (Rumah Maggot dll)
+  Future<Map<String, dynamic>> registerFasilitas(Map<String, dynamic> data, {String? imagePath});
 }

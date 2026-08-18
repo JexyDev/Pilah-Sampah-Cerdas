@@ -178,7 +178,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> w
             ],
           ),
           content: Text(
-            'Data $labelKegiatan ($rwTarget) beserta foto berhasil disimpan.\n\nLaporan ini diteruskan ke DPL (Dosen Pendamping Lapangan) untuk direviu.',
+            'Data $labelKegiatan ($rwTarget) beserta foto berhasil disimpan.\n\nLaporan ini diteruskan ke DPL (Dosen Pembimbing Lapangan) untuk direviu.',
             style: const TextStyle(fontSize: 14, height: 1.4),
           ),
           actions: [

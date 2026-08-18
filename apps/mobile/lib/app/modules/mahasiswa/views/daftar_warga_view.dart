@@ -28,20 +28,20 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
 
   int _activationFilterIndex = 0; // 0=Semua, 1=Sudah, 2=Belum
 
-  List<WargaDampingan> _filteredList(List<WargaDampingan> list, String userKecamatan, String userKelurahan, String userRw, String userId, String userNim) {
+  List<WargaDampingan> _filteredList(List<WargaDampingan> list, String userKecamatan, String userKelurahan, String userRw, String userId, String userNim, String userName) {
     // Tampilkan Warga Dampingan mahasiswa sesuai filter aktivasi
     var filtered = list.where((w) {
-      // Filter Aktivasi
       if (_activationFilterIndex == 1 && !w.isActivated) return false;
       if (_activationFilterIndex == 2 && w.isActivated) return false;
 
-      final mhsId = w.mahasiswaId.trim();
-      if (mhsId.isEmpty || mhsId.toLowerCase() == 'null' || mhsId.toLowerCase() == 'undefined') {
-        return false;
-      }
+      // Filter QC: Tampilkan HANYA warga si mahasiswa tersebut dan pastikan RW sama.
+      final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
+      final cleanUserRw = userRw.trim().replaceFirst(RegExp(r'^0+'), '');
       
-      final matchesUser = (userId.isNotEmpty && mhsId == userId) || (userNim.isNotEmpty && mhsId == userNim);
-      return matchesUser;
+      final isMyCitizen = w.pendampingName.trim().toLowerCase() == userName.trim().toLowerCase();
+      final isMyRw = cleanUserRw.isEmpty || cleanWargaRw == cleanUserRw;
+
+      return isMyCitizen && isMyRw;
     }).map((w) {
       // Selaraskan alamat warga ke wilayah penugasan mahasiswa jika data mentah backend masih umum
       final targetKel = userKelurahan;
@@ -86,8 +86,9 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
     final userKel = user?.kelurahan ?? '';
     final userId = user?.id ?? '';
     final userNim = user?.nim ?? '';
+    final userName = user?.name ?? '';
     
-    final filtered = _filteredList(state.wargaList, userKec, userKel, userRw, userId, userNim);
+    final filtered = _filteredList(state.wargaList, userKec, userKel, userRw, userId, userNim, userName);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -350,25 +351,25 @@ class _WargaListItem extends StatelessWidget {
                         const SizedBox(height: 5),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEBF5FF),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFF90CDF4)),
-                          ),
+                            decoration: BoxDecoration(
+                              color: warga.pendampingName.isNotEmpty ? const Color(0xFFEBF5FF) : AppColors.primaryGreen.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: warga.pendampingName.isNotEmpty ? const Color(0xFF90CDF4) : AppColors.primaryGreen.withValues(alpha: 0.3)),
+                            ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.verified_rounded, size: 12, color: AppColors.primaryBlueDark),
+                              Icon(Icons.verified_rounded, size: 12, color: warga.pendampingName.isNotEmpty ? AppColors.primaryBlueDark : AppColors.primaryGreen),
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
                                   warga.pendampingName.isNotEmpty
                                       ? 'Diaktivasi oleh: ${warga.pendampingName}'
-                                      : (currentUserName.isNotEmpty ? 'Diaktivasi oleh: $currentUserName' : 'Diaktivasi Mahasiswa'),
-                                  style: const TextStyle(
+                                      : 'Aktivasi Mandiri',
+                                  style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
-                                    color: AppColors.primaryBlueDark,
+                                    color: warga.pendampingName.isNotEmpty ? AppColors.primaryBlueDark : AppColors.primaryGreen,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),

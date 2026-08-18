@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:http_parser/http_parser.dart';
 
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -72,7 +73,7 @@ class ApiKknRepository implements KknRepository {
   Future<List<WargaDampingan>> getWargaDampingan() async {
     List<dynamic> rawList = [];
     try {
-      final response = await apiClient.dio.get(ApiEndpoints.kknWargaDampingan);
+      final response = await apiClient.dio.get(ApiEndpoints.kknWarga);
       if (response.statusCode == 200) {
         if (response.data is Map<String, dynamic>) {
           rawList = (response.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
@@ -84,28 +85,8 @@ class ApiKknRepository implements KknRepository {
       rawList = [];
     }
 
-    // Fallback: Jika endpoint warga-dampingan kosong (bug backend), ambil dari seluruh warga yang sudah aktif
-    if (rawList.isEmpty) {
-      try {
-        final fallbackResponse = await apiClient.dio.get(ApiEndpoints.kknWarga);
-        if (fallbackResponse.statusCode == 200) {
-          List<dynamic> fallbackList = [];
-          if (fallbackResponse.data is Map<String, dynamic>) {
-            fallbackList = (fallbackResponse.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
-          } else if (fallbackResponse.data is List) {
-            fallbackList = fallbackResponse.data as List<dynamic>;
-          }
-          rawList = fallbackList.where((e) {
-            try {
-              final w = WargaDampingan.fromJson(e as Map<String, dynamic>);
-              return w.isActivated;
-            } catch (_) {
-              return false;
-            }
-          }).toList();
-        }
-      } catch (_) {}
-    }
+    // Fallback removed: Jika endpoint warga-dampingan kosong, itu berarti mahasiswa belum memiliki warga dampingan.
+    // Mengambil seluruh warga yang aktif dari /kkn/warga akan menyebabkan mahasiswa mengklaim warga milik mahasiswa lain.
     if (rawList.isNotEmpty) {
        final prefs = await SharedPreferences.getInstance();
        await prefs.setString(_cacheKeyWarga, jsonEncode(rawList));
@@ -163,7 +144,7 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<String?> sendLocationPing(double latitude, double longitude) async {
+  Future<Map<String, dynamic>> sendLocationPing(double latitude, double longitude) async {
     final response = await apiClient.dio.post(
       ApiEndpoints.kknLocationPing,
       data: {
@@ -172,10 +153,9 @@ class ApiKknRepository implements KknRepository {
       },
     );
     if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
-      final data = response.data['data'] as Map<String, dynamic>?;
-      return data?['poskoArea']?.toString() ?? data?['kelurahan']?.toString();
+      return response.data as Map<String, dynamic>;
     }
-    return null;
+    return {};
   }
 
   @override
@@ -197,9 +177,15 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> getActiveZone() async {
+  Future<Map<String, dynamic>> getActiveZone({double? latitude, double? longitude}) async {
     try {
-      final response = await apiClient.dio.get(ApiEndpoints.kknActiveZone);
+      final response = await apiClient.dio.get(
+        ApiEndpoints.kknActiveZone,
+        queryParameters: {
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
+        },
+      );
       if (response.statusCode == 200 && response.data != null) {
         if (response.data is Map<String, dynamic>) {
           return response.data['data'] as Map<String, dynamic>? ?? {};
@@ -212,7 +198,7 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<bool> recordAttendance({
+  Future<Map<String, dynamic>> recordAttendance({
     required String scheduleId,
     required double latitude,
     required double longitude,
@@ -236,21 +222,30 @@ class ApiKknRepository implements KknRepository {
         if (rw != null && rw.isNotEmpty) 'rw': rw,
         if (kelurahan != null && kelurahan.isNotEmpty) 'kelurahan': kelurahan,
         if (kecamatan != null && kecamatan.isNotEmpty) 'kecamatan': kecamatan,
-        if (durationMinutes != null) 'durationMinutes': durationMinutes,
         'timestamp': timestamp ?? DateTime.now().toUtc().toIso8601String(),
       };
 
       // Coba endpoint spesifik jadwal dahulu, jika gagal coba fallback /kkn/attendance/check-in
       try {
         final res = await apiClient.dio.post(ApiEndpoints.kegiatanAbsen(scheduleId), data: payload);
-        if (res.statusCode == 200 || res.statusCode == 201) return true;
+        if (res.statusCode == 200 || res.statusCode == 201) {
+          if (res.data is Map<String, dynamic>) {
+            return res.data['data'] as Map<String, dynamic>? ?? res.data as Map<String, dynamic>;
+          }
+          return {'success': true};
+        }
       } catch (_) {
         final res = await apiClient.dio.post(ApiEndpoints.kknCheckIn, data: payload);
-        return res.statusCode == 200 || res.statusCode == 201;
+        if (res.statusCode == 200 || res.statusCode == 201) {
+          if (res.data is Map<String, dynamic>) {
+            return res.data['data'] as Map<String, dynamic>? ?? res.data as Map<String, dynamic>;
+          }
+          return {'success': true};
+        }
       }
-      return false;
+      return {};
     } catch (_) {
-      return false;
+      return {};
     }
   }
 
@@ -353,15 +348,13 @@ class ApiKknRepository implements KknRepository {
 
   @override
   Future<bool> submitPemanfaatanSampah(PemanfaatanSampahRequest request) async {
-    dynamic payload;
-    if (request.fotoPath != null && request.fotoPath!.isNotEmpty) {
-      payload = FormData.fromMap({
-        ...request.toJson(),
-        'fotoBukti': await MultipartFile.fromFile(request.fotoPath!),
-      });
-    } else {
-      payload = request.toJson();
-    }
+    // Backend for /pemanfaatan-sampah does not have multer middleware configured.
+    // If we send FormData (multipart/form-data), req.body will be empty on the backend, 
+    // causing it to use default values and ignore the user's input.
+    // Therefore, we MUST send application/json. 
+    // The backend hardcodes fotoDokumentasiUrl to default-pemanfaatan.jpg, 
+    // so we skip sending the photo file for this specific route.
+    final payload = request.toJson();
 
     final response = await apiClient.dio.post(
       ApiEndpoints.kknPemanfaatanSampah,
@@ -378,17 +371,30 @@ class ApiKknRepository implements KknRepository {
     required String deskripsi,
     required String fotoPath,
   }) async {
+    final fileExt = fotoPath.split('.').last.toLowerCase();
+    String mimeType = 'image/jpeg';
+    if (fileExt == 'png') mimeType = 'image/png';
+    if (fileExt == 'webp') mimeType = 'image/webp';
+
     final formData = FormData.fromMap({
       'kategori': kategori,
       'tanggalKegiatanTerkait': tanggal.toIso8601String(),
       'deskripsi': deskripsi,
       if (scheduleId != null) 'scheduleId': scheduleId,
-      'fotoBukti': await MultipartFile.fromFile(fotoPath),
+      'fotoBukti': await MultipartFile.fromFile(
+        fotoPath,
+        filename: fotoPath.split('/').last,
+        contentType: MediaType.parse(mimeType),
+      ),
     });
 
     final response = await apiClient.dio.post(
       ApiEndpoints.kknPengajuanIzin,
       data: formData,
+      options: Options(
+        sendTimeout: const Duration(seconds: 120),
+        receiveTimeout: const Duration(seconds: 120),
+      ),
     );
 
     if (response.statusCode != 200 && response.statusCode != 201) {
@@ -397,31 +403,16 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<bool> registerPoskoKkn(RegisterPoskoRequest request) async {
-    dynamic payload;
-    if (request.fotoPath != null && request.fotoPath!.isNotEmpty) {
-      payload = FormData.fromMap({
-        ...request.toJson(),
-        'foto': await MultipartFile.fromFile(request.fotoPath!),
-      });
-    } else {
-      payload = request.toJson();
+  Future<List<dynamic>> getPengajuanIzin() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.kknPengajuanIzin);
+      if (response.statusCode == 200) {
+        return response.data['data'] as List<dynamic>? ?? [];
+      }
+      throw Exception('Gagal memuat riwayat izin');
+    } catch (e) {
+      throw Exception('Terjadi kesalahan jaringan: $e');
     }
-
-    final response = await apiClient.dio.post(
-      ApiEndpoints.kknPoskoRegister,
-      data: payload,
-    );
-    return response.statusCode == 200 || response.statusCode == 201;
-  }
-
-  @override
-  Future<bool> bantuInputFasilitas(BantuFasilitasRequest request) async {
-    final response = await apiClient.dio.post(
-      ApiEndpoints.kknBantuFasilitas,
-      data: request.toJson(),
-    );
-    return response.statusCode == 200 || response.statusCode == 201;
   }
 
   @override
@@ -442,6 +433,60 @@ class ApiKknRepository implements KknRepository {
       throw Exception('Data statistik dampak RW tidak tersedia.');
     } catch (_) {
       throw Exception('Gagal memuat data statistik dampak RW.');
+    }
+  }
+  @override
+  Future<Map<String, dynamic>> registerPosko(Map<String, dynamic> data, {String? imagePath}) async {
+    try {
+      if (imagePath != null) {
+        final formData = FormData.fromMap({
+          ...data,
+          'foto': await MultipartFile.fromFile(imagePath),
+        });
+        final response = await apiClient.dio.post(ApiEndpoints.kknPoskoRegister, data: formData);
+        return response.data as Map<String, dynamic>;
+      } else {
+        final response = await apiClient.dio.post(ApiEndpoints.kknPoskoRegister, data: data);
+        return response.data as Map<String, dynamic>;
+      }
+    } catch (e) {
+      throw Exception('Gagal mendaftarkan posko: $e');
+    }
+  }
+
+  @override
+  Future<PoskoKknResponse?> getPoskoMe() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.kknPoskoMe);
+      if (response.statusCode == 200) {
+        final data = response.data['data'] as Map<String, dynamic>?;
+        if (data != null) {
+          return PoskoKknResponse.fromJson(data);
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getPoskoMe: $e');
+      throw Exception('Gagal mengambil data posko');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> registerFasilitas(Map<String, dynamic> data, {String? imagePath}) async {
+    try {
+      if (imagePath != null) {
+        final formData = FormData.fromMap({
+          ...data,
+          'foto': await MultipartFile.fromFile(imagePath),
+        });
+        final response = await apiClient.dio.post(ApiEndpoints.kknFasilitasBantuInput, data: formData);
+        return response.data as Map<String, dynamic>;
+      } else {
+        final response = await apiClient.dio.post(ApiEndpoints.kknFasilitasBantuInput, data: data);
+        return response.data as Map<String, dynamic>;
+      }
+    } catch (e) {
+      throw Exception('Gagal mendata fasilitas: $e');
     }
   }
 }

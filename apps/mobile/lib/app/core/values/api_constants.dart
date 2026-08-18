@@ -32,6 +32,11 @@ class ApiEndpoints {
   static const String binsActivate = '/bins/activate';
   static const String binsMeasure = '/bins/measure';
   static const String binsReset = '/bins/reset';
+  static const String binsResetRequests = '/bins/reset-requests';
+  static String binsApproveReset(String id) => '/bins/reset/$id/approve';
+  static const String binsResetPetugasStatus = '/bins/reset/petugas-status';
+  static const String binsResetPetugasWilayah = '/bins/reset/petugas-wilayah';
+  static const String binsResetSetDefaultPetugas = '/bins/reset/set-default-petugas';
   static const String aiDetect = '/ai/detect';
   static const String wasteDetect = '/waste/detect';
 
@@ -53,11 +58,11 @@ class ApiEndpoints {
   static const String kknActivateBin = '/kkn/warga/activate-bin';
   static const String kknHistory = '/kkn/history';
   static const String kknKelompokMe = '/kkn/kelompok/me';
-  static const String kknPoskoRegister = '/kkn/posko/register';
-  static const String kknPoskoMe = '/kkn/posko/me';
-  static const String kknBantuFasilitas = '/kkn/fasilitas/bantu-input';
   static const String kknPemanfaatanSampah = '/kkn/pemanfaatan-sampah';
   static const String kknPengajuanIzin = '/kkn/pengajuan-izin';
+  static const String kknPoskoRegister = '/kkn/posko/register';
+  static const String kknPoskoMe = '/kkn/posko/me';
+  static const String kknFasilitasBantuInput = '/kkn/fasilitas/bantu-input';
 
   // Schedules
   static const String schedules = '/schedules';

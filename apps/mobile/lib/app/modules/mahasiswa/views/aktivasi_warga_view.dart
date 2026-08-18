@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../core/values/app_colors.dart';
 import '../../shared/widgets/qr_scanner_widget.dart';
+import '../../shared/widgets/feature_rating_dialog.dart';
 import '../controllers/aktivasi_warga_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
@@ -22,7 +23,6 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
   String _binOrganikId = '';
   String _binAnorganikId = '';
   bool _isProcessing = false;
-  int _scanAttempt = 0;
 
   /// Memvalidasi format & kategori QR Code tempat sampah
   String? _validateBinQr(String qr, int step) {
@@ -88,7 +88,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
     if (wargaId.trim().isEmpty) {
       _isProcessing = false;
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('ID Warga tidak ditemukan. Silakan pilih ulang warga dari daftar.'),
             backgroundColor: AppColors.dangerRed,
@@ -123,11 +123,6 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         ),
       );
       _isProcessing = false;
-      if (mounted) {
-        setState(() {
-          _scanAttempt++;
-        });
-      }
       return;
     }
 
@@ -193,10 +188,6 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
           _binOrganikId = cleanQr;
           _step = 2;
         });
-      } else if (mounted) {
-        setState(() {
-          _scanAttempt++;
-        });
       }
       _isProcessing = false;
     } else {
@@ -252,11 +243,6 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
 
       if (processConfirm != true) {
         _isProcessing = false;
-        if (mounted) {
-          setState(() {
-            _scanAttempt++;
-          });
-        }
         return;
       }
 
@@ -384,7 +370,18 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
           );
 
           if (mounted) {
-            Navigator.pop(context);
+            // Rating dialog 1-5 bintang (hanya muncul 1x saat pertama kali berhasil aktivasi warga binaan)
+            await showFeatureRatingOnceIfNeeded(
+              context: context,
+              featureKey: 'mahasiswa_aktivasi_warga',
+              featureTitle: 'Aktivasi Warga Berhasil! ⭐',
+              featureSubtitle: 'Bagaimana pengalaman Anda saat pertama kali membantu proses aktivasi tempat sampah warga binaan?',
+              roleTag: 'Mahasiswa KKN',
+            );
+
+            if (mounted) {
+              Navigator.pop(context);
+            }
           }
         }
       } else if (mounted) {
@@ -412,7 +409,6 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         );
         setState(() {
           _binAnorganikId = '';
-          _scanAttempt++;
         });
       }
       _isProcessing = false;
@@ -443,7 +439,6 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         children: [
           // ─── Full Camera Screen QR Scanner Widget ──────────────────────────
           QrScannerWidget(
-            key: ValueKey('$_step-$_scanAttempt'),
             isFullScreen: true,
             hint: _step == 1 ? 'Scan QR Tempat Sampah Organik' : 'Scan QR Tempat Sampah Anorganik',
             overlayColor: _step == 1 ? const Color(0xFF10B981) : const Color(0xFFFFB800),

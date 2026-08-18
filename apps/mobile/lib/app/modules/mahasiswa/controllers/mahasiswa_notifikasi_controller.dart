@@ -1,10 +1,11 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/notification_entity.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 import '../../../data/services/local_notification_cache_service.dart';
 import '../../../data/services/firebase_notification_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final Set<String> _mhsShownNotifIds = {};
 
@@ -15,7 +16,6 @@ bool _isMahasiswaNotification(NotificationEntity notif) {
 
   // Keyword & Tipe yang DILARANG untuk Mahasiswa KKN (Milik Warga / Petugas)
   final isForbidden = type.contains('TIMBANGAN_PEMILAHAN') ||
-      type.contains('VIOLATION') ||
       type.contains('JADWAL') ||
       type.contains('JEMPUT') ||
       type.contains('PENGANGKUTAN') ||
@@ -56,7 +56,12 @@ bool _isMahasiswaNotification(NotificationEntity notif) {
       title.contains('IZIN') ||
       title.contains('DPL') ||
       title.contains('POIN') ||
-      title.contains('KKN');
+      title.contains('KKN') ||
+      title.contains('PELANGGARAN') ||
+      title.contains('GEOFENCE') ||
+      title.contains('PENALTI') ||
+      desc.contains('PELANGGARAN') ||
+      desc.contains('GEOFENCE');
 
   if (!isMahasiswaTopic) return false;
 
@@ -82,14 +87,88 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     list = [];
   }
 
+  final prefs = await SharedPreferences.getInstance();
+  final readList = prefs.getStringList('read_notifs_${userId}_$role') ?? [];
+  final readSet = readList.toSet();
+  final markAllTimestamp = prefs.getInt('mark_all_notifs_${userId}_$role') ?? 0;
+
+  try {
+    final pointRepo = ref.read(wasteLogRepositoryProvider);
+    final pointHistory = await pointRepo.getPointHistoryByUser(userId);
+    
+    for (final ph in pointHistory) {
+      if (ph.points != 0) {
+        final notifId = 'point_${ph.id}';
+        final isRead = readSet.contains(notifId) || 
+            ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
+            LocalNotificationCacheService().isRead(userId, role, notifId, ph.createdAt);
+            
+        final isPunishment = ph.points < 0;
+            
+        list.add(NotificationEntity(
+          id: notifId,
+          type: isPunishment ? 'PUNISHMENT' : 'POIN_KKN',
+          title: isPunishment ? 'Penalti Poin KKN' : 'Poin KKN Bertambah!',
+          desc: ph.description.isNotEmpty ? ph.description : (isPunishment ? 'Poin KKN Anda dikurangi ${ph.points}.' : 'Anda mendapatkan +${ph.points} poin.'),
+          isRead: isRead,
+          time: ph.createdAt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
+          icon: isPunishment ? 'warning' : 'star',
+        ));
+      }
+    }
+  } catch (_) {}
+
+  // Tambahkan notifikasi persetujuan/penolakan Izin dari DPL
+  try {
+    final kknRepo = ref.read(kknRepositoryProvider);
+    final izinList = await kknRepo.getPengajuanIzin();
+    for (final izin in izinList) {
+      final status = izin['status']?.toString().toUpperCase();
+      if (status == 'APPROVED' || status == 'REJECTED') {
+        final isApproved = status == 'APPROVED';
+        final kategori = izin['kategori']?.toString() ?? 'Izin';
+        final timestamp = izin['reviewedAt']?.toString() ?? izin['createdAt']?.toString() ?? DateTime.now().toIso8601String();
+        final dt = DateTime.tryParse(timestamp) ?? DateTime.now();
+        
+        final notifId = 'izin_${izin['id']}';
+        final isRead = readSet.contains(notifId) || 
+            dt.millisecondsSinceEpoch <= markAllTimestamp ||
+            LocalNotificationCacheService().isRead(userId, role, notifId, dt);
+            
+        list.add(NotificationEntity(
+          id: notifId,
+          type: 'IZIN',
+          title: isApproved ? 'Pengajuan Izin Disetujui' : 'Pengajuan Izin Ditolak',
+          desc: isApproved ? 'DPL telah menyetujui pengajuan $kategori Anda.' : 'DPL menolak pengajuan $kategori Anda. ${izin['rejectionReason'] ?? ''}',
+          isRead: isRead,
+          time: dt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
+          icon: isApproved ? 'check_circle' : 'cancel',
+        ));
+      }
+    }
+  } catch (_) {}
+
   final List<NotificationEntity> result = [];
 
   for (final notif in list) {
     if (!_isMahasiswaNotification(notif)) continue;
-    result.add(notif);
+    
+    // Deduplikasi berdasar ID atau kesamaan persis (Title + Desc + Type)
+    if (result.any((n) => n.id == notif.id || (n.title == notif.title && n.desc == notif.desc && n.type == notif.type))) continue;
 
-    final notifKey = 'mhs_${userId}_${notif.id}';
-    if (!notif.isRead && !_mhsShownNotifIds.contains(notifKey)) {
+    // Pastikan konversi waktu ke lokal jika formatnya UTC (ada 'Z')
+    NotificationEntity finalNotif = notif;
+    if (notif.time.endsWith('Z')) {
+      final dt = DateTime.tryParse(notif.time);
+      if (dt != null) {
+        finalNotif = notif.copyWith(time: dt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '));
+      }
+    }
+
+    result.add(finalNotif);
+
+    final notifKey = 'mhs_${userId}_${finalNotif.id}';
+    if (!finalNotif.isRead && !_mhsShownNotifIds.contains(notifKey)) {
       _mhsShownNotifIds.add(notifKey);
     }
   }
@@ -99,7 +178,7 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
   for (final localItem in localNotifs) {
     if (!_isMahasiswaNotification(localItem)) continue;
 
-    if (!result.any((n) => n.id == localItem.id)) {
+    if (!result.any((n) => n.id == localItem.id || (n.title == localItem.title && n.desc == localItem.desc && n.type == localItem.type))) {
       result.insert(0, localItem);
     }
   }
@@ -108,7 +187,7 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
   for (final fbItem in firebaseNotifs) {
     if (!_isMahasiswaNotification(fbItem)) continue;
 
-    if (!result.any((n) => n.id == fbItem.id)) {
+    if (!result.any((n) => n.id == fbItem.id || (n.title == fbItem.title && n.desc == fbItem.desc && n.type == fbItem.type))) {
       result.insert(0, fbItem);
     }
   }
@@ -119,8 +198,7 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
 /// Provider jumlah notifikasi belum dibaca untuk Mahasiswa KKN
 final mahasiswaUnreadNotificationCountProvider = Provider<int>((ref) {
   final notifAsync = ref.watch(mahasiswaNotificationsProvider);
-  return notifAsync.when(
-    data: (list) => list.where((n) => !n.isRead).length,
+  return notifAsync.when(skipLoadingOnReload: true, data: (list) => list.where((n) => !n.isRead).length,
     loading: () => 0,
     error: (_, __) => 0,
   );

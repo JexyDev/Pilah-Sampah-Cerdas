@@ -128,7 +128,7 @@ class ApiNotificationRepository implements NotificationRepository {
       title: rawTitle,
       desc: rawDesc,
       isRead: json['isRead'] as bool? ?? json['read'] as bool? ?? json['is_read'] as bool? ?? false,
-      time: json['time']?.toString() ?? json['createdAt']?.toString() ?? json['timestamp']?.toString() ?? 'Baru saja',
+      time: json['time']?.toString() ?? json['createdAt']?.toString() ?? json['timestamp']?.toString() ?? DateTime.now().toUtc().toIso8601String(),
       icon: json['icon']?.toString() ?? 'info',
     );
   }

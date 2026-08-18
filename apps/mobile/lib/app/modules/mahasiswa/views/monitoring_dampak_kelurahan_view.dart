@@ -71,8 +71,7 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
-            child: dampakAsync.when(
-              data: (dampak) => Column(
+            child: dampakAsync.when(skipLoadingOnReload: true, data: (dampak) => Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ── Banner Header RW ──────────────────────────────

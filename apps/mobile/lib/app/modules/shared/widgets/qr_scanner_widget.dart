@@ -1,6 +1,5 @@
 
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -30,76 +29,28 @@ class QrScannerWidget extends StatefulWidget {
   State<QrScannerWidget> createState() => QrScannerWidgetState();
 }
 
-class QrScannerWidgetState extends State<QrScannerWidget>
-    with WidgetsBindingObserver {
+class QrScannerWidgetState extends State<QrScannerWidget> {
   MobileScannerController? _controller;
+  bool _isProcessing = false;
   bool _scanned = false;
-  _QrState _state = _QrState.loading;
-  bool _isRequestingPermission = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    if (PlatformUtils.supportsNativeQrScanner) {
-      _requestPermissionAndStart();
-    }
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (_controller == null) return;
-    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
-      _controller?.stop();
-    } else if (state == AppLifecycleState.resumed) {
-      if (_state == _QrState.ready && !_scanned) {
-        _controller?.start();
-      }
-    }
-  }
-
-  Future<void> _requestPermissionAndStart() async {
-    if (kIsWeb) return;
-    if (_isRequestingPermission) return;
-    _isRequestingPermission = true;
-
-    try {
-      // Request permission kamera runtime
-      final PermissionStatus status = await Permission.camera.request();
-
-      if (!mounted) return;
-
-      if (status.isGranted) {
-        // Beri waktu sejenak bagi OS melepaskan resource kamera ke aplikasi
-        await Future.delayed(const Duration(milliseconds: 300));
-        if (!mounted) return;
-        _startScanner();
-      } else if (status.isPermanentlyDenied) {
-        setState(() => _state = _QrState.permDenied);
-      } else {
-        setState(() => _state = _QrState.denied);
-      }
-    } finally {
-      _isRequestingPermission = false;
-    }
-  }
-
-  void _startScanner() {
-    _controller?.dispose();
     _controller = MobileScannerController(
       facing: CameraFacing.back,
       autoStart: true,
       detectionSpeed: DetectionSpeed.noDuplicates,
+      returnImage: false,
     );
-    if (mounted) setState(() => _state = _QrState.ready);
   }
 
   void _onDetect(BarcodeCapture capture) async {
-    if (_scanned) return;
+    if (_scanned || _isProcessing) return;
     final String? code = capture.barcodes.firstOrNull?.rawValue;
     if (code != null && code.isNotEmpty) {
+      _isProcessing = true;
       setState(() => _scanned = true);
-      _controller?.stop(); // Hentikan kamera segera agar tidak freeze/stuck
       
       // Feedback instan saat barcode terbaca
       HapticFeedback.vibrate();
@@ -107,23 +58,34 @@ class QrScannerWidgetState extends State<QrScannerWidget>
       if (!mounted) return;
       
       // Panggil callback
-      await widget.onQrDetected(code);
+      final success = await widget.onQrDetected(code);
+      if (mounted && !success) {
+        _isProcessing = false;
+        resetScanner();
+      }
+    }
+  }
+
+  @override
+  void didUpdateWidget(QrScannerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.hint != oldWidget.hint || widget.overlayColor != oldWidget.overlayColor) {
+      if (_scanned) {
+        resetScanner();
+      }
     }
   }
   
-  // Method to reset scanner externally
   void resetScanner() {
     if (!mounted) return;
     setState(() {
       _scanned = false;
-      _state = _QrState.ready;
+      _isProcessing = false;
     });
-    _controller?.start(); // Nyalakan kembali kamera
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _controller?.dispose();
     super.dispose();
   }
@@ -133,22 +95,13 @@ class QrScannerWidgetState extends State<QrScannerWidget>
     if (!PlatformUtils.supportsNativeQrScanner) {
       return _buildManualInput();
     }
-
-    switch (_state) {
-      case _QrState.loading:
-        return _buildLoading();
-      case _QrState.denied:
-        return _buildDenied(permanent: false);
-      case _QrState.permDenied:
-        return _buildDenied(permanent: true);
-      case _QrState.ready:
-        return _buildScanner();
-    }
+    return _buildScanner();
   }
 
   // ─── Scanner aktif ────────────────────────────────────────────────────────
 
   Widget _buildScanner() {
+    if (_controller == null) return _buildLoading();
     final Color frameColor = widget.overlayColor ?? AppColors.primaryGreen;
 
     if (widget.isFullScreen) {
@@ -159,6 +112,9 @@ class QrScannerWidgetState extends State<QrScannerWidget>
             controller: _controller!,
             onDetect: _onDetect,
             errorBuilder: (ctx, error, child) {
+              if (error.errorCode == MobileScannerErrorCode.permissionDenied) {
+                return _buildDenied(permanent: true);
+              }
               return Container(
                 color: Colors.black,
                 child: Center(
@@ -183,10 +139,9 @@ class QrScannerWidgetState extends State<QrScannerWidget>
                       TextButton(
                         onPressed: () {
                           setState(() {
-                            _state = _QrState.loading;
                             _scanned = false;
+                            _isProcessing = false;
                           });
-                          _requestPermissionAndStart();
                         },
                         child: const Text(
                           'Coba Lagi',
@@ -282,6 +237,9 @@ class QrScannerWidgetState extends State<QrScannerWidget>
                   controller: _controller!,
                   onDetect: _onDetect,
                   errorBuilder: (ctx, error, child) {
+                    if (error.errorCode == MobileScannerErrorCode.permissionDenied) {
+                      return _buildDenied(permanent: true);
+                    }
                     return Container(
                       color: Colors.black,
                       child: Center(
@@ -306,10 +264,9 @@ class QrScannerWidgetState extends State<QrScannerWidget>
                             TextButton(
                               onPressed: () {
                                 setState(() {
-                                  _state = _QrState.loading;
                                   _scanned = false;
+                                  _isProcessing = false;
                                 });
-                                _requestPermissionAndStart();
                               },
                               child: const Text(
                                 'Coba Lagi',
@@ -447,10 +404,7 @@ class QrScannerWidgetState extends State<QrScannerWidget>
                       ),
                     )
                   : TextButton.icon(
-                      onPressed: () {
-                        setState(() => _state = _QrState.loading);
-                        _requestPermissionAndStart();
-                      },
+                      onPressed: openAppSettings,
                       icon: const Icon(
                         Icons.refresh_rounded,
                         color: AppColors.primaryGreen,
@@ -568,8 +522,6 @@ class QrScannerWidgetState extends State<QrScannerWidget>
 }
 
 // ─── Enum ─────────────────────────────────────────────────────────────────────
-
-enum _QrState { loading, ready, denied, permDenied }
 
 // ─── Flash Button ─────────────────────────────────────────────────────────────
 

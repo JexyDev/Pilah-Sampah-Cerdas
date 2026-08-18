@@ -5,8 +5,11 @@ import 'package:dio/dio.dart';
 import '../models/bin_entity.dart';
 import '../models/ai_detection_entity.dart';
 import '../models/bin_reset_entity.dart';
+import '../models/petugas_entity.dart';
+import '../models/petugas_status_response.dart';
 import 'bin_repository.dart';
 import '../providers/api_client.dart';
+
 import '../../core/utils/image_compressor.dart';
 import '../../core/utils/network_exception_helper.dart';
 import '../../core/values/api_constants.dart';
@@ -62,7 +65,7 @@ class ApiBinRepository implements BinRepository {
 
         final List<BinEntity> parsedBins = data.map((json) {
           final bin = _mapMyBin(json as Map<String, dynamic>);
-          if (pendingBinIds.contains(bin.id)) {
+          if (pendingBinIds.contains(bin.id) && bin.currentVolumeL >= (bin.maxCapacityL * 0.90)) {
             return bin.copyWith(isResetPending: true);
           }
           return bin;
@@ -80,8 +83,7 @@ class ApiBinRepository implements BinRepository {
                   orElse: () => parsedBins.first,
                 ),
               );
-              if (matchingBin.currentVolumeL < matchingBin.maxCapacityL &&
-                  req.status != BinResetStatus.pending) {
+              if (matchingBin.currentVolumeL < (matchingBin.maxCapacityL * 0.90)) {
                 await apiClient.secureStorage.delete(key: entry.key);
               }
             } catch (e) {
@@ -370,7 +372,7 @@ class ApiBinRepository implements BinRepository {
         throw BinException(
           'LOCATION_OUT_OF_RANGE',
           serverMsg ??
-              'Anda terlalu jauh dari tempat sampah (> 10m). Harap mendekat.',
+              'Anda berada lebih dari 50 meter dari tempat sampah. Harap mendekat ke lokasi tempat sampah.',
         );
       }
       if (errorCode == 'RESOURCE_NOT_FOUND' ||
@@ -564,26 +566,33 @@ class ApiBinRepository implements BinRepository {
   Future<BinResetEntity> submitResetRequest({
     required String binId,
     required String userId,
-    required String evidencePhotoPath,
+    String? evidencePhotoPath,
     String? wargaName,
+    String? petugasId,
+    String? jenisSampah,
   }) async {
     try {
-      // Auto-compress evidence photo before upload (Target < 5MB, max 1920x1080)
-      final compressedEvidencePath = await ImageCompressor.compressImage(
-        evidencePhotoPath,
-        maxSizeBytes: 5 * 1024 * 1024,
-        maxWidth: 1920,
-        maxHeight: 1080,
-      );
+      String? compressedEvidencePath;
+      if (evidencePhotoPath != null && evidencePhotoPath.isNotEmpty) {
+        compressedEvidencePath = await ImageCompressor.compressImage(
+          evidencePhotoPath,
+          maxSizeBytes: 5 * 1024 * 1024,
+          maxWidth: 1920,
+          maxHeight: 1080,
+        );
+      }
 
       final formData = FormData.fromMap({
         'binId': binId,
         'userId': userId,
         if (wargaName != null && wargaName.isNotEmpty) 'wargaName': wargaName,
-        'evidence': await MultipartFile.fromFile(
-          compressedEvidencePath,
-          filename: 'evidence_${DateTime.now().millisecondsSinceEpoch}.jpg',
-        ),
+        if (petugasId != null && petugasId.isNotEmpty) 'petugasId': petugasId,
+        if (jenisSampah != null && jenisSampah.isNotEmpty) 'jenisSampah': jenisSampah,
+        if (compressedEvidencePath != null)
+          'evidence': await MultipartFile.fromFile(
+            compressedEvidencePath,
+            filename: 'evidence_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          ),
       });
 
       final response = await apiClient.dio.post(
@@ -603,7 +612,7 @@ class ApiBinRepository implements BinRepository {
       }
       throw const BinException(
         'RESET_FAILED',
-        'Gagal mengajukan pengosongan Tempat Sampah',
+        'Gagal mengajukan pengosongan tong',
       );
     } on DioException catch (e) {
       final errorCode = e.response?.data?['error']?.toString();
@@ -651,7 +660,7 @@ class ApiBinRepository implements BinRepository {
         key: 'active_reset_request_$userId',
       );
       if (cachedStr != null) {
-        // Cek apakah Tempat Sampah pengguna saat ini sudah kosong/dikirim ulang (< 25L)
+        // Cek apakah tong-tempat sampah pengguna saat ini sudah kosong/dikirim ulang (< 25L)
         try {
           final bins = await getBinsByHousehold(userId);
           final bool isAnyFull = bins.any(
@@ -677,6 +686,46 @@ class ApiBinRepository implements BinRepository {
     return null;
   }
 
+  @override
+  Future<PetugasStatusResponse> getPetugasStatus() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.binsResetPetugasStatus);
+      return PetugasStatusResponse.fromJson(response.data['data'] as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw BinException('NETWORK_ERROR', 'Gagal memuat status petugas: ${e.message}');
+    } catch (e) {
+      throw BinException('UNKNOWN_ERROR', 'Terjadi kesalahan sistem: $e');
+    }
+  }
+
+  @override
+  Future<List<PetugasEntity>> getPetugasWilayah() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.binsResetPetugasWilayah);
+      final List data = response.data['data'] as List? ?? [];
+      return data.map((e) => PetugasEntity.fromJson(e as Map<String, dynamic>)).toList();
+    } on DioException catch (e) {
+      throw BinException('NETWORK_ERROR', 'Gagal memuat daftar petugas: ${e.message}');
+    } catch (e) {
+      throw BinException('UNKNOWN_ERROR', 'Terjadi kesalahan sistem: $e');
+    }
+  }
+
+  @override
+  Future<String> setDefaultPetugas(String petugasId) async {
+    try {
+      final response = await apiClient.dio.post(
+        ApiEndpoints.binsResetSetDefaultPetugas,
+        data: {'petugasId': petugasId},
+      );
+      return response.data['data']['petugasId']?.toString() ?? petugasId;
+    } on DioException catch (e) {
+      throw BinException('NETWORK_ERROR', 'Gagal menyimpan petugas pilihan: ${e.message}');
+    } catch (e) {
+      throw BinException('UNKNOWN_ERROR', 'Terjadi kesalahan sistem: $e');
+    }
+  }
+
   // ─── Measure Bin ──────────────────────────────────────────────────────────
   // POST /api/v1/bins/measure
   // Request: { qrCode, binType, maxCapacityLiter }
@@ -698,7 +747,7 @@ class ApiBinRepository implements BinRepository {
     } on DioException catch (e) {
       throw BinException(
         'NETWORK_ERROR',
-        'Gagal mengatur kapasitas Tempat Sampah: ${e.message}',
+        'Gagal mengatur kapasitas tong: ${e.message}',
       );
     } catch (e) {
       throw BinException('UNKNOWN_ERROR', 'Terjadi kesalahan sistem: $e');

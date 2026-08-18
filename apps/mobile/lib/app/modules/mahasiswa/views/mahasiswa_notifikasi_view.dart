@@ -4,6 +4,8 @@ import '../../../core/values/app_colors.dart';
 import '../../../data/models/notification_entity.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
+import 'mahasiswa_poin_view.dart';
+import 'package:intl/intl.dart';
 
 /// Halaman Notifikasi Khusus Mahasiswa KKN.
 /// Terpisah sepenuhnya dari Halaman Notifikasi Warga & Petugas.
@@ -19,10 +21,10 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
   final List<String> _filters = [
     'Semua',
     'Poin KKN',
-    'DPL & Izin',
-    'Presensi & Posko GPS',
+    'Pengajuan Izin',
+    'Ping Lokasi Posko',
     'Aktivasi Tempat Sampah Warga',
-    'Laporan Pemanfaatan'
+    'Laporan Pemanfaatan Sampah'
   ];
 
   @override
@@ -95,8 +97,7 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
             child: RefreshIndicator(
               onRefresh: () async => ref.invalidate(mahasiswaNotificationsProvider),
               color: AppColors.primaryGreen,
-              child: notifAsync.when(
-                data: (list) {
+              child: notifAsync.when(skipLoadingOnReload: true, data: (list) {
                   // Filter berdasarkan kategori tab chip yang dipilih
                   final filteredList = list.where((n) {
                     if (_selectedFilter == 'Semua') return true;
@@ -106,16 +107,16 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
                     if (_selectedFilter == 'Poin KKN') {
                       return typeUpper.contains('POIN') || titleLower.contains('poin');
                     }
-                    if (_selectedFilter == 'DPL & Izin') {
-                      return typeUpper.contains('IZIN') || typeUpper.contains('DPL') || titleLower.contains('dpl') || titleLower.contains('izin');
+                    if (_selectedFilter == 'Pengajuan Izin') {
+                      return typeUpper.contains('IZIN') || titleLower.contains('dpl');
                     }
-                    if (_selectedFilter == 'Presensi & Posko GPS') {
-                      return typeUpper.contains('PRESENSI') || typeUpper.contains('GPS') || typeUpper.contains('WELCOME') || typeUpper.contains('KKN') || titleLower.contains('presensi') || titleLower.contains('posko');
+                    if (_selectedFilter == 'Ping Lokasi Posko') {
+                      return typeUpper.contains('PRESENSI') || typeUpper.contains('GPS');
                     }
                     if (_selectedFilter == 'Aktivasi Tempat Sampah Warga') {
                       return typeUpper.contains('AKTIVASI') || typeUpper.contains('BIN') || titleLower.contains('bin') || titleLower.contains('aktivasi') || titleLower.contains('tempat sampah');
                     }
-                    if (_selectedFilter == 'Laporan Pemanfaatan') {
+                    if (_selectedFilter == 'Laporan Pemanfaatan Sampah') {
                       return typeUpper.contains('LAPORAN') || typeUpper.contains('PEMANFAATAN') || titleLower.contains('laporan') || titleLower.contains('pemanfaatan');
                     }
                     return true;
@@ -159,6 +160,18 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
                           if (!item.isRead) {
                             await ref.read(markReadProvider.notifier).markRead(item.id);
                             ref.invalidate(mahasiswaNotificationsProvider);
+                          }
+                          if (context.mounted) {
+                            if (item.type.toUpperCase() == 'POIN_KKN' || item.type.toUpperCase() == 'PUNISHMENT') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const MahasiswaPoinView(),
+                                ),
+                              );
+                            } else {
+                              Navigator.pushNamed(context, '/detail-notifikasi', arguments: item);
+                            }
                           }
                         },
                       );
@@ -209,6 +222,7 @@ class _MahasiswaNotificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     IconData iconData = Icons.notifications_rounded;
+    String? iconAsset;
     Color iconColor = AppColors.primaryGreen;
     Color iconBg = AppColors.primaryGreen.withValues(alpha: 0.1);
 
@@ -219,10 +233,12 @@ class _MahasiswaNotificationCard extends StatelessWidget {
       iconBg = const Color(0xFF8E24AA).withValues(alpha: 0.12);
     } else if (type.contains('POIN_KKN') || item.title.toLowerCase().contains('poin')) {
       iconData = Icons.stars_rounded;
+      iconAsset = 'assets/icons/medal.png';
       iconColor = AppColors.warningOrange;
       iconBg = AppColors.warningOrange.withValues(alpha: 0.15);
-    } else if (type.contains('IZIN') || item.title.toLowerCase().contains('dpl')) {
+    } else if (type.contains('IZIN') || item.title.toLowerCase().contains('dpl') || type.contains('SAKIT') || item.title.toLowerCase().contains('sakit') || item.title.toLowerCase().contains('pengajuan')) {
       iconData = Icons.assignment_turned_in_rounded;
+      iconAsset = 'assets/icons/submission.png';
       iconColor = AppColors.primaryBlueDark;
       iconBg = AppColors.primaryBlueDark.withValues(alpha: 0.1);
     } else if (type.contains('PRESENSI')) {
@@ -261,7 +277,9 @@ class _MahasiswaNotificationCard extends StatelessWidget {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)),
-                  child: Icon(iconData, color: iconColor, size: 22),
+                  child: iconAsset != null 
+                    ? Padding(padding: const EdgeInsets.all(10.0), child: Image.asset(iconAsset, color: iconColor))
+                    : Icon(iconData, color: iconColor, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -302,7 +320,7 @@ class _MahasiswaNotificationCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        item.time,
+                        _formatDateTime(item.time),
                         style: const TextStyle(
                           fontSize: 10,
                           color: AppColors.textHint,
@@ -318,5 +336,15 @@ class _MahasiswaNotificationCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatDateTime(String? rawStr) {
+    if (rawStr == null || rawStr.isEmpty || rawStr == '-') return '';
+    try {
+      final dt = DateTime.parse(rawStr).toLocal();
+      return '${DateFormat('d MMMM yyyy, HH:mm', 'id_ID').format(dt)} WIB';
+    } catch (_) {
+      return rawStr;
+    }
   }
 }

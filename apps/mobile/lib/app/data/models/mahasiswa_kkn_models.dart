@@ -193,7 +193,17 @@ class WargaDampingan extends Equatable {
         json['mahasiswaName'],
         json['studentName'],
         json['didaftarkanOlehNama'],
+        json['didaftarkanOleh'],
         json['registeredByStudentName'],
+        json['registeredByStudent'],
+        json['user']?['pendampingName'],
+        json['user']?['mahasiswaPendamping'],
+        json['user']?['mahasiswaName'],
+        json['user']?['didaftarkanOlehNama'],
+        json['user']?['didaftarkanOleh'],
+        if (json['user']?['pendamping'] is Map) json['user']['pendamping']['name'],
+        if (json['user']?['mahasiswa'] is Map) json['user']['mahasiswa']['name'],
+        if (json['user']?['student'] is Map) json['user']['student']['name'],
       ];
       for (final c in candidates) {
         if (c != null) {
@@ -209,14 +219,36 @@ class WargaDampingan extends Equatable {
     final rawStatus = json['status']?.toString() ?? json['statusPendamping']?.toString() ?? json['status_pendamping']?.toString() ?? '';
     final extractedWargaId = json['wargaId']?.toString() ?? json['id']?.toString() ?? '';
 
+    String parsedKecamatan = json['kecamatan']?.toString() ?? '';
+    String parsedKelurahan = json['kelurahan']?.toString() ?? '';
+    String parsedRw = json['rw']?.toString() ?? json['rt_rw']?.toString() ?? json['rtRw']?.toString() ?? '';
+    String rawAddr = json['address']?.toString() ?? json['alamat']?.toString() ?? 'Alamat tidak diketahui';
+
+    // Fallback parsing from address string: "RW 01, Sadang Serang" or "Jl. A, RW 05, Kel. B"
+    if (parsedRw.isEmpty && rawAddr.contains('RW')) {
+      final rwMatch = RegExp(r'RW\s*(\d+)').firstMatch(rawAddr);
+      if (rwMatch != null) parsedRw = rwMatch.group(1) ?? '';
+    }
+    if (parsedKelurahan.isEmpty) {
+      if (rawAddr.toLowerCase().contains('sadang serang')) {
+        parsedKelurahan = 'Sadang Serang';
+      } else if (rawAddr.toLowerCase().contains('lebak gede')) {
+        parsedKelurahan = 'Lebak Gede';
+      } else if (rawAddr.toLowerCase().contains('sekeloa')) {
+        parsedKelurahan = 'Sekeloa';
+      } else if (rawAddr.toLowerCase().contains('coblong')) {
+        parsedKelurahan = 'Coblong';
+      }
+    }
+
     return WargaDampingan(
       wargaId: extractedWargaId,
       binId: extractedBinId,
       wargaName: json['wargaName']?.toString() ?? json['name']?.toString() ?? json['warga_name']?.toString() ?? 'Warga',
-      address: json['address']?.toString() ?? json['alamat']?.toString() ?? 'Alamat tidak diketahui',
-      kecamatan: json['kecamatan']?.toString() ?? '',
-      kelurahan: json['kelurahan']?.toString() ?? '',
-      rw: json['rw']?.toString() ?? json['rt_rw']?.toString() ?? json['rtRw']?.toString() ?? '',
+      address: rawAddr,
+      kecamatan: parsedKecamatan,
+      kelurahan: parsedKelurahan,
+      rw: parsedRw,
       mahasiswaId: extractMhsId(),
       pendampingName: extractPendampingName(),
       status: rawStatus.isEmpty ? 'Aktif' : rawStatus,
@@ -227,7 +259,12 @@ class WargaDampingan extends Equatable {
           (json['status'] == 'ACTIVE_BOUND') ||
           (json['binOrganikId'] != null && json['binOrganikId'].toString().trim().isNotEmpty),
       role: json['role']?.toString().toUpperCase() ?? json['user']?['role']?.toString().toUpperCase() ?? 'WARGA',
-      totalPoints: (json['totalPoints'] as num?)?.toInt() ?? 0,
+      totalPoints: (json['totalPoints'] as num?)?.toInt() ?? 
+                   (json['totalPoin'] as num?)?.toInt() ?? 
+                   (json['poin'] as num?)?.toInt() ?? 
+                   (json['user']?['totalPoints'] as num?)?.toInt() ??
+                   (json['user']?['poin'] as num?)?.toInt() ?? 
+                   0,
       apiCorrectPercentage: (json['complianceScore'] as num?)?.toDouble() ?? (json['correctPercentage'] as num?)?.toDouble(),
     );
   }
@@ -478,14 +515,6 @@ class KelompokKknData extends Equatable {
     required this.poskoLocation,
     required this.totalGroupPoints,
     required this.members,
-    this.poskoAlamat = '-',
-    this.poskoFoto,
-    this.poskoStatus = 'UNREGISTERED',
-    this.poskoFacilityId,
-    this.isUserLeader = false,
-    this.latitude = -6.8906,
-    this.longitude = 107.6123,
-    this.radiusMeter = 100,
   });
 
   final String groupId;
@@ -494,14 +523,6 @@ class KelompokKknData extends Equatable {
   final String poskoLocation;
   final int totalGroupPoints;
   final List<KelompokMemberData> members;
-  final String poskoAlamat;
-  final String? poskoFoto;
-  final String poskoStatus;
-  final String? poskoFacilityId;
-  final bool isUserLeader;
-  final double latitude;
-  final double longitude;
-  final int radiusMeter;
 
   /// Penjumlahan Poin Kelompok (Fallback Client-Side Sum)
   int get calculatedTotalPoints {
@@ -537,78 +558,11 @@ class KelompokKknData extends Equatable {
       poskoLocation: json['poskoLocation']?.toString() ?? json['lokasiPosko']?.toString() ?? json['kelurahan']?.toString() ?? '-',
       totalGroupPoints: (json['totalGroupPoints'] as num?)?.toInt() ?? (json['totalPoints'] as num?)?.toInt() ?? 0,
       members: membersList,
-      poskoAlamat: json['poskoAlamat']?.toString() ?? '-',
-      poskoFoto: json['poskoFoto']?.toString(),
-      poskoStatus: json['poskoStatus']?.toString() ?? 'UNREGISTERED',
-      poskoFacilityId: json['poskoFacilityId']?.toString(),
-      isUserLeader: json['isUserLeader'] == true,
-      latitude: (json['latitude'] as num?)?.toDouble() ?? (json['poskoLatitude'] as num?)?.toDouble() ?? -6.8906,
-      longitude: (json['longitude'] as num?)?.toDouble() ?? (json['poskoLongitude'] as num?)?.toDouble() ?? 107.6123,
-      radiusMeter: (json['radiusMeter'] as num?)?.toInt() ?? 100,
     );
   }
 
   @override
-  List<Object?> get props => [groupId, groupName, totalGroupPoints, members, poskoStatus, isUserLeader, poskoFacilityId];
-}
-
-class RegisterPoskoRequest {
-  final String? nama;
-  final String alamat;
-  final int? rwId;
-  final double latitude;
-  final double longitude;
-  final String? fotoPath;
-  final String? fotoUrl;
-
-  const RegisterPoskoRequest({
-    this.nama,
-    required this.alamat,
-    this.rwId,
-    required this.latitude,
-    required this.longitude,
-    this.fotoPath,
-    this.fotoUrl,
-  });
-
-  Map<String, dynamic> toJson() => {
-        if (nama != null && nama!.isNotEmpty) 'nama': nama,
-        'alamat': alamat,
-        if (rwId != null) 'rwId': rwId,
-        'latitude': latitude,
-        'longitude': longitude,
-        if (fotoUrl != null && fotoUrl!.isNotEmpty) 'foto': fotoUrl,
-      };
-}
-
-class BantuFasilitasRequest {
-  final String nama;
-  final String jenis;
-  final String? picUserId;
-  final int rwId;
-  final double latitude;
-  final double longitude;
-  final String? fotoUrl;
-
-  const BantuFasilitasRequest({
-    required this.nama,
-    required this.jenis,
-    this.picUserId,
-    required this.rwId,
-    required this.latitude,
-    required this.longitude,
-    this.fotoUrl,
-  });
-
-  Map<String, dynamic> toJson() => {
-        'nama': nama,
-        'jenis': jenis,
-        'userId': picUserId ?? 'warga-kkn',
-        'rwId': rwId,
-        'latitude': latitude,
-        'longitude': longitude,
-        if (fotoUrl != null) 'foto': fotoUrl,
-      };
+  List<Object?> get props => [groupId, groupName, totalGroupPoints, members];
 }
 
 /// ─────────────────────────────────────────────────────────────────────────────
@@ -670,3 +624,80 @@ class DampakKelurahanData extends Equatable {
         totalActiveBins,
       ];
 }
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Model untuk response GET /api/v1/kkn/posko/me
+/// ─────────────────────────────────────────────────────────────────────────────
+class PoskoKknData extends Equatable {
+  final String id;
+  final String nama;
+  final String jenis;
+  final String alamat;
+  final double latitude;
+  final double longitude;
+  final String statusApproval;
+  final String? foto;
+  final int? rwId;
+  final String? rwName;
+  final String? kelurahanName;
+
+  const PoskoKknData({
+    required this.id,
+    required this.nama,
+    required this.jenis,
+    required this.alamat,
+    required this.latitude,
+    required this.longitude,
+    required this.statusApproval,
+    this.foto,
+    this.rwId,
+    this.rwName,
+    this.kelurahanName,
+  });
+
+  factory PoskoKknData.fromJson(Map<String, dynamic> json) {
+    final rw = json['rw'] as Map<String, dynamic>?;
+    final kel = rw?['kelurahan'] as Map<String, dynamic>?;
+
+    return PoskoKknData(
+      id: json['id']?.toString() ?? '',
+      nama: json['nama']?.toString() ?? '',
+      jenis: json['jenis']?.toString() ?? '',
+      alamat: json['alamat']?.toString() ?? '',
+      latitude: double.tryParse(json['latitude']?.toString() ?? '0') ?? 0.0,
+      longitude: double.tryParse(json['longitude']?.toString() ?? '0') ?? 0.0,
+      statusApproval: json['statusApproval']?.toString() ?? 'PENDING',
+      foto: json['foto']?.toString(),
+      rwId: (rw?['id'] as num?)?.toInt(),
+      rwName: rw?['name']?.toString(),
+      kelurahanName: kel?['name']?.toString(),
+    );
+  }
+
+  @override
+  List<Object?> get props => [id, nama, statusApproval, latitude, longitude];
+}
+
+class PoskoKknResponse extends Equatable {
+  final PoskoKknData? posko;
+  final bool isUserLeader;
+  final String kelompokId;
+
+  const PoskoKknResponse({
+    this.posko,
+    required this.isUserLeader,
+    required this.kelompokId,
+  });
+
+  factory PoskoKknResponse.fromJson(Map<String, dynamic> json) {
+    return PoskoKknResponse(
+      posko: json['posko'] != null ? PoskoKknData.fromJson(json['posko']) : null,
+      isUserLeader: json['isUserLeader'] == true,
+      kelompokId: json['kelompokId']?.toString() ?? '',
+    );
+  }
+
+  @override
+  List<Object?> get props => [posko, isUserLeader, kelompokId];
+}
+

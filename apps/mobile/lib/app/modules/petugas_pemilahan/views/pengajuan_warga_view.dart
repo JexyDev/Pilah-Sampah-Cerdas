@@ -196,7 +196,6 @@ class PengajuanWargaView extends ConsumerWidget {
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
-                        if (ok) Navigator.of(context).pop();
                       }
                     },
                     icon: const Icon(Icons.check_circle_rounded, size: 18),

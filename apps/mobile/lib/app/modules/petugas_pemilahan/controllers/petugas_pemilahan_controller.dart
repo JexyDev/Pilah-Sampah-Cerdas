@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/network_exception_helper.dart';
 import '../../../data/models/petugas_pemilahan_models.dart';
 import '../../../data/providers/repository_providers.dart';
+import '../../../data/services/local_notification_cache_service.dart';
+import '../../auth/controllers/auth_controller.dart';
 import '../services/petugas_pemilahan_fcm_service.dart';
 
 class PetugasPemilahanState {
@@ -150,6 +152,37 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
       );
 
       if (success) {
+        // Simpan notifikasi aksi ke cache lokal agar muncul di halaman Notifikasi
+        final user = _ref.read(authProvider).user;
+        if (user != null) {
+          final poin = (actualWeightKg.round() * 2) + 10; // 2 poin/kg + 10 bonus foto
+          final now = DateTime.now();
+          final timeStr =
+              '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year} '
+              '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
+          LocalNotificationCacheService().addNotification(
+            userId: user.id,
+            role: 'PETUGAS_PEMILAHAN',
+            title: 'Input Timbangan Berhasil',
+            desc: '${actualWeightKg.toStringAsFixed(1)} kg $classification tercatat. '
+                'Estimasi poin: +$poin pts.',
+            type: 'TIMBANGAN_PEMILAHAN',
+            id: 'timbangan_${now.millisecondsSinceEpoch}',
+            icon: 'scale',
+          );
+          LocalNotificationCacheService().addNotification(
+            userId: user.id,
+            role: 'PETUGAS_PEMILAHAN',
+            title: 'Poin Petugas Bertambah!',
+            desc: 'Anda mendapatkan +$poin poin dari input timbangan $classification '
+                '${actualWeightKg.toStringAsFixed(1)} kg. ($timeStr)',
+            type: 'POIN_PETUGAS',
+            id: 'poin_timbangan_${now.millisecondsSinceEpoch}',
+            icon: 'star',
+          );
+        }
+
         await refreshAll();
         return true;
       }
@@ -219,6 +252,38 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     try {
       final repo = _ref.read(petugasPemilahanRepositoryProvider);
       final ok = await repo.claimPengajuanReset(pengajuanId);
+      if (ok) {
+        // Simpan notifikasi pengangkutan ke cache lokal
+        // Pengangkutan sampah memberikan 20 poin sesuai ketentuan sistem
+        final user = _ref.read(authProvider).user;
+        if (user != null) {
+          const poinPengangkutan = 20;
+          final now = DateTime.now();
+          final timeStr =
+              '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year} '
+              '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
+          LocalNotificationCacheService().addNotification(
+            userId: user.id,
+            role: 'PETUGAS_PEMILAHAN',
+            title: 'Pengangkutan Sampah Berhasil',
+            desc: 'Konfirmasi pengangkutan sampah warga telah tercatat. '
+                'Anda mendapatkan +$poinPengangkutan poin. ($timeStr)',
+            type: 'PENGANGKUTAN_SAMPAH',
+            id: 'angkut_${now.millisecondsSinceEpoch}',
+            icon: 'local_shipping',
+          );
+          LocalNotificationCacheService().addNotification(
+            userId: user.id,
+            role: 'PETUGAS_PEMILAHAN',
+            title: 'Poin Petugas Bertambah!',
+            desc: 'Anda mendapatkan +$poinPengangkutan poin dari konfirmasi pengangkutan sampah. ($timeStr)',
+            type: 'POIN_PETUGAS',
+            id: 'poin_angkut_${now.millisecondsSinceEpoch}',
+            icon: 'star',
+          );
+        }
+      }
       await refreshAll();
       state = state.copyWith(isLoading: false);
       return ok;

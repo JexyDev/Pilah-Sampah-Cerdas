@@ -34,14 +34,14 @@ class AppStrings {
   static const String berandaAnorganik = 'Anorganik';
   static const String berandaRiwayatTerakhir = 'Riwayat Terakhir';
   static const String berandaLihatSemua = 'Lihat Semua';
-  static const String berandaStatusTempatSampah = 'Status Tempat Sampah';
+  static const String berandaStatusTong = 'Status Tempat Sampah';
 
   // --- Scan / Setor Flow ---
   static const String scanStep1Title = 'Foto Sampah';
   static const String scanStep1Subtitle = 'Ambil foto sampah yang akan dibuang';
   static const String scanStep2Title = 'Verifikasi AI';
   static const String scanStep2Subtitle = 'Mendeteksi jenis & volume sampah';
-  static const String scanStep3Title = 'Scan QR Tempat Sampah';
+  static const String scanStep3Title = 'Scan QR Tong';
   static const String scanStep3Subtitle = 'Pindai QR Code pada tempat sampah';
   static const String scanStep4Title = 'Selesai';
   static const String scanStep4Subtitle = 'Sampah berhasil tercatat';
@@ -97,7 +97,7 @@ class AppStrings {
       'Foto tempat sampah penuh sebagai bukti pengajuan reset';
   static const String resetButton = 'Ajukan Reset';
   static const String resetSuccess = 'Pengajuan pengosongan terkirim!';
-  static const String resetPending = 'Menunggu persetujuan petugas RT';
+  static const String resetPending = 'Menunggu persetujuan Petugas Pemilah';
 
   // --- Offline ---
   static const String offlineBannerMessage =

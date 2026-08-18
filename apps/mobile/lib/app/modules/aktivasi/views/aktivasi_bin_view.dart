@@ -29,7 +29,6 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   String _qrAnorganik = '';
   bool _bothBinsDetected = false;
   bool _localLoading = false;
-  int _scanAttempt = 0;
 
   bool _argsLoaded = false;
   bool _hasOrganic = false;
@@ -164,9 +163,6 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     final error = _validateBinQr(detected, _step);
     if (error != null) {
       _showErrorSnackBar(error);
-      setState(() {
-        _scanAttempt++;
-      });
       return false;
     }
 
@@ -228,13 +224,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           setState(() => _localLoading = false);
         }
       }
-    }
+    } // End if (PlatformUtils.isMobile)
 
-    final List<String> serials = [];
-    if (_qrOrganik.isNotEmpty) serials.add(_qrOrganik);
-    if (_qrAnorganik.isNotEmpty) serials.add(_qrAnorganik);
-
-    if (serials.isEmpty) {
+    if (_qrOrganik.isEmpty && _qrAnorganik.isEmpty) {
       _showErrorSnackBar('Tidak ada QR Code yang di-scan.');
       return;
     }
@@ -242,7 +234,8 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     await ref
         .read(aktivasiBinProvider.notifier)
         .aktivasiBatch(
-          qrSerials: serials,
+          qrOrganik: _qrOrganik.isNotEmpty ? _qrOrganik : null,
+          qrAnorganik: _qrAnorganik.isNotEmpty ? _qrAnorganik : null,
           userId: user?.id ?? '',
           householdId: user?.householdId ?? '',
           latitude: lat,
@@ -318,10 +311,12 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     }
 
     if (aktivasiState.isSuccess) {
+      final int count = (_qrOrganik.isNotEmpty && _qrAnorganik.isNotEmpty) ? 2 : 1;
       return _SuccessScreen(
+        binCount: count,
         onBack: () {
           ref.read(aktivasiBinProvider.notifier).reset();
-          Navigator.of(context).pop();
+          Navigator.maybePop(context);
         },
       );
     }
@@ -331,7 +326,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         backgroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.maybePop(context),
         ),
         title: const Text(
           'Aktivasi Tempat Sampah',
@@ -377,7 +372,6 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                               _step = _hasOrganic ? 2 : 1;
                               _qrOrganik = '';
                               _qrAnorganik = '';
-                              _scanAttempt++;
                             }),
                             icon: const Icon(
                               Icons.refresh_rounded,
@@ -397,7 +391,6 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: QrScannerWidget(
-                        key: ValueKey('$_step-$_scanAttempt'),
                         hint: _step == 1 ? 'BIN-ORG-EF2072F0' : 'BIN-NON-EF2072F1',
                         overlayColor: _step == 1 ? AppColors.organicColor : AppColors.nonOrganicColor,
                         onQrDetected: _onQrDetected,
@@ -481,7 +474,6 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                 _qrOrganik = '';
                 _qrAnorganik = '';
                 _bothBinsDetected = false;
-                _scanAttempt++;
               });
             },
             icon: const Icon(Icons.refresh_rounded, color: AppColors.dangerRed),
@@ -534,7 +526,6 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                 _step = _hasOrganic ? 2 : 1;
                 _qrOrganik = '';
                 _qrAnorganik = '';
-                _scanAttempt++;
               }),
               child: const Icon(
                 Icons.close_rounded,
@@ -651,8 +642,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
 // ─── Success Screen ──────────────────────────────────────────────────────────
 
 class _SuccessScreen extends StatelessWidget {
-  const _SuccessScreen({required this.onBack});
+  const _SuccessScreen({required this.onBack, this.binCount = 2});
   final VoidCallback onBack;
+  final int binCount;
 
   @override
   Widget build(BuildContext context) {
@@ -689,9 +681,11 @@ class _SuccessScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
-                'Kedua Tempat Sampah Berhasil Diaktivasi!',
-                style: TextStyle(
+              Text(
+                binCount > 1 
+                  ? 'Kedua Tempat Sampah Berhasil Diaktivasi!' 
+                  : 'Tempat Sampah Berhasil Diaktivasi!',
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                   color: AppColors.primaryGreen,
@@ -699,9 +693,11 @@ class _SuccessScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Kedua tempat sampah Anda telah terhubung\ndengan akun rumah tangga.',
-                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              Text(
+                binCount > 1 
+                  ? 'Kedua tempat sampah Anda telah terhubung\ndengan akun rumah tangga.'
+                  : 'Tempat sampah Anda telah terhubung\ndengan akun rumah tangga.',
+                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),

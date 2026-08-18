@@ -191,44 +191,6 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           ),
                           _divider(),
                         ],
-                        if (user?.role != UserRole.warga && user?.role != UserRole.mahasiswaKkn) ...[
-                          _InfoTile(
-                            Icons.email_outlined,
-                            'Email',
-                            user?.email != null && user!.email!.isNotEmpty ? user.email! : '-',
-                          ),
-                          _divider(),
-                        ],
-                        _InfoTile(
-                          Icons.phone_iphone_rounded,
-                          'No. Telepon',
-                          user?.phone != null && user!.phone.isNotEmpty ? user.phone : '-',
-                          bold: true,
-                        ),
-                        _divider(),
-                        if (user?.role == UserRole.mahasiswaKkn) ...[
-                          _InfoTile(
-                            Icons.location_city_outlined,
-                            'Kelurahan',
-                            (user?.kelurahan != null && user!.kelurahan.isNotEmpty && user.kelurahan != '-')
-                                ? user.kelurahan.replaceAll(RegExp(r'^(?:Kel\.|Kelurahan|Desa)\s+', caseSensitive: false), '').trim()
-                                : '-',
-                          ),
-                          _divider(),
-                          _InfoTile(
-                            Icons.map_outlined,
-                            'RW Dampingan',
-                            user?.rw != null && user!.rw.isNotEmpty && user.rw != '-' ? user.rw : '-',
-                          ),
-                          _divider(),
-                        ] else ...[
-                          _InfoTile(
-                            Icons.home_outlined,
-                            'Alamat Lengkap',
-                            user?.address != null && user!.address.isNotEmpty ? user.address : '-',
-                          ),
-                          _divider(),
-                        ],
                         if (user?.role == UserRole.mahasiswaKkn) ...[
                           _InfoTile(
                             Icons.school_outlined,
@@ -250,47 +212,58 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                             bold: true,
                           ),
                           _divider(),
-                        ] else ...[
                           _InfoTile(
-                            Icons.map_rounded,
-                            'Provinsi',
-                            user?.provinsi != null && user!.provinsi.isNotEmpty
-                                ? user.provinsi
-                                : '-',
+                            Icons.school_rounded,
+                            'Jenjang Studi',
+                            user?.jenjangPendidikan != null && user!.jenjangPendidikan.isNotEmpty ? user.jenjangPendidikan : '-',
+                            bold: true,
                           ),
                           _divider(),
-                          _InfoTile(
-                            Icons.location_city_rounded,
-                            'Kota/Kabupaten',
-                            user?.kota != null && user!.kota.isNotEmpty
-                                ? user.kota
-                                : '-',
-                          ),
-                          _divider(),
-                          _InfoTile(
-                            Icons.map_rounded,
-                            'Kecamatan',
-                            user?.kecamatan != null && user!.kecamatan.isNotEmpty
-                                ? user.kecamatan
-                                : '-',
-                          ),
-                          _divider(),
-                          _InfoTile(
-                            Icons.map_outlined,
-                            'Kelurahan',
-                            user?.kelurahan != null && user!.kelurahan.isNotEmpty
-                                ? user.kelurahan
-                                : '-',
-                          ),
-                          _divider(),
-                          _InfoTile(
-                            Icons.location_city_rounded,
-                            'RW',
-                            user?.rw != null && user!.rw.isNotEmpty
-                                ? user.rw
-                                : '-',
-                          ),
-                          _divider(),
+                        ],
+                        _InfoTile(
+                          Icons.phone_iphone_rounded,
+                          'No. Telepon',
+                          user?.phone != null && user!.phone.isNotEmpty ? user.phone : '-',
+                          bold: true,
+                        ),
+                        _divider(),
+                        _InfoTile(
+                          Icons.map_rounded,
+                          'Provinsi',
+                          user?.provinsi != null && user!.provinsi.isNotEmpty ? user.provinsi : '-',
+                        ),
+                        _divider(),
+                        _InfoTile(
+                          Icons.location_city_rounded,
+                          'Kota/Kabupaten',
+                          user?.kota != null && user!.kota.isNotEmpty ? user.kota : '-',
+                        ),
+                        _divider(),
+                        _InfoTile(
+                          Icons.map_rounded,
+                          'Kecamatan',
+                          user?.kecamatan != null && user!.kecamatan.isNotEmpty 
+                              ? user.kecamatan.replaceAll(RegExp(r'^(?:Kec\.|Kecamatan)\s+', caseSensitive: false), '').trim()
+                              : '-',
+                        ),
+                        _divider(),
+                        _InfoTile(
+                          Icons.map_outlined,
+                          'Kelurahan',
+                          (user?.kelurahan != null && user!.kelurahan.isNotEmpty && user.kelurahan != '-')
+                              ? user.kelurahan.replaceAll(RegExp(r'^(?:Kel\.|Kelurahan|Desa)\s+', caseSensitive: false), '').trim()
+                              : '-',
+                        ),
+                        _divider(),
+                        _InfoTile(
+                          Icons.location_city_rounded,
+                          user?.role == UserRole.mahasiswaKkn ? 'RW Dampingan' : 'RW',
+                          (user?.rw != null && user!.rw.isNotEmpty && user.rw != '-')
+                              ? (RegExp(r'\d+').firstMatch(user.rw)?.group(0)?.padLeft(2, '0') ?? user.rw)
+                              : '-',
+                        ),
+                        _divider(),
+                        if (user?.role == UserRole.warga) ...[
                           _InfoTile(
                             Icons.school_outlined,
                             'Mahasiswa Pendamping',
@@ -299,6 +272,15 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                                 : '-',
                           ),
                           _divider(),
+                        ],
+                        if (user?.role != UserRole.mahasiswaKkn) ...[
+                          _InfoTile(
+                            Icons.home_outlined,
+                            'Alamat Lengkap',
+                            user?.address != null && user!.address.isNotEmpty 
+                                ? user.address.replaceAll(RegExp(r',\s*(?:Kec\.|Kecamatan)\s+.*$', caseSensitive: false), '').trim()
+                                : '-',
+                          ),
                         ],
                       ],
                     ),
@@ -315,8 +297,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  binsAsync.when(
-                    data: (bins) => GestureDetector(
+                  binsAsync.when(skipLoadingOnReload: true, data: (bins) => GestureDetector(
                       onTap: () => Navigator.of(context).pushNamed(AppRoutes.kelolaBin),
                       child: Container(
                         padding: const EdgeInsets.all(16),
@@ -491,7 +472,7 @@ Widget _sectionLabel(String text) => Text(
 Widget _divider() => const Divider(height: 1, indent: 52);
 
 class _InfoTile extends StatelessWidget {
-  const _InfoTile(this.icon, this.label, this.value, {this.bold = false});
+  const _InfoTile(this.icon, this.label, this.value, {this.bold = true});
 
   final IconData icon;
   final String label;

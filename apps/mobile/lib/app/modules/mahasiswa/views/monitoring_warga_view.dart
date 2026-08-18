@@ -7,6 +7,7 @@ import '../controllers/mahasiswa_controller.dart';
 import '../controllers/aktivasi_warga_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
+import '../controllers/kelompok_kkn_controller.dart';
 
 class MonitoringWargaView extends ConsumerStatefulWidget {
   const MonitoringWargaView({super.key});
@@ -41,33 +42,54 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     super.didChangeDependencies();
     final user = ref.read(authProvider).user;
 
-    final isAktivasiBinMode =
-        ModalRoute.of(context)?.settings.arguments == 'aktivasi_bin';
-    if (isAktivasiBinMode && !_hasFetchedAktivasi) {
+    if (!_hasFetchedAktivasi) {
       _hasFetchedAktivasi = true;
-      final kelurahan = user?.kelurahan ?? '';
-      final rw = user?.rw ?? '';
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          ref.read(aktivasiWargaProvider.notifier).fetchWargaWithRegion(
-                kelurahan: kelurahan,
-                rw: rw,
-              );
+        if (!mounted) return;
+
+        // Ambil kelurahan & rw dari profil user
+        String kelurahan = user?.kelurahan ?? '';
+        String rw = user?.rw ?? '';
+
+        // Fallback: jika profil kosong, gunakan data kelompok KKN
+        // Ini terjadi pada akun bulk-insert yang tidak punya wilayah di profil
+        if (kelurahan.isEmpty) {
+          final kelompok = ref.read(kelompokKknProvider).kelompok;
+          if (kelompok != null) {
+            // poskoLocation diisi dari field kelurahan kelompok di backend
+            final loc = kelompok.poskoLocation;
+            if (loc.isNotEmpty && loc != '-') {
+              kelurahan = loc;
+            }
+          }
         }
+
+        ref.read(aktivasiWargaProvider.notifier).fetchWargaWithRegion(
+              kelurahan: kelurahan,
+              rw: rw,
+            );
       });
     }
   }
 
   List<WargaDampingan> _getFilteredWarga(List<WargaDampingan> allWarga, bool isAktivasiBinMode, String userKec, String userKel, String userRw) {
+    // Helper: bersihkan string kelurahan untuk perbandingan
+    String cleanKel(String val) => val
+        .toLowerCase()
+        .replaceAll('kel.', '')
+        .replaceAll('kelurahan', '')
+        .replaceAll('desa', '')
+        .trim();
+
+    final targetKelClean = cleanKel(userKel);
+    final targetRwClean = userRw.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
+
     return allWarga.where((w) {
-      if (w.role.isNotEmpty && w.role != 'WARGA') return false; // Hanya tampilkan role warga
+      if (w.role.isNotEmpty && w.role != 'WARGA') return false;
 
       if (isAktivasiBinMode) {
-        final targetRwClean = userRw.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
-        final targetKelClean = userKel.toLowerCase().replaceAll('kel.', '').replaceAll('kelurahan', '').replaceAll('desa', '').trim();
-
         final wRwClean = w.rw.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
-        final wKelClean = w.kelurahan.toLowerCase().replaceAll('kel.', '').replaceAll('kelurahan', '').replaceAll('desa', '').trim();
+        final wKelClean = cleanKel(w.kelurahan);
         final wAddr = w.address.toLowerCase();
 
         final rwMatches = targetRwClean.isEmpty || wRwClean == targetRwClean || wAddr.contains('rw $targetRwClean') || wAddr.contains('rw 0$targetRwClean');
@@ -75,6 +97,18 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
 
         if (!rwMatches || !kelMatches) return false;
       } else {
+        // ── Filter WAJIB: hanya tampilkan warga dari kelurahan mahasiswa ──
+        // Ini mencegah warga dari kelurahan lain muncul di monitoring
+        if (targetKelClean.isNotEmpty) {
+          final wKelClean = cleanKel(w.kelurahan);
+          final wAddr = w.address.toLowerCase();
+          final kelMatches = wKelClean.contains(targetKelClean) ||
+              targetKelClean.contains(wKelClean) ||
+              wAddr.contains(targetKelClean);
+          if (!kelMatches) return false;
+        }
+
+        // ── Filter tambahan dari dropdown pilihan user ──
         if (_selectedKelurahan != 'Semua') {
           final targetKel = _selectedKelurahan.toLowerCase();
           final matches = w.kelurahan.toLowerCase().contains(targetKel) || 
@@ -143,6 +177,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
           role: w.role,
           totalPoints: w.totalPoints,
           apiCorrectPercentage: w.apiCorrectPercentage,
+          pendampingName: w.pendampingName,
         );
       }).toList();
     } catch (_) {
@@ -155,27 +190,34 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     final state = ref.watch(mahasiswaControllerProvider);
     final user = ref.watch(authProvider).user;
     final userKec = user?.kecamatan ?? '';
-    final userKel = user?.kelurahan ?? '';
-    final userRw = user?.rw ?? '';
+    final kelompokState = ref.watch(kelompokKknProvider);
+
+    // Ambil kelurahan & rw dari profil user. Jika kosong (akun bulk-insert),
+    // gunakan data kelompok KKN sebagai fallback.
+    String userKel = user?.kelurahan ?? '';
+    String userRw = user?.rw ?? '';
+    if (userKel.isEmpty) {
+      final loc = kelompokState.kelompok?.poskoLocation ?? '';
+      if (loc.isNotEmpty && loc != '-') userKel = loc;
+    }
 
     final isAktivasiBinMode = ModalRoute.of(context)?.settings.arguments == 'aktivasi_bin';
     
-    // For aktivasi mode, we need to watch the aktivasi controller too
-    final aktivasiState = isAktivasiBinMode ? ref.watch(aktivasiWargaProvider) : null;
+    // For ALL modes, we need to watch the aktivasi controller to get ALL warga matching the RW.
+    final aktivasiState = ref.watch(aktivasiWargaProvider);
 
-    final rawAktivasiList = aktivasiState?.wargaList ?? [];
+    // Fetch list of ALL warga from aktivasiState (which hits /kkn/warga-list)
+    // regardless of whether we are in aktivasi_bin mode or monitoring mode.
+    List<WargaDampingan> allWargaList = _getFilteredWargaAktivasi(aktivasiState.wargaList, userKec, userKel, userRw);
 
-    final userKelDisplay = userKel.toLowerCase().startsWith('kel') ? userKel : 'Kel. $userKel';
-    final allWargaList = isAktivasiBinMode 
-        ? _getFilteredWargaAktivasi(rawAktivasiList, userKec, userKel, userRw)
-        : state.wargaList.map((w) {
-            final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RW')
-                ? w.address
-                : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $userRw, $userKelDisplay, Kec. $userKec';
-            return WargaDampingan(
-              wargaId: w.wargaId, binId: w.binId, wargaName: w.wargaName, address: displayAddr, kelurahan: userKel, rw: userRw, kecamatan: userKec, mahasiswaId: w.mahasiswaId, recentLogs: w.recentLogs, isActivated: w.isActivated, role: w.role, totalPoints: w.totalPoints, apiCorrectPercentage: w.apiCorrectPercentage,
-            );
-          }).toList();
+
+
+    // Remove duplicates
+    final uniqueMap = <String, WargaDampingan>{};
+    for (final w in allWargaList) {
+      uniqueMap[w.wargaId] = w;
+    }
+    allWargaList = uniqueMap.values.toList();
 
     List<String> kelurahanList = [];
     List<String> rtRwList = [];
@@ -234,13 +276,12 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
           }
         },
         color: AppColors.primaryGreen,
-        child: _buildBody(state, aktivasiState, filteredWarga, isAktivasiBinMode, kelurahanList, rtRwList, userKec, userKel, userRw),
+        child: _buildBody(state, aktivasiState, kelompokState, filteredWarga, isAktivasiBinMode, kelurahanList, rtRwList, userKec, userKel, userRw),
       ),
     );
   }
 
-  Widget _buildBody(MahasiswaState state, AktivasiWargaState? aktivasiState, List<WargaDampingan> filteredWarga, bool isAktivasiBinMode, List<String> kelurahanList, List<String> rtRwList, String userKec, String userKel, String userRw) {
-    final currentUserName = ref.watch(authProvider).user?.name ?? '';
+  Widget _buildBody(MahasiswaState state, AktivasiWargaState? aktivasiState, KelompokKknState kelompokState, List<WargaDampingan> filteredWarga, bool isAktivasiBinMode, List<String> kelurahanList, List<String> rtRwList, String userKec, String userKel, String userRw) {
     final isLoading = isAktivasiBinMode ? (aktivasiState?.isLoading ?? false) : state.isLoading;
     final errorMsg = isAktivasiBinMode ? aktivasiState?.errorMessage : state.errorMessage;
     final isEmpty = filteredWarga.isEmpty;
@@ -300,88 +341,55 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Cari nama atau ID tempat sampah...',
-                    prefixIcon: const Icon(Icons.search),
+                    prefixIcon: const Icon(Icons.search_rounded),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                   ),
                 ),
                 const SizedBox(height: 12),
-                isAktivasiBinMode
-                    ? Row(
-                        children: [
-                          Expanded(
-                            child: InputDecorator(
-                              key: ValueKey('kel_$userKel'),
-                              decoration: InputDecoration(
-                                labelText: 'Kelurahan Dampingan',
-                                prefixIcon: const Icon(Icons.location_city_rounded, size: 18, color: AppColors.primaryGreen),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                filled: true,
-                                fillColor: const Color(0xFFF5F7FA),
-                                isDense: true,
-                              ),
-                              child: Text(
-                                userKel.isNotEmpty ? (userKel.toLowerCase().startsWith('kel') ? userKel : 'Kel. $userKel') : '-',
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: InputDecorator(
-                              key: ValueKey('rtrw_$userRw'),
-                              decoration: InputDecoration(
-                                labelText: 'RW Dampingan',
-                                prefixIcon: const Icon(Icons.maps_home_work_outlined, size: 18, color: AppColors.primaryGreen),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                filled: true,
-                                fillColor: const Color(0xFFF5F7FA),
-                                isDense: true,
-                              ),
-                              child: Text(
-                                userRw.isNotEmpty ? (userRw.startsWith('RW') ? userRw : 'RW $userRw') : 'RW 02',
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              initialValue: _selectedKelurahan,
-                              decoration: const InputDecoration(labelText: 'Kelurahan', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12)),
-                              items: kelurahanList.map((k) => DropdownMenuItem(value: k, child: Text(k, style: const TextStyle(fontSize: 13)))).toList(),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() {
-                                    _selectedKelurahan = val;
-                                    _selectedRtRw = 'Semua';
-                                  });
-                                }
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              initialValue: _selectedRtRw,
-                              decoration: const InputDecoration(labelText: 'RW', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12)),
-                              items: rtRwList.map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 13)))).toList(),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() => _selectedRtRw = val);
-                                }
-                              },
-                            ),
-                          ),
-                        ],
+                Row(
+                  children: [
+                    Expanded(
+                      child: InputDecorator(
+                        key: ValueKey('kel_$userKel'),
+                        decoration: InputDecoration(
+                          labelText: 'Kelurahan Dampingan',
+                          prefixIcon: const Icon(Icons.location_city_rounded, size: 18, color: AppColors.primaryGreen),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          filled: true,
+                          fillColor: const Color(0xFFF5F7FA),
+                          isDense: true,
+                        ),
+                        child: Text(
+                          userKel.isNotEmpty ? (userKel.toLowerCase().startsWith('kel') ? userKel : 'Kel. $userKel') : '-',
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: InputDecorator(
+                        key: ValueKey('rtrw_$userRw'),
+                        decoration: InputDecoration(
+                          labelText: 'RW Dampingan',
+                          prefixIcon: const Icon(Icons.maps_home_work_rounded, size: 18, color: AppColors.primaryGreen),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          filled: true,
+                          fillColor: const Color(0xFFF5F7FA),
+                          isDense: true,
+                        ),
+                        child: Text(
+                          userRw.isNotEmpty ? (userRw.startsWith('RW') ? userRw : 'RW $userRw') : 'RW 02',
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -418,8 +426,6 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
               itemCount: filteredWarga.length,
               itemBuilder: (context, index) {
                 final warga = filteredWarga[index];
-                final isErrorProne = warga.needsReeducation;
-                
                 return Card(
                   margin: const EdgeInsets.only(bottom: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -460,64 +466,59 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                     ),
                                     if (warga.isActivated) ...[
                                       const SizedBox(height: 4),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFEBF5FF),
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(color: const Color(0xFF90CDF4)),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Icon(Icons.verified_rounded, size: 11, color: AppColors.primaryBlueDark),
-                                            const SizedBox(width: 4),
-                                            Flexible(
-                                              child: Text(
-                                                warga.pendampingName.isNotEmpty
-                                                    ? 'Diaktivasi oleh: ${warga.pendampingName}'
-                                                    : (currentUserName.isNotEmpty ? 'Diaktivasi oleh: $currentUserName' : 'Diaktivasi Mahasiswa'),
-                                                style: const TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: AppColors.primaryBlueDark,
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
+                                      Builder(builder: (_) {
+                                        String mName = warga.pendampingName;
+                                        if (mName.isEmpty && warga.mahasiswaId.isNotEmpty) {
+                                          final mem = kelompokState.kelompok?.members
+                                              .where((m) => m.userId == warga.mahasiswaId)
+                                              .firstOrNull;
+                                          if (mem != null) mName = mem.name;
+                                        }
+                                        return Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: mName.isNotEmpty
+                                                ? const Color(0xFFEBF5FF)
+                                                : AppColors.primaryGreen.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(
+                                              color: mName.isNotEmpty
+                                                  ? const Color(0xFF90CDF4)
+                                                  : AppColors.primaryGreen.withValues(alpha: 0.3),
                                             ),
-                                          ],
-                                        ),
-                                      ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.verified_rounded,
+                                                size: 12,
+                                                color: mName.isNotEmpty
+                                                    ? AppColors.primaryBlueDark
+                                                    : AppColors.primaryGreen,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Flexible(
+                                                child: Text(
+                                                  mName.isNotEmpty
+                                                      ? 'Diaktivasi oleh: $mName'
+                                                      : 'Aktivasi Mandiri',
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: mName.isNotEmpty
+                                                        ? AppColors.primaryBlueDark
+                                                        : AppColors.primaryGreen,
+                                                  ),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }),
                                     ],
                                   ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                decoration: BoxDecoration(
-                                  color: !warga.isActivated
-                                      ? AppColors.dangerRed.withValues(alpha: 0.1)
-                                      : isErrorProne
-                                          ? AppColors.dangerRed.withValues(alpha: 0.1)
-                                          : AppColors.primaryGreen.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  !warga.isActivated 
-                                      ? 'Belum Aktivasi' 
-                                      : isErrorProne 
-                                          ? 'Butuh Edukasi' 
-                                          : 'Pemilahan Baik',
-                                  style: TextStyle(
-                                    color: !warga.isActivated
-                                        ? AppColors.dangerRed
-                                        : isErrorProne 
-                                            ? AppColors.dangerRed 
-                                            : AppColors.primaryGreen,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 11,
-                                  ),
                                 ),
                               ),
                             ],
@@ -656,8 +657,8 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
       return _ChartDataPoint(firstName, score);
     }).toList();
 
-    // Hitung max value untuk skala Y (kelipatan 50 terdekat)
-    double maxY = 100.0;
+    // Hitung max value untuk skala Y yang dinamis
+    double maxY = 50.0; // Default yang lebih rendah jika poin 0
     if (chartData.isNotEmpty) {
       final highest = chartData.map((e) => e.value).reduce((a, b) => a > b ? a : b);
       if (highest > 0) {

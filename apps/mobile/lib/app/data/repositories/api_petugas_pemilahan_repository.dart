@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/utils/image_compressor.dart';
+import '../../core/values/api_constants.dart';
 import '../models/petugas_pemilahan_models.dart';
 import '../providers/api_client.dart';
 import '../services/notification_engine.dart';
@@ -251,10 +252,43 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
   @override
   Future<List<Map<String, dynamic>>> getDaftarPengajuanWarga() async {
     try {
-      final response = await apiClient.dio.get('/petugas-residu/pengajuan');
-      if (response.statusCode == 200 && response.data != null) {
-        final list = response.data['data'] as List<dynamic>? ?? (response.data as List<dynamic>);
-        return list.cast<Map<String, dynamic>>();
+      dynamic response;
+      try {
+        response = await apiClient.dio.get(ApiEndpoints.binsResetRequests);
+      } catch (_) {
+        response = await apiClient.dio.get('/petugas-residu/pengajuan');
+      }
+
+      if (response != null && response.statusCode == 200 && response.data != null) {
+        List<dynamic> rawList = [];
+        if (response.data is Map<String, dynamic>) {
+          rawList = response.data['data'] as List<dynamic>? ?? [];
+        } else if (response.data is List) {
+          rawList = response.data as List<dynamic>;
+        }
+
+        return rawList.map((e) {
+          if (e is Map<String, dynamic>) {
+            final user = e['user'] as Map<String, dynamic>? ?? {};
+            final bin = e['bin'] as Map<String, dynamic>? ?? {};
+            final rtRw = bin['rw'] as Map<String, dynamic>? ?? user['rtRw'] as Map<String, dynamic>? ?? {};
+            final kelurahan = bin['kelurahan'] as Map<String, dynamic>? ?? user['kelurahan'] as Map<String, dynamic>? ?? {};
+
+            return {
+              'id': e['id']?.toString() ?? '',
+              'wargaName': user['name']?.toString() ?? e['wargaName']?.toString() ?? 'Warga',
+              'binCode': bin['qrCode']?.toString() ?? e['binCode']?.toString() ?? e['binId']?.toString() ?? '-',
+              'alasan': e['alasan']?.toString() ?? e['reason']?.toString() ?? 'Pengajuan pengosongan tempat sampah penuh',
+              'address': user['address']?.toString() ?? e['address']?.toString() ?? e['alamat']?.toString() ?? '',
+              'rtRw': rtRw['name']?.toString() ?? e['rw']?.toString() ?? '',
+              'kelurahan': kelurahan['name']?.toString() ?? e['kelurahan']?.toString() ?? '',
+              'createdAt': e['createdAt']?.toString() ?? '',
+              'status': e['status']?.toString() ?? 'PENDING',
+              'evidencePhotoUrl': e['evidencePhotoUrl']?.toString() ?? e['photoUrl']?.toString() ?? '',
+            };
+          }
+          return <String, dynamic>{};
+        }).where((m) => m.isNotEmpty && m['status'] == 'PENDING').toList();
       }
       return [];
     } on DioException catch (e) {
@@ -262,23 +296,30 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
         return [];
       }
       debugPrint('[ApiPetugasPemilahanRepository] Error getDaftarPengajuanWarga: $e');
-      rethrow;
+      return [];
     } catch (e) {
       debugPrint('[ApiPetugasPemilahanRepository] Error getDaftarPengajuanWarga: $e');
-      rethrow;
+      return [];
     }
   }
 
   @override
   Future<bool> claimPengajuanReset(String pengajuanId) async {
     try {
+      try {
+        final response = await apiClient.dio.put(
+          ApiEndpoints.binsApproveReset(pengajuanId),
+        );
+        if (response.statusCode == 200 || response.statusCode == 201) return true;
+      } catch (_) {}
+
       final response = await apiClient.dio.put(
         '/petugas-residu/pengajuan/$pengajuanId/terima',
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       debugPrint('[ApiPetugasPemilahanRepository] Error claimPengajuanReset: $e');
-      rethrow;
+      return false;
     }
   }
 }

@@ -6,7 +6,9 @@ import '../../../data/models/notification_entity.dart';
 import '../controllers/notifikasi_controller.dart';
 import '../controllers/warga_notifikasi_controller.dart';
 import '../../shared/widgets/app_loading.dart';
-import '../../poin/poin_view.dart';
+import 'package:intl/intl.dart';
+import '../../../routes/app_routes.dart';
+
 
 /// Halaman daftar notifikasi Warga.
 class NotifikasiView extends ConsumerStatefulWidget {
@@ -111,9 +113,7 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
             child: RefreshIndicator(
               onRefresh: () async => ref.invalidate(wargaNotificationsProvider),
               color: AppColors.primaryGreen,
-              child: notifAsync.when(
-                skipLoadingOnReload: true,
-                loading: () => const AppLoading(message: 'Memuat notifikasi...'),
+              child: notifAsync.when(skipLoadingOnReload: true, loading: () => const AppLoading(message: 'Memuat notifikasi...'),
                 error: (e, _) => Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -202,30 +202,14 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                             ref.invalidate(wargaNotificationsProvider);
                           }
 
-                          final type = item.type.toLowerCase();
-                          final title = item.title.toLowerCase();
-
-                          if (type.contains('penuh') || 
-                              type.contains('setuju') || 
-                              type.contains('tolak') || 
-                              title.contains('penuh') || 
-                              title.contains('pengajuan') ||
-                              title.contains('kritis')) {
-                            Navigator.pushNamed(context, '/reset-bin');
-                          } else if (type.contains('poin') || 
-                                     type.contains('punishment') ||
-                                     type.contains('penalti') ||
-                                     type.contains('pengurangan') ||
-                                     title.contains('poin') || 
-                                     title.contains('penalti') ||
-                                     title.contains('punishment') ||
-                                     title.contains('berkurang') ||
-                                     title.contains('potong') ||
-                                     title.contains('berhasil') ||
-                                     title.contains('sukses') ||
-                                     title.contains('setor') ||
-                                     title.contains('sampah')) {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const PoinView()));
+                          if (item.type.toUpperCase() == 'POIN_BERTAMBAH' || item.type.toUpperCase() == 'POIN' || item.type.toUpperCase() == 'PUNISHMENT') {
+                            Navigator.pushNamed(context, AppRoutes.poin);
+                          } else {
+                            Navigator.pushNamed(
+                              context,
+                              '/detail-notifikasi',
+                              arguments: item,
+                            );
                           }
                         },
                       );
@@ -259,7 +243,7 @@ class _NotificationTile extends StatelessWidget {
                          titleUpper.contains('TERLEWAT') || 
                          titleUpper.contains('JADWAL BUANG');
 
-    final iconData = _resolveIcon(item.icon);
+
     final iconColor = isPunishment ? const Color(0xFFEF4444) : _resolveIconColor(item.type);
     final iconBg = isPunishment ? const Color(0xFFFEE2E2) : _resolveIconBg(item.type);
 
@@ -283,7 +267,7 @@ class _NotificationTile extends StatelessWidget {
                 color: iconBg,
                 shape: BoxShape.circle,
               ),
-              child: Icon(iconData, color: iconColor, size: 22),
+              child: _buildIconWidget(item.icon, item.type, iconColor),
             ),
             const SizedBox(width: 12),
 
@@ -333,7 +317,7 @@ class _NotificationTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    item.time,
+                    _formatDateTime(item.time),
                     style: const TextStyle(
                       fontSize: 11,
                       color: AppColors.textHint,
@@ -346,6 +330,36 @@ class _NotificationTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatDateTime(String? rawStr) {
+    if (rawStr == null || rawStr.isEmpty || rawStr == '-') return '';
+    try {
+      final dt = DateTime.parse(rawStr).toLocal();
+      return '${DateFormat('d MMMM yyyy, HH:mm', 'id_ID').format(dt)} WIB';
+    } catch (_) {
+      return rawStr; // fallback jika bukan ISO string (misal 'Baru saja')
+    }
+  }
+
+  Widget _buildIconWidget(String iconName, String type, Color iconColor) {
+    final typeUpper = type.toUpperCase();
+    if (typeUpper.contains('PUNISHMENT') || typeUpper.contains('PENALTI')) {
+      return Icon(Icons.warning_amber_rounded, color: iconColor, size: 22);
+    }
+    if (iconName == 'star' || typeUpper == 'POIN_BERTAMBAH') {
+      return Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Image.asset('assets/icons/medal.png', color: iconColor),
+      );
+    }
+    if (typeUpper.contains('PENGAJUAN') || iconName == 'local_shipping' || iconName == 'rule') {
+      return Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Image.asset('assets/icons/submission.png', color: iconColor),
+      );
+    }
+    return Icon(_resolveIcon(iconName), color: iconColor, size: 22);
   }
 
   IconData _resolveIcon(String iconName) {

@@ -1,4 +1,4 @@
-﻿import 'package:equatable/equatable.dart';
+import 'package:equatable/equatable.dart';
 
 /// State whitelist & status akun Petugas Pemilahan
 enum WhitelistStatus { pending, approved, rejected }

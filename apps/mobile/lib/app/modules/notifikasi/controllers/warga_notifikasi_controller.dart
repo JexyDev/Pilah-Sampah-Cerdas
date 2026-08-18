@@ -1,10 +1,11 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/notification_entity.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 import '../../../data/services/local_notification_cache_service.dart';
 import '../../../data/services/firebase_notification_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final Set<String> _wargaShownNotifIds = {};
 
@@ -24,6 +25,37 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
   }
 
   final List<NotificationEntity> result = [];
+
+  try {
+    final pointRepo = ref.read(wasteLogRepositoryProvider);
+    final pointHistory = await pointRepo.getPointHistoryByUser(userId);
+    
+    final prefs = await SharedPreferences.getInstance();
+    final readList = prefs.getStringList('read_notifs_${userId}_$role') ?? [];
+    final readSet = readList.toSet();
+    final markAllTimestamp = prefs.getInt('mark_all_notifs_${userId}_$role') ?? 0;
+    
+    for (final ph in pointHistory) {
+      if (ph.points != 0) {
+        final notifId = 'point_${ph.id}';
+        final isRead = readSet.contains(notifId) || 
+            ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
+            LocalNotificationCacheService().isRead(userId, role, notifId, ph.createdAt);
+            
+        final isPunishment = ph.points < 0;
+            
+        result.add(NotificationEntity(
+          id: notifId,
+          type: isPunishment ? 'PUNISHMENT' : 'POIN_BERTAMBAH',
+          title: isPunishment ? 'Penalti Pengurangan Poin' : 'Poin Bertambah!',
+          desc: ph.description.isNotEmpty ? ph.description : (isPunishment ? 'Poin Anda dikurangi ${ph.points}.' : 'Anda mendapatkan tambahan +${ph.points} poin.'),
+          isRead: isRead,
+          time: ph.createdAt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
+          icon: isPunishment ? 'warning' : 'star',
+        ));
+      }
+    }
+  } catch (_) {}
 
   for (final notif in list) {
     final type = notif.type.toUpperCase();
@@ -60,10 +92,22 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
     if (!isWargaReminder && isForbidden) continue;
     if (notif.id == 'seed-notif-1' || desc.contains('ORG004520')) continue;
 
-    result.add(notif);
+    // Deduplikasi
+    if (result.any((n) => n.id == notif.id || (n.title == notif.title && n.desc == notif.desc && n.type == notif.type))) continue;
 
-    final notifKey = 'warga_${userId}_${notif.id}';
-    if (!notif.isRead && !_wargaShownNotifIds.contains(notifKey)) {
+    // Konversi UTC ke Lokal
+    NotificationEntity finalNotif = notif;
+    if (notif.time.endsWith('Z')) {
+      final dt = DateTime.tryParse(notif.time);
+      if (dt != null) {
+        finalNotif = notif.copyWith(time: dt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '));
+      }
+    }
+
+    result.add(finalNotif);
+
+    final notifKey = 'warga_${userId}_${finalNotif.id}';
+    if (!finalNotif.isRead && !_wargaShownNotifIds.contains(notifKey)) {
       _wargaShownNotifIds.add(notifKey);
     }
   }
@@ -81,7 +125,7 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
       continue;
     }
 
-    if (!result.any((n) => n.id == localItem.id)) {
+    if (!result.any((n) => n.id == localItem.id || (n.title == localItem.title && n.desc == localItem.desc && n.type == localItem.type))) {
       result.insert(0, localItem);
     }
   }
@@ -98,7 +142,7 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
       continue;
     }
 
-    if (!result.any((n) => n.id == fbItem.id)) {
+    if (!result.any((n) => n.id == fbItem.id || (n.title == fbItem.title && n.desc == fbItem.desc && n.type == fbItem.type))) {
       result.insert(0, fbItem);
     }
   }
@@ -109,8 +153,7 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
 /// Provider jumlah notifikasi belum dibaca untuk Warga
 final wargaUnreadNotificationCountProvider = Provider<int>((ref) {
   final notifAsync = ref.watch(wargaNotificationsProvider);
-  return notifAsync.when(
-    data: (list) => list.where((n) => !n.isRead).length,
+  return notifAsync.when(skipLoadingOnReload: true, data: (list) => list.where((n) => !n.isRead).length,
     loading: () => 0,
     error: (_, __) => 0,
   );

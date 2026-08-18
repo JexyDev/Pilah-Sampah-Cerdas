@@ -280,6 +280,7 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
                   const SizedBox(height: 12),
                     _buildReadOnlyField('NIM', userNim.isNotEmpty ? userNim : '-'),
                     _buildReadOnlyField('Program Studi', userProdi.isNotEmpty ? userProdi : '-'),
+                    _buildReadOnlyField('Jenjang Studi', (user?.jenjangPendidikan != null && user!.jenjangPendidikan.isNotEmpty) ? user.jenjangPendidikan : '-'),
 
                   _buildReadOnlyField('Kelurahan Dampingan', kelurahan.isNotEmpty ? kelurahan : '-'),
                   _buildReadOnlyField('RW Dampingan', rw.isNotEmpty ? rw : '-'),

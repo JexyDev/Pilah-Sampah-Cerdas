@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../modules/notifikasi/views/detail_notifikasi_view.dart';
 import '../modules/splash/splash_view.dart';
 import '../modules/auth/views/login_view.dart';
 import '../modules/auth/views/register_view.dart';
@@ -20,6 +21,8 @@ import '../modules/mahasiswa/views/mahasiswa_view.dart';
 import '../modules/mahasiswa/views/kelompok_kkn_view.dart';
 import '../modules/mahasiswa/views/daftar_warga_view.dart';
 import '../modules/mahasiswa/views/detail_warga_view.dart';
+import '../modules/mahasiswa/views/register_posko_view.dart';
+import '../modules/mahasiswa/views/register_fasilitas_view.dart';
 import '../modules/mahasiswa/views/pemanfaatan_sampah_view.dart';
 import '../modules/mahasiswa/views/edit_profil_mahasiswa_view.dart';
 import '../modules/mahasiswa/views/pengajuan_izin_form_view.dart';
@@ -65,6 +68,8 @@ class AppPages {
         return _buildRoute(const ResetBinView(), settings);
       case AppRoutes.notifikasi:
         return _buildRoute(const NotifikasiView(), settings);
+      case AppRoutes.detailNotifikasi:
+        return _buildRoute(const DetailNotifikasiView(), settings);
       case AppRoutes.mahasiswaNotifikasi:
         return _buildRoute(const MahasiswaNotifikasiView(), settings);
       case AppRoutes.petugasNotifikasi:
@@ -108,6 +113,10 @@ class AppPages {
         return _buildRoute(const PengajuanWargaView(), settings);
       case AppRoutes.monitoringDampakKelurahan:
         return _buildRoute(const MonitoringDampakKelurahanView(), settings);
+      case AppRoutes.registerPosko:
+        return _buildRoute(const RegisterPoskoView(), settings);
+      case AppRoutes.registerFasilitas:
+        return _buildRoute(const RegisterFasilitasView(), settings);
       case AppRoutes.riwayatKkn:
         return _buildRoute(const RiwayatKknView(), settings);
       default:
@@ -115,17 +124,13 @@ class AppPages {
     }
   }
 
-  static PageRouteBuilder<dynamic> _buildRoute(
+  static Route<dynamic> _buildRoute(
     Widget page,
     RouteSettings settings,
   ) {
-    return PageRouteBuilder(
+    return MaterialPageRoute(
       settings: settings,
-      pageBuilder: (_, __, ___) => page,
-      transitionsBuilder: (_, animation, __, child) {
-        return FadeTransition(opacity: animation, child: child);
-      },
-      transitionDuration: const Duration(milliseconds: 200),
+      builder: (_) => page,
     );
   }
 }

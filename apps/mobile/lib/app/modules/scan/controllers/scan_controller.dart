@@ -1,9 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 import '../../../data/models/bin_entity.dart';
 import '../../../data/models/ai_detection_entity.dart';
 import '../../../data/models/bin_reset_entity.dart';
+import '../../../data/models/petugas_entity.dart';
+import '../../../data/models/petugas_status_response.dart';
 import '../../../data/repositories/bin_repository.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/models/user_entity.dart';
@@ -129,46 +129,9 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
 
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      // 1. Ambil data tempat sampah dari cache/server untuk client-side geofencing
-      final bin = await _binRepository.getBinByQrSerial(qrCode);
-      if (bin != null) {
-        // Hitung jarak Haversine (client-side)
-        final distance = Geolocator.distanceBetween(
-          userLat,
-          userLng,
-          bin.lat,
-          bin.lng,
-        );
-
-        const maxDistance = kDebugMode ? 500.0 : 10.0;
-        // Jika userLat == 0.0, itu adalah fallback dari error GPS, jadi skip geofencing
-        if (userLat != 0.0 && distance > maxDistance) {
-          throw BinException(
-            'LOCATION_OUT_OF_RANGE',
-            'Anda terlalu jauh dari tempat sampah (> ${maxDistance.toInt()}m).',
-          );
-        }
-
-        // Cek kapasitas
-        final double projectedVol =
-            bin.currentVolumeL + state.aiResult!.volumeEstimate;
-        if (bin.currentVolumeL >= bin.maxCapacityL) {
-          throw const BinException(
-            'BIN_OVERFLOW',
-            'Tempat sampah ini sudah penuh (100%)! Silakan ajukan pengosongan.',
-          );
-        } else if (projectedVol > bin.maxCapacityL) {
-          final sisa = (bin.maxCapacityL - bin.currentVolumeL).clamp(
-            0.0,
-            999.0,
-          );
-          throw BinException(
-            'BIN_OVERFLOW',
-            'Kapasitas tempat sampah tersisa ${sisa.toStringAsFixed(1)}L, tidak muat untuk sampah sekitar ${state.aiResult!.volumeEstimate.toStringAsFixed(1)}L.',
-          );
-        }
-      }
-
+      // Langsung kirim ke backend — backend melakukan validasi geofencing 50m secara akurat.
+      // Client-side geofencing dihapus karena GPS Android tidak konsisten antar-request
+      // dan menyebabkan false rejection meski pengguna diam di tempat yang sama.
       final result = await _binRepository.scanAndCommit(
         qrCode: qrCode,
         userId: _userId,
@@ -259,7 +222,8 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
   }
 
   Future<void> aktivasiBatch({
-    required List<String> qrSerials,
+    String? qrOrganik,
+    String? qrAnorganik,
     required String userId,
     required String householdId,
     double? latitude,
@@ -269,6 +233,10 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
   }) async {
     state = const AktivasiBinState(isLoading: true);
     try {
+      final List<String> qrSerials = [];
+      if (qrOrganik != null && qrOrganik.isNotEmpty) qrSerials.add(qrOrganik);
+      if (qrAnorganik != null && qrAnorganik.isNotEmpty) qrSerials.add(qrAnorganik);
+
       final results = await _binRepository.activateBinsBatch(
         qrSerials: qrSerials,
         userId: userId,
@@ -277,16 +245,20 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
         longitude: longitude,
       );
 
-      // Panggil measureBin sesuai jenis QR Code secara berurutan
-      for (final qr in qrSerials) {
-        final isOrganik =
-            !qr.toUpperCase().contains('NON') &&
-            !qr.toUpperCase().contains('ANORG') &&
-            !qr.toUpperCase().startsWith('ANO');
+      // Panggil measureBin sesuai parameter tanpa menebak string
+      if (qrOrganik != null && qrOrganik.isNotEmpty) {
         await _binRepository.measureBin(
-          qrCode: qr,
-          binType: isOrganik ? WasteType.organic : WasteType.nonOrganic,
-          maxCapacityLiter: isOrganik ? orgCapacity : anorgCapacity,
+          qrCode: qrOrganik,
+          binType: WasteType.organic,
+          maxCapacityLiter: orgCapacity,
+        );
+      }
+      
+      if (qrAnorganik != null && qrAnorganik.isNotEmpty) {
+        await _binRepository.measureBin(
+          qrCode: qrAnorganik,
+          binType: WasteType.nonOrganic,
+          maxCapacityLiter: anorgCapacity,
         );
       }
       state = AktivasiBinState(
@@ -331,8 +303,10 @@ class ResetBinNotifier extends StateNotifier<ResetBinState> {
   Future<void> submitReset({
     required List<String> binIds,
     required String userId,
-    required String evidencePhotoPath,
+    String? evidencePhotoPath,
     String? wargaName,
+    String? petugasId,
+    String? jenisSampah,
   }) async {
     state = const ResetBinState(isLoading: true);
     try {
@@ -343,6 +317,8 @@ class ResetBinNotifier extends StateNotifier<ResetBinState> {
           userId: userId,
           evidencePhotoPath: evidencePhotoPath,
           wargaName: wargaName,
+          petugasId: petugasId,
+          jenisSampah: jenisSampah,
         );
       }
       state = ResetBinState(result: lastResult);
@@ -373,3 +349,76 @@ final resetBinProvider = StateNotifierProvider<ResetBinNotifier, ResetBinState>(
     return ResetBinNotifier(ref.watch(binRepositoryProvider));
   },
 );
+
+// ─── Petugas Pengosongan Provider ──────────────────────────────────────────
+
+class PetugasPengosonganState {
+  const PetugasPengosonganState({
+    this.isLoading = false,
+    this.statusResponse,
+    this.petugasWilayah = const [],
+    this.error,
+  });
+
+  final bool isLoading;
+  final PetugasStatusResponse? statusResponse;
+  final List<PetugasEntity> petugasWilayah;
+  final String? error;
+
+  PetugasPengosonganState copyWith({
+    bool? isLoading,
+    PetugasStatusResponse? statusResponse,
+    List<PetugasEntity>? petugasWilayah,
+    String? error,
+  }) {
+    return PetugasPengosonganState(
+      isLoading: isLoading ?? this.isLoading,
+      statusResponse: statusResponse ?? this.statusResponse,
+      petugasWilayah: petugasWilayah ?? this.petugasWilayah,
+      error: error, // Can be null to clear
+    );
+  }
+}
+
+class PetugasPengosonganNotifier extends StateNotifier<PetugasPengosonganState> {
+  PetugasPengosonganNotifier(this._repository) : super(const PetugasPengosonganState());
+
+  final BinRepository _repository;
+
+  Future<void> checkStatus() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final status = await _repository.getPetugasStatus();
+      state = state.copyWith(isLoading: false, statusResponse: status);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<void> fetchPetugasWilayah() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final list = await _repository.getPetugasWilayah();
+      state = state.copyWith(isLoading: false, petugasWilayah: list);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<bool> setDefaultPetugas(String petugasId) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      await _repository.setDefaultPetugas(petugasId);
+      await checkStatus(); // Reload status after setting default
+      return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return false;
+    }
+  }
+}
+
+final petugasPengosonganProvider = StateNotifierProvider<PetugasPengosonganNotifier, PetugasPengosonganState>((ref) {
+  return PetugasPengosonganNotifier(ref.watch(binRepositoryProvider));
+});
+

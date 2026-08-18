@@ -47,6 +47,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   DateTime? _tglSelesaiKKN;
   final Map<String, List<String>> _rwByKelurahan = {};
   final Map<String, List<String>> _kelurahanByKecamatan = {};
+  final Map<String, int> _rtRwIdMap = {};
 
   final List<String> _jenjangList = ['D3', 'D4', 'S1', 'S2', 'S3'];
   final List<String> _kelurahanList = [];
@@ -55,26 +56,32 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   final List<String> _kotaList = [];
 
   List<String> get _availableRwList {
-    if (_selectedKelurahan == null) return [];
-    if (_rwByKelurahan.containsKey(_selectedKelurahan) && _rwByKelurahan[_selectedKelurahan!]!.isNotEmpty) {
-      final rws = _rwByKelurahan[_selectedKelurahan!]!.toSet().toList();
-      rws.sort((a, b) {
-        int ia = int.tryParse(a) ?? 0;
-        int ib = int.tryParse(b) ?? 0;
-        return ia.compareTo(ib);
-      });
-      return rws;
+    if (_selectedKelurahan == null || _selectedKelurahan!.isEmpty) return [];
+    final targetKel = _selectedKelurahan!.trim().toLowerCase();
+    for (final entry in _rwByKelurahan.entries) {
+      if (entry.key.trim().toLowerCase() == targetKel && entry.value.isNotEmpty) {
+        final rws = entry.value.toSet().toList();
+        rws.sort((a, b) {
+          int ia = int.tryParse(a.replaceAll(RegExp(r'[^\d]'), '')) ?? 0;
+          int ib = int.tryParse(b.replaceAll(RegExp(r'[^\d]'), '')) ?? 0;
+          return ia.compareTo(ib);
+        });
+        return rws;
+      }
     }
+    // Mengambil murni daftar RW asli dari database backend VPS
     return [];
   }
 
   List<String> get _availableKelurahanList {
-    if (_kecamatanController.text.isEmpty) return [];
-    final kec = _kecamatanController.text;
-    if (_kelurahanByKecamatan.containsKey(kec) && _kelurahanByKecamatan[kec]!.isNotEmpty) {
-      final kels = _kelurahanByKecamatan[kec]!.toSet().toList();
-      kels.sort();
-      return kels;
+    if (_kecamatanController.text.isEmpty) return _kelurahanList;
+    final kec = _kecamatanController.text.trim().toLowerCase();
+    for (final entry in _kelurahanByKecamatan.entries) {
+      if (entry.key.trim().toLowerCase() == kec && entry.value.isNotEmpty) {
+        final kels = entry.value.toSet().toList();
+        kels.sort();
+        return kels;
+      }
     }
     return _kelurahanList;
   }
@@ -122,12 +129,16 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
 
   String _cleanTerritoryName(dynamic val) {
     if (val == null) return '';
+    if (val is Map) {
+      final n = val['name'] ?? val['nama'] ?? val['title'] ?? val['label'];
+      if (n != null) return _cleanTerritoryName(n);
+    }
     String str = val.toString().trim();
     if (str.contains('{') && str.contains('name:')) {
       final match = RegExp(r'name:\s*([\w\s]+?)(?:,|\})', caseSensitive: false).firstMatch(str);
       if (match != null) str = match.group(1)?.trim() ?? str;
     }
-    return str.replaceAll(RegExp(r'[\{\}]'), '').trim();
+    return str.replaceAll(RegExp(r'[\{\}]'), '').replaceAll(RegExp(r'id:\s*\d+'), '').trim();
   }
 
   Future<void> _loadDynamicTerritories() async {
@@ -157,11 +168,14 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
           _kelurahanList.addAll(kelsRaw);
 
           _rwByKelurahan.clear();
+          _rtRwIdMap.clear();
           final rawRtRw = res['rawRtRw'] as List<dynamic>? ?? [];
           for (final item in rawRtRw) {
-             if (item is Map<String, dynamic>) {
-                 final kelName = _cleanTerritoryName(item['kelurahan']);
-                 final rwName = _cleanTerritoryName(item['name']);
+             if (item is Map) {
+                 final itemMap = Map<String, dynamic>.from(item);
+                 final kelName = _cleanTerritoryName(itemMap['kelurahan']);
+                 final rwName = _cleanTerritoryName(itemMap['name']);
+                 final intId = int.tryParse(itemMap['id']?.toString() ?? '');
                  if (kelName.isNotEmpty && rwName.isNotEmpty) {
                      if (!_rwByKelurahan.containsKey(kelName)) {
                          _rwByKelurahan[kelName] = [];
@@ -171,6 +185,20 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                      if (!_rwByKelurahan[kelName]!.contains(cleanRw)) {
                          _rwByKelurahan[kelName]!.add(cleanRw);
                      }
+                     if (intId != null) {
+                         final k = kelName.toLowerCase().trim();
+                         final r = cleanRw.trim();
+                         final rInt = int.tryParse(r) ?? 0;
+                         _rtRwIdMap['${k}_$r'] = intId;
+                         _rtRwIdMap['${k}_${r.padLeft(2, '0')}'] = intId;
+                         _rtRwIdMap['${k}_$rInt'] = intId;
+                         _rtRwIdMap['${k}_rw $r'] = intId;
+                         _rtRwIdMap['${k}_rw ${r.padLeft(2, '0')}'] = intId;
+                         _rtRwIdMap['${k}_rw $rInt'] = intId;
+                         _rtRwIdMap['${k}_${rwName.toLowerCase().trim()}'] = intId;
+                         _rtRwIdMap['${k}_rw $r ($k)'] = intId;
+                         _rtRwIdMap['${k}_rw ${r.padLeft(2, '0')} ($k)'] = intId;
+                     }
                  }
              }
           }
@@ -178,10 +206,11 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
           _kelurahanByKecamatan.clear();
           final rawKelurahan = res['rawKelurahan'] as List<dynamic>? ?? [];
           for (final item in rawKelurahan) {
-             if (item is Map<String, dynamic>) {
-                 final kecObj = item['kecamatan'];
-                 final kecName = _cleanTerritoryName(kecObj != null ? kecObj['name'] : '');
-                 final kelName = _cleanTerritoryName(item['name']);
+             if (item is Map) {
+                 final itemMap = Map<String, dynamic>.from(item);
+                 final kecObj = itemMap['kecamatan'];
+                 final kecName = _cleanTerritoryName(kecObj != null ? (kecObj is Map ? kecObj['name'] : kecObj) : '');
+                 final kelName = _cleanTerritoryName(itemMap['name']);
                  if (kecName.isNotEmpty && kelName.isNotEmpty) {
                      if (!_kelurahanByKecamatan.containsKey(kecName)) {
                          _kelurahanByKecamatan[kecName] = [];
@@ -288,19 +317,26 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       'phone': normalizedPhone,
       'noWa': normalizedPhone,
       'password': password,
-      'provinsi': _provinsiController.text, // Disimpan ke User.provinsi
-      'kabupaten': _kotaController.text, // Disimpan ke User.kabupaten
     };
 
     if (_selectedRole == 'Warga') {
       // Gabungkan kecamatan ke address agar tersimpan tanpa membuat backend crash
       final baseAddress = InputSanitizer.sanitize(_alamatController.text);
       final kec = InputSanitizer.sanitize(_kecamatanController.text);
-      data['address'] = kec.isNotEmpty ? '$baseAddress, Kec. $kec' : baseAddress;
+      final kab = InputSanitizer.sanitize(_kotaController.text);
+      final prov = InputSanitizer.sanitize(_provinsiController.text);
       
+      List<String> addrParts = [baseAddress];
+      if (kec.isNotEmpty) addrParts.add('Kec. $kec');
+      if (kab.isNotEmpty) addrParts.add(kab);
+      if (prov.isNotEmpty) addrParts.add(prov);
+      
+      data['address'] = addrParts.join(', ');
       data['rw'] = _selectedRw ?? '';
+      data['rtRw'] = _selectedRw ?? '';
       data['kelurahan'] = _selectedKelurahan ?? '';
       data['jumlahAnggotaKeluarga'] = int.tryParse(_familySizeController.text) ?? 1;
+      data['familySize'] = int.tryParse(_familySizeController.text) ?? 1;
     } else if (_selectedRole == 'Mahasiswa') {
       data['nim'] = InputSanitizer.sanitize(_nimController.text);
       
@@ -317,15 +353,56 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       data['prodi'] = data['jurusan'];
 
       data['rw'] = _selectedRw ?? '';
+      data['rtRw'] = _selectedRw ?? '';
       data['kelurahan'] = _selectedKelurahan ?? '';
       if (_tglMulaiKKN != null) data['startDate'] = _tglMulaiKKN!.toIso8601String();
       if (_tglSelesaiKKN != null) data['endDate'] = _tglSelesaiKKN!.toIso8601String();
     } else if (_selectedRole == 'Petugas Pemilahan' || _selectedRole == 'Petugas') {
       data['rw'] = _selectedRw ?? '';
+      data['rtRw'] = _selectedRw ?? '';
       data['kelurahan'] = _selectedKelurahan ?? '';
       final kel = _selectedKelurahan ?? '';
       final kec = InputSanitizer.sanitize(_kecamatanController.text);
-      data['assignedZone'] = kec.isNotEmpty ? '$kel, Kec. $kec' : kel;
+      final kab = InputSanitizer.sanitize(_kotaController.text);
+      
+      List<String> zoneParts = [kel];
+      if (kec.isNotEmpty) zoneParts.add('Kec. $kec');
+      if (kab.isNotEmpty) zoneParts.add(kab);
+      
+      data['assignedZone'] = zoneParts.join(', ');
+    }
+
+    int? resolvedId;
+    if (_selectedKelurahan != null && _selectedRw != null) {
+      final k = _selectedKelurahan!.toLowerCase().trim();
+      final rawRw = _selectedRw!;
+      final r = rawRw.replaceAll(RegExp(r'[^\d]'), '').trim();
+      final rInt = int.tryParse(r) ?? 0;
+      resolvedId = _rtRwIdMap['${k}_$r'] ?? 
+                   _rtRwIdMap['${k}_${r.padLeft(2, '0')}'] ?? 
+                   _rtRwIdMap['${k}_$rInt'] ?? 
+                   _rtRwIdMap['${k}_rw $r'] ?? 
+                   _rtRwIdMap['${k}_rw ${r.padLeft(2, '0')}'] ?? 
+                   _rtRwIdMap['${k}_rw $rInt'] ?? 
+                   _rtRwIdMap['${k}_${rawRw.toLowerCase().trim()}'] ??
+                   _rtRwIdMap['${k}_rw $r ($k)'] ??
+                   _rtRwIdMap['${k}_rw ${r.padLeft(2, '0')} ($k)'];
+
+      if (resolvedId == null) {
+        for (final entry in _rtRwIdMap.entries) {
+          if (entry.key.startsWith('${k}_') && (entry.key.contains(r) || entry.key.contains(rawRw.toLowerCase()))) {
+            resolvedId = entry.value;
+            break;
+          }
+        }
+      }
+    }
+
+    if (resolvedId != null) {
+      data['rwId'] = resolvedId;
+      data['assignedRwId'] = resolvedId;
+      data['rtRwId'] = resolvedId;
+      data['assignedPolygonId'] = resolvedId;
     }
 
     ref.read(authProvider.notifier).clearError();

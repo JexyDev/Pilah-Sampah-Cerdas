@@ -10,8 +10,7 @@ final connectivityProvider = StreamProvider<List<ConnectivityResult>>((ref) {
 /// Provider boolean — true jika ada koneksi internet aktif.
 final isOnlineProvider = Provider<bool>((ref) {
   final connectivity = ref.watch(connectivityProvider);
-  return connectivity.when(
-    data: (results) =>
+  return connectivity.when(skipLoadingOnReload: true, data: (results) =>
         results.any((result) => result != ConnectivityResult.none),
     loading: () => true, // Asumsi online saat loading awal
     error: (_, __) => false,

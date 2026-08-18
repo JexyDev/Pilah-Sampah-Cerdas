@@ -236,7 +236,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/master-pengguna"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "RW", "DEVELOPER"]}>
               <ManajemenPengguna />
             </ProtectedRoute>
           }
@@ -244,7 +244,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/master-data-pengguna"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "RW", "DEVELOPER"]}>
               <ManajemenPengguna />
             </ProtectedRoute>
           }
@@ -252,7 +252,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/manajemen-pengguna"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "RW", "DEVELOPER"]}>
               <ManajemenPengguna />
             </ProtectedRoute>
           }
@@ -260,7 +260,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/users"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "RW"]}>
               <ManajemenPengguna />
             </ProtectedRoute>
           }
@@ -268,7 +268,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/admin/users"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "RW"]}>
               <ManajemenPengguna />
             </ProtectedRoute>
           }

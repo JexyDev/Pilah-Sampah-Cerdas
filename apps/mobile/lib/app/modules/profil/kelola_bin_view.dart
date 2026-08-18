@@ -32,12 +32,11 @@ class KelolaBinView extends ConsumerWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.maybePop(context),
         ),
       ),
       backgroundColor: AppColors.backgroundCanvas,
-      body: binsAsync.when(
-        data: (bins) {
+      body: binsAsync.when(skipLoadingOnReload: true, data: (bins) {
           if (bins.isEmpty) {
             return const Center(
               child: Column(
@@ -161,7 +160,7 @@ class _BinCardLarge extends StatelessWidget {
                 Row(
                   children: [
                     const Text(
-                      'Status Backend: ',
+                      'Status: ',
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12,

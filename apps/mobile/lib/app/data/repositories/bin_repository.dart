@@ -1,6 +1,8 @@
 import '../models/bin_entity.dart';
-import '../models/ai_detection_entity.dart';
 import '../models/bin_reset_entity.dart';
+import '../models/petugas_entity.dart';
+import '../models/petugas_status_response.dart';
+import '../models/ai_detection_entity.dart';
 
 /// Interface repository tempat sampah.
 /// Implementasi: ApiBinRepository (data layer).
@@ -57,9 +59,20 @@ abstract class BinRepository {
   Future<BinResetEntity> submitResetRequest({
     required String binId,
     required String userId,
-    required String evidencePhotoPath,
+    String? evidencePhotoPath,
     String? wargaName,
+    String? petugasId,
+    String? jenisSampah,
   });
+
+  /// Cek status petugas tetap warga
+  Future<PetugasStatusResponse> getPetugasStatus();
+
+  /// Ambil daftar petugas di wilayah warga
+  Future<List<PetugasEntity>> getPetugasWilayah();
+
+  /// Simpan petugas pilihan warga sebagai default
+  Future<String> setDefaultPetugas(String petugasId);
 
   /// Ambil active reset request dari local storage
   Future<BinResetEntity?> getActiveResetRequest(String userId);

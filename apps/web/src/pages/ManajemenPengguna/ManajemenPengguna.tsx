@@ -123,8 +123,33 @@ const normalizeRoleFromUrl = (param: string | null): string => {
 const ManajemenPengguna: React.FC = () => {
   const { user, updateUser: updateStoreUser } = useAuthStore();
   const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
-  const [searchParams] = useSearchParams();
-  const roleFromUrl = normalizeRoleFromUrl(searchParams.get("role") || searchParams.get("roleName") || searchParams.get("type"));
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const allowedRoleTabs = useMemo(() => {
+    const peran = user?.peran || "";
+    if (peran === "DEVELOPER") {
+      return [
+        "DEVELOPER", "SUPER_USER", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL",
+        "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"
+      ];
+    }
+    if (peran === "SUPER_USER") {
+      return [
+        "SUPER_USER", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL",
+        "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"
+      ];
+    }
+    if (peran === "PANITIA_TASKFORCE" || peran === "PEMIMPIN") {
+      return ["PANITIA_TASKFORCE", "DPL", "MAHASISWA_KKN"];
+    }
+    if (peran === "RW") {
+      return ["WARGA", "PETUGAS_RESIDU"];
+    }
+    return ["WARGA"];
+  }, [user?.peran]);
+
+  const rawRoleParam = searchParams.get("role") || searchParams.get("roleName") || searchParams.get("type");
+  const roleFromUrl = rawRoleParam ? normalizeRoleFromUrl(rawRoleParam) : (allowedRoleTabs[0] || "SUPER_USER");
 
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,10 +160,15 @@ const ManajemenPengguna: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState(roleFromUrl);
 
   useEffect(() => {
-    if (roleFromUrl !== selectedRole) {
-      setSelectedRole(roleFromUrl);
+    if (rawRoleParam) {
+      const normalized = normalizeRoleFromUrl(rawRoleParam);
+      if (normalized !== selectedRole) {
+        setSelectedRole(normalized);
+      }
+    } else if (!allowedRoleTabs.includes(selectedRole)) {
+      setSelectedRole(allowedRoleTabs[0] || "SUPER_USER");
     }
-  }, [roleFromUrl]);
+  }, [rawRoleParam, allowedRoleTabs]);
   const [selectedStatus, setSelectedStatus] = useState("Semua");
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   // Modal state
@@ -1146,6 +1176,32 @@ const ManajemenPengguna: React.FC = () => {
           <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-200/60 dark:border-purple-800/60 shrink-0">
             <User size={20} />
           </div>
+        </div>
+      </div>
+
+      {/* Role Selector Tabs Bar */}
+      <div className="bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
+          {allowedRoleTabs.map((roleKey) => {
+            const isActive = selectedRole === roleKey;
+            return (
+              <button
+                key={roleKey}
+                type="button"
+                onClick={() => {
+                  setSelectedRole(roleKey);
+                  setSearchParams({ role: roleKey.toLowerCase() });
+                }}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                  isActive
+                    ? "bg-[#009966] text-white shadow-xs scale-[1.02]"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200"
+                }`}
+              >
+                {ROLE_LABEL_MAP[roleKey] || roleKey}
+              </button>
+            );
+          })}
         </div>
       </div>
 

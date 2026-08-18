@@ -2,10 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../data/providers/repository_providers.dart';
 import '../../../data/models/point_history_entity.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../riwayat/controllers/riwayat_controller.dart' show pointHistoryProvider;
 import '../controllers/mahasiswa_controller.dart';
-import '../../riwayat/controllers/riwayat_controller.dart';
+import '../controllers/riwayat_kkn_controller.dart';
+
+final pengajuanIzinCountProvider = FutureProvider.autoDispose<int>((ref) async {
+  try {
+    final repo = ref.read(kknRepositoryProvider);
+    final list = await repo.getPengajuanIzin();
+    return list.length;
+  } catch (e) {
+    return 0;
+  }
+});
 
 /// Halaman Poin KKN Mahasiswa — Mengikuti gaya visual Page Poin Warga:
 /// Header Putih Bersih, Total Poin KKN + Status Ranking, Stats 3 Kolom,
@@ -27,6 +39,8 @@ class MahasiswaPoinView extends ConsumerWidget {
           await ref.read(mahasiswaControllerProvider.notifier).fetchAll();
           if (user != null) {
             ref.invalidate(pointHistoryProvider);
+            await ref.read(riwayatKknControllerProvider.notifier).refresh();
+            ref.invalidate(pengajuanIzinCountProvider);
           }
         },
         color: AppColors.primaryGreen,
@@ -42,7 +56,7 @@ class MahasiswaPoinView extends ConsumerWidget {
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   // ── 2. Stats 3 Kolom ──────────────────────────────
-                  _buildStatsRow(mhsState, user != null ? ref.watch(pointHistoryProvider) : const AsyncValue.loading()),
+                  _buildStatsRow(mhsState, ref),
                   const SizedBox(height: 16),
 
                   // ── 3. Info Banner Poin KKN ─────────────────────────
@@ -150,17 +164,28 @@ class MahasiswaPoinView extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsRow(MahasiswaState mhsState, AsyncValue<List<PointHistoryEntity>> asyncHistory) {
-    final wargaCount = mhsState.wargaList.where((w) => w.isActivated).length;
+  Widget _buildStatsRow(MahasiswaState mhsState, WidgetRef ref) {
+    final user = ref.watch(authProvider).user;
+    final userName = user?.name ?? '';
+
+    // Warga dampingan mahasiswa ini
+    final myWargaList = mhsState.wargaList.where((w) {
+      if (w.role != 'WARGA') return false;
+      final isMyCitizen = w.pendampingName.trim().toLowerCase() == userName.trim().toLowerCase();
+      return isMyCitizen;
+    }).toList();
+
+    // Warga dampingan mahasiswa ini yang tempat sampahnya sudah aktif
+    final wargaCount = myWargaList.where((w) => w.binId.isNotEmpty && w.binId != 'Belum Ada Tempat Sampah').length;
     final points = mhsState.dashboard?.contributionPoints ?? 0;
     
+    final riwayatState = ref.watch(riwayatKknControllerProvider);
     int laporanCount = 0;
-    int izinCount = 0;
-    if (asyncHistory.value != null) {
-      final list = asyncHistory.value!;
-      laporanCount = list.where((h) => h.description.toLowerCase().contains('pemanfaatan')).length;
-      izinCount = list.where((h) => h.description.toLowerCase().contains('izin') || h.description.toLowerCase().contains('sakit')).length;
+    if (!riwayatState.isLoading && riwayatState.logs.isNotEmpty) {
+      laporanCount = riwayatState.logs.where((h) => h.title.toLowerCase().contains('pemanfaatan') || h.subtitle.toLowerCase().contains('pemanfaatan')).length;
     }
+
+    final izinCount = ref.watch(pengajuanIzinCountProvider).value ?? 0;
 
     // Total Input = Laporan Pemanfaatan Sampah + Warga Binaan yang Diaktivasi
     final totalInputCount = laporanCount + wargaCount;
@@ -318,7 +343,7 @@ class MahasiswaPoinView extends ConsumerWidget {
           child: CircularProgressIndicator(color: AppColors.primaryGreen),
         ),
       ),
-      error: (err, _) => Container(
+      error: (err, stack) => Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -338,7 +363,10 @@ class MahasiswaPoinView extends ConsumerWidget {
         ),
       ),
       data: (history) {
-        if (history.isEmpty) {
+        // Filter logs that actually have points awarded for the Poin View
+        final pointLogs = history.where((log) => log.points > 0).toList();
+
+        if (pointLogs.isEmpty) {
           return Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
@@ -360,7 +388,7 @@ class MahasiswaPoinView extends ConsumerWidget {
         }
 
         return Column(
-          children: history
+          children: pointLogs
               .map((item) => Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: _PoinHistoryItem(item: item),
@@ -371,6 +399,7 @@ class MahasiswaPoinView extends ConsumerWidget {
     );
   }
 }
+
 
 class _StatCard extends StatelessWidget {
   const _StatCard({
@@ -440,7 +469,27 @@ class _PoinHistoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(item.createdAt);
+    final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(item.createdAt.toLocal());
+
+    // Map description to standardized title
+    String title = item.description;
+    IconData icon = Icons.check_circle_outline_rounded;
+
+    if (title.toLowerCase().contains('aktivasi')) {
+      title = 'Aktivasi Tempat Sampah Warga';
+      icon = Icons.qr_code_scanner_rounded;
+    } else if (title.toLowerCase().contains('pemanfaatan')) {
+      if (!title.toLowerCase().startsWith('laporan')) {
+        title = 'Laporan Pemanfaatan Sampah: $title';
+      }
+      icon = Icons.recycling_rounded;
+    } else if (title.toLowerCase().contains('geofence') || title.toLowerCase().contains('presensi')) {
+      title = 'Ping Lokasi Posko / Presensi';
+      icon = Icons.location_on_rounded;
+    } else if (title.toLowerCase().contains('registrasi')) {
+      title = 'Bonus Registrasi Akun Mahasiswa KKN';
+      icon = Icons.card_giftcard_rounded;
+    }
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -457,8 +506,8 @@ class _PoinHistoryItem extends StatelessWidget {
               color: AppColors.primaryGreen.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.add_circle_outline_rounded,
+            child: Icon(
+              icon,
               color: AppColors.primaryGreen,
               size: 20,
             ),
@@ -469,13 +518,13 @@ class _PoinHistoryItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.description,
+                  title,
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
@@ -502,3 +551,4 @@ class _PoinHistoryItem extends StatelessWidget {
     );
   }
 }
+
