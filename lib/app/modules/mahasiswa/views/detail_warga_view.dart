@@ -6,6 +6,7 @@ import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/detail_warga_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
+import '../controllers/kelompok_kkn_controller.dart';
 
 class DetailWargaView extends ConsumerStatefulWidget {
   const DetailWargaView({super.key});
@@ -49,6 +50,8 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
   Widget build(BuildContext context) {
     final state = ref.watch(detailWargaControllerProvider);
     final warga = state.warga;
+    final currentUser = ref.watch(authProvider).user;
+    final kelompokState = ref.watch(kelompokKknProvider);
 
     if (warga == null) {
       return Scaffold(
@@ -63,8 +66,6 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
         ),
       );
     }
-
-    final currentUser = ref.watch(authProvider).user;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -186,19 +187,26 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                                           const Icon(Icons.verified_rounded, size: 12, color: Colors.white),
                                           const SizedBox(width: 4),
                                           Flexible(
-                                            child: Text(
-                                              warga.pendampingName.isNotEmpty
-                                                  ? 'Diaktivasi oleh: ${warga.pendampingName}'
-                                                  : (currentUser?.name != null && currentUser!.name.isNotEmpty
-                                                      ? 'Diaktivasi oleh: ${currentUser.name}'
-                                                      : 'Diaktivasi Mahasiswa'),
-                                              style: const TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
+                                            child: Builder(builder: (_) {
+                                              String mName = warga.pendampingName;
+                                              if (mName.isEmpty && warga.mahasiswaId.isNotEmpty) {
+                                                final mem = kelompokState.kelompok?.members.where((m) => m.userId == warga.mahasiswaId).firstOrNull;
+                                                if (mem != null) mName = mem.name;
+                                              }
+                                              return Text(
+                                                mName.isNotEmpty
+                                                    ? 'Diaktivasi oleh: $mName'
+                                                    : (currentUser?.name != null && currentUser!.name.isNotEmpty
+                                                        ? 'Diaktivasi oleh: ${currentUser.name}'
+                                                        : 'Diaktivasi Mahasiswa'),
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              );
+                                            }),
                                           ),
                                         ],
                                       ),

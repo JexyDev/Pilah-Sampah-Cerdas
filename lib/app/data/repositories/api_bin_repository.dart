@@ -565,19 +565,21 @@ class ApiBinRepository implements BinRepository {
   Future<BinResetEntity> submitResetRequest({
     required String binId,
     required String userId,
-    required String evidencePhotoPath,
+    String? evidencePhotoPath,
     String? wargaName,
     String? petugasId,
     String? jenisSampah,
   }) async {
     try {
-      // Auto-compress evidence photo before upload (Target < 5MB, max 1920x1080)
-      final compressedEvidencePath = await ImageCompressor.compressImage(
-        evidencePhotoPath,
-        maxSizeBytes: 5 * 1024 * 1024,
-        maxWidth: 1920,
-        maxHeight: 1080,
-      );
+      String? compressedEvidencePath;
+      if (evidencePhotoPath != null && evidencePhotoPath.isNotEmpty) {
+        compressedEvidencePath = await ImageCompressor.compressImage(
+          evidencePhotoPath,
+          maxSizeBytes: 5 * 1024 * 1024,
+          maxWidth: 1920,
+          maxHeight: 1080,
+        );
+      }
 
       final formData = FormData.fromMap({
         'binId': binId,
@@ -585,10 +587,11 @@ class ApiBinRepository implements BinRepository {
         if (wargaName != null && wargaName.isNotEmpty) 'wargaName': wargaName,
         if (petugasId != null && petugasId.isNotEmpty) 'petugasId': petugasId,
         if (jenisSampah != null && jenisSampah.isNotEmpty) 'jenisSampah': jenisSampah,
-        'evidence': await MultipartFile.fromFile(
-          compressedEvidencePath,
-          filename: 'evidence_${DateTime.now().millisecondsSinceEpoch}.jpg',
-        ),
+        if (compressedEvidencePath != null)
+          'evidence': await MultipartFile.fromFile(
+            compressedEvidencePath,
+            filename: 'evidence_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          ),
       });
 
       final response = await apiClient.dio.post(

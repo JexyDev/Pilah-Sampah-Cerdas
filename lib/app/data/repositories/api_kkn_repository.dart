@@ -73,7 +73,7 @@ class ApiKknRepository implements KknRepository {
   Future<List<WargaDampingan>> getWargaDampingan() async {
     List<dynamic> rawList = [];
     try {
-      final response = await apiClient.dio.get(ApiEndpoints.kknWargaDampingan);
+      final response = await apiClient.dio.get(ApiEndpoints.kknWarga);
       if (response.statusCode == 200) {
         if (response.data is Map<String, dynamic>) {
           rawList = (response.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];

@@ -193,8 +193,17 @@ class WargaDampingan extends Equatable {
         json['mahasiswaName'],
         json['studentName'],
         json['didaftarkanOlehNama'],
+        json['didaftarkanOleh'],
         json['registeredByStudentName'],
         json['registeredByStudent'],
+        json['user']?['pendampingName'],
+        json['user']?['mahasiswaPendamping'],
+        json['user']?['mahasiswaName'],
+        json['user']?['didaftarkanOlehNama'],
+        json['user']?['didaftarkanOleh'],
+        if (json['user']?['pendamping'] is Map) json['user']['pendamping']['name'],
+        if (json['user']?['mahasiswa'] is Map) json['user']['mahasiswa']['name'],
+        if (json['user']?['student'] is Map) json['user']['student']['name'],
       ];
       for (final c in candidates) {
         if (c != null) {
@@ -249,7 +258,13 @@ class WargaDampingan extends Equatable {
           (json['status']?.toString().toUpperCase() == 'ACTIVATED') ||
           (json['status'] == 'ACTIVE_BOUND') ||
           (json['binOrganikId'] != null && json['binOrganikId'].toString().trim().isNotEmpty),
-      totalPoints: (json['totalPoints'] as num?)?.toInt() ?? (json['totalPoin'] as num?)?.toInt() ?? (json['poin'] as num?)?.toInt() ?? 0,
+      role: json['role']?.toString().toUpperCase() ?? json['user']?['role']?.toString().toUpperCase() ?? 'WARGA',
+      totalPoints: (json['totalPoints'] as num?)?.toInt() ?? 
+                   (json['totalPoin'] as num?)?.toInt() ?? 
+                   (json['poin'] as num?)?.toInt() ?? 
+                   (json['user']?['totalPoints'] as num?)?.toInt() ??
+                   (json['user']?['poin'] as num?)?.toInt() ?? 
+                   0,
       apiCorrectPercentage: (json['complianceScore'] as num?)?.toDouble() ?? (json['correctPercentage'] as num?)?.toDouble(),
     );
   }

@@ -303,7 +303,7 @@ class ResetBinNotifier extends StateNotifier<ResetBinState> {
   Future<void> submitReset({
     required List<String> binIds,
     required String userId,
-    required String evidencePhotoPath,
+    String? evidencePhotoPath,
     String? wargaName,
     String? petugasId,
     String? jenisSampah,

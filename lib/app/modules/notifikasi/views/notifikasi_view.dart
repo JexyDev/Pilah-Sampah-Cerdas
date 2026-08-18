@@ -6,7 +6,7 @@ import '../../../data/models/notification_entity.dart';
 import '../controllers/notifikasi_controller.dart';
 import '../controllers/warga_notifikasi_controller.dart';
 import '../../shared/widgets/app_loading.dart';
-import '../../poin/poin_view.dart';
+
 
 /// Halaman daftar notifikasi Warga.
 class NotifikasiView extends ConsumerStatefulWidget {

@@ -37,7 +37,6 @@ class ApiClient {
     dio.options.receiveTimeout = const Duration(seconds: 30);
     dio.options.headers = {
       'Content-Type': 'application/json',
-      'Bypass-Tunnel-Reminder': 'true' // Bypass localtunnel warning page
     };
     dio.interceptors.add(OfflineCacheInterceptor());
     dio.interceptors.add(

@@ -26,7 +26,6 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
   String? _evidencePhotoPath;
   double _compressedKB = 0;
   final Set<String> _selectedBinIds = {};
-  final Set<String> _selectedJenisSampah = {};
   String? _selectedPetugasId;
 
   String _mapError(String code, String? message) {
@@ -104,7 +103,6 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
           if (mounted) {
             setState(() {
               _selectedBinIds.clear();
-              _selectedJenisSampah.clear();
               _selectedPetugasId = null;
             });
             ref.invalidate(binsProvider);
@@ -414,48 +412,6 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
         if (!isPending) ...[
           _buildPetugasSelection(petugasState),
           
-          const Text('Jenis Sampah yang Dikosongkan', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-          const SizedBox(height: AppDimensions.sm),
-          Row(
-            children: [
-              Expanded(
-                child: CheckboxListTile(
-                  title: const Text('Organik', style: TextStyle(fontSize: 14)),
-                  value: _selectedJenisSampah.contains('organik'),
-                  onChanged: (bool? value) {
-                    setState(() {
-                      if (value == true) {
-                        _selectedJenisSampah.add('organik');
-                      } else {
-                        _selectedJenisSampah.remove('organik');
-                      }
-                    });
-                  },
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  activeColor: AppColors.organicColor,
-                ),
-              ),
-              Expanded(
-                child: CheckboxListTile(
-                  title: const Text('Anorganik', style: TextStyle(fontSize: 14)),
-                  value: _selectedJenisSampah.contains('anorganik'),
-                  onChanged: (bool? value) {
-                    setState(() {
-                      if (value == true) {
-                        _selectedJenisSampah.add('anorganik');
-                      } else {
-                        _selectedJenisSampah.remove('anorganik');
-                      }
-                    });
-                  },
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  activeColor: AppColors.nonOrganicColor,
-                ),
-              ),
-            ],
-          ),
           const SizedBox(height: AppDimensions.md),
         ],
         
@@ -511,10 +467,10 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
             return b.capacityPercent < 0.70;
           });
           
-          final bool isJenisSampahEmpty = _selectedJenisSampah.isEmpty;
-          final bool isPetugasInvalid = _selectedPetugasId == 'CHANGE_REQUESTED';
+          final bool isFotoEmpty = _evidencePhotoPath == null;
+          final bool isPetugasInvalid = _selectedPetugasId == null || _selectedPetugasId!.isEmpty || _selectedPetugasId == 'CHANGE_REQUESTED';
           
-          final bool canSubmit = _evidencePhotoPath != null && _selectedBinIds.isNotEmpty && !isJenisSampahEmpty && !isPetugasInvalid;
+          final bool canSubmit = !isFotoEmpty && _selectedBinIds.isNotEmpty && !isPetugasInvalid;
 
           return SizedBox(
             width: double.infinity,
@@ -541,11 +497,11 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                             ),
                           );
                         }
-                      : isJenisSampahEmpty
+                      : isFotoEmpty
                           ? () {
                               ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Pilih minimal satu jenis sampah yang ingin dikosongkan.'),
+                                  content: Text('Silakan upload foto bukti terlebih dahulu.'),
                                   backgroundColor: AppColors.dangerRed,
                                   behavior: SnackBarBehavior.floating,
                                   duration: Duration(seconds: 3),
@@ -572,7 +528,6 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                                               evidencePhotoPath: _evidencePhotoPath!,
                                               wargaName: ref.read(authProvider).user?.name,
                                               petugasId: _selectedPetugasId,
-                                              jenisSampah: _selectedJenisSampah.join(','),
                                             );
                                     }
                                   : null,
@@ -580,7 +535,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 backgroundColor: isPending
                     ? AppColors.warningYellow
-                    : hasInvalidSelectedBin || isJenisSampahEmpty || isPetugasInvalid
+                    : hasInvalidSelectedBin || isPetugasInvalid || isFotoEmpty
                         ? AppColors.dangerRed
                         : (canSubmit ? AppColors.primaryGreen : Colors.grey.shade400),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -590,19 +545,17 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                     ? 'Sedang Mengajukan (PENDING)'
                     : hasInvalidSelectedBin
                         ? 'Tempat Sampah Belum 70%'
-                        : isJenisSampahEmpty
-                            ? 'Pilih Jenis Sampah'
+                        : isFotoEmpty
+                            ? 'Upload Foto Bukti'
                             : isPetugasInvalid
                                 ? 'Pilih Petugas Tujuan'
                                 : (_selectedBinIds.isEmpty
                                     ? 'Pilih Tempat Sampah'
-                                    : _evidencePhotoPath == null 
-                                        ? 'Upload Foto Bukti'
-                                        : 'Ajukan Pengosongan (${_selectedBinIds.length} Tempat Sampah)'),
+                                    : 'Ajukan Pengosongan (${_selectedBinIds.length} Tempat Sampah)'),
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: isPending || hasInvalidSelectedBin || isJenisSampahEmpty || isPetugasInvalid || canSubmit ? Colors.white : Colors.grey.shade700,
+                  color: isPending || hasInvalidSelectedBin || isPetugasInvalid || isFotoEmpty || canSubmit ? Colors.white : Colors.grey.shade700,
                 ),
               ),
             ),
