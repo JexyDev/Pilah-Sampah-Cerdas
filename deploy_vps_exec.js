@@ -11,7 +11,7 @@ git reset --hard origin/main
 
 echo "=== 2. Resetting Database & Seeding Real Data (apps/api) ==="
 cd /home/maker/Pilah-Sampah-Cerdas/apps/api
-npm install --silent
+npm install --legacy-peer-deps
 npx prisma generate
 npx prisma db push --skip-generate
 npx tsx scripts/seed-official-coblong-officials.ts || true

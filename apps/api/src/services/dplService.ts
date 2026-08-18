@@ -72,6 +72,12 @@ function getKelompokWhere(dplUserId: string, role?: any) {
     return {};
   }
 
+  if (normalizedRole.includes("MAHASISWA_KKN") || normalizedRole.includes("MAHASISWA")) {
+    return {
+      students: { some: { userId: dplUserId } }
+    };
+  }
+
   return {
     OR: [{ dplId: dplUserId }, { dpl: { id: dplUserId } }],
   };
@@ -809,6 +815,7 @@ export const dplService = {
    */
   createProgramKerja: async (
     dplUserId: string,
+    role: any,
     data: {
       kelompokId: string;
       nomor?: number;
@@ -820,6 +827,16 @@ export const dplService = {
       kebutuhanBiaya?: number;
     }
   ) => {
+    const groups = await prisma.kelompokKkn.findMany({
+      where: getKelompokWhere(dplUserId, role),
+      select: { id: true },
+    });
+    const allowedGroupIds = groups.map(g => g.id);
+
+    if (!allowedGroupIds.includes(data.kelompokId)) {
+      throw new Error("FORBIDDEN_SCOPE");
+    }
+
     const proker = await prisma.programKerjaKkn.create({
       data: {
         kelompokId: data.kelompokId,
@@ -841,6 +858,8 @@ export const dplService = {
    */
   updateProgramKerja: async (
     id: string,
+    userId: string,
+    role: any,
     data: {
       nomor?: number;
       deskripsi?: string;
@@ -853,6 +872,19 @@ export const dplService = {
       catatanDpl?: string;
     }
   ) => {
+    const prokerExisting = await prisma.programKerjaKkn.findUnique({ where: { id } });
+    if (!prokerExisting) throw new Error("Program kerja tidak ditemukan");
+
+    const groups = await prisma.kelompokKkn.findMany({
+      where: getKelompokWhere(userId, role),
+      select: { id: true },
+    });
+    const allowedGroupIds = groups.map(g => g.id);
+
+    if (!allowedGroupIds.includes(prokerExisting.kelompokId)) {
+      throw new Error("FORBIDDEN_SCOPE");
+    }
+
     const updateData: any = {};
     if (data.nomor !== undefined) updateData.nomor = data.nomor;
     if (data.deskripsi !== undefined) updateData.deskripsi = data.deskripsi;
@@ -874,7 +906,20 @@ export const dplService = {
   /**
    * 11. Program Kerja KKN - Delete
    */
-  deleteProgramKerja: async (id: string) => {
+  deleteProgramKerja: async (id: string, userId: string, role: any) => {
+    const prokerExisting = await prisma.programKerjaKkn.findUnique({ where: { id } });
+    if (!prokerExisting) throw new Error("Program kerja tidak ditemukan");
+
+    const groups = await prisma.kelompokKkn.findMany({
+      where: getKelompokWhere(userId, role),
+      select: { id: true },
+    });
+    const allowedGroupIds = groups.map(g => g.id);
+
+    if (!allowedGroupIds.includes(prokerExisting.kelompokId)) {
+      throw new Error("FORBIDDEN_SCOPE");
+    }
+
     return await prisma.programKerjaKkn.delete({
       where: { id },
     });

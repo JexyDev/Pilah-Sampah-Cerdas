@@ -8,7 +8,7 @@ const router = Router();
 
 // Protect all DPL routes with authentication and role check
 router.use(authMiddleware);
-router.use(roleMiddleware(["SUPER_USER", "DPL", "PEMIMPIN", "PANITIA_TASKFORCE"]));
+router.use(roleMiddleware(["SUPER_USER", "DPL", "PEMIMPIN", "PANITIA_TASKFORCE", "MAHASISWA_KKN"]));
 
 /**
  * @swagger
@@ -150,10 +150,10 @@ router.post("/approvals/:requestId/decide", dplScopeMiddleware, dplController.de
 // ─────────────────────────────────────────────
 // PROGRAM KERJA KKN
 // ─────────────────────────────────────────────
-router.get("/program-kerja", dplScopeMiddleware, dplController.getProgramKerja);
-router.post("/program-kerja", dplScopeMiddleware, dplController.createProgramKerja);
-router.put("/program-kerja/:id", dplScopeMiddleware, dplController.updateProgramKerja);
-router.delete("/program-kerja/:id", dplScopeMiddleware, dplController.deleteProgramKerja);
+router.get("/program-kerja", dplController.getProgramKerja);
+router.post("/program-kerja", dplController.createProgramKerja);
+router.put("/program-kerja/:id", dplController.updateProgramKerja);
+router.delete("/program-kerja/:id", dplController.deleteProgramKerja);
 router.patch("/program-kerja/:id/decision", dplScopeMiddleware, dplController.decideProgramKerja);
 router.patch("/program-kerja/:id/penilaian", dplScopeMiddleware, dplController.assessProgramKerja);
 

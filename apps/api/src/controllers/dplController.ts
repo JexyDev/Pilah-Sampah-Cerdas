@@ -164,12 +164,13 @@ export const dplController = {
   createProgramKerja: async (req: Request, res: Response): Promise<void> => {
     try {
       const dplUserId = getUserId(req);
+      const userRole = (req.user as any)?.role;
       const { kelompokId, nomor, deskripsi, kategori, sumber, waktuPelaksanaan, linkGoogleDrive, kebutuhanBiaya } = req.body;
       if (!kelompokId || !deskripsi) {
         res.status(400).json({ error: "BAD_REQUEST", message: "kelompokId dan deskripsi wajib diisi" });
         return;
       }
-      const data = await dplService.createProgramKerja(dplUserId, {
+      const data = await dplService.createProgramKerja(dplUserId, userRole, {
         kelompokId,
         nomor: nomor ? Number(nomor) : undefined,
         deskripsi,
@@ -182,6 +183,10 @@ export const dplController = {
       res.status(201).json({ success: true, data });
     } catch (error: any) {
       console.error("[dplController.createProgramKerja] error:", error);
+      if (error.message === "FORBIDDEN_SCOPE") {
+        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Program kerja ini bukan milik kelompok Anda" });
+        return;
+      }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   },
@@ -189,8 +194,10 @@ export const dplController = {
   updateProgramKerja: async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
+      const dplUserId = getUserId(req);
+      const userRole = (req.user as any)?.role;
       const { nomor, deskripsi, kategori, sumber, waktuPelaksanaan, linkGoogleDrive, kebutuhanBiaya, status, catatanDpl } = req.body;
-      const data = await dplService.updateProgramKerja(id, {
+      const data = await dplService.updateProgramKerja(id, dplUserId, userRole, {
         nomor: nomor !== undefined ? Number(nomor) : undefined,
         deskripsi,
         kategori,
@@ -204,6 +211,10 @@ export const dplController = {
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[dplController.updateProgramKerja] error:", error);
+      if (error.message === "FORBIDDEN_SCOPE") {
+        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Program kerja ini bukan milik kelompok Anda" });
+        return;
+      }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   },
@@ -211,10 +222,16 @@ export const dplController = {
   deleteProgramKerja: async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
-      await dplService.deleteProgramKerja(id);
+      const dplUserId = getUserId(req);
+      const userRole = (req.user as any)?.role;
+      await dplService.deleteProgramKerja(id, dplUserId, userRole);
       res.json({ success: true, message: "Program kerja berhasil dihapus" });
     } catch (error: any) {
       console.error("[dplController.deleteProgramKerja] error:", error);
+      if (error.message === "FORBIDDEN_SCOPE") {
+        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Program kerja ini bukan milik kelompok Anda" });
+        return;
+      }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   },
