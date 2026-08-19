@@ -578,6 +578,7 @@ class _PoinHistoryItem extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),

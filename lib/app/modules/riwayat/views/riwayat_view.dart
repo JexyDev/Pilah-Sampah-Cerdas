@@ -431,6 +431,7 @@ class _SummaryCard extends StatelessWidget {
           Container(
             width: 36,
             height: 36,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: bgColor,
               borderRadius: BorderRadius.circular(8),
@@ -488,6 +489,7 @@ class _RiwayatItem extends ConsumerWidget {
           Container(
             width: 44,
             height: 44,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
