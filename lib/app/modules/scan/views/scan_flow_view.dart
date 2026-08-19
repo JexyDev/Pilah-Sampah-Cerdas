@@ -175,25 +175,19 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
           ref.invalidate(notificationsProvider);
           ref.invalidate(binsProvider);
 
-          // Tampilkan popup sukses lalu keluar
+          // Langsung tampilkan rating (jika pertama kali) lalu keluar
           // ignore: use_build_context_synchronously
-          _showSuccessDialog(capturedContext, next.scanResult!.pointsAwarded).then((_) {
+          showFeatureRatingOnceIfNeeded(
+            // ignore: use_build_context_synchronously
+            context: capturedContext,
+            featureKey: 'warga_setor_sampah',
+            featureTitle: 'Setoran Sampah Berhasil! 🎉',
+            featureSubtitle: 'Bagaimana kepuasan Anda saat pertama kali melakukan setoran & pemilahan sampah Berseka?',
+            roleTag: 'Warga',
+          ).then((_) {
             if (mounted) {
-              // Rating dialog 1-5 bintang (hanya muncul 1x saat pertama kali berhasil setor)
               // ignore: use_build_context_synchronously
-              showFeatureRatingOnceIfNeeded(
-                // ignore: use_build_context_synchronously
-                context: capturedContext,
-                featureKey: 'warga_setor_sampah',
-                featureTitle: 'Setoran Sampah Berhasil! 🎉',
-                featureSubtitle: 'Bagaimana kepuasan Anda saat pertama kali melakukan setoran & pemilahan sampah TrashCare?',
-                roleTag: 'Warga',
-              ).then((_) {
-                if (mounted) {
-                  // ignore: use_build_context_synchronously
-                  Navigator.of(capturedContext).pop(); // Keluar dari halaman scan
-                }
-              });
+              Navigator.of(capturedContext).pop(); // Keluar dari halaman scan
             }
           });
         });
@@ -604,6 +598,14 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   // Guard: skip jika sudah loading, sukses, atau sedang ada error tampil
                   final s = ref.read(scanFlowProvider);
                   if (s.isLoading || s.scanResult != null || s.errorCode != null) return false;
+                  
+                  // CEK LOKAL JIKA BIN SEDANG PENGAJUAN (isResetPending)
+                  final bins = ref.read(binsProvider).value ?? [];
+                  final foundBin = bins.where((b) => b.qrSerial == qrCode).firstOrNull;
+                  if (foundBin != null && foundBin.isResetPending) {
+                    _showPendingResetDialog(context, 'Ganti QR karena sedang diajukan pengosongan ke petugas pemilah.');
+                    return false;
+                  }
                   
                   await ref
                       .read(scanFlowProvider.notifier)
@@ -1223,13 +1225,31 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     );
   }
 
+  void _showPendingResetDialog(BuildContext context, String? message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _PendingResetDialog(
+        message: message ?? 'Tempat sampah sedang dalam pengajuan pengosongan.',
+        onScanLain: () {
+          ref.read(scanFlowProvider.notifier).clearError();
+          Navigator.of(context).pop();
+        },
+        onKeluar: () {
+          Navigator.of(context).pop();
+          Navigator.of(context).pop();
+        },
+      ),
+    );
+  }
+
   /// Dialog BIN_TYPE_MISMATCH — "Tidak Sesuai!" dengan info sampah vs tempat sampah
   void _showMismatchDialog(BuildContext context) {
     final aiResult = ref.read(scanFlowProvider).aiResult;
     final String detectedName = aiResult?.detectedType.displayName ?? 'Organik';
     // Tempat sampah yang salah = kebalikan dari yang terdeteksi
     final String tongName = aiResult?.detectedType == WasteType.organic
-        ? 'Non-Organik'
+        ? 'Anorganik'
         : 'Organik';
 
     showDialog(
@@ -1251,79 +1271,6 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     );
   }
 
-  Future<void> _showSuccessDialog(BuildContext context, int pointsAwarded) async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        backgroundColor: Colors.white,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle_rounded,
-                  color: AppColors.primaryGreen,
-                  size: 64,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Transaksi Berhasil!',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Tempat sampah berhasil dipindai dan data telah dicatat. Anda mendapatkan tambahan +$pointsAwarded poin.',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.black54,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 28),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Selesai',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   /// Dialog scan gagal — "Scan Gagal" merah
   void _showScanFailedDialog(BuildContext context, String? message, {required bool isQrError}) {
@@ -1606,42 +1553,6 @@ class _AiSuccessSheet extends StatelessWidget {
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 16),
-                const Divider(height: 1, color: AppColors.border),
-                const SizedBox(height: 12),
-                
-                // Estimasi Poin
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Estimasi Poin:',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.stars_rounded,
-                          color: AppColors.warningYellow,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '+${result.estimatedPoints ?? 0} Pts',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.warningYellow,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -2070,4 +1981,75 @@ class _OverflowDialog extends StatelessWidget {
   }
 }
 
+class _PendingResetDialog extends StatelessWidget {
+  const _PendingResetDialog({
+    required this.message,
+    required this.onScanLain,
+    required this.onKeluar,
+  });
 
+  final String message;
+  final VoidCallback onScanLain;
+  final VoidCallback onKeluar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.access_time_rounded,
+                color: Colors.grey,
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Sedang Diajukan!',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: ElevatedButton.icon(
+                onPressed: onScanLain,
+                icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
+                label: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text('Ganti QR Tempat Sampah Lain', style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: onKeluar,
+              child: const Text('Batal', style: TextStyle(color: AppColors.textHint, fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

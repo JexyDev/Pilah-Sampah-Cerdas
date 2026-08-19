@@ -201,13 +201,32 @@ class ApiWasteLogRepository implements WasteLogRepository {
   }
 
   PointHistoryEntity _mapPointHistory(Map<String, dynamic> json) {
-    final String desc = json['description']?.toString() ?? '';
-    // Deteksi jenis sampah dari description
-    final wasteType =
-        desc.toUpperCase().contains('NON_ORGANIC') ||
-            desc.toUpperCase().contains('ANORGANIK')
-        ? WasteType.nonOrganic
-        : WasteType.organic;
+    String desc = json['description']?.toString() ?? '';
+    desc = desc.replaceAll(RegExp(r'(?i)non[\s-]?organik'), 'Anorganik');
+    // Cek field wasteType langsung dari backend (paling akurat)
+    final String rawWasteType = (
+      json['wasteType']?.toString() ??
+      json['kategori']?.toString() ??
+      json['type']?.toString() ??
+      ''
+    ).toUpperCase();
+
+    WasteType wasteType;
+    if (rawWasteType.contains('NON') || rawWasteType.contains('ANORG')) {
+      wasteType = WasteType.nonOrganic;
+    } else if (rawWasteType.contains('ORG')) {
+      wasteType = WasteType.organic;
+    } else {
+      // Fallback: deteksi dari description
+      final descUpper = desc.toUpperCase();
+      if (descUpper.contains('NON_ORGANIC') || descUpper.contains('ANORGANIK') || descUpper.contains('Anorganik')) {
+        wasteType = WasteType.nonOrganic;
+      } else if (descUpper.contains('ORGANIC') || descUpper.contains('ORGANIK')) {
+        wasteType = WasteType.organic;
+      } else {
+        wasteType = WasteType.organic; // default
+      }
+    }
 
     DateTime createdAt;
     try {

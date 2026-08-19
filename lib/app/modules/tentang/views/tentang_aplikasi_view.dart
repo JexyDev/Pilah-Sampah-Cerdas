@@ -63,7 +63,7 @@ class TentangAplikasiView extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               Text(
-                'TrashCare adalah platform manajemen pemilahan sampah cerdas yang bertujuan untuk meningkatkan kepatuhan dan efisiensi pengelolaan sampah di lingkungan masyarakat.',
+                'Berseka adalah platform manajemen pemilahan sampah cerdas yang bertujuan untuk meningkatkan kepatuhan dan efisiensi pengelolaan sampah di lingkungan masyarakat.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyMedium,
               ),

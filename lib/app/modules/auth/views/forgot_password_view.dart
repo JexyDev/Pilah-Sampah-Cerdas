@@ -289,14 +289,17 @@ class _ForgotPasswordViewState
                               ],
                             ),
                             clipBehavior: Clip.antiAlias,
-                            child: Image.asset(
-                              AppAssets.logo,
-                              fit: BoxFit.cover,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Image.asset(
+                                AppAssets.logo,
+                                fit: BoxFit.contain,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 12),
                           const Text(
-                            'TrashCare',
+                            'Berseka',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
@@ -548,13 +551,9 @@ class _ForgotPasswordViewState
           ),
           const SizedBox(height: 24),
 
-          Text(
-            _phoneController.text.isEmpty
-                ? 'NOMOR TELEPON ATAU NIM'
-                : (_phoneController.text.length >= 11 && _phoneController.text.length <= 13)
-                    ? 'NOMOR TELEPON'
-                    : 'NIM',
-            style: const TextStyle(
+          const Text(
+            'NOMOR TELEPON',
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
               color: AppColors.textSecondary,
@@ -573,9 +572,7 @@ class _ForgotPasswordViewState
               PhonePrefixFormatter(),
             ],
             decoration: InputDecoration(
-              hintText: _phoneController.text.isEmpty || (_phoneController.text.length >= 11 && _phoneController.text.length <= 13)
-                  ? '81234567890'
-                  : '1301210000',
+              hintText: '81234567890',
               prefixIcon: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 margin: const EdgeInsets.only(right: 8),

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/waste_log_entity.dart';
 import '../../../data/models/point_history_entity.dart';
-import '../../../data/models/bin_entity.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/repositories/waste_log_repository.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -50,38 +49,6 @@ final pointHistoryProvider = FutureProvider<List<PointHistoryEntity>>((
   final repo = ref.watch(wasteLogRepositoryProvider);
   final userId = ref.watch(authProvider.select((state) => state.user?.id ?? ''));
   final history = await repo.getPointHistoryByUser(userId);
-
-  // Fallback: Jika backend mengirimkan notifikasi "Jadwal Buang Sampah Terlewat" tapi
-  // lupa/gagal mengurangkan poin di tabel PointHistory, kita inject secara lokal.
-  try {
-    final notifRepo = ref.read(notificationRepositoryProvider);
-    final notifs = await notifRepo.getNotifications();
-    for (final notif in notifs) {
-      if (notif.title.toLowerCase().contains('terlewat') && 
-          notif.title.toLowerCase().contains('jadwal')) {
-        
-        final dt = DateTime.tryParse(notif.time.endsWith('Z') ? notif.time : '${notif.time}Z') ?? DateTime.now();
-        
-        // Cek apakah hukuman sudah ada di jam yang berdekatan
-        final isAlreadyInHistory = history.any((h) => 
-            h.points < 0 && (h.createdAt.difference(dt).inMinutes).abs() < 60
-        );
-        
-        if (!isAlreadyInHistory) {
-          history.add(PointHistoryEntity(
-            id: 'penalty_${notif.id}_${dt.millisecondsSinceEpoch}',
-            userId: userId,
-            points: -5,
-            wasteType: WasteType.organic,
-            description: notif.title,
-            createdAt: dt,
-          ));
-        }
-      }
-    }
-    // Urutkan kembali berdasarkan waktu dari yang terbaru
-    history.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-  } catch (_) {}
 
   return history;
 });

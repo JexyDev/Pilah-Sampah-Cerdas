@@ -32,7 +32,7 @@ class RiwayatView extends ConsumerStatefulWidget {
 }
 
 class _RiwayatViewState extends ConsumerState<RiwayatView> {
-  int _categoryFilterIndex = 0; // 0=Semua, 1=Organik, 2=Non-Organik, 3=Pengajuan, 4=Info
+  int _categoryFilterIndex = 0; // 0=Semua, 1=Organik, 2=Anorganik, 3=Pengajuan, 4=Info
   int _timeFilterIndex = 0; // 0=Semua Waktu, 1=Hari Ini, 2=Minggu Ini, 3=Bulan Ini
 
   @override
@@ -88,7 +88,7 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
                       const SizedBox(width: 8),
                       _filterTab('Organik', 1),
                       const SizedBox(width: 8),
-                      _filterTab('Non-Organik', 2),
+                      _filterTab('Anorganik', 2),
                       const SizedBox(width: 8),
                       _filterTab('Pengajuan', 3),
                       const SizedBox(width: 8),
@@ -202,7 +202,7 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
     // 1. Filter Kategori
     if (_categoryFilterIndex == 1) { // Organik
       result = result.where((l) => l.wasteLog != null && l.wasteLog!.wasteType == WasteType.organic).toList();
-    } else if (_categoryFilterIndex == 2) { // Non-Organik
+    } else if (_categoryFilterIndex == 2) { // Anorganik
       result = result.where((l) => l.wasteLog != null && l.wasteLog!.wasteType == WasteType.nonOrganic).toList();
     } else if (_categoryFilterIndex == 3) { // Pengajuan
       result = result.where((l) {
@@ -502,7 +502,7 @@ class _RiwayatItem extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isOrganic ? 'Sampah Organik' : 'Sampah Non Organik',
+                  isOrganic ? 'Sampah Organik' : 'Sampah Anorganik',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -524,7 +524,7 @@ class _RiwayatItem extends ConsumerWidget {
                 Row(
                   children: [
                     const Icon(
-                      Icons.calendar_today_outlined,
+                      Icons.calendar_month_rounded,
                       size: 11,
                       color: AppColors.textHint,
                     ),
@@ -555,7 +555,7 @@ class _NotificationHistoryItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isPengajuan = notif.type.toUpperCase().contains('PENGAJUAN') || notif.type.toUpperCase().contains('RESET');
     final color = isPengajuan ? Colors.blue : AppColors.textSecondary;
-    final icon = isPengajuan ? Icons.mark_email_unread_rounded : Icons.info_outline_rounded;
+    final icon = isPengajuan ? Icons.mark_email_unread_rounded : Icons.info_rounded;
     DateTime dt;
     try {
       dt = DateTime.parse(notif.time).toLocal();
@@ -603,7 +603,7 @@ class _NotificationHistoryItem extends StatelessWidget {
                 Row(
                   children: [
                     const Icon(
-                      Icons.calendar_today_outlined,
+                      Icons.calendar_month_rounded,
                       size: 11,
                       color: AppColors.textHint,
                     ),

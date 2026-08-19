@@ -4,6 +4,7 @@ import '../../../data/providers/repository_providers.dart';
 
 import '../../auth/controllers/auth_controller.dart';
 
+import '../../../data/services/firebase_notification_service.dart';
 import '../../../data/services/local_notification_cache_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -37,14 +38,15 @@ bool _isPetugasPemilahanNotification(NotificationEntity notif) {
   // 4. Penalti, KPI, Kinerja, Jadwal Pengangkutan
   final isPetugasTopic = type.contains('TIMBANGAN') ||
       type.contains('PEMILAHAN') ||
-      type.contains('POIN_PETUGAS') ||
+      type == 'POIN_PETUGAS' ||
+      type == 'POIN_BERTAMBAH' ||
+      type == 'PUNISHMENT' ||
       type.contains('PENGANGKUTAN') ||
       type.contains('WHITELIST') ||
       type.contains('VERIFIKASI') ||
       type.contains('WELCOME_PETUGAS') ||
       title.contains('TIMBANGAN') ||
       title.contains('PEMILAHAN') ||
-      title.contains('POIN') ||
       title.contains('PETUGAS') ||
       title.contains('WHITELIST') ||
       title.contains('VERIFIKASI') ||
@@ -128,9 +130,27 @@ final petugasPemilahanNotificationsProvider = FutureProvider<List<NotificationEn
     }
   }
 
-  // Server adalah source of truth — tidak menggabungkan LocalCache atau Firebase
-  // ke dalam list tampilan agar tidak terjadi duplikasi dan data tidak sinkron.
-  // LocalCache & Firebase hanya digunakan untuk tracking isRead (di markRead()).
+  // Ambil notifikasi dari Firebase local storage
+  try {
+    final firebaseNotifs = await FirebaseNotificationService().getNotifications(userId, role);
+    for (final fn in firebaseNotifs) {
+      if (result.any((n) => n.id == fn.id || (n.title == fn.title && n.desc == fn.desc && n.type == fn.type))) {
+        continue;
+      }
+      if (!_isPetugasPemilahanNotification(fn)) continue;
+      
+      result.add(fn.copyWith(
+        time: fn.time.endsWith('Z') ? (DateTime.tryParse(fn.time)?.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' ') ?? fn.time) : fn.time
+      ));
+    }
+  } catch (_) {}
+
+  // Urutkan: terbaru di atas — parse waktu dari string lokal format "YYYY-MM-DD HH:mm"
+  result.sort((a, b) {
+    final ta = DateTime.tryParse(a.time.replaceAll(' ', 'T')) ?? DateTime(2000);
+    final tb = DateTime.tryParse(b.time.replaceAll(' ', 'T')) ?? DateTime(2000);
+    return tb.compareTo(ta); // descending (terbaru di atas)
+  });
 
   return result;
 });

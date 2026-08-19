@@ -4,7 +4,7 @@ class AppAssets {
   AppAssets._();
 
   // ─── Logo ─────────────────────────────────────────────────────────────────
-  static const String logo = 'assets/logos.webp';
+  static const String logo = 'assets/logo_berseka.webp';
 
   // ─── Stitch UI — Screen References ───────────────────────────────────────
   static const String splash =

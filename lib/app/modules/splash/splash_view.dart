@@ -159,9 +159,12 @@ class _SplashViewState extends ConsumerState<SplashView>
                                 ],
                               ),
                               clipBehavior: Clip.antiAlias,
-                              child: Image.asset(
-                                AppAssets.logo,
-                                fit: BoxFit.cover,
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Image.asset(
+                                  AppAssets.logo,
+                                  fit: BoxFit.contain,
+                                ),
                               ),
                             ),
                           ),
@@ -173,7 +176,7 @@ class _SplashViewState extends ConsumerState<SplashView>
                         child: FadeTransition(
                           opacity: _titleFade,
                           child: Text(
-                            'TrashCare',
+                            'Berseka',
                             style: GoogleFonts.poppins(
                               color: AppColors.primaryGreen,
                               fontSize: 26,
