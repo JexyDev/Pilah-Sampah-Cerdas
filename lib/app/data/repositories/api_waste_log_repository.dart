@@ -202,7 +202,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
 
   PointHistoryEntity _mapPointHistory(Map<String, dynamic> json) {
     String desc = json['description']?.toString() ?? '';
-    desc = desc.replaceAll(RegExp(r'(?i)non[\s-]?organik'), 'Anorganik');
+    desc = desc.replaceAll(RegExp(r'non[\s-]?organik', caseSensitive: false), 'Anorganik');
     // Cek field wasteType langsung dari backend (paling akurat)
     final String rawWasteType = (
       json['wasteType']?.toString() ??

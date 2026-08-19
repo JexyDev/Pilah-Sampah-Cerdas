@@ -545,7 +545,6 @@ class _PoinHistoryItem extends StatelessWidget {
       }
     }
 
-    final bool isSetorSampah = !isPunishment && !isAktivasi && !isRedeem && !isPresensi;
     final bool isOrganic = item.wasteType == WasteType.organic;
     
     final Color color = isPunishment
