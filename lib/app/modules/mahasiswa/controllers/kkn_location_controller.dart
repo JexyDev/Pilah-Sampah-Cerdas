@@ -470,11 +470,11 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           _currentTargetScheduleId =
               activeZone['id']?.toString() ??
               activeZone['scheduleId']?.toString();
-          final status =
-              (activeZone['attendanceStatus'] ?? activeZone['status'] ?? activeZone['kehadiran'] ?? '')
+          final attendanceStatus =
+              (activeZone['attendanceStatus'] ?? activeZone['statusKehadiran'] ?? activeZone['kehadiran'] ?? '')
                   .toString()
                   .toLowerCase();
-          final bool isAttended = activeZone['isAttended'] == true || status == 'hadir';
+          final bool isAttended = activeZone['isAttended'] == true || attendanceStatus == 'hadir';
 
           final double rawTargetMins = double.tryParse(activeZone['targetDurationMinutes']?.toString() ?? '') ??
               double.tryParse(activeZone['durationMinutes']?.toString() ?? '') ??
@@ -485,7 +485,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           }
           if (targetMins <= 0) targetMins = 1;
 
-          if (isAttended || status == 'hadir') {
+          if (isAttended || attendanceStatus == 'hadir') {
             _accumulatedSeconds = targetMins * 60;
             state = state.copyWith(
               isSuccessAttendance: true,
@@ -495,12 +495,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
               clearWarning: false,
               clearError: true,
             );
-          } else if (status == 'izin' || status == 'sakit') {
+          } else if (attendanceStatus == 'izin' || attendanceStatus == 'sakit') {
             state = state.copyWith(
               zoneResetWarning:
-                  'Anda tercatat ${status.toUpperCase()} pada jadwal kegiatan ini.',
+                  'Anda tercatat ${attendanceStatus.toUpperCase()} pada jadwal kegiatan ini.',
             );
-          } else if (status == 'alpa') {
+          } else if (attendanceStatus == 'alpa') {
             state = state.copyWith(
               zoneResetWarning:
                   'Waktu kegiatan telah berakhir. Anda tercatat TANPA KETERANGAN.',
@@ -515,7 +515,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             state = state.copyWith(
               activeActivity: activeZone,
               targetDurationMinutes: targetMins,
-              inZoneDurationSeconds: (isAttended || status == 'hadir') ? targetMins * 60 : _accumulatedSeconds,
+              inZoneDurationSeconds: (isAttended || attendanceStatus == 'hadir') ? targetMins * 60 : _accumulatedSeconds,
             );
           }
         }

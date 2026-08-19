@@ -864,11 +864,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                   icon: Icons.timer_outlined,
                   title: 'Durasi Kegiatan',
                   value: act != null ? '$targetMenit Menit' : '-',
-                  trailing: const Icon(
-                    Icons.map_rounded,
-                    size: 48,
-                    color: AppColors.primaryGreen,
-                  ),
                 ),
               ],
             ),
@@ -1182,9 +1177,9 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
               ),
               label: Text(
                 isSuccess
-                    ? '✅ Anda Sudah Presensi (Hadir)'
+                    ? 'Anda Sudah Presensi (Hadir)'
                     : (isAlpa
-                          ? '⚠️ Tanpa Keterangan (Waktu Habis)'
+                          ? 'Tanpa Keterangan (Waktu Habis)'
                           : 'Absen Sekarang'),
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
@@ -1283,13 +1278,49 @@ class KegiatanKknCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isAktif =
         (kegiatan['status'] ?? '').toString().toUpperCase() == 'AKTIF';
-    final statusKehadiran = kegiatan['statusKehadiran'];
+    final String? statusKehadiran = kegiatan['statusKehadiran']?.toString().toUpperCase();
+    final bool canStart = isAktif && (statusKehadiran == null || statusKehadiran == 'BERLANGSUNG');
+
     final jamMulai = kegiatan['jamMulai'] ?? '-';
     final jamSelesai = kegiatan['jamSelesai'] ?? '-';
     final durasiWajib = kegiatan['durasiWajibMenit'] ?? 120;
     final lokasi = kegiatan['lokasi'] != null
-        ? kegiatan['lokasi']['alamat']
+        ? (kegiatan['lokasi']['alamat'] ?? kegiatan['lokasi']['address'] ?? '-')
         : '-';
+
+    String statusText;
+    Color badgeColor;
+    Color textColor;
+    String buttonText;
+
+    if (statusKehadiran == 'HADIR') {
+      statusText = '✅ HADIR';
+      badgeColor = AppColors.primaryGreen.withValues(alpha: 0.1);
+      textColor = AppColors.primaryGreen;
+      buttonText = 'Sudah Presensi (HADIR)';
+    } else if (statusKehadiran == 'BERLANGSUNG') {
+      statusText = '🟠 BERLANGSUNG';
+      badgeColor = Colors.orange.withValues(alpha: 0.1);
+      textColor = Colors.orange;
+      buttonText = 'Lanjutkan Sesi';
+    } else if (statusKehadiran == 'IZIN' || statusKehadiran == 'SAKIT') {
+      statusText = '📝 $statusKehadiran';
+      badgeColor = Colors.amber.withValues(alpha: 0.1);
+      textColor = Colors.amber.shade800;
+      buttonText = 'Izin / Sakit';
+    } else if (statusKehadiran == 'ALPA') {
+      statusText = '⚠️ ALPA';
+      badgeColor = AppColors.dangerRed.withValues(alpha: 0.1);
+      textColor = AppColors.dangerRed;
+      buttonText = 'Alpa (Tidak Hadir)';
+    } else {
+      statusText = isAktif ? '🟢 AKTIF' : '🔵 BELUM MULAI';
+      badgeColor = isAktif
+          ? AppColors.primaryGreen.withValues(alpha: 0.1)
+          : Colors.blue.withValues(alpha: 0.1);
+      textColor = isAktif ? AppColors.primaryGreen : Colors.blue;
+      buttonText = isAktif ? 'Mulai Kegiatan' : 'Belum Dimulai';
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -1307,23 +1338,15 @@ class KegiatanKknCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: statusKehadiran != null
-                        ? Colors.grey.shade200
-                        : (isAktif
-                              ? AppColors.primaryGreen.withValues(alpha: 0.1)
-                              : Colors.blue.withValues(alpha: 0.1)),
+                    color: badgeColor,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    statusKehadiran != null
-                        ? 'SELESAI ($statusKehadiran)'
-                        : (isAktif ? '🟢 AKTIF' : '🔵 BELUM MULAI'),
+                    statusText,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: statusKehadiran != null
-                          ? Colors.grey.shade700
-                          : (isAktif ? AppColors.primaryGreen : Colors.blue),
+                      color: textColor,
                     ),
                   ),
                 ),
@@ -1348,7 +1371,7 @@ class KegiatanKknCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: (isAktif && statusKehadiran == null)
+                onPressed: canStart
                     ? () => onMulai(kegiatan['id'].toString())
                     : null,
                 style: ElevatedButton.styleFrom(
@@ -1359,9 +1382,7 @@ class KegiatanKknCard extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  statusKehadiran != null
-                      ? 'Sudah Presensi'
-                      : (isAktif ? '🚀 Mulai Kegiatan' : 'Belum Dimulai'),
+                  buttonText,
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
