@@ -28,7 +28,7 @@ class PengajuanIzinFormView extends ConsumerStatefulWidget {
 class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
   final _formKey = GlobalKey<FormState>();
   KategoriIzin _selectedKategori = KategoriIzin.sakit;
-  DateTime _tanggalKegiatan = DateTime.now();
+  DateTime _tanggalKegiatan = DateTime.now().add(const Duration(days: 1));
   final TextEditingController _deskripsiController = TextEditingController();
   String? _photoPath;
   bool _isSubmitting = false;
@@ -324,19 +324,19 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             const SizedBox(height: 20),
 
             // Tanggal Kegiatan
-            const Text('Tanggal Kegiatan Terkait', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const Text('Tanggal Kegiatan Terkait (Minimal H-1)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 8),
             InkWell(
               onTap: () async {
                 final now = DateTime.now();
-                final today = DateTime(now.year, now.month, now.day);
-                final initial = _tanggalKegiatan.isBefore(today) ? today : _tanggalKegiatan;
+                final tomorrow = DateTime(now.year, now.month, now.day + 1);
+                final initial = _tanggalKegiatan.isBefore(tomorrow) ? tomorrow : _tanggalKegiatan;
 
                 final picked = await showDatePicker(
                   context: context,
                   initialDate: initial,
-                  firstDate: today,
-                  lastDate: DateTime(today.year + 1),
+                  firstDate: tomorrow,
+                  lastDate: DateTime(tomorrow.year + 1),
                   builder: (context, child) => Theme(
                     data: Theme.of(context).copyWith(
                       colorScheme: const ColorScheme.light(primary: AppColors.primaryGreen),
