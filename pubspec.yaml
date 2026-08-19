@@ -86,8 +86,7 @@ flutter:
     # - assets/on_boarding/
 
     # Logo aplikasi
-    - assets/logos.webp
-    - assets/logos.jpeg
+    - assets/logo_berseka.webp
     - assets/icons/
     - assets/icons/notification.png
 

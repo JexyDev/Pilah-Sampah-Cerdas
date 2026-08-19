@@ -126,9 +126,6 @@ class _LoginViewState extends ConsumerState<LoginView> {
         errorText = 'Tidak dapat terhubung ke server. Periksa koneksi.';
       } else if (authState.errorCode == 'UNAUTHORIZED_ROLE') {
         errorText = 'Akses ditolak. Aplikasi mobile hanya untuk Warga, Petugas Pemilah, dan Mahasiswa.';
-      } else if (authState.errorCode == 'UNAPPROVED_ACCOUNT') {
-        errorText =
-            'Akun Anda sedang menunggu persetujuan Admin DLH. Silakan coba login kembali nanti.';
       } else if (authState.errorCode == 'SERVER_ERROR' ||
           authState.errorCode == 'INTERNAL_SERVER_ERROR') {
         errorText =
@@ -186,7 +183,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                           ),
                           const SizedBox(height: 16),
                           const Text(
-                            'TrashCare',
+                            'Berseka',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w800,

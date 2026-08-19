@@ -165,7 +165,7 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.notifications_off_outlined, size: 56, color: AppColors.textHint),
+                              Icon(Icons.notifications_off_rounded, size: 56, color: AppColors.textHint),
                               SizedBox(height: 12),
                               Text(
                                 'Belum Ada Notifikasi Warga',
@@ -344,20 +344,30 @@ class _NotificationTile extends StatelessWidget {
 
   Widget _buildIconWidget(String iconName, String type, Color iconColor) {
     final typeUpper = type.toUpperCase();
+
     if (typeUpper.contains('PUNISHMENT') || typeUpper.contains('PENALTI')) {
       return Icon(Icons.warning_amber_rounded, color: iconColor, size: 22);
     }
-    if (iconName == 'star' || typeUpper == 'POIN_BERTAMBAH') {
+    if (typeUpper == 'POIN_BERTAMBAH' || typeUpper == 'POIN' || iconName == 'star') {
       return Padding(
         padding: const EdgeInsets.all(10.0),
         child: Image.asset('assets/icons/medal.png', color: iconColor),
       );
     }
-    if (typeUpper.contains('PENGAJUAN') || iconName == 'local_shipping' || iconName == 'rule') {
-      return Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Image.asset('assets/icons/submission.png', color: iconColor),
-      );
+    if (typeUpper.contains('PENGOSONGAN') || typeUpper.contains('PENGAJUAN') || iconName == 'local_shipping' || iconName == 'rule') {
+      return Icon(Icons.delete_sweep_rounded, color: iconColor, size: 22);
+    }
+    if (typeUpper.contains('DISETUJUI') || iconName == 'check_circle') {
+      return Icon(Icons.check_circle_rounded, color: iconColor, size: 22);
+    }
+    if (typeUpper.contains('DITOLAK') || iconName == 'cancel') {
+      return Icon(Icons.cancel_rounded, color: iconColor, size: 22);
+    }
+    if (typeUpper.contains('TONG') || typeUpper.contains('PENUH') || typeUpper.contains('KAPASITAS')) {
+      return Icon(Icons.delete_rounded, color: iconColor, size: 22);
+    }
+    if (typeUpper.contains('JADWAL') || typeUpper.contains('SCHEDULE') || iconName == 'alarm') {
+      return Icon(Icons.alarm_rounded, color: iconColor, size: 22);
     }
     return Icon(_resolveIcon(iconName), color: iconColor, size: 22);
   }
@@ -380,36 +390,24 @@ class _NotificationTile extends StatelessWidget {
   }
 
   Color _resolveIconColor(String type) {
-    switch (type) {
-      case 'POIN_BERTAMBAH':
-        return const Color(0xFFF59E0B); // amber
-      case 'TONG_PENUH':
-        return const Color(0xFFEF4444); // red
-      case 'PENGAJUAN_PENGOSONGAN':
-        return const Color(0xFFF97316); // orange
-      case 'PENGAJUAN_DISETUJUI':
-        return const Color(0xFF10B981); // green
-      case 'PENGAJUAN_DITOLAK':
-        return const Color(0xFFEF4444);
-      default:
-        return AppColors.primaryGreen;
-    }
+    final t = type.toUpperCase();
+    if (t.contains('POIN') || t == 'POIN_BERTAMBAH') return const Color(0xFFF59E0B);
+    if (t.contains('PENUH') || t.contains('TONG') || t.contains('KAPASITAS') || t.contains('DITOLAK')) return const Color(0xFFEF4444);
+    if (t.contains('PENGOSONGAN') || t.contains('PENGAJUAN')) return const Color(0xFFF97316);
+    if (t.contains('DISETUJUI')) return const Color(0xFF10B981);
+    if (t.contains('PUNISHMENT') || t.contains('PENALTI')) return const Color(0xFFEF4444);
+    if (t.contains('JADWAL') || t.contains('SCHEDULE')) return const Color(0xFF6366F1);
+    return AppColors.primaryGreen;
   }
 
   Color _resolveIconBg(String type) {
-    switch (type) {
-      case 'POIN_BERTAMBAH':
-        return const Color(0xFFFEF3C7);
-      case 'TONG_PENUH':
-        return const Color(0xFFFEE2E2);
-      case 'PENGAJUAN_PENGOSONGAN':
-        return const Color(0xFFFFEDD5);
-      case 'PENGAJUAN_DISETUJUI':
-        return const Color(0xFFD1FAE5);
-      case 'PENGAJUAN_DITOLAK':
-        return const Color(0xFFFEE2E2);
-      default:
-        return AppColors.primaryGreen.withValues(alpha: 0.1);
-    }
+    final t = type.toUpperCase();
+    if (t.contains('POIN') || t == 'POIN_BERTAMBAH') return const Color(0xFFFEF3C7);
+    if (t.contains('PENUH') || t.contains('TONG') || t.contains('KAPASITAS') || t.contains('DITOLAK')) return const Color(0xFFFEE2E2);
+    if (t.contains('PENGOSONGAN') || t.contains('PENGAJUAN')) return const Color(0xFFFFEDD5);
+    if (t.contains('DISETUJUI')) return const Color(0xFFD1FAE5);
+    if (t.contains('PUNISHMENT') || t.contains('PENALTI')) return const Color(0xFFFEE2E2);
+    if (t.contains('JADWAL') || t.contains('SCHEDULE')) return const Color(0xFFEDE9FE);
+    return AppColors.primaryGreen.withValues(alpha: 0.1);
   }
 }

@@ -73,7 +73,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   }
 }
 
-/// Entry point aplikasi TrashCare â€” Mobile (Warga).
+/// Entry point aplikasi Berseka â€” Mobile (Warga).
 ///
 /// Arsitektur: Clean Architecture + Riverpod
 /// - Presentation Layer: lib/app/modules/

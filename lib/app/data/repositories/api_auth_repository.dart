@@ -116,22 +116,16 @@ class ApiAuthRepository implements AuthRepository {
       final message = e.response?.data?['message']?.toString();
       
       if (status == 401 || status == 404) {
-        if (message != null && message.toLowerCase().contains('approve')) {
-          throw AuthException(
-            'UNAPPROVED_ACCOUNT',
-            message,
-          );
-        }
         throw const AuthException(
           'INVALID_CREDENTIALS',
           'Nomor telepon/NIM atau password salah',
         );
       }
-      
+
       if (status == 403) {
-        throw AuthException(
-          'UNAPPROVED_ACCOUNT',
-          message ?? 'Akun Anda sedang menunggu persetujuan (approval) dari pihak Admin. Silakan coba login kembali nanti.',
+        throw const AuthException(
+          'INVALID_CREDENTIALS',
+          'Nomor telepon/NIM atau password salah',
         );
       }
       if (status == 429) {
@@ -140,14 +134,8 @@ class ApiAuthRepository implements AuthRepository {
           message ?? 'Terlalu banyak percobaan login gagal. Silakan tunggu 15 menit.',
         );
       }
-      
+
       if (status != null && status >= 500) {
-        if (message != null && (message.toLowerCase().contains('approve') || message.toLowerCase().contains('izin') || message.toLowerCase().contains('tunggu') || message.toLowerCase().contains('setuju'))) {
-          throw AuthException(
-            'UNAPPROVED_ACCOUNT',
-            message,
-          );
-        }
         throw AuthException(
           'SERVER_ERROR',
           message ?? 'Server sedang mengalami gangguan (Error $status). Silakan coba lagi nanti.',

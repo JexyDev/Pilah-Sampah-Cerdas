@@ -132,7 +132,7 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.scale_outlined, size: 64, color: AppColors.textSecondary.withValues(alpha: 0.5)),
+                              Icon(Icons.notifications_off_rounded, size: 56, color: AppColors.textSecondary.withValues(alpha: 0.5)),
                               const SizedBox(height: 12),
                               const Text(
                                 'Belum Ada Notifikasi Petugas',

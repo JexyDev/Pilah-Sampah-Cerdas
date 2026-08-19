@@ -42,7 +42,7 @@ class KelolaBinView extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.delete_outline, size: 64, color: AppColors.textHint),
+                  Icon(Icons.delete_rounded, size: 64, color: AppColors.textHint),
                   SizedBox(height: 16),
                   Text(
                     'Belum ada tempat sampah terdaftar.',
@@ -108,76 +108,91 @@ class _BinCardLarge extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.delete_outline, color: color, size: 40),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isOrganic ? 'Tempat Sampah Organik' : 'Tempat Sampah Anorganik',
-                  style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Pemilik: ${user?.name ?? '-'}',
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  'User ID: ${user?.id ?? '-'}',
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'ID Tempat Sampah: ${bin.qrSerial}',
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-                Text(
-                  'Kapasitas Maksimal: ${bin.maxCapacityL} L',
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.delete_rounded, color: color, size: 40),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Status: ',
+                    Text(
+                      isOrganic ? 'Tempat Sampah Organik' : 'Tempat Sampah Anorganik',
                       style: TextStyle(
+                        color: color,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Pemilik: ${user?.name ?? '-'}',
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'ID Tempat Sampah: ${bin.qrSerial}',
+                      style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12,
                       ),
                     ),
                     Text(
-                      bin.backendStatus.isNotEmpty ? bin.backendStatus.replaceAll('_', ' ').toUpperCase() : (bin.isActive ? 'AKTIF' : 'NON-AKTIF'),
-                      style: TextStyle(
-                        color: (bin.backendStatus.toUpperCase() == 'ACTIVE_BOUND' || bin.backendStatus.toUpperCase() == 'AKTIF' || (bin.backendStatus.isEmpty && bin.isActive)) ? AppColors.primaryGreen : AppColors.dangerRed,
-                        fontWeight: FontWeight.w700,
+                      'Kapasitas Maksimal: ${bin.maxCapacityL} L',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
                         fontSize: 12,
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Text(
+                          'Status: ',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          bin.backendStatus.isNotEmpty ? bin.backendStatus.replaceAll('_', ' ').toUpperCase() : (bin.isActive ? 'AKTIF' : 'NON-AKTIF'),
+                          style: TextStyle(
+                            color: (bin.backendStatus.toUpperCase() == 'ACTIVE_BOUND' || bin.backendStatus.toUpperCase() == 'AKTIF' || (bin.backendStatus.isEmpty && bin.isActive)) ? AppColors.primaryGreen : AppColors.dangerRed,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: bin.isActive ? bin.capacityPercent.clamp(0.0, 1.0) : 0.0,
+              minHeight: 8,
+              backgroundColor: bin.isActive ? AppColors.border : Colors.grey.shade300,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            !bin.isActive
+                ? 'Tempat Sampah Dinonaktifkan di Web'
+                : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — ${bin.currentVolumeL.toStringAsFixed(1)} KG / ${bin.maxCapacityL.toStringAsFixed(0)} KG',
+            style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
           ),
         ],
       ),

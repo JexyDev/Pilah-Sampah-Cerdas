@@ -32,7 +32,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
 
     // 1. Tolak QR acak / URL / link web yang bukan format tempat sampah
     if (lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('www.')) {
-      return 'QR Code tidak valid!\n\nTerdeteksi sebagai tautan web. Pastikan Anda memindai stiker QR Code resmi fisik pada tempat sampah TrashCare.';
+      return 'QR Code tidak valid!\n\nTerdeteksi sebagai tautan web. Pastikan Anda memindai stiker QR Code resmi fisik pada tempat sampah Berseka.';
     }
 
     // 2. Minimal panjang kode QR tempat sampah yang wajar

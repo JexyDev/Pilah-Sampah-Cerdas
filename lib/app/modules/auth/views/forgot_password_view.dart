@@ -296,7 +296,7 @@ class _ForgotPasswordViewState
                           ),
                           const SizedBox(height: 12),
                           const Text(
-                            'TrashCare',
+                            'Berseka',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,

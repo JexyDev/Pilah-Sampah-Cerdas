@@ -526,7 +526,7 @@ class _RiwayatItem extends ConsumerWidget {
                 Row(
                   children: [
                     const Icon(
-                      Icons.calendar_today_outlined,
+                      Icons.calendar_month_rounded,
                       size: 11,
                       color: AppColors.textHint,
                     ),
@@ -557,7 +557,7 @@ class _NotificationHistoryItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isPengajuan = notif.type.toUpperCase().contains('PENGAJUAN') || notif.type.toUpperCase().contains('RESET');
     final color = isPengajuan ? Colors.blue : AppColors.textSecondary;
-    final icon = isPengajuan ? Icons.mark_email_unread_rounded : Icons.info_outline_rounded;
+    final icon = isPengajuan ? Icons.mark_email_unread_rounded : Icons.info_rounded;
     DateTime dt;
     try {
       dt = DateTime.parse(notif.time).toLocal();
@@ -605,7 +605,7 @@ class _NotificationHistoryItem extends StatelessWidget {
                 Row(
                   children: [
                     const Icon(
-                      Icons.calendar_today_outlined,
+                      Icons.calendar_month_rounded,
                       size: 11,
                       color: AppColors.textHint,
                     ),

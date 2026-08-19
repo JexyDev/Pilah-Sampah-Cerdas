@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_config.dart';
 import '../../../core/values/app_dimensions.dart';
-import '../../../data/models/petugas_pemilahan_models.dart';
 import '../../../data/models/user_entity.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -369,67 +368,6 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
     );
   }
 
-  /// Banner kuning yang muncul saat akun petugas belum diverifikasi RW (whitelistStatus == PENDING)
-  Widget _buildPendingVerifikasiBanner() {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF8E1),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFFCA28), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFFCA28).withValues(alpha: 0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFCA28).withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.hourglass_top_rounded, color: Color(0xFFE65100), size: 22),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Akun Belum Diverifikasi',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFFE65100),
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Akun Petugas Pemilahan Anda sedang menunggu verifikasi dari RW. '
-                  'Beberapa fitur input timbangan mungkin dibatasi hingga akun disetujui. '
-                  'Silakan hubungi petugas RW untuk konfirmasi.',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    color: Color(0xFF5D4037),
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -450,11 +388,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
               child: _buildHeader(context, ref, user, unreadCount),
             ),
 
-            // ── Banner PENDING Verifikasi ─────────────────────────────────────
-            if (dashboard?.whitelistStatus == WhitelistStatus.pending)
-              SliverToBoxAdapter(
-                child: _buildPendingVerifikasiBanner(),
-              ),
+
 
             SliverPadding(
               padding: const EdgeInsets.all(AppDimensions.md),

@@ -62,7 +62,7 @@ class PoinView extends ConsumerWidget {
                   historyAsync.when(skipLoadingOnReload: true, data: (history) => history.isEmpty
                         ? const EmptyState(
                             message: 'Belum ada riwayat poin.',
-                            icon: Icons.monetization_on_outlined,
+                            icon: Icons.monetization_on_rounded,
                           )
                         : Column(
                             children: history
@@ -110,7 +110,7 @@ class PoinView extends ConsumerWidget {
                     child: const Row(
                       children: [
                         Icon(
-                          Icons.info_outline_rounded,
+                          Icons.info_rounded,
                           color: AppColors.primaryGreen,
                           size: 18,
                         ),

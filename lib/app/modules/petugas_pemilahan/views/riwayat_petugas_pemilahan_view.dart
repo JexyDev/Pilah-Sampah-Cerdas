@@ -219,7 +219,7 @@ class _RiwayatPetugasPemilahanViewState extends ConsumerState<RiwayatPetugasPemi
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.history_toggle_off_rounded, size: 56, color: AppColors.textHint),
+                              Icon(Icons.history_rounded, size: 56, color: AppColors.textHint),
                               SizedBox(height: 12),
                               Text('Belum ada riwayat aktivitas tugas', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
                             ],
@@ -302,7 +302,7 @@ class _RiwayatPetugasPemilahanViewState extends ConsumerState<RiwayatPetugasPemi
                                               if (subtitle.isNotEmpty && subtitle != '-')
                                                 Row(
                                                   children: [
-                                                    const Icon(Icons.person_outline, size: 14, color: AppColors.textSecondary),
+                                                    const Icon(Icons.person_rounded, size: 14, color: AppColors.textSecondary),
                                                     const SizedBox(width: 4),
                                                     Expanded(child: Text(subtitle, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis)),
                                                   ],
@@ -311,7 +311,7 @@ class _RiwayatPetugasPemilahanViewState extends ConsumerState<RiwayatPetugasPemi
                                               if (address.isNotEmpty && address != '-')
                                                 Row(
                                                   children: [
-                                                    const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
+                                                    const Icon(Icons.location_on_rounded, size: 14, color: AppColors.textSecondary),
                                                     const SizedBox(width: 4),
                                                     Expanded(child: Text(address, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis)),
                                                   ],

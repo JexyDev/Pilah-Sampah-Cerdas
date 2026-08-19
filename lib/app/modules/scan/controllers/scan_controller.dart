@@ -169,7 +169,7 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
   void goToStep(int step) => state = state.copyWith(currentStep: step);
 }
 
-final scanFlowProvider = StateNotifierProvider<ScanFlowNotifier, ScanFlowState>(
+final scanFlowProvider = StateNotifierProvider.autoDispose<ScanFlowNotifier, ScanFlowState>(
   (ref) {
     final user = ref.watch(authProvider).user;
     final userId = user?.id ?? '';
@@ -279,7 +279,7 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
 }
 
 final aktivasiBinProvider =
-    StateNotifierProvider<AktivasiBinNotifier, AktivasiBinState>((ref) {
+    StateNotifierProvider.autoDispose<AktivasiBinNotifier, AktivasiBinState>((ref) {
       return AktivasiBinNotifier(ref.watch(binRepositoryProvider));
     });
 
@@ -352,7 +352,7 @@ class ResetBinNotifier extends StateNotifier<ResetBinState> {
   void reset() => state = const ResetBinState();
 }
 
-final resetBinProvider = StateNotifierProvider<ResetBinNotifier, ResetBinState>(
+final resetBinProvider = StateNotifierProvider.autoDispose<ResetBinNotifier, ResetBinState>(
   (ref) {
     return ResetBinNotifier(ref.watch(binRepositoryProvider));
   },
@@ -426,7 +426,7 @@ class PetugasPengosonganNotifier extends StateNotifier<PetugasPengosonganState> 
   }
 }
 
-final petugasPengosonganProvider = StateNotifierProvider<PetugasPengosonganNotifier, PetugasPengosonganState>((ref) {
+final petugasPengosonganProvider = StateNotifierProvider.autoDispose<PetugasPengosonganNotifier, PetugasPengosonganState>((ref) {
   return PetugasPengosonganNotifier(ref.watch(binRepositoryProvider));
 });
 

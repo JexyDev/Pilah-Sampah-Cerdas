@@ -39,7 +39,6 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   final _kecamatanController = TextEditingController();
   final _provinsiController = TextEditingController();
   final _kotaController = TextEditingController();
-  final _dplNameController = TextEditingController();
   String _selectedJenjang = 'S1';
   String? _selectedKelurahan;
   String? _selectedRw;
@@ -241,7 +240,6 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
     _fakultasController.dispose();
     _universitasController.dispose();
     _kecamatanController.dispose();
-    _dplNameController.dispose();
     _toastTimer?.cancel();
     super.dispose();
   }
@@ -346,11 +344,9 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       final jenjang = _selectedJenjang;
       data['fakultas'] = [jenjang, fak, univ].where((e) => e.isNotEmpty).join(' - ');
 
-      // Gabungkan DPL ke jurusan
       final jur = InputSanitizer.sanitize(_jurusanController.text);
-      final dpl = InputSanitizer.sanitize(_dplNameController.text);
-      data['jurusan'] = dpl.isNotEmpty ? '$jur (DPL: $dpl)' : jur;
-      data['prodi'] = data['jurusan'];
+      data['jurusan'] = jur;
+      data['prodi'] = jur;
 
       data['rw'] = _selectedRw != null ? 'RW $_selectedRw' : '';
       data['rtRw'] = _selectedRw != null ? 'RW $_selectedRw' : '';
@@ -560,7 +556,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                           ),
                           const SizedBox(height: 12),
                           const Text(
-                            'TrashCare',
+                            'Berseka',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
@@ -950,31 +946,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                    ],
                                  ),
                                  const SizedBox(height: 16),
-                                 Row(
-                                   children: [
-                                     Expanded(
-                                       child: Column(
-                                         crossAxisAlignment: CrossAxisAlignment.start,
-                                         children: [
-                                           _buildLabel('NAMA DPL'),
-                                           const SizedBox(height: 6),
-                                           TextFormField(
-                                             controller: _dplNameController,
-                                             decoration: const InputDecoration(
-                                               hintText: 'Nama Dosen DPL',
-                                               prefixIcon: Icon(Icons.person_pin_rounded, color: AppColors.textSecondary, size: 20),
-                                             ),
-                                             validator: (v) {
-                                               if (_selectedRole == 'Mahasiswa' && (v == null || v.trim().isEmpty)) return 'Wajib diisi';
-                                               return null;
-                                             },
-                                           ),
-                                         ],
-                                       ),
-                                     ),
-                                   ],
-                                 ),
-                                 const SizedBox(height: 16),
+
                                  Row(
                                    children: [
                                      Expanded(

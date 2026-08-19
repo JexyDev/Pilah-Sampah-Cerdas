@@ -173,7 +173,7 @@ class _SplashViewState extends ConsumerState<SplashView>
                         child: FadeTransition(
                           opacity: _titleFade,
                           child: Text(
-                            'TrashCare',
+                            'Berseka',
                             style: GoogleFonts.poppins(
                               color: AppColors.primaryGreen,
                               fontSize: 26,
