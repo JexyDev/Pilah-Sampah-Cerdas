@@ -692,123 +692,124 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
               ],
             ),
           ),
-        const SizedBox(height: 16),
+        if (state.activeActivity != null && state.activeActivity!.isNotEmpty) ...[
+          const SizedBox(height: 16),
 
-        // Durasi Card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.orange.withValues(alpha: 0.05),
-            border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                      color: Colors.orange,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.timer_rounded, color: Colors.white, size: 24),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Durasi Terdeteksi di Zona', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
-                        const SizedBox(height: 4),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              isSuccess ? '$targetMenit mnt 0 dtk' : '$durasiMenit mnt $durasiDetik dtk', 
-                              style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 18)
-                            ),
-                            const SizedBox(width: 4),
-                            Text('/ $targetMenit mnt', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      isSuccess ? '100.0%' : '${targetMenit > 0 ? ((durasiMenit / targetMenit) * 100).toStringAsFixed(1) : 0}%',
-                      style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 11),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              LinearProgressIndicator(
-                value: isSuccess ? 1.0 : (targetMenit > 0 ? (durasiMenit / targetMenit).clamp(0.0, 1.0) : 0),
-                backgroundColor: Colors.grey[300],
-                color: isSuccess ? AppColors.primaryGreen : Colors.orange,
-                minHeight: 6,
-                borderRadius: BorderRadius.circular(3),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                isSuccess 
-                    ? 'Waktu terpenuhi! Presensi Anda resmi terdaftar.'
-                    : (remainingMenit > 0 
-                        ? 'Waktu tersisa: $remainingMenit menit lagi sebelum tombol absen terbuka.'
-                        : 'Waktu terpenuhi! Tombol absen sudah terbuka.'),
-                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Absen Sekarang Button
-        SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton.icon(
-            onPressed: (state.isEligibleForAttendance && !isSuccess && !isAlpa) ? () async {
-              await _showAbsenDialog(state, notifier);
-            } : null,
-            icon: Icon(
-              isSuccess ? Icons.check_circle_rounded : (isAlpa ? Icons.cancel_rounded : Icons.location_on_rounded), 
-              color: Colors.white,
-              size: 20,
+          // Durasi Card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.orange.withValues(alpha: 0.05),
+              border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
+              borderRadius: BorderRadius.circular(12),
             ),
-            label: Text(
-              isSuccess 
-                  ? '✅ Anda Sudah Presensi (Hadir)' 
-                  : (isAlpa ? '⚠️ Tanpa Keterangan (Waktu Habis)' : 'Absen Sekarang'),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold, 
-                fontSize: 15, 
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: Colors.orange,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.timer_rounded, color: Colors.white, size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Durasi Terdeteksi di Zona', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+                          const SizedBox(height: 4),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                isSuccess ? '$targetMenit mnt 0 dtk' : '$durasiMenit mnt $durasiDetik dtk', 
+                                style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 18)
+                              ),
+                              const SizedBox(width: 4),
+                              Text('/ $targetMenit mnt', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        isSuccess ? '100.0%' : '${targetMenit > 0 ? ((durasiMenit / targetMenit) * 100).toStringAsFixed(1) : 0}%',
+                        style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 11),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                LinearProgressIndicator(
+                  value: isSuccess ? 1.0 : (targetMenit > 0 ? (durasiMenit / targetMenit).clamp(0.0, 1.0) : 0),
+                  backgroundColor: Colors.grey[300],
+                  color: isSuccess ? AppColors.primaryGreen : Colors.orange,
+                  minHeight: 6,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  isSuccess 
+                      ? 'Waktu terpenuhi! Presensi Anda resmi terdaftar.'
+                      : (remainingMenit > 0 
+                          ? 'Waktu tersisa: $remainingMenit menit lagi sebelum tombol absen terbuka.'
+                          : 'Waktu terpenuhi! Tombol absen sudah terbuka.'),
+                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Absen Sekarang Button
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: (state.isEligibleForAttendance && !isSuccess && !isAlpa) ? () async {
+                await _showAbsenDialog(state, notifier);
+              } : null,
+              icon: Icon(
+                isSuccess ? Icons.check_circle_rounded : (isAlpa ? Icons.cancel_rounded : Icons.location_on_rounded), 
                 color: Colors.white,
+                size: 20,
+              ),
+              label: Text(
+                isSuccess 
+                    ? '✅ Anda Sudah Presensi (Hadir)' 
+                    : (isAlpa ? '⚠️ Tanpa Keterangan (Waktu Habis)' : 'Absen Sekarang'),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold, 
+                  fontSize: 15, 
+                  color: Colors.white,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isSuccess ? AppColors.primaryGreen : (isAlpa ? AppColors.dangerRed : Colors.grey[300]),
+                disabledBackgroundColor: isSuccess ? AppColors.primaryGreen : (isAlpa ? AppColors.dangerRed : Colors.grey[300]),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ).copyWith(
+                backgroundColor: WidgetStateProperty.resolveWith((states) {
+                  if (isSuccess) return AppColors.primaryGreen;
+                  if (isAlpa) return AppColors.dangerRed;
+                  if (states.contains(WidgetState.disabled)) return Colors.grey[300];
+                  return AppColors.primaryGreen; // Active color
+                }),
               ),
             ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isSuccess ? AppColors.primaryGreen : (isAlpa ? AppColors.dangerRed : Colors.grey[300]),
-              disabledBackgroundColor: isSuccess ? AppColors.primaryGreen : (isAlpa ? AppColors.dangerRed : Colors.grey[300]),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ).copyWith(
-              backgroundColor: WidgetStateProperty.resolveWith((states) {
-                if (isSuccess) return AppColors.primaryGreen;
-                if (isAlpa) return AppColors.dangerRed;
-                if (states.contains(WidgetState.disabled)) return Colors.grey[300];
-                return AppColors.primaryGreen; // Active color
-              }),
-            ),
           ),
-        ),
         const SizedBox(height: 8),
         if (!state.isEligibleForAttendance && !isSuccess && !isAlpa)
           Text(
@@ -818,6 +819,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 11, color: AppColors.dangerRed),
           ),
+        ],
         SizedBox(height: MediaQuery.of(context).padding.bottom + 40),
       ],
     );

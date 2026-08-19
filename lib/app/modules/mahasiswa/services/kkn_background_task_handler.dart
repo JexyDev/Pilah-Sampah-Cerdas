@@ -190,10 +190,10 @@ class KknBackgroundTaskHandler extends TaskHandler {
     try {
       pos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.low, // Network-only di background (hemat baterai)
-          distanceFilter: 10, // Skip jika bergerak < 10 meter
+          accuracy: LocationAccuracy.high, // Akurasi tinggi agar posisi tidak melompat-lompat
+          distanceFilter: 0, // Set ke 0 agar update lebih presisi 
         ),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 15));
     } catch (_) {
       // Fallback ke last known
       try {
