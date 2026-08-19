@@ -577,11 +577,14 @@ class _PoinHistoryItem extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(iconData, color: color, size: 20),
+            child: iconData == Icons.delete_rounded
+                ? Image.asset('assets/icons/recycle-bin.png', color: color, width: 20, height: 20)
+                : Icon(iconData, color: color, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(

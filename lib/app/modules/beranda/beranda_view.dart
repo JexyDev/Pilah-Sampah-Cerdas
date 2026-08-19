@@ -873,16 +873,17 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.primaryGreen, width: 1.5),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.delete_sweep_rounded,
+                  Image.asset(
+                    'assets/icons/waste.png',
                     color: AppColors.primaryGreen,
-                    size: 28,
+                    width: 28,
+                    height: 28,
                   ),
-                  SizedBox(height: 8),
-                  Text(
+                  const SizedBox(height: 8),
+                  const Text(
                     'Minta Kosongkan',
                     style: TextStyle(
                       color: AppColors.primaryGreen,
@@ -1090,7 +1091,7 @@ class _BerandaBinCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(Icons.delete_rounded, color: color, size: 24),
+              Image.asset('assets/icons/recycle-bin.png', color: color, width: 24, height: 24),
               if (bin.isResetPending)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

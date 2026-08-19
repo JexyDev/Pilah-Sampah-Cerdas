@@ -88,6 +88,8 @@ flutter:
     # Logo aplikasi
     - assets/logo_berseka.webp
     - assets/icons/
+    - assets/icons/recycle-bin.png
+    - assets/icons/waste.png
     - assets/icons/notification.png
 
     # Stitch UI — screen reference assets

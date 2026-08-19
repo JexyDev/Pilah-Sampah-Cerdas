@@ -95,4 +95,24 @@ abstract class KknRepository {
   /// Serah terima (handover) KKN — mengirim laporan final ke DPL / admin
   /// POST /api/v1/kkn/handover
   Future<Map<String, dynamic>> submitHandover(Map<String, dynamic> data);
+
+  // ═══════════════════════════════════════════════════════════════
+  // GPS Presensi Berbasis Kegiatan
+  // ═══════════════════════════════════════════════════════════════
+
+  /// Mengambil daftar kegiatan KKN aktif hari ini
+  /// GET /api/v1/kkn/kegiatan-aktif
+  Future<List<Map<String, dynamic>>> getKegiatanAktif();
+
+  /// Konfirmasi mulai kegiatan KKN (check-in awal)
+  /// POST /api/v1/kkn/kegiatan/{id}/mulai
+  Future<Map<String, dynamic>> mulaiKegiatan(String id, double latitude, double longitude, {String? deviceInfo});
+
+  /// Akhiri kegiatan KKN
+  /// POST /api/v1/kkn/kegiatan/{id}/selesai
+  Future<Map<String, dynamic>> selesaiKegiatan(String id, {required String sessionId, required int totalDurasiDalamZonaMenit, required String alasan});
+
+  /// Catat pelanggaran keluar zona (penalti poin)
+  /// POST /api/v1/kkn/out-of-zone-violation
+  Future<Map<String, dynamic>> recordOutOfZoneViolation({required String scheduleId, required double outOfZoneMinutes});
 }

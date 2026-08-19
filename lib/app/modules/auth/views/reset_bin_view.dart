@@ -173,21 +173,19 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
     PetugasPengosonganState petugasState, {
     bool isPending = false,
   }) {
-    final visibleBins = bins.where((b) => b.capacityPercent >= 0.70 || b.isResetPending).toList();
-
-    if (visibleBins.isEmpty) {
+    if (bins.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              Icons.check_circle_rounded,
+              Icons.info_outline_rounded,
               size: AppDimensions.iconXxl,
-              color: AppColors.primaryGreen,
+              color: AppColors.textSecondary,
             ),
             const SizedBox(height: AppDimensions.md),
             Text(
-              'Semua tempat sampah Anda masih aman.\nTidak ada yang perlu dikosongkan (>70%).',
+              'Anda belum memiliki tempat sampah terdaftar.',
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
@@ -197,21 +195,18 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
     }
 
     // Removed auto selection so user is free to choose or not
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Status Tempat Sampah', style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: AppDimensions.sm),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: visibleBins.length,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Status Tempat Sampah', style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: AppDimensions.sm),
+        Expanded(
+          child: ListView.separated(
+            itemCount: bins.length,
             separatorBuilder: (_, __) =>
                 const SizedBox(height: AppDimensions.sm),
             itemBuilder: (context, index) {
-              final BinEntity bin = visibleBins[index];
+              final BinEntity bin = bins[index];
               final bool isBinActive = bin.isActive;
               final bool isPendingBin = bin.isResetPending;
               final bool isSelected = _selectedBinIds.contains(bin.id);
@@ -295,17 +290,11 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                       children: [
                         Row(
                           children: [
-                            Icon(
-                              !isBinActive
-                                  ? Icons.do_not_disturb_on_rounded
-                                  : (isPendingBin
-                                      ? Icons.access_time_rounded
-                                      : (bin.binType == WasteType.organic
-                                          ? Icons.compost_rounded
-                                          : Icons.delete_rounded)),
-                              color: iconColor,
-                              size: AppDimensions.iconMd,
-                            ),
+                            !isBinActive
+                                ? Icon(Icons.do_not_disturb_on_rounded, color: iconColor, size: AppDimensions.iconMd)
+                                : isPendingBin
+                                    ? Icon(Icons.access_time_rounded, color: iconColor, size: AppDimensions.iconMd)
+                                    : Image.asset('assets/icons/recycle-bin.png', color: iconColor, width: AppDimensions.iconMd, height: AppDimensions.iconMd),
                             const SizedBox(width: AppDimensions.sm),
                             Expanded(
                               child: Row(
@@ -382,27 +371,25 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                           children: [
                             Text(
                               !isBinActive
-                                  ? 'Tempat Sampah Dinonaktifkan di Web'
+                                  ? 'Tempat Sampah Dinonaktifkan di Web — '
                                   : (isPendingBin
-                                      ? 'Pengajuan pengosongan sedang diproses'
+                                      ? 'Pengajuan pengosongan sedang diproses — '
                                       : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — '),
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
                             ),
-                            if (isBinActive && !isPendingBin) ...[
-                              WeightText(
-                                bin.currentVolumeL,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
-                              ),
-                              Text(
-                                ' / ',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
-                              ),
-                              WeightText(
-                                bin.maxCapacityL,
-                                fractionDigits: 0,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
-                              ),
-                            ],
+                            WeightText(
+                              bin.currentVolumeL,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
+                            ),
+                            Text(
+                              ' / ',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
+                            ),
+                            WeightText(
+                              bin.maxCapacityL,
+                              fractionDigits: 0,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
+                            ),
                           ],
                         ),
                       ],
@@ -412,6 +399,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
               );
             },
           ),
+        ),
         
         const SizedBox(height: AppDimensions.md),
 
@@ -455,7 +443,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: _pickImage,
-                icon: const Icon(Icons.camera_alt_rounded),
+                icon: const Icon(Icons.camera_alt_outlined),
                 label: const Text('Upload Foto Bukti (< 5MB)'),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -571,7 +559,6 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
         })(),
         const SizedBox(height: AppDimensions.md),
       ],
-    ),
     );
   }
 
@@ -713,7 +700,27 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
     final petugasList = state.petugasWilayah;
     
     if (petugasList.isEmpty && !hasDefault && state.statusResponse != null) {
-      return const SizedBox.shrink();
+      return Container(
+        margin: const EdgeInsets.only(bottom: AppDimensions.md),
+        padding: const EdgeInsets.all(AppDimensions.md),
+        decoration: BoxDecoration(
+          color: AppColors.warningYellow.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.warningYellow),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.info_outline, color: AppColors.warningYellow),
+            SizedBox(width: AppDimensions.sm),
+            Expanded(
+              child: Text(
+                'Belum ada petugas pemilah terdaftar di wilayah Anda. Pengajuan akan diteruskan ke Admin RW untuk diproses manual.',
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     if (petugasList.isEmpty) return const SizedBox.shrink();
