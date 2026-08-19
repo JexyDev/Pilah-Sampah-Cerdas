@@ -166,19 +166,8 @@ class _LoginViewState extends ConsumerState<LoginView> {
                         children: [
                           Image.asset(
                             AppAssets.logo,
-                            height: 70,
+                            height: 100,
                             fit: BoxFit.contain,
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Berseka',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primaryGreen,
-                              letterSpacing: -0.5,
-                            ),
-                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),

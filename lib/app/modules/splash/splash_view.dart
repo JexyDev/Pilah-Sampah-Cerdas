@@ -146,30 +146,12 @@ class _SplashViewState extends ConsumerState<SplashView>
                             padding: const EdgeInsets.only(bottom: 24),
                             child: Image.asset(
                               AppAssets.logo,
-                              height: 80,
+                              height: 100,
                               fit: BoxFit.contain,
                             ),
                           ),
                         ),
                       ),
-                      // Judul
-                      SlideTransition(
-                        position: _titleSlide,
-                        child: FadeTransition(
-                          opacity: _titleFade,
-                          child: Text(
-                            'Berseka',
-                            style: GoogleFonts.poppins(
-                              color: AppColors.primaryGreen,
-                              fontSize: 26,
-                              fontWeight: FontWeight.w700,
-                              height: 1.2,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
                       // Tagline
                       SlideTransition(
                         position: _taglineSlide,
