@@ -227,7 +227,7 @@ const MasterData: React.FC = () => {
                     </tr>
                   ) : (
                     filteredMahasiswas.map((mhs, idx) => (
-                      <tr key={mhs.id} className="hover:bg-slate-50 transition-colors">
+                      <tr key={mhs.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                         <td className="py-3.5 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
                         <td className="py-3.5 px-4">
                           <p className="font-bold text-slate-900 dark:text-slate-100">{mhs.name}</p>
@@ -278,7 +278,7 @@ const MasterData: React.FC = () => {
                             <div className="flex justify-center gap-1">
                               <button
                                 onClick={() => setSelectedMhsDetail(mhs)}
-                                className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-primary rounded-lg transition-colors cursor-pointer"
+                                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-primary rounded-lg transition-colors cursor-pointer"
                                 title="Detail Profil"
                               >
                                 <Eye size={15} />
@@ -318,7 +318,7 @@ const MasterData: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-medium">
                 {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                     <td className="py-3 px-4 font-mono text-slate-400 text-[10px]">
                       {u.id ? u.id.substring(0, 8) : "-"}
                     </td>
@@ -367,7 +367,7 @@ const MasterData: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-medium">
                 {bins.map((b) => (
-                  <tr key={b.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                     <td className="py-3 px-4 font-mono text-slate-400 text-[10px]">
                       {b.id ? b.id.substring(0, 8) : "-"}
                     </td>

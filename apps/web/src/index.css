@@ -305,3 +305,38 @@ input:-webkit-autofill:active {
   color: #f8fafc;
 }
 
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="time"]::-webkit-calendar-picker-indicator,
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.85);
+}
+
+/* ==========================================================
+   RECHARTS & DATA VISUALIZATION DARK MODE
+   ========================================================== */
+.dark .recharts-default-tooltip {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+}
+
+.dark .recharts-tooltip-item {
+  color: #f8fafc !important;
+}
+
+.dark .recharts-tooltip-label {
+  color: #94a3b8 !important;
+  font-weight: 700 !important;
+}
+
+.dark .recharts-cartesian-grid line {
+  stroke: #1e293b !important;
+}
+
+.dark .recharts-text.recharts-cartesian-axis-tick-value {
+  fill: #94a3b8 !important;
+}
+
+

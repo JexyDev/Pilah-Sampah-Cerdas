@@ -142,7 +142,7 @@ const MasterWilayah: React.FC = () => {
             <div className="flex items-center gap-2 ml-auto sm:ml-0">
               <button
                 onClick={handleExportCsv}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
               >
                 <Download size={14} className="text-slate-500" />
                 <span>Ekspor CSV</span>
@@ -280,7 +280,7 @@ const MasterWilayah: React.FC = () => {
                 </tr>
               ) : paginatedData.length > 0 ? (
                 paginatedData.map((item, idx) => (
-                  <tr key={item.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 transition-colors">
+                  <tr key={item.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                     <td className="py-3.5 px-4 text-center font-bold text-slate-400">
                       {(currentPage - 1) * rowsPerPage + idx + 1}
                     </td>

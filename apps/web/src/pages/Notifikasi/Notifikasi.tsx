@@ -556,7 +556,7 @@ const Notifikasi: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             onClick={handleMarkAllRead}
-            className="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center gap-2 shadow-2xs transition-all cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center gap-2 shadow-2xs transition-all cursor-pointer"
           >
             <CheckCheck size={15} /> Tandai Dibaca Semua
           </button>
@@ -684,7 +684,7 @@ const Notifikasi: React.FC = () => {
                 className={`p-4 rounded-2xl border transition-all cursor-pointer group flex items-start gap-4 ${
                   !notif.isRead
                     ? "bg-emerald-50/40 border-emerald-300/80 shadow-2xs"
-                    : "bg-white border-slate-200/80 hover:bg-slate-50/80"
+                    : "bg-white border-slate-200/80 hover:bg-slate-50/80 dark:hover:bg-slate-800/80"
                 }`}
               >
                 {/* Visual Icon Badge */}
@@ -709,7 +709,7 @@ const Notifikasi: React.FC = () => {
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <h4 className={`text-xs sm:text-sm truncate ${!notif.isRead ? "font-black text-slate-900" : "font-extrabold text-slate-700"}`}>
+                    <h4 className={`text-xs sm:text-sm truncate ${!notif.isRead ? "font-black text-slate-900 dark:text-slate-100" : "font-extrabold text-slate-700 dark:text-slate-300"}`}>
                       {notif.title}
                     </h4>
                     <span className="text-[10.5px] font-extrabold text-slate-400 shrink-0">

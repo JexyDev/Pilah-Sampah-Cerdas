@@ -319,7 +319,7 @@ const MasterProvinsi: React.FC = () => {
                   return (
                     <tr
                       key={prov.id}
-                      className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/80 transition-colors text-xs text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap"
+                      className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors text-xs text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap"
                     >
                       {/* NO */}
                       <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-500 whitespace-nowrap">
@@ -434,7 +434,7 @@ const MasterProvinsi: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-2.5 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl hover:bg-slate-50 transition cursor-pointer"
+                  className="flex-1 py-2.5 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition cursor-pointer"
                 >
                   Batal
                 </button>
@@ -468,7 +468,7 @@ const MasterProvinsi: React.FC = () => {
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="flex-1 py-2.5 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl hover:bg-slate-50 transition cursor-pointer"
+                className="flex-1 py-2.5 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition cursor-pointer"
               >
                 Batal
               </button>

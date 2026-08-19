@@ -228,7 +228,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                   else letterColor = "text-rose-700 bg-rose-50 border border-rose-200 font-bold";
 
                   return (
-                    <tr key={st.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={st.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors">
                       <td className="py-3 px-3 text-center font-bold text-slate-400">
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>

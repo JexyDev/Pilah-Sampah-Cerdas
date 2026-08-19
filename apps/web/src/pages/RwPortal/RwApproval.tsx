@@ -101,7 +101,7 @@ export const RwApproval = () => {
                   const targetId = petugas.id || petugas.userId;
                   const isApproved = petugas.whitelistStatus === "APPROVED" || petugas.user?.status === "Aktif";
                   return (
-                    <tr key={targetId} className="hover:bg-slate-50/50 transition-colors duration-150">
+                    <tr key={targetId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors duration-150">
                       <td className="px-4 py-2">
                         <p className="font-semibold text-sm">{petugas.nama || petugas.user?.name || "Petugas Residu"}</p>
                         <p className="text-xs text-gray-500">{petugas.noWa || petugas.user?.phone || "-"}</p>
@@ -148,7 +148,7 @@ export const RwApproval = () => {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
                 {inactiveBins.map((bin) => (
-                  <tr key={bin.id} className="hover:bg-slate-50/50 transition-colors duration-150">
+                  <tr key={bin.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors duration-150">
                     <td className="px-4 py-2 font-medium text-sm">{bin.user?.name}</td>
                     <td className="px-4 py-2 font-mono text-sm">{bin.qrCode}</td>
                     <td className="px-4 py-2">

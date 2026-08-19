@@ -299,7 +299,7 @@ const IdeDaurUlang: React.FC = () => {
               <>
                 <div className="space-y-4">
                   {ides.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((ide) => (
-                    <div key={ide.id} className="border border-slate-100 dark:border-slate-800 rounded-xl p-4.5 hover:border-slate-200 hover:bg-slate-50/50 transition group">
+                    <div key={ide.id} className="border border-slate-100 dark:border-slate-800 rounded-xl p-4.5 hover:border-slate-200 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition group">
                       <div className="flex justify-between items-start mb-2.5">
                         <div>
                           <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base">{ide.judul}</h3>
@@ -371,7 +371,7 @@ const IdeDaurUlang: React.FC = () => {
                         type="button"
                         disabled={currentPage === 1}
                         onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                       >
                         ← Sebelum
                       </button>
@@ -383,7 +383,7 @@ const IdeDaurUlang: React.FC = () => {
                           className={`w-8 h-8 rounded-lg text-xs font-bold transition cursor-pointer ${
                             currentPage === pg
                               ? "bg-emerald-600 text-white"
-                              : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                              : "border border-slate-200 text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/60"
                           }`}
                         >
                           {pg}
@@ -393,7 +393,7 @@ const IdeDaurUlang: React.FC = () => {
                         type="button"
                         disabled={currentPage === Math.ceil(ides.length / itemsPerPage)}
                         onClick={() => setCurrentPage((p) => Math.min(Math.ceil(ides.length / itemsPerPage), p + 1))}
-                        className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                       >
                         Selanjut →
                       </button>
@@ -425,7 +425,7 @@ const IdeDaurUlang: React.FC = () => {
             <div className="px-6 py-4 border-t border-outline-variant/30 flex justify-end gap-3 bg-gray-50 dark:bg-slate-800/60">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2 text-sm font-bold text-gray-600 dark:text-slate-400 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 text-sm font-bold text-gray-600 dark:text-slate-400 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800/60"
               >
                 Batal
               </button>

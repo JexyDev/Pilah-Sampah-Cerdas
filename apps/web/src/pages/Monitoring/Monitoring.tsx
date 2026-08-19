@@ -802,7 +802,7 @@ const Monitoring: React.FC = () => {
                 <select
                   value={mapCategoryFilter}
                   onChange={(e) => setMapCategoryFilter(e.target.value)}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 shadow-2xs cursor-pointer hover:bg-slate-100 transition-all focus:outline-none"
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 shadow-2xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all focus:outline-none"
                 >
                   <option value="Semua">Semua Kategori</option>
                   <option value="Organik">Organik</option>
@@ -813,7 +813,7 @@ const Monitoring: React.FC = () => {
                 <select
                   value={mapStatusFilter}
                   onChange={(e) => setMapStatusFilter(e.target.value)}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 shadow-2xs cursor-pointer hover:bg-slate-100 transition-all focus:outline-none"
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 shadow-2xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all focus:outline-none"
                 >
                   <option value="Semua">Semua Status</option>
                   <option value="Aman">Aman (&lt;70%)</option>
@@ -1494,7 +1494,7 @@ const Monitoring: React.FC = () => {
                     return (
                       <tr
                         key={`tbl-bin-${bin.id || binCode}`}
-                        className="hover:bg-slate-50/80 transition-colors text-xs text-slate-700 dark:text-slate-300 font-medium"
+                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors text-xs text-slate-700 dark:text-slate-300 font-medium"
                       >
                         {/* 1. QR CODE */}
                         <td className="py-3 px-4 text-center whitespace-nowrap">
@@ -1660,7 +1660,7 @@ const Monitoring: React.FC = () => {
                   type="button"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                 >
                   <ChevronLeft size={15} />
                 </button>

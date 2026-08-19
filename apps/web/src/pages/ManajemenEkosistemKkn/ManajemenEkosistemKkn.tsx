@@ -592,7 +592,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                         const ketuaMhs = k.students?.find((s: any) => s.isKetua);
                         const cakupanRw = Array.isArray(k.cakupanRw) ? k.cakupanRw.join(", ") : k.cakupanRw;
                         return (
-                          <tr key={k.id} className="hover:bg-slate-50/70 transition-colors">
+                          <tr key={k.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/70 transition-colors">
                             <td className="p-4">
                               <button
                                 onClick={() => handleOpenDetailKelompok(k)}
@@ -730,7 +730,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                       <button
                         onClick={() => setCurrentPage(1)}
                         disabled={currentPage === 1}
-                        className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 disabled:opacity-30 rounded-lg transition-all cursor-pointer"
+                        className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 rounded-lg transition-all cursor-pointer"
                         title="Halaman Pertama"
                       >
                         <ChevronsLeft size={15} />
@@ -738,7 +738,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                       <button
                         onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                         disabled={currentPage === 1}
-                        className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 disabled:opacity-30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
                       >
                         <ChevronLeft size={14} /> Sebelumnya
                       </button>
@@ -769,14 +769,14 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                       <button
                         onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                         disabled={currentPage === totalPages}
-                        className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 disabled:opacity-30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
                       >
                         Selanjutnya <ChevronRight size={14} />
                       </button>
                       <button
                         onClick={() => setCurrentPage(totalPages)}
                         disabled={currentPage === totalPages}
-                        className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 disabled:opacity-30 rounded-lg transition-all cursor-pointer"
+                        className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 rounded-lg transition-all cursor-pointer"
                         title="Halaman Terakhir"
                       >
                         <ChevronsRight size={15} />
@@ -873,14 +873,14 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                       <button
                         onClick={() => setDplPage((p) => Math.max(p - 1, 1))}
                         disabled={dplPage === 1}
-                        className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 disabled:opacity-30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
                       >
                         <ChevronLeft size={14} /> Sebelumnya
                       </button>
                       <button
                         onClick={() => setDplPage((p) => Math.min(p + 1, totalDplPages))}
                         disabled={dplPage === totalDplPages}
-                        className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 disabled:opacity-30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
                       >
                         Selanjutnya <ChevronRight size={14} />
                       </button>
@@ -916,12 +916,12 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Daftar Universitas Mitra</h2>
               <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/20">
                 {uniList.map((uni) => (
-                  <div key={uni} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                  <div key={uni} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                     <span className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{uni}</span>
                     {!isReadOnly && (
                       <button
                         onClick={() => handleRemoveUni(uni)}
-                        className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-100 transition-all cursor-pointer"
+                        className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -1043,7 +1043,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsKelompokModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer"
                 >
                   Batal
                 </button>
@@ -1135,7 +1135,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsDplModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer"
                 >
                   Batal
                 </button>
@@ -1234,7 +1234,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsLeaderModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer"
                 >
                   Batal
                 </button>
@@ -1350,7 +1350,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 ) : (
                   <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden">
                     {selectedGroupForMembers.students.map((st: any) => (
-                      <div key={st.id} className="p-3 bg-white dark:bg-slate-900 flex items-center justify-between hover:bg-slate-50/80 transition">
+                      <div key={st.id} className="p-3 bg-white dark:bg-slate-900 flex items-center justify-between hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition">
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">{st.user?.name || `Mahasiswa ${st.id}`}</span>
@@ -1508,7 +1508,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                         {selectedDetailKelompok.students.map((st: any, idx: number) => (
-                          <tr key={st.id} className="hover:bg-slate-50/70 transition">
+                          <tr key={st.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/70 transition">
                             <td className="py-2 px-3 text-center text-slate-400 font-bold">{idx + 1}</td>
                             <td className="py-2 px-3 font-mono font-bold text-slate-800 dark:text-slate-100">{st.nim || "-"}</td>
                             <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">{st.user?.name || `Mahasiswa ${st.id.substring(0, 6)}`}</td>

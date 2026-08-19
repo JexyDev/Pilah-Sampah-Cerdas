@@ -515,7 +515,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                 />
               ) : (
                 paginatedDataset.map((item, index) => (
-                  <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
+                  <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60 transition-colors">
                     {/* Number (No. Kolom Paling Kiri) */}
                     <td className="py-4 px-4 text-center font-black text-slate-500 text-xs">
                       {(currentPage - 1) * itemsPerPage + index + 1}
@@ -806,7 +806,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
             />
             <button
               onClick={() => setPreviewImageUrl(null)}
-              className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold flex items-center justify-center shadow-xl cursor-pointer hover:bg-slate-100"
+              className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold flex items-center justify-center shadow-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               <X size={20} />
             </button>

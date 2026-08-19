@@ -502,7 +502,7 @@ export default function DetailSurveiKkn() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
                   {kp.map((actor: any, idx: number) => (
-                    <tr key={actor.id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr key={actor.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="px-6 py-4 text-slate-400 font-bold">{idx + 1}</td>
                       <td className="px-6 py-4 font-extrabold text-slate-800 dark:text-slate-100">{renderValue(actor.nama)}</td>
                       <td className="px-6 py-4">

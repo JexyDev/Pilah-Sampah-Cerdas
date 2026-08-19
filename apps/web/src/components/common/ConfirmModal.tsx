@@ -34,10 +34,10 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
   const iconBgClass =
     type === "danger"
-      ? "bg-rose-100 text-rose-600 border-rose-200"
+      ? "bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800/60"
       : type === "warning"
-      ? "bg-amber-100 text-amber-600 border-amber-200"
-      : "bg-emerald-100 text-emerald-600 border-emerald-200";
+      ? "bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/60"
+      : "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60";
 
   const confirmBtnClass =
     type === "danger"

@@ -296,7 +296,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer"
           >
             <X size={20} />
           </button>
@@ -315,7 +315,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                 className={`flex items-center gap-2 py-3 px-3.5 border-b-2 text-xs font-bold whitespace-nowrap transition cursor-pointer ${
                   isActive
                     ? "border-emerald-600 text-emerald-700 bg-emerald-50/50"
-                    : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                    : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60"
                 }`}
               >
                 <Icon size={14} className={isActive ? "text-emerald-600" : "text-slate-400"} />
@@ -447,7 +447,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                     ].map((item) => (
                       <label
                         key={item.key}
-                        className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:bg-slate-100 transition"
+                        className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                       >
                         <input
                           type="checkbox"
@@ -665,7 +665,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                     ].map((item) => (
                       <label
                         key={item.key}
-                        className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:bg-slate-100 transition"
+                        className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                       >
                         <input
                           type="checkbox"
@@ -914,7 +914,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold text-xs hover:bg-slate-50 transition cursor-pointer"
+              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-800/60 transition cursor-pointer"
             >
               Batal
             </button>

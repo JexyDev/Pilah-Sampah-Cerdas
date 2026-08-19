@@ -390,7 +390,7 @@ export default function EditSurveiKkn() {
         <div className="mb-8">
           <button 
             onClick={() => navigate("/superUser/data-survei-kkn")} 
-            className="flex items-center text-slate-500 hover:text-slate-800 transition-colors mb-4 text-sm font-medium"
+            className="flex items-center text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors mb-4 text-sm font-medium"
           >
             <ArrowLeft className="mr-2" size={16} />
             Kembali ke Data Survei
@@ -410,7 +410,7 @@ export default function EditSurveiKkn() {
             <div className="flex gap-3">
               <button
                 onClick={() => navigate(`/superUser/data-survei-kkn/${id}`)}
-                className="px-4 py-2.5 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-50 transition-colors"
+                className="px-4 py-2.5 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
               >
                 Batal
               </button>
@@ -439,7 +439,7 @@ export default function EditSurveiKkn() {
                   className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all ${
                     isActive 
                     ? "bg-[#009966] text-white shadow-sm shadow-[#009966]/20" 
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                    : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-800 dark:hover:text-slate-200"
                   }`}
                 >
                   <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />

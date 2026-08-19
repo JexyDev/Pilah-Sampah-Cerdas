@@ -115,7 +115,7 @@ const SheetDetailModal: React.FC<{
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 transition-colors"
           >
             <X size={20} />
           </button>
@@ -143,7 +143,7 @@ const SheetDetailModal: React.FC<{
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                   {paginatedData.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                    <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="px-3 py-2 text-gray-400 font-mono text-xs">{(currentPage - 1) * rowsPerPage + idx + 1}</td>
                       {columns.map((col) => (
                         <td key={col} className="px-3 py-2 text-gray-700 dark:text-slate-300 whitespace-nowrap max-w-[200px] truncate">
@@ -174,14 +174,14 @@ const SheetDetailModal: React.FC<{
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 disabled:opacity-40 disabled:cursor-not-allowed transition"
               >
                 Sebelumnya
               </button>
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 disabled:opacity-40 disabled:cursor-not-allowed transition"
               >
                 Selanjutnya
               </button>
@@ -621,7 +621,7 @@ const ImportSurveiKkn: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                     {sheetSummaries.map((sheet) => (
-                      <tr key={sheet.name} className="hover:bg-gray-50/50 transition-colors">
+                      <tr key={sheet.name} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="px-4 py-3 font-medium text-gray-900 dark:text-slate-100">
                           {SHEET_DISPLAY_NAMES[sheet.name] || sheet.name}
                         </td>
@@ -766,7 +766,7 @@ const ImportSurveiKkn: React.FC = () => {
               {history.map((item) => (
                 <div
                   key={item.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-gray-50/30 hover:bg-gray-50/60 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-gray-50/30 hover:bg-gray-50/60 dark:hover:bg-slate-800/60 transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="p-2 rounded-lg bg-gray-100 dark:bg-slate-800 flex-shrink-0">

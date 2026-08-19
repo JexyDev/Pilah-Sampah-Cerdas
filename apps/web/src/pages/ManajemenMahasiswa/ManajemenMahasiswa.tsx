@@ -389,7 +389,7 @@ const ManajemenMahasiswa: React.FC = () => {
                   />
                 ) : (
                   paginatedMahasiswas.map((mhs, idx) => (
-                    <tr key={mhs.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={mhs.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors">
                       <td className="py-3.5 px-4 text-center font-bold text-slate-400">
                         {startIndex + idx + 1}
                       </td>
@@ -664,7 +664,7 @@ const ManajemenMahasiswa: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2.5 rounded-xl font-bold text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl font-bold text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                   >
                     Batal
                   </button>
@@ -696,7 +696,7 @@ const ManajemenMahasiswa: React.FC = () => {
               <div className="flex justify-center gap-3">
                 <button
                   onClick={() => setIsDeleteModalOpen(false)}
-                  className="flex-1 px-4 py-2.5 rounded-xl font-bold border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 cursor-pointer transition-colors text-xs"
+                  className="flex-1 px-4 py-2.5 rounded-xl font-bold border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors text-xs"
                 >
                   Batal
                 </button>

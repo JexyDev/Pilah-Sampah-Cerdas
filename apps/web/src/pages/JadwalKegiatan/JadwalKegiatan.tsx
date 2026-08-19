@@ -673,7 +673,7 @@ const JadwalKegiatan: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                   {filteredTimeline.map((item, idx) => (
-                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors">
                       <td className="py-3.5 px-4 text-center font-bold text-slate-400">
                         {idx + 1}
                       </td>

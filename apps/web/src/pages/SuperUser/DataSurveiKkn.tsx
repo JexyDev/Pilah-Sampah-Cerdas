@@ -159,7 +159,7 @@ export default function DataSurveiKkn({ type: propType }: DataSurveiKknProps) {
                   />
                 ) : (
                   surveys.map((survey, index) => (
-                    <tr key={survey.kelurahanId} className="hover:bg-slate-50/50 transition-colors group">
+                    <tr key={survey.kelurahanId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
                       <td className="px-6 py-4 text-sm font-medium text-slate-500">
                         {(currentPage - 1) * limit + index + 1}
                       </td>

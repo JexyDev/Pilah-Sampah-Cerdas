@@ -752,7 +752,7 @@ const WargaDashboard: React.FC = () => {
             </div>
             <button
               onClick={() => navigate("/pengaturan")}
-              className="px-4 py-2 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors text-[11px] font-bold rounded-xl uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+              className="px-4 py-2 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-[11px] font-bold rounded-xl uppercase tracking-wider flex items-center gap-1 cursor-pointer"
             >
               <Pencil size={16} />
               Edit Profil
@@ -1394,7 +1394,7 @@ const WargaDashboard: React.FC = () => {
                       </thead>
                       <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                         {filteredLogs.map((log) => (
-                          <tr key={log.id} className="hover:bg-slate-50">
+                          <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60">
                             <td className="p-3 font-medium text-slate-600 dark:text-slate-400">
                               {new Date(log.waktu).toLocaleString("id-ID", {
                                 day: "numeric",

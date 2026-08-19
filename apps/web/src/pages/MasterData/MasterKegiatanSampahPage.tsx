@@ -241,7 +241,7 @@ export const MasterKegiatanSampahPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 {paginatedData.map((item, idx) => (
-                  <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors">
                     <td className="py-3.5 px-4 text-center font-bold text-slate-400">
                       {(currentPage - 1) * itemsPerPage + idx + 1}
                     </td>
@@ -322,7 +322,7 @@ export const MasterKegiatanSampahPage: React.FC = () => {
               </h3>
               <button
                 onClick={() => setIsFormOpen(false)}
-                className="p-1 rounded-full text-slate-400 hover:bg-slate-100"
+                className="p-1 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 <X size={18} />
               </button>
@@ -392,7 +392,7 @@ export const MasterKegiatanSampahPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                 >
                   Batal
                 </button>

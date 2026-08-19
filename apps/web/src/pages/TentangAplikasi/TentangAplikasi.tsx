@@ -148,7 +148,7 @@ const Informasi: React.FC = () => {
             className={`px-4 py-2.5 rounded-2xl font-black text-xs transition-all flex items-center gap-2 cursor-pointer ${
               techTab === "EXECUTIVE"
                 ? "bg-[#009966] text-white shadow-md shadow-emerald-700/20"
-                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60"
             }`}
           >
             <Info size={16} /> Ikhtisar Sistem &amp; Pilar
@@ -159,7 +159,7 @@ const Informasi: React.FC = () => {
             className={`px-4 py-2.5 rounded-2xl font-black text-xs transition-all flex items-center gap-2 cursor-pointer ${
               techTab === "ROLES"
                 ? "bg-[#009966] text-white shadow-md shadow-emerald-700/20"
-                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60"
             }`}
           >
             <Users size={16} /> Struktur Peran Pengguna
@@ -170,7 +170,7 @@ const Informasi: React.FC = () => {
             className={`px-4 py-2.5 rounded-2xl font-black text-xs transition-all flex items-center gap-2 cursor-pointer ${
               techTab === "AI_MODEL"
                 ? "bg-[#009966] text-white shadow-md shadow-emerald-700/20"
-                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60"
             }`}
           >
             <BrainCircuit size={16} /> Arsitektur Model AI ONNX
@@ -181,7 +181,7 @@ const Informasi: React.FC = () => {
             className={`px-4 py-2.5 rounded-2xl font-black text-xs transition-all flex items-center gap-2 cursor-pointer ${
               techTab === "TECH_STACK"
                 ? "bg-[#009966] text-white shadow-md shadow-emerald-700/20"
-                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60"
             }`}
           >
             <Cpu size={16} /> Arsitektur &amp; Teknologi Sistem
@@ -195,7 +195,7 @@ const Informasi: React.FC = () => {
             className={`px-4 py-2.5 rounded-2xl font-black text-xs transition-all flex items-center gap-2 cursor-pointer ${
               userTab === "ROLE_GUIDE"
                 ? "bg-[#009966] text-white shadow-md shadow-emerald-700/20"
-                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60"
             }`}
           >
             <BookOpen size={16} /> Panduan Peran Anda ({roleInfo.title.split(" ")[0]})
@@ -206,7 +206,7 @@ const Informasi: React.FC = () => {
             className={`px-4 py-2.5 rounded-2xl font-black text-xs transition-all flex items-center gap-2 cursor-pointer ${
               userTab === "WORKFLOW"
                 ? "bg-[#009966] text-white shadow-md shadow-emerald-700/20"
-                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60"
             }`}
           >
             <Layers size={16} /> Alur Kerja &amp; SOP Pemilahan
@@ -217,7 +217,7 @@ const Informasi: React.FC = () => {
             className={`px-4 py-2.5 rounded-2xl font-black text-xs transition-all flex items-center gap-2 cursor-pointer ${
               userTab === "FAQ"
                 ? "bg-[#009966] text-white shadow-md shadow-emerald-700/20"
-                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60"
             }`}
           >
             <HelpCircle size={16} /> Tanya Jawab &amp; Bantuan

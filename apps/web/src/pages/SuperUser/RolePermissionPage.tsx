@@ -280,7 +280,7 @@ const RolePermissionPage: React.FC = () => {
                       {/* Group Header */}
                       <button
                         onClick={() => toggleGroup(group)}
-                        className="w-full grid grid-cols-[1fr_repeat(4,_80px)] px-5 py-2.5 bg-slate-100/70 hover:bg-slate-100 transition cursor-pointer"
+                        className="w-full grid grid-cols-[1fr_repeat(4,_80px)] px-5 py-2.5 bg-slate-100/70 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                       >
                         <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-500 uppercase tracking-wider">
                           {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
@@ -303,7 +303,7 @@ const RolePermissionPage: React.FC = () => {
                           return (
                             <div
                               key={resource.key}
-                              className="grid grid-cols-[1fr_repeat(4,_80px)] px-5 py-3 hover:bg-slate-50/80 transition items-center"
+                              className="grid grid-cols-[1fr_repeat(4,_80px)] px-5 py-3 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition items-center"
                             >
                               <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{resource.label}</span>
                               {PERMISSION_COLS.map((col) => {

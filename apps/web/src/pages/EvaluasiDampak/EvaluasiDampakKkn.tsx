@@ -340,7 +340,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
               </thead>
               <tbody className="text-sm divide-y divide-slate-100 dark:divide-slate-800">
                 {(activeTab === "BASELINE" ? filteredBaseline : filteredEndline).map((item: any) => (
-                  <tr key={item.kelurahanId} className="hover:bg-slate-50/50 transition">
+                  <tr key={item.kelurahanId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition">
                     <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-100">
                       Kel. {item.namaKelurahan}
                       <span className="block text-[10px] text-slate-400 font-medium">Kec. {item.kecamatan || "-"}</span>
@@ -394,7 +394,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                       {item.statusValidasi === "VALID" && isValidator && (
                         <button
                           onClick={() => setValidatingItem({ id: item.kelurahanId, type: activeTab })}
-                          className="bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 text-slate-600 dark:text-slate-400 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border border-slate-200 dark:border-slate-800 cursor-pointer shadow-2xs"
+                          className="bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border border-slate-200 dark:border-slate-800 cursor-pointer shadow-2xs"
                         >
                            Revisi
                         </button>
@@ -611,7 +611,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                   </thead>
                   <tbody className="text-sm divide-y divide-slate-100 dark:divide-slate-800">
                     {filteredKomparasi.map(item => (
-                      <tr key={item.kelurahanId} className="hover:bg-slate-50/50 transition">
+                      <tr key={item.kelurahanId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition">
                         <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-100">
                           Kel. {item.namaKelurahan}
                         </td>
@@ -666,7 +666,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                  </h2>
                  <p className="text-xs text-slate-500">Tentukan status kelayakan data survei yang disubmit.</p>
                </div>
-               <button onClick={() => setValidatingItem(null)} className="text-slate-400 hover:bg-slate-100 p-1 rounded-lg cursor-pointer">
+               <button onClick={() => setValidatingItem(null)} className="text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 p-1 rounded-lg cursor-pointer">
                  <XCircle size={20} />
                </button>
              </div>
@@ -742,7 +742,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                       className={`py-2 px-3 rounded-xl text-xs font-bold transition border text-left flex items-center justify-between ${
                         exportPeriod === p.id
                           ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                       }`}
                     >
                       <span>{p.label}</span>

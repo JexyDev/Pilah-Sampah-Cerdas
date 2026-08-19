@@ -33,9 +33,19 @@ const applyThemeToDOM = (theme: "light" | "dark") => {
   }
 };
 
+const isPublicPath = (pathname: string) => {
+  const publicPaths = ["/", "/login", "/register", "/register-mahasiswa", "/download"];
+  return publicPaths.includes(pathname);
+};
+
+const getInitialLayoutState = () => {
+  if (typeof window === "undefined") return false;
+  return !isPublicPath(window.location.pathname);
+};
+
 export const useThemeStore = create<ThemeState>((set, get) => ({
   theme: typeof window !== "undefined" && (localStorage.getItem("trashcare-theme") as "light" | "dark") === "dark" ? "dark" : "light",
-  isInsideMainLayout: false,
+  isInsideMainLayout: getInitialLayoutState(),
 
   setInsideMainLayout: (inside: boolean) => {
     set({ isInsideMainLayout: inside });
@@ -77,9 +87,9 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     if (saved !== "dark") {
       saved = "light";
     }
-    // Set theme state without unconditionally forcing dark mode on public pages
-    set({ theme: saved });
-    if (get().isInsideMainLayout) {
+    const insideLayout = typeof window !== "undefined" ? !isPublicPath(window.location.pathname) : false;
+    set({ theme: saved, isInsideMainLayout: insideLayout });
+    if (insideLayout) {
       applyThemeToDOM(saved);
     } else {
       applyThemeToDOM("light");

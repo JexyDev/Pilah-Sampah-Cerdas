@@ -748,7 +748,7 @@ const MasterRuleEngine: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleMarkTodayHoliday}
-                    className="w-full py-2.5 px-4 bg-white dark:bg-slate-900 hover:bg-slate-100 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                    className="w-full py-2.5 px-4 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
                   >
                     <Calendar size={14} className="text-emerald-700" />
                     <span>Tandai Hari Ini ({new Date().toISOString().slice(0, 10)}) Sebagai Libur Massal</span>

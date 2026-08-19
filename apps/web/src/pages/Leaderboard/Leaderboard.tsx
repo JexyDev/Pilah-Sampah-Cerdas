@@ -400,7 +400,7 @@ const Leaderboard: React.FC = () => {
               className={`px-4 py-2 rounded-xl font-black text-xs transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
                 system === "system2"
                   ? "bg-[#009966] text-white shadow-2xs"
-                  : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/60"
+                  : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700"
               }`}
             >
               <GraduationCap size={14} /> Program KKN
@@ -409,25 +409,25 @@ const Leaderboard: React.FC = () => {
 
           {/* View Mode Toggle (Visual Chart vs Table vs Both) */}
           {system === "system1" && !["kelurahan", "overview"].includes(s1Tab) && (
-            <div className="flex items-center bg-slate-100/80 p-1 rounded-xl border border-slate-200/60 self-start sm:self-auto">
+            <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700 self-start sm:self-auto">
               <button
                 onClick={() => setViewDisplayMode("BOTH")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
                   viewDisplayMode === "BOTH"
-                    ? "bg-white text-slate-900 shadow-2xs border border-slate-200/60"
-                    : "text-slate-500 hover:text-slate-800"
+                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs border border-slate-200/60 dark:border-slate-700"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}
                 title="Tampilkan Grafik & Tabel"
               >
-                <BarChart3 size={13} className="text-[#009966]" />
+                <BarChart3 size={13} className="text-[#009966] dark:text-emerald-400" />
                 <span className="hidden md:inline">Grafik &amp; Tabel</span>
               </button>
               <button
                 onClick={() => setViewDisplayMode("CHART_ONLY")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
                   viewDisplayMode === "CHART_ONLY"
-                    ? "bg-white text-slate-900 shadow-2xs border border-slate-200/60"
-                    : "text-slate-500 hover:text-slate-800"
+                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs border border-slate-200/60 dark:border-slate-700"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}
                 title="Tampilkan Grafik Saja"
               >
@@ -438,12 +438,12 @@ const Leaderboard: React.FC = () => {
                 onClick={() => setViewDisplayMode("GRID_TABLE")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
                   viewDisplayMode === "GRID_TABLE"
-                    ? "bg-white text-slate-900 shadow-2xs border border-slate-200/60"
-                    : "text-slate-500 hover:text-slate-800"
+                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs border border-slate-200/60 dark:border-slate-700"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}
                 title="Tampilkan Tabel Saja"
               >
-                <LayoutList size={13} className="text-blue-600" />
+                <LayoutList size={13} className="text-blue-600 dark:text-blue-400" />
                 <span className="hidden md:inline">Tabel</span>
               </button>
             </div>
@@ -680,22 +680,22 @@ const Leaderboard: React.FC = () => {
                 {/* Table */}
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-xs text-left">
-                    <thead className="bg-slate-50/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
+                    <thead className="bg-slate-50/80 dark:bg-slate-850 text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                       <tr>
                         <th
-                          className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors w-20"
+                          className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors w-20"
                           onClick={() => toggleSort("rank")}
                         >
                           <div className="flex items-center gap-1.5">Peringkat <ArrowUpDown size={13} /></div>
                         </th>
                         <th
-                          className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                          className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                           onClick={() => toggleSort("name")}
                         >
                           <div className="flex items-center gap-1.5">{nameHeader} <ArrowUpDown size={13} /></div>
                         </th>
                         <th
-                          className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                          className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                           onClick={() => toggleSort("subtitle")}
                         >
                           <div className="flex items-center gap-1.5">{subtitleHeader} <ArrowUpDown size={13} /></div>
@@ -704,7 +704,7 @@ const Leaderboard: React.FC = () => {
                           <th className="py-3.5 px-4">{extraInfoHeader}</th>
                         )}
                         <th
-                          className="py-3.5 px-4 text-right cursor-pointer hover:bg-slate-100 transition-colors"
+                          className="py-3.5 px-4 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                           onClick={() => toggleSort("points")}
                         >
                           <div className="flex items-center justify-end gap-1.5">
