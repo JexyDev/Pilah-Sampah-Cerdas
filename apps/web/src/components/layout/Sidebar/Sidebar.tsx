@@ -430,7 +430,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             {
               to: "/penilaian-kkn/mahasiswa",
-              label: "Penilaian Mahasiswa",
+              label: "Penilaian Mahasiswa (Individu)",
               allowed: [
                 "DEVELOPER",
                 "DPL",
@@ -456,8 +456,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
+              to: "/penilaian-kkn/laporan-akhir",
+              label: "Penilaian Laporan Akhir",
+              allowed: [
+                "DEVELOPER",
+                "DPL",
+                "DOSEN_PEMBIMBING",
+                "SUPER_USER",
+                "PANITIA_TASKFORCE",
+                "PEMIMPIN",
+              ] as UserRole[],
+            },
+            {
               to: "/penilaian-kkn/rekap",
-              label: "Rekapitulasi Nilai",
+              label: "Rekap dan Nilai Akhir",
               allowed: [
                 "DEVELOPER",
                 "DPL",

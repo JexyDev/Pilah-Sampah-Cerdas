@@ -37,6 +37,11 @@ export interface StudentDetail {
   sickCount: number;
   izinCount: number;
   alphaCount: number;
+  totalHours?: number;
+  totalMinutes?: number;
+  remainingMinutes?: number;
+  targetHours?: number;
+  progressPercentage?: number;
   attendances: Array<{
     id: string;
     scheduleTitle: string;

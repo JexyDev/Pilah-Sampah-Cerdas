@@ -338,10 +338,26 @@ export const dplService = {
             : 0;
         const alphaCount = Math.max(rawAlpha, rejectedAbsenceCount);
 
+        const configTargets = await dplService.getConfigTargets();
         const ruleConfigs = await configService.getRuleEngineConfigs();
         const baseScore = Number(st.assessmentScore || 0);
         const penaltyPerAlpha = ruleConfigs.alphaPenaltyScorePercent || 5.0;
         const finalCalculatedScore = Math.max(0, Math.round(baseScore - (alphaCount * penaltyPerAlpha)));
+
+        let totalMinutes = 0;
+        for (const a of attendances) {
+          if (a.checkOutAt && a.attendedAt) {
+            const diffMs = Math.max(0, new Date(a.checkOutAt).getTime() - new Date(a.attendedAt).getTime());
+            const mins = Math.round(diffMs / (1000 * 60));
+            totalMinutes += mins;
+          } else if (a.attendedAt) {
+            totalMinutes += (configTargets.targetHarianJam || 4) * 60;
+          }
+        }
+        const totalHours = Math.floor(totalMinutes / 60);
+        const remainingMinutes = totalMinutes % 60;
+        const targetHours = configTargets.targetTotalJam || 200;
+        const progressPercentage = Math.round((totalMinutes / (targetHours * 60 || 1)) * 100);
 
         const points = await prisma.pointHistory.aggregate({
           where: { userId: st.userId },
@@ -371,6 +387,11 @@ export const dplService = {
           sickCount,
           izinCount,
           alphaCount,
+          totalHours,
+          totalMinutes,
+          remainingMinutes,
+          targetHours,
+          progressPercentage,
           statusKehadiranLabel: alphaCount > 0 ? `${alphaCount}x Tanpa Keterangan (Alpha)` : "Tertib Presensi",
           attendances: attendances.map((a) => ({
             id: a.id,

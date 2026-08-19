@@ -2359,7 +2359,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   Daftar Roster Mahasiswa KKN {selectedKelompokId ? `(${groups.find((g) => g.id === selectedKelompokId)?.name || "Kelompok Terpilih"})` : "(Seluruh Wilayah Binaan)"}
                 </h4>
                 <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
-                  Belum ada jadwal kegiatan aktif pada filter ini. Menampilkan rekapitulasi data mahasiswa terdaftar, akumulasi jam kerja, dan pin live GPS.
+                  Belum ada jadwal kegiatan aktif pada filter ini. Menampilkan rekapitulasi data mahasiswa terdaftar, progres aktual / target jam kerja, dan pin live GPS.
                 </p>
               </div>
             </div>
@@ -2395,7 +2395,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       <th className="py-3.5 px-4 text-center">Jam Pulang</th>
                       <th className="py-3.5 px-4 text-center">Durasi</th>
                       <th className="py-3.5 px-4 text-center">
-                        {activeSchedule ? "Aktual / Target" : "Total Akumulasi"}
+                        Aktual / Target
                       </th>
                       <th className="py-3.5 px-4 text-center">Poin Dampingan</th>
                       <th className="py-3.5 px-4 text-center">Lokasi Kegiatan</th>
@@ -2744,7 +2744,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         </div>
                         <div>
                           <span className="text-[9px] text-slate-400 block font-bold uppercase">
-                            {activeSchedule ? "Durasi" : "Total Jam"}
+                            Aktual / Target
                           </span>
                           <span
                             className={`font-black ${

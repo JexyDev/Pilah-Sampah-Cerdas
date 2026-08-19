@@ -3,12 +3,13 @@
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
- * Modul Penilaian KKN Mahasiswa (Komposisi Mitra/PL 70% + DPL 30%)
+ * Modul Penilaian KKN Mahasiswa (Komposisi Mitra/MPL 70% + DPL 30%)
  * Sesuai Acuan UI Resmi PT Makerindo & Standar Penilaian Coblong
  * - 100% Real-time Database Integration
  * - Perhitungan Matematis Otomatis & Presisi
- * - Pemisahan Kolom Mandiri (NIM, Nama, Jenjang, Prodi)
- * - Form Penilaian Berdasarkan Role (DPL 30% / Mitra 70%)
+ * - Pemisahan Kolom Mandiri (NIM, Nama, Jenjang, Prodi, Kelompok)
+ * - Modal Dialog Interaktif Modern dengan Tab Navigasi Role-focused
+ * - Single Save Button (Non-redundant) dengan Modal Konfirmasi Interaktif
  * - Portofolio Aktivitas KKN Mahasiswa
  * - Cetak Lembar Nilai Resmi PDF
  */
@@ -24,6 +25,11 @@ import {
   Search,
   Filter,
   Loader2,
+  X,
+  CheckCircle2,
+  AlertCircle,
+  BookOpen,
+  MapPin,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -58,7 +64,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   const isMitra = ["ADMIN_DLH", "DLH", "LURAH", "KELURAHAN", "RW", "MITRA", "MPL", "MITRA_LAPANGAN"].includes(userRole);
   const isSuper = ["SUPER_USER", "DEVELOPER", "PANITIA_TASKFORCE", "CAMAT", "PEMIMPIN"].includes(userRole);
 
+  const canEditMitra = isMitra || isSuper;
+  const canEditDpl = isDpl || isSuper;
+
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [studentsRekap, setStudentsRekap] = useState<StudentRekapItem[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
@@ -66,6 +76,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   const [filterKelompok, setFilterKelompok] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10;
+
+  // Modal Dialog states
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<"DPL" | "MPL" | "RINGKASAN">("DPL");
 
   const [studentInfo, setStudentInfo] = useState<StudentInfo | null>(null);
 
@@ -111,9 +126,6 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     catatanMitra: "",
   });
 
-  const canEditMitra = isMitra || isSuper;
-  const canEditDpl = isDpl || isSuper;
-
   // Load Rekap Mahasiswa
   const fetchStudents = async () => {
     setLoading(true);
@@ -136,9 +148,6 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         kategori: s.kategori || "Belum Dinilai",
       }));
       setStudentsRekap(formatted);
-      if (formatted.length > 0 && !selectedStudentId) {
-        setSelectedStudentId(formatted[0].studentId);
-      }
     } catch (err) {
       console.error("Gagal memuat daftar mahasiswa:", err);
       toast.error("Gagal memuat rekapitulasi nilai mahasiswa");
@@ -152,10 +161,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   }, []);
 
   // Fetch Detail Mahasiswa Terpilih
-  const loadAssessment = useCallback(async () => {
-    if (!selectedStudentId) return;
+  const loadAssessment = useCallback(async (studentId: string) => {
+    if (!studentId) return;
+    setLoadingDetail(true);
     try {
-      const data = await penilaianKknApiService.getStudentPenilaian(selectedStudentId);
+      const data = await penilaianKknApiService.getStudentPenilaian(studentId);
       setStudentInfo(data.student);
       const a = data.assessment;
       setScores({
@@ -179,12 +189,28 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
       });
     } catch (err: any) {
       console.error("Gagal memuat detail nilai mahasiswa:", err);
+      toast.error("Gagal memuat data detail penilaian");
+    } finally {
+      setLoadingDetail(false);
     }
-  }, [selectedStudentId]);
+  }, []);
 
-  useEffect(() => {
-    loadAssessment();
-  }, [loadAssessment]);
+  // Open assessment modal with auto-focused tab according to role
+  const handleOpenAssessmentModal = (studentId: string) => {
+    setSelectedStudentId(studentId);
+    if (isMitra && !isSuper) {
+      setActiveTab("MPL");
+    } else {
+      setActiveTab("DPL");
+    }
+    loadAssessment(studentId);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setIsConfirmOpen(false);
+  };
 
   // Kalkulasi Aspek: (Skor / 4) * Bobot
   const calcAspect = (skor: number, bobot: number) => {
@@ -245,8 +271,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     setScores((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Simpan Penilaian (Fleksibel tanpa finalisasi kaku)
-  const handleSaveScore = async () => {
+  // Simpan Penilaian yang Dikonfirmasi
+  const handleConfirmSaveScore = async () => {
     if (!selectedStudentId) return;
     setSaving(true);
     try {
@@ -254,22 +280,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         studentId: selectedStudentId,
         ...scores,
       });
-      toast.success("Penilaian mahasiswa berhasil disimpan!");
+      toast.success("Penilaian mahasiswa berhasil disimpan ke database!");
+      setIsConfirmOpen(false);
+      setIsModalOpen(false);
       // Refresh rekap data
       await fetchStudents();
-
-      // Scroll kembali ke atas ke mahasiswa yang dinilai
-      setTimeout(() => {
-        const studentRow = document.getElementById(`student-row-${selectedStudentId}`);
-        if (studentRow) {
-          studentRow.scrollIntoView({ behavior: "smooth", block: "center" });
-        } else {
-          const tableSection = document.getElementById("tabel-mahasiswa-section");
-          if (tableSection) {
-            tableSection.scrollIntoView({ behavior: "smooth" });
-          }
-        }
-      }, 100);
     } catch (err: any) {
       toast.error(err.message || "Gagal menyimpan penilaian");
     } finally {
@@ -301,18 +316,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     return filteredStudents.slice(start, start + itemsPerPage);
   }, [filteredStudents, currentPage, itemsPerPage]);
 
-  const handleSelectStudentForAssessment = (studentId: string) => {
-    setSelectedStudentId(studentId);
-    // Smooth scroll down to assessment form if on mobile/desktop
-    const el = document.getElementById("form-penilaian-section");
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
   const isGradeComplete = subtotalDpl > 0 && subtotalMitra > 0;
 
-  // Cetak PDF Berita Acara & Lembar Nilai (Hanya jika nilai lengkap 100%)
+  // Cetak PDF Berita Acara & Lembar Nilai
   const handlePrintPdf = () => {
     if (!isGradeComplete) {
       toast.error("Cetak PDF lembar penilaian resmi hanya dapat dilakukan setelah nilai lengkap dari kedua pihak (DPL 30% dan MPL 70%).");
@@ -458,20 +464,20 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-slate-50 dark:bg-slate-950 dark:bg-slate-800/60 p-4 md:p-6 space-y-6 text-slate-800 dark:text-slate-100">
+    <div className="min-h-[calc(100vh-64px)] bg-slate-50 dark:bg-slate-950 p-4 md:p-6 space-y-6 text-slate-800 dark:text-slate-100">
       {/* Header Utama */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-emerald-50 text-emerald-700 rounded-xl">
+            <div className="p-2 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 rounded-xl">
               <Award size={22} />
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-                Penilaian KKN Mahasiswa
+                Penilaian Mahasiswa (Individu)
               </h1>
               <p className="text-slate-500 text-xs mt-0.5">
-                Evaluasi performa lapangan (Mitra 70%) dan capaian akademik (DPL 30%) dengan kalkulasi otomatis.
+                Evaluasi performa lapangan (Mitra) dan capaian akademik (DPL) mahasiswa dengan kalkulasi otomatis.
               </p>
             </div>
           </div>
@@ -481,7 +487,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
       {/* KPI Cards Ringkasan Nilai Angkatan */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center font-black shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-400 flex items-center justify-center font-black shrink-0">
             <Users size={16} />
           </div>
           <div>
@@ -491,12 +497,12 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center font-black shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 flex items-center justify-center font-black shrink-0">
             <GraduationCap size={16} />
           </div>
           <div>
-            <span className="text-[10px] text-slate-400 font-bold block uppercase">Rerata Nilai DPL (30%)</span>
-            <span className="text-lg font-black text-amber-700">
+            <span className="text-[10px] text-slate-400 font-bold block uppercase">Rerata Nilai DPL</span>
+            <span className="text-lg font-black text-amber-700 dark:text-amber-400">
               {studentsRekap.length > 0
                 ? (studentsRekap.reduce((acc, s) => acc + (s.subtotalDpl || 0), 0) / studentsRekap.length).toFixed(1)
                 : "0"}
@@ -505,12 +511,12 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-black shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-black shrink-0">
             <ClipboardList size={16} />
           </div>
           <div>
-            <span className="text-[10px] text-slate-400 font-bold block uppercase">Rerata Nilai Mitra (70%)</span>
-            <span className="text-lg font-black text-emerald-700">
+            <span className="text-[10px] text-slate-400 font-bold block uppercase">Rerata Nilai Mitra</span>
+            <span className="text-lg font-black text-emerald-700 dark:text-emerald-400">
               {studentsRekap.length > 0
                 ? (studentsRekap.reduce((acc, s) => acc + (s.subtotalMitra || 0), 0) / studentsRekap.length).toFixed(1)
                 : "0"}
@@ -519,12 +525,12 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center font-black shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 flex items-center justify-center font-black shrink-0">
             <Award size={16} />
           </div>
           <div>
-            <span className="text-[10px] text-slate-400 font-bold block uppercase">Rerata Nilai Akhir</span>
-            <span className="text-lg font-black text-blue-700">
+            <span className="text-[10px] text-slate-400 font-bold block uppercase">Rerata Nilai Akumulasi</span>
+            <span className="text-lg font-black text-blue-700 dark:text-blue-400">
               {studentsRekap.length > 0
                 ? (studentsRekap.reduce((acc, s) => acc + (s.nilaiAkhir || 0), 0) / studentsRekap.length).toFixed(1)
                 : "0"}
@@ -533,7 +539,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         </div>
       </div>
 
-      {/* SECTION 1: TABEL REKAPITULASI MAHASISWA DENGAN KOLOM MANDIRI */}
+      {/* TABEL REKAPITULASI MAHASISWA DENGAN KOLOM MANDIRI */}
       <div id="tabel-mahasiswa-section" className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
           <div>
@@ -541,7 +547,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
               Daftar Mahasiswa
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Pilih mahasiswa untuk membuka form penilaian aspek dan portofolio KKN. Kolom NIM, Jenjang, dan Program Studi dipisah secara mandiri.
+              Pilih mahasiswa untuk membuka formulir penilaian aspek dan portofolio KKN. Kolom NIM, Jenjang, dan Program Studi dipisah secara mandiri.
             </p>
           </div>
 
@@ -594,26 +600,27 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           <div className="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50/90 text-slate-600 dark:text-slate-400 font-extrabold uppercase text-[10.5px] tracking-wider border-b border-slate-200 dark:border-slate-800">
+                <tr className="bg-slate-50/90 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-extrabold uppercase text-[10.5px] tracking-wider border-b border-slate-200 dark:border-slate-800">
                   <th className="py-3 px-3 text-center w-10">No</th>
                   <th className="py-3 px-3">NIM</th>
                   <th className="py-3 px-3">Nama Mahasiswa</th>
                   <th className="py-3 px-3">Jenjang</th>
                   <th className="py-3 px-3">Program Studi</th>
                   <th className="py-3 px-3">Kelompok</th>
+                  <th className="py-3 px-3 text-center">Status Nilai</th>
                   <th className="py-3 px-3 text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                 {paginatedStudents.map((st, idx) => {
-                  const isSelected = st.studentId === selectedStudentId;
+                  const hasDpl = st.subtotalDpl > 0;
+                  const hasMitra = st.subtotalMitra > 0;
+                  const isFull = hasDpl && hasMitra;
+
                   return (
                     <tr
                       key={st.studentId}
-                      id={`student-row-${st.studentId}`}
-                      className={`transition-colors ${
-                        isSelected ? "bg-emerald-50/60 font-semibold" : "hover:bg-slate-50/80"
-                      }`}
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
                     >
                       <td className="py-3 px-3 text-center font-bold text-slate-400">
                         {(currentPage - 1) * itemsPerPage + idx + 1}
@@ -628,17 +635,29 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                       <td className="py-3 px-3 text-slate-600 dark:text-slate-400">{st.jurusan || "-"}</td>
                       <td className="py-3 px-3 text-slate-600 dark:text-slate-400">{st.kelompok}</td>
                       <td className="py-3 px-3 text-center">
+                        {isFull ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-black bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300">
+                            <CheckCircle2 size={11} />
+                            <span>Lengkap ({st.nilaiAkhir.toFixed(1)})</span>
+                          </span>
+                        ) : hasDpl || hasMitra ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300">
+                            <span>Sebagian ({st.nilaiAkhir.toFixed(1)})</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-500">
+                            <span>Belum Dinilai</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3 text-center">
                         <button
                           type="button"
-                          onClick={() => handleSelectStudentForAssessment(st.studentId)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer shadow-2xs ${
-                            isSelected
-                              ? "bg-emerald-600 text-white"
-                              : "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
-                          }`}
+                          onClick={() => handleOpenAssessmentModal(st.studentId)}
+                          className="px-3 py-1.5 rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer shadow-2xs bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
                         >
                           <Award size={13} />
-                          <span>{isSelected ? "Sedang Dinilai" : "Beri Nilai"}</span>
+                          <span>Beri Nilai</span>
                         </button>
                       </td>
                     </tr>
@@ -659,674 +678,515 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         </div>
       </div>
 
-      {/* SECTION 2: FORM PENILAIAN ASPEK & PORTOFOLIO AKTIVITAS */}
-      {selectedStudentId && studentInfo && (
-        <div id="form-penilaian-section" className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs space-y-6">
-          {/* Header Mahasiswa yang Sedang Dinilai */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  {studentInfo.kelompok}
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                  {studentInfo.rw ? `${studentInfo.rw}, ` : ""}{studentInfo.kelurahan ? `Kel. ${studentInfo.kelurahan}` : "Wilayah Dampingan"}
-                </span>
+      {/* ========================================================================= */}
+      {/* POP-UP MODAL PENILAIAN MODERN & INTERAKTIF */}
+      {/* ========================================================================= */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div
+            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden text-slate-800 dark:text-slate-100 animate-in zoom-in-95 duration-150"
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* Header Modal: Identitas Mahasiswa */}
+            <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-start sm:items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-black text-lg shadow-md shrink-0">
+                  {studentInfo?.nama ? studentInfo.nama.charAt(0).toUpperCase() : "M"}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-black bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300">
+                      {studentInfo?.kelompok || "Kelompok KKN"}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                      <MapPin size={11} />
+                      {studentInfo?.rw ? `${studentInfo.rw}, ` : ""}{studentInfo?.kelurahan ? `Kel. ${studentInfo.kelurahan}` : "Wilayah Coblong"}
+                    </span>
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100 mt-1 flex items-center gap-2">
+                    <span>{studentInfo?.nama || "Memuat Mahasiswa..."}</span>
+                    <span className="font-mono text-sm text-slate-500 font-normal">({studentInfo?.nim || "-"})</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Jenjang {studentInfo?.jenjangPendidikan || "S1"} &bull; {studentInfo?.programStudi || "-"} ({studentInfo?.fakultas || "-"}) &bull; DPL: <strong>{studentInfo?.dplNama || "-"}</strong>
+                  </p>
+                </div>
               </div>
-              <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 mt-1.5 flex items-center gap-2">
-                <span>{studentInfo.nama}</span>
-                <span className="font-mono text-sm text-slate-500 font-normal">({studentInfo.nim})</span>
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Jenjang {studentInfo.jenjangPendidikan || "S1"} &bull; {studentInfo.programStudi} ({studentInfo.fakultas || "-"}) &bull; DPL: <strong>{studentInfo.dplNama || "-"}</strong>
-              </p>
+
+              {/* Close Button & Role Badge */}
+              <div className="flex items-center gap-2 self-end md:self-auto">
+                {isDpl && !isSuper && (
+                  <span className="px-3 py-1 rounded-xl text-xs font-black bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-1.5">
+                    <GraduationCap size={14} className="text-amber-600" />
+                    <span>Mode DPL</span>
+                  </span>
+                )}
+                {isMitra && !isSuper && (
+                  <span className="px-3 py-1 rounded-xl text-xs font-black bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5">
+                    <ClipboardList size={14} className="text-emerald-600" />
+                    <span>Mode Mitra (MPL)</span>
+                  </span>
+                )}
+                {isSuper && (
+                  <span className="px-3 py-1 rounded-xl text-xs font-black bg-blue-50 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center gap-1.5">
+                    <Award size={14} className="text-blue-600" />
+                    <span>Mode Super User</span>
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                  title="Tutup Formulir"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
-            {/* Header Form Penilaian Sesuai Role */}
-            <div className="flex items-center gap-2">
-              {isDpl && !isSuper && (
-                <>
-                  <span className="px-3 py-1 rounded-xl text-xs font-black bg-amber-50 text-amber-900 border border-amber-200 flex items-center gap-1.5 shadow-2xs">
-                    <GraduationCap size={15} className="text-amber-600" />
-                    <span>Lembar Penilaian Akademik DPL (30%)</span>
+            {/* Sticky Real-time Calculation Ribbon */}
+            <div className="bg-slate-100/90 dark:bg-slate-800/80 px-5 sm:px-6 py-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Subtotal DPL</span>
+                  <span className="text-base sm:text-lg font-black text-amber-700 dark:text-amber-400">
+                    {subtotalDpl.toFixed(2)}
                   </span>
-                  <button
-                    type="button"
-                    onClick={handleSaveScore}
-                    disabled={saving || !selectedStudentId}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition shadow-xs cursor-pointer disabled:opacity-50"
-                    title="Simpan Penilaian Mahasiswa"
-                  >
-                    {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-                    <span>Simpan Penilaian</span>
-                  </button>
+                </div>
+                <span className="text-slate-300 text-lg font-light">+</span>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Subtotal Mitra (MPL)</span>
+                  <span className="text-base sm:text-lg font-black text-emerald-700 dark:text-emerald-400">
+                    {subtotalMitra.toFixed(2)}
+                  </span>
+                </div>
+                <span className="text-slate-300 text-lg font-light">=</span>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Akumulasi Nilai</span>
+                  <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100">
+                    {nilaiAkhir.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className={`px-3 py-1.5 rounded-xl text-xs font-black border ${isGradeComplete ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300" : "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300"}`}>
+                  Status: {isGradeComplete ? "Penilaian Lengkap" : "Menunggu Lengkap"}
+                </span>
+              </div>
+            </div>
+
+            {/* Tab Navigation */}
+            <div className="flex items-center border-b border-slate-200 dark:border-slate-800 px-5 sm:px-6 bg-white dark:bg-slate-900 gap-2 shrink-0">
+              {(canEditDpl || isSuper) && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("DPL")}
+                  className={`py-3 px-4 text-xs font-extrabold flex items-center gap-2 border-b-2 transition cursor-pointer ${
+                    activeTab === "DPL"
+                      ? "border-amber-500 text-amber-700 dark:text-amber-400 bg-amber-50/40 dark:bg-amber-950/20"
+                      : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  }`}
+                >
+                  <GraduationCap size={16} />
+                  <span>Akademik DPL</span>
+                  <span className="px-1.5 py-0.2 rounded-md bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 text-[10px] font-black">
+                    {subtotalDpl.toFixed(1)}
+                  </span>
+                </button>
+              )}
+
+              {(canEditMitra || isSuper) && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("MPL")}
+                  className={`py-3 px-4 text-xs font-extrabold flex items-center gap-2 border-b-2 transition cursor-pointer ${
+                    activeTab === "MPL"
+                      ? "border-emerald-600 text-emerald-700 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20"
+                      : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  }`}
+                >
+                  <ClipboardList size={16} />
+                  <span>Lapangan Mitra (MPL)</span>
+                  <span className="px-1.5 py-0.2 rounded-md bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-black">
+                    {subtotalMitra.toFixed(1)}
+                  </span>
+                </button>
+              )}
+
+              {isSuper && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("RINGKASAN")}
+                  className={`py-3 px-4 text-xs font-extrabold flex items-center gap-2 border-b-2 transition cursor-pointer ${
+                    activeTab === "RINGKASAN"
+                      ? "border-blue-600 text-blue-700 dark:text-blue-400 bg-blue-50/40 dark:bg-blue-950/20"
+                      : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  }`}
+                >
+                  <BookOpen size={16} />
+                  <span>Ringkasan Komprehensif</span>
+                </button>
+              )}
+            </div>
+
+            {/* Modal Body (Scrollable) */}
+            <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-6">
+              {loadingDetail ? (
+                <div className="flex flex-col items-center justify-center py-16 text-slate-400 gap-3">
+                  <Loader2 size={32} className="animate-spin text-emerald-600" />
+                  <span className="text-xs font-medium">Memuat data aspek penilaian mahasiswa...</span>
+                </div>
+              ) : (
+                <>
+                  {/* TAB 1: ASPEK DPL */}
+                  {activeTab === "DPL" && (
+                    <div className="space-y-5">
+                      <div className="bg-amber-50/60 dark:bg-amber-950/20 p-4 rounded-2xl border border-amber-200/80 dark:border-amber-900/40 flex items-center justify-between">
+                        <div>
+                          <h3 className="text-sm font-black text-amber-950 dark:text-amber-200">
+                            Lembar Penilaian Akademik Dosen Pendamping Lapangan (DPL)
+                          </h3>
+                          <p className="text-xs text-amber-800/80 dark:text-amber-300/80 mt-0.5">
+                            Evaluasi 6 aspek capaian akademik dan refleksi mahasiswa. Skala skor 0 sampai 4.
+                          </p>
+                        </div>
+                        {!canEditDpl && (
+                          <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                            Mode Lihat Saja
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 font-extrabold uppercase text-[10px] border-b border-slate-200 dark:border-slate-800">
+                              <th className="py-3 px-3 text-center w-8">No</th>
+                              <th className="py-3 px-3">Aspek Akademik DPL</th>
+                              <th className="py-3 px-2 text-center w-14">Bobot</th>
+                              <th className="py-3 px-3 text-center w-48">Pilih Skor (0 – 4)</th>
+                              <th className="py-3 px-3 text-right w-20">Nilai</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
+                            {[
+                              { no: 1, key: "skorDplPerencanaan" as const, label: "Perencanaan & Pemahaman Program", val: nilaiAspekDpl.perencanaan },
+                              { no: 2, key: "skorDplKontribusi" as const, label: "Kontribusi Individu", val: nilaiAspekDpl.kontribusi },
+                              { no: 3, key: "skorDplLogbook" as const, label: "Logbook & Dokumentasi Akademik", val: nilaiAspekDpl.logbook },
+                              { no: 4, key: "skorDplAnalisis" as const, label: "Analisis Masalah & Solusi", val: nilaiAspekDpl.analisis },
+                              { no: 5, key: "skorDplOutput" as const, label: "Output, Outcome, & Dampak", val: nilaiAspekDpl.output },
+                              { no: 6, key: "skorDplLaporanAkhir" as const, label: "Laporan Akhir, Evaluasi & Refleksi", val: nilaiAspekDpl.laporanAkhir },
+                            ].map((item) => (
+                              <tr key={item.key} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                                <td className="py-3 px-3 text-center font-bold text-slate-400">{item.no}</td>
+                                <td className="py-3 px-3 font-bold text-slate-900 dark:text-slate-100">{item.label}</td>
+                                <td className="py-3 px-2 text-center font-bold text-slate-700 dark:text-slate-300">5%</td>
+                                <td className="py-3 px-3 text-center">
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    {[0, 1, 2, 3, 4].map((num) => (
+                                      <button
+                                        key={num}
+                                        type="button"
+                                        disabled={!canEditDpl}
+                                        onClick={() => handleScoreChange(item.key, num)}
+                                        className={`w-7 h-7 rounded-lg text-xs font-black transition flex items-center justify-center ${
+                                          scores[item.key] === num
+                                            ? "bg-amber-500 text-white shadow-xs scale-105"
+                                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                                        } ${canEditDpl ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                                      >
+                                        {num}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-3 text-right font-black text-slate-900 dark:text-slate-100">
+                                  {item.val.toFixed(2)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Catatan DPL */}
+                      <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                          Catatan Evaluasi Akademik Dosen Pendamping Lapangan (DPL):
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={scores.catatanDpl}
+                          onChange={(e) => setScores((prev) => ({ ...prev, catatanDpl: e.target.value }))}
+                          placeholder="Tuliskan catatan evaluasi akademik, bimbingan, atau saran perbaikan untuk mahasiswa..."
+                          disabled={!canEditDpl}
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-amber-500 disabled:bg-slate-100 dark:disabled:bg-slate-800"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 2: ASPEK MITRA / MPL */}
+                  {activeTab === "MPL" && (
+                    <div className="space-y-5">
+                      <div className="bg-emerald-50/60 dark:bg-emerald-950/20 p-4 rounded-2xl border border-emerald-200/80 dark:border-emerald-900/40 flex items-center justify-between">
+                        <div>
+                          <h3 className="text-sm font-black text-emerald-950 dark:text-emerald-200">
+                            Lembar Penilaian Lapangan Mitra Pendamping Lapangan (MPL / Mitra)
+                          </h3>
+                          <p className="text-xs text-emerald-800/80 dark:text-emerald-300/80 mt-0.5">
+                            Evaluasi 8 aspek kedisiplinan dan kontribusi lapangan mahasiswa. Skala skor 0 sampai 4.
+                          </p>
+                        </div>
+                        {!canEditMitra && (
+                          <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                            Mode Lihat Saja
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 font-extrabold uppercase text-[10px] border-b border-slate-200 dark:border-slate-800">
+                              <th className="py-3 px-3 text-center w-8">No</th>
+                              <th className="py-3 px-3">Aspek Lapangan (MPL)</th>
+                              <th className="py-3 px-2 text-center w-14">Bobot</th>
+                              <th className="py-3 px-3 text-center w-48">Pilih Skor (0 – 4)</th>
+                              <th className="py-3 px-3 text-right w-20">Nilai</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
+                            {[
+                              { no: 1, key: "skorMitraKehadiran" as const, label: "Kehadiran dan Kedisiplinan", bobot: "10%", val: nilaiAspekMitra.kehadiran },
+                              { no: 2, key: "skorMitraWargaBinaan" as const, label: "Pembinaan Rumah Tangga / Warga Binaan", bobot: "10%", val: nilaiAspekMitra.wargaBinaan },
+                              { no: 3, key: "skorMitraProker" as const, label: "Keterlibatan Program Kerja Kelompok & Lapangan", bobot: "10%", val: nilaiAspekMitra.proker },
+                              { no: 4, key: "skorMitraKomunikasi" as const, label: "Komunikasi, Sopan Santun, & Etika Sosial", bobot: "8%", val: nilaiAspekMitra.komunikasi },
+                              { no: 5, key: "skorMitraTanggungJawab" as const, label: "Tanggung Jawab & Kerja Sama Tim", bobot: "8%", val: nilaiAspekMitra.tanggungJawab },
+                              { no: 6, key: "skorMitraBuktiKegiatan" as const, label: "Kesesuaian Bukti Kegiatan Lapangan", bobot: "7%", val: nilaiAspekMitra.buktiKegiatan },
+                              { no: 7, key: "skorMitraDampak" as const, label: "Dampak Nyata kepada Masyarakat & Wilayah", bobot: "10%", val: nilaiAspekMitra.dampak },
+                              { no: 8, key: "skorMitraInisiatif" as const, label: "Inisiatif Mandiri & Problem Solving", bobot: "7%", val: nilaiAspekMitra.inisiatif },
+                            ].map((item) => (
+                              <tr key={item.key} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                                <td className="py-3 px-3 text-center font-bold text-slate-400">{item.no}</td>
+                                <td className="py-3 px-3 font-bold text-slate-900 dark:text-slate-100">{item.label}</td>
+                                <td className="py-3 px-2 text-center font-bold text-slate-700 dark:text-slate-300">{item.bobot}</td>
+                                <td className="py-3 px-3 text-center">
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    {[0, 1, 2, 3, 4].map((num) => (
+                                      <button
+                                        key={num}
+                                        type="button"
+                                        disabled={!canEditMitra}
+                                        onClick={() => handleScoreChange(item.key, num)}
+                                        className={`w-7 h-7 rounded-lg text-xs font-black transition flex items-center justify-center ${
+                                          scores[item.key] === num
+                                            ? "bg-emerald-600 text-white shadow-xs scale-105"
+                                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                                        } ${canEditMitra ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                                      >
+                                        {num}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-3 text-right font-black text-slate-900 dark:text-slate-100">
+                                  {item.val.toFixed(2)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Catatan MPL */}
+                      <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                          Catatan Evaluasi Mitra Pendamping Lapangan (MPL / Mitra):
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={scores.catatanMitra}
+                          onChange={(e) => setScores((prev) => ({ ...prev, catatanMitra: e.target.value }))}
+                          placeholder="Tuliskan catatan etika, inisiatif, kedisiplinan, dan kinerja lapangan mahasiswa..."
+                          disabled={!canEditMitra}
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 disabled:bg-slate-100 dark:disabled:bg-slate-800"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 3: RINGKASAN KOMPREHENSIF (Super User) */}
+                  {activeTab === "RINGKASAN" && isSuper && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* DPL Summary Card */}
+                      <div className="p-4 rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/30 dark:bg-amber-950/20 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-black text-amber-900 dark:text-amber-300 uppercase flex items-center gap-1.5">
+                            <GraduationCap size={15} />
+                            <span>Porsi Akademik DPL (30%)</span>
+                          </h4>
+                          <span className="text-base font-black text-amber-700 dark:text-amber-400">
+                            {subtotalDpl.toFixed(2)}
+                          </span>
+                        </div>
+                        <ul className="text-xs divide-y divide-amber-100 dark:divide-amber-900/40 text-slate-700 dark:text-slate-300">
+                          <li className="py-1.5 flex justify-between"><span>Perencanaan (5%):</span><span className="font-bold">{nilaiAspekDpl.perencanaan.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Kontribusi (5%):</span><span className="font-bold">{nilaiAspekDpl.kontribusi.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Logbook (5%):</span><span className="font-bold">{nilaiAspekDpl.logbook.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Analisis Solusi (5%):</span><span className="font-bold">{nilaiAspekDpl.analisis.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Output & Dampak (5%):</span><span className="font-bold">{nilaiAspekDpl.output.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Laporan Akhir (5%):</span><span className="font-bold">{nilaiAspekDpl.laporanAkhir.toFixed(2)}</span></li>
+                        </ul>
+                      </div>
+
+                      {/* MPL Summary Card */}
+                      <div className="p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/30 dark:bg-emerald-950/20 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-black text-emerald-900 dark:text-emerald-300 uppercase flex items-center gap-1.5">
+                            <ClipboardList size={15} />
+                            <span>Porsi Lapangan MPL (70%)</span>
+                          </h4>
+                          <span className="text-base font-black text-emerald-700 dark:text-emerald-400">
+                            {subtotalMitra.toFixed(2)}
+                          </span>
+                        </div>
+                        <ul className="text-xs divide-y divide-emerald-100 dark:divide-emerald-900/40 text-slate-700 dark:text-slate-300">
+                          <li className="py-1.5 flex justify-between"><span>Kehadiran (10%):</span><span className="font-bold">{nilaiAspekMitra.kehadiran.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Warga Binaan (10%):</span><span className="font-bold">{nilaiAspekMitra.wargaBinaan.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Program Kerja (10%):</span><span className="font-bold">{nilaiAspekMitra.proker.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Komunikasi & Etika (8%):</span><span className="font-bold">{nilaiAspekMitra.komunikasi.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Tanggung Jawab (8%):</span><span className="font-bold">{nilaiAspekMitra.tanggungJawab.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Bukti Kegiatan (7%):</span><span className="font-bold">{nilaiAspekMitra.buktiKegiatan.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Dampak Warga (10%):</span><span className="font-bold">{nilaiAspekMitra.dampak.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Inisiatif (7%):</span><span className="font-bold">{nilaiAspekMitra.inisiatif.toFixed(2)}</span></li>
+                        </ul>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
-              {isMitra && !isSuper && (
-                <span className="px-3 py-1 rounded-xl text-xs font-black bg-emerald-50 text-emerald-900 border border-emerald-200 flex items-center gap-1.5 shadow-2xs">
-                  <ClipboardList size={15} className="text-emerald-600" />
-                  <span>Lembar Penilaian Lapangan Mitra (70%)</span>
-                </span>
-              )}
-              {isSuper && (
-                <span className="px-3 py-1 rounded-xl text-xs font-black bg-blue-50 text-blue-900 border border-blue-200 flex items-center gap-1.5 shadow-2xs">
-                  <Award size={15} className="text-blue-600" />
-                  <span>Lembar Penilaian Komprehensif (DPL 30% + Mitra 70%)</span>
-                </span>
+            </div>
+
+            {/* ================================================================= */}
+            {/* SINGLE NON-REDUNDANT FOOTER ACTION BUTTONS */}
+            {/* ================================================================= */}
+            <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 flex items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+                >
+                  Tutup
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePrintPdf}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition border ${
+                    isGradeComplete
+                      ? "bg-white dark:bg-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 shadow-2xs cursor-pointer"
+                      : "bg-slate-100 dark:bg-slate-800/40 text-slate-400 border-slate-200 dark:border-slate-800 cursor-not-allowed"
+                  }`}
+                  title={isGradeComplete ? "Cetak Dokumen Resmi PDF" : "Cetak PDF baru aktif setelah nilai lengkap dari kedua pihak"}
+                >
+                  <Printer size={14} className={isGradeComplete ? "text-slate-600 dark:text-slate-300" : "text-slate-400"} />
+                  <span>Cetak PDF</span>
+                  {!isGradeComplete && (
+                    <span className="text-[9.5px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded font-bold ml-1">
+                      Belum Lengkap
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* SINGLE SAVE BUTTON IN POPUP */}
+              {(canEditDpl || canEditMitra || isSuper) && (
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmOpen(true)}
+                  disabled={saving || !selectedStudentId || loadingDetail}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl text-xs font-black transition shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+                  <span>Simpan Penilaian</span>
+                </button>
               )}
             </div>
           </div>
+        </div>
+      )}
 
-          <div className="space-y-6">
-            {/* Summary Nilai Bar Sesuai Role (Hanya untuk Mitra & Super User) */}
-            {(!isDpl || isSuper) && (
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-6 flex-wrap">
-                  {/* Mode Tampilan Mitra / MPL */}
-                  {isMitra && !isSuper && (
-                    <>
-                      <div className="bg-white dark:bg-slate-900 px-3.5 py-2 rounded-xl border border-emerald-200 shadow-2xs">
-                        <span className="text-[10px] font-bold text-emerald-800 uppercase block">Subtotal MPL (Porsi Anda • 70%)</span>
-                        <div className="flex items-baseline gap-1 mt-0.5">
-                          <span className="text-xl font-black text-emerald-700">{subtotalMitra.toFixed(2)}</span>
-                        </div>
-                      </div>
-                      <div className="px-3 py-1.5 rounded-xl bg-slate-100/80 border border-slate-200 dark:border-slate-800">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase block">Subtotal DPL (Akademik • 30%)</span>
-                        <span className="text-sm font-black text-slate-700 dark:text-slate-300 mt-0.5 block">
-                          {subtotalDpl > 0 ? subtotalDpl.toFixed(2) : "Belum Dinilai"}
-                        </span>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Mode Super User / Developer */}
-                  {isSuper && (
-                    <>
-                      <div>
-                        <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Subtotal DPL (30%)</span>
-                        <span className="text-lg font-black text-amber-700">{subtotalDpl.toFixed(2)}</span>
-                      </div>
-                      <span className="text-slate-300 text-xl font-light">+</span>
-                      <div>
-                        <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Subtotal MPL (70%)</span>
-                        <span className="text-lg font-black text-emerald-700">{subtotalMitra.toFixed(2)}</span>
-                      </div>
-                      <span className="text-slate-300 text-xl font-light">=</span>
-                    </>
-                  )}
-
-                  <div>
-                    <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Nilai Akhir Kumulatif</span>
-                    <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{nilaiAkhir.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`px-3 py-1.5 rounded-xl text-xs font-black border ${currentCategory.color}`}>
-                    {currentCategory.label} ({currentCategory.letter})
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleSaveScore}
-                    disabled={saving || !selectedStudentId}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition shadow-xs cursor-pointer disabled:opacity-50"
-                    title="Simpan Penilaian Mahasiswa"
-                  >
-                    {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-                    <span>Simpan Penilaian</span>
-                  </button>
-                </div>
+      {/* ========================================================================= */}
+      {/* MODAL KONFIRMASI INTERAKTIF */}
+      {/* ========================================================================= */}
+      {isConfirmOpen && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-150">
+          <div
+            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 text-slate-800 dark:text-slate-100 space-y-4 animate-in zoom-in-95 duration-150"
+            role="alertdialog"
+            aria-modal="true"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <AlertCircle size={22} />
               </div>
-            )}
-
-            {/* Tables Sesuai Role */}
-            <div className={`grid grid-cols-1 ${isSuper ? "lg:grid-cols-2" : "grid-cols-1"} gap-6`}>
-              {/* TABEL DPL (30%) — Tampil untuk DPL & Super User */}
-              {(canEditDpl || isSuper) && (
-                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col justify-between shadow-2xs">
-                  <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-amber-50/50 dark:bg-amber-950/30 flex items-center justify-between">
-                    <h3 className="text-sm font-black text-amber-950 dark:text-amber-200 flex items-center gap-2">
-                      <GraduationCap size={17} className="text-amber-600 dark:text-amber-400" />
-                      <span>Aspek Dosen Pendamping Lapangan (DPL) &bull; Bobot 30%</span>
-                    </h3>
-                    {!canEditDpl && (
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                        View Only
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 font-extrabold uppercase text-[10px] border-b border-slate-200 dark:border-slate-800">
-                          <th className="py-2.5 px-3 text-center w-8">No</th>
-                          <th className="py-2.5 px-3">Aspek Akademik DPL</th>
-                          <th className="py-2.5 px-2 text-center w-12">Bobot</th>
-                          <th className="py-2.5 px-3 text-center">Skor (0–4)</th>
-                          <th className="py-2.5 px-3 text-right w-16">Nilai</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
-                        {/* 1. Perencanaan */}
-                        <tr className="hover:bg-slate-50/60">
-                          <td className="py-2.5 px-3 text-center font-bold text-slate-400">1</td>
-                          <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-slate-100">Perencanaan & Pemahaman Program</td>
-                          <td className="py-2.5 px-2 text-center font-bold text-slate-700 dark:text-slate-300">5%</td>
-                          <td className="py-2.5 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              {[0, 1, 2, 3, 4].map((num) => (
-                                <button
-                                  key={num}
-                                  type="button"
-                                  disabled={!canEditDpl}
-                                  onClick={() => handleScoreChange("skorDplPerencanaan", num)}
-                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
-                                    scores.skorDplPerencanaan === num
-                                      ? "bg-amber-500 text-white shadow-xs"
-                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                  } ${canEditDpl ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
-                                >
-                                  {num}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-black text-slate-900 dark:text-slate-100">
-                            {nilaiAspekDpl.perencanaan.toFixed(2)}
-                          </td>
-                        </tr>
-
-                        {/* 2. Kontribusi */}
-                        <tr className="hover:bg-slate-50/60">
-                          <td className="py-2.5 px-3 text-center font-bold text-slate-400">2</td>
-                          <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-slate-100">Kontribusi Individu</td>
-                          <td className="py-2.5 px-2 text-center font-bold text-slate-700 dark:text-slate-300">5%</td>
-                          <td className="py-2.5 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              {[0, 1, 2, 3, 4].map((num) => (
-                                <button
-                                  key={num}
-                                  type="button"
-                                  disabled={!canEditDpl}
-                                  onClick={() => handleScoreChange("skorDplKontribusi", num)}
-                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
-                                    scores.skorDplKontribusi === num
-                                      ? "bg-amber-500 text-white shadow-xs"
-                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                  } ${canEditDpl ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
-                                >
-                                  {num}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-black text-slate-900 dark:text-slate-100">
-                            {nilaiAspekDpl.kontribusi.toFixed(2)}
-                          </td>
-                        </tr>
-
-                        {/* 3. Logbook */}
-                        <tr className="hover:bg-slate-50/60">
-                          <td className="py-2.5 px-3 text-center font-bold text-slate-400">3</td>
-                          <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-slate-100">Logbook & Dokumentasi Akademik</td>
-                          <td className="py-2.5 px-2 text-center font-bold text-slate-700 dark:text-slate-300">5%</td>
-                          <td className="py-2.5 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              {[0, 1, 2, 3, 4].map((num) => (
-                                <button
-                                  key={num}
-                                  type="button"
-                                  disabled={!canEditDpl}
-                                  onClick={() => handleScoreChange("skorDplLogbook", num)}
-                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
-                                    scores.skorDplLogbook === num
-                                      ? "bg-amber-500 text-white shadow-xs"
-                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                  } ${canEditDpl ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
-                                >
-                                  {num}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-black text-slate-900 dark:text-slate-100">
-                            {nilaiAspekDpl.logbook.toFixed(2)}
-                          </td>
-                        </tr>
-
-                        {/* 4. Analisis */}
-                        <tr className="hover:bg-slate-50/60">
-                          <td className="py-2.5 px-3 text-center font-bold text-slate-400">4</td>
-                          <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-slate-100">Analisis Masalah & Solusi</td>
-                          <td className="py-2.5 px-2 text-center font-bold text-slate-700 dark:text-slate-300">5%</td>
-                          <td className="py-2.5 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              {[0, 1, 2, 3, 4].map((num) => (
-                                <button
-                                  key={num}
-                                  type="button"
-                                  disabled={!canEditDpl}
-                                  onClick={() => handleScoreChange("skorDplAnalisis", num)}
-                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
-                                    scores.skorDplAnalisis === num
-                                      ? "bg-amber-500 text-white shadow-xs"
-                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                  } ${canEditDpl ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
-                                >
-                                  {num}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-black text-slate-900 dark:text-slate-100">
-                            {nilaiAspekDpl.analisis.toFixed(2)}
-                          </td>
-                        </tr>
-
-                        {/* 5. Output */}
-                        <tr className="hover:bg-slate-50/60">
-                          <td className="py-2.5 px-3 text-center font-bold text-slate-400">5</td>
-                          <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-slate-100">Output, Outcome, & Dampak</td>
-                          <td className="py-2.5 px-2 text-center font-bold text-slate-700 dark:text-slate-300">5%</td>
-                          <td className="py-2.5 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              {[0, 1, 2, 3, 4].map((num) => (
-                                <button
-                                  key={num}
-                                  type="button"
-                                  disabled={!canEditDpl}
-                                  onClick={() => handleScoreChange("skorDplOutput", num)}
-                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
-                                    scores.skorDplOutput === num
-                                      ? "bg-amber-500 text-white shadow-xs"
-                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                  } ${canEditDpl ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
-                                >
-                                  {num}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-black text-slate-900 dark:text-slate-100">
-                            {nilaiAspekDpl.output.toFixed(2)}
-                          </td>
-                        </tr>
-
-                        {/* 6. Laporan Akhir */}
-                        <tr className="hover:bg-slate-50/60">
-                          <td className="py-2.5 px-3 text-center font-bold text-slate-400">6</td>
-                          <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-slate-100">Laporan Akhir, Evaluasi & Refleksi</td>
-                          <td className="py-2.5 px-2 text-center font-bold text-slate-700 dark:text-slate-300">5%</td>
-                          <td className="py-2.5 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              {[0, 1, 2, 3, 4].map((num) => (
-                                <button
-                                  key={num}
-                                  type="button"
-                                  disabled={!canEditDpl}
-                                  onClick={() => handleScoreChange("skorDplLaporanAkhir", num)}
-                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
-                                    scores.skorDplLaporanAkhir === num
-                                      ? "bg-amber-500 text-white shadow-xs"
-                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                  } ${canEditDpl ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
-                                >
-                                  {num}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-black text-slate-900 dark:text-slate-100">
-                            {nilaiAspekDpl.laporanAkhir.toFixed(2)}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="p-3 bg-amber-50/70 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-amber-900">Subtotal DPL (30%):</span>
-                      <span className="text-base font-black text-amber-700">{subtotalDpl.toFixed(2)}</span>
-                    </div>
-                    {canEditDpl && (
-                      <button
-                        type="button"
-                        onClick={handleSaveScore}
-                        disabled={saving || !selectedStudentId}
-                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition shadow-xs cursor-pointer disabled:opacity-50"
-                        title="Simpan Penilaian Mahasiswa"
-                      >
-                        {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                        <span>Simpan Penilaian</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* TABEL MPL (70%) — Tampil untuk Mitra & Super User */}
-              {(canEditMitra || isSuper) && (
-                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col justify-between shadow-2xs">
-                  <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-emerald-50/50 dark:bg-emerald-950/30 flex items-center justify-between">
-                    <h3 className="text-sm font-black text-emerald-950 dark:text-emerald-200 flex items-center gap-2">
-                      <ClipboardList size={17} className="text-emerald-600 dark:text-emerald-400" />
-                      <span>Aspek Mitra Pendamping Lapangan (MPL) &bull; Bobot 70%</span>
-                    </h3>
-                    {!canEditMitra && (
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                        View Only
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 font-extrabold uppercase text-[10px] border-b border-slate-200 dark:border-slate-800">
-                          <th className="py-2.5 px-3 text-center w-8">No</th>
-                          <th className="py-2.5 px-3">Aspek Lapangan (MPL)</th>
-                          <th className="py-2.5 px-2 text-center w-12">Bobot</th>
-                          <th className="py-2.5 px-3 text-center">Skor (0–4)</th>
-                          <th className="py-2.5 px-3 text-right w-16">Nilai</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
-                        {/* 1. Kehadiran */}
-                        <tr className="hover:bg-slate-50/60">
-                          <td className="py-2 px-3 text-center font-bold text-slate-400">1</td>
-                          <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">Kehadiran dan Kedisiplinan</td>
-                          <td className="py-2 px-2 text-center font-bold text-slate-700 dark:text-slate-300">10%</td>
-                          <td className="py-2 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              {[0, 1, 2, 3, 4].map((num) => (
-                                <button
-                                  key={num}
-                                  type="button"
-                                  disabled={!canEditMitra}
-                                  onClick={() => handleScoreChange("skorMitraKehadiran", num)}
-                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
-                                    scores.skorMitraKehadiran === num
-                                      ? "bg-emerald-600 text-white shadow-xs"
-                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                  } ${canEditMitra ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
-                                >
-                                  {num}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-2 px-3 text-right font-black text-slate-900 dark:text-slate-100">
-                            {nilaiAspekMitra.kehadiran.toFixed(2)}
-                          </td>
-                        </tr>
-
-                        {/* 2. Warga Binaan */}
-                        <tr className="hover:bg-slate-50/60">
-                          <td className="py-2 px-3 text-center font-bold text-slate-400">2</td>
-                          <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">Pembinaan Rumah Tangga / Warga Binaan</td>
-                          <td className="py-2 px-2 text-center font-bold text-slate-700 dark:text-slate-300">10%</td>
-                          <td className="py-2 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              {[0, 1, 2, 3, 4].map((num) => (
-                                <button
-                                  key={num}
-                                  type="button"
-                                  disabled={!canEditMitra}
-                                  onClick={() => handleScoreChange("skorMitraWargaBinaan", num)}
-                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
-                                    scores.skorMitraWargaBinaan === num
-                                      ? "bg-emerald-600 text-white shadow-xs"
-                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                  } ${canEditMitra ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
-                                >
-                                  {num}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-2 px-3 text-right font-black text-slate-900 dark:text-slate-100">
-                            {nilaiAspekMitra.wargaBinaan.toFixed(2)}
-                          </td>
-                        </tr>
-
-                        {/* 3. Program Kerja */}
-                        <tr className="hover:bg-slate-50/60">
-                          <td className="py-2 px-3 text-center font-bold text-slate-400">3</td>
-                          <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">Keterlibatan Program Kerja Kelompok & Lapangan</td>
-                          <td className="py-2 px-2 text-center font-bold text-slate-700 dark:text-slate-300">10%</td>
-                          <td className="py-2 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              {[0, 1, 2, 3, 4].map((num) => (
-                                <button
-                                  key={num}
-                                  type="button"
-                                  disabled={!canEditMitra}
-                                  onClick={() => handleScoreChange("skorMitraProker", num)}
-                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
-                                    scores.skorMitraProker === num
-                                      ? "bg-emerald-600 text-white shadow-xs"
-                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                  } ${canEditMitra ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
-                                >
-                                  {num}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-2 px-3 text-right font-black text-slate-900 dark:text-slate-100">
-                            {nilaiAspekMitra.proker.toFixed(2)}
-                          </td>
-                        </tr>
-
-                        {/* 4. Komunikasi */}
-                        <tr className="hover:bg-slate-50/60">
-                          <td className="py-2 px-3 text-center font-bold text-slate-400">4</td>
-                          <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">Komunikasi, Sopan Santun, & Etika Sosial</td>
-                          <td className="py-2 px-2 text-center font-bold text-slate-700 dark:text-slate-300">8%</td>
-                          <td className="py-2 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              {[0, 1, 2, 3, 4].map((num) => (
-                                <button
-                                  key={num}
-                                  type="button"
-                                  disabled={!canEditMitra}
-                                  onClick={() => handleScoreChange("skorMitraKomunikasi", num)}
-                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
-                                    scores.skorMitraKomunikasi === num
-                                      ? "bg-emerald-600 text-white shadow-xs"
-                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                  } ${canEditMitra ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
-                                >
-                                  {num}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-2 px-3 text-right font-black text-slate-900 dark:text-slate-100">
-                            {nilaiAspekMitra.komunikasi.toFixed(2)}
-                          </td>
-                        </tr>
-
-                        {/* 5. Tanggung Jawab */}
-                        <tr className="hover:bg-slate-50/60">
-                          <td className="py-2 px-3 text-center font-bold text-slate-400">5</td>
-                          <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">Tanggung Jawab & Kerja Sama Tim</td>
-                          <td className="py-2 px-2 text-center font-bold text-slate-700 dark:text-slate-300">8%</td>
-                          <td className="py-2 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              {[0, 1, 2, 3, 4].map((num) => (
-                                <button
-                                  key={num}
-                                  type="button"
-                                  disabled={!canEditMitra}
-                                  onClick={() => handleScoreChange("skorMitraTanggungJawab", num)}
-                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
-                                    scores.skorMitraTanggungJawab === num
-                                      ? "bg-emerald-600 text-white shadow-xs"
-                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                  } ${canEditMitra ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
-                                >
-                                  {num}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-2 px-3 text-right font-black text-slate-900 dark:text-slate-100">
-                            {nilaiAspekMitra.tanggungJawab.toFixed(2)}
-                          </td>
-                        </tr>
-
-                        {/* 6. Bukti Kegiatan */}
-                        <tr className="hover:bg-slate-50/60">
-                          <td className="py-2 px-3 text-center font-bold text-slate-400">6</td>
-                          <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">Kesesuaian Bukti Kegiatan Lapangan</td>
-                          <td className="py-2 px-2 text-center font-bold text-slate-700 dark:text-slate-300">7%</td>
-                          <td className="py-2 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              {[0, 1, 2, 3, 4].map((num) => (
-                                <button
-                                  key={num}
-                                  type="button"
-                                  disabled={!canEditMitra}
-                                  onClick={() => handleScoreChange("skorMitraBuktiKegiatan", num)}
-                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
-                                    scores.skorMitraBuktiKegiatan === num
-                                      ? "bg-emerald-600 text-white shadow-xs"
-                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                  } ${canEditMitra ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
-                                >
-                                  {num}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-2 px-3 text-right font-black text-slate-900 dark:text-slate-100">
-                            {nilaiAspekMitra.buktiKegiatan.toFixed(2)}
-                          </td>
-                        </tr>
-
-                        {/* 7. Dampak */}
-                        <tr className="hover:bg-slate-50/60">
-                          <td className="py-2 px-3 text-center font-bold text-slate-400">7</td>
-                          <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">Dampak Nyata kepada Masyarakat & Wilayah</td>
-                          <td className="py-2 px-2 text-center font-bold text-slate-700 dark:text-slate-300">10%</td>
-                          <td className="py-2 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              {[0, 1, 2, 3, 4].map((num) => (
-                                <button
-                                  key={num}
-                                  type="button"
-                                  disabled={!canEditMitra}
-                                  onClick={() => handleScoreChange("skorMitraDampak", num)}
-                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
-                                    scores.skorMitraDampak === num
-                                      ? "bg-emerald-600 text-white shadow-xs"
-                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                  } ${canEditMitra ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
-                                >
-                                  {num}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-2 px-3 text-right font-black text-slate-900 dark:text-slate-100">
-                            {nilaiAspekMitra.dampak.toFixed(2)}
-                          </td>
-                        </tr>
-
-                        {/* 8. Inisiatif */}
-                        <tr className="hover:bg-slate-50/60">
-                          <td className="py-2 px-3 text-center font-bold text-slate-400">8</td>
-                          <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">Inisiatif Mandiri & Problem Solving</td>
-                          <td className="py-2 px-2 text-center font-bold text-slate-700 dark:text-slate-300">7%</td>
-                          <td className="py-2 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              {[0, 1, 2, 3, 4].map((num) => (
-                                <button
-                                  key={num}
-                                  type="button"
-                                  disabled={!canEditMitra}
-                                  onClick={() => handleScoreChange("skorMitraInisiatif", num)}
-                                  className={`w-6 h-6 rounded-md text-xs font-black transition flex items-center justify-center ${
-                                    scores.skorMitraInisiatif === num
-                                      ? "bg-emerald-600 text-white shadow-xs"
-                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                  } ${canEditMitra ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
-                                >
-                                  {num}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-2 px-3 text-right font-black text-slate-900 dark:text-slate-100">
-                            {nilaiAspekMitra.inisiatif.toFixed(2)}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="p-3 bg-emerald-50/70 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center text-xs">
-                    <span className="font-extrabold text-emerald-900">Subtotal MPL (70%):</span>
-                    <span className="text-base font-black text-emerald-700">{subtotalMitra.toFixed(2)}</span>
-                  </div>
-                </div>
-              )}
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-slate-100">
+                  Konfirmasi Simpan Penilaian
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Pastikan seluruh skor aspek yang Anda masukkan sudah sesuai.
+                </p>
+              </div>
             </div>
 
-            {/* Catatan Evaluator Sesuai Role */}
-            <div className={`grid grid-cols-1 ${isSuper ? "md:grid-cols-2" : "grid-cols-1"} gap-4`}>
-              {(canEditDpl || isSuper) && (
-                <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Catatan Evaluasi Dosen Pendamping Lapangan (DPL):</label>
-                  <textarea
-                    rows={3}
-                    value={scores.catatanDpl}
-                    onChange={(e) => setScores((prev) => ({ ...prev, catatanDpl: e.target.value }))}
-                    placeholder="Tuliskan catatan akademik dan bimbingan untuk mahasiswa..."
-                    disabled={!canEditDpl}
-                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 disabled:bg-slate-100"
-                  />
-                </div>
-              )}
-
-              {(canEditMitra || isSuper) && (
-                <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Catatan Evaluasi Mitra Pendamping Lapangan (MPL):</label>
-                  <textarea
-                    rows={3}
-                    value={scores.catatanMitra}
-                    onChange={(e) => setScores((prev) => ({ ...prev, catatanMitra: e.target.value }))}
-                    placeholder="Tuliskan catatan etika, inisiatif, dan kinerja lapangan..."
-                    disabled={!canEditMitra}
-                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 disabled:bg-slate-100"
-                  />
-                </div>
-              )}
+            {/* Rekap Nilai yang Akan Disimpan */}
+            <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2.5 text-xs">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700">
+                <span className="text-slate-500 font-bold">Mahasiswa:</span>
+                <span className="font-black text-slate-900 dark:text-slate-100">{studentInfo?.nama} ({studentInfo?.nim})</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Subtotal DPL (Akademik 30%):</span>
+                <span className="font-bold text-amber-700 dark:text-amber-400">{subtotalDpl.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Subtotal MPL (Lapangan 70%):</span>
+                <span className="font-bold text-emerald-700 dark:text-emerald-400">{subtotalMitra.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-700">
+                <span className="font-black text-slate-800 dark:text-slate-200">Nilai Akhir Kumulatif:</span>
+                <span className="font-black text-base text-slate-900 dark:text-slate-100">
+                  {nilaiAkhir.toFixed(2)} <span className="text-xs text-emerald-600 font-bold">({currentCategory.letter})</span>
+                </span>
+              </div>
             </div>
 
-            {/* Action Footer Bawah Form */}
-            <div className="flex items-center justify-end gap-3 p-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-2xl">
+            <p className="text-[11.5px] text-slate-500 leading-relaxed">
+              Data penilaian akan langsung disimpan ke database dan memperbarui rekapitulasi nilai KKN mahasiswa.
+            </p>
+
+            {/* Action Buttons Konfirmasi */}
+            <div className="flex items-center justify-end gap-2.5 pt-2">
               <button
                 type="button"
-                onClick={handlePrintPdf}
-                className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition border ${
-                  isGradeComplete
-                    ? "bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-2xs cursor-pointer"
-                    : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
-                }`}
-                title={isGradeComplete ? "Cetak Dokumen Resmi PDF" : "Cetak PDF baru aktif setelah nilai lengkap dari kedua pihak"}
+                onClick={() => setIsConfirmOpen(false)}
+                disabled={saving}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
               >
-                <Printer size={15} className={isGradeComplete ? "text-slate-500" : "text-slate-400"} />
-                <span>Cetak PDF</span>
-                {!isGradeComplete && (
-                  <span className="text-[9.5px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold ml-1">
-                    Belum Lengkap
-                  </span>
-                )}
+                Periksa Kembali
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSaveScore}
+                disabled={saving}
+                className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                <span>Ya, Simpan Penilaian</span>
               </button>
             </div>
           </div>

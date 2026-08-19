@@ -269,11 +269,6 @@ export const DplDashboardPage: React.FC = () => {
   const [rejectionReasonInput, setRejectionReasonInput] = useState("");
   const [previewEvidence, setPreviewEvidence] = useState<{ url: string; title: string } | null>(null);
 
-  // Student Assessment Modal States
-  const [selectedStudentForAssess, setSelectedStudentForAssess] = useState<StudentDetail | null>(null);
-  const [assessScoreInput, setAssessScoreInput] = useState<number>(80);
-  const [assessNoteInput, setAssessNoteInput] = useState<string>("");
-  const [submittingAssess, setSubmittingAssess] = useState<boolean>(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -342,30 +337,6 @@ export const DplDashboardPage: React.FC = () => {
     }
   };
 
-  const handleOpenAssessModal = (student: StudentDetail) => {
-    setSelectedStudentForAssess(student);
-    setAssessScoreInput(student.assessmentScore || 80);
-    setAssessNoteInput("");
-  };
-
-  const handleSubmitAssessment = async () => {
-    if (!selectedStudentForAssess) return;
-    setSubmittingAssess(true);
-    try {
-      await dplService.assessStudent(
-        selectedStudentForAssess.userId || selectedStudentForAssess.id,
-        assessScoreInput,
-        assessNoteInput
-      );
-      toast.success(`Skor penilaian ${selectedStudentForAssess.name} berhasil disimpan!`);
-      setSelectedStudentForAssess(null);
-      await loadDashboardData();
-    } catch (err: any) {
-      toast.error("Gagal menyimpan skor penilaian mahasiswa");
-    } finally {
-      setSubmittingAssess(false);
-    }
-  };
 
   const [decidingLeaveId, setDecidingLeaveId] = useState<string | null>(null);
 
@@ -1377,6 +1348,7 @@ export const DplDashboardPage: React.FC = () => {
                     <th className="px-4 py-3.5 min-w-[170px]">Program Studi / Fakultas</th>
                     <th className="px-4 py-3.5 min-w-[130px]">Kelompok KKN</th>
                     <th className="px-4 py-3.5 text-center min-w-[170px]">Presensi (H / S / I / A)</th>
+                    <th className="px-4 py-3.5 text-center min-w-[140px]">Aktual / Target</th>
                     <th className="px-4 py-3.5 text-center min-w-[90px]">Poin</th>
                     <th className="px-4 py-3.5 text-center min-w-[130px]">Nilai Asesmen DPL</th>
                     <th className="px-4 py-3.5 text-center min-w-[120px]">Status</th>
@@ -1441,6 +1413,38 @@ export const DplDashboardPage: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-4 py-3.5 text-center">
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
+                              {st.totalHours !== undefined
+                                ? (st.totalHours === 0 && (st.remainingMinutes || 0) === 0
+                                    ? "0 Menit"
+                                    : `${st.totalHours} Jam ${st.remainingMinutes ? `${st.remainingMinutes} Menit` : ""}`.trim())
+                                : `${st.attendedCount * 4} Jam`}{" "}
+                              / {st.targetHours || 200} Jam
+                            </span>
+                            <div className="w-full max-w-[110px] flex flex-col items-center gap-0.5">
+                              <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                <div
+                                  className="bg-emerald-600 h-full rounded-full transition-all"
+                                  style={{
+                                    width: `${Math.min(
+                                      100,
+                                      st.progressPercentage !== undefined
+                                        ? st.progressPercentage
+                                        : Math.round(((st.attendedCount * 4) / (st.targetHours || 200)) * 100)
+                                    )}%`,
+                                  }}
+                                />
+                              </div>
+                              <span className="text-[9px] font-bold text-slate-500">
+                                {st.progressPercentage !== undefined
+                                  ? st.progressPercentage
+                                  : Math.round(((st.attendedCount * 4) / (st.targetHours || 200)) * 100)}% Tercapai
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5 text-center">
                           <span className="font-extrabold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/40 px-2.5 py-1 rounded-lg text-xs inline-block">
                             {st.individualPoints ?? 0}
                           </span>
@@ -1470,13 +1474,13 @@ export const DplDashboardPage: React.FC = () => {
                         </td>
                         <td className="px-4 py-3.5 text-center">
                           <div className="inline-flex items-center gap-2">
-                            <button
-                              onClick={() => handleOpenAssessModal(st)}
+                            <Link
+                              to="/penilaian-kkn/mahasiswa"
                               className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 font-bold rounded-lg transition flex items-center gap-1.5 text-xs border border-blue-200 dark:border-blue-700/40 cursor-pointer shadow-2xs"
-                              title="Beri / Edit Skor Penilaian DPL"
+                              title="Buka Lembar Penilaian Komprehensif KKN (DPL 30% + Mitra 70%)"
                             >
                               <FileCheck size={13} /> <span>Penilaian</span>
-                            </button>
+                            </Link>
                             <button
                               onClick={() => handleOpenCitizensDrilldown(st)}
                               className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 font-bold rounded-lg transition flex items-center gap-1.5 text-xs border border-emerald-200 dark:border-emerald-700/40 cursor-pointer shadow-2xs"
@@ -1492,7 +1496,7 @@ export const DplDashboardPage: React.FC = () => {
 
                   {paginatedStudents.length === 0 && (
                     <tr>
-                      <td colSpan={10} className="p-8 text-center text-slate-400 italic text-xs">
+                      <td colSpan={11} className="p-8 text-center text-slate-400 italic text-xs">
                         Tidak ada data mahasiswa bimbingan yang cocok dengan kriteria filter.
                       </td>
                     </tr>
@@ -2293,63 +2297,6 @@ export const DplDashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL 4: PENILAIAN SKOR DPL MAHASISWA */}
-      {selectedStudentForAssess && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-800">
-            <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                  <FileCheck size={18} className="text-emerald-600 dark:text-emerald-400" /> Penilaian Mahasiswa KKN
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{selectedStudentForAssess.name} ({selectedStudentForAssess.nim})</p>
-              </div>
-              <button onClick={() => setSelectedStudentForAssess(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold">✕</button>
-            </div>
-
-            <div className="space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Skor Evaluasi DPL (0 - 100):</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={assessScoreInput}
-                  onChange={(e) => setAssessScoreInput(Number(e.target.value))}
-                  className="w-full p-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-emerald-500 font-bold text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Catatan Penilaian DPL (Opsional):</label>
-                <textarea
-                  rows={3}
-                  value={assessNoteInput}
-                  onChange={(e) => setAssessNoteInput(e.target.value)}
-                  placeholder="Catatan keaktifan, kepemimpinan, dan integrasi pemilahan sampah warga..."
-                  className="w-full p-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={() => setSelectedStudentForAssess(null)}
-                  className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition"
-                >
-                  Batal
-                </button>
-                <button
-                  disabled={submittingAssess}
-                  onClick={handleSubmitAssessment}
-                  className="flex-1 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition disabled:opacity-50"
-                >
-                  {submittingAssess ? "Menyimpan..." : "Simpan Skor"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
 
       {/* MODAL PREVIEW BUKTI DOKUMEN / SURAT SAKIT */}

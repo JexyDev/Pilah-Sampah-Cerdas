@@ -508,6 +508,14 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
+          path="/penilaian-kkn/laporan-akhir"
+          element={
+            <ProtectedRoute allowedRoles={["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"]}>
+              <PlaceholderPage title="Penilaian Laporan Akhir" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/penilaian-kkn/rekap"
           element={
             <ProtectedRoute allowedRoles={["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "ADMIN_DLH", "LURAH", "CAMAT", "RW", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"]}>
