@@ -286,7 +286,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         kegiatanId,
         pos.latitude,
         pos.longitude,
-        deviceInfo: '${await _getDeviceInfo()}',
+        deviceInfo: await _getDeviceInfo(),
       );
 
       final sessionId = response['sessionId']?.toString();

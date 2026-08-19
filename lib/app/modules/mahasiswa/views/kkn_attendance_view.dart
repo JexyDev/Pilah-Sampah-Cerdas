@@ -550,7 +550,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
     final bool isSuccess = state.isSuccessAttendance;
 
     final act = state.selectedKegiatan ?? state.activeActivity;
-    final String? timeLabel =
+    final String timeLabel =
         act?['time']?.toString() ??
         '${act?['jamMulai'] ?? '-'} - ${act?['jamSelesai'] ?? '-'}';
 
@@ -1207,8 +1207,9 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                     backgroundColor: WidgetStateProperty.resolveWith((states) {
                       if (isSuccess) return AppColors.primaryGreen;
                       if (isAlpa) return AppColors.dangerRed;
-                      if (states.contains(WidgetState.disabled))
+                      if (states.contains(WidgetState.disabled)) {
                         return Colors.grey[300];
+                      }
                       return AppColors.primaryGreen; // Active color
                     }),
                   ),
