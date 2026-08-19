@@ -445,7 +445,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/penilaian-kkn/rekap",
-              label: "Rekap & Nilai Akhir",
+              label: "Rekapitulasi Nilai",
               allowed: [
                 "DEVELOPER",
                 "DPL",
@@ -509,7 +509,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/evaluasi-dampak-kkn",
-              label: "Perubahan dan Dampak",
+              label: "Evaluasi Dampak KKN",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",

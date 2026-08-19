@@ -123,7 +123,7 @@ const normalizeRoleFromUrl = (param: string | null): string => {
 const ManajemenPengguna: React.FC = () => {
   const { user, updateUser: updateStoreUser } = useAuthStore();
   const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
   const allowedRoleTabs = useMemo(() => {
     const peran = user?.peran || "";
