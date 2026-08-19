@@ -630,61 +630,10 @@ class _PoinHistoryItem extends StatelessWidget {
                   ),
                 ],
               ),
-              // HANYA transaksi Setor Sampah yang mendapatkan badge FULL POIN / SEBAGIAN
-              if (isSetorSampah && item.points > 0) ...[
-                const SizedBox(height: 4),
-                _buildScheduleBadge(item.createdAt.toLocal()),
-              ],
             ],
           ),
         ],
       ),
     );
   }
-
-  Widget _buildScheduleBadge(DateTime date) {
-    final hour = date.hour;
-    // Window Pagi: 06:00-08:59, Window Sore: 15:00-17:59
-    final isFullPoin = (hour >= 6 && hour < 9) || (hour >= 15 && hour < 18);
-    
-    if (isFullPoin) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-        decoration: BoxDecoration(
-          color: AppColors.primaryGreen.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.35), width: 0.5),
-        ),
-        child: const Text(
-          'FULL POIN',
-          style: TextStyle(
-            fontSize: 8,
-            fontWeight: FontWeight.w800,
-            color: AppColors.primaryGreen,
-            letterSpacing: 0.2,
-          ),
-        ),
-      );
-    } else {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-        decoration: BoxDecoration(
-          color: AppColors.warningYellow.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.35), width: 0.5),
-        ),
-        child: const Text(
-          'SEBAGIAN',
-          style: TextStyle(
-            fontSize: 8,
-            fontWeight: FontWeight.w800,
-            color: AppColors.warningYellow,
-            letterSpacing: 0.2,
-          ),
-        ),
-      );
-    }
-  }
 }
-
-

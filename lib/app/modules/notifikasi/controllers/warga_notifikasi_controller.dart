@@ -95,19 +95,10 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
     // Deduplikasi
     if (result.any((n) => n.id == notif.id || (n.title == notif.title && n.desc == notif.desc && n.type == notif.type))) continue;
 
-    // Konversi UTC ke Lokal
-    NotificationEntity finalNotif = notif;
-    if (notif.time.endsWith('Z')) {
-      final dt = DateTime.tryParse(notif.time);
-      if (dt != null) {
-        finalNotif = notif.copyWith(time: dt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '));
-      }
-    }
+    result.add(notif);
 
-    result.add(finalNotif);
-
-    final notifKey = 'warga_${userId}_${finalNotif.id}';
-    if (!finalNotif.isRead && !_wargaShownNotifIds.contains(notifKey)) {
+    final notifKey = 'warga_${userId}_${notif.id}';
+    if (!notif.isRead && !_wargaShownNotifIds.contains(notifKey)) {
       _wargaShownNotifIds.add(notifKey);
     }
   }
@@ -129,17 +120,15 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
       
       if (!isWargaReminder && isForbidden) continue;
 
-      result.add(fn.copyWith(
-        time: fn.time.endsWith('Z') ? (DateTime.tryParse(fn.time)?.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' ') ?? fn.time) : fn.time
-      ));
+      result.add(fn);
     }
   } catch (_) {}
 
-  // Urutkan: terbaru di atas — parse waktu dari string lokal format "YYYY-MM-DD HH:mm"
+  // Urutkan: terbaru di atas
   result.sort((a, b) {
-    final ta = DateTime.tryParse(a.time.replaceAll(' ', 'T')) ?? DateTime(2000);
-    final tb = DateTime.tryParse(b.time.replaceAll(' ', 'T')) ?? DateTime(2000);
-    return tb.compareTo(ta); // descending (terbaru di atas)
+    final ta = DateTime.tryParse(a.time) ?? DateTime(2000);
+    final tb = DateTime.tryParse(b.time) ?? DateTime(2000);
+    return tb.compareTo(ta);
   });
 
   return result;

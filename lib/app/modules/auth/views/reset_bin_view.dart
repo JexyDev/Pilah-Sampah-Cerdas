@@ -560,10 +560,11 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                                     ? 'Pilih Tempat Sampah'
                                     : 'Ajukan Pengosongan (${_selectedBinIds.length} Tempat Sampah)'),
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: isPending || hasInvalidSelectedBin || isPetugasInvalid || isFotoEmpty || canSubmit ? Colors.white : Colors.grey.shade700,
                 ),
+                textAlign: TextAlign.center,
               ),
             ),
           );

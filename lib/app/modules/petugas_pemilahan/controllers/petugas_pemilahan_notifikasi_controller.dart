@@ -139,16 +139,14 @@ final petugasPemilahanNotificationsProvider = FutureProvider<List<NotificationEn
       }
       if (!_isPetugasPemilahanNotification(fn)) continue;
       
-      result.add(fn.copyWith(
-        time: fn.time.endsWith('Z') ? (DateTime.tryParse(fn.time)?.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' ') ?? fn.time) : fn.time
-      ));
+      result.add(fn);
     }
   } catch (_) {}
 
   // Urutkan: terbaru di atas — parse waktu dari string lokal format "YYYY-MM-DD HH:mm"
   result.sort((a, b) {
-    final ta = DateTime.tryParse(a.time.replaceAll(' ', 'T')) ?? DateTime(2000);
-    final tb = DateTime.tryParse(b.time.replaceAll(' ', 'T')) ?? DateTime(2000);
+    final ta = DateTime.tryParse(a.time) ?? DateTime(2000);
+    final tb = DateTime.tryParse(b.time) ?? DateTime(2000);
     return tb.compareTo(ta); // descending (terbaru di atas)
   });
 
