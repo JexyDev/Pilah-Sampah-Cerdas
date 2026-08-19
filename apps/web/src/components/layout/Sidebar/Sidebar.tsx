@@ -334,7 +334,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       items: [
         {
           type: "group",
-          label: "Dampingan KKN",
+          label: "Pelaksanaan KKN",
           icon: GraduationCap,
           allowed: [
             "DEVELOPER",
@@ -348,7 +348,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             {
               to: "/jadwal-kegiatan",
-              label: "Timeline",
+              label: "Linimasa Kegiatan",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -361,7 +361,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/manajemen-ekosistem-kkn",
-              label: "Kelompok Dampingan",
+              label: "Kelompok KKN",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -386,7 +386,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/monitoring-absen",
-              label: "Presensi Lapangan",
+              label: "Presensi",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -398,7 +398,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/ajuan-absensi",
-              label: "Ajuan Ketidakhadiran",
+              label: "Pengajuan Izin/Sakit",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -533,7 +533,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/evaluasi-dampak-kkn",
-              label: "Evaluasi Dampak",
+              label: "Evaluasi & Dampak",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",

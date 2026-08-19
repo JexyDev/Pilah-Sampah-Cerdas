@@ -67,8 +67,8 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
     }
 
     if (pathname === "/manajemen-ekosistem-kkn") {
-      if (search.includes("tab=MAHASISWA")) return ["Dampingan KKN", "Portofolio Mahasiswa"];
-      return ["Dampingan KKN", "Kelompok Dampingan"];
+      if (search.includes("tab=MAHASISWA")) return ["Pelaksanaan KKN", "Portofolio Mahasiswa"];
+      return ["Pelaksanaan KKN", "Kelompok KKN"];
     }
 
     if (pathname.startsWith("/superUser/data-survei-kkn/")) {
@@ -83,14 +83,16 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/monitoring-wilayah":
       case "/monitoring":
         return ["Peta Wilayah"];
+      case "/jadwal-kegiatan":
+        return ["Pelaksanaan KKN", "Linimasa Kegiatan"];
       case "/monitoring-absen":
-        return ["Program KKN", "Presensi"];
+        return ["Pelaksanaan KKN", "Presensi"];
       case "/ajuan-absensi":
       case "/validasi-absensi":
-        return ["Program KKN", "Ajuan Ketidakhadiran"];
+        return ["Pelaksanaan KKN", "Pengajuan Izin/Sakit"];
       case "/program-kerja-kkn":
       case "/program-kerja":
-        return ["Program KKN", "Program Kerja"];
+        return ["Pelaksanaan KKN", "Program Kerja"];
       case "/pemantauan-rekapitulasi":
       case "/monitoring-pemilahan":
       case "/monitoring-aktivitas":
@@ -108,7 +110,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Program KKN", "Impor Data Survei"];
       case "/evaluasi-dampak-kkn":
       case "/evaluasi-dampak":
-        return ["Program KKN", "Evaluasi Dampak"];
+        return ["Program KKN", "Evaluasi & Dampak"];
       case "/penilaian-kkn/mahasiswa":
         return ["Penilaian KKN", "Penilaian Individu"];
       case "/penilaian-kkn/program-kerja":
@@ -182,7 +184,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/role-permissions":
         return ["Hak Akses"];
       case "/manajemen-ekosistem-kkn":
-        return ["Program KKN", "Kelompok Dampingan"];
+        return ["Pelaksanaan KKN", "Kelompok KKN"];
       case "/kkn-portal":
         return ["Dashboard KKN"];
       case "/residu-portal":
@@ -196,7 +198,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/setor":
         return ["Tata Kelola Sampah", "Setor Sampah"];
       case "/jadwal-kegiatan":
-        return ["Program KKN", "Timeline"];
+        return ["Pelaksanaan KKN", "Linimasa Kegiatan"];
       case "/input-manual":
         return ["Input Manual"];
       case "/penyetoran-sampah":

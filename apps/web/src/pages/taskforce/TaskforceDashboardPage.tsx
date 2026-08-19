@@ -336,7 +336,7 @@ export const TaskforceDashboardPage: React.FC = () => {
               <BarChart3 size={20} />
             </div>
             <div>
-              <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Evaluasi Dampak</h4>
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Evaluasi & Dampak</h4>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">Validasi Baseline vs Endline</p>
             </div>
           </div>

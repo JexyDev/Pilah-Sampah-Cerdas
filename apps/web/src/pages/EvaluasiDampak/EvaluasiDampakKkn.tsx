@@ -249,10 +249,10 @@ export const EvaluasiDampakKkn: React.FC = () => {
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold w-fit mb-2 border border-indigo-100">
-            <BarChart3 size={14} /> Perubahan dan Dampak KKN
+            <BarChart3 size={14} /> Evaluasi & Dampak KKN
           </div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-            Perubahan dan Dampak Program KKN
+            Evaluasi & Dampak Program KKN
           </h1>
           <p className="text-xs text-slate-500 mt-1">
             Monitoring komparasi evaluasi baseline (awal) vs endline (akhir) program KKN di seluruh kelurahan binaan.
@@ -709,7 +709,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
             <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-800 text-white">
               <div className="flex items-center gap-2.5">
                 <Download size={18} className="text-emerald-400" />
-                <h3 className="font-black text-white text-base">Ekspor Data Evaluasi Dampak</h3>
+                <h3 className="font-black text-white text-base">Ekspor Data Evaluasi & Dampak</h3>
               </div>
               <button
                 onClick={() => setIsExportModalOpen(false)}
