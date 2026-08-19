@@ -128,6 +128,7 @@ app.use("/api/v1/ide-daur-ulang", ideDaurUlangRouter);
 app.use("/api/v1/areas", areaRouter);
 app.use("/api/v1/wilayah", areaRouter);
 app.use("/api/v1/admin/mahasiswa", adminMahasiswaRouter);
+app.use("/api/v1/kkn-attendance", kknAttendanceRouter);
 app.use("/api/v1", kknAttendanceRouter);
 app.use("/api/v1/pemanfaatan", pemanfaatanRouter);
 app.use("/api/v1/pengangkutan", pengangkutanRouter);
@@ -144,6 +145,7 @@ app.use("/api/v1/penilaian-kkn", penilaianKknRouter);
 // Master API Spec Alias Mounts (Compatibility for mobile client without /v1 prefix)
 app.use("/api/v1/user", userRouter);
 app.use("/api/kkn", kknRouter);
+app.use("/api/kkn-attendance", kknAttendanceRouter);
 app.use("/api", kknAttendanceRouter);
 app.use("/api/residu", residuRouter);
 app.use("/api/petugas-residu", residuRouter);
