@@ -210,4 +210,32 @@ router.put(
   residuController.acceptPengajuan
 );
 
+/**
+ * @swagger
+ * /api/v1/petugas-residu/points:
+ *   get:
+ *     summary: Statistik total poin & ledger poin petugas residu
+ *     tags: [Petugas Residu]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan statistik poin
+ */
+router.get(
+  "/points",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU"]),
+  verifiedPetugasGuard,
+  residuController.getPetugasPoints
+);
+
+router.get(
+  "/statistik-poin",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU"]),
+  verifiedPetugasGuard,
+  residuController.getPetugasPoints
+);
+
 export default router;

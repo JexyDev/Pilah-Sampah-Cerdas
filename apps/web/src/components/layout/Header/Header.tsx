@@ -88,6 +88,12 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Peta Wilayah"];
       case "/monitoring-absen":
         return ["Program KKN", "Presensi Mahasiswa KKN"];
+      case "/ajuan-absensi":
+      case "/validasi-absensi":
+        return ["Program KKN", "Ajuan Izin & Sakit"];
+      case "/program-kerja-kkn":
+      case "/program-kerja":
+        return ["Program KKN", "Program Kerja"];
       case "/pemantauan-rekapitulasi":
       case "/monitoring-pemilahan":
       case "/monitoring-aktivitas":
@@ -110,6 +116,8 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Penilaian KKN", "Penilaian Mahasiswa"];
       case "/penilaian-kkn/program-kerja":
         return ["Penilaian KKN", "Penilaian Program Kerja"];
+      case "/penilaian-kkn/laporan-akhir":
+        return ["Penilaian KKN", "Penilaian Laporan Akhir"];
       case "/penilaian-kkn/rekap":
         return ["Penilaian KKN", "Rekap & Nilai Akhir"];
       case "/pengangkutan-residu":

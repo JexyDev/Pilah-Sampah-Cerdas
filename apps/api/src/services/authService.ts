@@ -130,6 +130,13 @@ export class AuthService {
       console.error("[AuthService] Gagal menyimpan refresh token ke DB:", err);
     }
 
+    // Aggregate user points
+    const userPointsSum = await prisma.pointHistory.aggregate({
+      where: { userId: user.id },
+      _sum: { points: true },
+    });
+    const totalPoints = userPointsSum._sum.points || 0;
+
     return {
       accessToken,
       refreshToken,
@@ -147,6 +154,16 @@ export class AuthService {
         provinsi: user.provinsi || "Jawa Barat",
         kabupaten: user.kabupaten || "Kota Bandung",
         kecamatan: "Coblong",
+        points: totalPoints,
+        totalPoints,
+        nim: anyUser.studentProfile?.nim || null,
+        jurusan: anyUser.studentProfile?.jurusan || null,
+        fakultas: anyUser.studentProfile?.fakultas || null,
+        studentProfile: anyUser.studentProfile || null,
+        petugasProfile: anyUser.petugasProfile || null,
+        assignedZone:
+          anyUser.petugasProfile?.assignedZone ||
+          (rwName ? `${rwName}, Kel. ${kelurahanName || "Coblong"}` : "Kecamatan Coblong"),
       },
     };
   }
@@ -482,6 +499,12 @@ export class AuthService {
       user.studentProfile?.assignedRw?.kelurahan?.kecamatan?.name ||
       "Coblong";
 
+    const userPointsSum = await prisma.pointHistory.aggregate({
+      where: { userId: user.id },
+      _sum: { points: true },
+    });
+    const totalPoints = userPointsSum._sum.points || 0;
+
     return {
       id: user.id,
       name: user.name,
@@ -497,6 +520,8 @@ export class AuthService {
       kecamatan: kecamatanName,
       kelurahan: kelurahanName,
       rw: rwName,
+      points: totalPoints,
+      totalPoints,
       nim: studentProfile?.nim || null,
       jurusan: studentProfile?.jurusan || null,
       fakultas: studentProfile?.fakultas || null,
@@ -504,6 +529,12 @@ export class AuthService {
       kelompokName: studentProfile?.kelompok?.name || null,
       dplName: studentProfile?.kelompok?.dpl?.name || studentProfile?.kelompok?.dosenPembimbing || null,
       dplKelompok: user.dplKelompok || [],
+      studentProfile: studentProfile || null,
+      petugasProfile: user.petugasProfile || null,
+      assignedZone:
+        user.petugasProfile?.assignedZone ||
+        (rwName ? `${rwName}, Kel. ${kelurahanName || "Coblong"}` : "Kecamatan Coblong"),
+      kpiScore: user.petugasProfile?.kpiScore ? Number(user.petugasProfile.kpiScore) : 100,
       streakInfo,
       pendamping,
       pendampingName: pendamping?.name || null,

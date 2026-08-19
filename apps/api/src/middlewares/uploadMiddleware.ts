@@ -83,3 +83,11 @@ export const uploadResiduImage = uploadSingleImage.fields([
   { name: "evidence", maxCount: 1 },
   { name: "evidencePhotoUrl", maxCount: 1 },
 ]);
+
+export const uploadPemanfaatanImage = uploadSingleImage.fields([
+  { name: "fotoDokumentasi", maxCount: 1 },
+  { name: "fotoBukti", maxCount: 1 },
+  { name: "image", maxCount: 1 },
+  { name: "foto", maxCount: 1 },
+  { name: "file", maxCount: 1 },
+]);

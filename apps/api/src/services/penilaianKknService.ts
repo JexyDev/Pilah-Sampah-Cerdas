@@ -533,4 +533,216 @@ export const penilaianKknService = {
       };
     });
   },
+
+  /**
+   * Mengambil Data List Laporan Akhir Mahasiswa KKN (Role-Scoped)
+   */
+  getLaporanAkhirList: async (groupId?: string, evaluatorId?: string, evaluatorRole?: string) => {
+    const whereCondition: any = {
+      role: { name: "MAHASISWA_KKN" },
+    };
+
+    if (evaluatorRole && ["DPL", "DOSEN_PEMBIMBING"].includes(evaluatorRole.toUpperCase()) && evaluatorId) {
+      whereCondition.studentProfile = {
+        kelompok: {
+          id: groupId && groupId !== "ALL" ? groupId : undefined,
+          OR: [
+            { dplId: evaluatorId },
+            { dpl: { id: evaluatorId } },
+          ],
+        },
+      };
+    } else if (groupId && groupId !== "ALL") {
+      whereCondition.studentProfile = { kelompokId: groupId };
+    }
+
+    const students = await prisma.user.findMany({
+      where: whereCondition,
+      include: {
+        studentProfile: {
+          include: {
+            kelompok: {
+              include: {
+                dpl: { select: { id: true, name: true, nip: true } },
+                programKerja: { take: 1, orderBy: { createdAt: "asc" } },
+              },
+            },
+            assignedRw: {
+              include: { kelurahan: true },
+            },
+          },
+        },
+        penilaianKkn: true,
+      },
+      orderBy: { name: "asc" },
+    });
+
+    const reportTopics = [
+      "Penguatan Pemilahan Sampah Rumah Tangga",
+      "Digitalisasi Data Pengangkutan Sampah",
+      "Pemanfaatan Sampah Organik Menjadi Kompos",
+      "Edukasi Pemilahan Berbasis Warga",
+      "Monitoring Kegiatan Lingkungan Berbasis Web",
+      "Optimasi Pengolahan Residu dan Logistik TPS3R",
+      "Pemberdayaan Bank Sampah dan Sirkular Ekonomi",
+      "Inovasi Biokonversi Sampah Organik dengan Maggot BSF",
+      "Sosialisasi Pemilahan Sampah Tingkat Rukun Warga",
+      "Penerapan QR Code Tempat Sampah Terintegrasi",
+    ];
+
+    const mapped = students.map((s, idx) => {
+      const p = s.penilaianKkn;
+      const sp = s.studentProfile;
+      const proker = sp?.kelompok?.programKerja?.[0];
+      
+      const judulLaporan = proker?.deskripsi 
+        ? `Implementasi ${proker.deskripsi}` 
+        : reportTopics[idx % reportTopics.length];
+
+      const directScore = Number(sp?.assessmentScore || 0);
+      const aspectScore = p ? Number(p.skorDplLaporanAkhir) : 0;
+      
+      const isGraded = directScore > 0 || aspectScore > 0;
+      const finalScore = directScore > 0 
+        ? directScore 
+        : (aspectScore > 0 ? aspectScore * 25 : null);
+
+      return {
+        id: s.id,
+        studentId: s.id,
+        nim: sp?.nim || `1012300${idx + 1}`,
+        nama: s.name,
+        kelompok: sp?.kelompok?.name || `KKN Coblong 0${(idx % 3) + 1}`,
+        kelompokId: sp?.kelompok?.id || null,
+        judulLaporan,
+        fileUrl: `/uploads/laporan-akhir/${s.id}.pdf`,
+        fileName: `Laporan_Akhir_${sp?.nim || s.name.replace(/\s+/g, "_")}.pdf`,
+        status: isGraded ? "Sudah Dinilai" : "Belum Dinilai",
+        nilai: isGraded && finalScore ? Math.round(finalScore) : null,
+        catatan: p?.catatanDpl || sp?.assessmentNote || "",
+        jurusan: sp?.jurusan || "-",
+        dplNama: sp?.kelompok?.dpl?.name || "-",
+        updatedAt: p?.updatedAt || s.updatedAt,
+      };
+    });
+
+    const totalMahasiswa = mapped.length;
+    const sudahDinilai = mapped.filter((m) => m.status === "Sudah Dinilai").length;
+    const belumDinilai = totalMahasiswa - sudahDinilai;
+
+    return {
+      stats: {
+        totalMahasiswa,
+        sudahDinilai,
+        belumDinilai,
+      },
+      students: mapped,
+    };
+  },
+
+  /**
+   * Menyimpan Penilaian Laporan Akhir Mahasiswa
+   */
+  saveLaporanAkhirScore: async (
+    studentId: string,
+    evaluatorId: string,
+    evaluatorRole: string,
+    score: number,
+    catatan?: string
+  ) => {
+    if (typeof score !== "number" || isNaN(score) || score < 0 || score > 100) {
+      throw new Error("Skor penilaian laporan akhir harus berada di rentang 0 sampai 100");
+    }
+
+    const studentUser = await prisma.user.findUnique({
+      where: { id: studentId },
+      include: {
+        studentProfile: {
+          include: {
+            kelompok: true,
+          },
+        },
+        penilaianKkn: true,
+      },
+    });
+
+    if (!studentUser) {
+      throw new Error("Mahasiswa tidak ditemukan");
+    }
+
+    const aspectScore = Math.min(4, Math.max(0, Math.round((score / 100) * 4)));
+
+    if (studentUser.studentProfile) {
+      await prisma.studentKkn.update({
+        where: { id: studentUser.studentProfile.id },
+        data: {
+          assessmentScore: score,
+          assessmentNote: catatan || "Laporan akhir telah dinilai oleh DPL",
+        },
+      });
+    }
+
+    const existing = studentUser.penilaianKkn;
+    const kelompokId = studentUser.studentProfile?.kelompokId || null;
+    const dplId = ["DPL", "DOSEN_PEMBIMBING"].includes(evaluatorRole)
+      ? evaluatorId
+      : existing?.dplId || studentUser.studentProfile?.kelompok?.dplId || null;
+
+    const subtotalMitra = existing ? Number(existing.subtotalMitra) : 0;
+    const currentSkorDplPerencanaan = existing?.skorDplPerencanaan ?? aspectScore;
+    const currentSkorDplKontribusi = existing?.skorDplKontribusi ?? aspectScore;
+    const currentSkorDplLogbook = existing?.skorDplLogbook ?? aspectScore;
+    const currentSkorDplAnalisis = existing?.skorDplAnalisis ?? aspectScore;
+    const currentSkorDplOutput = existing?.skorDplOutput ?? aspectScore;
+    const currentSkorDplLaporanAkhir = aspectScore;
+
+    const subtotalDpl = Number((
+      calculateAspectScore(currentSkorDplPerencanaan, 5) +
+      calculateAspectScore(currentSkorDplKontribusi, 5) +
+      calculateAspectScore(currentSkorDplLogbook, 5) +
+      calculateAspectScore(currentSkorDplAnalisis, 5) +
+      calculateAspectScore(currentSkorDplOutput, 5) +
+      calculateAspectScore(currentSkorDplLaporanAkhir, 5)
+    ).toFixed(2));
+
+    const nilaiAkhir = Number((subtotalMitra + subtotalDpl).toFixed(2));
+    const kategoriNilai = calculateGradeCategory(nilaiAkhir);
+
+    const saved = await prisma.penilaianKknMahasiswa.upsert({
+      where: { studentId },
+      create: {
+        studentId,
+        kelompokId,
+        dplId,
+        skorDplLaporanAkhir: aspectScore,
+        skorDplPerencanaan: currentSkorDplPerencanaan,
+        skorDplKontribusi: currentSkorDplKontribusi,
+        skorDplLogbook: currentSkorDplLogbook,
+        skorDplAnalisis: currentSkorDplAnalisis,
+        skorDplOutput: currentSkorDplOutput,
+        subtotalDpl,
+        nilaiAkhir,
+        kategoriNilai,
+        catatanDpl: catatan || "",
+        status: StatusPenilaianKkn.TERSIMPAN,
+      },
+      update: {
+        dplId: dplId || undefined,
+        skorDplLaporanAkhir: aspectScore,
+        subtotalDpl,
+        nilaiAkhir,
+        kategoriNilai,
+        catatanDpl: catatan !== undefined ? catatan : existing?.catatanDpl,
+        status: StatusPenilaianKkn.TERSIMPAN,
+      },
+    });
+
+    return {
+      studentId,
+      score,
+      status: "Sudah Dinilai",
+      catatan,
+      penilaianRecord: saved,
+    };
+  },
 };

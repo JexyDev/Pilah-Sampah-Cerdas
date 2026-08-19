@@ -95,4 +95,30 @@ abstract class KknRepository {
 
   /// Mendaftarkan fasilitas daur ulang (Rumah Maggot dll)
   Future<Map<String, dynamic>> registerFasilitas(Map<String, dynamic> data, {String? imagePath});
+
+  /// Mengambil daftar kegiatan KKN aktif hari ini (GET /api/v1/kkn/kegiatan-aktif)
+  Future<List<KegiatanKknItem>> getKegiatanAktif({String? tanggal});
+
+  /// Memulai kegiatan KKN dan inisialisasi sesi tracking (POST /api/v1/kkn/kegiatan/:id/mulai)
+  Future<MulaiKegiatanResponse> mulaiKegiatan({
+    required String scheduleId,
+    required double latitude,
+    required double longitude,
+    String? deviceInfo,
+  });
+
+  /// Mengakhiri kegiatan KKN (POST /api/v1/kkn/kegiatan/:id/selesai)
+  Future<Map<String, dynamic>> selesaiKegiatan({
+    required String scheduleId,
+    String? sessionId,
+    int? totalDurasiDalamZonaMenit,
+    String? alasan,
+  });
+
+  /// Mencatat penalti keluar zona melebihi batas toleransi (POST /api/v1/kkn/out-of-zone-violation)
+  Future<OutOfZoneViolationResult> recordOutOfZoneViolation({
+    required String scheduleId,
+    required double outOfZoneMinutes,
+  });
 }
+

@@ -95,6 +95,7 @@ export class AuthRepository {
               cakupanRw: true,
             },
           },
+          petugasProfile: true,
           households: {
             include: {
               rw: {
@@ -105,7 +106,7 @@ export class AuthRepository {
             },
           },
         },
-      })) as (User & { role: Role; rw?: any; studentProfile?: any; dplKelompok?: any; households?: any[] }) | null;
+      })) as (User & { role: Role; rw?: any; studentProfile?: any; dplKelompok?: any; petugasProfile?: any; households?: any[] }) | null;
 
       return user;
     } catch (error: any) {
@@ -233,6 +234,7 @@ export class AuthRepository {
             cakupanRw: true,
           },
         },
+        petugasProfile: true,
         households: {
           include: {
             rw: {

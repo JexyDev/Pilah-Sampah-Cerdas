@@ -9,17 +9,12 @@ import { prisma } from "../lib/prisma.js";
 import { Request, Response } from "express";
 import { residuService } from "../services/residuService.js";
 
-
 export class ResiduController {
   async getPendingLogs(req: Request, res: Response): Promise<void> {
     try {
-      if (!req.user || req.user.role !== "PETUGAS_RESIDU") {
-        res
-          .status(403)
-          .json({ error: "FORBIDDEN", message: "Only Petugas Residu can access this." });
-        return;
-      }
-      res.status(200).json({ success: true, data: [] });
+      const petugasUserId = req.user!.userId;
+      const data = await residuService.getPendingLogs(petugasUserId);
+      res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[ResiduController] getPendingLogs error:", error);
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memuat log." });
@@ -135,6 +130,17 @@ export class ResiduController {
     }
   }
 
+  async getPetugasPoints(req: Request, res: Response): Promise<void> {
+    try {
+      const petugasUserId = req.user!.userId;
+      const data = await residuService.getPetugasPoints(petugasUserId);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[ResiduController] getPetugasPoints error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
   async recordViolation(req: Request, res: Response) {
     try {
       const petugasUserId = req.user!.userId;
@@ -177,7 +183,8 @@ export class ResiduController {
 
   async getAnalytics(req: Request, res: Response) {
     try {
-      const data = await residuService.getAnalytics();
+      const petugasUserId = req.user?.userId;
+      const data = await residuService.getAnalytics(petugasUserId);
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[ResiduController] getAnalytics error:", error);

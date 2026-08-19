@@ -1663,6 +1663,7 @@ export class KknService {
       timestamp?: string;
       rwTerkait?: string;
       dplId?: string;
+      fotoDokumentasiUrl?: string;
     }
   ) {
     const {
@@ -1673,6 +1674,7 @@ export class KknService {
       deskripsi = "",
       rwTerkait,
       dplId,
+      fotoDokumentasiUrl,
     } = payload;
 
     const student = await prisma.studentKkn.findUnique({
@@ -1710,11 +1712,11 @@ export class KknService {
         program: jenisPemanfaatan,
         teknologi: kategoriSampah,
         bahanBaku: deskripsi || jenisPemanfaatan,
-        volumeBahanBaku: jumlah,
+        volumeBahanBaku: Number(jumlah) || 10,
         unitBahanBaku: satuan,
-        hasil: jumlah,
+        hasil: Number(jumlah) || 10,
         unitHasil: satuan,
-        fotoDokumentasiUrl: "/uploads/default-pemanfaatan.jpg",
+        fotoDokumentasiUrl: fotoDokumentasiUrl || "/uploads/default-pemanfaatan.jpg",
         tanggalPencatatan: payload.timestamp ? new Date(payload.timestamp) : new Date(),
       },
     });

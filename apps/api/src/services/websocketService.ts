@@ -300,4 +300,74 @@ export const websocketService = {
       }
     });
   },
+
+  /**
+   * Send realtime notification to specific Petugas Residu
+   */
+  broadcastPetugasNotification: (petugasUserId: string, notificationData: any) => {
+    const message = JSON.stringify({
+      type: "PETUGAS_NOTIFICATION",
+      data: notificationData,
+    });
+
+    const targetWs = clients.get(petugasUserId);
+    if (targetWs && targetWs.readyState === WebSocket.OPEN) {
+      try {
+        targetWs.send(message);
+      } catch (err) {
+        console.error("[WebSocketService] send to target petugas error:", err);
+      }
+    }
+
+    // Also broadcast to all connected monitoring dashboards
+    allSockets.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(message);
+        } catch (err) {
+          console.error("[WebSocketService] broadcastPetugasNotification send error:", err);
+        }
+      }
+    });
+  },
+
+  /**
+   * Broadcast bin capacity alert (>70% or new schedule item)
+   */
+  broadcastBinCapacityAlert: (binData: any) => {
+    const message = JSON.stringify({
+      type: "BIN_CAPACITY_ALERT",
+      data: binData,
+    });
+
+    allSockets.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(message);
+        } catch (err) {
+          console.error("[WebSocketService] broadcastBinCapacityAlert error:", err);
+        }
+      }
+    });
+  },
+
+  /**
+   * Broadcast daily schedule update for Petugas Residu
+   */
+  broadcastScheduleUpdate: (scheduleData: any) => {
+    const message = JSON.stringify({
+      type: "SCHEDULE_UPDATE",
+      data: scheduleData,
+    });
+
+    allSockets.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(message);
+        } catch (err) {
+          console.error("[WebSocketService] broadcastScheduleUpdate error:", err);
+        }
+      }
+    });
+  },
 };

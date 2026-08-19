@@ -118,4 +118,64 @@ export const penilaianKknController = {
       res.status(500).json({ success: false, message: error.message || "Internal server error" });
     }
   },
+
+  /**
+   * Mengambil List Laporan Akhir Mahasiswa KKN
+   */
+  getLaporanAkhirList: async (req: Request, res: Response) => {
+    try {
+      const groupId = req.query.groupId as string | undefined;
+      const evaluatorRole = String(req.user?.role || "").toUpperCase();
+      const evaluatorId = req.user?.userId || (req.user as any)?.id;
+
+      const data = await penilaianKknService.getLaporanAkhirList(groupId, evaluatorId, evaluatorRole);
+      res.status(200).json({
+        success: true,
+        data,
+      });
+    } catch (error: any) {
+      console.error("[penilaianKknController] getLaporanAkhirList error:", error);
+      res.status(500).json({ success: false, message: error.message || "Internal server error" });
+    }
+  },
+
+  /**
+   * Menyimpan Penilaian Laporan Akhir Mahasiswa
+   */
+  saveLaporanAkhirScore: async (req: Request, res: Response) => {
+    try {
+      const { studentId } = req.params;
+      const { score, catatan } = req.body;
+
+      if (!studentId) {
+        res.status(400).json({ success: false, message: "ID Mahasiswa (studentId) wajib disertakan" });
+        return;
+      }
+
+      if (score === undefined || score === null || isNaN(Number(score))) {
+        res.status(400).json({ success: false, message: "Nilai laporan akhir (score) wajib diisi angka" });
+        return;
+      }
+
+      const evaluatorId = req.user?.userId || (req.user as any)?.id || "";
+      const evaluatorRole = String(req.user?.role || "").toUpperCase();
+
+      const result = await penilaianKknService.saveLaporanAkhirScore(
+        studentId,
+        evaluatorId,
+        evaluatorRole,
+        Number(score),
+        catatan
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Penilaian laporan akhir berhasil disimpan",
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[penilaianKknController] saveLaporanAkhirScore error:", error);
+      res.status(500).json({ success: false, message: error.message || "Internal server error" });
+    }
+  },
 };

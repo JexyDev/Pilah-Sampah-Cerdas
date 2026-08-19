@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useSearchParams, Link, useLocation } from "react-router-dom";
+import { useSearchParams, Link, useLocation, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import {
@@ -156,6 +156,7 @@ export const DplDashboardPage: React.FC = () => {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const rawTab = (searchParams.get("tab") || (location.pathname === "/ajuan-absensi" ? "APPROVAL" : "OVERVIEW")).toUpperCase();
   // Normalize tab string alias
   const activeTab: TabType = useMemo(() => {
@@ -647,28 +648,41 @@ export const DplDashboardPage: React.FC = () => {
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400">
             <GraduationCap size={16} />
-            <span>Portal Akademik &amp; Dosen Pendamping Lapangan</span>
+            <span>Portal DPL</span>
             <span className="text-slate-300 dark:text-slate-600">•</span>
             <span className="text-slate-500 dark:text-slate-400 font-normal">{user?.wilayah || "Wilayah Dampingan"}</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-            Dasbor
+            {location.pathname === "/ajuan-absensi" || activeTab === "APPROVAL"
+              ? "Ajuan Izin & Sakit"
+              : "Dasbor"}
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl">
-            Rekapitulasi portofolio mahasiswa KKN, verifikasi presensi lapangan, dan penilaian akademik wilayah binaan.
+            {location.pathname === "/ajuan-absensi" || activeTab === "APPROVAL"
+              ? "Validasi, verifikasi bukti surat keterangan sakit/izin, dan putusan persetujuan ketidakhadiran mahasiswa KKN bimbingan."
+              : "Rekapitulasi portofolio mahasiswa KKN, verifikasi presensi lapangan, dan penilaian akademik wilayah binaan."}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {alerts && alerts.pendingApprovalsCount > 0 && (
-            <button
-              type="button"
-              onClick={() => setActiveTab("APPROVAL")}
-              className="bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/40 text-amber-800 dark:text-amber-300 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition cursor-pointer shadow-xs animate-pulse"
+          {location.pathname === "/ajuan-absensi" || activeTab === "APPROVAL" ? (
+            <Link
+              to="/dasbor"
+              className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border border-slate-200 dark:border-slate-700 shadow-xs"
             >
-              <AlertTriangle size={14} className="text-amber-600 shrink-0" />
-              <span>{alerts.pendingApprovalsCount} Pengajuan Izin / Sakit</span>
-            </button>
+              <ArrowLeft size={14} />
+              <span>Kembali ke Dasbor</span>
+            </Link>
+          ) : (
+            alerts && alerts.pendingApprovalsCount > 0 && (
+              <Link
+                to="/ajuan-absensi"
+                className="bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/40 text-amber-800 dark:text-amber-300 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition cursor-pointer shadow-xs animate-pulse"
+              >
+                <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+                <span>{alerts.pendingApprovalsCount} Pengajuan Izin / Sakit</span>
+              </Link>
+            )
           )}
         </div>
       </div>
@@ -679,6 +693,7 @@ export const DplDashboardPage: React.FC = () => {
           {(
             [
               { key: "OVERVIEW" as TabType, label: "Ringkasan Eksekutif", icon: LayoutDashboard },
+              { key: "APPROVAL" as TabType, label: "Ajuan Izin & Sakit", icon: FileCheck, badge: alerts?.pendingApprovalsCount },
               { key: "KELOMPOK" as TabType, label: "Kelompok (Dev)", icon: Users },
               { key: "MAHASISWA" as TabType, label: "Mahasiswa & Nilai (Dev)", icon: GraduationCap },
               { key: "MAP" as TabType, label: "Peta Wilayah (Dev)", icon: MapPin },
@@ -1007,7 +1022,13 @@ export const DplDashboardPage: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={() => setActiveTab("APPROVAL")}
+                onClick={() => {
+                  if (location.pathname !== "/ajuan-absensi") {
+                    navigate("/ajuan-absensi");
+                  } else {
+                    setActiveTab("APPROVAL");
+                  }
+                }}
                 className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition shadow-xs whitespace-nowrap cursor-pointer"
               >
                 Validasi Sekarang
@@ -1541,7 +1562,13 @@ export const DplDashboardPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setActiveTab("OVERVIEW")}
+                onClick={() => {
+                  if (location.pathname === "/ajuan-absensi") {
+                    navigate("/dasbor");
+                  } else {
+                    setActiveTab("OVERVIEW");
+                  }
+                }}
                 className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg transition flex items-center gap-1.5 cursor-pointer"
               >
                 <ArrowLeft size={14} />

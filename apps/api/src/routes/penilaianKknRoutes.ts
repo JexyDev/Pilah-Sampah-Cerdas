@@ -16,5 +16,7 @@ router.get("/student/:studentId", authMiddleware, penilaianKknController.getStud
 router.post("/save", authMiddleware, penilaianKknController.savePenilaian);
 router.post("/finalize", authMiddleware, penilaianKknController.finalizePenilaian);
 router.get("/rekap", authMiddleware, penilaianKknController.getRekapPenilaian);
+router.get("/laporan-akhir", authMiddleware, penilaianKknController.getLaporanAkhirList);
+router.post("/laporan-akhir/:studentId/assess", authMiddleware, penilaianKknController.saveLaporanAkhirScore);
 
 export default router;

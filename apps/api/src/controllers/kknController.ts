@@ -19,27 +19,44 @@ export class KknController {
         return;
       }
       const existingBin = await prisma.bin.findUnique({
-        where: { qrCode },
+        where: { qrCode: String(qrCode).trim() },
+        include: { qrBatch: true },
       });
 
-      if (existingBin && ["ACTIVE_BOUND", "PENDING_APPROVAL"].includes(existingBin.status)) {
-        res
-          .status(400)
-          .json({ error: "QR_IN_USE", message: "QR Code ini sudah terdaftar pada Tempat Sampah lain." });
-        return;
-      }
-
-      // Validasi terhadap master QR (asumsi master QR format valid jika memenuhi kriteria misal diawali TS- atau ada di tabel Master)
-      // Untuk MVP TrashCare, kita simulasikan validasi format TS-XXXX
-      if (!qrCode.toUpperCase().startsWith("TS-")) {
-        res.status(400).json({
-          error: "INVALID_QR",
-          message: "Format QR Master tidak valid. Harus diawali TS-",
+      if (!existingBin) {
+        res.status(404).json({
+          error: "QR_NOT_FOUND",
+          message: "QR Code Master tidak ditemukan dalam database sistem. Pastikan QR dicetak melalui sistem TrashCare.",
         });
         return;
       }
 
-      res.status(200).json({ success: true, message: "QR Code Master Valid dan belum digunakan." });
+      if (["ACTIVE_BOUND", "PENDING_APPROVAL"].includes(existingBin.status)) {
+        res.status(400).json({
+          error: "QR_IN_USE",
+          message: "QR Code ini sudah terdaftar dan aktif pada Tempat Sampah lain.",
+        });
+        return;
+      }
+
+      if (existingBin.status === "BROKEN") {
+        res.status(400).json({
+          error: "QR_BROKEN",
+          message: "QR Code ini telah ditandai rusak.",
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "QR Code Master Valid dan belum digunakan.",
+        data: {
+          qrCode: existingBin.qrCode,
+          status: existingBin.status,
+          binId: existingBin.id,
+          batchCode: existingBin.qrBatch?.batchCode || null,
+        },
+      });
     } catch (error: any) {
       console.error("[KknController] validateQrMaster error:", error);
       res
@@ -309,7 +326,26 @@ export class KknController {
   async createPemanfaatanSampah(req: Request, res: Response): Promise<void> {
     try {
       const kknUserId = req.user!.userId;
-      const data = await kknService.createPemanfaatanSampah(kknUserId, req.body);
+
+      let fotoDokumentasiUrl = req.body.fotoDokumentasiUrl || req.body.fotoBukti || req.body.evidencePhotoUrl;
+      if (req.file) {
+        fotoDokumentasiUrl = `/uploads/${req.file.filename}`;
+      } else if (req.files) {
+        const filesObj = req.files as any;
+        const f =
+          filesObj.fotoDokumentasi?.[0] ||
+          filesObj.fotoBukti?.[0] ||
+          filesObj.image?.[0] ||
+          filesObj.foto?.[0] ||
+          filesObj.file?.[0];
+        if (f) fotoDokumentasiUrl = `/uploads/${f.filename}`;
+      }
+
+      const data = await kknService.createPemanfaatanSampah(kknUserId, {
+        ...req.body,
+        fotoDokumentasiUrl,
+      });
+
       res.status(201).json({
         success: true,
         message: "Laporan pemanfaatan sampah berhasil disimpan dan tercatat di Web Monitoring.",

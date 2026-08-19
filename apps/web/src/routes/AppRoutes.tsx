@@ -79,6 +79,7 @@ import ProgramKerjaKkn from "../pages/ProgramKerjaKkn/ProgramKerjaKkn";
 import PenilaianProkerPage from "../pages/PenilaianKkn/PenilaianProkerPage";
 import RekapNilaiKknPage from "../pages/PenilaianKkn/RekapNilaiKknPage";
 import PenilaianKknMahasiswaPage from "../pages/PenilaianKkn/PenilaianKknMahasiswaPage";
+import PenilaianLaporanAkhirPage from "../pages/PenilaianKkn/PenilaianLaporanAkhirPage";
 import MasterPanduanPage from "../pages/MasterData/MasterPanduanPage";
 import MasterKegiatanSampahPage from "../pages/MasterData/MasterKegiatanSampahPage";
 
@@ -511,7 +512,7 @@ const AppRoutes: React.FC = () => {
           path="/penilaian-kkn/laporan-akhir"
           element={
             <ProtectedRoute allowedRoles={["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"]}>
-              <PlaceholderPage title="Penilaian Laporan Akhir" />
+              <PenilaianLaporanAkhirPage />
             </ProtectedRoute>
           }
         />

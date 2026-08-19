@@ -67,10 +67,31 @@ export interface AssessmentData {
   finalizedAt?: string | null;
 }
 
-export interface StudentPenilaianResponse {
-  student: StudentInfo;
-  requirements: RequirementsInfo;
-  assessment: AssessmentData;
+export interface LaporanAkhirItem {
+  id: string;
+  studentId: string;
+  nim: string;
+  nama: string;
+  kelompok: string;
+  kelompokId?: string | null;
+  judulLaporan: string;
+  fileUrl: string;
+  fileName: string;
+  status: "Sudah Dinilai" | "Belum Dinilai";
+  nilai: number | null;
+  catatan?: string;
+  jurusan?: string;
+  dplNama?: string;
+  updatedAt?: string;
+}
+
+export interface LaporanAkhirResponse {
+  stats: {
+    totalMahasiswa: number;
+    sudahDinilai: number;
+    belumDinilai: number;
+  };
+  students: LaporanAkhirItem[];
 }
 
 export const penilaianKknApiService = {
@@ -92,5 +113,18 @@ export const penilaianKknApiService = {
   getRekapPenilaian: async (groupId?: string) => {
     const res = await api.get("/penilaian-kkn/rekap", { params: { groupId } });
     return res.data.data;
+  },
+
+  getLaporanAkhirList: async (groupId?: string): Promise<LaporanAkhirResponse> => {
+    const res = await api.get("/penilaian-kkn/laporan-akhir", { params: { groupId } });
+    return res.data.data;
+  },
+
+  saveLaporanAkhirScore: async (studentId: string, score: number, catatan?: string) => {
+    const res = await api.post(`/penilaian-kkn/laporan-akhir/${studentId}/assess`, {
+      score,
+      catatan,
+    });
+    return res.data;
   },
 };
