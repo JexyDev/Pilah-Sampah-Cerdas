@@ -257,53 +257,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         kegiatanList: list,
         isLoadingKegiatan: false,
       );
-      // Auto-start: cek apakah mahasiswa sudah berada di zona kegiatan aktif
-      if (list.isNotEmpty && !state.isTracking) {
-        await _autoStartIfInZone(list);
-      }
+      // Auto-start dihapus sesuai requirement (tracking on-demand setelah user memilih)
     } catch (e) {
       state = state.copyWith(
         isLoadingKegiatan: false,
         error: NetworkExceptionHelper.getErrorMessage(e),
       );
-    }
-  }
-
-  /// One-time GPS check: auto-start jika terdeteksi di dalam zona kegiatan aktif
-  Future<void> _autoStartIfInZone(List<Map<String, dynamic>> kegiatanList) async {
-    try {
-      final pos = await LocationService.instance.getCurrentLocation();
-      if (pos == null) return;
-
-      // Filter hanya kegiatan AKTIF yang belum ada kehadiran
-      final activeList = kegiatanList.where((k) {
-        final status = (k['status'] ?? '').toString().toUpperCase();
-        final kehadiran = k['statusKehadiran'];
-        return status == 'AKTIF' && kehadiran == null;
-      }).toList();
-
-      for (final kegiatan in activeList) {
-        final lokasi = kegiatan['lokasi'] as Map<String, dynamic>?;
-        if (lokasi == null) continue;
-
-        final targetLat = double.tryParse(lokasi['latitude']?.toString() ?? '') ?? 0.0;
-        final targetLng = double.tryParse(lokasi['longitude']?.toString() ?? '') ?? 0.0;
-        final radius = double.tryParse(lokasi['radiusMeter']?.toString() ?? '150') ?? 150.0;
-
-        if (targetLat == 0.0 && targetLng == 0.0) continue;
-
-        final distance = Geolocator.distanceBetween(
-          pos.latitude, pos.longitude, targetLat, targetLng,
-        );
-        if (distance <= radius) {
-          // Mahasiswa di dalam zona kegiatan ini → auto-start!
-          debugPrint('[KKN] Auto-start: terdeteksi di zona kegiatan ${kegiatan['id']}');
-          await mulaiKegiatan(kegiatan['id'].toString(), isAuto: true);
-          return;
-        }
-      }
-    } catch (e) {
-      debugPrint('[KKN] Auto-start check error: $e');
     }
   }
 
@@ -1036,10 +995,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     _savePersistentTimer();
 
     NotificationEngine().cancelOngoingKKNNotification();
+    final bool durationMet = _accumulatedSeconds >= (state.targetDurationMinutes * 60);
+
     state = state.copyWith(
       inZoneDurationSeconds: _accumulatedSeconds,
-      isEligibleForAttendance: false,
-      zoneResetWarning: isExitingZone
+      isEligibleForAttendance: durationMet,
+      zoneResetWarning: (isExitingZone && !durationMet)
           ? 'Anda keluar dari zona KKN. Waktu dihentikan sementara (freeze).'
           : null,
     );

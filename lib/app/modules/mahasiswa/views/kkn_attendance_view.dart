@@ -976,7 +976,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
               ],
             ),
           )
-        else if (!isAlpa && !isDisabled)
+        else if (!isAlpa && !isDisabled && !state.isEligibleForAttendance)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(

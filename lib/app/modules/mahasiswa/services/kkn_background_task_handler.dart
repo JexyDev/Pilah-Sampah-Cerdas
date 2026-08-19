@@ -341,6 +341,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
         'inside': false,
         'distance': distance,
         'totalSeconds': _accumulatedSeconds,
+        'isEligible': _accumulatedSeconds >= (_targetDurationMinutes * 60),
       });
       
       FlutterForegroundTask.updateService(
