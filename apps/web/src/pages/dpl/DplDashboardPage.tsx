@@ -796,25 +796,29 @@ export const DplDashboardPage: React.FC = () => {
               </div>
 
               <div className="bg-slate-50/80 dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Tempat Sampah Organik</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Jam Presensi KKN</span>
                 <div className="mt-1">
-                  <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400">
-                    {groups.reduce((acc, g) => acc + (g.organikBinsCount || 0), 0)}
+                  <span className="text-2xl font-black text-indigo-700 dark:text-indigo-400">
+                    {groups.reduce((acc, g) => acc + ((g as any).actualHours || 0), 0).toFixed(1)}
                   </span>
-                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1.5">Tempat Sampah</span>
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1.5">Jam</span>
                 </div>
-                <span className="text-[10.5px] text-slate-400 font-medium mt-1">Teraktivasi &amp; Terdata</span>
+                <span className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium mt-1">
+                  Total Presensi Lapangan
+                </span>
               </div>
 
               <div className="bg-slate-50/80 dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Tempat Sampah Anorganik</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Tempat Sampah Teraktivasi</span>
                 <div className="mt-1">
-                  <span className="text-2xl font-black text-blue-700 dark:text-blue-400">
-                    {groups.reduce((acc, g) => acc + (g.anorganikBinsCount || 0), 0)}
+                  <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400">
+                    {groups.reduce((acc, g) => acc + (g.activatedBinsCount || 0), 0)}
                   </span>
-                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1.5">Tempat Sampah</span>
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1.5">Unit</span>
                 </div>
-                <span className="text-[10.5px] text-slate-400 font-medium mt-1">Teraktivasi &amp; Terdata</span>
+                <span className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium mt-1 truncate" title={`${groups.reduce((acc, g) => acc + (g.organikBinsCount || 0), 0)} Organik • ${groups.reduce((acc, g) => acc + (g.anorganikBinsCount || 0), 0)} Anorganik`}>
+                  {groups.reduce((acc, g) => acc + (g.organikBinsCount || 0), 0)} Organik • {groups.reduce((acc, g) => acc + (g.anorganikBinsCount || 0), 0)} Anorganik
+                </span>
               </div>
 
               <div className="bg-slate-50/80 dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between">
@@ -825,8 +829,8 @@ export const DplDashboardPage: React.FC = () => {
                   </span>
                   <span className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1.5">Kg</span>
                 </div>
-                <span className="text-[10.5px] text-indigo-700 dark:text-indigo-400 font-bold mt-1">
-                  Capaian {groups.reduce((acc, g) => acc + ((g as any).actualHours || 0), 0).toFixed(1)} Jam
+                <span className="text-[10.5px] text-slate-400 dark:text-slate-500 font-medium mt-1">
+                  Total Terkumpul &amp; Terdata
                 </span>
               </div>
             </div>
@@ -1144,7 +1148,7 @@ export const DplDashboardPage: React.FC = () => {
             <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
               <span className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold block">Tempat Sampah Aktif</span>
               <span className="text-xl font-extrabold text-blue-600 dark:text-blue-400 mt-0.5 block">
-                {groups.reduce((acc, g) => acc + (g.activatedBinsCount || 0), 0)} Bin
+                {groups.reduce((acc, g) => acc + (g.activatedBinsCount || 0), 0)} Tempat Sampah
               </span>
             </div>
             <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">

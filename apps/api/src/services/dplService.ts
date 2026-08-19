@@ -116,24 +116,68 @@ export const dplService = {
         const studentUserIds = grp.students.map((s) => s.userId);
         const studentCount = grp.students.length;
 
-        let activatedBinsCount = 0;
+        // Query kondisi Tempat Sampah terkait kelompok KKN (berdasarkan pendaftar mahasiswa atau kelurahan/RW kelompok)
+        let binWhere: any = { status: "ACTIVE_BOUND" };
         if (studentUserIds.length > 0) {
-          activatedBinsCount = await prisma.bin.count({
-            where: {
-              registeredByStudentId: { in: studentUserIds },
-              status: "ACTIVE_BOUND",
-            },
-          });
+          binWhere = {
+            status: "ACTIVE_BOUND",
+            OR: [
+              { registeredByStudentId: { in: studentUserIds } },
+              ...(grp.kelurahan
+                ? [{ rw: { kelurahan: { name: { contains: grp.kelurahan, mode: "insensitive" } } } }]
+                : []),
+            ],
+          };
+        } else if (grp.kelurahan) {
+          binWhere = {
+            status: "ACTIVE_BOUND",
+            rw: { kelurahan: { name: { contains: grp.kelurahan, mode: "insensitive" } } },
+          };
+        } else {
+          binWhere = { id: "impossible-id" };
         }
 
-        if (activatedBinsCount === 0 && grp.kelurahan) {
-          activatedBinsCount = await prisma.bin.count({
+        const [activatedBinsCount, organikBinsCount, anorganikBinsCount, wasteSum] = await Promise.all([
+          prisma.bin.count({
+            where: binWhere,
+          }),
+          prisma.bin.count({
             where: {
-              status: "ACTIVE_BOUND",
-              rw: { kelurahan: { name: { contains: grp.kelurahan, mode: "insensitive" } } },
+              ...binWhere,
+              category: {
+                name: {
+                  in: ["Organik", "organik", "ORGANIK", "ORGANIC", "organic"],
+                },
+              },
             },
-          });
-        }
+          }),
+          prisma.bin.count({
+            where: {
+              ...binWhere,
+              category: {
+                name: {
+                  in: [
+                    "Anorganik",
+                    "anorganik",
+                    "ANORGANIK",
+                    "ANORGANIC",
+                    "anorganic",
+                    "NON_ORGANIC",
+                    "Non-Organik",
+                  ],
+                },
+              },
+            },
+          }),
+          prisma.setoranOtomatis.aggregate({
+            where: {
+              bin: binWhere,
+            },
+            _sum: { berat: true },
+          }),
+        ]);
+
+        const totalWasteWeight = Math.round(Number(wasteSum._sum.berat || 0) * 100) / 100;
 
         const totalAttendances = await prisma.activityAttendance.count({
           where:
@@ -206,6 +250,9 @@ export const dplService = {
           targetHours: configTargets.targetTotalJam || 100,
           targetTotalKegiatan: configTargets.targetTotalKegiatan || 2000,
           activatedBinsCount,
+          organikBinsCount,
+          anorganikBinsCount,
+          totalWasteWeight,
           avgAttendanceRate,
           totalGroupPoints: pointSum._sum.points || 0,
           programKerja: prokerList.map((p) => ({
