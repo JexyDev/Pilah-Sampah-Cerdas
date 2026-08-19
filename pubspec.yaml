@@ -89,6 +89,8 @@ flutter:
     - assets/logos.webp
     - assets/logos.jpeg
     - assets/icons/
+    - assets/icons/recycle-bin.png
+    - assets/icons/waste.png
     - assets/icons/notification.png
 
     # Stitch UI — screen reference assets
