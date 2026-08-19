@@ -256,7 +256,20 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
       });
       toast.success("Penilaian mahasiswa berhasil disimpan!");
       // Refresh rekap data
-      fetchStudents();
+      await fetchStudents();
+
+      // Scroll kembali ke atas ke mahasiswa yang dinilai
+      setTimeout(() => {
+        const studentRow = document.getElementById(`student-row-${selectedStudentId}`);
+        if (studentRow) {
+          studentRow.scrollIntoView({ behavior: "smooth", block: "center" });
+        } else {
+          const tableSection = document.getElementById("tabel-mahasiswa-section");
+          if (tableSection) {
+            tableSection.scrollIntoView({ behavior: "smooth" });
+          }
+        }
+      }, 100);
     } catch (err: any) {
       toast.error(err.message || "Gagal menyimpan penilaian");
     } finally {
@@ -521,11 +534,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
       </div>
 
       {/* SECTION 1: TABEL REKAPITULASI MAHASISWA DENGAN KOLOM MANDIRI */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
+      <div id="tabel-mahasiswa-section" className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
           <div>
             <h2 className="text-base font-black text-slate-900 dark:text-slate-100">
-              Daftar Mahasiswa & Nilai Akhir
+              Daftar Mahasiswa
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Pilih mahasiswa untuk membuka form penilaian aspek dan portofolio KKN. Kolom NIM, Jenjang, dan Program Studi dipisah secara mandiri.
@@ -588,19 +601,16 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <th className="py-3 px-3">Jenjang</th>
                   <th className="py-3 px-3">Program Studi</th>
                   <th className="py-3 px-3">Kelompok</th>
-                  <th className="py-3 px-3 text-center">Nilai DPL (30%)</th>
-                  <th className="py-3 px-3 text-center">Nilai MPL (70%)</th>
-                  <th className="py-3 px-3 text-center">Nilai Akhir</th>
                   <th className="py-3 px-3 text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                 {paginatedStudents.map((st, idx) => {
                   const isSelected = st.studentId === selectedStudentId;
-                  const grade = getCategory(st.nilaiAkhir);
                   return (
                     <tr
                       key={st.studentId}
+                      id={`student-row-${st.studentId}`}
                       className={`transition-colors ${
                         isSelected ? "bg-emerald-50/60 font-semibold" : "hover:bg-slate-50/80"
                       }`}
@@ -617,24 +627,6 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                       </td>
                       <td className="py-3 px-3 text-slate-600 dark:text-slate-400">{st.jurusan || "-"}</td>
                       <td className="py-3 px-3 text-slate-600 dark:text-slate-400">{st.kelompok}</td>
-                      <td className="py-3 px-3 text-center font-black text-amber-700">
-                        {st.subtotalDpl > 0 ? st.subtotalDpl.toFixed(2) : "-"}
-                      </td>
-                      <td className="py-3 px-3 text-center font-black text-emerald-700">
-                        {st.subtotalMitra > 0 ? st.subtotalMitra.toFixed(2) : "-"}
-                      </td>
-                      <td className="py-3 px-3 text-center font-black text-slate-900 dark:text-slate-100">
-                        {st.nilaiAkhir > 0 ? (
-                          <span className="inline-flex items-center gap-1">
-                            <span>{st.nilaiAkhir.toFixed(2)}</span>
-                            <span className={`px-1.5 py-0.2 rounded text-[10px] font-black border ${grade.color}`}>
-                              {grade.letter}
-                            </span>
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 font-normal">Belum Dinilai</span>
-                        )}
-                      </td>
                       <td className="py-3 px-3 text-center">
                         <button
                           type="button"
@@ -1317,43 +1309,25 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             </div>
 
             {/* Action Footer Bawah Form */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl">
-              <div className="text-xs text-emerald-900">
-                <span className="font-extrabold block">
-                  {isDpl && !isSuper ? "Subtotal Nilai DPL:" : "Ringkasan Nilai Akhir:"}
-                </span>
-                <span className="text-slate-600 dark:text-slate-400">
-                  {isDpl && !isSuper ? (
-                    <>
-                      Subtotal Akademik DPL (30%): <strong className="text-amber-700">{subtotalDpl.toFixed(2)}</strong> / 30.00
-                    </>
-                  ) : (
-                    <>
-                      DPL (30%): <strong>{subtotalDpl.toFixed(2)}</strong> | MPL (70%): <strong>{subtotalMitra.toFixed(2)}</strong> | Total: <strong>{nilaiAkhir.toFixed(2)}</strong> ({currentCategory.label} / {currentCategory.letter})
-                    </>
-                  )}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                <button
-                  type="button"
-                  onClick={handlePrintPdf}
-                  className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition border ${
-                    isGradeComplete
-                      ? "bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-2xs cursor-pointer"
-                      : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
-                  }`}
-                  title={isGradeComplete ? "Cetak Dokumen Resmi PDF" : "Cetak PDF baru aktif setelah nilai lengkap dari kedua pihak"}
-                >
-                  <Printer size={15} className={isGradeComplete ? "text-slate-500" : "text-slate-400"} />
-                  <span>Cetak PDF</span>
-                  {!isGradeComplete && (
-                    <span className="text-[9.5px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold ml-1">
-                      Belum Lengkap
-                    </span>
-                  )}
-                </button>
-              </div>
+            <div className="flex items-center justify-end gap-3 p-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-2xl">
+              <button
+                type="button"
+                onClick={handlePrintPdf}
+                className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition border ${
+                  isGradeComplete
+                    ? "bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-2xs cursor-pointer"
+                    : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                }`}
+                title={isGradeComplete ? "Cetak Dokumen Resmi PDF" : "Cetak PDF baru aktif setelah nilai lengkap dari kedua pihak"}
+              >
+                <Printer size={15} className={isGradeComplete ? "text-slate-500" : "text-slate-400"} />
+                <span>Cetak PDF</span>
+                {!isGradeComplete && (
+                  <span className="text-[9.5px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold ml-1">
+                    Belum Lengkap
+                  </span>
+                )}
+              </button>
             </div>
           </div>
         </div>
