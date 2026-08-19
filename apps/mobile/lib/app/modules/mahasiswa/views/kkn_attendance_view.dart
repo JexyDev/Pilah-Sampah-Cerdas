@@ -37,7 +37,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
       // Fetch daftar kegiatan hari ini & periksa auto-start jika berada di zona
       ref.read(kknLocationProvider.notifier).fetchKegiatanAktif(
         autoStartIfInZone: true,
-        context: context,
       );
     });
   }
@@ -45,7 +44,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      ref.read(kknLocationProvider.notifier).forceLocationUpdate(context);
+      ref.read(kknLocationProvider.notifier).forceLocationUpdate();
     }
   }
 
@@ -70,7 +69,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
     }
 
     final isTrackingActive = locationState.isTracking && locationState.selectedKegiatan != null;
-    final isSuccess = locationState.isSuccessAttendance;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -107,13 +105,13 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
                   duration: Duration(seconds: 1),
                 ),
               );
-              await locationNotifier.fetchKegiatanAktif(autoStartIfInZone: true, context: context);
+              await locationNotifier.fetchKegiatanAktif(autoStartIfInZone: true);
             },
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => locationNotifier.fetchKegiatanAktif(autoStartIfInZone: true, context: context),
+        onRefresh: () => locationNotifier.fetchKegiatanAktif(autoStartIfInZone: true),
         color: AppColors.primaryGreen,
         child: Padding(
           padding: const EdgeInsets.all(AppDimensions.md),
@@ -155,15 +153,15 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
   // STATE 1: LOADING SKELETON
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildLoadingState() {
-    return Center(
+    return const Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 64.0),
+        padding: EdgeInsets.symmetric(vertical: 64.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircularProgressIndicator(color: AppColors.primaryGreen),
-            const SizedBox(height: 16),
-            const Text(
+            CircularProgressIndicator(color: AppColors.primaryGreen),
+            SizedBox(height: 16),
+            Text(
               'Memuat kegiatan KKN hari ini...',
               style: TextStyle(
                 fontSize: 14,
@@ -472,7 +470,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
     if (kegiatan.isAktif) {
       return ElevatedButton.icon(
         onPressed: () async {
-          await notifier.selectAndStartKegiatan(kegiatan, context: context);
+          await notifier.selectAndStartKegiatan(kegiatan);
         },
         icon: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
         label: const Text('Mulai Kegiatan 🚀', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
@@ -546,7 +544,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () => notifier.fetchKegiatanAktif(autoStartIfInZone: true, context: context),
+              onPressed: () => notifier.fetchKegiatanAktif(autoStartIfInZone: true),
               icon: const Icon(Icons.refresh_rounded, color: Colors.white),
               label: const Text('Muat Ulang', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
@@ -1116,7 +1114,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
               actions: [
                 TextButton(
                   onPressed: () {
-                    notifier.state = notifier.state.copyWith(clearConflict: true);
+                    notifier.clearConflict();
                     Navigator.pop(ctx, false);
                   },
                   child: const Text('Batal', style: TextStyle(color: AppColors.textHint)),
@@ -1139,7 +1137,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
       await notifier.switchKegiatan(
         oldKegiatan: currentKegiatan,
         newKegiatan: newKegiatan,
-        context: context,
       );
     }
   }

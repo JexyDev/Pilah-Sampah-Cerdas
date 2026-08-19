@@ -175,7 +175,7 @@ describe("Mobile Findings Backend Tests", () => {
 
       vi.mocked(prisma.rw.findFirst).mockResolvedValue({ id: 1, name: "RW 01" } as any);
 
-      vi.mocked(prisma.pemanfaatan.create).mockImplementation(async ({ data }: any) => {
+      (vi.mocked(prisma.pemanfaatan.create) as any).mockImplementation(async ({ data }: any) => {
         return {
           id: "pem-1",
           ...data,

@@ -1,4 +1,3 @@
-import { prisma } from "../lib/prisma.js";
 /**
  * Project: TrashCare
  * Developed by: PT Makerindo
@@ -7,8 +6,8 @@ import { prisma } from "../lib/prisma.js";
  */
 
 import { Request, Response } from "express";
+import { prisma } from "../lib/prisma.js";
 import { scheduleService } from "../services/scheduleService.js";
-
 
 export const scheduleController = {
   getAllSchedules: async (req: Request, res: Response) => {
@@ -45,6 +44,154 @@ export const scheduleController = {
         res.status(400).json({
           success: false,
           error: "VALIDATION_ERROR",
+          message: "Format tanggal tidak valid (harus ISO 8601 atau YYYY-MM-DD)",
+        });
+        return;
+      }
+
+      let resolvedKelompokId = kelompokId || undefined;
+      const userRole = String(req.user?.role || "").toUpperCase();
+      const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
+      const isMahasiswa = userRole === "MAHASISWA_KKN";
+
+      if (isDpl) {
+        res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Role DPL hanya memiliki hak akses monitoring dan tidak dapat membuat kegiatan/agenda",
+        });
+        return;
+      }
+
+      if (req.user?.userId) {
+        if (isMahasiswa && !resolvedKelompokId) {
+          const studentProfile = await prisma.studentKkn.findUnique({
+            where: { userId: req.user.userId },
+            select: { kelompokId: true },
+          });
+          if (studentProfile?.kelompokId) {
+            resolvedKelompokId = studentProfile.kelompokId;
+          } else {
+            res.status(403).json({
+              success: false,
+              message: "Mahasiswa tidak memiliki kelompok KKN, tidak dapat membuat jadwal",
+            });
+            return;
+          }
+        }
+      }
+
+      const schedule = await scheduleService.createSchedule({
+        title,
+        date: parsedDate,
+        time,
+        category,
+        location,
+        latitude: latitude ? Number(latitude) : undefined,
+        longitude: longitude ? Number(longitude) : undefined,
+        radius: radius ? Number(radius) : undefined,
+        polygon: polygon ? polygon : undefined,
+        kelompokId: resolvedKelompokId,
+        isActive: isActive !== undefined ? Boolean(isActive) : true,
+      });
+      res.status(201).json({
+        success: true,
+        data: schedule,
+      });
+    } catch (error) {
+      console.error("[ScheduleController] createSchedule error:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  },
+
+  deleteSchedule: async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const userRole = String(req.user?.role || "").toUpperCase();
+      const userId = req.user?.userId || (req.user as any)?.id;
+
+      if (["DPL", "DOSEN_PEMBIMBING"].includes(userRole)) {
+        res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Role DPL hanya memiliki hak akses monitoring",
+        });
+        return;
+      }
+
+      if (userRole === "MAHASISWA_KKN") {
+        const schedule = await prisma.schedule.findUnique({ where: { id } });
+        if (!schedule) {
+          res.status(404).json({ success: false, message: "Jadwal tidak ditemukan" });
+          return;
+        }
+        if (!schedule.kelompokId) {
+          res.status(403).json({
+            success: false,
+            message: "FORBIDDEN_SCOPE",
+            error: "Tidak dapat menghapus jadwal acara bersama",
+          });
+          return;
+        }
+        // Verify ownership
+        const studentProfile = await prisma.studentKkn.findUnique({ where: { userId } });
+        if (schedule.kelompokId !== studentProfile?.kelompokId) {
+          res.status(403).json({ success: false, message: "FORBIDDEN_SCOPE" });
+          return;
+        }
+      }
+
+      await scheduleService.deleteSchedule(id);
+      res.status(200).json({
+        success: true,
+        message: "Jadwal berhasil dihapus",
+      });
+    } catch (error) {
+      console.error("[ScheduleController] deleteSchedule error:", error);
+      res.status(500).json({ success: false, message: "Gagal menghapus jadwal" });
+    }
+  },
+
+  updateSchedule: async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { title, date, time, category, location, latitude, longitude, radius, polygon, kelompokId, isActive } =
+        req.body;
+
+      const userRole = String(req.user?.role || "").toUpperCase();
+      const userId = req.user?.userId || (req.user as any)?.id;
+
+      if (["DPL", "DOSEN_PEMBIMBING"].includes(userRole)) {
+        res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Role DPL hanya memiliki hak akses monitoring",
+        });
+        return;
+      }
+
+      if (userRole === "MAHASISWA_KKN") {
+        const schedule = await prisma.schedule.findUnique({ where: { id } });
+        if (!schedule) {
+          res.status(404).json({ success: false, message: "Jadwal tidak ditemukan" });
+          return;
+        }
+        if (!schedule.kelompokId) {
+          res.status(403).json({
+            success: false,
+            message: "FORBIDDEN_SCOPE",
+            error: "Tidak dapat mengedit jadwal acara bersama",
+          });
+          return;
+        }
+        // Verify ownership
+        const studentProfile = await prisma.studentKkn.findUnique({ where: { userId } });
+        if (schedule.kelompokId !== studentProfile?.kelompokId) {
+          res.status(403).json({ success: false, message: "FORBIDDEN_SCOPE" });
+          return;
+        }
+      }
+
       let parsedDate;
       if (date) {
         parsedDate = new Date(date);
