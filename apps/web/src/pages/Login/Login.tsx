@@ -702,7 +702,7 @@ const Login: React.FC = () => {
                 Sampah Terdata,<br />Lingkungan Tertata.
               </h2>
               <p className="text-xs text-emerald-100/90 leading-relaxed font-medium">
-                Sistem pemantauan dan tata kelola sampah terintegrasi di Kecamatan Coblong dalam kerangka kegiatan Kuliah Kerja Nyata (KKN) Berdampak Universitas Komputer Indonesia.
+                Sistem pemantauan dan tata kelola sampah terintegrasi dalam kerangka kegiatan Kuliah Kerja Nyata (KKN) Berdampak Universitas Komputer Indonesia.
               </p>
             </div>
 

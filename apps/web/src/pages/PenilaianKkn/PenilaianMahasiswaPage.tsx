@@ -135,7 +135,7 @@ export const PenilaianMahasiswaPage: React.FC = () => {
             <option value="ALL">Semua Kelompok Binaan</option>
             {kelompokList.map((k) => (
               <option key={k.id} value={k.id}>
-                {k.name} ({k.kelurahan || "Coblong"})
+                {k.name} ({k.kelurahan ? `Kel. ${k.kelurahan}` : "Wilayah Dampingan"})
               </option>
             ))}
           </select>

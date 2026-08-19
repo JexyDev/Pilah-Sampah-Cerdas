@@ -270,7 +270,16 @@ export const dplController = {
       const dplUserId = getUserId(req);
       const id = req.params.id;
       const { status, catatanDpl } = req.body;
-      const validStatuses = ["DITERIMA", "DITOLAK", "SEDANG_BERJALAN", "SELESAI", "BELUM_DISETUJUI"];
+      const validStatuses = [
+        "DITERIMA",
+        "DISETUJUI",
+        "DITOLAK",
+        "TIDAK_DISETUJUI",
+        "SEDANG_BERJALAN",
+        "SEDANG_DILAKSANAKAN",
+        "SELESAI",
+        "BELUM_DISETUJUI",
+      ];
       if (!validStatuses.includes(status)) {
         res.status(400).json({
           error: "BAD_REQUEST",

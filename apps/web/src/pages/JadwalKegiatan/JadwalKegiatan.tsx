@@ -172,7 +172,7 @@ const JadwalKegiatan: React.FC = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Timeline_KKN_Coblong_${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute("download", `Timeline_KKN_${new Date().toISOString().split("T")[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -268,7 +268,7 @@ const JadwalKegiatan: React.FC = () => {
       const isInCoblong = (lat >= -6.9100 && lat <= -6.8600 && lng >= 107.6000 && lng <= 107.6500);
       const isInMakerindo = (lat >= -6.9900 && lat <= -6.9500 && lng >= 107.6400 && lng <= 107.6800);
       if (!isInCoblong && !isInMakerindo) {
-        toast.error("Lokasi harus berada di dalam wilayah Kecamatan Coblong atau dekat kantor Makerindo (Pesona Ciganitri)!");
+        toast.error("Lokasi koordinat berada di luar wilayah operasional yang terdaftar!");
         return;
       }
     }
@@ -530,7 +530,7 @@ const JadwalKegiatan: React.FC = () => {
         <div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Time Line & Jadwal Kegiatan KKN</h1>
           <p className="text-slate-500 text-xs mt-1">
-            Rencana kerja terstruktur, tahapan timeline, dan monitoring jadwal lapangan Kecamatan Coblong.
+            Rencana kerja terstruktur, tahapan linimasa, dan monitoring jadwal lapangan program KKN.
           </p>
         </div>
 
@@ -615,7 +615,7 @@ const JadwalKegiatan: React.FC = () => {
               <div className="bg-slate-50/80 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">Wilayah Sasaran</span>
                 <span className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 block">6 Kelurahan</span>
-                <span className="text-[10.5px] text-slate-400 font-medium">Kecamatan Coblong, Bandung</span>
+                <span className="text-[10.5px] text-slate-400 font-medium">Wilayah Binaan Program KKN</span>
               </div>
             </div>
           </div>
@@ -967,7 +967,7 @@ const JadwalKegiatan: React.FC = () => {
                       groupsMap[key] = {
                         title: sch.title || "(tanpa judul)",
                         category: sch.category || "Lainnya",
-                        location: sch.location || "Wilayah Coblong",
+                        location: sch.location || "Wilayah Dampingan",
                         items: [],
                       };
                     }
@@ -1077,7 +1077,7 @@ const JadwalKegiatan: React.FC = () => {
                                       </span>
                                       <span className="text-slate-400">•</span>
                                       <span className="text-slate-500 truncate max-w-[120px]">
-                                        {item.location || "Wilayah Coblong"}
+                                        {item.location || "Wilayah Dampingan"}
                                       </span>
                                     </div>
                                     {canManageSchedules && (
@@ -1161,7 +1161,7 @@ const JadwalKegiatan: React.FC = () => {
                             </h4>
                             <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mt-1">
                               <MapPin size={12} className="text-slate-400" />
-                              {schedule.location || "Wilayah Coblong"}
+                              {schedule.location || "Wilayah Dampingan"}
                             </p>
                           </div>
                         </div>
@@ -1596,7 +1596,7 @@ const JadwalKegiatan: React.FC = () => {
                         <option value="">-- Semua Kelompok (Jadwal Global / Bersama) --</option>
                         {groups.map((g: any) => (
                           <option key={g.id} value={g.id}>
-                            {g.name} ({g.kelurahan || "Coblong"})
+                            {g.name} ({g.kelurahan ? `Kel. ${g.kelurahan}` : "Wilayah Dampingan"})
                           </option>
                         ))}
                       </select>

@@ -28,7 +28,7 @@ import { CustomSelect, type SelectOption } from "../../components/common/CustomS
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 
 const DEFAULT_WILAYAH_OPTIONS: SelectOption[] = [
-  { value: "Kecamatan Coblong", label: "Kecamatan Coblong (Semua)", sublabel: "Cakupan Seluruh Kecamatan" },
+  { value: "Semua Wilayah", label: "Seluruh Wilayah", sublabel: "Cakupan Seluruh Wilayah" },
   { value: "Kel. Dago", label: "Kel. Dago", sublabel: "Kelurahan Dago" },
   { value: "Kel. Sadang Serang", label: "Kel. Sadang Serang", sublabel: "Kelurahan Sadang Serang" },
   { value: "Kel. Sekeloa", label: "Kel. Sekeloa", sublabel: "Kelurahan Sekeloa" },
@@ -110,7 +110,7 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-1.5">
               <span className="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                Kecamatan Coblong
+                Wilayah Operasional
               </span>
               <span className="bg-cyan-100 dark:bg-cyan-950/80 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-700/40 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></span> Stream Real-Time
@@ -121,7 +121,7 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
               Indeks Kepatuhan Pemilahan Sampah
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium max-w-xl">
-              Persentase keaktifan rumah tangga dan tingkat kepatuhan pemilahan sampah terdata pada tiap Rukun Warga (RW) di wilayah Kecamatan Coblong.
+              Persentase keaktifan rumah tangga dan tingkat kepatuhan pemilahan sampah terdata pada tiap Rukun Warga (RW) di wilayah operasional.
             </p>
           </div>
           <button
@@ -1570,7 +1570,7 @@ const Dashboard: React.FC = () => {
     if (user?.wilayah && user.wilayah !== "PT Makerindo" && user.wilayah !== "Sistem Pusat" && user.wilayah !== "Dinas Lingkungan Hidup") {
       return user.wilayah;
     }
-    return "Kecamatan Coblong";
+    return "Semua Wilayah";
   });
 
   const [wilayahOptions, setWilayahOptions] = useState<SelectOption[]>(DEFAULT_WILAYAH_OPTIONS);
@@ -1584,9 +1584,9 @@ const Dashboard: React.FC = () => {
         if (Array.isArray(list) && list.length > 0) {
           const dynamicOptions: SelectOption[] = [
             {
-              value: "Kecamatan Coblong",
-              label: "Kecamatan Coblong (Semua)",
-              sublabel: "Cakupan Seluruh Kecamatan",
+              value: "Semua Wilayah",
+              label: "Seluruh Wilayah",
+              sublabel: "Cakupan Seluruh Wilayah",
             },
             ...list.map((k: any) => {
               const name = k.name || k.nama || "";
@@ -1601,7 +1601,7 @@ const Dashboard: React.FC = () => {
           setWilayahOptions(dynamicOptions);
         }
       } catch (_e) {
-        // Fallback to default Coblong options
+        // Fallback to default options
       }
     };
     fetchRealKelurahan();
@@ -1652,7 +1652,7 @@ const Dashboard: React.FC = () => {
 
     const effectiveWilayah = isLurahRole
       ? (userKelurahan ? (userKelurahan.startsWith("Kel.") ? userKelurahan : `Kel. ${userKelurahan}`) : "Kel. Cipaganti")
-      : (selectedWilayah || "Kecamatan Coblong");
+      : (selectedWilayah || "Semua Wilayah");
 
     const fetchStats = async () => {
       try {
@@ -1745,6 +1745,7 @@ const Dashboard: React.FC = () => {
         const isDistrictScope =
           !effectiveWilayah ||
           effectiveWilayah === "Kecamatan Coblong" ||
+          effectiveWilayah === "Semua Wilayah" ||
           effectiveWilayah === "Sistem Pusat" ||
           effectiveWilayah === "PT Makerindo";
 
@@ -2601,7 +2602,7 @@ const Dashboard: React.FC = () => {
                         <td className="py-3 px-3">
                           <div className="flex flex-col min-w-[110px]">
                             <span className="font-bold text-slate-700 dark:text-slate-300 text-[12px]">
-                              {bin.rtRw?.kelurahan?.name || bin.kelurahan || "Coblong"}
+                              {bin.rtRw?.kelurahan?.name || bin.kelurahan || "Wilayah Dampingan"}
                             </span>
                             <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium">
                               {(() => {
@@ -2790,7 +2791,7 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="p-6 space-y-4 max-h-[400px] overflow-y-auto text-sm">
               <p className="text-xs text-slate-400">
-                Detail material timbulan sampah organik, anorganik, dan residu hilir terdata real-time di wilayah Kecamatan Coblong.
+                Detail material timbulan sampah organik, anorganik, dan residu hilir terdata real-time di wilayah operasional.
               </p>
 
               <div className="space-y-3">

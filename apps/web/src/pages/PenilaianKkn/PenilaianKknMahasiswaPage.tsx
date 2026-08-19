@@ -343,7 +343,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
       <body>
         <div class="header">
           <h2>LEMBAR PENILAIAN AKHIR KKN MAHASISWA</h2>
-          <p>Kecamatan Coblong - Universitas Komputer Indonesia & Pemerintah Kota Bandung</p>
+          <p>Program KKN Tematik - Penilaian Akademik & Portofolio Lapangan Mahasiswa</p>
         </div>
 
         <div class="meta-grid">
@@ -678,7 +678,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   {studentInfo.kelompok}
                 </span>
                 <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                  {studentInfo.rw ? `${studentInfo.rw}, ` : ""}Kel. {studentInfo.kelurahan || "Coblong"}
+                  {studentInfo.rw ? `${studentInfo.rw}, ` : ""}{studentInfo.kelurahan ? `Kel. ${studentInfo.kelurahan}` : "Wilayah Dampingan"}
                 </span>
               </div>
               <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 mt-1.5 flex items-center gap-2">

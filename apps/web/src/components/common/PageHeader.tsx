@@ -14,7 +14,7 @@ export interface PageHeaderProps {
 export const PageHeader: FC<PageHeaderProps> = ({
   icon: Icon,
   category,
-  scope = "Kecamatan Coblong",
+  scope = "Wilayah Operasional",
   title,
   description,
   actions,

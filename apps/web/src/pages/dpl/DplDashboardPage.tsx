@@ -499,7 +499,7 @@ export const DplDashboardPage: React.FC = () => {
       "Sakit (Hari)",
       "Izin (Hari)",
       "Tanpa Keterangan (Hari)",
-      "Tingkat Kehadiran (%)",
+      "Tingkat Presensi (%)",
       "Poin Individu",
       "Nilai Asesmen DPL",
       "Huruf Mutu",
@@ -682,13 +682,13 @@ export const DplDashboardPage: React.FC = () => {
             <GraduationCap size={16} />
             <span>Portal Akademik &amp; Dosen Pendamping Lapangan</span>
             <span className="text-slate-300 dark:text-slate-600">•</span>
-            <span className="text-slate-500 dark:text-slate-400 font-normal">Kecamatan Coblong</span>
+            <span className="text-slate-500 dark:text-slate-400 font-normal">{user?.wilayah || "Wilayah Dampingan"}</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
             Dasbor
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl">
-            Rekapitulasi portofolio mahasiswa KKN, verifikasi presensi lapangan, dan penilaian akademik wilayah Kecamatan Coblong.
+            Rekapitulasi portofolio mahasiswa KKN, verifikasi presensi lapangan, dan penilaian akademik wilayah binaan.
           </p>
         </div>
 
@@ -757,7 +757,7 @@ export const DplDashboardPage: React.FC = () => {
                     Hierarki Wilayah &amp; Ekosistem Dampingan KKN
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                    Struktur 3 tingkatan wilayah binaan KKN terintegrasi di Kecamatan Coblong.
+                    Struktur 3 tingkatan wilayah binaan KKN terintegrasi.
                   </p>
                 </div>
               </div>
@@ -765,7 +765,7 @@ export const DplDashboardPage: React.FC = () => {
               <div className="flex items-center gap-2 flex-wrap text-xs">
                 <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 rounded-lg font-extrabold flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
-                  Tingkat 1: Kecamatan Coblong
+                  Tingkat 1: {user?.wilayah || "Wilayah Operasional"}
                 </span>
                 <span
                   title={dplKelurahanList.length > 0 ? dplKelurahanList.map((k) => `Kelurahan ${k}`).join(", ") : undefined}
@@ -832,14 +832,14 @@ export const DplDashboardPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Metrik Agregat Kehadiran & Program Kerja yang Diusulkan */}
+          {/* Metrik Agregat Presensi & Program Kerja yang Diusulkan */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Left: Metrik Kehadiran Mahasiswa */}
+            {/* Left: Metrik Presensi Mahasiswa */}
             <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
               <div>
                 <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Presensi Lapangan</h4>
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">Tingkat Kehadiran Mahasiswa</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Persentase rerata kehadiran mahasiswa pada kegiatan KKN di kelompok bimbingan Anda.</p>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">Tingkat Presensi Mahasiswa</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Persentase rerata presensi mahasiswa pada kegiatan KKN di kelompok bimbingan Anda.</p>
               </div>
 
               <div className="flex items-center gap-4 bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-700/40 p-4 rounded-xl">
@@ -850,7 +850,7 @@ export const DplDashboardPage: React.FC = () => {
                   <span className="text-2xl font-black text-emerald-900 dark:text-emerald-300">
                     {groups.length > 0 ? avgOverallAttendance : 0}%
                   </span>
-                  <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold">Rerata Kehadiran</p>
+                  <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold">Rerata Presensi</p>
                 </div>
               </div>
 
@@ -909,24 +909,14 @@ export const DplDashboardPage: React.FC = () => {
                               Disetujui
                             </span>
                           )}
-                          {(p.status === "SEDANG_BERJALAN" || p.status === "SEDANG_DILAKSANAKAN") && (
-                            <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-full font-bold text-[10px]">
-                              Sedang Dilaksanakan
-                            </span>
-                          )}
-                          {(p.status === "SELESAI" || p.status === "SELESAI_DILAKSANAKAN") && (
-                            <span className="px-2.5 py-1 bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-700/40 rounded-full font-bold text-[10px]">
-                              Selesai Dilaksanakan
-                            </span>
-                          )}
                           {(p.status === "DITOLAK" || p.status === "TIDAK_DISETUJUI") && (
                             <span className="px-2.5 py-1 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-700/40 rounded-full font-bold text-[10px]">
-                              Tidak Disetujui
+                              Ditolak
                             </span>
                           )}
-                          {(p.status === "BELUM_DISETUJUI" || p.status === "PENDING" || !p.status) && (
-                            <span className="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40 rounded-full font-bold text-[10px]">
-                              Belum Disetujui
+                          {(p.status !== "DITERIMA" && p.status !== "DISETUJUI" && p.status !== "DITOLAK" && p.status !== "TIDAK_DISETUJUI") && (
+                            <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-full font-bold text-[10px]">
+                              Sedang Dilaksanakan
                             </span>
                           )}
                         </div>
@@ -936,25 +926,19 @@ export const DplDashboardPage: React.FC = () => {
                 )}
               </div>
 
-              {/* Status Breakdown Proker Sesuai Standar PT Makerindo */}
+              {/* Status Breakdown Proker Sederhana (3 Status) */}
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
                 <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 flex-wrap gap-2">
                   <span>Total Proker: <strong className="text-slate-800 dark:text-slate-200">{groups.flatMap((g: any) => g.programKerja || []).length} Kegiatan</strong></span>
                   <div className="flex items-center gap-1.5 flex-wrap text-[10.5px]">
-                    <span className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40 rounded-md font-bold">
-                      Belum Disetujui: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "BELUM_DISETUJUI" || p.status === "PENDING" || !p.status).length}
-                    </span>
-                    <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 rounded-md font-bold">
+                    <span className="px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 rounded-md font-bold">
                       Disetujui: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "DITERIMA" || p.status === "DISETUJUI").length}
                     </span>
-                    <span className="px-2 py-0.5 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-700/40 rounded-md font-bold">
-                      Tidak Disetujui: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "DITOLAK" || p.status === "TIDAK_DISETUJUI").length}
+                    <span className="px-2.5 py-0.5 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-700/40 rounded-md font-bold">
+                      Ditolak: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "DITOLAK" || p.status === "TIDAK_DISETUJUI").length}
                     </span>
-                    <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-md font-bold">
-                      Sedang Dilaksanakan: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "SEDANG_BERJALAN" || p.status === "SEDANG_DILAKSANAKAN").length}
-                    </span>
-                    <span className="px-2 py-0.5 bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-700/40 rounded-md font-bold">
-                      Selesai Dilaksanakan: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "SELESAI" || p.status === "SELESAI_DILAKSANAKAN").length}
+                    <span className="px-2.5 py-0.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-md font-bold">
+                      Sedang Dilaksanakan: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status !== "DITERIMA" && p.status !== "DISETUJUI" && p.status !== "DITOLAK" && p.status !== "TIDAK_DISETUJUI").length}
                     </span>
                   </div>
                 </div>
@@ -995,7 +979,7 @@ export const DplDashboardPage: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">Presensi Mahasiswa</h4>
-                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400">Audit logbook &amp; kehadiran lapangan</p>
+                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400">Audit logbook &amp; presensi lapangan</p>
                 </div>
               </div>
               <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
@@ -1027,7 +1011,7 @@ export const DplDashboardPage: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">Penilaian Mahasiswa</h4>
-                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400">Form asesmen DPL (30%) &amp; Mitra (70%)</p>
+                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400">Form asesmen DPL &amp; Mitra</p>
                 </div>
               </div>
               <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
@@ -1219,7 +1203,7 @@ export const DplDashboardPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3.5">
                         <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/40 px-2.5 py-0.5 rounded-md text-[11px] inline-block mb-1">
-                          {grp.kelurahan || "Coblong"}
+                          {grp.kelurahan || "Wilayah Dampingan"}
                         </span>
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
                           RW: {formatCakupanRw(grp.cakupanRw)}
@@ -1954,7 +1938,7 @@ export const DplDashboardPage: React.FC = () => {
                               ✓ Wilayah Bimbingan DPL
                             </span>
                           ) : (
-                            <span className="text-slate-500 text-[11px]">Kecamatan Coblong</span>
+                            <span className="text-slate-500 text-[11px]">Wilayah Kerja</span>
                           )}
                         </p>
                         <p className="text-[11px] text-slate-600 dark:text-slate-400">
@@ -2002,7 +1986,7 @@ export const DplDashboardPage: React.FC = () => {
                                 ✓ Wilayah Bimbingan ({rwsInKel.length} RW Aktif)
                               </span>
                             ) : (
-                              <span className="text-slate-500 text-[11px]">{kel.rwCount} RW (Kec. Coblong)</span>
+                              <span className="text-slate-500 text-[11px]">{kel.rwCount} RW Terdata</span>
                             )}
                           </p>
                           <button
@@ -2234,7 +2218,7 @@ export const DplDashboardPage: React.FC = () => {
                           </td>
                           <td className="px-4 py-3.5">
                             <span className="font-bold text-slate-900 dark:text-slate-100 block">{ide.user?.name || ide.userName || "Mahasiswa KKN"}</span>
-                            <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold">{ide.kelompokName || "Kelompok KKN Coblong"}</span>
+                            <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold">{ide.kelompokName || "Kelompok KKN"}</span>
                           </td>
                           <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-slate-100">
                             {ide.judul || ide.title || "Tanpa Judul"}

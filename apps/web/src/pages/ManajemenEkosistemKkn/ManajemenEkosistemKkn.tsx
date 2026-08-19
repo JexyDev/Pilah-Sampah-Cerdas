@@ -619,7 +619,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                               <div className="flex flex-col gap-0.5">
                                 <span className="font-semibold text-slate-800 dark:text-slate-100 text-xs flex items-center gap-1">
                                   <MapPin size={13} className="text-emerald-600" />
-                                  Kel. {k.kelurahan || "Coblong"}
+                                  Kel. {k.kelurahan || "Wilayah Dampingan"}
                                 </span>
                                 {cakupanRw && (
                                   <span className="text-[11px] text-slate-500 font-medium pl-4">
@@ -1264,7 +1264,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   <span>Kelola Anggota - {selectedGroupForMembers.name}</span>
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Kel. {selectedGroupForMembers.kelurahan || "Coblong"} | Total: {selectedGroupForMembers.students?.length || 0} Mahasiswa
+                  {selectedGroupForMembers.kelurahan ? `Kel. ${selectedGroupForMembers.kelurahan}` : "Wilayah Dampingan"} | Total: {selectedGroupForMembers.students?.length || 0} Mahasiswa
                 </p>
               </div>
               <button onClick={() => setIsMembersModalOpen(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
@@ -1405,7 +1405,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    Kel. {selectedDetailKelompok.kelurahan || "Coblong"}
+                    Kel. {selectedDetailKelompok.kelurahan || "Wilayah Dampingan"}
                   </span>
                   {selectedDetailKelompok.cakupanRw && (
                     <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-200/80 text-slate-700 dark:text-slate-300">

@@ -445,7 +445,7 @@ export const ManajemenPengangkutan: React.FC = () => {
       <PageHeader
         icon={Truck}
         category="Operasional Hilir & Pengangkutan Residu"
-        scope="Kecamatan Coblong"
+        scope={user?.wilayah || "Wilayah Operasional"}
         title="Pengumpulan & Pengangkutan"
         description="Manajemen dan pemantauan penugasan armada pengangkutan residu sampah terintegrasi dari Tempat Sampah warga ke pemrosesan hilir."
         actions={

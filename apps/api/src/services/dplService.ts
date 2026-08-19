@@ -1035,7 +1035,13 @@ export const dplService = {
     if (data.waktuPelaksanaan !== undefined) updateData.waktuPelaksanaan = data.waktuPelaksanaan;
     if (data.linkGoogleDrive !== undefined) updateData.linkGoogleDrive = data.linkGoogleDrive;
     if (data.kebutuhanBiaya !== undefined) updateData.kebutuhanBiaya = data.kebutuhanBiaya;
-    if (data.status !== undefined) updateData.status = data.status;
+    if (data.status !== undefined) {
+      let normalizedStatus: any = data.status;
+      if (normalizedStatus === "DISETUJUI") normalizedStatus = "DITERIMA";
+      if (normalizedStatus === "TIDAK_DISETUJUI") normalizedStatus = "DITOLAK";
+      if (normalizedStatus === "SEDANG_DILAKSANAKAN") normalizedStatus = "SEDANG_BERJALAN";
+      updateData.status = normalizedStatus;
+    }
     if (data.catatanDpl !== undefined) updateData.catatanDpl = data.catatanDpl;
 
     const proker = await prisma.programKerjaKkn.update({
@@ -1073,13 +1079,18 @@ export const dplService = {
   decideProgramKerja: async (
     dplUserId: string,
     id: string,
-    status: "DITERIMA" | "DITOLAK" | "SEDANG_BERJALAN" | "SELESAI" | "BELUM_DISETUJUI",
+    status: "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI" | "BELUM_DISETUJUI",
     catatanDpl?: string
   ) => {
+    let normalizedStatus: any = status;
+    if (normalizedStatus === "DISETUJUI") normalizedStatus = "DITERIMA";
+    if (normalizedStatus === "TIDAK_DISETUJUI") normalizedStatus = "DITOLAK";
+    if (normalizedStatus === "SEDANG_DILAKSANAKAN") normalizedStatus = "SEDANG_BERJALAN";
+
     const proker = await prisma.programKerjaKkn.update({
       where: { id },
       data: {
-        status,
+        status: normalizedStatus,
         catatanDpl: catatanDpl || null,
         reviewedById: dplUserId,
         reviewedAt: new Date(),

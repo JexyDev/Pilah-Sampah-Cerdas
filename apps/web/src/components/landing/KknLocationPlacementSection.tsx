@@ -20,7 +20,7 @@ export const KknLocationPlacementSection: React.FC = () => {
             Sebaran 560 Mahasiswa ke 6 Kelurahan
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 max-w-2xl">
-            Distribusi peserta KKN Tematik Kecamatan Coblong berdasarkan hasil pemetaan wilayah dan kebutuhan pendampingan masyarakat.
+            Distribusi peserta KKN Tematik berdasarkan hasil pemetaan wilayah dan kebutuhan pendampingan masyarakat.
           </p>
         </div>
 

@@ -130,6 +130,18 @@ const NavGroup: React.FC<{
     ) {
       return index === 0;
     }
+    if (
+      ["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"].includes(location.pathname) &&
+      subTo.startsWith("/master-pengguna?role=")
+    ) {
+      const subRole = subTo.split("?role=")[1]?.toLowerCase();
+      const currentRole = (new URLSearchParams(location.search).get("role") || "").toLowerCase();
+      if (subRole === currentRole) return true;
+      if (subRole === "su" && ["su", "admin", "superuser", "super_user"].includes(currentRole)) return true;
+      if (subRole === "petugas-residu" && ["petugas-residu", "petugas_residu", "petugas"].includes(currentRole)) return true;
+      if (subRole === "mahasiswa" && ["mahasiswa", "mahasiswa-kkn", "mahasiswa_kkn"].includes(currentRole)) return true;
+      if (subRole === "taskforce" && ["taskforce", "task-force", "panitia_taskforce"].includes(currentRole)) return true;
+    }
     return false;
   };
 
@@ -336,7 +348,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             {
               to: "/jadwal-kegiatan",
-              label: "Jadwal & Zona",
+              label: "Jadwal & Linimasa",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -349,7 +361,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/manajemen-ekosistem-kkn",
-              label: "Kelompok",
+              label: "Kelompok Dampingan",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -374,7 +386,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/monitoring-absen",
-              label: "Presensi",
+              label: "Presensi Lapangan",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -386,7 +398,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/ajuan-absensi",
-              label: "Ajuan Izin / Sakit",
+              label: "Ajuan Izin & Sakit",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -463,7 +475,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         },
         {
           type: "group",
-          label: "Survei KKN",
+          label: "Survei & Dampak KKN",
           icon: FileText,
           allowed: [
             "DEVELOPER",
@@ -663,7 +675,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN", "RW"] as UserRole[],
           children: [
             { to: "/master-pengguna?role=developer", label: "Developer", allowed: ["DEVELOPER"] as UserRole[] },
-            { to: "/master-pengguna?role=su", label: "Super User", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
+            { to: "/master-pengguna?role=su", label: "Admin", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
             { to: "/master-pengguna?role=pimpinan", label: "Pimpinan", allowed: ["DEVELOPER", "SUPER_USER", "PEMIMPIN"] as UserRole[] },
             { to: "/master-pengguna?role=taskforce", label: "Task Force", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
             { to: "/master-pengguna?role=dpl", label: "Dosen Pendamping Lapangan", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },

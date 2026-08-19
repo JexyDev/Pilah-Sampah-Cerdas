@@ -171,7 +171,7 @@ const IdeDaurUlang: React.FC = () => {
       <PageHeader
         icon={Lightbulb}
         category="Kreativitas & Pemanfaatan"
-        scope="Komunitas Warga Coblong"
+        scope="Komunitas Warga Binaan"
         title="Ide & Inovasi Daur Ulang"
         description="Bagikan inspirasi daur ulang sampah lingkungan. Ide yang disetujui RW mendapatkan 50 poin gamifikasi."
       />

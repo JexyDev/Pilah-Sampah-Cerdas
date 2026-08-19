@@ -15,7 +15,7 @@ export const KelurahanGovernanceSection: React.FC = () => {
             Masalah Sampah di Setiap Kelurahan
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 max-w-2xl">
-            Identifikasi isu pemilahan sampah spesifik di 6 kelurahan Kecamatan Coblong beserta strategi intervensi KKN Tematik.
+            Identifikasi isu pemilahan sampah spesifik di setiap kelurahan binaan beserta strategi intervensi KKN Tematik.
           </p>
         </div>
 

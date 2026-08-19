@@ -375,7 +375,7 @@ const KknDashboard: React.FC = () => {
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               {isSuperOrAdmin
-                ? `Akses ${user?.peran || "SUPER_USER"} • Memantau seluruh progres aktivasi tempat sampah dan kepatuhan 6 kelurahan di Kecamatan Coblong`
+                ? `Akses ${user?.peran || "SUPER_USER"} • Memantau seluruh progres aktivasi tempat sampah dan kepatuhan warga di wilayah binaan`
                 : "Pusat pencatatan pendampingan warga, aktivasi tempat sampah, dan logbook KKN"}
             </p>
           </div>
@@ -398,7 +398,7 @@ const KknDashboard: React.FC = () => {
             )}
             <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-300 font-semibold flex items-center gap-1.5 border border-slate-200 dark:border-slate-700">
               <MapPin size={13} className="text-[#009966]" />
-              Wilayah: {studentKkn?.assignedArea || "Kecamatan Coblong"}
+              Wilayah: {studentKkn?.assignedArea || "Wilayah Dampingan"}
             </span>
           </div>
 
@@ -511,7 +511,7 @@ const KknDashboard: React.FC = () => {
           </div>
           <div className="my-3">
             <h4 className="font-extrabold text-base text-slate-800 dark:text-slate-200 leading-tight">
-              {studentKkn?.assignedArea || "Kecamatan Coblong"}
+              {studentKkn?.assignedArea || "Wilayah Dampingan"}
             </h4>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1">
               {isSuperOrAdmin ? "Cakupan: 6 Kelurahan (60+ RW)" : "Status: Pemimpin KKN"}
@@ -576,7 +576,7 @@ const KknDashboard: React.FC = () => {
                       {leave.student?.name || leave.studentName || "Mahasiswa KKN"}
                     </h4>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                      NIM: {leave.student?.studentProfile?.nim || "-"} • Kelompok: {leave.student?.studentProfile?.kelompok?.name || "KKN Coblong"}
+                      NIM: {leave.student?.studentProfile?.nim || "-"} • Kelompok: {leave.student?.studentProfile?.kelompok?.name || "Kelompok KKN"}
                     </p>
                     <p className="text-xs text-slate-700 dark:text-slate-300 font-semibold bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-100 dark:border-slate-700 italic">
                       "{leave.reason || "Tidak ada keterangan tambahan"}"
@@ -730,7 +730,7 @@ const KknDashboard: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-              Total {wargaList.length} warga terdaftar dalam pemantauan KKN Kecamatan Coblong
+              Total {wargaList.length} warga terdaftar dalam pemantauan KKN wilayah binaan
             </p>
           </div>
 
@@ -847,7 +847,7 @@ const KknDashboard: React.FC = () => {
                         <div className="font-extrabold text-slate-900 dark:text-slate-100">{w.name || w.wargaName}</div>
                         <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                           {w.rtRw || w.rw ? `${w.rtRw || w.rw} • ` : ""}
-                          {w.address || "Coblong, Bandung"}
+                          {w.address || "Wilayah Binaan"}
                         </div>
                       </td>
                       <td className="p-3.5">
@@ -981,7 +981,7 @@ const KknDashboard: React.FC = () => {
               Peta Sebaran Dampingan (Leaflet GIS Real-time)
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-              Pemetaan interaktif poligon 6 kelurahan dan sebaran titik tempat sampah warga di Kecamatan Coblong
+              Pemetaan interaktif poligon wilayah binaan dan sebaran titik tempat sampah warga
             </p>
           </div>
 
@@ -1100,7 +1100,7 @@ const KknDashboard: React.FC = () => {
                             {warga.binCode || "TS"}
                           </span>
                         </div>
-                        <p className="text-slate-600 dark:text-slate-400 text-[11px]">{warga.address || "Coblong"}</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-[11px]">{warga.address || "Wilayah Dampingan"}</p>
                         <div className="flex justify-between items-center pt-1 text-[11px]">
                           <span className="text-slate-400">Kepatuhan:</span>
                           <span className="font-bold text-emerald-600">{compliance} Pts</span>

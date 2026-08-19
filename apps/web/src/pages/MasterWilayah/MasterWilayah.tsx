@@ -120,7 +120,7 @@ const MasterWilayah: React.FC = () => {
               Master Data Wilayah
             </h1>
             <p className="text-xs text-slate-500 font-medium">
-              Kelola data hierarki wilayah Kecamatan Coblong, Kelurahan, RW, dan RT.
+              Kelola data hierarki wilayah Provinsi, Kota/Kabupaten, Kecamatan, Kelurahan, RW, dan RT.
             </p>
           </div>
 
@@ -135,7 +135,7 @@ const MasterWilayah: React.FC = () => {
         {/* Tier 2: Info & Action Buttons */}
         <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
           <div className="text-xs text-slate-500 font-medium">
-            Cakupan data resmi wilayah Kota Bandung &amp; Kecamatan Coblong
+            Cakupan data resmi wilayah administrasi terintegrasi
           </div>
 
           {!isReadOnly && (

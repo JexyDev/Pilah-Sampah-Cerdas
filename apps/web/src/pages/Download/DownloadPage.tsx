@@ -220,7 +220,7 @@ const DownloadPage: React.FC = () => {
               </h1>
 
               <p className="text-sm sm:text-base text-slate-600 font-medium leading-relaxed max-w-2xl">
-                Platform layanan mobile terintegrasi bagi <strong className="text-emerald-700 font-bold">Warga</strong>, <strong className="text-emerald-700 font-bold">Mahasiswa Kuliah Kerja Nyata (KKN) Berdampak</strong>, dan <strong className="text-emerald-700 font-bold">Petugas Residu</strong> di Kecamatan Coblong.
+                Platform layanan mobile terintegrasi bagi <strong className="text-emerald-700 font-bold">Warga</strong>, <strong className="text-emerald-700 font-bold">Mahasiswa Kuliah Kerja Nyata (KKN) Berdampak</strong>, dan <strong className="text-emerald-700 font-bold">Petugas Residu</strong> terintegrasi.
               </p>
 
               {/* Primary Download CTA Button & Real-time Metadata */}

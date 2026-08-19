@@ -132,7 +132,7 @@ export const PenilaianProkerPage: React.FC = () => {
             <option value="ALL">Semua Kelompok Binaan</option>
             {kelompokList.map((k) => (
               <option key={k.id} value={k.id}>
-                {k.name} ({k.kelurahan || "Coblong"})
+                {k.name} ({k.kelurahan ? `Kel. ${k.kelurahan}` : "Wilayah Dampingan"})
               </option>
             ))}
           </select>
@@ -206,18 +206,18 @@ export const PenilaianProkerPage: React.FC = () => {
                       <td className="py-3.5 px-4 text-center">
                         <span
                           className={`inline-block px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
-                            p.status === "DITERIMA"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : p.status === "DITOLAK"
-                              ? "bg-rose-50 text-rose-700 border border-rose-200"
-                              : "bg-amber-50 text-amber-700 border border-amber-200"
+                            (p.status as string) === "DITERIMA" || (p.status as string) === "DISETUJUI"
+                              ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40"
+                              : (p.status as string) === "DITOLAK" || (p.status as string) === "TIDAK_DISETUJUI"
+                              ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-700/40"
+                              : "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40"
                           }`}
                         >
-                          {p.status === "DITERIMA"
-                            ? "Diterima"
-                            : p.status === "DITOLAK"
+                          {(p.status as string) === "DITERIMA" || (p.status as string) === "DISETUJUI"
+                            ? "Disetujui"
+                            : (p.status as string) === "DITOLAK" || (p.status as string) === "TIDAK_DISETUJUI"
                             ? "Ditolak"
-                            : "Belum Disetujui"}
+                            : "Sedang Dilaksanakan"}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-center">

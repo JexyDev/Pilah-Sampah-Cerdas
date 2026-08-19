@@ -50,7 +50,7 @@ const Pengaturan: React.FC = () => {
 
   const [profileData, setProfileData] = useState({
     id: "", name: "", role: "", phone: "", address: "", fotoProfil: "",
-    provinsi: "Jawa Barat", kabupaten: "Kota Bandung", kecamatan: "Coblong",
+    provinsi: "Jawa Barat", kabupaten: "Kota Bandung", kecamatan: storeUser?.wilayah || "Kecamatan Terdaftar",
     kelurahan: "Dago", rw: "RW 01", jumlahAnggotaKeluarga: "",
   });
 
@@ -129,7 +129,7 @@ const Pengaturan: React.FC = () => {
           id: u.id || "", name: u.name || "", role: u.role || "Warga",
           phone: u.phone || "", address: u.address || "", fotoProfil: u.fotoProfil || "",
           provinsi: u.provinsi || "Jawa Barat", kabupaten: u.kabupaten || u.kota || "Kota Bandung",
-          kecamatan: u.kecamatan || "Coblong", kelurahan: resolvedKel, rw: resolvedRw,
+          kecamatan: u.kecamatan || storeUser?.wilayah || "Kecamatan Terdaftar", kelurahan: resolvedKel, rw: resolvedRw,
           jumlahAnggotaKeluarga: u.jumlahAnggotaKeluarga ? String(u.jumlahAnggotaKeluarga) : "",
         });
         updateStoreUser({ name: u.name, phone: u.phone, address: u.address, fotoProfil: u.fotoProfil, kelurahan: resolvedKel, rw: resolvedRw });

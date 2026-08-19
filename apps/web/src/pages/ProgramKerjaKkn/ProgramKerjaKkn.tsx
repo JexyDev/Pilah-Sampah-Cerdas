@@ -11,7 +11,6 @@ import {
   Pencil,
   Trash2,
   CheckCircle2,
-  CheckCheck,
   Search,
   Download,
   Loader2,
@@ -75,7 +74,7 @@ export const ProgramKerjaKkn: React.FC = () => {
     waktuPelaksanaan: "",
     linkGoogleDrive: "",
     kebutuhanBiaya: 0,
-    status: "BELUM_DISETUJUI" as "BELUM_DISETUJUI" | "DITERIMA" | "DITOLAK" | "SEDANG_BERJALAN" | "SELESAI",
+    status: "SEDANG_BERJALAN" as ProgramKerjaItem["status"],
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -306,16 +305,19 @@ export const ProgramKerjaKkn: React.FC = () => {
 
       let matchesStatus = true;
       const st: any = item.status || "";
-      if (statusFilter === "BELUM_DISETUJUI") {
-        matchesStatus = st === "BELUM_DISETUJUI" || st === "PENDING" || !item.status;
-      } else if (statusFilter === "DISETUJUI") {
+      if (statusFilter === "DISETUJUI") {
         matchesStatus = st === "DITERIMA" || st === "DISETUJUI";
-      } else if (statusFilter === "TIDAK_DISETUJUI") {
+      } else if (statusFilter === "DITOLAK") {
         matchesStatus = st === "DITOLAK" || st === "TIDAK_DISETUJUI";
       } else if (statusFilter === "SEDANG_BERJALAN") {
-        matchesStatus = st === "SEDANG_BERJALAN" || st === "SEDANG_DILAKSANAKAN";
-      } else if (statusFilter === "SELESAI") {
-        matchesStatus = st === "SELESAI" || st === "SELESAI_DILAKSANAKAN";
+        matchesStatus =
+          st === "SEDANG_BERJALAN" ||
+          st === "SEDANG_DILAKSANAKAN" ||
+          st === "BELUM_DISETUJUI" ||
+          st === "PENDING" ||
+          st === "SELESAI" ||
+          st === "SELESAI_DILAKSANAKAN" ||
+          !st;
       }
 
       return matchesSearch && matchesCategory && matchesSource && matchesStatus;
@@ -332,27 +334,26 @@ export const ProgramKerjaKkn: React.FC = () => {
     return filteredProkers.slice(start, start + itemsPerPage);
   }, [filteredProkers, currentPage, itemsPerPage]);
 
-  // Metric KPI Computations Sesuai Standar PT Makerindo
+  // Metric KPI Computations Sederhana (3 Status)
   const totalCount = prokerList.length;
   const disetujuiCount = prokerList.filter(
     (p) => (p.status as string) === "DITERIMA" || (p.status as string) === "DISETUJUI"
   ).length;
   const disetujuiPct = totalCount > 0 ? ((disetujuiCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
 
-  const tidakDisetujuiCount = prokerList.filter(
+  const ditolakCount = prokerList.filter(
     (p) => (p.status as string) === "DITOLAK" || (p.status as string) === "TIDAK_DISETUJUI"
   ).length;
-  const tidakDisetujuiPct = totalCount > 0 ? ((tidakDisetujuiCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
+  const ditolakPct = totalCount > 0 ? ((ditolakCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
 
   const sedangDilaksanakanCount = prokerList.filter(
-    (p) => (p.status as string) === "SEDANG_BERJALAN" || (p.status as string) === "SEDANG_DILAKSANAKAN"
+    (p) =>
+      (p.status as string) !== "DITERIMA" &&
+      (p.status as string) !== "DISETUJUI" &&
+      (p.status as string) !== "DITOLAK" &&
+      (p.status as string) !== "TIDAK_DISETUJUI"
   ).length;
   const sedangDilaksanakanPct = totalCount > 0 ? ((sedangDilaksanakanCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
-
-  const selesaiDilaksanakanCount = prokerList.filter(
-    (p) => (p.status as string) === "SELESAI" || (p.status as string) === "SELESAI_DILAKSANAKAN"
-  ).length;
-  const selesaiDilaksanakanPct = totalCount > 0 ? ((selesaiDilaksanakanCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
 
   const totalBiaya = prokerList.reduce((acc, p) => acc + (Number(p.kebutuhanBiaya) || 0), 0);
   void totalBiaya;
@@ -387,7 +388,7 @@ export const ProgramKerjaKkn: React.FC = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Program_Kerja_KKN_Coblong_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute("download", `Program_Kerja_KKN_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -457,20 +458,6 @@ export const ProgramKerjaKkn: React.FC = () => {
 
   const renderStatusPelaksanaanBadge = (status: string) => {
     const s = (status || "").toUpperCase();
-    if (s === "SELESAI" || s === "SELESAI_DILAKSANAKAN") {
-      return (
-        <span className="px-3.5 py-1 bg-teal-50 text-teal-700 border border-teal-200 rounded-full font-bold text-[11px]">
-          Selesai Dilaksanakan
-        </span>
-      );
-    }
-    if (s === "SEDANG_BERJALAN" || s === "SEDANG_DILAKSANAKAN") {
-      return (
-        <span className="px-3.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-bold text-[11px]">
-          Sedang Dilaksanakan
-        </span>
-      );
-    }
     if (s === "DITERIMA" || s === "DISETUJUI") {
       return (
         <span className="px-3.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-bold text-[11px]">
@@ -481,13 +468,13 @@ export const ProgramKerjaKkn: React.FC = () => {
     if (s === "DITOLAK" || s === "TIDAK_DISETUJUI") {
       return (
         <span className="px-3.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full font-bold text-[11px]">
-          Tidak Disetujui
+          Ditolak
         </span>
       );
     }
     return (
-      <span className="px-3.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-bold text-[11px]">
-        Belum Disetujui
+      <span className="px-3.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-bold text-[11px]">
+        Sedang Dilaksanakan
       </span>
     );
   };
@@ -527,8 +514,8 @@ export const ProgramKerjaKkn: React.FC = () => {
         </div>
       </div>
 
-      {/* 5 Stat Cards Metrik Utama Program Kerja */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+      {/* 4 Stat Cards Metrik Utama Program Kerja */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {/* Card 1: Total Program Kerja */}
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
@@ -557,17 +544,17 @@ export const ProgramKerjaKkn: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 3: Tidak Disetujui */}
+        {/* Card 3: Ditolak */}
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-rose-700 dark:text-rose-400 font-bold">Tidak Disetujui</span>
+            <span className="text-[11px] text-rose-700 dark:text-rose-400 font-bold">Ditolak</span>
             <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-100 dark:border-rose-800/40">
               <XCircle size={16} />
             </div>
           </div>
           <div className="mt-2">
-            <h3 className="text-2xl font-black text-rose-600 dark:text-rose-400">{tidakDisetujuiCount}</h3>
-            <span className="text-[10px] text-rose-600/80 dark:text-rose-400/80 font-medium">{tidakDisetujuiPct}% dari total</span>
+            <h3 className="text-2xl font-black text-rose-600 dark:text-rose-400">{ditolakCount}</h3>
+            <span className="text-[10px] text-rose-600/80 dark:text-rose-400/80 font-medium">{ditolakPct}% dari total</span>
           </div>
         </div>
 
@@ -582,20 +569,6 @@ export const ProgramKerjaKkn: React.FC = () => {
           <div className="mt-2">
             <h3 className="text-2xl font-black text-blue-600 dark:text-blue-400">{sedangDilaksanakanCount}</h3>
             <span className="text-[10px] text-blue-600/80 dark:text-blue-400/80 font-medium">{sedangDilaksanakanPct}% dari total</span>
-          </div>
-        </div>
-
-        {/* Card 5: Selesai Dilaksanakan */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-teal-100 dark:border-teal-900/30 shadow-xs flex flex-col justify-between col-span-2 sm:col-span-1">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] text-teal-700 dark:text-teal-400 font-bold">Selesai Dilaksanakan</span>
-            <div className="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0 border border-teal-100 dark:border-teal-800/40">
-              <CheckCheck size={16} />
-            </div>
-          </div>
-          <div className="mt-2">
-            <h3 className="text-2xl font-black text-teal-600 dark:text-teal-400">{selesaiDilaksanakanCount}</h3>
-            <span className="text-[10px] text-teal-600/80 dark:text-teal-400/80 font-medium">{selesaiDilaksanakanPct}% dari total</span>
           </div>
         </div>
       </div>
@@ -661,11 +634,9 @@ export const ProgramKerjaKkn: React.FC = () => {
               className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
             >
               <option value="ALL">Semua Status</option>
-              <option value="BELUM_DISETUJUI">Belum Disetujui</option>
               <option value="DISETUJUI">Disetujui</option>
-              <option value="TIDAK_DISETUJUI">Tidak Disetujui</option>
+              <option value="DITOLAK">Ditolak</option>
               <option value="SEDANG_BERJALAN">Sedang Dilaksanakan</option>
-              <option value="SELESAI">Selesai Dilaksanakan</option>
             </select>
           </div>
         </div>
@@ -838,7 +809,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                   <option value="">Pilih Kelompok...</option>
                   {kelompokList.map((k) => (
                     <option key={k.id} value={k.id}>
-                      {k.name} ({k.kelurahan || "Coblong"})
+                      {k.name} ({k.kelurahan ? `Kel. ${k.kelurahan}` : "Wilayah Dampingan"})
                     </option>
                   ))}
                 </select>
@@ -958,15 +929,13 @@ export const ProgramKerjaKkn: React.FC = () => {
                     Status Pelaksanaan
                   </label>
                   <select
-                    value={formData.status}
+                    value={formData.status === "DITERIMA" || (formData.status as string) === "DISETUJUI" ? "DISETUJUI" : formData.status === "DITOLAK" || (formData.status as string) === "TIDAK_DISETUJUI" ? "DITOLAK" : "SEDANG_BERJALAN"}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
                   >
-                    <option value="BELUM_DISETUJUI">Belum Disetujui</option>
                     <option value="DISETUJUI">Disetujui</option>
+                    <option value="DITOLAK">Ditolak</option>
                     <option value="SEDANG_BERJALAN">Sedang Dilaksanakan</option>
-                    <option value="SELESAI">Selesai Dilaksanakan</option>
-                    <option value="DITOLAK">Tidak Disetujui</option>
                   </select>
                 </div>
               )}

@@ -164,7 +164,7 @@ export const MasterKegiatanSampahPage: React.FC = () => {
           </div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Master Kegiatan & Inovasi Sampah</h1>
           <p className="text-xs text-slate-500 mt-1">
-            Kelola daftar jenis aktivitas pengolahan sampah dan inovasi sirkular yang terdaftar di wilayah Coblong.
+            Kelola daftar jenis aktivitas pengolahan sampah dan inovasi sirkular yang terdaftar di wilayah operasional.
           </p>
         </div>
         <button

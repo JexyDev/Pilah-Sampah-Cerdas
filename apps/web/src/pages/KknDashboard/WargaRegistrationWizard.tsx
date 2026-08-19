@@ -334,7 +334,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
                       </p>
                     </div>
                     <div className="bg-white/10 backdrop-blur-md text-[10.5px] p-2 rounded-lg text-emerald-100 flex items-center justify-between font-medium">
-                      <span>Kecamatan Coblong</span>
+                      <span>{formData.address || "Wilayah Operasional"}</span>
                       <span className="text-emerald-300 font-bold">Akurat</span>
                     </div>
                   </div>

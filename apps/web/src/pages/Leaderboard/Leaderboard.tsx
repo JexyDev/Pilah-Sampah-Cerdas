@@ -368,7 +368,7 @@ const Leaderboard: React.FC = () => {
               Peringkat Warga
             </h1>
             <p className="text-xs text-slate-500 font-semibold mt-0.5">
-              Pemeringkatan berdasarkan tingkat <strong className="text-slate-600 dark:text-slate-400">kepatuhan pemilahan sampah</strong> di wilayah Coblong.
+              Pemeringkatan berdasarkan tingkat <strong className="text-slate-600 dark:text-slate-400">kepatuhan pemilahan sampah</strong> di seluruh wilayah binaan.
             </p>
           </div>
         </div>

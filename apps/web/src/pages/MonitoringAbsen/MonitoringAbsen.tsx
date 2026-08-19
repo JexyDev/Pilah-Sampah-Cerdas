@@ -1135,15 +1135,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const getKelompokLocationInfo = (group?: any) => {
     if (!group) {
       return {
-        kelurahan: "Coblong",
+        kelurahan: "Wilayah Dampingan",
         rws: [] as string[],
-        fullAddress: "Kecamatan Coblong, Kota Bandung",
+        fullAddress: "Wilayah Dampingan Mahasiswa KKN",
         presetLocations: [] as Array<{ label: string; address: string }>,
         centroid: [-6.8906, 107.615] as [number, number],
       };
     }
 
-    const kelurahan = group.kelurahan || "Coblong";
+    const kelurahan = group.kelurahan || "Wilayah Dampingan";
     let rws: string[] = [];
     if (Array.isArray(group.cakupanRw)) {
       rws = group.cakupanRw.map((rw: any) => {
@@ -1176,18 +1176,18 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           ? `Balai ${rws[0]}`
           : `Wilayah Dampingan ${rws.join(", ")}`
         : "Balai Pertemuan Warga";
-    const fullAddress = `${defaultRwName}, Kelurahan ${kelurahan}, Kecamatan Coblong, Kota Bandung`;
+    const fullAddress = `${defaultRwName}, Kelurahan ${kelurahan}`;
 
     const presetLocations: Array<{ label: string; address: string }> = [];
     rws.forEach((rw) => {
       presetLocations.push({
         label: `Balai ${rw}`,
-        address: `Balai ${rw}, Kelurahan ${kelurahan}, Kecamatan Coblong, Kota Bandung`,
+        address: `Balai ${rw}, Kelurahan ${kelurahan}`,
       });
     });
     presetLocations.push({
       label: `Kantor Kel. ${kelurahan}`,
-      address: `Kantor Kelurahan ${kelurahan}, Kecamatan Coblong, Kota Bandung`,
+      address: `Kantor Kelurahan ${kelurahan}`,
     });
 
     return {
@@ -1520,7 +1520,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               </span>
             </div>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Pantau jam kehadiran mahasiswa KKN, verifikasi lokasi geofence GPS, dan unduh berita acara resmi.
+              Pantau jam presensi mahasiswa KKN, verifikasi lokasi geofence GPS, dan unduh berita acara resmi.
             </p>
           </div>
         </div>
@@ -1537,7 +1537,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 onChange={(e) => setSelectedKelompokId(e.target.value)}
                 className="bg-transparent text-xs font-black text-slate-800 dark:text-slate-100 outline-none cursor-pointer pr-1 max-w-[220px] truncate"
               >
-                <option value="">Semua Kelompok (Kecamatan Coblong)</option>
+                <option value="">Semua Kelompok (Seluruh Wilayah)</option>
                 {groups.map((g) => (
                   <option key={g.id} value={g.id}>
                     {formatKelompokDisplayName(g)}
@@ -2121,7 +2121,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               </div>
               <div>
                 <h4 className="text-xs font-black text-slate-900 dark:text-slate-100">
-                  Daftar Roster Mahasiswa KKN {selectedKelompokId ? `(${groups.find((g) => g.id === selectedKelompokId)?.name || "Kelompok Terpilih"})` : "(Seluruh Kecamatan Coblong)"}
+                  Daftar Roster Mahasiswa KKN {selectedKelompokId ? `(${groups.find((g) => g.id === selectedKelompokId)?.name || "Kelompok Terpilih"})` : "(Seluruh Wilayah Binaan)"}
                 </h4>
                 <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
                   Belum ada jadwal kegiatan aktif pada filter ini. Menampilkan rekapitulasi data mahasiswa terdaftar, akumulasi jam kerja, dan pin live GPS.
@@ -2155,7 +2155,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       {!selectedKelompokId && (
                         <th className="py-3.5 px-4 text-center">Kelompok</th>
                       )}
-                      <th className="py-3.5 px-4 text-center">Status Kehadiran</th>
+                      <th className="py-3.5 px-4 text-center">Status Presensi</th>
                       <th className="py-3.5 px-4 text-center">Jam Masuk</th>
                       <th className="py-3.5 px-4 text-center">Jam Pulang</th>
                       <th className="py-3.5 px-4 text-center">Durasi</th>
@@ -2865,7 +2865,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       onChange={(e) =>
                         setFormData({ ...formData, location: e.target.value })
                       }
-                      placeholder="Balai RW 03, Kelurahan Dago, Coblong"
+                      placeholder="Balai Pertemuan RW / Wilayah Tugas"
                       className="w-full h-10 px-3.5 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 focus:bg-white rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none"
                     />
                   </div>

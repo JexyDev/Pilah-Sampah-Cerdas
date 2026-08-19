@@ -428,7 +428,7 @@ export const HasilPemanfaatan: React.FC = () => {
             ? `RW ${user?.rw || user?.rtRwId || ""}`
             : user?.peran === "LURAH"
             ? `Kelurahan ${user?.kelurahan || ""}`
-            : "Kecamatan Coblong"
+            : user?.wilayah || "Wilayah Operasional"
         }
         title="Pemanfaatan & Hasil"
         description="Pusat pemantauan konversi produk hasil daur ulang (Kompos, Maggot BSF, Pupuk POC, Saldo Bank Sampah) dan evaluasi kepuasan pemanfaatan warga."
@@ -590,7 +590,7 @@ export const HasilPemanfaatan: React.FC = () => {
                       </td>
                       <td className="px-4 py-3.5">
                         <span className="font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/50 px-2.5 py-0.5 rounded-md text-[11px] inline-block">
-                          {p.rw?.name || `RW ${p.rwId}`} ({p.rw?.kelurahan?.name || "Coblong"})
+                          {p.rw?.name || `RW ${p.rwId}`} ({p.rw?.kelurahan?.name || "Wilayah Dampingan"})
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-center font-bold text-slate-700 dark:text-slate-300">
@@ -796,7 +796,7 @@ export const HasilPemanfaatan: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">{item.wargaNama || "Warga"}</h4>
                           <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/50 px-2 py-0.5 rounded-md">
-                            {item.rw?.name || (item.rwId ? `RW ${item.rwId}` : "Warga Coblong")}
+                            {item.rw?.name || (item.rwId ? `RW ${item.rwId}` : "Warga Binaan")}
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">

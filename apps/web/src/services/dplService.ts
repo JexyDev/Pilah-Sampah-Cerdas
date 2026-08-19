@@ -126,7 +126,7 @@ export interface ProgramKerjaItem {
   waktuPelaksanaan?: string | null;
   linkGoogleDrive?: string | null;
   kebutuhanBiaya: number;
-  status: "BELUM_DISETUJUI" | "DITERIMA" | "DITOLAK" | "SEDANG_BERJALAN" | "SELESAI";
+  status: "BELUM_DISETUJUI" | "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI";
   catatanDpl?: string | null;
   reviewedByName?: string | null;
   reviewedAt?: string | null;
@@ -312,7 +312,7 @@ export const dplService = {
       waktuPelaksanaan?: string;
       linkGoogleDrive?: string;
       kebutuhanBiaya?: number;
-      status?: "BELUM_DISETUJUI" | "DITERIMA" | "DITOLAK" | "SEDANG_BERJALAN" | "SELESAI";
+      status?: "BELUM_DISETUJUI" | "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI";
       catatanDpl?: string;
     }
   ) => {
@@ -325,7 +325,7 @@ export const dplService = {
     return res.data;
   },
 
-  decideProgramKerja: async (id: string, status: "DITERIMA" | "DITOLAK", catatanDpl?: string) => {
+  decideProgramKerja: async (id: string, status: "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI" | "BELUM_DISETUJUI", catatanDpl?: string) => {
     const res = await api.patch(`/dpl/program-kerja/${id}/decision`, { status, catatanDpl });
     return res.data;
   },

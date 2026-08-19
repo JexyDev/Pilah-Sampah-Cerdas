@@ -74,10 +74,9 @@ export interface ProvinsiData {
 }
 
 const formatKecName = (raw: string | undefined | null): string => {
-  if (!raw || raw === "-") return "Kecamatan Coblong";
+  if (!raw || raw === "-") return "Kecamatan";
   const trimmed = raw.trim();
   if (/^kecamatan\s+/i.test(trimmed)) return trimmed;
-  if (trimmed.toLowerCase().includes("coblong")) return "Kecamatan Coblong";
   const clean = trimmed.replace(/^kec\.?\s+/i, "").trim();
   return `Kecamatan ${clean.charAt(0).toUpperCase()}${clean.slice(1)}`;
 };
@@ -146,16 +145,16 @@ const MasterRw: React.FC = () => {
 
       const kecs: KecamatanData[] = (resKec.data?.data || []).map((kc: any) => ({
         id: kc.id,
-        nama: formatKecName(kc.name || kc.nama || "Kecamatan Coblong"),
+        nama: formatKecName(kc.name || kc.nama || "Kecamatan"),
         kabupatenId: kc.kabupatenId || kc.kabupaten?.id || 1,
       }));
-      setKecamatanList(kecs.length > 0 ? kecs : [{ id: 1, nama: "Kecamatan Coblong", kabupatenId: 1 }]);
+      setKecamatanList(kecs.length > 0 ? kecs : [{ id: 1, nama: "Kecamatan Terdaftar", kabupatenId: 1 }]);
 
       const kels: KelurahanData[] = (resKel.data?.data || []).map((kl: any) => ({
         id: String(kl.id),
         nama: kl.name || kl.nama || "Dago",
         kecamatanId: kl.kecamatanId || kl.kecamatan?.id || 1,
-        kecamatanNama: formatKecName(kl.kecamatan?.name || kl.kecamatan?.nama || "Kecamatan Coblong"),
+        kecamatanNama: formatKecName(kl.kecamatan?.name || kl.kecamatan?.nama || "Kecamatan"),
         kabupatenNama: kl.kecamatan?.kabupaten?.name || kl.kecamatan?.kabupaten?.nama || "Kota Bandung",
         provinsiNama: kl.kecamatan?.kabupaten?.provinsi?.name || kl.kecamatan?.kabupaten?.provinsi?.nama || "Jawa Barat",
       }));
@@ -166,7 +165,7 @@ const MasterRw: React.FC = () => {
         name: r.name,
         kelurahanId: String(r.kelurahanId || r.kelurahan?.id || ""),
         kelurahanNama: r.kelurahan?.name || r.kelurahan?.nama || "Dago",
-        kecamatanNama: formatKecName(r.kelurahan?.kecamatan?.name || r.kelurahan?.kecamatan?.nama || "Kecamatan Coblong"),
+        kecamatanNama: formatKecName(r.kelurahan?.kecamatan?.name || r.kelurahan?.kecamatan?.nama || "Kecamatan"),
         kabupatenNama: r.kelurahan?.kecamatan?.kabupaten?.name || r.kelurahan?.kecamatan?.kabupaten?.nama || "Kota Bandung",
         provinsiNama: r.kelurahan?.kecamatan?.kabupaten?.provinsi?.name || r.kelurahan?.kecamatan?.kabupaten?.provinsi?.nama || "Jawa Barat",
       }));
@@ -197,7 +196,7 @@ const MasterRw: React.FC = () => {
       map.set(kel.id, {
         kelurahanId: kel.id,
         kelurahanNama: kel.nama,
-        kecamatanNama: formatKecName(kel.kecamatanNama || parentKec?.nama || "Kecamatan Coblong"),
+        kecamatanNama: formatKecName(kel.kecamatanNama || parentKec?.nama || "Kecamatan"),
         kabupatenNama: kel.kabupatenNama || parentKab?.nama || "Kota Bandung",
         provinsiNama: kel.provinsiNama || parentProv?.nama || "Jawa Barat",
         rws: [],
@@ -425,7 +424,7 @@ const MasterRw: React.FC = () => {
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">
               CAKUPAN PENUGASAN UTAMA
             </span>
-            <h3 className="text-xl font-black text-[#009966]">6 Kelurahan Coblong</h3>
+            <h3 className="text-xl font-black text-[#009966]">{kelurahanList.length} Kelurahan Terdata</h3>
           </div>
           <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center">
             <MapPin size={20} />

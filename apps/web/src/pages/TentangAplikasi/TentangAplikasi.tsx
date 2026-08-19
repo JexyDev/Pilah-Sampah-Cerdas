@@ -256,7 +256,7 @@ const Informasi: React.FC = () => {
                       <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">1. Penilaian Kinerja Mahasiswa KKN</h3>
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                      Buka menu <strong>Dasbor</strong> &rarr; Tab <strong>Mahasiswa &amp; Nilai</strong>. Anda dapat melihat kehadiran, partisipasi dampingan warga, dan memasukkan nilai akhir mahasiswa bimbingan secara langsung.
+                      Buka menu <strong>Dasbor</strong> &rarr; Tab <strong>Mahasiswa &amp; Nilai</strong>. Anda dapat melihat presensi, partisipasi dampingan warga, dan memasukkan nilai akhir mahasiswa bimbingan secara langsung.
                     </p>
                   </div>
 

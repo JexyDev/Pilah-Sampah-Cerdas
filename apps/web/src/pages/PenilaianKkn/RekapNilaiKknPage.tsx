@@ -84,7 +84,7 @@ export const RekapNilaiKknPage: React.FC = () => {
       "Kelompok",
       "Nilai Individu (40%)",
       "Nilai Proker (30%)",
-      "Kehadiran (30%)",
+      "Presensi (30%)",
       "Poin Dampingan",
       "Nilai Akhir",
       "Huruf Mutu",
@@ -150,7 +150,7 @@ export const RekapNilaiKknPage: React.FC = () => {
           <p className="text-2xl font-black text-emerald-700 mt-1">{rekapData.stats.rerataNilai.toFixed(2)}</p>
         </div>
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-          <span className="text-xs text-indigo-600 font-semibold">Rerata Tingkat Kehadiran</span>
+          <span className="text-xs text-indigo-600 font-semibold">Rerata Tingkat Presensi</span>
           <p className="text-2xl font-black text-indigo-700 mt-1">{rekapData.stats.rerataKehadiran.toFixed(2)}%</p>
         </div>
       </div>
@@ -167,7 +167,7 @@ export const RekapNilaiKknPage: React.FC = () => {
             <option value="ALL">Semua Kelompok Binaan</option>
             {kelompokList.map((k) => (
               <option key={k.id} value={k.id}>
-                {k.name} ({k.kelurahan || "Coblong"})
+                {k.name} ({k.kelurahan ? `Kel. ${k.kelurahan}` : "Wilayah Dampingan"})
               </option>
             ))}
           </select>

@@ -216,7 +216,7 @@ export const LandingPage: React.FC = () => {
       bgLight: "bg-[#F99D26]/10 text-[#F99D26] border-[#F99D26]/20",
       img: "/image/sdg/SDG-11.svg",
       title: "Kota dan Permukiman Berkelanjutan",
-      desc: "Mendorong partisipasi warga Coblong dalam pemilahan guna mewujudkan kota yang lestari.",
+      desc: "Mendorong partisipasi warga dalam pemilahan guna mewujudkan kawasan perkotaan yang lestari.",
     },
     {
       num: 12,
@@ -466,7 +466,7 @@ export const LandingPage: React.FC = () => {
              <div className="absolute inset-y-0 left-0 w-16 sm:w-24 bg-gradient-to-r from-white via-white/40 to-transparent z-10 pointer-events-none" />
              <img
                src="/image/landingpage.png"
-               alt="Aksi Pemilahan Sampah Mahasiswa KKN Coblong"
+               alt="Aksi Pemilahan Sampah Mahasiswa KKN Berdampak"
                className="w-full h-full object-cover object-center lg:object-right transition-all duration-500 [mask-image:linear-gradient(to_right,transparent_0%,black_8%)]"
              />
            </div>
@@ -1401,7 +1401,7 @@ export const LandingPage: React.FC = () => {
           <div className="text-center space-y-2">
             <span className="text-emerald-600 font-extrabold text-sm uppercase tracking-wider">05. What</span>
             <h2 className="text-4xl font-extrabold text-slate-900">Pemanfaatan Hilir dan Fasilitas GIS</h2>
-            <p className="text-slate-500 text-sm font-medium">Pengolahan sampah terintegrasi di wilayah Kecamatan Coblong</p>
+            <p className="text-slate-500 text-sm font-medium">Pengolahan sampah terintegrasi di seluruh wilayah operasional</p>
 
             <div className="inline-flex p-1 bg-white border border-slate-200 rounded-full mt-4">
               <button
@@ -1554,7 +1554,7 @@ export const LandingPage: React.FC = () => {
                     <h3 className="font-extrabold text-slate-900 text-lg leading-tight">
                       Hubungi Kami
                     </h3>
-                    <p className="text-[11px] text-slate-500 font-semibold mt-0.5">Sistem Tata Kelola Sampah Coblong</p>
+                    <p className="text-[11px] text-slate-500 font-semibold mt-0.5">Sistem Tata Kelola Sampah Berdampak</p>
                   </div>
                 </div>
                 <button
@@ -1569,7 +1569,7 @@ export const LandingPage: React.FC = () => {
               {/* Body */}
               <div className="space-y-4 text-xs text-slate-600">
                 <p className="font-medium text-slate-600 leading-relaxed">
-                  Untuk informasi seputar sistem pemilahan sampah cerdas Kecamatan Coblong atau kerja sama operasional:
+                  Untuk informasi seputar sistem pemilahan sampah cerdas atau kerja sama operasional:
                 </p>
 
                 <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200/70 space-y-4">

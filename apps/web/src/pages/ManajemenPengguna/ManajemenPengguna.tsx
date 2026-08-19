@@ -210,7 +210,7 @@ const ManajemenPengguna: React.FC = () => {
         const listKab = resKab.data?.data || resKab.data || [];
         setKabupatenList(listKab.length > 0 ? listKab : [{ id: 1, name: "Kota Bandung" }]);
         const listKec = resKec.data?.data || resKec.data || [];
-        setKecamatanList(listKec.length > 0 ? listKec : [{ id: 1, name: "Kecamatan Coblong" }]);
+        setKecamatanList(listKec.length > 0 ? listKec : [{ id: 1, name: "Kecamatan Terdaftar" }]);
         const listKel = resKel.data?.data || resKel.data || [];
         setKelurahanList(listKel);
       } catch (err) {
@@ -243,7 +243,7 @@ const ManajemenPengguna: React.FC = () => {
     provinsi: "Jawa Barat",
     kabupaten: "Kota Bandung",
     wilayah: "Kota Bandung",
-    kecamatan: "Kecamatan Coblong",
+    kecamatan: "Kecamatan Terdaftar",
     petugasResiduId: "",
     dplId: "",
   });
@@ -565,7 +565,7 @@ const ManajemenPengguna: React.FC = () => {
       provinsi: provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat",
       kabupaten: kabupatenList[0]?.name || "Kota Bandung",
       wilayah: defaultRole === "ADMIN_DLH" ? "Kota Bandung" : "",
-      kecamatan: "Kecamatan Coblong",
+      kecamatan: kecamatanList[0]?.name || "Kecamatan Terdaftar",
       petugasResiduId: "",
       dplId: "",
     });
@@ -647,7 +647,7 @@ const ManajemenPengguna: React.FC = () => {
       provinsi: u.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat"),
       kabupaten: u.kabupaten || (kabupatenList[0]?.name || "Kota Bandung"),
       wilayah: u.wilayah || (u.role === "ADMIN_DLH" ? "Kota Bandung" : ""),
-      kecamatan: u.kecamatan || u.rw?.kelurahan?.kecamatan?.name || "Kecamatan Coblong",
+      kecamatan: u.kecamatan || u.rw?.kelurahan?.kecamatan?.name || kecamatanList[0]?.name || "Kecamatan Terdaftar",
       petugasResiduId: u.petugasResidu?.id || "",
       dplId: u.studentProfile?.kelompok?.dplId || u.studentProfile?.kelompok?.dpl?.id || u.dplId || "",
     });
@@ -1179,31 +1179,6 @@ const ManajemenPengguna: React.FC = () => {
         </div>
       </div>
 
-      {/* Role Selector Tabs Bar */}
-      <div className="bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
-          {allowedRoleTabs.map((roleKey) => {
-            const isActive = selectedRole === roleKey;
-            return (
-              <button
-                key={roleKey}
-                type="button"
-                onClick={() => {
-                  setSelectedRole(roleKey);
-                  setSearchParams({ role: roleKey.toLowerCase() });
-                }}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                  isActive
-                    ? "bg-[#009966] text-white shadow-xs scale-[1.02]"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200"
-                }`}
-              >
-                {ROLE_LABEL_MAP[roleKey] || roleKey}
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       {/* Filter Bar */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
@@ -2307,7 +2282,7 @@ const ManajemenPengguna: React.FC = () => {
                             type="text"
                             value={formData.wilayah}
                             onChange={(e) => setFormData({ ...formData, wilayah: e.target.value })}
-                            placeholder="TPS 3R Siliwangi, Jl. Siliwangi No. 10, Coblong, Kel. Cipaganti"
+                            placeholder="TPS 3R / Wilayah Penugasan Operasional"
                             className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
                           />
                         </div>

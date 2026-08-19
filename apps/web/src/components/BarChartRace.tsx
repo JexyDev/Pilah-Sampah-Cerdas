@@ -82,7 +82,7 @@ export const BarChartRace: React.FC = () => {
             </div>
             <div>
               <h3 className="font-black text-lg text-slate-800 dark:text-slate-100 tracking-tight">
-                Top Kelurahan Kecamatan Coblong
+                Peringkat Kelurahan Teraktif
               </h3>
               <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">
                 Peringkat real-time hasil akumulasi data dari seluruh Rukun Warga

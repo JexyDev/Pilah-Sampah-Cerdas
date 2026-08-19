@@ -105,17 +105,16 @@ const MasterKecamatan: React.FC = () => {
       setKabupatenList(kabs);
 
       const formatKecName = (raw: string) => {
-        if (!raw) return "Kecamatan Coblong";
+        if (!raw) return "Kecamatan";
         const trimmed = raw.trim();
         if (/^kecamatan\s+/i.test(trimmed)) return trimmed;
-        if (trimmed.toLowerCase().includes("coblong")) return "Kecamatan Coblong";
         const clean = trimmed.replace(/^kec\.?\s+/i, "").trim();
         return `Kecamatan ${clean.charAt(0).toUpperCase()}${clean.slice(1)}`;
       };
 
       const kecs: KecamatanItem[] = (resKec.data?.data || []).map((kc: any) => ({
         id: Number(kc.id),
-        nama: formatKecName(kc.name || kc.nama || "Kecamatan Coblong"),
+        nama: formatKecName(kc.name || kc.nama || "Kecamatan"),
         kabupatenId: Number(kc.kabupatenId || kc.kabupaten?.id || 1),
         kabupatenNama: kc.kabupaten?.name || kc.kabupaten?.nama || "Kota Bandung",
         provinsiNama: kc.kabupaten?.provinsi?.name || kc.kabupaten?.provinsi?.nama || "Jawa Barat",
@@ -316,7 +315,7 @@ const MasterKecamatan: React.FC = () => {
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">
               KECAMATAN UTAMA PENUGASAN
             </span>
-            <h3 className="text-xl font-black text-[#009966]">Kecamatan Coblong</h3>
+            <h3 className="text-xl font-black text-[#009966]">{kecamatanList[0]?.nama || "Kecamatan Terdata"}</h3>
           </div>
           <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center">
             <MapPin size={20} />
@@ -601,7 +600,7 @@ const MasterKecamatan: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Kecamatan Coblong"
+                  placeholder="Contoh: Kecamatan Sukasari"
                   value={formData.nama}
                   onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                   className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#009966] focus:bg-white transition-all"

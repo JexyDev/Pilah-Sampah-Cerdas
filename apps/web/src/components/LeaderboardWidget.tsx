@@ -210,7 +210,7 @@ export const LeaderboardWidget: React.FC = () => {
           const apiWarga = d.citizens.map((c: any, i: number) => ({
             rank: i + 1,
             name: c.name,
-            subtitle: c.wilayah && c.wilayah !== "N/A" ? c.wilayah : "Wilayah Coblong",
+            subtitle: c.wilayah && c.wilayah !== "N/A" ? c.wilayah : "Wilayah Binaan",
             points: Number(c.totalPoints || 0),
           }));
           setWargaList(apiWarga);
@@ -219,7 +219,7 @@ export const LeaderboardWidget: React.FC = () => {
           const apiPetugas = d.pengangkut.map((p: any, i: number) => ({
             rank: i + 1,
             name: p.name,
-            subtitle: p.wilayah || "Coblong",
+            subtitle: p.wilayah || "Wilayah Operasional",
             points: Number(p.totalPoints || 0),
           }));
           setPetugasList(apiPetugas);
@@ -229,7 +229,7 @@ export const LeaderboardWidget: React.FC = () => {
           const apiRw = rawRw.map((r: any, i: number) => {
             const rawName = r.rtRwName || r.name || `${r.rwId || i + 1}`;
             const cleanRw = rawName.toLowerCase().startsWith("rw") ? rawName : `RW ${rawName}`;
-            const rawKel = r.kelurahanName || "Coblong";
+            const rawKel = r.kelurahanName || "Wilayah Kerja";
             const cleanKel = rawKel.toLowerCase().startsWith("kel") ? rawKel : `Kel. ${rawKel}`;
             return {
               rank: i + 1,
@@ -247,7 +247,7 @@ export const LeaderboardWidget: React.FC = () => {
             return {
               rank: i + 1,
               name: cleanKel,
-              subtitle: "Kecamatan Coblong",
+              subtitle: k.kecamatanName || "Wilayah Operasional",
               points: Number(k.totalPoints || 0),
             };
           });

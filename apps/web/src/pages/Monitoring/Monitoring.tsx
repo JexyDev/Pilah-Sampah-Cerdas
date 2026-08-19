@@ -177,7 +177,7 @@ const Monitoring: React.FC = () => {
     if (isDpl) {
       return dplKelurahans.length > 0 ? dplKelurahans.join(",") : user?.kelurahan || "Dago";
     }
-    if (isCamat) return "Kecamatan Coblong";
+    if (isCamat) return user?.wilayah || "Kecamatan";
     return undefined;
   }, [user, isLurah, isDpl, isRw, isCamat, userKelurahan, selectedMapKelurahan, dplKelurahans]);
 
@@ -410,21 +410,29 @@ const Monitoring: React.FC = () => {
       const isPenuh = bin.status === "Penuh" || pct >= 90;
       const isSedang = bin.status === "Sedang" || (pct >= 70 && pct < 90);
 
-      const catLower = (bin.category?.name || bin.lokasi || "").toLowerCase();
-      const isAnorganik = catLower.includes("anorganik") || catLower.includes("non_organic");
-      const isResidu = catLower.includes("residu") || catLower.includes("b3");
+      const binCode = (bin as any).kode || bin.qrCode || bin.id || "";
+      const rawCat = (bin.category?.name || (binCode.includes("ANG") ? "anorganik" : binCode.includes("RSD") ? "residu" : binCode.includes("OGN") ? "organik" : "") || "").toLowerCase();
+      const isAnorganik = rawCat.includes("anorganik") || rawCat.includes("non_organic") || rawCat.includes("ang");
+      const isResidu = rawCat.includes("residu") || rawCat.includes("b3") || rawCat.includes("rsd");
       const isOrganik = !isAnorganik && !isResidu;
 
       let group = map[key];
       if (!group) {
+        const candidateAddress =
+          bin.address ||
+          (bin as any).wargaAddress ||
+          (bin as any).user?.address ||
+          (bin.lokasi && !bin.lokasi.toLowerCase().startsWith("kategori:") ? bin.lokasi : null) ||
+          "Wilayah Operasional";
+
         group = {
           householdKey: key,
           userId,
           wargaName: ownerName,
           wargaPhone: ownerPhone,
-          address: (bin as any).user?.address || bin.lokasi || "Kecamatan Coblong",
-          rtRw: bin.rtRw || (bin as any).rw?.name || "Wilayah Coblong",
-          kelurahan: (bin as any).kelurahan?.name || (bin as any).user?.kelurahan?.name || "",
+          address: candidateAddress,
+          rtRw: bin.rtRw || (bin as any).rw?.name || (typeof bin.rw === "string" ? bin.rw : "Wilayah Dampingan"),
+          kelurahan: (bin as any).kelurahan?.name || (bin as any).user?.kelurahan?.name || (typeof bin.kelurahan === "string" ? bin.kelurahan : ""),
           latitude: lat,
           longitude: lng,
           organikBin: null,
@@ -533,7 +541,7 @@ const Monitoring: React.FC = () => {
       return "Kelompok KKN Binaan";
     }
     if (isMahasiswa) return "Wilayah Dampingan Mahasiswa KKN";
-    if (isCamat) return "Kecamatan Coblong (6 Kelurahan)";
+    if (isCamat) return user?.wilayah ? `${user.wilayah} (Seluruh Kelurahan)` : "Wilayah Kecamatan";
     return "Seluruh Wilayah (Developer / Admin DLH)";
   };
 
@@ -901,10 +909,10 @@ const Monitoring: React.FC = () => {
                   <div className="border-t border-slate-100 dark:border-slate-800 max-h-60 overflow-y-auto rounded-b-2xl bg-white dark:bg-slate-900 shadow-xl">
                     {mapSearchResults.length > 0 ? (
                       mapSearchResults.map((bin) => {
-                        const binCode = (bin as any).kode || bin.qrCode || bin.id;
-                        const catLower = (bin.category?.name || bin.lokasi || "").toLowerCase();
-                        const isResidu = catLower.includes("residu") || catLower.includes("b3");
-                        const isAnorganic = catLower.includes("anorganik");
+                        const binCode = (bin as any).kode || bin.qrCode || bin.id || "";
+                        const rawCat = (bin.category?.name || (binCode.includes("ANG") ? "anorganik" : binCode.includes("RSD") ? "residu" : binCode.includes("OGN") ? "organik" : "")).toLowerCase();
+                        const isResidu = rawCat.includes("residu") || rawCat.includes("b3") || rawCat.includes("rsd");
+                        const isAnorganic = rawCat.includes("anorganik") || rawCat.includes("ang");
                         const catName = isResidu ? "Residu" : isAnorganic ? "Anorganik" : "Organik";
                         return (
                           <div
@@ -1089,7 +1097,7 @@ const Monitoring: React.FC = () => {
 
                       <div className="space-y-1 border-t border-slate-100 dark:border-slate-800 pt-2">
                         <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
-                          Batas 6 Kelurahan Coblong
+                          Batas Kelurahan Terdata
                         </span>
                         <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10.5px]">
                           {Object.values(KELURAHAN_GEODATA).map((kg) => (
@@ -1462,10 +1470,10 @@ const Monitoring: React.FC = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {paginatedBins.length > 0 ? (
                   paginatedBins.map((bin) => {
-                    const binCode = (bin as any).kode || bin.qrCode || bin.id;
-                    const catLower = (bin.category?.name || bin.lokasi || "").toLowerCase();
-                    const isResidu = catLower.includes("residu") || catLower.includes("b3");
-                    const isAnorganik = catLower.includes("anorganik");
+                    const binCode = (bin as any).kode || bin.qrCode || bin.id || "";
+                    const rawCat = (bin.category?.name || (binCode.includes("ANG") ? "anorganik" : binCode.includes("RSD") ? "residu" : binCode.includes("OGN") ? "organik" : "")).toLowerCase();
+                    const isResidu = rawCat.includes("residu") || rawCat.includes("b3") || rawCat.includes("rsd");
+                    const isAnorganik = rawCat.includes("anorganik") || rawCat.includes("ang");
                     const catName = isResidu ? "Residu" : isAnorganik ? "Anorganik" : "Organik";
 
                     const vol = Number(bin.currentVolumeLiter || 0);
@@ -1478,7 +1486,7 @@ const Monitoring: React.FC = () => {
 
                     const ownerName = bin.wargaName || (bin as any).user?.name || "Warga Terdaftar";
                     const ownerPhone = (bin as any).user?.phone || (bin as any).wargaPhone || (bin as any).phone;
-                    const areaText = bin.rtRw || (bin as any).rw?.name || bin.lokasi || "Wilayah Coblong";
+                    const areaText = bin.rtRw || (bin as any).rw?.name || (typeof bin.rw === "string" ? bin.rw : null) || (bin.lokasi && !bin.lokasi.toLowerCase().startsWith("kategori:") ? bin.lokasi : "Wilayah Dampingan");
 
                     const lat = Number(bin.latitude);
                     const lng = Number(bin.longitude);
@@ -1748,7 +1756,7 @@ const Monitoring: React.FC = () => {
                   <div className="flex justify-between">
                     <span className="text-slate-400 font-semibold">Wilayah:</span>
                     <span className="font-bold text-slate-800 dark:text-slate-100">
-                      {selectedBinDetail.rtRw || (selectedBinDetail as any).rw?.name || "Kecamatan Coblong"}
+                      {selectedBinDetail.rtRw || (selectedBinDetail as any).rw?.name || "Wilayah Dampingan"}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -1776,7 +1784,7 @@ const Monitoring: React.FC = () => {
                   )}
                 </div>
                 <p className="text-[11.5px] text-slate-600 dark:text-slate-400">
-                  {(selectedBinDetail as any).user?.address || selectedBinDetail.lokasi || "Kecamatan Coblong, Kota Bandung"}
+                  {(selectedBinDetail as any).user?.address || selectedBinDetail.lokasi || "Wilayah Operasional"}
                 </p>
               </div>
 

@@ -11,7 +11,6 @@ import { z } from "zod";
 import { binService } from "../services/binService.js";
 import { generateNextQrCode } from "../utils/qrGenerator.js";
 
-
 const scanSchema = z.object({
   qrCode: z.string().min(1, "QR Code diperlukan"),
   detectedType: z.string().min(1, "Jenis sampah terdeteksi diperlukan"),
@@ -115,11 +114,27 @@ export class BinController {
           lastActivityLog = verifiedAtStr;
         }
 
+        const calculatedAddress =
+          bin.user?.address ||
+          bin.user?.households?.[0]?.address ||
+          (bin.rw?.name ? `${bin.rw.name}, Coblong` : "Kecamatan Coblong");
+
         return {
           id: bin.id,
           kode: ensureTcFormat(bin.qrCode, bin.category?.name),
-          lokasi: bin.category?.name ? `Kategori: ${bin.category.name}` : "Kategori: -",
+          lokasi: calculatedAddress,
+          address: calculatedAddress,
+          wargaAddress: bin.user?.address || bin.user?.households?.[0]?.address || null,
           rw: bin.rw?.name || (bin.rwId ? `ID RT/RW: ${bin.rwId}` : "Belum Terikat"),
+          kelurahan: bin.rw?.kelurahan?.name || null,
+          user: bin.user
+            ? {
+                id: bin.user.id,
+                name: bin.user.name,
+                phone: bin.user.phone,
+                address: bin.user.address || bin.user.households?.[0]?.address || null,
+              }
+            : null,
           kapasitas,
           status:
             bin.status === "BROKEN"

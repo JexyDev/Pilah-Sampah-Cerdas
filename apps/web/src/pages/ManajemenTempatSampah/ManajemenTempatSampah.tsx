@@ -320,21 +320,29 @@ const ManajemenTempatSampah: React.FC = () => {
       const isPenuh = bin.status === "Penuh" || pct >= 90;
       const isSedang = bin.status === "Sedang" || (pct >= 70 && pct < 90);
 
-      const catLower = (bin.category?.name || bin.lokasi || "").toLowerCase();
-      const isAnorganik = catLower.includes("anorganik") || catLower.includes("non_organic");
-      const isResidu = catLower.includes("residu") || catLower.includes("b3");
+      const binCode = (bin as any).kode || bin.qrCode || bin.id || "";
+      const rawCat = (bin.category?.name || (binCode.includes("ANG") ? "anorganik" : binCode.includes("RSD") ? "residu" : binCode.includes("OGN") ? "organik" : "") || "").toLowerCase();
+      const isAnorganik = rawCat.includes("anorganik") || rawCat.includes("non_organic") || rawCat.includes("ang");
+      const isResidu = rawCat.includes("residu") || rawCat.includes("b3") || rawCat.includes("rsd");
       const isOrganik = !isAnorganik && !isResidu;
 
       let group = map[key];
       if (!group) {
+        const candidateAddress =
+          bin.address ||
+          (bin as any).wargaAddress ||
+          bin.user?.address ||
+          (bin.lokasi && !bin.lokasi.toLowerCase().startsWith("kategori:") ? bin.lokasi : null) ||
+          "Wilayah Operasional";
+
         group = {
           householdKey: key,
           userId,
           wargaName: ownerName,
           wargaPhone: ownerPhone,
-          address: bin.user?.address || bin.lokasi || "Kecamatan Coblong",
-          rtRw: bin.rw || "Wilayah Coblong",
-          kelurahan: bin.kelurahan?.name || bin.user?.kelurahan?.name || "",
+          address: candidateAddress,
+          rtRw: bin.rw || "Wilayah Dampingan",
+          kelurahan: bin.kelurahan?.name || bin.user?.kelurahan?.name || (typeof bin.kelurahan === "string" ? bin.kelurahan : ""),
           latitude: lat,
           longitude: lng,
           organikBin: null,
@@ -1017,9 +1025,10 @@ const ManajemenTempatSampah: React.FC = () => {
                     <div className="border-t border-slate-100 dark:border-slate-800 max-h-60 overflow-y-auto rounded-b-2xl bg-white dark:bg-slate-900 shadow-xl">
                       {mapSearchResults.length > 0 ? (
                         mapSearchResults.map((bin) => {
-                          const catLower = (bin.category?.name || bin.lokasi || "").toLowerCase();
-                          const isResidu = catLower.includes("residu") || catLower.includes("b3");
-                          const isAnorganic = catLower.includes("anorganik");
+                          const binCode = (bin as any).kode || bin.qrCode || bin.id || "";
+                          const rawCat = (bin.category?.name || (binCode.includes("ANG") ? "anorganik" : binCode.includes("RSD") ? "residu" : binCode.includes("OGN") ? "organik" : "")).toLowerCase();
+                          const isResidu = rawCat.includes("residu") || rawCat.includes("b3") || rawCat.includes("rsd");
+                          const isAnorganic = rawCat.includes("anorganik") || rawCat.includes("ang");
                           const catName = isResidu ? "Residu" : isAnorganic ? "Anorganik" : "Organik";
                           return (
                             <div
@@ -1824,7 +1833,7 @@ const ManajemenTempatSampah: React.FC = () => {
                       <div>
                         <span className="text-slate-400 font-bold block text-[10px] uppercase">Kecamatan</span>
                         <span className="font-extrabold text-slate-700 dark:text-slate-300">
-                          {selectedBinObj?.kecamatan || selectedBinObj?.user?.kecamatan || (isBound ? "Coblong" : "-")}
+                          {selectedBinObj?.kecamatan || selectedBinObj?.user?.kecamatan || (isBound ? "Wilayah Operasional" : "-")}
                         </span>
                       </div>
                       <div>

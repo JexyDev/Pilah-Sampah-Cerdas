@@ -62,7 +62,7 @@ export const KknWargaMonitoring: React.FC = () => {
                     <tr key={w.id || i} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
                       <td className="p-3.5">
                         <p className="font-bold text-slate-900 dark:text-slate-100">{w.wargaName || w.name || "Nama Warga"}</p>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">{w.address || "Coblong, Bandung"}</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">{w.address || "Wilayah Binaan"}</p>
                       </td>
                       <td className="p-3.5">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase inline-flex items-center gap-1 ${isOrganik ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40" : "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40"}`}>
