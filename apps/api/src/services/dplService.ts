@@ -556,16 +556,16 @@ export const dplService = {
    * 5. Notifikasi / Alert DPL (Hanya Pengajuan Izin dari Mahasiswa Bimbingan DPL)
    */
   getAlerts: async (dplUserId: string, role?: string) => {
-    // 1. Auto-eskalasi pengajuan izin yang PENDING lebih dari 48 jam (2x24 jam) ke Task Force
-    const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    // 1. Auto-eskalasi pengajuan izin yang PENDING lebih dari 24 jam ke Panitia Task Force
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     await prisma.studentLeaveRequest.updateMany({
       where: {
         status: "PENDING",
-        createdAt: { lt: twoDaysAgo },
+        createdAt: { lt: oneDayAgo },
       },
       data: {
         status: "ESCALATED",
-        rejectionReason: "Auto-eskalasi ke Panitia Task Force (Melewati batas respon 2x24 jam)",
+        rejectionReason: "Auto-eskalasi ke Panitia Taskforce (DPL tidak merespons dalam 24 jam)",
       },
     });
 
