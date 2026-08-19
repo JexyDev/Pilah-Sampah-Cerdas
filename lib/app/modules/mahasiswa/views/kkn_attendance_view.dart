@@ -837,7 +837,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                       child: _buildBoxDetail(
                         Icons.access_time_rounded,
                         'Jam Kegiatan',
-                        (timeLabel != null && timeLabel.isNotEmpty)
+                        timeLabel.isNotEmpty
                             ? timeLabel.toUpperCase()
                             : (act != null
                                   ? (act['jamKegiatan'] ??
