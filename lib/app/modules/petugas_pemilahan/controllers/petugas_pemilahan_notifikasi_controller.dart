@@ -97,7 +97,7 @@ final petugasPemilahanNotificationsProvider = FutureProvider<List<NotificationEn
     final markAllTimestamp = prefs.getInt('mark_all_notifs_${userId}_$role') ?? 0;
     
     for (final ph in pointHistory) {
-      if (ph.points != 0) {
+      if (ph.points < 0) {
         final notifId = 'point_${ph.id}';
         final isRead = readSet.contains(notifId) || 
             ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||

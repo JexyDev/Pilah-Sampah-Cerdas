@@ -97,7 +97,7 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     final pointHistory = await pointRepo.getPointHistoryByUser(userId);
     
     for (final ph in pointHistory) {
-      if (ph.points != 0) {
+      if (ph.points < 0) {
         final notifId = 'point_${ph.id}';
         final isRead = readSet.contains(notifId) || 
             ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
