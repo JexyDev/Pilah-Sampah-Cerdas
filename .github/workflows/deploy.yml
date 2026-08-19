@@ -28,7 +28,12 @@ jobs:
           cd dist && tar -czf ../dist.tar.gz *
 
       - name: Install sshpass
-        run: sudo apt-get update && sudo apt-get install -y sshpass
+        timeout-minutes: 2
+        run: |
+          if ! command -v sshpass &> /dev/null; then
+            sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout="15"
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends sshpass
+          fi
 
       - name: Upload Frontend Archive to VPS
         env:
