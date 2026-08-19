@@ -302,6 +302,7 @@ export const dplService = {
     waktuPelaksanaan?: string;
     linkGoogleDrive?: string;
     kebutuhanBiaya?: number;
+    status?: "BELUM_DISETUJUI" | "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI";
   }) => {
     const res = await api.post("/dpl/program-kerja", data);
     return res.data;

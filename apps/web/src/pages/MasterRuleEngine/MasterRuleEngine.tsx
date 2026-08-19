@@ -39,6 +39,8 @@ export interface RuleEngineConfig {
   attendanceMinDurationMinutes: number;
   attendanceMinDurationSeconds: number;
   attendanceOutOfZoneToleranceMinutes: number;
+  attendanceOutOfZonePenaltyPoints: number;
+  attendanceOutOfZonePenaltyActive: boolean;
   kknTotalDays: number;
   kknStartDate: string;
   kknEndDate: string;
@@ -57,7 +59,9 @@ const DEFAULT_CONFIG: RuleEngineConfig = {
   attendanceMinDurationHours: 4,
   attendanceMinDurationMinutes: 0,
   attendanceMinDurationSeconds: 0,
-  attendanceOutOfZoneToleranceMinutes: 15,
+  attendanceOutOfZoneToleranceMinutes: 5,
+  attendanceOutOfZonePenaltyPoints: 10,
+  attendanceOutOfZonePenaltyActive: true,
   kknTotalDays: 50,
   kknStartDate: "2026-08-20",
   kknEndDate: "2026-10-20",
@@ -592,7 +596,7 @@ const MasterRuleEngine: React.FC = () => {
                 </div>
               </div>
 
-              {/* Right Side: Input Toleransi Keluar Zona */}
+              {/* Right Side: Input Toleransi & Penalti Keluar Zona */}
               <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-4 flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -612,13 +616,55 @@ const MasterRuleEngine: React.FC = () => {
                     className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-500"
                   />
                   <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                    Batas waktu toleransi jika Mahasiswa secara tidak sengaja keluar dari zona lokasi sementara (posko/RW) tanpa menghentikan akumulasi durasi presensi.
+                    Batas waktu toleransi freeze jika Mahasiswa keluar dari zona posko sebelum sanksi pemotongan poin dieksekusi sistem.
                   </p>
+
+                  {/* Penalti Poin & Status Toggle */}
+                  <div className="pt-2 border-t border-slate-200/60 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-black text-slate-800 dark:text-slate-100 block">
+                          Sanksi Penalti Keluar Zona
+                        </span>
+                        <span className="text-[10.5px] text-slate-500 font-medium">
+                          Potong poin jika keluar zona &gt; toleransi
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={config.attendanceOutOfZonePenaltyActive}
+                          onChange={(e) => handleChange("attendanceOutOfZonePenaltyActive", e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600" />
+                      </label>
+                    </div>
+
+                    {config.attendanceOutOfZonePenaltyActive && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 shrink-0">
+                          Potongan Poin:
+                        </span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={config.attendanceOutOfZonePenaltyPoints}
+                          onChange={(e) => handleChange("attendanceOutOfZonePenaltyPoints", parseInt(e.target.value) || 0)}
+                          className="w-24 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 text-xs font-black text-rose-600 dark:text-rose-400 text-center focus:outline-none focus:border-rose-500"
+                        />
+                        <span className="text-xs font-extrabold text-rose-600 dark:text-rose-400">
+                          PTS / Insiden
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="pt-3 border-t border-slate-200/60 flex items-center gap-2 text-[11px] text-slate-500 font-bold">
                   <Info size={14} className="text-blue-600 shrink-0" />
-                  <span>Geofence menghitung lokasi secara otomatis sejak mahasiswa pertama kali check-in</span>
+                  <span>Waktu otomatis di-freeze saat di luar zona dan di-resume saat masuk kembali</span>
                 </div>
               </div>
             </div>

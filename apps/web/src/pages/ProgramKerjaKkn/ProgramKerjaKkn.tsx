@@ -197,16 +197,20 @@ export const ProgramKerjaKkn: React.FC = () => {
     setEditingId(null);
     setFormStartDate("");
     setFormEndDate("");
+    const defaultKelompokId =
+      selectedKelompokId !== "ALL"
+        ? selectedKelompokId
+        : kelompokList[0]?.id || "";
     setFormData({
-      kelompokId: kelompokList[0]?.id || "",
+      kelompokId: defaultKelompokId,
       nomor: prokerList.length + 1,
       deskripsi: "",
-      kategori: "Pemilahan",
+      kategori: "Edukasi & Sosialisasi",
       sumber: "Mahasiswa",
       waktuPelaksanaan: "",
       linkGoogleDrive: "",
       kebutuhanBiaya: 0,
-      status: "BELUM_DISETUJUI",
+      status: "SEDANG_BERJALAN",
     });
     setIsFormModalOpen(true);
   };
@@ -224,7 +228,7 @@ export const ProgramKerjaKkn: React.FC = () => {
       sumber: item.sumber || "Mahasiswa",
       waktuPelaksanaan: item.waktuPelaksanaan || "",
       linkGoogleDrive: item.linkGoogleDrive || "",
-      kebutuhanBiaya: item.kebutuhanBiaya,
+      kebutuhanBiaya: Number(item.kebutuhanBiaya) || 0,
       status: item.status,
     });
     setIsFormModalOpen(true);
@@ -243,23 +247,24 @@ export const ProgramKerjaKkn: React.FC = () => {
         await dplService.createProgramKerja({
           kelompokId: formData.kelompokId,
           nomor: Number(formData.nomor),
-          deskripsi: formData.deskripsi,
+          deskripsi: formData.deskripsi.trim(),
           kategori: formData.kategori,
           sumber: formData.sumber,
           waktuPelaksanaan: formData.waktuPelaksanaan,
           linkGoogleDrive: formData.linkGoogleDrive,
-          kebutuhanBiaya: Number(formData.kebutuhanBiaya),
+          kebutuhanBiaya: Number(formData.kebutuhanBiaya) || 0,
+          status: formData.status,
         });
         toast.success("Rencana program kerja berhasil ditambahkan");
       } else if (editingId) {
         await dplService.updateProgramKerja(editingId, {
           nomor: Number(formData.nomor),
-          deskripsi: formData.deskripsi,
+          deskripsi: formData.deskripsi.trim(),
           kategori: formData.kategori,
           sumber: formData.sumber,
           waktuPelaksanaan: formData.waktuPelaksanaan,
           linkGoogleDrive: formData.linkGoogleDrive,
-          kebutuhanBiaya: Number(formData.kebutuhanBiaya),
+          kebutuhanBiaya: Number(formData.kebutuhanBiaya) || 0,
           status: formData.status,
         });
         toast.success("Program kerja berhasil diperbarui");
@@ -900,14 +905,22 @@ export const ProgramKerjaKkn: React.FC = () => {
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Kebutuhan Biaya (Rp)
                 </label>
-                <input
-                  type="number"
-                  min={0}
-                  step={1000}
-                  value={formData.kebutuhanBiaya}
-                  onChange={(e) => setFormData({ ...formData, kebutuhanBiaya: Number(e.target.value) })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500"
-                />
+                <div className="relative rounded-xl shadow-2xs">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                    <span className="text-xs font-bold text-slate-400 dark:text-slate-500">Rp</span>
+                  </div>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={formData.kebutuhanBiaya ? Number(formData.kebutuhanBiaya).toLocaleString("id-ID") : ""}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^0-9]/g, "");
+                      setFormData({ ...formData, kebutuhanBiaya: raw ? Number(raw) : 0 });
+                    }}
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  />
+                </div>
               </div>
 
               <div>
@@ -923,22 +936,32 @@ export const ProgramKerjaKkn: React.FC = () => {
                 />
               </div>
 
-              {formMode === "edit" && (
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Status Pelaksanaan
-                  </label>
-                  <select
-                    value={formData.status === "DITERIMA" || (formData.status as string) === "DISETUJUI" ? "DISETUJUI" : formData.status === "DITOLAK" || (formData.status as string) === "TIDAK_DISETUJUI" ? "DITOLAK" : "SEDANG_BERJALAN"}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
-                  >
-                    <option value="DISETUJUI">Disetujui</option>
-                    <option value="DITOLAK">Ditolak</option>
-                    <option value="SEDANG_BERJALAN">Sedang Dilaksanakan</option>
-                  </select>
-                </div>
-              )}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Status Pelaksanaan
+                </label>
+                <select
+                  value={
+                    formData.status === "DITERIMA" || (formData.status as string) === "DISETUJUI"
+                      ? "DISETUJUI"
+                      : formData.status === "DITOLAK" || (formData.status as string) === "TIDAK_DISETUJUI"
+                      ? "DITOLAK"
+                      : formData.status === "BELUM_DISETUJUI"
+                      ? "BELUM_DISETUJUI"
+                      : formData.status === "SELESAI"
+                      ? "SELESAI"
+                      : "SEDANG_BERJALAN"
+                  }
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="SEDANG_BERJALAN">Sedang Dilaksanakan</option>
+                  <option value="DISETUJUI">Disetujui</option>
+                  <option value="BELUM_DISETUJUI">Belum Disetujui</option>
+                  <option value="SELESAI">Selesai</option>
+                  <option value="DITOLAK">Ditolak</option>
+                </select>
+              </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button

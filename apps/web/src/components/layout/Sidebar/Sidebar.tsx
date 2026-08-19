@@ -348,7 +348,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             {
               to: "/jadwal-kegiatan",
-              label: "Jadwal & Linimasa",
+              label: "Timeline",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",

@@ -8,7 +8,6 @@ import { prisma } from "../lib/prisma.js";
 
 import { redisService } from "./redisService.js";
 
-
 export class ConfigService {
   /**
    * Get configuration parameter by key with Redis caching
@@ -67,10 +66,14 @@ export class ConfigService {
       "attendance_min_duration_minutes",
       "attendance_min_duration_seconds",
       "attendance_out_of_zone_tolerance_minutes",
+      "attendance_out_of_zone_penalty_points",
+      "attendance_out_of_zone_penalty_active",
       "kkn_start_date",
       "kkn_end_date",
       "kkn_auto_holiday_weekends",
       "kkn_holidays",
+      "alpha_penalty_points",
+      "alpha_penalty_score_percent",
     ];
 
     const records = await prisma.systemConfig.findMany({
@@ -107,7 +110,9 @@ export class ConfigService {
       attendanceMinDurationHours: parseInt(map["attendance_min_duration_hours"] || "2", 10),
       attendanceMinDurationMinutes: parseInt(map["attendance_min_duration_minutes"] || "0", 10),
       attendanceMinDurationSeconds: parseInt(map["attendance_min_duration_seconds"] || "0", 10),
-      attendanceOutOfZoneToleranceMinutes: parseInt(map["attendance_out_of_zone_tolerance_minutes"] || "15", 10),
+      attendanceOutOfZoneToleranceMinutes: parseInt(map["attendance_out_of_zone_tolerance_minutes"] || "5", 10),
+      attendanceOutOfZonePenaltyPoints: parseInt(map["attendance_out_of_zone_penalty_points"] || "10", 10),
+      attendanceOutOfZonePenaltyActive: map["attendance_out_of_zone_penalty_active"] !== "false",
 
       // Rule 4: Kalender KKN & Hari Libur Absensi
       kknStartDate: map["kkn_start_date"] || "2026-08-20",
@@ -169,7 +174,9 @@ export class ConfigService {
       { key: "attendance_min_duration_hours", value: String(data.attendanceMinDurationHours ?? 2) },
       { key: "attendance_min_duration_minutes", value: String(data.attendanceMinDurationMinutes ?? 0) },
       { key: "attendance_min_duration_seconds", value: String(data.attendanceMinDurationSeconds ?? 0) },
-      { key: "attendance_out_of_zone_tolerance_minutes", value: String(data.attendanceOutOfZoneToleranceMinutes ?? 15) },
+      { key: "attendance_out_of_zone_tolerance_minutes", value: String(data.attendanceOutOfZoneToleranceMinutes ?? 5) },
+      { key: "attendance_out_of_zone_penalty_points", value: String(data.attendanceOutOfZonePenaltyPoints ?? 10) },
+      { key: "attendance_out_of_zone_penalty_active", value: String(data.attendanceOutOfZonePenaltyActive ?? true) },
       { key: "kkn_start_date", value: String(data.kknStartDate ?? "2026-08-20") },
       { key: "kkn_end_date", value: String(data.kknEndDate ?? "2026-10-20") },
       { key: "kkn_auto_holiday_weekends", value: String(data.kknAutoHolidayWeekends ?? true) },

@@ -450,6 +450,34 @@ router.get(
   kknController.getActiveZone
 );
 
+router.get(
+  "/kegiatan-aktif",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  kknAttendanceController.getKegiatanAktif
+);
+
+router.post(
+  "/kegiatan/:id/mulai",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.mulaiKegiatan
+);
+
+router.post(
+  "/kegiatan/:id/selesai",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.selesaiKegiatan
+);
+
+router.post(
+  "/out-of-zone-violation",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.recordOutOfZoneViolation
+);
+
 /**
  * @swagger
  * /api/v1/kkn/pemanfaatan-sampah:

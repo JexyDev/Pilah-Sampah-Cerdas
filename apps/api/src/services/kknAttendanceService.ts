@@ -1092,7 +1092,368 @@ export class KknAttendanceService {
       students: summary,
     };
   }
+
+  /**
+   * Mengambil daftar kegiatan KKN hari ini untuk mahasiswa yang sedang login.
+   * Endpoint: GET /api/v1/kkn/kegiatan-aktif
+   */
+  async getKegiatanAktif(userId: string, targetTanggal?: string) {
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId },
+      include: {
+        kelompok: true,
+      },
+    });
+
+    const ruleConfigs = await configService.getRuleEngineConfigs();
+    const durasiWajibMenit =
+      ruleConfigs.attendanceMinDurationHours * 60 +
+      ruleConfigs.attendanceMinDurationMinutes +
+      Math.round(ruleConfigs.attendanceMinDurationSeconds / 60) || 120;
+
+    let targetDate = new Date();
+    if (targetTanggal) {
+      const parsed = new Date(targetTanggal);
+      if (!isNaN(parsed.getTime())) {
+        targetDate = parsed;
+      }
+    }
+
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // 1. Cek pengajuan izin/sakit mahasiswa yang sudah disetujui pada tanggal ini
+    const approvedLeave = await prisma.studentLeaveRequest.findFirst({
+      where: {
+        studentId: userId,
+        status: "APPROVED",
+        startDate: { lte: endOfDay },
+        endDate: { gte: startOfDay },
+      },
+    });
+
+    // 2. Cari jadwal KKN yang berlaku untuk kelompok mahasiswa (atau jadwal global)
+    const schedules = await prisma.schedule.findMany({
+      where: {
+        date: { gte: startOfDay, lte: endOfDay },
+        isActive: true,
+        ...(student?.kelompokId ? { OR: [{ kelompokId: student.kelompokId }, { kelompokId: null }] } : {}),
+      },
+      include: {
+        kelompok: true,
+        attendances: {
+          where: { studentId: userId },
+        },
+      },
+      orderBy: { date: "asc" },
+    });
+
+    const now = new Date();
+    const currentHour = (now.getUTCHours() + 7) % 24;
+    const currentMinute = now.getUTCMinutes();
+    const currentMinutesTotal = currentHour * 60 + currentMinute;
+    const isToday = targetDate.toDateString() === now.toDateString();
+
+    const result = schedules.map((sch) => {
+      let jamMulai = "08:00";
+      let jamSelesai = "16:00";
+      if (sch.time && sch.time.includes("-")) {
+        const parts = sch.time.split("-");
+        jamMulai = parts[0].trim();
+        jamSelesai = parts[1].trim();
+      }
+
+      // Hitung menit mulai dan selesai
+      const [startH, startM] = jamMulai.split(":").map(Number);
+      const [endH, endM] = jamSelesai.split(":").map(Number);
+      const startMinutesTotal = (startH || 8) * 60 + (startM || 0);
+      const endMinutesTotal = (endH || 16) * 60 + (endM || 0);
+
+      // Status waktu kegiatan
+      let scheduleStatus = "AKTIF";
+      if (isToday) {
+        if (currentMinutesTotal < startMinutesTotal) {
+          scheduleStatus = "BELUM_MULAI";
+        } else if (currentMinutesTotal > endMinutesTotal) {
+          scheduleStatus = "SELESAI";
+        } else {
+          scheduleStatus = "AKTIF";
+        }
+      } else if (targetDate > now) {
+        scheduleStatus = "BELUM_MULAI";
+      } else {
+        scheduleStatus = "SELESAI";
+      }
+
+      // Status Kehadiran mahasiswa
+      let statusKehadiran: string | null = null;
+      if (approvedLeave) {
+        statusKehadiran = approvedLeave.type.toUpperCase() === "SAKIT" ? "SAKIT" : "IZIN";
+      } else if (sch.attendances && sch.attendances.length > 0) {
+        const att = sch.attendances[0];
+        if (att.status === "ALPA") {
+          statusKehadiran = "ALPA";
+        } else if (att.checkOutAt || att.status === "HADIR" || att.status === "SELESAI") {
+          statusKehadiran = "HADIR";
+        } else if (att.status === "BERLANGSUNG" || att.status === "DALAM_RADIUS" || att.status === "DI_ZONA") {
+          statusKehadiran = "BERLANGSUNG";
+        }
+      } else if (scheduleStatus === "SELESAI") {
+        statusKehadiran = "ALPA";
+      }
+
+      const latNum = sch.latitude ? Number(sch.latitude) : -6.8906;
+      const lngNum = sch.longitude ? Number(sch.longitude) : 107.615;
+
+      return {
+        id: sch.id,
+        namaKegiatan: sch.title,
+        tanggal: targetDate.toISOString().slice(0, 10),
+        jamMulai,
+        jamSelesai,
+        durasiWajibMenit,
+        lokasi: {
+          alamat: sch.location || "Lokasi Kegiatan KKN",
+          latitude: latNum,
+          longitude: lngNum,
+          radiusMeter: sch.radius || 150,
+          polygon: sch.polygon || null,
+        },
+        status: scheduleStatus,
+        statusKehadiran,
+        kelompok: {
+          id: sch.kelompok?.id || student?.kelompok?.id || "KLP-001",
+          nama: sch.kelompok?.name || student?.kelompok?.name || "Kelompok KKN",
+        },
+      };
+    });
+
+    return result;
+  }
+
+  /**
+   * Konfirmasi mulai kegiatan dan start background GPS session
+   * Endpoint: POST /api/v1/kkn/kegiatan/:id/mulai
+   */
+  async mulaiKegiatan(
+    studentUserId: string,
+    scheduleId: string,
+    payload: { latitude: number; longitude: number; deviceInfo?: string }
+  ) {
+    const { latitude, longitude, deviceInfo } = payload;
+
+    const schedule = await prisma.schedule.findUnique({
+      where: { id: scheduleId },
+      include: { kelompok: true },
+    });
+
+    if (!schedule || !schedule.isActive) {
+      throw new Error("SCHEDULE_NOT_FOUND: Jadwal kegiatan KKN tidak ditemukan atau tidak aktif.");
+    }
+
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId: studentUserId },
+      include: { kelompok: true, user: true },
+    });
+
+    if (!student) {
+      throw new Error("STUDENT_NOT_FOUND: Profil mahasiswa KKN tidak ditemukan.");
+    }
+
+    // Validasi kepemilikan kelompok (jika jadwal memiliki kelompok spesifik)
+    if (schedule.kelompokId && student.kelompokId && schedule.kelompokId !== student.kelompokId) {
+      throw new Error("FORBIDDEN: Anda tidak terdaftar pada kelompok kegiatan ini.");
+    }
+
+    // Concurrency check: Pastikan tidak ada kegiatan lain yang sedang BERLANGSUNG hari ini
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const activeOtherSession = await prisma.activityAttendance.findFirst({
+      where: {
+        studentId: studentUserId,
+        scheduleId: { not: scheduleId },
+        attendedAt: { gte: startOfDay },
+        checkOutAt: null,
+        status: "BERLANGSUNG",
+      },
+      include: { schedule: true },
+    });
+
+    if (activeOtherSession) {
+      throw new Error(
+        `CONCURRENCY_CONFLICT: Selesaikan sesi kegiatan '${activeOtherSession.schedule?.title || "sebelumnya"}' terlebih dahulu sebelum memulai kegiatan baru.`
+      );
+    }
+
+    // Upsert session di activityAttendance
+    const attendance = await prisma.activityAttendance.upsert({
+      where: {
+        studentId_scheduleId: {
+          studentId: studentUserId,
+          scheduleId,
+        },
+      },
+      update: {
+        attendedAt: new Date(),
+        status: "BERLANGSUNG",
+        latitude,
+        longitude,
+        method: "GPS_ACTIVITY",
+        checkOutAt: null,
+      },
+      create: {
+        studentId: studentUserId,
+        scheduleId,
+        attendedAt: new Date(),
+        status: "BERLANGSUNG",
+        latitude,
+        longitude,
+        method: "GPS_ACTIVITY",
+      },
+    });
+
+    // Simpan koordinat awal ke studentLocation
+    await prisma.studentLocation.create({
+      data: {
+        studentId: studentUserId,
+        latitude,
+        longitude,
+      },
+    });
+
+    // Broadcast lokasi via WebSocket
+    websocketService.broadcastStudentLocation({
+      studentId: studentUserId,
+      latitude,
+      longitude,
+      recordedAt: new Date().toISOString(),
+      student: {
+        id: studentUserId,
+        name: student.user.name,
+        phone: student.user.phone,
+        studentProfile: {
+          nim: student.nim,
+          jurusan: student.jurusan,
+          kelompokId: student.kelompokId,
+        },
+      },
+    });
+
+    const ruleConfigs = await configService.getRuleEngineConfigs();
+    const durasiWajibMenit =
+      ruleConfigs.attendanceMinDurationHours * 60 +
+      ruleConfigs.attendanceMinDurationMinutes +
+      Math.round(ruleConfigs.attendanceMinDurationSeconds / 60) || 120;
+
+    let jamMulai = "08:00";
+    let jamSelesai = "16:00";
+    if (schedule.time && schedule.time.includes("-")) {
+      const parts = schedule.time.split("-");
+      jamMulai = parts[0].trim();
+      jamSelesai = parts[1].trim();
+    }
+
+    return {
+      sessionId: `SES-${schedule.id.slice(0, 8)}-${studentUserId.slice(-6)}`,
+      scheduleId: schedule.id,
+      namaKegiatan: schedule.title,
+      jamMulai,
+      jamSelesai,
+      durasiWajibMenit,
+      lokasi: {
+        alamat: schedule.location || "Lokasi Kegiatan KKN",
+        latitude: schedule.latitude ? Number(schedule.latitude) : latitude,
+        longitude: schedule.longitude ? Number(schedule.longitude) : longitude,
+        radiusMeter: schedule.radius || 150,
+        polygon: schedule.polygon || null,
+      },
+      serverTimestamp: new Date().toISOString(),
+      attendanceId: attendance.id,
+    };
+  }
+
+  /**
+   * Mengakhiri sesi kegiatan / manual stop
+   * Endpoint: POST /api/v1/kkn/kegiatan/:id/selesai
+   */
+  async selesaiKegiatan(
+    studentUserId: string,
+    scheduleId: string,
+    payload?: { sessionId?: string; totalDurasiDalamZonaMenit?: number; alasan?: string }
+  ) {
+    return this.checkOutAttendance({
+      studentId: studentUserId,
+      scheduleId,
+    });
+  }
+
+  /**
+   * Catat pelanggaran keluar zona dengan pemotongan poin di ledger
+   * Endpoint: POST /api/v1/kkn/out-of-zone-violation
+   */
+  async recordOutOfZoneViolation(
+    studentUserId: string,
+    payload: { scheduleId: string; outOfZoneMinutes: number }
+  ) {
+    const { scheduleId, outOfZoneMinutes } = payload;
+    const ruleConfigs = await configService.getRuleEngineConfigs();
+
+    if (!ruleConfigs.attendanceOutOfZonePenaltyActive) {
+      return {
+        success: true,
+        message: "Penalti keluar zona saat ini dinonaktifkan oleh Rule Engine.",
+        pointsDeducted: 0,
+      };
+    }
+
+    const penaltyPoints = ruleConfigs.attendanceOutOfZonePenaltyPoints || 10;
+    const schedule = await prisma.schedule.findUnique({
+      where: { id: scheduleId },
+      include: { kelompok: true },
+    });
+
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId: studentUserId },
+      include: { user: true, kelompok: true },
+    });
+
+    const attendance = await prisma.activityAttendance.findFirst({
+      where: {
+        studentId: studentUserId,
+        scheduleId,
+      },
+      orderBy: { attendedAt: "desc" },
+    });
+
+    // Catat ke buku besar point_history
+    const pointRecord = await prisma.pointHistory.create({
+      data: {
+        userId: studentUserId,
+        points: -Math.abs(penaltyPoints),
+        kategori: "PENALTY_OUT_OF_ZONE",
+        description: `Penalti keluar zona kegiatan '${schedule?.title || "KKN"}' (Kelompok: ${
+          student?.kelompok?.name || schedule?.kelompok?.name || "Binaan"
+        }) melebihi batas waktu toleransi (${outOfZoneMinutes || 5} menit).`,
+        redeemable: false,
+      },
+    });
+
+    return {
+      success: true,
+      message: `Pelanggaran tercatat. Poin KKN dipotong -${penaltyPoints} PTS.`,
+      data: {
+        pointId: pointRecord.id,
+        pointsDeducted: penaltyPoints,
+        scheduleId,
+        kelompokId: student?.kelompokId || schedule?.kelompokId || null,
+        attendanceId: attendance?.id || null,
+        outOfZoneMinutes,
+        recordedAt: pointRecord.createdAt,
+      },
+    };
+  }
 }
 
 export const kknAttendanceService = new KknAttendanceService();
-

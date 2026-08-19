@@ -201,6 +201,34 @@ router.get(
 import { KknAttendanceService } from "../services/kknAttendanceService.js";
 const kknAttendanceServiceInstance = new KknAttendanceService();
 
+router.get(
+  ["/kkn/kegiatan-aktif", "/kegiatan-aktif"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  kknAttendanceController.getKegiatanAktif
+);
+
+router.post(
+  ["/kkn/kegiatan/:id/mulai", "/kegiatan/:id/mulai"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.mulaiKegiatan
+);
+
+router.post(
+  ["/kkn/kegiatan/:id/selesai", "/kegiatan/:id/selesai"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.selesaiKegiatan
+);
+
+router.post(
+  ["/kkn/out-of-zone-violation", "/out-of-zone-violation"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.recordOutOfZoneViolation
+);
+
 router.post(
   "/location-ping",
   authMiddleware,

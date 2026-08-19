@@ -1035,6 +1035,7 @@ export const dplService = {
       waktuPelaksanaan?: string;
       linkGoogleDrive?: string;
       kebutuhanBiaya?: number;
+      status?: "BELUM_DISETUJUI" | "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI";
     }
   ) => {
     const groups = await prisma.kelompokKkn.findMany({
@@ -1047,6 +1048,14 @@ export const dplService = {
       throw new Error("FORBIDDEN_SCOPE");
     }
 
+    let normalizedStatus: any = data.status || "BELUM_DISETUJUI";
+    if (normalizedStatus === "DISETUJUI") normalizedStatus = "DITERIMA";
+    if (normalizedStatus === "TIDAK_DISETUJUI") normalizedStatus = "DITOLAK";
+    if (normalizedStatus === "SEDANG_DILAKSANAKAN") normalizedStatus = "SEDANG_BERJALAN";
+    if (!["BELUM_DISETUJUI", "DITERIMA", "DITOLAK", "SEDANG_BERJALAN", "SELESAI"].includes(normalizedStatus)) {
+      normalizedStatus = "BELUM_DISETUJUI";
+    }
+
     const proker = await prisma.programKerjaKkn.create({
       data: {
         kelompokId: data.kelompokId,
@@ -1057,7 +1066,7 @@ export const dplService = {
         waktuPelaksanaan: data.waktuPelaksanaan || null,
         linkGoogleDrive: data.linkGoogleDrive || null,
         kebutuhanBiaya: data.kebutuhanBiaya || 0,
-        status: "BELUM_DISETUJUI",
+        status: normalizedStatus,
       },
     });
     return proker;
