@@ -186,6 +186,37 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     }
   }
 
+  Future<void> checkActiveSchedule() async {
+    try {
+      final pos = await LocationService.instance.getCurrentLocation();
+      final repo = ref.read(kknRepositoryProvider);
+      final activeZone = await repo.getActiveZone(
+        latitude: pos?.latitude,
+        longitude: pos?.longitude,
+      );
+      if (activeZone.isNotEmpty) {
+        _currentTargetScheduleId =
+            activeZone['id']?.toString() ?? activeZone['scheduleId']?.toString();
+        
+        // Ensure address and namaKegiatan are set so UI displays them properly before tracking
+        activeZone['address'] ??=
+            activeZone['location'] ?? activeZone['kelurahan'] ?? 'Zona Dampingan';
+        activeZone['namaKegiatan'] ??= activeZone['title'] ?? 'Penugasan KKN';
+        activeZone['radius'] ??= 100;
+
+        state = state.copyWith(
+          activeActivity: activeZone,
+          error: null,
+          clearError: true,
+        );
+      } else {
+        state = state.copyWith(activeActivity: null);
+      }
+    } catch (e) {
+      state = state.copyWith(error: NetworkExceptionHelper.getErrorMessage(e));
+    }
+  }
+
   /// Start tracking GPS locations and sync with backend
   Future<void> startTracking([BuildContext? context]) async {
     if (state.isTracking) return;
@@ -282,7 +313,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         }
       } catch (_) {}
     } else {
-      await _fetchTargetLocation();
+      await fetchTargetLocation();
     }
 
     // Initial check
@@ -509,7 +540,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       state = state.copyWith(clearWarning: true);
     }
 
-    await _fetchTargetLocation();
+    await fetchTargetLocation();
     await _performLocationUpdate();
   }
 
@@ -530,7 +561,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   }
 
   /// Fetch schedule coordinates from backend
-  Future<void> _fetchTargetLocation([Map<String, dynamic>? initialData]) async {
+  Future<void> fetchTargetLocation([Map<String, dynamic>? initialData]) async {
     if (_currentTargetScheduleId == null) return;
     try {
       final repo = ref.read(kknRepositoryProvider);

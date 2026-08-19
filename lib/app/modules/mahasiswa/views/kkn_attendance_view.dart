@@ -26,6 +26,10 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView> with Widg
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Fetch target lokasi (jadwal) di awal agar UI bisa menampilkan tombol "Mulai Tracking"
+      // atau pesan "Tidak ada jadwal" sebelum user klik apapun.
+      ref.read(kknLocationProvider.notifier).checkActiveSchedule();
+      
       final user = ref.read(authProvider).user;
       if (user != null) {
         _rtRwCtrl.text = user.rw.isNotEmpty ? user.rw : '';
