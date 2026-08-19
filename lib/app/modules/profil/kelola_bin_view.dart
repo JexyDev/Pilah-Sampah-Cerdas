@@ -163,9 +163,17 @@ class _BinCardLarge extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          bin.backendStatus.isNotEmpty ? bin.backendStatus.replaceAll('_', ' ').toUpperCase() : (bin.isActive ? 'AKTIF' : 'NON-AKTIF'),
+                          bin.isResetPending 
+                              ? 'DIAJUKAN PENGOSONGAN' 
+                              : (bin.backendStatus.isNotEmpty 
+                                  ? bin.backendStatus.replaceAll('_', ' ').toUpperCase() 
+                                  : (bin.isActive ? 'AKTIF' : 'NON-AKTIF')),
                           style: TextStyle(
-                            color: (bin.backendStatus.toUpperCase() == 'ACTIVE_BOUND' || bin.backendStatus.toUpperCase() == 'AKTIF' || (bin.backendStatus.isEmpty && bin.isActive)) ? AppColors.primaryGreen : AppColors.dangerRed,
+                            color: bin.isResetPending 
+                                ? AppColors.warningYellow 
+                                : ((bin.backendStatus.toUpperCase() == 'ACTIVE_BOUND' || bin.backendStatus.toUpperCase() == 'AKTIF' || (bin.backendStatus.isEmpty && bin.isActive)) 
+                                    ? AppColors.primaryGreen 
+                                    : AppColors.dangerRed),
                             fontWeight: FontWeight.w700,
                             fontSize: 12,
                           ),
@@ -191,7 +199,9 @@ class _BinCardLarge extends StatelessWidget {
           Text(
             !bin.isActive
                 ? 'Tempat Sampah Dinonaktifkan di Web'
-                : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — ${bin.currentVolumeL.toStringAsFixed(1)} KG / ${bin.maxCapacityL.toStringAsFixed(0)} KG',
+                : bin.isResetPending
+                    ? 'Pengajuan pengosongan sedang diproses'
+                    : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — ${bin.currentVolumeL.toStringAsFixed(1)} KG / ${bin.maxCapacityL.toStringAsFixed(0)} KG',
             style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
           ),
         ],
