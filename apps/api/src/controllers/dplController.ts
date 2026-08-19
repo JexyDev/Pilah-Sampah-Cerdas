@@ -269,6 +269,7 @@ export const dplController = {
   decideProgramKerja: async (req: Request, res: Response): Promise<void> => {
     try {
       const dplUserId = getUserId(req);
+      const userRole = (req.user as any)?.role;
       const id = req.params.id;
       const { status, catatanDpl } = req.body;
       const validStatuses = [
@@ -288,10 +289,14 @@ export const dplController = {
         });
         return;
       }
-      const data = await dplService.decideProgramKerja(dplUserId, id, status as any, catatanDpl);
+      const data = await dplService.decideProgramKerja(dplUserId, id, status as any, catatanDpl, userRole);
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[dplController.decideProgramKerja] error:", error);
+      if (error.message === "FORBIDDEN_SCOPE") {
+        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Program kerja ini bukan milik kelompok Anda" });
+        return;
+      }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   },
@@ -299,6 +304,7 @@ export const dplController = {
   assessProgramKerja: async (req: Request, res: Response): Promise<void> => {
     try {
       const dplUserId = getUserId(req);
+      const userRole = (req.user as any)?.role;
       const id = req.params.id;
       const { skorPenilaian, evaluasiDpl } = req.body;
       if (skorPenilaian === undefined || isNaN(Number(skorPenilaian))) {
@@ -309,11 +315,16 @@ export const dplController = {
         dplUserId,
         id,
         Number(skorPenilaian),
-        evaluasiDpl
+        evaluasiDpl,
+        userRole
       );
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[dplController.assessProgramKerja] error:", error);
+      if (error.message === "FORBIDDEN_SCOPE") {
+        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Program kerja ini bukan milik kelompok Anda" });
+        return;
+      }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   },

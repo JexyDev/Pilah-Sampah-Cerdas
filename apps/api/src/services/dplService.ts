@@ -1157,8 +1157,22 @@ export const dplService = {
     dplUserId: string,
     id: string,
     status: "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI" | "BELUM_DISETUJUI",
-    catatanDpl?: string
+    catatanDpl?: string,
+    role?: any
   ) => {
+    const prokerExisting = await prisma.programKerjaKkn.findUnique({ where: { id } });
+    if (!prokerExisting) throw new Error("Program kerja tidak ditemukan");
+
+    const groups = await prisma.kelompokKkn.findMany({
+      where: getKelompokWhere(dplUserId, role),
+      select: { id: true },
+    });
+    const allowedGroupIds = groups.map(g => g.id);
+
+    if (!allowedGroupIds.includes(prokerExisting.kelompokId)) {
+      throw new Error("FORBIDDEN_SCOPE");
+    }
+
     let normalizedStatus: any = status;
     if (normalizedStatus === "DISETUJUI") normalizedStatus = "DITERIMA";
     if (normalizedStatus === "TIDAK_DISETUJUI") normalizedStatus = "DITOLAK";
@@ -1168,7 +1182,7 @@ export const dplService = {
       where: { id },
       data: {
         status: normalizedStatus,
-        catatanDpl: catatanDpl || null,
+        catatanDpl: catatanDpl !== undefined ? (catatanDpl || null) : undefined,
         reviewedById: dplUserId,
         reviewedAt: new Date(),
       },
@@ -1183,11 +1197,26 @@ export const dplService = {
     dplUserId: string,
     id: string,
     skorPenilaian: number,
-    evaluasiDpl?: string
+    evaluasiDpl?: string,
+    role?: any
   ) => {
     if (skorPenilaian < 0 || skorPenilaian > 100) {
       throw new Error("Skor penilaian harus berada di rentang 0-100");
     }
+
+    const prokerExisting = await prisma.programKerjaKkn.findUnique({ where: { id } });
+    if (!prokerExisting) throw new Error("Program kerja tidak ditemukan");
+
+    const groups = await prisma.kelompokKkn.findMany({
+      where: getKelompokWhere(dplUserId, role),
+      select: { id: true },
+    });
+    const allowedGroupIds = groups.map(g => g.id);
+
+    if (!allowedGroupIds.includes(prokerExisting.kelompokId)) {
+      throw new Error("FORBIDDEN_SCOPE");
+    }
+
     const proker = await prisma.programKerjaKkn.update({
       where: { id },
       data: {
