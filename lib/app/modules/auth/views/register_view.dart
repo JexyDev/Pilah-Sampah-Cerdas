@@ -552,7 +552,10 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                               ],
                             ),
                             clipBehavior: Clip.antiAlias,
-                            child: Image.asset(AppAssets.logo, fit: BoxFit.cover),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Image.asset(AppAssets.logo, fit: BoxFit.contain),
+                            ),
                           ),
                           const SizedBox(height: 12),
                           const Text(
