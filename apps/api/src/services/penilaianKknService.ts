@@ -20,10 +20,14 @@ export const calculateGradeCategory = (score: number): string => {
   return "Belum Dinilai";
 };
 
-// Helper for exact aspect calculation: (Score / 4) * Bobot
+// Helper for exact aspect calculation: supports 0-100 percentage & 0-4 scale
 export const calculateAspectScore = (score: number, weight: number): number => {
-  const safeScore = Math.max(0, Math.min(4, Number(score) || 0));
-  return Number(((safeScore / 4) * weight).toFixed(2));
+  const num = Number(score) || 0;
+  if (num <= 4 && num > 0) {
+    return Number(((num / 4) * weight).toFixed(2));
+  }
+  const safeScore = Math.max(0, Math.min(100, num));
+  return Number(((safeScore * weight) / 100).toFixed(2));
 };
 
 export const penilaianKknService = {
@@ -165,15 +169,16 @@ export const penilaianKknService = {
       calculateAspectScore(assessment.skorMitraDampak, 10) +
       calculateAspectScore(assessment.skorMitraInisiatif, 7);
 
+    // DPL academic 6 aspects (20%, 20%, 20%, 15%, 15%, 10% -> 100% total)
     const subDpl =
-      calculateAspectScore(assessment.skorDplPerencanaan, 5) +
-      calculateAspectScore(assessment.skorDplKontribusi, 5) +
-      calculateAspectScore(assessment.skorDplLogbook, 5) +
-      calculateAspectScore(assessment.skorDplAnalisis, 5) +
-      calculateAspectScore(assessment.skorDplOutput, 5) +
-      calculateAspectScore(assessment.skorDplLaporanAkhir, 5);
+      calculateAspectScore(assessment.skorDplPerencanaan, 20) +
+      calculateAspectScore(assessment.skorDplKontribusi, 20) +
+      calculateAspectScore(assessment.skorDplLogbook, 20) +
+      calculateAspectScore(assessment.skorDplAnalisis, 15) +
+      calculateAspectScore(assessment.skorDplOutput, 15) +
+      calculateAspectScore(assessment.skorDplLaporanAkhir, 10);
 
-    const totalNilai = Number((subMitra + subDpl).toFixed(2));
+    const totalNilai = Number((subDpl > 0 ? subDpl : (subMitra + subDpl)).toFixed(2));
     const kategori = totalNilai === 0 && !existing ? "Belum Dinilai" : calculateGradeCategory(totalNilai);
 
     return {
@@ -349,18 +354,18 @@ export const penilaianKknService = {
       calculateAspectScore(skorMitraInisiatif, 7)
     ).toFixed(2));
 
-    // 3. Kalkulasi Subtotal DPL (Max 30)
+    // 3. Kalkulasi Subtotal DPL (Bobot total 100%: 20%, 20%, 20%, 15%, 15%, 10%)
     const subtotalDpl = Number((
-      calculateAspectScore(skorDplPerencanaan, 5) +
-      calculateAspectScore(skorDplKontribusi, 5) +
-      calculateAspectScore(skorDplLogbook, 5) +
-      calculateAspectScore(skorDplAnalisis, 5) +
-      calculateAspectScore(skorDplOutput, 5) +
-      calculateAspectScore(skorDplLaporanAkhir, 5)
+      calculateAspectScore(skorDplPerencanaan, 20) +
+      calculateAspectScore(skorDplKontribusi, 20) +
+      calculateAspectScore(skorDplLogbook, 20) +
+      calculateAspectScore(skorDplAnalisis, 15) +
+      calculateAspectScore(skorDplOutput, 15) +
+      calculateAspectScore(skorDplLaporanAkhir, 10)
     ).toFixed(2));
 
     // 4. Kalkulasi Nilai Akhir & Kategori
-    const nilaiAkhir = Number((subtotalMitra + subtotalDpl).toFixed(2));
+    const nilaiAkhir = Number((subtotalDpl > 0 ? subtotalDpl : (subtotalMitra + subtotalDpl)).toFixed(2));
     const kategoriNilai = calculateGradeCategory(nilaiAkhir);
 
     const isFinal = Boolean(payload.isFinalizeAction);
@@ -383,6 +388,16 @@ export const penilaianKknService = {
     const catatanMitra = isDpl
       ? (prev?.catatanMitra ?? "")
       : (payload.catatanMitra !== undefined ? payload.catatanMitra : (prev?.catatanMitra ?? ""));
+
+    if (studentUser.studentProfile) {
+      await prisma.studentKkn.update({
+        where: { id: studentUser.studentProfile.id },
+        data: {
+          assessmentScore: subtotalDpl,
+          assessmentNote: catatanDpl || undefined,
+        },
+      });
+    }
 
     const updated = await prisma.penilaianKknMahasiswa.upsert({
       where: { studentId },
@@ -512,6 +527,49 @@ export const penilaianKknService = {
 
     return students.map((s) => {
       const p = s.penilaianKkn;
+      const skorDplPerencanaan = p ? Number(p.skorDplPerencanaan) : 0;
+      const skorDplKontribusi = p ? Number(p.skorDplKontribusi) : 0;
+      const skorDplLogbook = p ? Number(p.skorDplLogbook) : 0;
+      const skorDplAnalisis = p ? Number(p.skorDplAnalisis) : 0;
+      const skorDplOutput = p ? Number(p.skorDplOutput) : 0;
+      const skorDplLaporanAkhir = p ? Number(p.skorDplLaporanAkhir) : 0;
+      const directScore = Number(s.studentProfile?.assessmentScore || 0);
+
+      const subtotalDpl = p && Number(p.subtotalDpl) > 0
+        ? Number(p.subtotalDpl)
+        : Number((
+            calculateAspectScore(skorDplPerencanaan, 20) +
+            calculateAspectScore(skorDplKontribusi, 20) +
+            calculateAspectScore(skorDplLogbook, 20) +
+            calculateAspectScore(skorDplAnalisis, 15) +
+            calculateAspectScore(skorDplOutput, 15) +
+            calculateAspectScore(skorDplLaporanAkhir, 10)
+          ).toFixed(2)) || (directScore > 0 ? directScore : 0);
+
+      const hasAnyScore =
+        skorDplPerencanaan > 0 ||
+        skorDplKontribusi > 0 ||
+        skorDplLogbook > 0 ||
+        skorDplAnalisis > 0 ||
+        skorDplOutput > 0 ||
+        skorDplLaporanAkhir > 0 ||
+        directScore > 0;
+
+      const hasAllScores =
+        skorDplPerencanaan > 0 &&
+        skorDplKontribusi > 0 &&
+        skorDplLogbook > 0 &&
+        skorDplAnalisis > 0 &&
+        skorDplOutput > 0 &&
+        skorDplLaporanAkhir > 0;
+
+      let statusDpl = "BELUM_DINILAI";
+      if (hasAllScores || (p && p.status === "FINAL") || (subtotalDpl > 0 && hasAllScores)) {
+        statusDpl = "SUDAH_DINILAI";
+      } else if (hasAnyScore) {
+        statusDpl = "SEDANG_DINILAI";
+      }
+
       return {
         studentId: s.id,
         nama: s.name,
@@ -524,11 +582,19 @@ export const penilaianKknService = {
         rw: s.studentProfile?.assignedRw?.name || "-",
         dplNama: s.studentProfile?.kelompok?.dpl?.name || "-",
         subtotalMitra: p ? Number(p.subtotalMitra) : 0,
-        subtotalDpl: p ? Number(p.subtotalDpl) : 0,
-        nilaiAkhir: p ? Number(p.nilaiAkhir) : 0,
-        kategori: p?.kategoriNilai || (p && Number(p.nilaiAkhir) > 0 ? calculateGradeCategory(Number(p.nilaiAkhir)) : "Belum Dinilai"),
+        subtotalDpl,
+        nilaiAkhir: subtotalDpl,
+        kategori: p?.kategoriNilai || (subtotalDpl > 0 ? calculateGradeCategory(subtotalDpl) : "Belum Dinilai"),
         status: p?.status || "BELUM_DINILAI",
+        statusDpl,
         isFinalized: Boolean(p?.isFinalized),
+        skorDplPerencanaan,
+        skorDplKontribusi,
+        skorDplLogbook,
+        skorDplAnalisis,
+        skorDplOutput,
+        skorDplLaporanAkhir,
+        catatanDpl: p?.catatanDpl || s.studentProfile?.assessmentNote || "",
       };
     });
   },

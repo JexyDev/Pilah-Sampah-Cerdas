@@ -654,7 +654,7 @@ export const DplDashboardPage: React.FC = () => {
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
             {location.pathname === "/ajuan-absensi" || activeTab === "APPROVAL"
-              ? "Ajuan Izin & Sakit"
+              ? "Ajuan Ketidakhadiran"
               : "Dasbor"}
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl">
@@ -680,7 +680,7 @@ export const DplDashboardPage: React.FC = () => {
                 className="bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/40 text-amber-800 dark:text-amber-300 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition cursor-pointer shadow-xs animate-pulse"
               >
                 <AlertTriangle size={14} className="text-amber-600 shrink-0" />
-                <span>{alerts.pendingApprovalsCount} Pengajuan Izin / Sakit</span>
+                <span>{alerts.pendingApprovalsCount} Ajuan Ketidakhadiran</span>
               </Link>
             )
           )}
@@ -693,7 +693,7 @@ export const DplDashboardPage: React.FC = () => {
           {(
             [
               { key: "OVERVIEW" as TabType, label: "Ringkasan Eksekutif", icon: LayoutDashboard },
-              { key: "APPROVAL" as TabType, label: "Ajuan Izin & Sakit", icon: FileCheck, badge: alerts?.pendingApprovalsCount },
+              { key: "APPROVAL" as TabType, label: "Ajuan Ketidakhadiran", icon: FileCheck, badge: alerts?.pendingApprovalsCount },
               { key: "KELOMPOK" as TabType, label: "Kelompok (Dev)", icon: Users },
               { key: "MAHASISWA" as TabType, label: "Mahasiswa & Nilai (Dev)", icon: GraduationCap },
               { key: "MAP" as TabType, label: "Peta Wilayah (Dev)", icon: MapPin },

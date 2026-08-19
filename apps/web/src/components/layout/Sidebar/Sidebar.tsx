@@ -398,7 +398,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/ajuan-absensi",
-              label: "Ajuan Izin",
+              label: "Ajuan Ketidakhadiran",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
