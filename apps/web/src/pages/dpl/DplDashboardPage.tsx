@@ -266,9 +266,7 @@ export const DplDashboardPage: React.FC = () => {
 
   // Rejection, Escalation, & Evidence Preview Modal States
   const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
-  const [escalatingRequestId, setEscalatingRequestId] = useState<string | null>(null);
   const [rejectionReasonInput, setRejectionReasonInput] = useState("");
-  const [escalationReasonInput, setEscalationReasonInput] = useState("");
   const [previewEvidence, setPreviewEvidence] = useState<{ url: string; title: string } | null>(null);
 
   // Student Assessment Modal States
@@ -387,9 +385,7 @@ export const DplDashboardPage: React.FC = () => {
         toast.success("Pengajuan izin berhasil ditolak");
       }
       setRejectingRequestId(null);
-      setEscalatingRequestId(null);
       setRejectionReasonInput("");
-      setEscalationReasonInput("");
       const [updatedAlerts, updatedHistory] = await Promise.all([
         dplService.getAlerts(),
         dplService.getApprovalHistory(),
@@ -1657,15 +1653,6 @@ export const DplDashboardPage: React.FC = () => {
                             >
                               <XCircle size={14} /> {isOver24Hours && canTakeover ? "Ambil Alih & Tolak" : "Tolak"}
                             </button>
-                            {!isOver24Hours && (
-                              <button
-                                disabled={isBusy}
-                                onClick={() => setEscalatingRequestId(req.id)}
-                                className="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold text-xs rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/60 transition flex items-center gap-1 border border-amber-200 dark:border-amber-700/40 cursor-pointer disabled:opacity-50"
-                              >
-                                <AlertTriangle size={14} /> Eskalasi Taskforce
-                              </button>
-                            )}
                             <button
                               disabled={isBusy}
                               onClick={() => handleDecideLeave(req.id, "APPROVED")}
@@ -1708,9 +1695,9 @@ export const DplDashboardPage: React.FC = () => {
                   <option value="ALL">Semua Keputusan</option>
                   <option value="APPROVED">Disetujui</option>
                   <option value="REJECTED">Ditolak</option>
+                  <option value="ESCALATED">Dieskalasi ke Taskforce Panitia</option>
                   <option value="CANCELLED">Dibatalkan Mahasiswa</option>
                   <option value="OVERRIDDEN_HADIR">Batal Izin (Hadir)</option>
-                  <option value="ESCALATED">Dieskalasi</option>
                 </select>
               </div>
             </div>
@@ -1724,7 +1711,6 @@ export const DplDashboardPage: React.FC = () => {
                     <th className="px-4 py-3.5">Tanggal / Periode Izin</th>
                     <th className="px-4 py-3.5 min-w-[240px]">Alasan / Catatan</th>
                     <th className="px-4 py-3.5 text-center">Status Keputusan</th>
-                    <th className="px-4 py-3.5">Waktu Verifikasi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -1747,7 +1733,7 @@ export const DplDashboardPage: React.FC = () => {
                       badgeLabel = "Ditolak";
                     } else if (isEsc) {
                       badgeClass = "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700/40";
-                      badgeLabel = "Dieskalasi";
+                      badgeLabel = "Dieskalasi ke Taskforce Panitia";
                     } else if (isCanc) {
                       badgeClass = "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700";
                       badgeLabel = "Dibatalkan Mahasiswa";
@@ -1787,16 +1773,13 @@ export const DplDashboardPage: React.FC = () => {
                             {badgeLabel}
                           </span>
                         </td>
-                        <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
-                          {log.reviewedAt ? new Date(log.reviewedAt).toLocaleString("id-ID") : "-"}
-                        </td>
                       </tr>
                     );
                   })}
 
                   {paginatedApprovalHistory.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="p-4 text-center text-slate-400 italic">
+                      <td colSpan={5} className="p-4 text-center text-slate-400 italic">
                         Belum ada data riwayat persetujuan.
                       </td>
                     </tr>
@@ -2368,48 +2351,7 @@ export const DplDashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL 5: ESKALASI IZIN KE TASKFORCE */}
-      {escalatingRequestId && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-800">
-            <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                <AlertTriangle size={18} /> Eskalasi Izin ke Panitia Taskforce
-              </h3>
-              <button onClick={() => setEscalatingRequestId(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold">✕</button>
-            </div>
 
-            <div className="space-y-3 text-xs">
-              <p className="text-slate-600 dark:text-slate-300">
-                Pengajuan izin ini akan diteruskan ke Panitia Taskforce untuk evaluasi tingkat lanjut.
-              </p>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300">Catatan / Alasan Eskalasi:</label>
-              <textarea
-                rows={3}
-                value={escalationReasonInput}
-                onChange={(e) => setEscalationReasonInput(e.target.value)}
-                placeholder="Contoh: Izin melebihi 3 hari berturut-turut, membutuhkan keputusan panitia pusat..."
-                className="w-full p-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-amber-500"
-              />
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={() => setEscalatingRequestId(null)}
-                  className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition"
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={() => handleDecideLeave(escalatingRequestId, "ESCALATED", escalationReasonInput)}
-                  className="flex-1 py-2 bg-amber-600 text-white font-bold rounded-lg hover:bg-amber-700 transition"
-                >
-                  Kirim Eskalasi
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       {/* MODAL PREVIEW BUKTI DOKUMEN / SURAT SAKIT */}
       {previewEvidence && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
