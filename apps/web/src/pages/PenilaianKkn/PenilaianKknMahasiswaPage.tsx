@@ -605,7 +605,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <th className="py-3 px-3">Program Studi</th>
                   <th className="py-3 px-3">Kelompok</th>
                   <th className="py-3 px-3 text-center">Nilai</th>
-                  <th className="py-3 px-3 text-center">Status Nilai</th>
+                  <th className="py-3 px-3 text-center">Status</th>
                   <th className="py-3 px-3 text-center">Aksi</th>
                 </tr>
               </thead>
@@ -614,6 +614,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   const hasDpl = st.subtotalDpl > 0;
                   const hasMitra = st.subtotalMitra > 0;
                   const isFull = hasDpl && hasMitra;
+                  const hasScore = st.nilaiAkhir > 0 || hasDpl || hasMitra;
 
                   return (
                     <tr
@@ -638,7 +639,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                           </span>
                         ) : hasDpl || hasMitra ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300">
-                            <span>Sebagian</span>
+                            <span>Sedang Dinilai</span>
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-500">
@@ -653,7 +654,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                           className="px-3 py-1.5 rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer shadow-2xs bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
                         >
                           <Award size={13} />
-                          <span>Beri Nilai</span>
+                          <span>{hasScore ? "Lanjutkan" : "Beri Nilai"}</span>
                         </button>
                       </td>
                     </tr>
