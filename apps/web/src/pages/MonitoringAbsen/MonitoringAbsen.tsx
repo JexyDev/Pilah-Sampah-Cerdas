@@ -1181,7 +1181,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
     const groups: Record<string, GroupedStudent> = {};
 
-    studentLocations.forEach((loc) => {
+    studentLocations.forEach((loc, idx) => {
       const lat = Number(loc.latitude);
       const lng = Number(loc.longitude);
       if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
