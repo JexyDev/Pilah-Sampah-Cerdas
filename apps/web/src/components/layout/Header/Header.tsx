@@ -110,13 +110,13 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/evaluasi-dampak":
         return ["Program KKN", "Evaluasi Dampak"];
       case "/penilaian-kkn/mahasiswa":
-        return ["Penilaian KKN", "Nilai Mahasiswa"];
+        return ["Penilaian KKN", "Penilaian Individu"];
       case "/penilaian-kkn/program-kerja":
-        return ["Penilaian KKN", "Nilai Proker"];
+        return ["Penilaian KKN", "Penilaian Program Kerja"];
       case "/penilaian-kkn/laporan-akhir":
-        return ["Penilaian KKN", "Nilai Laporan"];
+        return ["Penilaian KKN", "Penilaian Laporan Akhir"];
       case "/penilaian-kkn/rekap":
-        return ["Penilaian KKN", "Rekap Nilai"];
+        return ["Penilaian KKN", "Rekap & Nilai Akhir"];
       case "/pengangkutan-residu":
       case "/manajemen-pengangkutan":
         return ["Tata Kelola Sampah", "Pengangkutan Residu"];

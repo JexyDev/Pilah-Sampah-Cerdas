@@ -430,7 +430,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             {
               to: "/penilaian-kkn/mahasiswa",
-              label: "Penilaian Mahasiswa",
+              label: "Penilaian Individu",
               allowed: [
                 "DEVELOPER",
                 "DPL",
