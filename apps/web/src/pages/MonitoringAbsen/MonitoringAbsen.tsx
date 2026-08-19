@@ -51,6 +51,7 @@ import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { useAuthStore } from "../../store/useAuthStore";
 import { dplService, type ConfigTargets } from "../../services/dplService";
+import { wsClient } from "../../utils/websocket";
 import {
   KELURAHAN_GEODATA,
   createKknMhsIcon as createStudentIcon,
@@ -69,6 +70,15 @@ L.Icon.Default.mergeOptions({
   shadowUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
+
+const MapZoomEvents: React.FC<{ onZoom: (zoom: number) => void }> = ({ onZoom }) => {
+  useMapEvents({
+    zoomend: (e) => {
+      onZoom(e.target.getZoom());
+    },
+  });
+  return null;
+};
 
 const createActivityMarkerIcon = () => {
   return L.divIcon({
@@ -515,41 +525,162 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 };
 
   // Dynamic Targets & Ketentuan Waktu (Managed by Super User / Taskforce / Developer)
+  const ALL_DAYS_LIST = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
+
+  const parseDaysFromString = (str?: string): string[] => {
+    if (!str) return ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
+    const s = str.toLowerCase();
+    if (s.includes("senin") && s.includes("jumat")) {
+      return ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
+    }
+    if (s.includes("senin") && s.includes("sabtu")) {
+      return ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+    }
+    if (s.includes("setiap") || (s.includes("senin") && s.includes("minggu"))) {
+      return ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
+    }
+    const matched = ALL_DAYS_LIST.filter((d) => s.includes(d.toLowerCase()));
+    return matched.length > 0 ? matched : ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
+  };
+
+  const formatDaysToString = (days: string[]): string => {
+    if (days.length === 5 && ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"].every((d) => days.includes(d))) {
+      return "Senin – Jumat";
+    }
+    if (days.length === 6 && ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"].every((d) => days.includes(d))) {
+      return "Senin – Sabtu";
+    }
+    if (days.length === 7) {
+      return "Setiap Hari (Senin – Minggu)";
+    }
+    return days.join(", ");
+  };
+
+  const parseTimeRange = (timeStr?: string): { start: string; end: string } => {
+    if (!timeStr) return { start: "08:00", end: "16:00" };
+    const matches = timeStr.match(/(\d{1,2}[:.]\d{2})\s*(?:-|–|s\/d|sampai)\s*(\d{1,2}[:.]\d{2})/i);
+    if (matches) {
+      return {
+        start: matches[1].replace(".", ":").padStart(5, "0"),
+        end: matches[2].replace(".", ":").padStart(5, "0"),
+      };
+    }
+    return { start: "08:00", end: "16:00" };
+  };
+
   const [configTargets, setConfigTargets] = useState<ConfigTargets>({
     targetTotalKegiatan: 2000,
-    targetTotalJam: 100,
-    targetHarianJam: 2,
+    targetTotalJam: 200,
+    targetHarianJam: 4,
     targetHarianKegiatan: 5,
-    attendanceMinDurationHours: 2,
+    attendanceMinDurationHours: 4,
     attendanceMinDurationMinutes: 0,
     attendanceMinDurationSeconds: 0,
     hariKerja: "Senin – Jumat",
-    jamKerja: "08.00 – 16.00",
+    jamKerja: "08:00 – 16:00 WIB",
     targetPekan: 10,
     targetTotalHari: 50,
   });
+
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  const [configFormData, setConfigFormData] = useState<ConfigTargets>({
-    targetTotalKegiatan: 2000,
-    targetTotalJam: 100,
-    targetHarianJam: 2,
-    targetHarianKegiatan: 5,
-    attendanceMinDurationHours: 2,
-    attendanceMinDurationMinutes: 0,
-    attendanceMinDurationSeconds: 0,
-    hariKerja: "Senin – Jumat",
-    jamKerja: "08.00 – 16.00",
-    targetPekan: 10,
-    targetTotalHari: 50,
-  });
+  const [formDays, setFormDays] = useState<string[]>(["Senin", "Selasa", "Rabu", "Kamis", "Jumat"]);
+  const [formStartTime, setFormStartTime] = useState<string>("08:00");
+  const [formEndTime, setFormEndTime] = useState<string>("16:00");
+  const [formDurasiJam, setFormDurasiJam] = useState<number>(4);
+  const [formDurasiMenit, setFormDurasiMenit] = useState<number>(0);
+  const [formTargetPekan, setFormTargetPekan] = useState<number>(10);
+  const [formTotalHari, setFormTotalHari] = useState<number>(50);
+  const [formTotalJam, setFormTotalJam] = useState<number>(200);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
+
+  const openConfigModal = () => {
+    const parsedDays = parseDaysFromString(configTargets.hariKerja);
+    const parsedTimes = parseTimeRange(configTargets.jamKerja);
+    const durJam = configTargets.attendanceMinDurationHours !== undefined && configTargets.attendanceMinDurationHours > 0
+      ? configTargets.attendanceMinDurationHours
+      : (configTargets.targetHarianJam ? Math.floor(configTargets.targetHarianJam) : 4);
+    const durMenit = configTargets.attendanceMinDurationMinutes !== undefined
+      ? configTargets.attendanceMinDurationMinutes
+      : (configTargets.targetHarianJam ? Math.round((configTargets.targetHarianJam % 1) * 60) : 0);
+    const pekan = configTargets.targetPekan || 10;
+    const daysCount = parsedDays.length || 5;
+    const totalHari = configTargets.targetTotalHari || (pekan * daysCount);
+    const totalJam = configTargets.targetTotalJam || Math.round(totalHari * (durJam + durMenit / 60));
+
+    setFormDays(parsedDays);
+    setFormStartTime(parsedTimes.start);
+    setFormEndTime(parsedTimes.end);
+    setFormDurasiJam(durJam);
+    setFormDurasiMenit(durMenit);
+    setFormTargetPekan(pekan);
+    setFormTotalHari(totalHari);
+    setFormTotalJam(totalJam);
+    setIsConfigModalOpen(true);
+  };
+
+  const handleDaysPreset = (preset: "SENIN_JUMAT" | "SENIN_SABTU" | "SETIAP_HARI") => {
+    let nextDays: string[] = [];
+    if (preset === "SENIN_JUMAT") nextDays = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
+    else if (preset === "SENIN_SABTU") nextDays = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+    else nextDays = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
+
+    setFormDays(nextDays);
+    const newTotalHari = formTargetPekan * nextDays.length;
+    const durasiTotalJam = formDurasiJam + formDurasiMenit / 60;
+    const newTotalJam = Math.round(newTotalHari * durasiTotalJam);
+    setFormTotalHari(newTotalHari);
+    setFormTotalJam(newTotalJam);
+  };
+
+  const handleToggleDay = (day: string) => {
+    let nextDays: string[];
+    if (formDays.includes(day)) {
+      if (formDays.length <= 1) {
+        toast.error("Minimal harus memilih 1 hari kerja operasional.");
+        return;
+      }
+      nextDays = formDays.filter((d) => d !== day);
+    } else {
+      nextDays = [...formDays, day].sort((a, b) => ALL_DAYS_LIST.indexOf(a) - ALL_DAYS_LIST.indexOf(b));
+    }
+    setFormDays(nextDays);
+    const newTotalHari = formTargetPekan * nextDays.length;
+    const durasiTotalJam = formDurasiJam + formDurasiMenit / 60;
+    const newTotalJam = Math.round(newTotalHari * durasiTotalJam);
+    setFormTotalHari(newTotalHari);
+    setFormTotalJam(newTotalJam);
+  };
+
+  const handlePekanChange = (pekan: number) => {
+    setFormTargetPekan(pekan);
+    const daysCount = formDays.length || 1;
+    const newTotalHari = pekan * daysCount;
+    const durasiTotalJam = formDurasiJam + formDurasiMenit / 60;
+    const newTotalJam = Math.round(newTotalHari * durasiTotalJam);
+    setFormTotalHari(newTotalHari);
+    setFormTotalJam(newTotalJam);
+  };
+
+  const handleDurasiChange = (jam: number, menit: number) => {
+    setFormDurasiJam(jam);
+    setFormDurasiMenit(menit);
+    const durasiTotalJam = jam + menit / 60;
+    const newTotalJam = Math.round(formTotalHari * durasiTotalJam);
+    setFormTotalJam(newTotalJam);
+  };
+
+  const handleTotalHariChange = (hari: number) => {
+    setFormTotalHari(hari);
+    const durasiTotalJam = formDurasiJam + formDurasiMenit / 60;
+    const newTotalJam = Math.round(hari * durasiTotalJam);
+    setFormTotalJam(newTotalJam);
+  };
 
   const fetchConfigTargets = async () => {
     try {
       const data = await dplService.getConfigTargets();
       if (data) {
         setConfigTargets(data);
-        setConfigFormData(data);
       }
     } catch (err) {
       console.error("Gagal memuat target:", err);
@@ -562,12 +693,39 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       toast.error("Hanya Developer dan Super User yang memiliki hak akses mengubah ketentuan target.");
       return;
     }
+    if (formDays.length === 0) {
+      toast.error("Pilih minimal 1 hari kerja operasional.");
+      return;
+    }
+    if (!formStartTime || !formEndTime) {
+      toast.error("Isi jam mulai dan jam selesai operasional.");
+      return;
+    }
+    const durasiTotalHarian = Number((formDurasiJam + formDurasiMenit / 60).toFixed(2));
+    if (durasiTotalHarian <= 0) {
+      toast.error("Target minimal durasi harian harus lebih dari 0.");
+      return;
+    }
+
     setIsSavingConfig(true);
     try {
-      const res = await dplService.updateConfigTargets(configFormData);
+      const payload: Partial<ConfigTargets> = {
+        hariKerja: formatDaysToString(formDays),
+        jamKerja: `${formStartTime} – ${formEndTime} WIB`,
+        targetPekan: Number(formTargetPekan),
+        targetTotalHari: Number(formTotalHari),
+        targetHarianJam: durasiTotalHarian,
+        targetTotalJam: Number(formTotalJam),
+        attendanceMinDurationHours: Number(formDurasiJam),
+        attendanceMinDurationMinutes: Number(formDurasiMenit),
+        attendanceMinDurationSeconds: 0,
+      };
+
+      const res = await dplService.updateConfigTargets(payload);
       setConfigTargets(res);
       toast.success("Ketentuan waktu & target kegiatan berhasil diperbarui!");
       setIsConfigModalOpen(false);
+      fetchAttendanceAndLocations(selectedScheduleId, selectedKelompokId);
     } catch (err: any) {
       console.error("Gagal update target:", err);
       toast.error(err.response?.data?.message || "Gagal menyimpan ketentuan & target kegiatan");
@@ -780,6 +938,84 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     }
   }, [selectedKelompokId, activeSchedule, groups]);
 
+  // WebSocket Live GPS Tracking for Developer & Super Admin (and seamless real-time map updates)
+  useEffect(() => {
+    const unsubLoc = wsClient.onStudentLocation((locData) => {
+      if (!locData || !locData.studentId) return;
+      const lat = Number(locData.latitude);
+      const lng = Number(locData.longitude);
+      if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
+
+      setStudentLocations((prev) => {
+        const index = prev.findIndex((s) => s.studentId === locData.studentId);
+        const studentInfo = locData.student || {
+          id: locData.studentId,
+          name: locData.namaMahasiswa || locData.name || "Mahasiswa KKN",
+          email: "",
+          phone: locData.phone || "",
+          studentProfile: {
+            nim: locData.nim || "-",
+            jurusan: locData.jurusan || "-",
+          },
+        };
+
+        const updatedItem: StudentLoc = {
+          id: locData.id || `loc-${locData.studentId}-${Date.now()}`,
+          studentId: locData.studentId,
+          latitude: String(lat),
+          longitude: String(lng),
+          recordedAt: locData.recordedAt || new Date().toISOString(),
+          student: studentInfo,
+        };
+
+        if (index >= 0) {
+          const next = [...prev];
+          next[index] = {
+            ...next[index],
+            latitude: String(lat),
+            longitude: String(lng),
+            recordedAt: updatedItem.recordedAt,
+            student: {
+              ...next[index].student,
+              ...studentInfo,
+            },
+          };
+          return next;
+        } else {
+          return [updatedItem, ...prev];
+        }
+      });
+    });
+
+    const unsubLogout = wsClient.onStudentLogout((data) => {
+      if (!data || !data.studentId) return;
+      setStudentLocations((prev) => prev.filter((s) => s.studentId !== data.studentId));
+    });
+
+    const unsubCheckout = wsClient.onStudentCheckout((data) => {
+      if (!data || !data.studentId) return;
+      setAttendance((prev) =>
+        prev.map((a) =>
+          a.studentId === data.studentId
+            ? {
+                ...a,
+                completedAt: data.checkOutAt || new Date().toISOString(),
+                status: "SELESAI",
+                currentStatus: "SELESAI",
+                totalMinutes: data.durationMinutes || a.totalMinutes,
+              }
+            : a
+        )
+      );
+    });
+
+    return () => {
+      unsubLoc();
+      unsubLogout();
+      unsubCheckout();
+    };
+  }, []);
+
   // Export Attendance Rekap to CSV
   const handleExportCSV = () => {
     if (!attendance || attendance.length === 0) {
@@ -978,7 +1214,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
       const isActivePresence = isAttended || isInsideZone || (isRecentLocation && Boolean(activeSchedule));
 
-      const gridKey = `${lat.toFixed(4)}_${lng.toFixed(4)}`;
+      // Smart zoom-aware grid key: if zoomed in close (zoom >= 17), do not cluster unless exactly same coordinates
+      const gridKey = mapZoom >= 17 ? `${loc.studentId || idx}` : `${lat.toFixed(4)}_${lng.toFixed(4)}`;
 
       if (!groups[gridKey]) {
         groups[gridKey] = {
@@ -1119,7 +1356,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     });
 
     return items;
-  }, [studentLocations, attendance, activeSchedule]);
+  }, [studentLocations, attendance, activeSchedule, mapZoom]);
 
   const STANDARD_CATEGORIES = [
     "Sosialisasi",
@@ -1581,10 +1818,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           {isSuperUserOrDev && (
             <button
               type="button"
-              onClick={() => {
-                setConfigFormData(configTargets);
-                setIsConfigModalOpen(true);
-              }}
+              onClick={openConfigModal}
               className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
               title="Atur Hari, Jam Kerja & Target Kegiatan KKN (Khusus Developer & Super User)"
             >
@@ -1636,7 +1870,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   </span>
                 )}
                 {!activeSchedule && selectedKelompokId && (
-                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                     {groups.find((g) => g.id === selectedKelompokId)?.name || "Kelompok KKN"}
                   </span>
                 )}
@@ -1655,7 +1889,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     </span>
                     <span className="flex items-center gap-1.5">
                       <Clock size={14} className="text-emerald-600" />
-                      {activeSchedule.time || configTargets.jamKerja || "08.00 – 16.00"} (Target {scheduleTargetHours} Jam)
+                      {activeSchedule.time || configTargets.jamKerja || "08:00 – 16:00 WIB"} (Target Minimal {formatHoursToUnits(scheduleTargetHours)})
                     </span>
                     <span className="flex items-center gap-1.5 truncate max-w-sm">
                       <MapPin size={14} className="text-emerald-600 shrink-0" />
@@ -1742,10 +1976,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         {/* 2-Column Cards: Informasi Waktu Kerja & Target Kegiatan Lapangan */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Left Card: Informasi Waktu Kerja */}
-          <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4">
+          <div className="bg-slate-50/70 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4 shadow-2xs">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100">
-                <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 flex items-center justify-center">
                   <Clock size={15} />
                 </div>
                 <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Informasi Waktu Kerja</span>
@@ -1753,11 +1987,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               {isSuperUserOrDev && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setConfigFormData(configTargets);
-                    setIsConfigModalOpen(true);
-                  }}
-                  className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1 cursor-pointer"
+                  onClick={openConfigModal}
+                  className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <Pencil size={12} />
                   <span>Ubah</span>
@@ -1766,37 +1997,37 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             </div>
 
             <div className="space-y-3 pt-1">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 text-xs">
-                <span className="flex items-center gap-2 text-slate-500 font-semibold">
-                  <Calendar size={14} className="text-emerald-600" />
-                  Hari Kerja
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-700/60 text-xs">
+                <span className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-semibold">
+                  <Calendar size={14} className="text-emerald-600 dark:text-emerald-400" />
+                  Hari Kerja Operasional
                 </span>
                 <span className="font-extrabold text-slate-900 dark:text-slate-100">{configTargets.hariKerja || "Senin – Jumat"}</span>
               </div>
 
-              <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 text-xs">
-                <span className="flex items-center gap-2 text-slate-500 font-semibold">
-                  <Clock size={14} className="text-emerald-600" />
-                  Jam Kerja
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-700/60 text-xs">
+                <span className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-semibold">
+                  <Clock size={14} className="text-emerald-600 dark:text-emerald-400" />
+                  Jam Kerja Operasional
                 </span>
-                <span className="font-extrabold text-slate-900 dark:text-slate-100">{activeSchedule?.time || configTargets.jamKerja || "08.00 – 16.00"}</span>
+                <span className="font-extrabold text-slate-900 dark:text-slate-100">{activeSchedule?.time || configTargets.jamKerja || "08:00 – 16:00 WIB"}</span>
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-2 text-slate-500 font-semibold">
-                  <Hourglass size={14} className="text-emerald-600" />
+                <span className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-semibold">
+                  <Hourglass size={14} className="text-emerald-600 dark:text-emerald-400" />
                   Minimal Durasi / Hari
                 </span>
-                <span className="font-extrabold text-slate-900 dark:text-slate-100">{formatHoursToUnits(scheduleTargetHours || configTargets.targetHarianJam || 2)}</span>
+                <span className="font-extrabold text-slate-900 dark:text-slate-100">{formatHoursToUnits(configTargets.targetHarianJam || 4)}</span>
               </div>
             </div>
           </div>
 
           {/* Right Card: Target Kegiatan Lapangan */}
-          <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4">
+          <div className="bg-slate-50/70 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4 shadow-2xs">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100">
-                <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 flex items-center justify-center">
                   <Target size={15} />
                 </div>
                 <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Target Kegiatan Lapangan</span>
@@ -1804,11 +2035,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               {isSuperUserOrDev && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setConfigFormData(configTargets);
-                    setIsConfigModalOpen(true);
-                  }}
-                  className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1 cursor-pointer"
+                  onClick={openConfigModal}
+                  className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <Pencil size={12} />
                   <span>Ubah Target</span>
@@ -1816,26 +2044,26 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               )}
             </div>
 
-            <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-800 pt-1 text-center">
+            <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700/60 pt-1 text-center">
               <div className="px-2 flex flex-col items-center justify-center">
-                <Calendar size={18} className="text-emerald-600 mb-1" />
+                <Calendar size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
                 <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{configTargets.targetPekan ?? 10}</span>
                 <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Pekan</span>
                 <span className="text-[10px] text-slate-400 font-medium">Periode Kegiatan</span>
               </div>
 
               <div className="px-2 flex flex-col items-center justify-center">
-                <CheckCircle2 size={18} className="text-emerald-600 mb-1" />
+                <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
                 <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{configTargets.targetTotalHari ?? 50}</span>
                 <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Hari</span>
                 <span className="text-[10px] text-slate-400 font-medium">Total Hari Kegiatan</span>
               </div>
 
               <div className="px-2 flex flex-col items-center justify-center">
-                <Clock size={18} className="text-emerald-600 mb-1" />
-                <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{formatHoursToUnits(configTargets.targetTotalJam ?? 100)}</span>
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Total Target</span>
-                <span className="text-[10px] text-slate-400 font-medium">Total Jam Kegiatan</span>
+                <Clock size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
+                <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{formatHoursToUnits(configTargets.targetTotalJam ?? 200)}</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Minimal Target</span>
+                <span className="text-[10px] text-slate-400 font-medium">Minimal Jam Kumulatif</span>
               </div>
             </div>
           </div>
@@ -1868,9 +2096,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           </div>
 
           <div className="h-[340px] relative z-0">
-            <MapContainer center={mapCenter} zoom={mapZoom} className="w-full h-full">
+            <MapContainer
+              center={mapCenter}
+              zoom={mapZoom}
+              maxZoom={20}
+              minZoom={11}
+              className="w-full h-full"
+            >
               <ChangeMapView center={mapCenter} zoom={mapZoom} />
-              <ThemeTileLayer />
+              <MapZoomEvents onZoom={(z) => setMapZoom(z)} />
+              <ThemeTileLayer maxZoom={20} maxNativeZoom={19} />
 
               {/* Boundary 6 Kelurahan */}
               {Object.values(KELURAHAN_GEODATA).map((kg) => (
@@ -2187,10 +2422,38 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
                       const formattedHours = isLeaveOrPending ? "-" : (durationMins > 0 ? formatDurationUnits(durationMins) : "-");
 
+                      const targetKumulatif = configTargets.targetTotalJam || 200;
+                      const percentCapaian = rec.totalHours !== undefined ? Math.round(((rec.totalHours || 0) / (targetKumulatif || 1)) * 100) : 0;
+                      const isExceeded = percentCapaian > 100;
+
                       const formattedActualTarget = isLeaveOrPending
                         ? `0 Menit / ${formatHoursToUnits(scheduleTargetHours)}`
                         : (rec.totalHours !== undefined
-                            ? `${formatHoursToUnits(rec.totalHours)} / ${formatHoursToUnits(configTargets.targetTotalJam)}`
+                            ? (
+                                <div className="flex flex-col items-center gap-1">
+                                  <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-100">
+                                    {formatHoursToUnits(rec.totalHours)} / {formatHoursToUnits(targetKumulatif)}
+                                  </span>
+                                  {isExceeded ? (
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 shadow-2xs">
+                                      <span>🌟 Melampaui</span>
+                                      <span className="font-extrabold">({percentCapaian}%)</span>
+                                    </span>
+                                  ) : (
+                                    <div className="w-full max-w-[120px] flex flex-col items-center gap-0.5">
+                                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                        <div
+                                          className="bg-emerald-600 h-full rounded-full transition-all"
+                                          style={{ width: `${Math.min(100, percentCapaian)}%` }}
+                                        />
+                                      </div>
+                                      <span className="text-[9px] font-bold text-slate-500">
+                                        {percentCapaian}% Tercapai
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              )
                             : `${durationMins > 0 ? formatDurationUnits(durationMins) : "0 Menit"} / ${formatHoursToUnits(scheduleTargetHours)}`);
 
                       let poinDampingan = 0;
@@ -2520,17 +2783,28 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     {/* Card Footer */}
                     <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px]">
                       {rec.totalHours !== undefined ? (
-                        <span className="text-[10px] font-bold text-slate-500">
-                          Kumulatif KKN
-                        </span>
+                        (() => {
+                          const targetKumulatif = configTargets.targetTotalJam || 200;
+                          const percentCapaian = Math.round(((rec.totalHours || 0) / (targetKumulatif || 1)) * 100);
+                          const isExceeded = percentCapaian > 100;
+                          return isExceeded ? (
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              🌟 Melampaui ({percentCapaian}%)
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">
+                              {percentCapaian}% ({formatHoursToUnits(rec.totalHours)} / {formatHoursToUnits(targetKumulatif)})
+                            </span>
+                          );
+                        })()
                       ) : isAttended ? (
                         isDurationSufficient ? (
-                          <span className="text-[10px] font-bold text-emerald-800">
-                            ✅ Target {scheduleTargetHours} Jam OK
+                          <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-400">
+                            ✅ Target Minimal {formatHoursToUnits(scheduleTargetHours)} OK
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold text-amber-800">
-                            ⚠️ Kurang {scheduleTargetHours} Jam
+                          <span className="text-[10px] font-bold text-amber-800 dark:text-amber-400">
+                            ⚠️ Target Minimal {formatHoursToUnits(scheduleTargetHours)}
                           </span>
                         )
                       ) : (
@@ -2686,10 +2960,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           setFormErrors((prev) => ({ ...prev, title: "" }));
                       }}
                       placeholder="Contoh: Sosialisasi Pemilahan Sampah Organik RW 03"
-                      className={`w-full h-10 px-3.5 border rounded-xl text-xs font-bold text-slate-800 placeholder-slate-400 outline-none transition-all ${
+                      className={`w-full h-10 px-3.5 border rounded-xl text-xs font-bold placeholder-slate-400 outline-none transition-all ${
                         formErrors.title
-                          ? "border-rose-400 bg-rose-50/40 focus:border-rose-600"
-                          : "border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500"
+                          ? "border-rose-400 bg-rose-50/40 dark:bg-rose-950/40 text-slate-800 dark:text-slate-100 focus:border-rose-600"
+                          : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:border-emerald-500"
                       }`}
                     />
                   </div>
@@ -2922,9 +3196,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           key={`modal-geofence-map-${modalMode}-${formData.id || "new"}-${geofenceMode}`}
                           center={mapModalCenter}
                           zoom={15}
+                          maxZoom={20}
+                          minZoom={11}
                           style={{ height: "100%", width: "100%" }}
                         >
-                          <ThemeTileLayer />
+                          <ThemeTileLayer maxZoom={20} maxNativeZoom={19} />
                           <DualGeofencePickerModalMap
                             mode={geofenceMode}
                             points={selectedPos || []}
@@ -3131,175 +3407,258 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
       {/* Modal Pengaturan Ketentuan Waktu & Target Kegiatan KKN (Khusus Super User & Developer) */}
       {isConfigModalOpen && isSuperUserOrDev && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-slate-100 dark:border-slate-800 space-y-4">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-xl shadow-2xl border border-slate-100 dark:border-slate-800 space-y-5 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 flex items-center justify-center">
                   <Settings size={18} />
                 </div>
                 <div>
                   <h3 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
-                    Atur Ketentuan Waktu & Target KKN
+                    Atur Ketentuan Operasional & Target Minimal KKN
                   </h3>
                   <p className="text-[11px] text-slate-400 font-medium">
-                    Nilai ini ditampilkan dinamis di halaman presensi dan monitoring DPL.
+                    Konfigurasi otomatis tersimpan ke basis data terpusat dan menjadi acuan presensi.
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsConfigModalOpen(false)}
-                className="p-1.5 rounded-full text-slate-400 hover:bg-slate-100 transition"
+                className="p-1.5 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleSaveConfig} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              {/* Bagian 1: Hari Kerja Operasional (Pilihan Preset & Checkbox 7 Hari) */}
+              <div className="space-y-2 p-3.5 bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                    <Calendar size={14} className="text-emerald-600" />
                     Hari Kerja Operasional
                   </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: Senin – Jumat"
-                    value={configFormData.hariKerja || ""}
-                    onChange={(e) =>
-                      setConfigFormData({
-                        ...configFormData,
-                        hariKerja: e.target.value,
-                      })
-                    }
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Jam Kerja Operasional
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: 08.00 – 16.00"
-                    value={configFormData.jamKerja || ""}
-                    onChange={(e) =>
-                      setConfigFormData({
-                        ...configFormData,
-                        jamKerja: e.target.value,
-                      })
-                    }
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Min. Durasi (Jam/Hari)
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={24}
-                    required
-                    value={configFormData.targetHarianJam || 2}
-                    onChange={(e) => {
-                      const harian = Number(e.target.value) || 0;
-                      setConfigFormData({
-                        ...configFormData,
-                        targetHarianJam: harian,
-                        targetTotalJam: (configFormData.targetTotalHari || 50) * harian,
-                      });
-                    }}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Periode (Pekan)
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    required
-                    value={configFormData.targetPekan || 10}
-                    onChange={(e) =>
-                      setConfigFormData({
-                        ...configFormData,
-                        targetPekan: Number(e.target.value),
-                      })
-                    }
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Total Hari Kegiatan
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    required
-                    value={configFormData.targetTotalHari || 50}
-                    onChange={(e) => {
-                      const hari = Number(e.target.value) || 0;
-                      setConfigFormData({
-                        ...configFormData,
-                        targetTotalHari: hari,
-                        targetTotalJam: hari * (configFormData.targetHarianJam || 2),
-                      });
-                    }}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Total Jam Kegiatan (Target Kumulatif KKN = Total Hari × Jam/Hari)
-                  </label>
-                  <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    {(configFormData.targetTotalHari || 50)} Hari × {(configFormData.targetHarianJam || 2)} Jam = {(configFormData.targetTotalJam || 100)} Jam
+                  <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                    {formDays.length} Hari / Pekan
                   </span>
                 </div>
-                <input
-                  type="number"
-                  min={1}
-                  required
-                  value={configFormData.targetTotalJam || 200}
-                  onChange={(e) =>
-                    setConfigFormData({
-                      ...configFormData,
-                      targetTotalJam: Number(e.target.value),
-                    })
-                  }
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
-                />
+
+                {/* Preset Cepat */}
+                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => handleDaysPreset("SENIN_JUMAT")}
+                    className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition border cursor-pointer ${
+                      formDays.length === 5 && ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"].every((d) => formDays.includes(d))
+                        ? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
+                        : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-emerald-300"
+                    }`}
+                  >
+                    Senin – Jumat (5 Hari)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDaysPreset("SENIN_SABTU")}
+                    className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition border cursor-pointer ${
+                      formDays.length === 6 && ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"].every((d) => formDays.includes(d))
+                        ? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
+                        : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-emerald-300"
+                    }`}
+                  >
+                    Senin – Sabtu (6 Hari)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDaysPreset("SETIAP_HARI")}
+                    className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition border cursor-pointer ${
+                      formDays.length === 7
+                        ? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
+                        : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-emerald-300"
+                    }`}
+                  >
+                    Setiap Hari (7 Hari)
+                  </button>
+                </div>
+
+                {/* 7-Days Checkbox Pills */}
+                <div className="grid grid-cols-7 gap-1.5 pt-1">
+                  {ALL_DAYS_LIST.map((day) => {
+                    const isSelected = formDays.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => handleToggleDay(day)}
+                        className={`py-1.5 px-1 rounded-xl text-xs font-black transition border text-center cursor-pointer ${
+                          isSelected
+                            ? "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700"
+                            : "bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-800 hover:bg-slate-100"
+                        }`}
+                        title={day}
+                      >
+                        {day.slice(0, 3)}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold pt-0.5">
+                  Label Tersimpan: <strong className="text-slate-800 dark:text-slate-200">{formatDaysToString(formDays)}</strong>
+                </p>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+              {/* Bagian 2: Jam Kerja Operasional & Target Minimal Durasi Harian */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Jam Operasional */}
+                <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
+                  <label className="block text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                    <Clock size={14} className="text-emerald-600" />
+                    Jam Kerja Operasional
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="block text-[10px] font-bold text-slate-400 mb-0.5">Jam Mulai</span>
+                      <input
+                        type="time"
+                        required
+                        value={formStartTime}
+                        onChange={(e) => setFormStartTime(e.target.value)}
+                        className="w-full px-2.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-bold focus:ring-2 focus:ring-emerald-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <span className="block text-[10px] font-bold text-slate-400 mb-0.5">Jam Selesai</span>
+                      <input
+                        type="time"
+                        required
+                        value={formEndTime}
+                        onChange={(e) => setFormEndTime(e.target.value)}
+                        className="w-full px-2.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-bold focus:ring-2 focus:ring-emerald-500 outline-none"
+                      />
+                    </div>
+                  </div>
+                  <span className="block text-[10px] text-slate-500 font-medium">
+                    Format: {formStartTime} – {formEndTime} WIB
+                  </span>
+                </div>
+
+                {/* Minimal Durasi / Hari */}
+                <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
+                  <label className="block text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                    <Hourglass size={14} className="text-emerald-600" />
+                    Target Minimal Durasi / Hari
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="block text-[10px] font-bold text-slate-400 mb-0.5">Jam</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={24}
+                        required
+                        value={formDurasiJam}
+                        onChange={(e) => handleDurasiChange(Math.max(0, Number(e.target.value) || 0), formDurasiMenit)}
+                        className="w-full px-2.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-bold focus:ring-2 focus:ring-emerald-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <span className="block text-[10px] font-bold text-slate-400 mb-0.5">Menit</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={59}
+                        step={5}
+                        required
+                        value={formDurasiMenit}
+                        onChange={(e) => handleDurasiChange(formDurasiJam, Math.max(0, Math.min(59, Number(e.target.value) || 0)))}
+                        className="w-full px-2.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-bold focus:ring-2 focus:ring-emerald-500 outline-none"
+                      />
+                    </div>
+                  </div>
+                  <span className="block text-[10px] text-slate-500 font-medium">
+                    Total Durasi: <strong>{formDurasiJam} Jam {formDurasiMenit > 0 ? `${formDurasiMenit} Menit` : ''}</strong> / Hari
+                  </span>
+                </div>
+              </div>
+
+              {/* Bagian 3: Periode & Target Minimal Jam Kumulatif */}
+              <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-black text-slate-800 dark:text-slate-100 mb-1">
+                      Periode Kegiatan (Pekan)
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={52}
+                      required
+                      value={formTargetPekan}
+                      onChange={(e) => handlePekanChange(Math.max(1, Number(e.target.value) || 1))}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-bold focus:ring-2 focus:ring-emerald-500 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black text-slate-800 dark:text-slate-100 mb-1">
+                      Total Hari Kegiatan
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      required
+                      value={formTotalHari}
+                      onChange={(e) => handleTotalHariChange(Math.max(1, Number(e.target.value) || 1))}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-bold focus:ring-2 focus:ring-emerald-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-black text-slate-800 dark:text-slate-100">
+                      Minimal Target Jam Kumulatif (Jam)
+                    </label>
+                    <span className="text-[10px] text-slate-400 font-medium">Bisa disesuaikan manual</span>
+                  </div>
+                  <input
+                    type="number"
+                    min={1}
+                    required
+                    value={formTotalJam}
+                    onChange={(e) => setFormTotalJam(Math.max(1, Number(e.target.value) || 1))}
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-black text-emerald-800 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500 outline-none"
+                  />
+                </div>
+
+                {/* Live Formula Preview */}
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 text-xs">
+                  <span className="font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
+                    <Target size={14} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
+                    Kalkulasi Minimal Target:
+                  </span>
+                  <span className="font-black text-emerald-800 dark:text-emerald-300">
+                    {formTotalHari} Hari × {formDurasiJam}{formDurasiMenit > 0 ? `.${Math.round((formDurasiMenit / 60) * 10)}` : ''} Jam = {formTotalJam} Jam
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsConfigModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingConfig}
-                  className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                  className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {isSavingConfig && <Loader2 size={14} className="animate-spin" />}
-                  Simpan Ketentuan
+                  Simpan Ketentuan & Target
                 </button>
               </div>
             </form>

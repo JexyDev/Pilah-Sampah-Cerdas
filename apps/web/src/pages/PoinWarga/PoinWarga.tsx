@@ -163,11 +163,11 @@ const PoinWarga: React.FC = () => {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
         {/* Leaderboard Section */}
         <section
-          className={`bg-white rounded-xl shadow-sm p-5 flex flex-col h-full border border-outline-variant/50 ${selectedUser ? "xl:col-span-8" : "xl:col-span-12"}`}
+          className={`bg-white dark:bg-slate-900 rounded-2xl shadow-xs p-5 flex flex-col h-full border border-slate-200/80 dark:border-slate-800 ${selectedUser ? "xl:col-span-8" : "xl:col-span-12"}`}
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 pb-4 border-b border-outline-variant/30 gap-4">
             <div className="flex items-center gap-2">
-              <BarChart3 className="text-primary bg-green-50 p-1.5 rounded-lg" />
+              <BarChart3 className="text-primary bg-green-50 dark:bg-emerald-950 p-1.5 rounded-lg" />
               <h3 className="text-[20px] font-bold text-on-surface">Leaderboard Warga</h3>
             </div>
             <div className="flex items-center gap-4 w-full sm:w-auto">
@@ -216,7 +216,7 @@ const PoinWarga: React.FC = () => {
                       <img
                         src={l.fotoProfil || "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80"}
                         alt={l.nama}
-                        className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
+                        className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-slate-800 shadow-sm"
                         onError={(e: any) => {
                           e.target.src = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80";
                         }}
@@ -257,7 +257,7 @@ const PoinWarga: React.FC = () => {
                 return (
                   <div
                     key={leader.rank}
-                    className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border ${isSelected ? "border-primary bg-green-50/50" : mc.border + " bg-white hover:bg-surface-container-lowest"} transition-colors gap-4 cursor-pointer`}
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border ${isSelected ? "border-primary bg-emerald-50/50 dark:bg-emerald-950/40" : mc.border + " bg-white dark:bg-slate-800/80 hover:bg-surface-container-lowest"} transition-colors gap-4 cursor-pointer`}
                     onClick={() => handleViewDetail(leader)}
                   >
                     <div className="flex items-center gap-4">

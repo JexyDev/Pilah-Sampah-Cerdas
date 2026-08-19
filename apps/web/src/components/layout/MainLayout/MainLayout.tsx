@@ -5,7 +5,7 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 
 import { ErrorBoundary } from "react-error-boundary";
@@ -13,10 +13,19 @@ import Sidebar from "../Sidebar/Sidebar";
 import Header from "../Header/Header";
 import Footer from "../Footer/Footer";
 import ErrorBoundaryFallback from "../../common/ErrorBoundaryFallback";
+import { useThemeStore } from "../../../store/useThemeStore";
 
 const MainLayout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Sync darkmode exclusively when user is inside the authenticated menu/dashboard layout
+  useEffect(() => {
+    useThemeStore.getState().setInsideMainLayout(true);
+    return () => {
+      useThemeStore.getState().setInsideMainLayout(false);
+    };
+  }, []);
 
   const handleToggleSidebar = () => {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {

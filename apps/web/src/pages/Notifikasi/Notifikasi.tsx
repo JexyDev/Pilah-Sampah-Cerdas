@@ -204,7 +204,7 @@ const NotificationModal = ({
                     setPhoto(null);
                     setPhotoFile(null);
                   }}
-                  className="absolute top-2 right-2 bg-white/80 p-1.5 rounded-full hover:bg-white shadow-sm transition-colors cursor-pointer"
+                  className="absolute top-2 right-2 bg-white/80 dark:bg-slate-800/80 p-1.5 rounded-full hover:bg-white dark:hover:bg-slate-800 shadow-sm transition-colors cursor-pointer border border-slate-200/50 dark:border-slate-700"
                 >
                   <X size={16} className="text-slate-700 dark:text-slate-300" />
                 </button>

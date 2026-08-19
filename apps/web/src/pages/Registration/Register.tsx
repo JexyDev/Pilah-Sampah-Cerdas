@@ -54,24 +54,8 @@ export const Register: React.FC = () => {
 
   // Force clean light mode on Register page unconditionally
   useEffect(() => {
-    const root = document.documentElement;
-    root.classList.remove("dark");
-    root.setAttribute("data-theme", "light");
-    root.style.colorScheme = "light";
-
-    return () => {
-      // Restore user preference when navigating away
-      const currentTheme = useThemeStore.getState().theme;
-      if (currentTheme === "dark") {
-        root.classList.add("dark");
-        root.setAttribute("data-theme", "dark");
-        root.style.colorScheme = "dark";
-      } else {
-        root.classList.remove("dark");
-        root.setAttribute("data-theme", "light");
-        root.style.colorScheme = "light";
-      }
-    };
+    useThemeStore.getState().setInsideMainLayout(false);
+    useThemeStore.getState().resetThemeToLight();
   }, []);
 
   // Role State (Default: WARGA)

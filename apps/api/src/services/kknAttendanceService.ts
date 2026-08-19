@@ -7,6 +7,7 @@ import { prisma } from "../lib/prisma.js";
  */
 
 import { configService } from "./configService.js";
+import { dplService } from "./dplService.js";
 import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
 import { websocketService } from "./websocketService.js";
 
@@ -391,11 +392,110 @@ export class KknAttendanceService {
   }
 
   /**
-   * Get all student locations recorded in the last 24 hours.
+   * Record attendance check-out (waktu kepulangan / selesai sesi presensi)
+   */
+  async checkOutAttendance(params: {
+    studentId: string;
+    scheduleId?: string;
+    latitude?: number;
+    longitude?: number;
+  }) {
+    const { studentId, scheduleId, latitude, longitude } = params;
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    // Find the latest active check-in today that has not checked out yet
+    let attendance = await prisma.activityAttendance.findFirst({
+      where: {
+        studentId,
+        ...(scheduleId ? { scheduleId } : {}),
+        attendedAt: { gte: startOfDay },
+        checkOutAt: null,
+      },
+      orderBy: { attendedAt: "desc" },
+    });
+
+    if (!attendance) {
+      // Fallback: check if already checked out today
+      attendance = await prisma.activityAttendance.findFirst({
+        where: {
+          studentId,
+          ...(scheduleId ? { scheduleId } : {}),
+          attendedAt: { gte: startOfDay },
+        },
+        orderBy: { attendedAt: "desc" },
+      });
+    }
+
+    if (!attendance) {
+      throw new Error("ATTENDANCE_NOT_FOUND: Belum ada data check-in hari ini untuk di-checkout.");
+    }
+
+    const checkOutTime = new Date();
+    const attendedTime = new Date(attendance.attendedAt);
+    const durationMinutes = Math.max(0, Math.floor((checkOutTime.getTime() - attendedTime.getTime()) / (1000 * 60)));
+
+    const updated = await prisma.activityAttendance.update({
+      where: { id: attendance.id },
+      data: {
+        checkOutAt: checkOutTime,
+        status: "SELESAI",
+        ...(latitude !== undefined && !isNaN(Number(latitude)) ? { latitude: Number(latitude) } : {}),
+        ...(longitude !== undefined && !isNaN(Number(longitude)) ? { longitude: Number(longitude) } : {}),
+      },
+      include: {
+        schedule: true,
+        student: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            studentProfile: {
+              select: {
+                nim: true,
+                jurusan: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Broadcast checkout event via WebSocket
+    websocketService.broadcastStudentCheckout({
+      attendanceId: updated.id,
+      studentId,
+      scheduleId: updated.scheduleId,
+      attendedAt: updated.attendedAt,
+      checkOutAt: updated.checkOutAt,
+      durationMinutes,
+      status: updated.status,
+      student: updated.student,
+    });
+
+    return {
+      success: true,
+      message: "Check-out presensi berhasil dicatat.",
+      data: {
+        attendanceId: updated.id,
+        scheduleId: updated.scheduleId,
+        attendedAt: updated.attendedAt,
+        checkOutAt: updated.checkOutAt,
+        durationMinutes,
+        durationFormatted: `${Math.floor(durationMinutes / 60)} Jam ${durationMinutes % 60} Menit`,
+        status: updated.status,
+      },
+    };
+  }
+
+  /**
+   * Get all active student locations recorded in the last 30 minutes.
    * If dplUserId is provided, filters to students in DPL's assigned kelompok.
    */
   async getActiveStudentsLocations(dplUserId?: string, kelompokId?: string) {
-    const cutoff = new Date(Date.now() - 12 * 60 * 60 * 1000);
+    // Only fetch fresh locations from the last 30 minutes
+    const cutoff = new Date(Date.now() - 30 * 60 * 1000);
 
     // If DPL or specific kelompokId provided, find student user IDs
     let targetStudentIds: string[] | null = null;
@@ -451,64 +551,6 @@ export class KknAttendanceService {
     for (const loc of locations) {
       if (!uniqueStudents.has(loc.studentId)) {
         uniqueStudents.set(loc.studentId, loc);
-      }
-    }
-
-    // Include registered Mahasiswa KKN who have active attendance coordinates today if no direct location ping exists
-    const activeMahasiswaWithAbsen = await prisma.user.findMany({
-      where: {
-        role: { name: "MAHASISWA_KKN" },
-        ...(targetStudentIds ? { id: { in: targetStudentIds } } : {}),
-      },
-      select: {
-        id: true,
-        name: true,
-        phone: true,
-        studentProfile: {
-          select: {
-            nim: true,
-            jurusan: true,
-          },
-        },
-        attendances: {
-          where: {
-            attendedAt: { gte: cutoff },
-          },
-          orderBy: { attendedAt: "desc" },
-          take: 1,
-          select: {
-            latitude: true,
-            longitude: true,
-            attendedAt: true,
-          },
-        },
-      },
-    });
-
-    for (const mhs of activeMahasiswaWithAbsen) {
-      if (!uniqueStudents.has(mhs.id) && mhs.attendances.length > 0) {
-        const latestAbsen = mhs.attendances[0];
-        if (latestAbsen.latitude && latestAbsen.longitude) {
-          uniqueStudents.set(mhs.id, {
-            id: `absen-${mhs.id}`,
-            studentId: mhs.id,
-            latitude: latestAbsen.latitude as any,
-            longitude: latestAbsen.longitude as any,
-            recordedAt: latestAbsen.attendedAt,
-            student: {
-              id: mhs.id,
-              name: mhs.name,
-              email: mhs.phone,
-              phone: mhs.phone,
-              studentProfile: mhs.studentProfile
-                ? {
-                    nim: mhs.studentProfile.nim,
-                    jurusan: mhs.studentProfile.jurusan,
-                  }
-                : undefined,
-            },
-          } as any);
-        }
       }
     }
 
@@ -966,8 +1008,11 @@ export class KknAttendanceService {
       orderBy: [{ isKetua: "desc" }, { user: { name: "asc" } }],
     });
 
-    const TARGET_TOTAL_HOURS = 100;
-    const TARGET_TOTAL_MINUTES = TARGET_TOTAL_HOURS * 60; // 6000 mins
+    const config = await dplService.getConfigTargets();
+    const TARGET_TOTAL_HOURS = config.targetTotalJam || 100;
+    const TARGET_TOTAL_MINUTES = TARGET_TOTAL_HOURS * 60;
+    const TARGET_HARIAN_HOURS = config.targetHarianJam || 2;
+    const TARGET_HARIAN_MINUTES = Math.round(TARGET_HARIAN_HOURS * 60);
 
     const summary = students.map((s) => {
       let totalMinutes = 0;
@@ -980,10 +1025,16 @@ export class KknAttendanceService {
           const diffMs = att.checkOutAt.getTime() - att.attendedAt.getTime();
           // Cap max 8 hours (480 mins) per session
           durationMins = Math.min(480, Math.max(0, Math.floor(diffMs / (1000 * 60))));
+        } else if (att.attendedAt) {
+          const isToday = new Date(att.attendedAt).toDateString() === new Date().toDateString();
+          if (isToday) {
+            const diffMs = Date.now() - new Date(att.attendedAt).getTime();
+            durationMins = Math.min(480, Math.max(0, Math.floor(diffMs / (1000 * 60))));
+          }
         }
         totalMinutes += durationMins;
         if (durationMins > 0) validSessionsCount++;
-        if (durationMins >= 240) fulfilledTargetDays++; // >= 4 hours
+        if (durationMins >= TARGET_HARIAN_MINUTES) fulfilledTargetDays++;
 
         return {
           id: att.id,
@@ -993,17 +1044,14 @@ export class KknAttendanceService {
           checkOutAt: att.checkOutAt,
           durationMinutes: durationMins,
           durationFormatted: `${Math.floor(durationMins / 60)} Jam ${durationMins % 60} Menit`,
-          isMinTargetMet: durationMins >= 240,
+          isMinTargetMet: durationMins >= TARGET_HARIAN_MINUTES,
           status: att.status,
         };
       });
 
       const hours = Math.floor(totalMinutes / 60);
       const mins = totalMinutes % 60;
-      const progressPercentage = Math.min(
-        100,
-        Math.round((totalMinutes / TARGET_TOTAL_MINUTES) * 1000) / 10
-      );
+      const progressPercentage = Math.round((totalMinutes / (TARGET_TOTAL_MINUTES || 1)) * 1000) / 10;
 
       return {
         studentId: s.userId,
@@ -1022,6 +1070,7 @@ export class KknAttendanceService {
         remainingMinutes: mins,
         totalFormatted: `${hours} Jam ${mins} Menit`,
         targetTotalHours: TARGET_TOTAL_HOURS,
+        targetHarianHours: TARGET_HARIAN_HOURS,
         progressPercentage,
         totalDaysAttended: sessionDetails.length,
         fulfilledTargetDays,
@@ -1032,11 +1081,12 @@ export class KknAttendanceService {
 
     return {
       targetRules: {
-        hariKerja: "Senin – Jumat",
-        jamOperasional: "08:00 – 16:00 WIB (Toleransi 06:00 – 18:00 WIB)",
-        targetHarianMinJam: 4,
+        hariKerja: config.hariKerja || "Senin – Jumat",
+        jamOperasional: config.jamKerja || "08:00 – 16:00 WIB",
+        targetHarianMinJam: TARGET_HARIAN_HOURS,
         targetTotalJam: TARGET_TOTAL_HOURS,
-        durasiBulan: 2.5,
+        targetTotalHari: config.targetTotalHari || 50,
+        targetPekan: config.targetPekan || 10,
       },
       totalMahasiswa: summary.length,
       students: summary,

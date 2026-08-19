@@ -234,7 +234,7 @@ const Informasi: React.FC = () => {
               {/* Role Welcome Card */}
               <div className={`p-6 rounded-3xl border shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 ${roleInfo.color}`}>
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-white/80 border border-current flex items-center justify-center shrink-0 shadow-2xs">
+                  <div className="w-14 h-14 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-current flex items-center justify-center shrink-0 shadow-2xs">
                     <RoleIcon size={28} />
                   </div>
                   <div>

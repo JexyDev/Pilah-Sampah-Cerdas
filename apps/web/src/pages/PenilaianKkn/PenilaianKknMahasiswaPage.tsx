@@ -785,13 +785,13 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
               {/* TABEL DPL (30%) — Tampil untuk DPL & Super User */}
               {(canEditDpl || isSuper) && (
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col justify-between shadow-2xs">
-                  <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-amber-50/50 flex items-center justify-between">
-                    <h3 className="text-sm font-black text-amber-950 flex items-center gap-2">
-                      <GraduationCap size={17} className="text-amber-600" />
+                  <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-amber-50/50 dark:bg-amber-950/30 flex items-center justify-between">
+                    <h3 className="text-sm font-black text-amber-950 dark:text-amber-200 flex items-center gap-2">
+                      <GraduationCap size={17} className="text-amber-600 dark:text-amber-400" />
                       <span>Aspek Dosen Pendamping Lapangan (DPL) &bull; Bobot 30%</span>
                     </h3>
                     {!canEditDpl && (
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-700 dark:text-slate-300">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                         View Only
                       </span>
                     )}
@@ -1010,13 +1010,13 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
               {/* TABEL MPL (70%) — Tampil untuk Mitra & Super User */}
               {(canEditMitra || isSuper) && (
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col justify-between shadow-2xs">
-                  <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-emerald-50/50 flex items-center justify-between">
-                    <h3 className="text-sm font-black text-emerald-950 flex items-center gap-2">
-                      <ClipboardList size={17} className="text-emerald-600" />
+                  <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-emerald-50/50 dark:bg-emerald-950/30 flex items-center justify-between">
+                    <h3 className="text-sm font-black text-emerald-950 dark:text-emerald-200 flex items-center gap-2">
+                      <ClipboardList size={17} className="text-emerald-600 dark:text-emerald-400" />
                       <span>Aspek Mitra Pendamping Lapangan (MPL) &bull; Bobot 70%</span>
                     </h3>
                     {!canEditMitra && (
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-700 dark:text-slate-300">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                         View Only
                       </span>
                     )}

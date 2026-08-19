@@ -109,6 +109,38 @@ router.post(
 
 /**
  * @swagger
+ * /api/v1/kegiatan/{id}/check-out:
+ *   post:
+ *     summary: Melakukan check-out (pulang/selesai) untuk kegiatan KKN
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Check-out berhasil dicatat
+ */
+router.post(
+  ["/kegiatan/:id/check-out", "/kegiatan/:id/checkout"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.checkOutAttendance
+);
+
+router.post(
+  ["/kkn/attendance/check-out", "/kkn/attendance/checkout"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.checkOutAttendance
+);
+
+/**
+ * @swagger
  * /api/v1/mahasiswa/lokasi-aktif:
  *   get:
  *     summary: Mendapatkan lokasi aktif seluruh mahasiswa KKN

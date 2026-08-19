@@ -328,7 +328,7 @@ const Pengaturan: React.FC = () => {
                   type="password"
                   required
                   placeholder="••••••••"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-amber-500 text-xs font-mono"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-amber-500 text-xs font-mono text-slate-800 dark:text-slate-100"
                   value={passwordData.currentPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
                 />
@@ -339,7 +339,7 @@ const Pengaturan: React.FC = () => {
                   type="password"
                   required
                   placeholder="Min. 8 karakter"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-amber-500 text-xs font-mono"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-amber-500 text-xs font-mono text-slate-800 dark:text-slate-100"
                   value={passwordData.newPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
                 />
@@ -350,14 +350,14 @@ const Pengaturan: React.FC = () => {
                   type="password"
                   required
                   placeholder="Ketik ulang sandi"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-amber-500 text-xs font-mono"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-amber-500 text-xs font-mono text-slate-800 dark:text-slate-100"
                   value={passwordData.confirmPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
                 />
               </div>
 
               {/* Aturan Password */}
-              <div className="p-2.5 bg-amber-50/60 border border-amber-200/80 rounded-xl text-[10.5px] text-amber-900 space-y-0.5">
+              <div className="p-2.5 bg-amber-50/60 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 rounded-xl text-[10.5px] text-amber-900 dark:text-amber-200 space-y-0.5">
                 <p className="font-bold">Ketentuan Kata Sandi:</p>
                 <ul className="list-disc pl-3 text-[10px] text-amber-800 space-y-0.5 font-medium">
                   <li>Minimal 8 karakter</li>
@@ -389,14 +389,14 @@ const Pengaturan: React.FC = () => {
               </div>
 
               {/* Form Profil Utama */}
-              <div className="bg-[#f8fafc] rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 space-y-6">
+              <div className="bg-[#f8fafc] dark:bg-slate-850 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 space-y-6">
                 <div className="flex items-center gap-2.5 text-slate-800 dark:text-slate-100 pb-3 border-b border-slate-200/80 dark:border-slate-800">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-[#009966] flex items-center justify-center font-bold">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-[#009966] dark:text-emerald-400 flex items-center justify-center font-bold">
                     <User size={18} />
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 tracking-tight">Profil Utama</h3>
-                    <p className="text-[11.5px] font-medium text-slate-500">Pembaruan foto dan informasi kontak</p>
+                    <p className="text-[11.5px] font-medium text-slate-500 dark:text-slate-400">Pembaruan foto dan informasi kontak</p>
                   </div>
                 </div>
 
@@ -414,8 +414,8 @@ const Pengaturan: React.FC = () => {
                           onDragLeave={() => setDragOver(false)}
                           onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files?.[0]) handleFileChange(e.dataTransfer.files[0]); }}
                           onClick={() => fileInputRef.current?.click()}
-                          className={`relative group cursor-pointer w-28 h-28 rounded-2xl flex items-center justify-center border-2 border-dashed transition-all overflow-hidden bg-white shadow-2xs ${
-                            dragOver ? "border-[#009966] bg-emerald-50/50 scale-105" : "border-slate-300 hover:border-[#009966]"
+                          className={`relative group cursor-pointer w-28 h-28 rounded-2xl flex items-center justify-center border-2 border-dashed transition-all overflow-hidden bg-white dark:bg-slate-800 shadow-2xs ${
+                            dragOver ? "border-[#009966] bg-emerald-50/50 dark:bg-emerald-950/50 scale-105" : "border-slate-300 dark:border-slate-700 hover:border-[#009966]"
                           }`}
                         >
                           {isUploading ? (
@@ -445,7 +445,7 @@ const Pengaturan: React.FC = () => {
                           <label className="block text-xs font-black">Nama Lengkap</label>
                           <div className="relative">
                             <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input type="text" required className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-[#009966] transition-all" value={profileData.name} onChange={(e) => setProfileData({ ...profileData, name: e.target.value })} />
+                            <input type="text" required className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-[#009966] text-slate-800 dark:text-slate-100 transition-all" value={profileData.name} onChange={(e) => setProfileData({ ...profileData, name: e.target.value })} />
                           </div>
                         </div>
 
@@ -453,7 +453,7 @@ const Pengaturan: React.FC = () => {
                           <label className="block text-xs font-black">Nomor WhatsApp (+62)</label>
                           <div className="relative">
                             <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input type="tel" className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-[#009966] transition-all font-mono" placeholder="+628xxx" value={profileData.phone} onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })} />
+                            <input type="tel" className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-[#009966] text-slate-800 dark:text-slate-100 transition-all font-mono" placeholder="+628xxx" value={profileData.phone} onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })} />
                           </div>
                         </div>
 
@@ -468,7 +468,7 @@ const Pengaturan: React.FC = () => {
                               <label className="block text-xs font-black">Jumlah Anggota Keluarga</label>
                               <div className="relative">
                                 <Users size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input type="number" min={1} max={20} className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-[#009966] transition-all" value={profileData.jumlahAnggotaKeluarga} onChange={(e) => setProfileData({ ...profileData, jumlahAnggotaKeluarga: e.target.value })} />
+                                <input type="number" min={1} max={20} className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-[#009966] text-slate-800 dark:text-slate-100 transition-all" value={profileData.jumlahAnggotaKeluarga} onChange={(e) => setProfileData({ ...profileData, jumlahAnggotaKeluarga: e.target.value })} />
                               </div>
                             </div>
 
@@ -476,7 +476,7 @@ const Pengaturan: React.FC = () => {
                               <label className="block text-xs font-black">Alamat Lengkap Domisili</label>
                               <div className="relative">
                                 <Home size={16} className="absolute left-3.5 top-3 text-slate-400" />
-                                <textarea rows={2} className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-[#009966] transition-all" value={profileData.address} onChange={(e) => setProfileData({ ...profileData, address: e.target.value })} />
+                                <textarea rows={2} className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-[#009966] text-slate-800 dark:text-slate-100 transition-all" value={profileData.address} onChange={(e) => setProfileData({ ...profileData, address: e.target.value })} />
                               </div>
                             </div>
                           </>
@@ -506,48 +506,48 @@ const Pengaturan: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-                <div className="bg-[#f8fafc] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1">
+                <div className="bg-[#f8fafc] dark:bg-slate-850 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1">
                   <div className="flex items-center justify-between text-slate-400 mb-1">
                     <span className="text-[10px] font-black uppercase">PostgreSQL</span> <Database size={16} className="text-[#009966]" />
                   </div>
-                  <p className="font-extrabold text-emerald-700 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />{vpsHealth?.database.status || "TERHUBUNG"}</p>
-                  <p className="text-slate-500 font-medium">Latensi: {vpsHealth?.database.queryLatencyMs || 62} ms</p>
+                  <p className="font-extrabold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />{vpsHealth?.database.status || "TERHUBUNG"}</p>
+                  <p className="text-slate-500 dark:text-slate-400 font-medium">Latensi: {vpsHealth?.database.queryLatencyMs || 62} ms</p>
                 </div>
-                <div className="bg-[#f8fafc] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1">
+                <div className="bg-[#f8fafc] dark:bg-slate-850 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1">
                   <div className="flex items-center justify-between text-slate-400 mb-1">
                     <span className="text-[10px] font-black uppercase">Beban CPU</span> <Cpu size={16} className="text-[#009966]" />
                   </div>
                   <p className="font-extrabold text-slate-800 dark:text-slate-100">{vpsHealth?.cpu.usagePercent || 18.5}%</p>
-                  <p className="text-slate-500 font-medium">{vpsHealth?.cpu.cores || 4} Core</p>
+                  <p className="text-slate-500 dark:text-slate-400 font-medium">{vpsHealth?.cpu.cores || 4} Core</p>
                 </div>
-                <div className="bg-[#f8fafc] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1">
+                <div className="bg-[#f8fafc] dark:bg-slate-850 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1">
                   <div className="flex items-center justify-between text-slate-400 mb-1">
                     <span className="text-[10px] font-black uppercase">Memori (RAM)</span> <HardDrive size={16} className="text-[#009966]" />
                   </div>
                   <p className="font-extrabold text-slate-800 dark:text-slate-100">{vpsHealth?.memory.usedGb || 2.4} / {vpsHealth?.memory.totalGb || 8} GB</p>
-                  <p className="text-slate-500 font-medium">{vpsHealth?.memory.usagePercent || 30}% Terpakai</p>
+                  <p className="text-slate-500 dark:text-slate-400 font-medium">{vpsHealth?.memory.usagePercent || 30}% Terpakai</p>
                 </div>
-                <div className="bg-[#f8fafc] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1">
+                <div className="bg-[#f8fafc] dark:bg-slate-850 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1">
                   <div className="flex items-center justify-between text-slate-400 mb-1">
                     <span className="text-[10px] font-black uppercase">Tembolok Redis</span> <Server size={16} className="text-[#009966]" />
                   </div>
-                  <p className="font-extrabold text-emerald-700 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" />{vpsHealth?.redis.status || "TERHUBUNG"}</p>
-                  <p className="text-slate-500 font-medium">Kunci: {vpsHealth?.redis.cacheKeysCount || 128}</p>
+                  <p className="font-extrabold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" />{vpsHealth?.redis.status || "TERHUBUNG"}</p>
+                  <p className="text-slate-500 dark:text-slate-400 font-medium">Kunci: {vpsHealth?.redis.cacheKeysCount || 128}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div className="p-5 rounded-2xl bg-[#f8fafc] border border-slate-200 dark:border-slate-800 space-y-3">
+                <div className="p-5 rounded-2xl bg-[#f8fafc] dark:bg-slate-850 border border-slate-200 dark:border-slate-800 space-y-3">
                   <h4 className="text-sm font-black text-slate-900 dark:text-slate-100">Cadangkan Basis Data</h4>
-                  <p className="text-xs font-medium text-slate-500">Buat salinan data (SQL Dump) terbaru secara langsung.</p>
-                  <button onClick={() => handleSystemAction("/system/backup", "Cadangan berhasil dibuat!", setIsBackingUp)} disabled={isBackingUp} className="px-4 py-2.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white font-extrabold text-xs flex items-center gap-2 disabled:opacity-50 transition-all">
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Buat salinan data (SQL Dump) terbaru secara langsung.</p>
+                  <button onClick={() => handleSystemAction("/system/backup", "Cadangan berhasil dibuat!", setIsBackingUp)} disabled={isBackingUp} className="px-4 py-2.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white font-extrabold text-xs flex items-center gap-2 disabled:opacity-50 transition-all cursor-pointer">
                     {isBackingUp ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Proses Cadangan
                   </button>
                 </div>
-                <div className="p-5 rounded-2xl bg-[#f8fafc] border border-slate-200 dark:border-slate-800 space-y-3">
+                <div className="p-5 rounded-2xl bg-[#f8fafc] dark:bg-slate-850 border border-slate-200 dark:border-slate-800 space-y-3">
                   <h4 className="text-sm font-black text-slate-900 dark:text-slate-100">Bersihkan Tembolok Redis</h4>
-                  <p className="text-xs font-medium text-slate-500">Hapus cache sementara untuk sinkronisasi performa.</p>
-                  <button onClick={() => handleSystemAction("/system/clear-cache", "Tembolok dibersihkan!", setIsClearingCache)} disabled={isClearingCache} className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 text-slate-800 dark:text-slate-100 font-extrabold text-xs flex items-center gap-2 disabled:opacity-50 transition-all">
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Hapus cache sementara untuk sinkronisasi performa.</p>
+                  <button onClick={() => handleSystemAction("/system/clear-cache", "Tembolok dibersihkan!", setIsClearingCache)} disabled={isClearingCache} className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-extrabold text-xs flex items-center gap-2 disabled:opacity-50 transition-all cursor-pointer">
                     {isClearingCache ? <Loader2 size={15} className="animate-spin text-[#009966]" /> : <Brush size={15} className="text-[#009966]" />} Bersihkan Tembolok
                   </button>
                 </div>

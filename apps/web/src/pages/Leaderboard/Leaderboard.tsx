@@ -667,7 +667,7 @@ const Leaderboard: React.FC = () => {
                     <input
                       type="text"
                       placeholder="Cari nama atau wilayah..."
-                      className="w-full bg-slate-50/50 border border-slate-200 dark:border-slate-800 pl-10 pr-4 py-2 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-[#009966] transition-all"
+                      className="w-full bg-slate-50/50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 pl-10 pr-4 py-2 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-[#009966] transition-all"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />

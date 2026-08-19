@@ -7,6 +7,7 @@
 
 import { create } from "zustand";
 import api from "../utils/api";
+import { useThemeStore } from "./useThemeStore";
 
 export type UserRole =
   | "DEVELOPER"
@@ -340,6 +341,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
     } finally {
       clearAllStoredItems();
+      useThemeStore.getState().setInsideMainLayout(false);
+      useThemeStore.getState().resetThemeToLight();
       set({ user: null, isAuthenticated: false, error: null });
     }
   },

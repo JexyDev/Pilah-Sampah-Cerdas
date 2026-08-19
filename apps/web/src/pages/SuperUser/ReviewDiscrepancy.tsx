@@ -451,7 +451,7 @@ export const ReviewDiscrepancy: React.FC = () => {
                     className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-center justify-center">
-                    <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-gray-900 dark:text-slate-100 text-[10px] font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+                    <span className="opacity-0 group-hover:opacity-100 bg-white/90 dark:bg-slate-800/90 text-gray-900 dark:text-slate-100 text-[10px] font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 border border-slate-200/50 dark:border-slate-700">
                       <ImageIcon size={14} /> Lihat Foto Penuh
                     </span>
                   </div>

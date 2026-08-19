@@ -27,13 +27,13 @@ router.post(
 router.get(
   "/",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
   configController.getAll
 );
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
   configController.update
 );
 

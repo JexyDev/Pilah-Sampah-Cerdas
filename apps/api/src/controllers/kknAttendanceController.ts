@@ -165,6 +165,37 @@ export const kknAttendanceController = {
     }
   },
 
+  checkOutAttendance: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const studentId = req.user!.userId;
+      const { id: paramId } = req.params;
+      const { latitude, longitude, lat, lng, scheduleId: bodyScheduleId } = req.body;
+      const id = paramId || bodyScheduleId || req.body.id;
+
+      const finalLat =
+        latitude !== undefined ? parseFloat(latitude) : lat !== undefined ? parseFloat(lat) : undefined;
+      const finalLng =
+        longitude !== undefined ? parseFloat(longitude) : lng !== undefined ? parseFloat(lng) : undefined;
+
+      const result = await kknAttendanceService.checkOutAttendance({
+        studentId,
+        scheduleId: id,
+        latitude: finalLat,
+        longitude: finalLng,
+      });
+
+      res.status(200).json(result);
+    } catch (error: any) {
+      console.error("[KknAttendanceController] checkOutAttendance error:", error);
+      const isNotFound = error.message && error.message.includes("ATTENDANCE_NOT_FOUND");
+      res.status(isNotFound ? 404 : 500).json({
+        success: false,
+        error: isNotFound ? "NOT_FOUND" : "INTERNAL_SERVER_ERROR",
+        message: error.message || "Gagal melakukan check-out absensi kegiatan",
+      });
+    }
+  },
+
   getActiveStudentsLocations: async (req: Request, res: Response): Promise<void> => {
     try {
       const rawRole = (req as any).user?.role;

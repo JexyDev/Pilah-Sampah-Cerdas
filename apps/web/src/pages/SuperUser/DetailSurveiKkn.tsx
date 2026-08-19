@@ -573,7 +573,7 @@ export default function DetailSurveiKkn() {
           </button>
           
           {isLoadingDetail ? (
-            <div className="h-9 w-64 bg-slate-200 animate-pulse rounded-lg"></div>
+            <div className="h-9 w-64 bg-slate-200 dark:bg-slate-700 animate-pulse rounded-lg"></div>
           ) : (
             <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6 w-full">
               <div>
@@ -581,7 +581,7 @@ export default function DetailSurveiKkn() {
                   Detail Survei Kelurahan {selectedSurvey?.namaKelurahan}
                 </h1>
                 <div className="flex items-center gap-3 mt-3">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${completion.percentage === 100 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${completion.percentage === 100 ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'}`}>
                     {completion.percentage === 100 ? 'Lengkap' : 'Belum Lengkap'}
                   </span>
                 </div>
@@ -590,7 +590,7 @@ export default function DetailSurveiKkn() {
               <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                 <div className="bg-white dark:bg-slate-900 px-5 py-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs min-w-[280px]">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Kelengkapan Data</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Kelengkapan Data</span>
                     <span className="text-sm font-black text-slate-800 dark:text-slate-100">{completion.percentage}%</span>
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 mb-3">
@@ -602,9 +602,9 @@ export default function DetailSurveiKkn() {
                         {b.isComplete ? (
                           <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
                         ) : (
-                          <div className="w-3 h-3 rounded-full bg-slate-200 shrink-0 border border-slate-300 dark:border-slate-700" />
+                          <div className="w-3 h-3 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0 border border-slate-300 dark:border-slate-600" />
                         )}
-                        <span className={`text-[10px] font-bold ${b.isComplete ? 'text-slate-700' : 'text-slate-400'}`}>{b.key}</span>
+                        <span className={`text-[10px] font-bold ${b.isComplete ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400 dark:text-slate-500'}`}>{b.key}</span>
                       </div>
                     ))}
                   </div>

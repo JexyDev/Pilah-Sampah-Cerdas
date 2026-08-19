@@ -549,6 +549,13 @@ router.post(
   kknAttendanceController.recordAttendance
 );
 
+router.post(
+  ["/attendance/check-out", "/attendance/checkout"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.checkOutAttendance
+);
+
 /**
  * @swagger
  * /api/v1/kkn/history:

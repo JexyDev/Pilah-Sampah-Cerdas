@@ -343,12 +343,33 @@ export const dplController = {
   updateConfigTargets: async (req: Request, res: Response): Promise<void> => {
     try {
       const user = req.user as any;
-      const { targetTotalKegiatan, targetTotalJam, targetHarianJam, targetHarianKegiatan } = req.body;
+      const {
+        targetTotalKegiatan,
+        targetTotalJam,
+        targetHarianJam,
+        targetHarianKegiatan,
+        attendanceMinDurationHours,
+        attendanceMinDurationMinutes,
+        attendanceMinDurationSeconds,
+        hariKerja,
+        jamKerja,
+        targetPekan,
+        targetTotalHari,
+        catatanDpl,
+      } = req.body;
       const data = await dplService.updateConfigTargets({
         targetTotalKegiatan: targetTotalKegiatan !== undefined ? Number(targetTotalKegiatan) : undefined,
         targetTotalJam: targetTotalJam !== undefined ? Number(targetTotalJam) : undefined,
         targetHarianJam: targetHarianJam !== undefined ? Number(targetHarianJam) : undefined,
         targetHarianKegiatan: targetHarianKegiatan !== undefined ? Number(targetHarianKegiatan) : undefined,
+        attendanceMinDurationHours: attendanceMinDurationHours !== undefined ? Number(attendanceMinDurationHours) : undefined,
+        attendanceMinDurationMinutes: attendanceMinDurationMinutes !== undefined ? Number(attendanceMinDurationMinutes) : undefined,
+        attendanceMinDurationSeconds: attendanceMinDurationSeconds !== undefined ? Number(attendanceMinDurationSeconds) : undefined,
+        hariKerja: hariKerja !== undefined ? String(hariKerja) : undefined,
+        jamKerja: jamKerja !== undefined ? String(jamKerja) : undefined,
+        targetPekan: targetPekan !== undefined ? Number(targetPekan) : undefined,
+        targetTotalHari: targetTotalHari !== undefined ? Number(targetTotalHari) : undefined,
+        catatanDpl: catatanDpl !== undefined ? String(catatanDpl) : undefined,
         updatedBy: user?.name || user?.userId || "DPL",
       });
       res.json({ success: true, data });

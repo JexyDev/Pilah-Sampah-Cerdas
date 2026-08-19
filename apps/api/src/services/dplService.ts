@@ -1325,15 +1325,15 @@ export const dplService = {
 
     const configMap = new Map(configs.map((c) => [c.key, c.value]));
 
-    const minHours = Number(configMap.get("attendance_min_duration_hours") || 2);
-    const minMinutes = Number(configMap.get("attendance_min_duration_minutes") || 0);
-    const minSeconds = Number(configMap.get("attendance_min_duration_seconds") || 0);
-    const ruleMinDurationHours = Number((minHours + (minMinutes / 60) + (minSeconds / 3600)).toFixed(4));
+    const minHours = Number(configMap.get("attendance_min_duration_hours") ?? 2);
+    const minMinutes = Number(configMap.get("attendance_min_duration_minutes") ?? 0);
+    const minSeconds = Number(configMap.get("attendance_min_duration_seconds") ?? 0);
 
     const targetHarianRaw = Number(configMap.get("kkn_target_harian_jam"));
-    const targetHarian = ruleMinDurationHours > 0 ? ruleMinDurationHours : (!isNaN(targetHarianRaw) && targetHarianRaw > 0 ? targetHarianRaw : 2);
+    const targetHarian = !isNaN(targetHarianRaw) && targetHarianRaw > 0 ? targetHarianRaw : (minHours > 0 ? minHours : 2);
     const targetHariTotal = Number(configMap.get("kkn_target_total_hari") || 50);
-    const targetJamTotal = Number(configMap.get("kkn_target_total_jam") || (targetHariTotal * targetHarian));
+    const targetJamRaw = Number(configMap.get("kkn_target_total_jam"));
+    const targetJamTotal = !isNaN(targetJamRaw) && targetJamRaw > 0 ? targetJamRaw : Math.round(targetHariTotal * targetHarian);
 
     return {
       targetTotalKegiatan: Number(configMap.get("kkn_target_total_kegiatan") || 2000),
@@ -1344,7 +1344,7 @@ export const dplService = {
       attendanceMinDurationMinutes: minMinutes,
       attendanceMinDurationSeconds: minSeconds,
       hariKerja: configMap.get("kkn_hari_kerja") || "Senin – Jumat",
-      jamKerja: configMap.get("kkn_jam_kerja") || "08.00 – 16.00",
+      jamKerja: configMap.get("kkn_jam_kerja") || "08:00 – 16:00 WIB",
       targetPekan: Number(configMap.get("kkn_target_pekan") || 10),
       targetTotalHari: targetHariTotal,
       catatanDpl: configMap.get("kkn_catatan_dpl") || `Pastikan mahasiswa hadir minimal ${minHours > 0 ? `${minHours} jam ` : ''}${minMinutes > 0 ? `${minMinutes} menit ` : ''}per hari di lokasi kegiatan. Verifikasi lokasi melalui GPS dan unduh berita acara sebagai bukti validasi.`,
@@ -1356,6 +1356,9 @@ export const dplService = {
     targetTotalJam?: number;
     targetHarianJam?: number;
     targetHarianKegiatan?: number;
+    attendanceMinDurationHours?: number;
+    attendanceMinDurationMinutes?: number;
+    attendanceMinDurationSeconds?: number;
     hariKerja?: string;
     jamKerja?: string;
     targetPekan?: number;
@@ -1376,7 +1379,7 @@ export const dplService = {
       updates.push({
         key: "kkn_target_total_jam",
         value: String(data.targetTotalJam),
-        desc: "Target total jam kegiatan mahasiswa KKN",
+        desc: "Target minimal jam kumulatif kegiatan mahasiswa KKN",
         tipe: "NUMBER",
       });
     }
@@ -1393,6 +1396,30 @@ export const dplService = {
         key: "kkn_target_harian_kegiatan",
         value: String(data.targetHarianKegiatan),
         desc: "Target minimum kegiatan per hari mahasiswa KKN",
+        tipe: "NUMBER",
+      });
+    }
+    if (data.attendanceMinDurationHours !== undefined) {
+      updates.push({
+        key: "attendance_min_duration_hours",
+        value: String(data.attendanceMinDurationHours),
+        desc: "Durasi minimal presensi KKN (Jam)",
+        tipe: "NUMBER",
+      });
+    }
+    if (data.attendanceMinDurationMinutes !== undefined) {
+      updates.push({
+        key: "attendance_min_duration_minutes",
+        value: String(data.attendanceMinDurationMinutes),
+        desc: "Durasi minimal presensi KKN (Menit)",
+        tipe: "NUMBER",
+      });
+    }
+    if (data.attendanceMinDurationSeconds !== undefined) {
+      updates.push({
+        key: "attendance_min_duration_seconds",
+        value: String(data.attendanceMinDurationSeconds),
+        desc: "Durasi minimal presensi KKN (Detik)",
         tipe: "NUMBER",
       });
     }

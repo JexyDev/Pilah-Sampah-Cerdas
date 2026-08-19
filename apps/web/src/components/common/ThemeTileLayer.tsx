@@ -42,6 +42,8 @@ export const ThemeTileLayer: React.FC<ThemeTileLayerProps> = ({
       key={isDark ? "dark-tile" : "light-tile"}
       url={activeUrl}
       attribution={activeAttribution}
+      maxZoom={20}
+      maxNativeZoom={19}
       {...props}
     />
   );

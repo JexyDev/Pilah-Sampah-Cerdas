@@ -1361,7 +1361,7 @@ const ManajemenTempatSampah: React.FC = () => {
                                     </div>
                                   </div>
                                 ) : (
-                                  <div className="p-2 rounded-lg bg-slate-50 text-slate-400 text-xs italic">
+                                  <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 text-xs italic border border-slate-100 dark:border-slate-800">
                                     Tempat Sampah Organik belum terhubung
                                   </div>
                                 )}
@@ -1388,7 +1388,7 @@ const ManajemenTempatSampah: React.FC = () => {
                                     </div>
                                   </div>
                                 ) : (
-                                  <div className="p-2 rounded-lg bg-slate-50 text-slate-400 text-xs italic">
+                                  <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 text-xs italic border border-slate-100 dark:border-slate-800">
                                     Tempat Sampah Anorganik belum terhubung
                                   </div>
                                 )}

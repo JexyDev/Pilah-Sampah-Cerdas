@@ -801,13 +801,13 @@ const JadwalKegiatan: React.FC = () => {
                   <div
                     key={i}
                     onClick={() => setSelectedDate(day.date)}
-                    className={`bg-white p-2 hover:bg-emerald-50/30 transition-all cursor-pointer group flex flex-col justify-between min-h-[90px] border border-transparent rounded-lg ${
+                    className={`bg-white dark:bg-slate-900 p-2 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/30 transition-all cursor-pointer group flex flex-col justify-between min-h-[90px] border border-transparent rounded-lg ${
                       !day.isCurrentMonth ? "opacity-40" : ""
                     } ${
                       isSelected
-                        ? "ring-2 ring-emerald-500 bg-emerald-50/60 font-bold shadow-sm z-10"
+                        ? "ring-2 ring-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/60 font-bold shadow-sm z-10"
                         : isToday
-                        ? "bg-blue-50/40 border-blue-400 font-bold relative"
+                        ? "bg-blue-50/40 dark:bg-blue-950/40 border-blue-400 dark:border-blue-700 font-bold relative"
                         : ""
                     }`}
                   >
@@ -823,10 +823,10 @@ const JadwalKegiatan: React.FC = () => {
                         <span
                           className={`text-right text-[12px] font-bold ${
                             isToday
-                              ? "text-blue-700 font-black"
+                              ? "text-blue-700 dark:text-blue-300 font-black"
                               : i % 7 >= 5
-                              ? "text-red-500"
-                              : "text-slate-800"
+                              ? "text-red-500 dark:text-red-400"
+                              : "text-slate-800 dark:text-slate-200"
                           }`}
                         >
                           {day.day}
@@ -836,15 +836,15 @@ const JadwalKegiatan: React.FC = () => {
                       {/* Clean Aggregated Activity Pills */}
                       <div className="flex flex-col gap-1">
                         {visibleSchedules.map((s, idx) => {
-                          let colorCls = "bg-blue-50 border-blue-200 text-blue-800";
+                          let colorCls = "bg-blue-50 dark:bg-sky-950/60 border-blue-200 dark:border-sky-800 text-blue-800 dark:text-sky-300";
                           const titleLower = s.title.toLowerCase();
                           const catLower = s.category.toLowerCase();
                           if (catLower.includes("pengangkutan") || titleLower.includes("pengangkutan"))
-                            colorCls = "bg-emerald-50 border-emerald-200 text-emerald-800";
+                            colorCls = "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300";
                           else if (catLower.includes("sosialisasi") || titleLower.includes("sosialisasi"))
-                            colorCls = "bg-amber-50 border-amber-200 text-amber-800";
+                            colorCls = "bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300";
                           else if (catLower.includes("rapat") || titleLower.includes("rapat"))
-                            colorCls = "bg-purple-50 border-purple-200 text-purple-800";
+                            colorCls = "bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-800 text-purple-800 dark:text-purple-300";
 
                           return (
                             <div
@@ -854,7 +854,7 @@ const JadwalKegiatan: React.FC = () => {
                             >
                               <span className="truncate">{s.title}</span>
                               {s.count > 1 && (
-                                <span className="bg-white/80 px-1 py-0.2 rounded text-[9px] font-extrabold shrink-0">
+                                <span className="bg-white/80 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-1 py-0.2 rounded text-[9px] font-extrabold shrink-0">
                                   {s.count}x
                                 </span>
                               )}
@@ -863,7 +863,7 @@ const JadwalKegiatan: React.FC = () => {
                         })}
 
                         {hiddenCount > 0 && (
-                          <div className="text-[9px] font-extrabold text-emerald-800 bg-emerald-100/80 px-1.5 py-0.5 rounded-md text-center truncate">
+                          <div className="text-[9px] font-extrabold text-emerald-800 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-950/80 px-1.5 py-0.5 rounded-md text-center truncate">
                             +{hiddenCount} kegiatan lagi
                           </div>
                         )}
@@ -999,11 +999,11 @@ const JadwalKegiatan: React.FC = () => {
                         return (
                           <div
                             key={groupKey}
-                            className={`border border-slate-200/80 rounded-xl bg-white hover:border-slate-300 transition-all overflow-hidden border-l-4 ${catTheme.border}`}
+                            className={`border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 transition-all overflow-hidden border-l-4 ${catTheme.border}`}
                           >
                             <div
                               onClick={() => count > 1 && toggleGroupExpand(groupKey)}
-                              className={`p-3 flex flex-col gap-2 ${count > 1 ? "cursor-pointer hover:bg-slate-50/60" : ""}`}
+                              className={`p-3 flex flex-col gap-2 ${count > 1 ? "cursor-pointer hover:bg-slate-50/60 dark:hover:bg-slate-800/60" : ""}`}
                             >
                               <div className="flex justify-between items-center">
                                 <span className={`text-[10px] px-2 py-0.5 rounded border uppercase tracking-wider font-extrabold ${catTheme.badge}`}>
@@ -1128,17 +1128,17 @@ const JadwalKegiatan: React.FC = () => {
 
                           <div className="p-3 border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 hover:border-emerald-400 hover:shadow-sm transition-all relative">
                             {canManageSchedules && (
-                              <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 p-0.5 rounded-md shadow-2xs">
+                              <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-slate-800/90 p-0.5 rounded-md shadow-2xs border border-slate-200/80 dark:border-slate-700">
                                 <button
                                   onClick={(e) => handleEdit(schedule, e)}
-                                  className="p-1 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded"
+                                  className="p-1 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 rounded"
                                   title="Edit"
                                 >
                                   <Pencil size={13} />
                                 </button>
                                 <button
                                   onClick={(e) => handleDelete(schedule.id, e)}
-                                  className="p-1 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded"
+                                  className="p-1 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-rose-950/60 rounded"
                                   title="Hapus"
                                 >
                                   <Trash2 size={13} />

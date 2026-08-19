@@ -189,10 +189,39 @@ export const websocketService = {
   /**
    * Broadcast student location update to connected monitoring clients
    */
-  broadcastStudentLocation: (locationData: any) => {
+  broadcastStudentLocation: async (locationData: any) => {
+    let payload = locationData;
+    if (locationData.studentId && !locationData.student) {
+      try {
+        const studentUser = await prisma.user.findUnique({
+          where: { id: locationData.studentId },
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            studentProfile: {
+              select: {
+                nim: true,
+                jurusan: true,
+                kelompokId: true,
+              },
+            },
+          },
+        });
+        if (studentUser) {
+          payload = {
+            ...locationData,
+            student: studentUser,
+          };
+        }
+      } catch (_e) {
+        // Fallback to raw location data
+      }
+    }
+
     const message = JSON.stringify({
       type: "STUDENT_LOCATION_UPDATE",
-      data: locationData,
+      data: payload,
     });
 
     allSockets.forEach((ws) => {
@@ -201,6 +230,72 @@ export const websocketService = {
           ws.send(message);
         } catch (err) {
           console.error("[WebSocketService] broadcastStudentLocation send error:", err);
+        }
+      }
+    });
+  },
+
+  /**
+   * Broadcast student logout event to immediately remove marker on monitoring map
+   */
+  broadcastStudentLogout: (studentId: string) => {
+    const message = JSON.stringify({
+      type: "STUDENT_LOGOUT",
+      data: {
+        studentId,
+        loggedOutAt: new Date().toISOString(),
+      },
+    });
+
+    allSockets.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(message);
+        } catch (err) {
+          console.error("[WebSocketService] broadcastStudentLogout send error:", err);
+        }
+      }
+    });
+  },
+
+  /**
+   * Broadcast removal of a student GPS location pin
+   */
+  broadcastStudentLocationRemoved: (studentId: string) => {
+    const message = JSON.stringify({
+      type: "STUDENT_LOCATION_REMOVED",
+      data: {
+        studentId,
+        removedAt: new Date().toISOString(),
+      },
+    });
+
+    allSockets.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(message);
+        } catch (err) {
+          console.error("[WebSocketService] broadcastStudentLocationRemoved send error:", err);
+        }
+      }
+    });
+  },
+
+  /**
+   * Broadcast student check-out / session completion event
+   */
+  broadcastStudentCheckout: (checkoutData: any) => {
+    const message = JSON.stringify({
+      type: "STUDENT_CHECKOUT",
+      data: checkoutData,
+    });
+
+    allSockets.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(message);
+        } catch (err) {
+          console.error("[WebSocketService] broadcastStudentCheckout send error:", err);
         }
       }
     });

@@ -11,6 +11,7 @@ import { authRepository } from "../repositories/authRepository.js";
 import { comparePassword, hashPassword } from "../utils/hashUtils.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwtUtils.js";
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
+import { websocketService } from "./websocketService.js";
 import crypto from "crypto";
 
 
@@ -189,9 +190,29 @@ export class AuthService {
         select: { userId: true },
       });
       if (record?.userId) {
+        const userId = record.userId;
         await prisma.studentLocation.deleteMany({
-          where: { studentId: record.userId },
+          where: { studentId: userId },
         });
+
+        // Auto check-out any unclosed attendance session today
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        await prisma.activityAttendance.updateMany({
+          where: {
+            studentId: userId,
+            attendedAt: { gte: startOfDay },
+            checkOutAt: null,
+          },
+          data: {
+            checkOutAt: new Date(),
+            status: "SELESAI",
+          },
+        }).catch(() => {});
+
+        // Broadcast removal via WebSocket
+        websocketService.broadcastStudentLogout(userId);
+        websocketService.broadcastStudentLocationRemoved(userId);
       }
       await authRepository.deleteRefreshToken(token);
     }
@@ -201,6 +222,26 @@ export class AuthService {
     await prisma.studentLocation.deleteMany({
       where: { studentId: userId },
     });
+
+    // Auto check-out any unclosed attendance session today
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    await prisma.activityAttendance.updateMany({
+      where: {
+        studentId: userId,
+        attendedAt: { gte: startOfDay },
+        checkOutAt: null,
+      },
+      data: {
+        checkOutAt: new Date(),
+        status: "SELESAI",
+      },
+    }).catch(() => {});
+
+    // Broadcast removal via WebSocket
+    websocketService.broadcastStudentLogout(userId);
+    websocketService.broadcastStudentLocationRemoved(userId);
+
     await prisma.refreshToken.deleteMany({
       where: { userId },
     });

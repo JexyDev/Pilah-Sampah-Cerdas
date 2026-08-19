@@ -84,13 +84,16 @@ router.post(
   authMiddleware,
   roleMiddleware([
     "SUPER_USER",
+    "DEVELOPER",
     "ADMIN_DLH",
     "LURAH",
     "RW",
     "PETUGAS_RESIDU",
     "DPL",
+    "DOSEN_PEMBIMBING",
     "PANITIA_TASKFORCE",
     "PEMIMPIN",
+    "MAHASISWA_KKN",
   ]),
   scheduleController.createSchedule
 );
@@ -116,7 +119,7 @@ router.post(
 router.delete(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN", "MAHASISWA_KKN"]),
   scheduleController.deleteSchedule
 );
 
@@ -169,13 +172,16 @@ router.put(
   authMiddleware,
   roleMiddleware([
     "SUPER_USER",
+    "DEVELOPER",
     "ADMIN_DLH",
     "LURAH",
     "RW",
     "PETUGAS_RESIDU",
     "DPL",
+    "DOSEN_PEMBIMBING",
     "PANITIA_TASKFORCE",
     "PEMIMPIN",
+    "MAHASISWA_KKN",
   ]),
   scheduleController.updateSchedule
 );

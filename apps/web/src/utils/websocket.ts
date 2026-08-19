@@ -7,11 +7,17 @@
  */
 
 type DepositCallback = (deposit: any) => void;
+type StudentLocationCallback = (locationData: any) => void;
+type StudentLogoutCallback = (data: { studentId: string; loggedOutAt?: string; removedAt?: string }) => void;
+type StudentCheckoutCallback = (checkoutData: any) => void;
 type StatusCallback = (status: "CONNECTED" | "CONNECTING" | "DISCONNECTED") => void;
 
 class TrashcareWebSocketClient {
   private socket: WebSocket | null = null;
   private depositListeners: Set<DepositCallback> = new Set();
+  private studentLocationListeners: Set<StudentLocationCallback> = new Set();
+  private studentLogoutListeners: Set<StudentLogoutCallback> = new Set();
+  private studentCheckoutListeners: Set<StudentCheckoutCallback> = new Set();
   private statusListeners: Set<StatusCallback> = new Set();
   private reconnectTimeout: any = null;
   private status: "CONNECTED" | "CONNECTING" | "DISCONNECTED" = "DISCONNECTED";
@@ -60,7 +66,31 @@ class TrashcareWebSocketClient {
               try {
                 listener(msg.data);
               } catch (err) {
-                console.error("[WS] listener error:", err);
+                console.error("[WS] deposit listener error:", err);
+              }
+            });
+          } else if (msg.type === "STUDENT_LOCATION_UPDATE" && msg.data) {
+            this.studentLocationListeners.forEach((listener) => {
+              try {
+                listener(msg.data);
+              } catch (err) {
+                console.error("[WS] studentLocation listener error:", err);
+              }
+            });
+          } else if ((msg.type === "STUDENT_LOGOUT" || msg.type === "STUDENT_LOCATION_REMOVED") && msg.data) {
+            this.studentLogoutListeners.forEach((listener) => {
+              try {
+                listener(msg.data);
+              } catch (err) {
+                console.error("[WS] studentLogout listener error:", err);
+              }
+            });
+          } else if (msg.type === "STUDENT_CHECKOUT" && msg.data) {
+            this.studentCheckoutListeners.forEach((listener) => {
+              try {
+                listener(msg.data);
+              } catch (err) {
+                console.error("[WS] studentCheckout listener error:", err);
               }
             });
           }
@@ -107,6 +137,30 @@ class TrashcareWebSocketClient {
     this.connect();
     return () => {
       this.depositListeners.delete(callback);
+    };
+  }
+
+  public onStudentLocation(callback: StudentLocationCallback): () => void {
+    this.studentLocationListeners.add(callback);
+    this.connect();
+    return () => {
+      this.studentLocationListeners.delete(callback);
+    };
+  }
+
+  public onStudentLogout(callback: StudentLogoutCallback): () => void {
+    this.studentLogoutListeners.add(callback);
+    this.connect();
+    return () => {
+      this.studentLogoutListeners.delete(callback);
+    };
+  }
+
+  public onStudentCheckout(callback: StudentCheckoutCallback): () => void {
+    this.studentCheckoutListeners.add(callback);
+    this.connect();
+    return () => {
+      this.studentCheckoutListeners.delete(callback);
     };
   }
 

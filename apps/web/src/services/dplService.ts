@@ -363,8 +363,8 @@ export const dplService = {
     };
   },
 
-  updateConfigTargets: async (data: Partial<ConfigTargets>) => {
+  updateConfigTargets: async (data: Partial<ConfigTargets>): Promise<ConfigTargets> => {
     const res = await api.put("/dpl/config-targets", data);
-    return res.data;
+    return res.data?.data || res.data;
   },
 };

@@ -740,10 +740,10 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                   return (
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs font-black">
-                        <span className="text-emerald-700">🌱 Organik: {org}%</span>
-                        <span className="text-amber-700">📦 Anorganik: {inorg}%</span>
+                        <span className="text-emerald-700 dark:text-emerald-400">🌱 Organik: {org}%</span>
+                        <span className="text-amber-700 dark:text-amber-400">📦 Anorganik: {inorg}%</span>
                       </div>
-                      <div className="w-full h-3 rounded-full bg-slate-200 flex overflow-hidden border border-slate-300/60">
+                      <div className="w-full h-3 rounded-full bg-slate-200 dark:bg-slate-700 flex overflow-hidden border border-slate-300/60 dark:border-slate-600">
                         <div className="bg-emerald-500 h-full transition-all duration-300" style={{ width: `${org}%` }} />
                         <div className="bg-amber-500 h-full transition-all duration-300" style={{ width: `${inorg}%` }} />
                       </div>

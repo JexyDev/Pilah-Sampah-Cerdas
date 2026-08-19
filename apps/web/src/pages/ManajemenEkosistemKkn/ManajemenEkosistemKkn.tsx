@@ -1195,7 +1195,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     <span className="text-sm text-slate-700 dark:text-slate-300 italic">-- Tanpa Ketua / Lepas Ketua --</span>
                   </div>
                   {!selectedLeaderKelompok?.students?.some((s: any) => s.isKetua) && (
-                    <span className="text-[10px] font-extrabold bg-slate-200 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md uppercase">
+                    <span className="text-[10px] font-extrabold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md uppercase">
                       Saat Ini Tanpa Ketua
                     </span>
                   )}
