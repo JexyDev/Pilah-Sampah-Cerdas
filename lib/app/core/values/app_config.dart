@@ -1,5 +1,3 @@
-
-
 /// Konfigurasi aplikasi terpusat.
 /// Seluruh konstanta environment dan konfigurasi global didefinisikan di sini.
 class AppConfig {
@@ -11,7 +9,7 @@ class AppConfig {
   //   flutter build apk --dart-define=API_BASE_URL=http://157.10.252.252:3000
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://trashcare.id',
+    defaultValue: 'https://berseka.id',
   );
 
   /// Alamat cadangan (akses langsung via IP) bila domain belum ter-resolve

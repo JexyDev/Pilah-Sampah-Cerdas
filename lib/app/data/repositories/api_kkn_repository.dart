@@ -216,6 +216,8 @@ class ApiKknRepository implements KknRepository {
         'latitude': latitude,
         'longitude': longitude,
         'method': method,
+        'scheduleId': scheduleId,
+        if (durationMinutes != null) 'durationMinutes': durationMinutes,
         if (nim != null && nim.isNotEmpty) 'nim': nim,
         if (namaMahasiswa != null && namaMahasiswa.isNotEmpty) 'namaMahasiswa': namaMahasiswa,
         if (kodeZona != null && kodeZona.isNotEmpty) 'kodeZona': kodeZona,
@@ -515,6 +517,96 @@ class ApiKknRepository implements KknRepository {
       throw Exception('Gagal mengirim handover KKN (${response.statusCode})');
     } catch (e) {
       throw Exception('Gagal mengirim handover KKN: $e');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // GPS Presensi Berbasis Kegiatan
+  // ═══════════════════════════════════════════════════════════════
+
+  @override
+  Future<List<Map<String, dynamic>>> getKegiatanAktif() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.kknKegiatanAktif);
+      if (response.statusCode == 200) {
+        final data = response.data['data'];
+        if (data is List) {
+          return data.cast<Map<String, dynamic>>();
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('[KKN] getKegiatanAktif error: $e');
+      return [];
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> mulaiKegiatan(String id, double latitude, double longitude, {String? deviceInfo}) async {
+    try {
+      final response = await apiClient.dio.post(
+        ApiEndpoints.kknMulaiKegiatan(id),
+        data: {
+          'latitude': latitude,
+          'longitude': longitude,
+          if (deviceInfo != null) 'deviceInfo': deviceInfo,
+        },
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data['data'] as Map<String, dynamic>? ?? response.data as Map<String, dynamic>;
+      }
+      throw Exception('Gagal memulai kegiatan');
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      final msg = e.response?.data?['message']?.toString() ?? e.response?.data?['error']?.toString();
+      if (statusCode == 409) {
+        throw Exception('CONFLICT:${msg ?? 'Anda masih memiliki kegiatan aktif lain'}');
+      }
+      throw Exception(msg ?? 'Gagal memulai kegiatan ($statusCode)');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> selesaiKegiatan(String id, {required String sessionId, required int totalDurasiDalamZonaMenit, required String alasan}) async {
+    try {
+      final response = await apiClient.dio.post(
+        ApiEndpoints.kknSelesaiKegiatan(id),
+        data: {
+          'sessionId': sessionId,
+          'totalDurasiDalamZonaMenit': totalDurasiDalamZonaMenit,
+          'alasan': alasan,
+        },
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data as Map<String, dynamic>? ?? {'success': true};
+      }
+      throw Exception('Gagal mengakhiri kegiatan');
+    } catch (e) {
+      if (e is DioException) {
+        final msg = e.response?.data?['message']?.toString();
+        throw Exception(msg ?? 'Gagal mengakhiri kegiatan');
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> recordOutOfZoneViolation({required String scheduleId, required double outOfZoneMinutes}) async {
+    try {
+      final response = await apiClient.dio.post(
+        ApiEndpoints.kknOutOfZoneViolation,
+        data: {
+          'scheduleId': scheduleId,
+          'outOfZoneMinutes': outOfZoneMinutes,
+        },
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data['data'] as Map<String, dynamic>? ?? response.data as Map<String, dynamic>;
+      }
+      return {};
+    } catch (e) {
+      debugPrint('[KKN] recordOutOfZoneViolation error: $e');
+      return {};
     }
   }
 }

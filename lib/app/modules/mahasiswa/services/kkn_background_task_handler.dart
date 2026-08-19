@@ -50,6 +50,7 @@ class KknBgMessageType {
   static const durationUpdate = 'DURATION_UPDATE';
   static const geofenceStatus = 'GEOFENCE_STATUS';
   static const autoStop = 'AUTO_STOP';
+  static const outOfZoneViolation = 'OUT_OF_ZONE_VIOLATION';
   static const error = 'ERROR';
 }
 
@@ -95,6 +96,10 @@ class KknBackgroundTaskHandler extends TaskHandler {
   
   // Ignore counter for now, used for future notification throttling
   int _notifUpdateCounter = 0; // ignore: unused_field
+  
+  // Out-of-zone violation tracking
+  int _outOfZoneSeconds = 0;
+  bool _outOfZoneViolationSent = false;
 
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
@@ -298,6 +303,9 @@ class KknBackgroundTaskHandler extends TaskHandler {
           'message': 'Anda memasuki zona KKN',
         });
       }
+      // Reset out-of-zone counter saat kembali ke zona
+      _outOfZoneSeconds = 0;
+      _outOfZoneViolationSent = false;
     } else {
       // Keluar zona — freeze durasi
       if (_zoneEntryTime != null) {
@@ -312,6 +320,17 @@ class KknBackgroundTaskHandler extends TaskHandler {
           'type': KknBgMessageType.geofenceStatus,
           'status': 'EXITED',
           'message': 'Anda keluar dari zona KKN. Waktu dihentikan sementara.',
+        });
+      }
+      
+      // Out-of-zone violation tracking (per 30 detik cycle)
+      _outOfZoneSeconds += 30;
+      if (_outOfZoneSeconds >= 300 && !_outOfZoneViolationSent) {
+        _outOfZoneViolationSent = true;
+        _sendToUI({
+          'type': KknBgMessageType.outOfZoneViolation,
+          'outOfZoneSeconds': _outOfZoneSeconds,
+          'message': 'Keluar zona melebihi 5 menit. Poin akan dikurangi.',
         });
       }
       

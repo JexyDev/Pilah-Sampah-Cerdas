@@ -31,18 +31,28 @@ class KelolaBinView extends ConsumerWidget {
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.maybePop(context),
         ),
       ),
       backgroundColor: AppColors.backgroundCanvas,
-      body: binsAsync.when(skipLoadingOnReload: true, data: (bins) {
+      body: binsAsync.when(
+        skipLoadingOnReload: true,
+        data: (bins) {
           if (bins.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Image.asset('assets/icons/recycle-bin.png', color: AppColors.textHint, width: 64, height: 64),
+                  Image.asset(
+                    'assets/icons/recycle-bin.png',
+                    color: AppColors.textHint,
+                    width: 64,
+                    height: 64,
+                  ),
                   SizedBox(height: 16),
                   Text(
                     'Belum ada tempat sampah terdaftar.',
@@ -71,7 +81,8 @@ class KelolaBinView extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: ElevatedButton(
-            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas),
+            onPressed: () =>
+                Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryGreen,
               foregroundColor: Colors.white,
@@ -100,7 +111,9 @@ class _BinCardLarge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isOrganic = bin.binType == WasteType.organic;
-    final color = isOrganic ? AppColors.organicColor : AppColors.nonOrganicColor;
+    final color = isOrganic
+        ? AppColors.organicColor
+        : AppColors.nonOrganicColor;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -111,14 +124,21 @@ class _BinCardLarge extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Image.asset('assets/icons/recycle-bin.png', color: color, width: 40, height: 40),
+          Image.asset(
+            'assets/icons/recycle-bin.png',
+            color: color,
+            width: 40,
+            height: 40,
+          ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isOrganic ? 'Tempat Sampah Organik' : 'Tempat Sampah Anorganik',
+                  isOrganic
+                      ? 'Tempat Sampah Organik'
+                      : 'Tempat Sampah Anorganik',
                   style: TextStyle(
                     color: color,
                     fontWeight: FontWeight.w700,
@@ -167,9 +187,17 @@ class _BinCardLarge extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      bin.backendStatus.isNotEmpty ? bin.backendStatus.replaceAll('_', ' ').toUpperCase() : (bin.isActive ? 'AKTIF' : 'NON-AKTIF'),
+                      bin.backendStatus.isNotEmpty
+                          ? bin.backendStatus.replaceAll('_', ' ').toUpperCase()
+                          : (bin.isActive ? 'AKTIF' : 'NON-AKTIF'),
                       style: TextStyle(
-                        color: (bin.backendStatus.toUpperCase() == 'ACTIVE_BOUND' || bin.backendStatus.toUpperCase() == 'AKTIF' || (bin.backendStatus.isEmpty && bin.isActive)) ? AppColors.primaryGreen : AppColors.dangerRed,
+                        color:
+                            (bin.backendStatus.toUpperCase() ==
+                                    'ACTIVE_BOUND' ||
+                                bin.backendStatus.toUpperCase() == 'AKTIF' ||
+                                (bin.backendStatus.isEmpty && bin.isActive))
+                            ? AppColors.primaryGreen
+                            : AppColors.dangerRed,
                         fontWeight: FontWeight.w700,
                         fontSize: 12,
                       ),
