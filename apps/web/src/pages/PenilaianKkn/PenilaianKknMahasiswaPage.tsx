@@ -4,9 +4,13 @@
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
  * Halaman Penilaian Individu Mahasiswa KKN (Role DPL)
- * Sesuai Acuan Desain Mockup Resmi (Two-Column Split Master-Detail Layout):
- * - Kolom Kiri: Tabel Mahasiswa Bimbingan dengan Filter 3-arah, highlight baris aktif, dan tombol aksi dinamis
- * - Kolom Kanan: Form Penilaian 6 Aspek Akademik DPL (Bobot 20%, 20%, 20%, 15%, 15%, 10%), live score calculation, & feedback
+ * Menggunakan Layout Master-Detail dengan Sistem Penilaian Cepat (Hybrid Opsi A + Opsi B):
+ * - Kolom Kiri: Tabel Mahasiswa Bimbingan dengan Filter Kelompok & Status, Search, dan Paginasi
+ * - Kolom Kanan: Form Penilaian 6 Aspek Akademik DPL dengan:
+ *   1. Master Fill Template (Semua A, Semua B+, Semua B, Reset)
+ *   2. Quick Grade Chips per Aspek ([A], [B+], [B], [C], [D])
+ *   3. Input Angka Presisi & Kalkulasi Skor Real-Time
+ *   4. Catatan DPL dengan Template Feedback Cepat
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
@@ -17,6 +21,10 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  Sparkles,
+  RotateCcw,
+  Save,
+  MessageSquare,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -48,6 +56,34 @@ interface StudentItem {
   catatanDpl: string;
 }
 
+// 6 Aspek Standar Akademik DPL & Bobot
+const ASPEK_CONFIG = [
+  { key: "skorDplPerencanaan", no: 1, title: "Perencanaan & Pemahaman Program", bobot: 20 },
+  { key: "skorDplKontribusi", no: 2, title: "Kontribusi Individu", bobot: 20 },
+  { key: "skorDplLogbook", no: 3, title: "Logbook & Dokumentasi Akademik", bobot: 20 },
+  { key: "skorDplAnalisis", no: 4, title: "Analisis Masalah & Solusi", bobot: 15 },
+  { key: "skorDplOutput", no: 5, title: "Output, Outcome, & Dampak", bobot: 15 },
+  { key: "skorDplLaporanAkhir", no: 6, title: "Laporan Akhir, Evaluasi & Refleksi", bobot: 10 },
+] as const;
+
+type AspekKey = (typeof ASPEK_CONFIG)[number]["key"];
+
+// Quick-grade presets per aspect (Opsi A)
+const GRADE_PRESETS = [
+  { label: "A", value: 90, desc: "Sangat Baik (90)" },
+  { label: "B+", value: 80, desc: "Baik Sekali (80)" },
+  { label: "B", value: 75, desc: "Baik (75)" },
+  { label: "C", value: 65, desc: "Cukup (65)" },
+] as const;
+
+// Quick feedback notes templates
+const QUICK_FEEDBACK_OPTIONS = [
+  "Kinerja sangat aktif, berinisiatif tinggi, dan kepemimpinan solid di lapangan.",
+  "Logbook dan dokumentasi kegiatan tersusun sangat rapi dan konsisten.",
+  "Analisis masalah lapangan tajam dengan eksekusi solusi pemilahan sampah yang berdampak.",
+  "Partisipasi aktif dalam kelompok, perlu sedikit peningkatan ketepatan waktu unggah bukti.",
+];
+
 export const PenilaianKknMahasiswaPage: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const displayName = user?.name || "Dr. Agus Mulyana, M.T.";
@@ -67,14 +103,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   const itemsPerPage = 5;
 
   // Form State (6 Aspek DPL: 0-100)
-  const [formScores, setFormScores] = useState<{
-    skorDplPerencanaan: number | string;
-    skorDplKontribusi: number | string;
-    skorDplLogbook: number | string;
-    skorDplAnalisis: number | string;
-    skorDplOutput: number | string;
-    skorDplLaporanAkhir: number | string;
-  }>({
+  const [formScores, setFormScores] = useState<Record<AspekKey, number | string>>({
     skorDplPerencanaan: "",
     skorDplKontribusi: "",
     skorDplLogbook: "",
@@ -164,27 +193,22 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     return Number(((safe * weight) / 100).toFixed(1));
   };
 
-  // Calculated Individual Scores
-  const skor1 = calcScore(formScores.skorDplPerencanaan, 20);
-  const skor2 = calcScore(formScores.skorDplKontribusi, 20);
-  const skor3 = calcScore(formScores.skorDplLogbook, 20);
-  const skor4 = calcScore(formScores.skorDplAnalisis, 15);
-  const skor5 = calcScore(formScores.skorDplOutput, 15);
-  const skor6 = calcScore(formScores.skorDplLaporanAkhir, 10);
-
   // Nilai Akhir DPL (Sum of 6 calculated aspect scores)
   const calculatedFinalScore = useMemo(() => {
-    const rawSum = skor1 + skor2 + skor3 + skor4 + skor5 + skor6;
-    return Number(rawSum.toFixed(1));
-  }, [skor1, skor2, skor3, skor4, skor5, skor6]);
+    let total = 0;
+    ASPEK_CONFIG.forEach((aspek) => {
+      total += calcScore(formScores[aspek.key], aspek.bobot);
+    });
+    return Number(total.toFixed(1));
+  }, [formScores]);
 
   // Predikat Nilai
   const calculatedPredicate = useMemo(() => {
-    if (calculatedFinalScore >= 85) return "Sangat Baik";
-    if (calculatedFinalScore >= 75) return "Baik";
-    if (calculatedFinalScore >= 65) return "Cukup";
-    if (calculatedFinalScore >= 55) return "Kurang";
-    if (calculatedFinalScore > 0) return "Sangat Kurang";
+    if (calculatedFinalScore >= 85) return "Sangat Baik (A)";
+    if (calculatedFinalScore >= 75) return "Baik (B)";
+    if (calculatedFinalScore >= 65) return "Cukup (C)";
+    if (calculatedFinalScore >= 55) return "Kurang (D)";
+    if (calculatedFinalScore > 0) return "Sangat Kurang (E)";
     return "-";
   }, [calculatedFinalScore]);
 
@@ -228,10 +252,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     return filteredStudents.slice(startIndex, endIndex);
   }, [filteredStudents, startIndex, endIndex]);
 
-  const handleScoreInputChange = (
-    field: keyof typeof formScores,
-    val: string
-  ) => {
+  // Handler: Set single aspect score
+  const handleSetAspectScore = (field: AspekKey, val: number | string) => {
     if (val === "") {
       setFormScores((prev) => ({ ...prev, [field]: "" }));
       return;
@@ -240,6 +262,19 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     if (isNaN(num)) return;
     const clamped = Math.max(0, Math.min(100, num));
     setFormScores((prev) => ({ ...prev, [field]: clamped }));
+  };
+
+  // Handler: Global Master Fill (Opsi B)
+  const handleGlobalFill = (scoreValue: number) => {
+    setFormScores({
+      skorDplPerencanaan: scoreValue,
+      skorDplKontribusi: scoreValue,
+      skorDplLogbook: scoreValue,
+      skorDplAnalisis: scoreValue,
+      skorDplOutput: scoreValue,
+      skorDplLaporanAkhir: scoreValue,
+    });
+    toast.success(`Seluruh aspek diisi nilai ${scoreValue}`);
   };
 
   const handleSelectStudent = (student: StudentItem) => {
@@ -285,6 +320,13 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
       // Refresh list to update status and score in table
       await fetchStudents();
+
+      // Find next unassessed student in list to speed up grading
+      const currentIndex = students.findIndex((s) => s.studentId === selectedStudent.studentId);
+      const nextUnassessed = students.slice(currentIndex + 1).find((s) => s.statusDpl !== "SUDAH_DINILAI");
+      if (nextUnassessed) {
+        setSelectedStudentId(nextUnassessed.studentId);
+      }
     } catch (err: any) {
       console.error("Gagal menyimpan nilai:", err);
       toast.error(err.response?.data?.message || "Gagal menyimpan penilaian mahasiswa");
@@ -323,11 +365,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         {/* ========================================================================= */}
         {/* KOLOM KIRI: DAFTAR MAHASISWA & FILTER */}
         {/* ========================================================================= */}
-        <div className="lg:col-span-7 space-y-3.5">
+        <div className="lg:col-span-6 xl:col-span-7 space-y-3.5">
           {/* Baris Filter & Search */}
           <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
             {/* Search Input */}
-            <div className="relative flex-1 min-w-[200px]">
+            <div className="relative flex-1 min-w-[180px]">
               <Search
                 size={15}
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
@@ -523,8 +565,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             {/* Pagination Footer */}
             <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
               <div>
-                Menampilkan {filteredStudents.length > 0 ? startIndex + 1 : 0}–
-                {endIndex} dari {filteredStudents.length} mahasiswa
+                Menampilkan {filteredStudents.length > 0 ? startIndex + 1 : 0}–{endIndex} dari {filteredStudents.length} mahasiswa
               </div>
               <div className="flex items-center gap-1">
                 <button
@@ -565,19 +606,24 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         </div>
 
         {/* ========================================================================= */}
-        {/* KOLOM KANAN: FORM PENILAIAN INDIVIDU */}
+        {/* KOLOM KANAN: FORM PENILAIAN INDIVIDU DENGAN QUICK-CLICK PRESETS */}
         {/* ========================================================================= */}
-        <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs space-y-4">
-          <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
-            Form Penilaian Individu
-          </h2>
+        <div className="lg:col-span-6 xl:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 shadow-2xs space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
+              Form Penilaian Individu
+            </h2>
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">
+              6 Aspek Akademik
+            </span>
+          </div>
 
           {/* Kartu Profil Mahasiswa Terpilih */}
           <div className="bg-[#f0fdf4] dark:bg-emerald-950/30 border border-emerald-200/90 dark:border-emerald-800/60 rounded-xl p-3.5 flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-full bg-white dark:bg-slate-900 border-2 border-[#009966] text-[#009966] dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-2xs">
               <User size={22} />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
                 {selectedStudent?.nama || "Pilih Mahasiswa"}
               </h3>
@@ -586,12 +632,54 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
               </p>
               <p className="text-[11.5px] text-slate-600 dark:text-slate-400">
                 {selectedStudent?.kelompok || "Kelompok KKN"}{" "}
-                {selectedStudent?.kelurahan && selectedStudent.kelurahan !== "-" ? selectedStudent.kelurahan : ""}
+                {selectedStudent?.kelurahan && selectedStudent.kelurahan !== "-" ? `• Kel. ${selectedStudent.kelurahan}` : ""}
               </p>
             </div>
           </div>
 
-          {/* Tabel Aspek Akademik DPL */}
+          {/* OPSI B: Global Master Fill (Isi Cepat Seluruh Aspek Sekaligus) */}
+          <div className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Sparkles size={13} className="text-amber-500" />
+                Isi Cepat Semua Aspek (1-Klik):
+              </span>
+              <button
+                type="button"
+                onClick={handleResetForm}
+                className="text-[10.5px] font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-1 cursor-pointer"
+                title="Reset seluruh nilai"
+              >
+                <RotateCcw size={11} />
+                Reset
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => handleGlobalFill(90)}
+                className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-[#009966] dark:text-emerald-300 rounded-lg text-xs font-bold transition shadow-2xs flex items-center justify-center gap-1 cursor-pointer"
+              >
+                <span>⭐ Semua A (90)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleGlobalFill(80)}
+                className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-blue-300 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-blue-600 dark:text-blue-300 rounded-lg text-xs font-bold transition shadow-2xs flex items-center justify-center gap-1 cursor-pointer"
+              >
+                <span>👍 Semua B+ (80)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleGlobalFill(75)}
+                className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition shadow-2xs flex items-center justify-center gap-1 cursor-pointer"
+              >
+                <span>👌 Semua B (75)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Tabel Aspek Akademik DPL dengan OPSI A (Preset Chips per Aspek) */}
           <div className="space-y-2">
             <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
               Aspek Akademik DPL
@@ -601,158 +689,81 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-50/70 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-                    <th className="py-2.5 px-2.5 text-center w-8">No.</th>
-                    <th className="py-2.5 px-2.5">Aspek Penilaian</th>
-                    <th className="py-2.5 px-2.5 text-center w-14">Bobot</th>
-                    <th className="py-2.5 px-2.5 text-center w-28">Nilai</th>
-                    <th className="py-2.5 px-2.5 text-right w-14">Skor</th>
+                    <th className="py-2.5 px-2 text-center w-6">No.</th>
+                    <th className="py-2.5 px-2">Aspek Penilaian</th>
+                    <th className="py-2.5 px-2 text-center w-12">Bobot</th>
+                    <th className="py-2.5 px-2 text-center min-w-[145px]">Preset & Nilai</th>
+                    <th className="py-2.5 px-2.5 text-right w-12">Skor</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
-                  {/* Aspek 1 */}
-                  <tr>
-                    <td className="py-2.5 px-2.5 text-center text-slate-500">1</td>
-                    <td className="py-2.5 px-2.5 font-medium">Perencanaan & Pemahaman Program</td>
-                    <td className="py-2.5 px-2.5 text-center text-slate-500 font-medium">20%</td>
-                    <td className="py-2.5 px-2.5 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={formScores.skorDplPerencanaan}
-                          onChange={(e) => handleScoreInputChange("skorDplPerencanaan", e.target.value)}
-                          className="w-14 px-2 py-1 text-center font-bold text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-[#009966] focus:ring-1 focus:ring-[#009966]"
-                        />
-                        <span className="text-[10px] text-slate-400">0–100</span>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-2.5 text-right font-semibold text-slate-800 dark:text-slate-200">
-                      {skor1.toFixed(1)}
-                    </td>
-                  </tr>
+                  {ASPEK_CONFIG.map((aspek) => {
+                    const currentVal = formScores[aspek.key];
+                    const numVal = Number(currentVal) || 0;
+                    const aspectScore = calcScore(currentVal, aspek.bobot);
 
-                  {/* Aspek 2 */}
-                  <tr>
-                    <td className="py-2.5 px-2.5 text-center text-slate-500">2</td>
-                    <td className="py-2.5 px-2.5 font-medium">Kontribusi Individu</td>
-                    <td className="py-2.5 px-2.5 text-center text-slate-500 font-medium">20%</td>
-                    <td className="py-2.5 px-2.5 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={formScores.skorDplKontribusi}
-                          onChange={(e) => handleScoreInputChange("skorDplKontribusi", e.target.value)}
-                          className="w-14 px-2 py-1 text-center font-bold text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-[#009966] focus:ring-1 focus:ring-[#009966]"
-                        />
-                        <span className="text-[10px] text-slate-400">0–100</span>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-2.5 text-right font-semibold text-slate-800 dark:text-slate-200">
-                      {skor2.toFixed(1)}
-                    </td>
-                  </tr>
+                    return (
+                      <tr key={aspek.key} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                        <td className="py-2.5 px-2 text-center text-slate-500 font-medium">
+                          {aspek.no}
+                        </td>
+                        <td className="py-2.5 px-2">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-xs">
+                            {aspek.title}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-2 text-center text-slate-500 font-bold">
+                          {aspek.bobot}%
+                        </td>
+                        <td className="py-2.5 px-2">
+                          <div className="flex items-center justify-center gap-1.5">
+                            {/* OPSI A: Quick-Grade Chips ([A], [B+], [B], [C]) */}
+                            <div className="flex items-center gap-1 shrink-0">
+                              {GRADE_PRESETS.map((preset) => {
+                                const isPresetActive = numVal === preset.value;
+                                return (
+                                  <button
+                                    key={preset.label}
+                                    type="button"
+                                    onClick={() => handleSetAspectScore(aspek.key, preset.value)}
+                                    className={`px-1.5 py-0.5 rounded text-[10.5px] font-bold border transition-all cursor-pointer ${
+                                      isPresetActive
+                                        ? "bg-[#009966] text-white border-[#009966] shadow-2xs"
+                                        : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-[#009966] hover:text-[#009966]"
+                                    }`}
+                                    title={preset.desc}
+                                  >
+                                    {preset.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
 
-                  {/* Aspek 3 */}
-                  <tr>
-                    <td className="py-2.5 px-2.5 text-center text-slate-500">3</td>
-                    <td className="py-2.5 px-2.5 font-medium">Logbook & Dokumentasi Akademik</td>
-                    <td className="py-2.5 px-2.5 text-center text-slate-500 font-medium">20%</td>
-                    <td className="py-2.5 px-2.5 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={formScores.skorDplLogbook}
-                          onChange={(e) => handleScoreInputChange("skorDplLogbook", e.target.value)}
-                          className="w-14 px-2 py-1 text-center font-bold text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-[#009966] focus:ring-1 focus:ring-[#009966]"
-                        />
-                        <span className="text-[10px] text-slate-400">0–100</span>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-2.5 text-right font-semibold text-slate-800 dark:text-slate-200">
-                      {skor3.toFixed(1)}
-                    </td>
-                  </tr>
-
-                  {/* Aspek 4 */}
-                  <tr>
-                    <td className="py-2.5 px-2.5 text-center text-slate-500">4</td>
-                    <td className="py-2.5 px-2.5 font-medium">Analisis Masalah & Solusi</td>
-                    <td className="py-2.5 px-2.5 text-center text-slate-500 font-medium">15%</td>
-                    <td className="py-2.5 px-2.5 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={formScores.skorDplAnalisis}
-                          onChange={(e) => handleScoreInputChange("skorDplAnalisis", e.target.value)}
-                          className="w-14 px-2 py-1 text-center font-bold text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-[#009966] focus:ring-1 focus:ring-[#009966]"
-                        />
-                        <span className="text-[10px] text-slate-400">0–100</span>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-2.5 text-right font-semibold text-slate-800 dark:text-slate-200">
-                      {skor4.toFixed(1)}
-                    </td>
-                  </tr>
-
-                  {/* Aspek 5 */}
-                  <tr>
-                    <td className="py-2.5 px-2.5 text-center text-slate-500">5</td>
-                    <td className="py-2.5 px-2.5 font-medium">Output, Outcome, & Dampak</td>
-                    <td className="py-2.5 px-2.5 text-center text-slate-500 font-medium">15%</td>
-                    <td className="py-2.5 px-2.5 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={formScores.skorDplOutput}
-                          onChange={(e) => handleScoreInputChange("skorDplOutput", e.target.value)}
-                          className="w-14 px-2 py-1 text-center font-bold text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-[#009966] focus:ring-1 focus:ring-[#009966]"
-                        />
-                        <span className="text-[10px] text-slate-400">0–100</span>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-2.5 text-right font-semibold text-slate-800 dark:text-slate-200">
-                      {skor5.toFixed(1)}
-                    </td>
-                  </tr>
-
-                  {/* Aspek 6 */}
-                  <tr>
-                    <td className="py-2.5 px-2.5 text-center text-slate-500">6</td>
-                    <td className="py-2.5 px-2.5 font-medium">Laporan Akhir, Evaluasi & Refleksi</td>
-                    <td className="py-2.5 px-2.5 text-center text-slate-500 font-medium">10%</td>
-                    <td className="py-2.5 px-2.5 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={formScores.skorDplLaporanAkhir}
-                          onChange={(e) => handleScoreInputChange("skorDplLaporanAkhir", e.target.value)}
-                          className="w-14 px-2 py-1 text-center font-bold text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-[#009966] focus:ring-1 focus:ring-[#009966]"
-                        />
-                        <span className="text-[10px] text-slate-400">0–100</span>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-2.5 text-right font-semibold text-slate-800 dark:text-slate-200">
-                      {skor6.toFixed(1)}
-                    </td>
-                  </tr>
+                            {/* Manual Number Fine-Tuning */}
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={currentVal}
+                              onChange={(e) => handleSetAspectScore(aspek.key, e.target.value)}
+                              placeholder="0"
+                              className="w-12 px-1.5 py-0.5 text-center font-bold text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-[#009966] focus:ring-1 focus:ring-[#009966]"
+                            />
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-2.5 text-right font-bold text-slate-800 dark:text-slate-200">
+                          {aspectScore.toFixed(1)}
+                        </td>
+                      </tr>
+                    );
+                  })}
 
                   {/* Total Bobot Row */}
                   <tr className="bg-slate-50/70 dark:bg-slate-800/60 font-semibold border-t border-slate-200 dark:border-slate-800 text-[11.5px]">
                     <td colSpan={2} className="py-2.5 px-3 text-slate-800 dark:text-slate-200">
                       Total Bobot
                     </td>
-                    <td className="py-2.5 px-2.5 text-center text-slate-800 dark:text-slate-200">
+                    <td className="py-2.5 px-2 text-center text-slate-800 dark:text-slate-200 font-bold">
                       100%
                     </td>
                     <td colSpan={2}></td>
@@ -783,11 +794,32 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Catatan DPL */}
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-              Catatan DPL
-            </label>
+          {/* Catatan DPL & Quick Feedback Templates */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                Catatan DPL
+              </label>
+              <span className="text-[10.5px] text-slate-400 flex items-center gap-1">
+                <MessageSquare size={11} />
+                Klik template di bawah untuk isi instan:
+              </span>
+            </div>
+
+            {/* Quick Feedback Chips */}
+            <div className="flex flex-wrap gap-1.5">
+              {QUICK_FEEDBACK_OPTIONS.map((feedback, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setCatatanDpl(feedback)}
+                  className="px-2 py-1 bg-slate-50 dark:bg-slate-800/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-700 hover:border-emerald-300 text-[10.5px] text-slate-600 dark:text-slate-300 rounded-lg text-left transition cursor-pointer"
+                >
+                  + {feedback.length > 38 ? `${feedback.substring(0, 38)}...` : feedback}
+                </button>
+              ))}
+            </div>
+
             <textarea
               rows={3}
               value={catatanDpl}
@@ -812,7 +844,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
               onClick={handleSaveScore}
               className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#009966] hover:bg-[#008055] transition shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {saving && <Loader2 size={13} className="animate-spin" />}
+              {saving ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Save size={13} />
+              )}
               <span>Simpan Nilai</span>
             </button>
           </div>
