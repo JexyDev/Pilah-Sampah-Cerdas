@@ -451,15 +451,14 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                       {/* 6. File Laporan (Lihat PDF) */}
                       <td className="py-3.5 px-4 text-center">
                         {st.fileUrl ? (
-                          <a
-                            href={st.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            type="button"
+                            onClick={() => handleOpenPdf(st)}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-400 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition cursor-pointer"
                           >
                             <FileText size={14} className="text-blue-500" />
                             <span>Lihat PDF</span>
-                          </a>
+                          </button>
                         ) : (
                           <span className="inline-block px-2.5 py-1 rounded text-xs font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80">
                             Belum Upload
