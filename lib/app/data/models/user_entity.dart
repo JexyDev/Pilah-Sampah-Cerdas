@@ -116,7 +116,7 @@ class UserEntity extends Equatable {
 }
 
 /// 5 role RBAC sesuai backend tabel `roles`.
-enum UserRole { admin, petugasKelurahan, petugasRw, petugasRt, warga, mahasiswaKkn, petugasPemilahan }
+enum UserRole { admin, petugasKelurahan, petugasRw, petugasRt, warga, mahasiswaKkn, petugasPemilahan, dpl, unknown }
 
 extension UserRoleExtension on UserRole {
   String get displayName {
@@ -135,6 +135,10 @@ extension UserRoleExtension on UserRole {
         return 'Mahasiswa KKN';
       case UserRole.petugasPemilahan:
         return 'Petugas Pemilahan';
+      case UserRole.dpl:
+        return 'DPL';
+      case UserRole.unknown:
+        return 'Tidak Diketahui';
     }
   }
 
@@ -154,6 +158,10 @@ extension UserRoleExtension on UserRole {
         return 'MAHASISWA_KKN';
       case UserRole.petugasPemilahan:
         return 'PETUGAS_RESIDU';
+      case UserRole.dpl:
+        return 'DPL';
+      case UserRole.unknown:
+        return 'UNKNOWN';
     }
   }
 
@@ -185,14 +193,32 @@ extension UserRoleExtension on UserRole {
       case 'PEMILAHAN':
       case 'OFFICER':
         return UserRole.petugasPemilahan;
+      case 'DPL':
+      case 'DOSEN_PEMBIMBING':
+      case 'DOSEN':
+        return UserRole.dpl;
       default:
-        if (v.contains('PETUGAS') || v.contains('RESIDU') || v.contains('PEMILAHAN')) {
+        if (v.contains('KELURAHAN')) return UserRole.petugasKelurahan;
+        if (v.contains('RW')) return UserRole.petugasRw;
+        if (v.contains('RT')) return UserRole.petugasRt;
+        if (v.contains('ADMIN')) return UserRole.admin;
+        if (v.contains('RESIDU') || v.contains('PEMILAHAN')) {
+          return UserRole.petugasPemilahan;
+        }
+        if (v.contains('PETUGAS') && !(v.contains('KELURAHAN') || v.contains('RW') || v.contains('RT'))) {
           return UserRole.petugasPemilahan;
         }
         if (v.contains('MAHASISWA') || v.contains('KKN')) {
           return UserRole.mahasiswaKkn;
         }
-        return UserRole.warga;
+        if (v.contains('WARGA')) {
+          return UserRole.warga;
+        }
+        if (v.contains('DPL')) {
+          return UserRole.dpl;
+        }
+        // Previously defaulted to warga which allowed other roles like DPL to login
+        return UserRole.unknown;
     }
   }
 }

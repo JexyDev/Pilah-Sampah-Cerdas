@@ -280,7 +280,7 @@ class ApiAuthRepository implements AuthRepository {
         name: 'User',
         email: '',
         phone: cleanPhone,
-        role: UserRole.warga,
+        role: UserRole.unknown,
       );
     } on DioException catch (e) {
       final status = e.response?.statusCode;
@@ -786,13 +786,18 @@ class ApiAuthRepository implements AuthRepository {
       ];
       for (final c in candidates) {
         if (c != null) {
-          final str = c.toString().trim();
+          String str = '';
+          if (c is Map) {
+             str = (c['name'] ?? c['roleName'] ?? c['type'] ?? c.toString()).toString().trim();
+          } else {
+             str = c.toString().trim();
+          }
           if (str.isNotEmpty && str.toLowerCase() != 'null') {
             return str;
           }
         }
       }
-      return 'WARGA';
+      return 'UNKNOWN';
     }
 
     String provinsi = userMap['provinsi']?.toString() ?? '';
