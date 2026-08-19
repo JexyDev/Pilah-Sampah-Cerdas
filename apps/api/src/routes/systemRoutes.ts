@@ -93,6 +93,13 @@ router.post(
 );
 
 router.get("/latest-release", systemController.getLatestRelease);
+router.get("/app-version", systemController.getAppVersion);
+router.post(
+  "/app-version",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER"]),
+  systemController.publishRelease
+);
 router.get("/download-apk", systemController.downloadApk);
 
 export default router;

@@ -6,8 +6,6 @@ import { prisma } from "../lib/prisma.js";
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-
-
 export const systemService = {
   /**
    * Get all audit trail logs (SUPER USER only view)
@@ -162,29 +160,38 @@ export const systemService = {
   publishRelease: async (
     publisherName: string,
     data: {
-      version: string;
+      version?: string;
+      latestVersion?: string;
       buildNumber?: number;
       releaseNotes?: string;
       apkUrl?: string;
+      downloadUrl?: string;
       fileSizeBytes?: number;
+      forceUpdate?: boolean;
     }
   ) => {
     const formattedSize = data.fileSizeBytes
       ? `${(data.fileSizeBytes / (1024 * 1024)).toFixed(1)} MB`
       : "24.8 MB";
 
+    const targetVersion = data.latestVersion || data.version || "1.0.0";
+    const targetUrl = data.downloadUrl || data.apkUrl || "http://157.10.252.252:3000/api/v1/system/download-apk";
+
     const releaseData = {
-      version: data.version || "1.0.4",
-      buildNumber: Number(data.buildNumber) || 104,
+      version: targetVersion,
+      latestVersion: targetVersion,
+      buildNumber: Number(data.buildNumber) || 100,
       releaseNotes:
         data.releaseNotes ||
         "Perbaikan performa, pembaruan antarmuka mobile, dan integrasi real-time.",
-      apkUrl: data.apkUrl || "http://localhost:3000/api/v1/system/download-apk",
+      apkUrl: targetUrl,
+      downloadUrl: targetUrl,
       fileSizeBytes: data.fileSizeBytes || 26004512,
       formattedSize,
       publishedAt: new Date().toISOString(),
       publisher: publisherName || "Super User",
       minAndroidVersion: "Android 7.0 (Nougat)+",
+      forceUpdate: data.forceUpdate ?? false,
     };
 
     await prisma.systemConfig.upsert({
@@ -214,20 +221,42 @@ export const systemService = {
         where: { key: "app_release_info" },
       });
       if (config && config.value) {
-        return JSON.parse(config.value);
+        const parsed = JSON.parse(config.value);
+        const version = parsed.latestVersion || parsed.version || "1.0.0";
+        const downloadUrl =
+          parsed.downloadUrl ||
+          parsed.apkUrl ||
+          "http://157.10.252.252:3000/api/v1/system/download-apk";
+        return {
+          version,
+          latestVersion: version,
+          buildNumber: parsed.buildNumber || 100,
+          releaseNotes: parsed.releaseNotes || "Versi terbaru aplikasi TrashCare",
+          apkUrl: downloadUrl,
+          downloadUrl,
+          fileSizeBytes: parsed.fileSizeBytes || 26004512,
+          formattedSize: parsed.formattedSize || "24.8 MB",
+          publishedAt: parsed.publishedAt || new Date().toISOString(),
+          publisher: parsed.publisher || "Developer",
+          minAndroidVersion: parsed.minAndroidVersion || "Android 7.0 (Nougat)+",
+          forceUpdate: parsed.forceUpdate ?? false,
+        };
       }
     } catch {}
 
     return {
-      version: "1.0.4",
-      buildNumber: 104,
-      releaseNotes: "Perbaikan performa, pembaruan antarmuka mobile, dan integrasi real-time.",
-      apkUrl: "http://localhost:3000/api/v1/system/download-apk",
+      version: "1.0.0",
+      latestVersion: "1.0.0",
+      buildNumber: 100,
+      releaseNotes: "Versi stabil aplikasi Pilah Sampah TrashCare.",
+      apkUrl: "http://157.10.252.252:3000/api/v1/system/download-apk",
+      downloadUrl: "http://157.10.252.252:3000/api/v1/system/download-apk",
       fileSizeBytes: 26004512,
       formattedSize: "24.8 MB",
       publishedAt: new Date().toISOString(),
       publisher: "Developer",
       minAndroidVersion: "Android 7.0 (Nougat)+",
+      forceUpdate: false,
     };
   },
 };

@@ -47,6 +47,7 @@ import datasetKlasifikasiRouter from "./routes/datasetKlasifikasiRoutes.js";
 import panduanRouter from "./routes/panduanRoutes.js";
 import masterKegiatanRouter from "./routes/masterKegiatanRoutes.js";
 import penilaianKknRouter from "./routes/penilaianKknRoutes.js";
+import { systemController } from "./controllers/systemController.js";
 
 import { setupSwagger } from "./swagger.js";
 import { readOnlyGuard } from "./middlewares/readOnlyGuard.js";
@@ -92,6 +93,10 @@ fs.mkdirSync("uploads", { recursive: true });
 // Statically serve uploads folder
 app.use("/uploads", express.static("uploads"));
 
+// In-App Version Checking Endpoints (Direct Root & /v1 for Mobile Updater)
+app.get("/api/v1/app-version", (req, res) => systemController.getAppVersion(req, res));
+app.get("/api/app-version", (req, res) => systemController.getAppVersion(req, res));
+
 // Main APIs
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
@@ -135,7 +140,6 @@ app.use("/api/v1", datasetKlasifikasiRouter);
 app.use("/api/v1/panduan", panduanRouter);
 app.use("/api/v1/master-kegiatan", masterKegiatanRouter);
 app.use("/api/v1/penilaian-kkn", penilaianKknRouter);
-
 
 // Master API Spec Alias Mounts (Compatibility for mobile client without /v1 prefix)
 app.use("/api/v1/user", userRouter);

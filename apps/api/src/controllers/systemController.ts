@@ -85,6 +85,11 @@ export class SystemController {
       const publisherName = (req.user as any)?.name || "Developer";
       const release = await systemService.publishRelease(publisherName, req.body);
       res.status(201).json({
+        latestVersion: release.latestVersion,
+        downloadUrl: release.downloadUrl,
+        forceUpdate: release.forceUpdate,
+        version: release.version,
+        apkUrl: release.apkUrl,
         success: true,
         message: `Rilis APK versi ${release.version} berhasil dipublikasikan.`,
         data: release,
@@ -102,11 +107,58 @@ export class SystemController {
   async getLatestRelease(req: Request, res: Response): Promise<void> {
     try {
       const release = await systemService.getLatestRelease();
-      res.status(200).json({ success: true, data: release });
+      res.status(200).json({
+        latestVersion: release.latestVersion,
+        downloadUrl: release.downloadUrl,
+        forceUpdate: release.forceUpdate,
+        version: release.version,
+        apkUrl: release.apkUrl,
+        buildNumber: release.buildNumber,
+        releaseNotes: release.releaseNotes,
+        minAndroidVersion: release.minAndroidVersion,
+        publishedAt: release.publishedAt,
+        formattedSize: release.formattedSize,
+        success: true,
+        data: release,
+      });
     } catch (error: any) {
       res
         .status(500)
         .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
+   * App version check endpoint for mobile in-app updater (GET /api/v1/app-version and GET /api/app-version)
+   */
+  async getAppVersion(req: Request, res: Response): Promise<void> {
+    try {
+      const release = await systemService.getLatestRelease();
+      res.status(200).json({
+        latestVersion: release.latestVersion,
+        downloadUrl: release.downloadUrl,
+        forceUpdate: release.forceUpdate,
+        version: release.version,
+        apkUrl: release.apkUrl,
+        buildNumber: release.buildNumber,
+        releaseNotes: release.releaseNotes,
+        minAndroidVersion: release.minAndroidVersion,
+        publishedAt: release.publishedAt,
+        formattedSize: release.formattedSize,
+        success: true,
+        data: release,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        latestVersion: "1.0.0",
+        downloadUrl: "http://157.10.252.252:3000/api/v1/system/download-apk",
+        forceUpdate: false,
+        version: "1.0.0",
+        apkUrl: "http://157.10.252.252:3000/api/v1/system/download-apk",
+        success: false,
+        code: "INTERNAL_SERVER_ERROR",
+        message: error.message,
+      });
     }
   }
 
