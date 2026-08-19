@@ -974,9 +974,19 @@ export const dplService = {
   /**
    * 8. Program Kerja KKN - Get List
    */
-  getProgramKerja: async (dplUserId: string, groupId?: string, role?: any) => {
+  getProgramKerja: async (
+    dplUserId: string,
+    groupId?: string,
+    role?: any,
+    filters?: {
+      kategori?: string;
+      statusPelaksanaan?: string;
+      statusPenilaian?: string;
+      search?: string;
+    }
+  ) => {
     const whereGroup: any = getKelompokWhere(dplUserId, role);
-    if (groupId) whereGroup.id = groupId;
+    if (groupId && groupId !== "ALL") whereGroup.id = groupId;
 
     const groups = await prisma.kelompokKkn.findMany({
       where: whereGroup,
@@ -990,34 +1000,81 @@ export const dplService = {
     const groupIds = groups.map((g) => g.id);
     const groupMap = new Map(groups.map((g) => [g.id, g]));
 
+    const prokerWhere: any = {
+      kelompokId: { in: groupIds },
+    };
+
+    if (filters?.kategori && filters.kategori !== "ALL") {
+      prokerWhere.kategori = { equals: filters.kategori, mode: "insensitive" };
+    }
+
+    if (filters?.statusPelaksanaan && filters.statusPelaksanaan !== "ALL") {
+      let normStatus: any = filters.statusPelaksanaan;
+      if (normStatus === "SELESAI") normStatus = "SELESAI";
+      else if (normStatus === "BERJALAN" || normStatus === "SEDANG_BERJALAN") normStatus = "SEDANG_BERJALAN";
+      else if (normStatus === "BELUM_MULAI" || normStatus === "BELUM_DISETUJUI") normStatus = "BELUM_DISETUJUI";
+      prokerWhere.status = normStatus;
+    }
+
+    if (filters?.statusPenilaian && filters.statusPenilaian !== "ALL") {
+      if (filters.statusPenilaian === "SUDAH_DINILAI") {
+        prokerWhere.skorPenilaian = { not: null };
+      } else if (filters.statusPenilaian === "BELUM_DINILAI") {
+        prokerWhere.skorPenilaian = null;
+      }
+    }
+
+    if (filters?.search && filters.search.trim()) {
+      const q = filters.search.trim();
+      prokerWhere.OR = [
+        { deskripsi: { contains: q, mode: "insensitive" } },
+        { kategori: { contains: q, mode: "insensitive" } },
+        { kelompok: { name: { contains: q, mode: "insensitive" } } },
+      ];
+    }
+
     const prokers = await prisma.programKerjaKkn.findMany({
-      where: { kelompokId: { in: groupIds } },
+      where: prokerWhere,
       include: {
         reviewedBy: { select: { id: true, name: true } },
       },
       orderBy: [{ kelompokId: "asc" }, { nomor: "asc" }, { createdAt: "asc" }],
     });
 
-    return prokers.map((p) => ({
-      id: p.id,
-      kelompokId: p.kelompokId,
-      kelompokName: groupMap.get(p.kelompokId)?.name || "-",
-      kelurahan: groupMap.get(p.kelompokId)?.kelurahan || "-",
-      nomor: p.nomor || 1,
-      deskripsi: p.deskripsi,
-      kategori: p.kategori || "LAINNYA",
-      sumber: p.sumber || "MAHASISWA",
-      waktuPelaksanaan: p.waktuPelaksanaan || null,
-      linkGoogleDrive: p.linkGoogleDrive || null,
-      kebutuhanBiaya: Number(p.kebutuhanBiaya || 0),
-      status: p.status,
-      catatanDpl: p.catatanDpl,
-      reviewedByName: p.reviewedBy?.name || null,
-      reviewedAt: p.reviewedAt,
-      skorPenilaian: p.skorPenilaian !== null ? Number(p.skorPenilaian) : null,
-      evaluasiDpl: p.evaluasiDpl,
-      createdAt: p.createdAt,
-    }));
+    return prokers.map((p) => {
+      const skorNum = p.skorPenilaian !== null ? Number(p.skorPenilaian) : null;
+      let calculatedPredikat: string | null = null;
+      if (skorNum !== null) {
+        if (skorNum >= 85) calculatedPredikat = "Sangat Baik";
+        else if (skorNum >= 70) calculatedPredikat = "Baik";
+        else if (skorNum >= 60) calculatedPredikat = "Cukup";
+        else calculatedPredikat = "Kurang";
+      }
+
+      return {
+        id: p.id,
+        kelompokId: p.kelompokId,
+        kelompokName: groupMap.get(p.kelompokId)?.name || "-",
+        kelurahan: groupMap.get(p.kelompokId)?.kelurahan || "-",
+        nomor: p.nomor || 1,
+        deskripsi: p.deskripsi,
+        kategori: p.kategori || "LAINNYA",
+        sumber: p.sumber || "MAHASISWA",
+        waktuPelaksanaan: p.waktuPelaksanaan || null,
+        linkGoogleDrive: p.linkGoogleDrive || null,
+        kebutuhanBiaya: Number(p.kebutuhanBiaya || 0),
+        status: p.status,
+        catatanDpl: p.catatanDpl,
+        reviewedByName: p.reviewedBy?.name || null,
+        reviewedAt: p.reviewedAt,
+        skorPenilaian: skorNum,
+        predikat: (p as any).predikat || calculatedPredikat,
+        statusPenilaian: (p as any).statusPenilaian || (skorNum !== null ? "SUDAH_DINILAI" : "BELUM_DINILAI"),
+        aspekPenilaian: (p as any).aspekPenilaian || null,
+        evaluasiDpl: p.evaluasiDpl,
+        createdAt: p.createdAt,
+      };
+    });
   },
 
   /**
@@ -1198,7 +1255,10 @@ export const dplService = {
     id: string,
     skorPenilaian: number,
     evaluasiDpl?: string,
-    role?: any
+    role?: any,
+    aspekPenilaian?: any,
+    predikat?: string,
+    statusPenilaian?: "BELUM_DINILAI" | "SEDANG_DINILAI" | "SUDAH_DINILAI"
   ) => {
     if (skorPenilaian < 0 || skorPenilaian > 100) {
       throw new Error("Skor penilaian harus berada di rentang 0-100");
@@ -1217,16 +1277,104 @@ export const dplService = {
       throw new Error("FORBIDDEN_SCOPE");
     }
 
+    let finalPredikat = predikat;
+    if (!finalPredikat) {
+      if (skorPenilaian >= 85) finalPredikat = "Sangat Baik";
+      else if (skorPenilaian >= 70) finalPredikat = "Baik";
+      else if (skorPenilaian >= 60) finalPredikat = "Cukup";
+      else finalPredikat = "Kurang";
+    }
+
+    const finalStatusPenilaian = statusPenilaian || (skorPenilaian > 0 ? "SUDAH_DINILAI" : "SEDANG_DINILAI");
+
+    const updateData: any = {
+      skorPenilaian,
+      evaluasiDpl: evaluasiDpl || null,
+      reviewedById: dplUserId,
+      reviewedAt: new Date(),
+      predikat: finalPredikat,
+      statusPenilaian: finalStatusPenilaian,
+    };
+
+    if (aspekPenilaian !== undefined) {
+      updateData.aspekPenilaian = aspekPenilaian;
+    }
+
     const proker = await prisma.programKerjaKkn.update({
       where: { id },
-      data: {
-        skorPenilaian,
-        evaluasiDpl: evaluasiDpl || null,
-        reviewedById: dplUserId,
-        reviewedAt: new Date(),
+      data: updateData,
+    });
+
+    return {
+      ...proker,
+      skorPenilaian: Number(proker.skorPenilaian),
+      predikat: (proker as any).predikat || finalPredikat,
+      statusPenilaian: (proker as any).statusPenilaian || finalStatusPenilaian,
+      aspekPenilaian: (proker as any).aspekPenilaian || aspekPenilaian || null,
+    };
+  },
+
+  /**
+   * 13b. Program Kerja KKN - Bukti Kegiatan & Dokumentasi
+   */
+  getProgramKerjaBukti: async (dplUserId: string, prokerId: string, role?: any) => {
+    const proker = await prisma.programKerjaKkn.findUnique({
+      where: { id: prokerId },
+      include: {
+        kelompok: {
+          include: {
+            students: {
+              include: {
+                user: { select: { id: true, name: true, phone: true } },
+              },
+            },
+          },
+        },
       },
     });
-    return proker;
+    if (!proker) throw new Error("Program kerja tidak ditemukan");
+
+    const groups = await prisma.kelompokKkn.findMany({
+      where: getKelompokWhere(dplUserId, role),
+      select: { id: true },
+    });
+    const allowedGroupIds = groups.map(g => g.id);
+    if (!allowedGroupIds.includes(proker.kelompokId)) {
+      throw new Error("FORBIDDEN_SCOPE");
+    }
+
+    const studentUserIds = proker.kelompok.students.map(s => s.userId);
+    const attendances = await prisma.activityAttendance.findMany({
+      where: {
+        studentId: { in: studentUserIds },
+      },
+      orderBy: { attendedAt: "desc" },
+      take: 12,
+      include: {
+        schedule: { select: { title: true, location: true, category: true } },
+        student: { select: { name: true } },
+      },
+    });
+
+    return {
+      proker: {
+        id: proker.id,
+        nomor: proker.nomor,
+        deskripsi: proker.deskripsi,
+        kategori: proker.kategori,
+        linkGoogleDrive: proker.linkGoogleDrive,
+        kelompokName: proker.kelompok.name,
+        kelurahan: proker.kelompok.kelurahan,
+      },
+      attendances: attendances.map((a) => ({
+        id: a.id,
+        activityTitle: a.schedule?.title || "Kegiatan Lapangan",
+        description: a.schedule?.location || a.schedule?.category || "",
+        photoUrl: null,
+        checkIn: a.attendedAt.toISOString(),
+        user: { name: a.student?.name || "Mahasiswa" },
+      })),
+    };
   },
 
   /**

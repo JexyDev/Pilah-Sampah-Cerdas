@@ -8,6 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -35,7 +36,7 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USERNAME }}
           VPS_PASS: ${{ secrets.VPS_PASSWORD }}
         run: |
-          sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no -o IPQoS=throughput apps/web/dist.tar.gz "$VPS_USER@$VPS_HOST":/tmp/frontend-dist.tar.gz
+          sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o IPQoS=throughput apps/web/dist.tar.gz "$VPS_USER@$VPS_HOST":/tmp/frontend-dist.tar.gz
 
       - name: Update Backend & Deploy Web on VPS
         env:
@@ -43,7 +44,7 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USERNAME }}
           VPS_PASS: ${{ secrets.VPS_PASSWORD }}
         run: |
-          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o PreferredAuthentications=password -o PubkeyAuthentication=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' bash -s" << 'EOF'
+          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o PreferredAuthentications=password -o PubkeyAuthentication=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' bash -s" << 'EOF'
             set -e
             NODE_BIN_DIR=$(ls -d ~/.nvm/versions/node/v* 2>/dev/null | tail -n 1)/bin
             export PATH=$PATH:/usr/local/bin:$NODE_BIN_DIR

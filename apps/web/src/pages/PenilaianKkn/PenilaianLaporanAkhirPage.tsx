@@ -91,9 +91,9 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
     return students.filter((s) => {
       const matchSearch =
         s.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.nim.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.kelompok.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.judulLaporan.toLowerCase().includes(searchQuery.toLowerCase());
+        (s.nim || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.kelompok || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.judulLaporan || "").toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchStatus =
         statusFilter === "ALL" ||
@@ -238,7 +238,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
           <tr><td class="label">Nama Mahasiswa</td><td><strong>${selectedStudent.nama}</strong></td></tr>
           <tr><td class="label">NIM</td><td>${selectedStudent.nim}</td></tr>
           <tr><td class="label">Kelompok KKN</td><td>${selectedStudent.kelompok}</td></tr>
-          <tr><td class="label">Judul Laporan</td><td><strong>${selectedStudent.judulLaporan}</strong></td></tr>
+          <tr><td class="label">Judul Laporan</td><td><strong>${selectedStudent.judulLaporan || "—"}</strong></td></tr>
           <tr><td class="label">Dosen Pembimbing (DPL)</td><td>${selectedStudent.dplNama || "Dosen Pendamping Lapangan"}</td></tr>
         </table>
         <table class="score-table">
@@ -439,19 +439,32 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
 
                       {/* 5. Judul Laporan */}
                       <td className="py-3.5 px-4 text-slate-800 dark:text-slate-200 font-medium max-w-xs">
-                        {st.judulLaporan}
+                        {st.judulLaporan ? (
+                          <span>{st.judulLaporan}</span>
+                        ) : (
+                          <span className="text-slate-400 dark:text-slate-500 italic text-xs font-normal">
+                            Belum Ada Judul
+                          </span>
+                        )}
                       </td>
 
                       {/* 6. File Laporan (Lihat PDF) */}
                       <td className="py-3.5 px-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenPdf(st)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-400 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition cursor-pointer"
-                        >
-                          <FileText size={14} className="text-blue-500" />
-                          <span>Lihat PDF</span>
-                        </button>
+                        {st.fileUrl ? (
+                          <a
+                            href={st.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-400 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition cursor-pointer"
+                          >
+                            <FileText size={14} className="text-blue-500" />
+                            <span>Lihat PDF</span>
+                          </a>
+                        ) : (
+                          <span className="inline-block px-2.5 py-1 rounded text-xs font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80">
+                            Belum Upload
+                          </span>
+                        )}
                       </td>
 
                       {/* 7. Status */}
@@ -579,8 +592,30 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                 <div className="pt-2 border-t border-slate-200/80 dark:border-slate-700 flex flex-col gap-1">
                   <span className="text-slate-500 font-semibold">Judul Laporan:</span>
                   <span className="font-bold text-slate-900 dark:text-slate-100">
-                    {selectedStudent.judulLaporan}
+                    {selectedStudent.judulLaporan || (
+                      <span className="text-slate-400 dark:text-slate-500 italic font-normal">
+                        Belum ada judul laporan yang diajukan
+                      </span>
+                    )}
                   </span>
+                </div>
+                <div className="pt-2 border-t border-slate-200/80 dark:border-slate-700 flex justify-between items-center">
+                  <span className="text-slate-500 font-semibold">Berkas Laporan:</span>
+                  {selectedStudent.fileUrl ? (
+                    <a
+                      href={selectedStudent.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      <FileText size={13} />
+                      <span>Buka File Dokumen</span>
+                    </a>
+                  ) : (
+                    <span className="text-amber-600 dark:text-amber-400 font-medium text-xs">
+                      Belum diunggah oleh mahasiswa
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -792,62 +827,56 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
             </div>
 
             {/* Document Body / Viewer Simulation */}
-            <div className="p-6 sm:p-8 overflow-y-auto space-y-6 bg-slate-100/50 dark:bg-slate-950/40">
-              <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm max-w-2xl mx-auto space-y-6 text-slate-800 dark:text-slate-200">
-                {/* Cover Title */}
-                <div className="text-center pb-6 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-[11px] font-extrabold uppercase tracking-widest text-teal-600 block mb-1">
-                    LAPORAN AKHIR KKN TEMATIK
-                  </span>
-                  <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100">
-                    {selectedStudent.judulLaporan}
-                  </h2>
-                  <p className="text-xs text-slate-500 mt-2">
-                    Disusun oleh: <strong>{selectedStudent.nama}</strong> ({selectedStudent.nim})
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    Program Studi {selectedStudent.jurusan || "S1"} &bull; Kecamatan Coblong &bull; Periode 2026
-                  </p>
+            <div className="p-6 sm:p-8 overflow-y-auto space-y-6 bg-slate-100/50 dark:bg-slate-950/40 min-h-[380px] flex items-center justify-center">
+              {selectedStudent.fileUrl ? (
+                <div className="w-full h-full flex flex-col items-center space-y-4">
+                  <div className="w-full bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <FileText size={24} className="text-blue-600 dark:text-blue-400" />
+                      <div>
+                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                          {selectedStudent.fileName || `Laporan_Akhir_${selectedStudent.nim}.pdf`}
+                        </p>
+                        <p className="text-[11px] text-slate-400">
+                          Tautan Dokumen Riil Mahasiswa
+                        </p>
+                      </div>
+                    </div>
+                    <a
+                      href={selectedStudent.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <Eye size={13} />
+                      <span>Buka Tab Baru</span>
+                    </a>
+                  </div>
+                  <iframe
+                    src={selectedStudent.fileUrl}
+                    title="Dokumen Laporan Akhir"
+                    className="w-full h-[55vh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white"
+                  />
                 </div>
-
-                {/* Ringkasan Eksekutif */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-black uppercase text-slate-900 dark:text-slate-100 tracking-wider">
-                    I. Ringkasan Eksekutif
+              ) : (
+                <div className="text-center py-12 px-6 flex flex-col items-center justify-center space-y-3">
+                  <div className="w-16 h-16 rounded-3xl bg-slate-200/80 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                    <FileText size={32} />
+                  </div>
+                  <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                    Belum Ada Berkas Laporan
                   </h4>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed text-justify">
-                    Program KKN Tematik ini difokuskan pada penguatan pemilahan sampah organik dan anorganik di tingkat rumah tangga, implementasi digitalisasi pencatatan timbulan residu, serta edukasi komposting mandiri di Kecamatan Coblong. Selama periode kegiatan, tercatat partisipasi aktif warga dengan capaian tingkat kepatuhan pemilahan yang meningkat secara signifikan.
+                  <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
+                    Mahasiswa <strong>{selectedStudent.nama}</strong> ({selectedStudent.nim}) belum mengunggah file dokumen Laporan Akhir KKN.
                   </p>
                 </div>
-
-                {/* Metodologi & Capaian */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-black uppercase text-slate-900 dark:text-slate-100 tracking-wider">
-                    II. Capaian Program & Hasil Kegiatan
-                  </h4>
-                  <ul className="list-disc list-inside text-xs text-slate-600 dark:text-slate-300 space-y-1">
-                    <li>Pemasangan dan aktivasi QR Code tempat sampah terintegrasi pada rumah tangga binaan.</li>
-                    <li>Sosialisasi langsung metode pemilahan sampah organik untuk pakan maggot BSF dan kompos komunal.</li>
-                    <li>Pencatatan data penimbangan berkala bersama petugas residu di TPS3R wilayah Coblong.</li>
-                  </ul>
-                </div>
-
-                {/* Kesimpulan */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-black uppercase text-slate-900 dark:text-slate-100 tracking-wider">
-                    III. Kesimpulan & Rekomendasi
-                  </h4>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed text-justify">
-                    Digitalisasi pemilahan sampah terbukti meningkatkan kesadaran dan akuntabilitas pemilahan sampah warga. Disarankan agar kemitraan antara pengurus RW, warga, dan dinas terkait terus diperkuat pasca-KKN.
-                  </p>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Footer Modal */}
             <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
               <span className="text-xs text-slate-500">
-                Format: Dokumen PDF Resmi &bull; Status: Terverifikasi
+                {selectedStudent.fileUrl ? "Status: Dokumen Tersedia" : "Status: Berkas Kosong"}
               </span>
               <div className="flex items-center gap-2">
                 <button

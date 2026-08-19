@@ -119,6 +119,14 @@ export interface ApprovalHistoryLog {
   rejectionReason?: string;
 }
 
+export interface AspekPenilaianItem {
+  no: number;
+  aspek: string;
+  bobot: number;
+  nilai: number;
+  skor: number;
+}
+
 export interface ProgramKerjaItem {
   id: string;
   kelompokId: string;
@@ -136,6 +144,9 @@ export interface ProgramKerjaItem {
   reviewedByName?: string | null;
   reviewedAt?: string | null;
   skorPenilaian?: number | null;
+  aspekPenilaian?: AspekPenilaianItem[] | null;
+  predikat?: string | null;
+  statusPenilaian?: "BELUM_DINILAI" | "SEDANG_DINILAI" | "SUDAH_DINILAI" | string;
   evaluasiDpl?: string | null;
   createdAt: string;
 }
@@ -283,9 +294,22 @@ export const dplService = {
     return res.data;
   },
 
-  getProgramKerja: async (groupId?: string): Promise<ProgramKerjaItem[]> => {
+  getProgramKerja: async (
+    groupId?: string,
+    filters?: {
+      kategori?: string;
+      statusPelaksanaan?: string;
+      statusPenilaian?: string;
+      search?: string;
+    }
+  ): Promise<ProgramKerjaItem[]> => {
     try {
-      const res = await api.get("/dpl/program-kerja", { params: { groupId } });
+      const res = await api.get("/dpl/program-kerja", {
+        params: {
+          groupId,
+          ...filters,
+        },
+      });
       if (res.data.success && Array.isArray(res.data.data)) return res.data.data;
       return [];
     } catch {
@@ -336,9 +360,27 @@ export const dplService = {
     return res.data;
   },
 
-  assessProgramKerja: async (id: string, skorPenilaian: number, evaluasiDpl?: string) => {
-    const res = await api.patch(`/dpl/program-kerja/${id}/penilaian`, { skorPenilaian, evaluasiDpl });
+  assessProgramKerja: async (
+    id: string,
+    skorPenilaian: number,
+    evaluasiDpl?: string,
+    aspekPenilaian?: AspekPenilaianItem[],
+    predikat?: string,
+    statusPenilaian?: "BELUM_DINILAI" | "SEDANG_DINILAI" | "SUDAH_DINILAI"
+  ) => {
+    const res = await api.patch(`/dpl/program-kerja/${id}/penilaian`, {
+      skorPenilaian,
+      evaluasiDpl,
+      aspekPenilaian,
+      predikat,
+      statusPenilaian,
+    });
     return res.data;
+  },
+
+  getProgramKerjaBukti: async (id: string) => {
+    const res = await api.get(`/dpl/program-kerja/${id}/bukti`);
+    return res.data?.data || null;
   },
 
   getRekapNilaiAkhir: async (groupId?: string): Promise<RekapNilaiResponse> => {

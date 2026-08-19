@@ -74,9 +74,9 @@ export interface LaporanAkhirItem {
   nama: string;
   kelompok: string;
   kelompokId?: string | null;
-  judulLaporan: string;
-  fileUrl: string;
-  fileName: string;
+  judulLaporan?: string | null;
+  fileUrl?: string | null;
+  fileName?: string | null;
   status: "Sudah Dinilai" | "Belum Dinilai";
   nilai: number | null;
   catatan?: string;

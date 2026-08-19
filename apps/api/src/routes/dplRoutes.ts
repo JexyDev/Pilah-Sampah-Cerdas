@@ -166,6 +166,7 @@ router.put("/program-kerja/:id", dplController.updateProgramKerja);
 router.delete("/program-kerja/:id", dplController.deleteProgramKerja);
 router.patch("/program-kerja/:id/decision", dplScopeMiddleware, dplController.decideProgramKerja);
 router.patch("/program-kerja/:id/penilaian", dplScopeMiddleware, dplController.assessProgramKerja);
+router.get("/program-kerja/:id/bukti", dplScopeMiddleware, dplController.getProgramKerjaBukti);
 
 // ─────────────────────────────────────────────
 // PENILAIAN KKN & REKAP LEMBAR NILAI

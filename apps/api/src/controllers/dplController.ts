@@ -182,7 +182,17 @@ export const dplController = {
       const dplUserId = getUserId(req);
       const userRole = (req.user as any)?.role;
       const groupId = req.query.groupId as string | undefined;
-      const data = await dplService.getProgramKerja(dplUserId, groupId, userRole);
+      const kategori = req.query.kategori as string | undefined;
+      const statusPelaksanaan = req.query.statusPelaksanaan as string | undefined;
+      const statusPenilaian = req.query.statusPenilaian as string | undefined;
+      const search = req.query.search as string | undefined;
+
+      const data = await dplService.getProgramKerja(dplUserId, groupId, userRole, {
+        kategori,
+        statusPelaksanaan,
+        statusPenilaian,
+        search,
+      });
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[dplController.getProgramKerja] error:", error);
@@ -306,7 +316,7 @@ export const dplController = {
       const dplUserId = getUserId(req);
       const userRole = (req.user as any)?.role;
       const id = req.params.id;
-      const { skorPenilaian, evaluasiDpl } = req.body;
+      const { skorPenilaian, evaluasiDpl, aspekPenilaian, predikat, statusPenilaian } = req.body;
       if (skorPenilaian === undefined || isNaN(Number(skorPenilaian))) {
         res.status(400).json({ error: "BAD_REQUEST", message: "skorPenilaian (angka 0-100) wajib diisi" });
         return;
@@ -316,11 +326,31 @@ export const dplController = {
         id,
         Number(skorPenilaian),
         evaluasiDpl,
-        userRole
+        userRole,
+        aspekPenilaian,
+        predikat,
+        statusPenilaian
       );
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[dplController.assessProgramKerja] error:", error);
+      if (error.message === "FORBIDDEN_SCOPE") {
+        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Program kerja ini bukan milik kelompok Anda" });
+        return;
+      }
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  },
+
+  getProgramKerjaBukti: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const dplUserId = getUserId(req);
+      const userRole = (req.user as any)?.role;
+      const id = req.params.id;
+      const data = await dplService.getProgramKerjaBukti(dplUserId, id, userRole);
+      res.json({ success: true, data });
+    } catch (error: any) {
+      console.error("[dplController.getProgramKerjaBukti] error:", error);
       if (error.message === "FORBIDDEN_SCOPE") {
         res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Program kerja ini bukan milik kelompok Anda" });
         return;

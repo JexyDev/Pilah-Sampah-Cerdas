@@ -10,7 +10,6 @@ import { prisma } from "../lib/prisma.js";
 
 import { StatusPenilaianKkn } from "@prisma/client";
 
-
 // Helper to determine category from score
 export const calculateGradeCategory = (score: number): string => {
   if (score >= 85) return "Sangat Baik";
@@ -577,27 +576,14 @@ export const penilaianKknService = {
       orderBy: { name: "asc" },
     });
 
-    const reportTopics = [
-      "Penguatan Pemilahan Sampah Rumah Tangga",
-      "Digitalisasi Data Pengangkutan Sampah",
-      "Pemanfaatan Sampah Organik Menjadi Kompos",
-      "Edukasi Pemilahan Berbasis Warga",
-      "Monitoring Kegiatan Lingkungan Berbasis Web",
-      "Optimasi Pengolahan Residu dan Logistik TPS3R",
-      "Pemberdayaan Bank Sampah dan Sirkular Ekonomi",
-      "Inovasi Biokonversi Sampah Organik dengan Maggot BSF",
-      "Sosialisasi Pemilahan Sampah Tingkat Rukun Warga",
-      "Penerapan QR Code Tempat Sampah Terintegrasi",
-    ];
-
-    const mapped = students.map((s, idx) => {
+    const mapped = students.map((s) => {
       const p = s.penilaianKkn;
       const sp = s.studentProfile;
       const proker = sp?.kelompok?.programKerja?.[0];
       
-      const judulLaporan = proker?.deskripsi 
-        ? `Implementasi ${proker.deskripsi}` 
-        : reportTopics[idx % reportTopics.length];
+      const judulLaporan = proker?.deskripsi ? `Implementasi ${proker.deskripsi}` : null;
+      const fileUrl = proker?.linkGoogleDrive || null;
+      const fileName = fileUrl ? `Laporan_${sp?.nim || s.name.replace(/\s+/g, "_")}.pdf` : null;
 
       const directScore = Number(sp?.assessmentScore || 0);
       const aspectScore = p ? Number(p.skorDplLaporanAkhir) : 0;
@@ -610,13 +596,13 @@ export const penilaianKknService = {
       return {
         id: s.id,
         studentId: s.id,
-        nim: sp?.nim || `1012300${idx + 1}`,
+        nim: sp?.nim || "-",
         nama: s.name,
-        kelompok: sp?.kelompok?.name || `KKN Coblong 0${(idx % 3) + 1}`,
+        kelompok: sp?.kelompok?.name || "-",
         kelompokId: sp?.kelompok?.id || null,
         judulLaporan,
-        fileUrl: `/uploads/laporan-akhir/${s.id}.pdf`,
-        fileName: `Laporan_Akhir_${sp?.nim || s.name.replace(/\s+/g, "_")}.pdf`,
+        fileUrl,
+        fileName,
         status: isGraded ? "Sudah Dinilai" : "Belum Dinilai",
         nilai: isGraded && finalScore ? Math.round(finalScore) : null,
         catatan: p?.catatanDpl || sp?.assessmentNote || "",

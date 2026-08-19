@@ -5,9 +5,8 @@
  * 
  * Modul Penilaian KKN Mahasiswa (Komposisi Mitra/MPL 70% + DPL 30%)
  * Sesuai Acuan UI Resmi PT Makerindo & Standar Penilaian Coblong
- * - 100% Real-time Database Integration
+ * - Pemisahan Kolom Mandiri (NIM, Nama, Prodi, Kelompok, Nilai)n
  * - Perhitungan Matematis Otomatis & Presisi
- * - Pemisahan Kolom Mandiri (NIM, Nama, Jenjang, Prodi, Kelompok)
  * - Modal Dialog Interaktif Modern dengan Tab Navigasi Role-focused
  * - Single Save Button (Non-redundant) dengan Modal Konfirmasi Interaktif
  * - Portofolio Aktivitas KKN Mahasiswa
@@ -368,7 +367,6 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         <div class="meta-grid">
           <div class="meta-item"><span class="meta-label">Nama Mahasiswa:</span><span class="meta-value">${studentInfo?.nama || "-"}</span></div>
           <div class="meta-item"><span class="meta-label">NIM:</span><span class="meta-value">${studentInfo?.nim || "-"}</span></div>
-          <div class="meta-item"><span class="meta-label">Jenjang:</span><span class="meta-value">${studentInfo?.jenjangPendidikan || "S1"}</span></div>
           <div class="meta-item"><span class="meta-label">Program Studi:</span><span class="meta-value">${studentInfo?.programStudi || "-"}</span></div>
           <div class="meta-item"><span class="meta-label">Kelompok:</span><span class="meta-value">${studentInfo?.kelompok || "-"}</span></div>
           <div class="meta-item"><span class="meta-label">Wilayah Tugas:</span><span class="meta-value">${studentInfo?.rw || "-"}, Kel. ${studentInfo?.kelurahan || "-"}</span></div>
@@ -547,7 +545,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
               Daftar Mahasiswa
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Pilih mahasiswa untuk membuka formulir penilaian aspek dan portofolio KKN. Kolom NIM, Jenjang, dan Program Studi dipisah secara mandiri.
+              Pilih mahasiswa untuk membuka formulir penilaian aspek dan portofolio KKN. Kolom NIM, Program Studi, Kelompok, dan Nilai dipisah secara mandiri.
             </p>
           </div>
 
@@ -604,9 +602,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <th className="py-3 px-3 text-center w-10">No</th>
                   <th className="py-3 px-3">NIM</th>
                   <th className="py-3 px-3">Nama Mahasiswa</th>
-                  <th className="py-3 px-3">Jenjang</th>
                   <th className="py-3 px-3">Program Studi</th>
                   <th className="py-3 px-3">Kelompok</th>
+                  <th className="py-3 px-3 text-center">Nilai</th>
                   <th className="py-3 px-3 text-center">Status Nilai</th>
                   <th className="py-3 px-3 text-center">Aksi</th>
                 </tr>
@@ -627,22 +625,20 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                       </td>
                       <td className="py-3 px-3 font-mono font-bold text-slate-800 dark:text-slate-100">{st.nim}</td>
                       <td className="py-3 px-3 font-extrabold text-slate-900 dark:text-slate-100">{st.nama}</td>
-                      <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-300 text-[10.5px]">
-                          {st.jenjangPendidikan || "S1"}
-                        </span>
-                      </td>
                       <td className="py-3 px-3 text-slate-600 dark:text-slate-400">{st.jurusan || "-"}</td>
                       <td className="py-3 px-3 text-slate-600 dark:text-slate-400">{st.kelompok}</td>
+                      <td className="py-3 px-3 text-center font-mono font-black text-slate-800 dark:text-slate-100">
+                        {st.nilaiAkhir > 0 ? st.nilaiAkhir.toFixed(1) : "-"}
+                      </td>
                       <td className="py-3 px-3 text-center">
                         {isFull ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-black bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300">
                             <CheckCircle2 size={11} />
-                            <span>Lengkap ({st.nilaiAkhir.toFixed(1)})</span>
+                            <span>Lengkap</span>
                           </span>
                         ) : hasDpl || hasMitra ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300">
-                            <span>Sebagian ({st.nilaiAkhir.toFixed(1)})</span>
+                            <span>Sebagian</span>
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-500">
@@ -709,7 +705,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                     <span className="font-mono text-sm text-slate-500 font-normal">({studentInfo?.nim || "-"})</span>
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Jenjang {studentInfo?.jenjangPendidikan || "S1"} &bull; {studentInfo?.programStudi || "-"} ({studentInfo?.fakultas || "-"}) &bull; DPL: <strong>{studentInfo?.dplNama || "-"}</strong>
+                    {studentInfo?.programStudi || "-"} ({studentInfo?.fakultas || "-"}) &bull; DPL: <strong>{studentInfo?.dplNama || "-"}</strong>
                   </p>
                 </div>
               </div>

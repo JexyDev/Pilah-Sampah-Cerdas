@@ -210,7 +210,6 @@ export const RekapNilaiKknPage: React.FC = () => {
                   <th className="py-3.5 px-3 w-10 text-center">No</th>
                   <th className="py-3.5 px-3">NIM</th>
                   <th className="py-3.5 px-3">Nama Mahasiswa</th>
-                  <th className="py-3.5 px-3">Jenjang</th>
                   <th className="py-3.5 px-3">Program Studi</th>
                   <th className="py-3.5 px-3">Kelompok</th>
                   <th className="py-3.5 px-3 text-center">Individu (40%)</th>
@@ -245,11 +244,6 @@ export const RekapNilaiKknPage: React.FC = () => {
                             </span>
                           )}
                         </div>
-                      </td>
-                      <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-300 text-[10.5px]">
-                          {(st as any).jenjangPendidikan || "S1"}
-                        </span>
                       </td>
                       <td className="py-3 px-3 text-slate-600 dark:text-slate-400">
                         {st.jurusan || "-"}

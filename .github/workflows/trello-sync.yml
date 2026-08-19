@@ -23,6 +23,7 @@ jobs:
   trello-sync:
     name: Sync Commits → Trello
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     # continue-on-error: true pastikan workflow secara keseluruhan tidak gagal
     # meskipun job ini error (Trello API down, dll.)
     continue-on-error: true
@@ -85,7 +86,14 @@ jobs:
 
       - name: Run Trello Sync
         id: trello-sync
-        run: node scripts/trello-sync.js
+        run: |
+          if [ -f scripts/tools/trello-sync.js ]; then
+            node scripts/tools/trello-sync.js || true
+          elif [ -f scripts/trello-sync.js ]; then
+            node scripts/trello-sync.js || true
+          else
+            echo "No trello-sync.js found, skipping."
+          fi
         env:
           # TRELLO_API_KEY: "${{ secrets.TRELLO_API_KEY }}"
           # TRELLO_TOKEN: "${{ secrets.TRELLO_TOKEN }}"
