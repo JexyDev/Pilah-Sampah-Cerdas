@@ -231,7 +231,28 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="/peringkat" element={<Leaderboard />} />
+        <Route
+          path="/peringkat"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "MAHASISWA_KKN",
+                "PANITIA_TASKFORCE",
+                "PEMIMPIN",
+                "WARGA",
+                "DEVELOPER",
+              ]}
+            >
+              <Leaderboard />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/leaderboard" element={<Navigate to="/peringkat" replace />} />
         <Route
           path="/master-pengguna"

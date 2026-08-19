@@ -693,10 +693,22 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             {/* Header Form Penilaian Sesuai Role */}
             <div className="flex items-center gap-2">
               {isDpl && !isSuper && (
-                <span className="px-3 py-1 rounded-xl text-xs font-black bg-amber-50 text-amber-900 border border-amber-200 flex items-center gap-1.5 shadow-2xs">
-                  <GraduationCap size={15} className="text-amber-600" />
-                  <span>Lembar Penilaian Akademik DPL (30%)</span>
-                </span>
+                <>
+                  <span className="px-3 py-1 rounded-xl text-xs font-black bg-amber-50 text-amber-900 border border-amber-200 flex items-center gap-1.5 shadow-2xs">
+                    <GraduationCap size={15} className="text-amber-600" />
+                    <span>Lembar Penilaian Akademik DPL (30%)</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleSaveScore}
+                    disabled={saving || !selectedStudentId}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition shadow-xs cursor-pointer disabled:opacity-50"
+                    title="Simpan Penilaian Mahasiswa"
+                  >
+                    {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+                    <span>Simpan Penilaian</span>
+                  </button>
+                </>
               )}
               {isMitra && !isSuper && (
                 <span className="px-3 py-1 rounded-xl text-xs font-black bg-emerald-50 text-emerald-900 border border-emerald-200 flex items-center gap-1.5 shadow-2xs">
@@ -714,83 +726,67 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           </div>
 
           <div className="space-y-6">
-            {/* Summary Nilai Bar Sesuai Role */}
-            <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-6 flex-wrap">
-                {/* Mode Tampilan DPL */}
-                {isDpl && !isSuper && (
-                  <>
-                    <div className="bg-white dark:bg-slate-900 px-3.5 py-2 rounded-xl border border-amber-200 shadow-2xs">
-                      <span className="text-[10px] font-bold text-amber-800 uppercase block">Subtotal DPL (Porsi Anda • 30%)</span>
-                      <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-xl font-black text-amber-700">{subtotalDpl.toFixed(2)}</span>
+            {/* Summary Nilai Bar Sesuai Role (Hanya untuk Mitra & Super User) */}
+            {(!isDpl || isSuper) && (
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-6 flex-wrap">
+                  {/* Mode Tampilan Mitra / MPL */}
+                  {isMitra && !isSuper && (
+                    <>
+                      <div className="bg-white dark:bg-slate-900 px-3.5 py-2 rounded-xl border border-emerald-200 shadow-2xs">
+                        <span className="text-[10px] font-bold text-emerald-800 uppercase block">Subtotal MPL (Porsi Anda • 70%)</span>
+                        <div className="flex items-baseline gap-1 mt-0.5">
+                          <span className="text-xl font-black text-emerald-700">{subtotalMitra.toFixed(2)}</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="px-3 py-1.5 rounded-xl bg-slate-100/80 border border-slate-200 dark:border-slate-800">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase block">Subtotal MPL (Porsi Lapangan • 70%)</span>
-                      <span className="text-sm font-black text-slate-700 dark:text-slate-300 mt-0.5 block">
-                        {subtotalMitra > 0 ? subtotalMitra.toFixed(2) : "Belum Dinilai"}
-                      </span>
-                    </div>
-                  </>
-                )}
-
-                {/* Mode Tampilan Mitra / MPL */}
-                {isMitra && !isSuper && (
-                  <>
-                    <div className="bg-white dark:bg-slate-900 px-3.5 py-2 rounded-xl border border-emerald-200 shadow-2xs">
-                      <span className="text-[10px] font-bold text-emerald-800 uppercase block">Subtotal MPL (Porsi Anda • 70%)</span>
-                      <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-xl font-black text-emerald-700">{subtotalMitra.toFixed(2)}</span>
+                      <div className="px-3 py-1.5 rounded-xl bg-slate-100/80 border border-slate-200 dark:border-slate-800">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase block">Subtotal DPL (Akademik • 30%)</span>
+                        <span className="text-sm font-black text-slate-700 dark:text-slate-300 mt-0.5 block">
+                          {subtotalDpl > 0 ? subtotalDpl.toFixed(2) : "Belum Dinilai"}
+                        </span>
                       </div>
-                    </div>
-                    <div className="px-3 py-1.5 rounded-xl bg-slate-100/80 border border-slate-200 dark:border-slate-800">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase block">Subtotal DPL (Akademik • 30%)</span>
-                      <span className="text-sm font-black text-slate-700 dark:text-slate-300 mt-0.5 block">
-                        {subtotalDpl > 0 ? subtotalDpl.toFixed(2) : "Belum Dinilai"}
-                      </span>
-                    </div>
-                  </>
-                )}
+                    </>
+                  )}
 
-                {/* Mode Super User / Developer */}
-                {isSuper && (
-                  <>
-                    <div>
-                      <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Subtotal DPL (30%)</span>
-                      <span className="text-lg font-black text-amber-700">{subtotalDpl.toFixed(2)}</span>
-                    </div>
-                    <span className="text-slate-300 text-xl font-light">+</span>
-                    <div>
-                      <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Subtotal MPL (70%)</span>
-                      <span className="text-lg font-black text-emerald-700">{subtotalMitra.toFixed(2)}</span>
-                    </div>
-                    <span className="text-slate-300 text-xl font-light">=</span>
-                  </>
-                )}
+                  {/* Mode Super User / Developer */}
+                  {isSuper && (
+                    <>
+                      <div>
+                        <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Subtotal DPL (30%)</span>
+                        <span className="text-lg font-black text-amber-700">{subtotalDpl.toFixed(2)}</span>
+                      </div>
+                      <span className="text-slate-300 text-xl font-light">+</span>
+                      <div>
+                        <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Subtotal MPL (70%)</span>
+                        <span className="text-lg font-black text-emerald-700">{subtotalMitra.toFixed(2)}</span>
+                      </div>
+                      <span className="text-slate-300 text-xl font-light">=</span>
+                    </>
+                  )}
 
-                <div>
-                  <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Nilai Akhir Kumulatif</span>
-                  <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{nilaiAkhir.toFixed(2)}</span>
+                  <div>
+                    <span className="text-[10.5px] font-bold text-slate-400 uppercase block">Nilai Akhir Kumulatif</span>
+                    <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{nilaiAkhir.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`px-3 py-1.5 rounded-xl text-xs font-black border ${currentCategory.color}`}>
+                    {currentCategory.label} ({currentCategory.letter})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleSaveScore}
+                    disabled={saving || !selectedStudentId}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition shadow-xs cursor-pointer disabled:opacity-50"
+                    title="Simpan Penilaian Mahasiswa"
+                  >
+                    {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+                    <span>Simpan Penilaian</span>
+                  </button>
                 </div>
               </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-3 py-1.5 rounded-xl text-xs font-black border ${currentCategory.color}`}>
-                  {currentCategory.label} ({currentCategory.letter})
-                </span>
-                <button
-                  type="button"
-                  onClick={handleSaveScore}
-                  disabled={saving || !selectedStudentId}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition shadow-xs cursor-pointer disabled:opacity-50"
-                  title="Simpan Penilaian Mahasiswa"
-                >
-                  {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-                  <span>Simpan Penilaian</span>
-                </button>
-              </div>
-            </div>
+            )}
 
             {/* Tables Sesuai Role */}
             <div className={`grid grid-cols-1 ${isSuper ? "lg:grid-cols-2" : "grid-cols-1"} gap-6`}>
@@ -999,8 +995,22 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   </div>
 
                   <div className="p-3 bg-amber-50/70 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center text-xs">
-                    <span className="font-extrabold text-amber-900">Subtotal DPL (30%):</span>
-                    <span className="text-base font-black text-amber-700">{subtotalDpl.toFixed(2)}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-amber-900">Subtotal DPL (30%):</span>
+                      <span className="text-base font-black text-amber-700">{subtotalDpl.toFixed(2)}</span>
+                    </div>
+                    {canEditDpl && (
+                      <button
+                        type="button"
+                        onClick={handleSaveScore}
+                        disabled={saving || !selectedStudentId}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition shadow-xs cursor-pointer disabled:opacity-50"
+                        title="Simpan Penilaian Mahasiswa"
+                      >
+                        {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                        <span>Simpan Penilaian</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -1309,9 +1319,19 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             {/* Action Footer Bawah Form */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl">
               <div className="text-xs text-emerald-900">
-                <span className="font-extrabold block">Ringkasan Nilai Akhir:</span>
+                <span className="font-extrabold block">
+                  {isDpl && !isSuper ? "Subtotal Nilai DPL:" : "Ringkasan Nilai Akhir:"}
+                </span>
                 <span className="text-slate-600 dark:text-slate-400">
-                  DPL (30%): <strong>{subtotalDpl.toFixed(2)}</strong> | MPL (70%): <strong>{subtotalMitra.toFixed(2)}</strong> | Total: <strong>{nilaiAkhir.toFixed(2)}</strong> ({currentCategory.label} / {currentCategory.letter})
+                  {isDpl && !isSuper ? (
+                    <>
+                      Subtotal Akademik DPL (30%): <strong className="text-amber-700">{subtotalDpl.toFixed(2)}</strong> / 30.00
+                    </>
+                  ) : (
+                    <>
+                      DPL (30%): <strong>{subtotalDpl.toFixed(2)}</strong> | MPL (70%): <strong>{subtotalMitra.toFixed(2)}</strong> | Total: <strong>{nilaiAkhir.toFixed(2)}</strong> ({currentCategory.label} / {currentCategory.letter})
+                    </>
+                  )}
                 </span>
               </div>
               <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
