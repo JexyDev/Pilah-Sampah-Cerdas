@@ -231,7 +231,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   // ═══════════════════════════════════════════════════════════════════════
 
   /// Mengambil daftar kegiatan hari ini dari backend dan cek auto-start
-  Future<void> fetchKegiatanAktif({bool autoStartIfInZone = true, BuildContext? context}) async {
+  Future<void> fetchKegiatanAktif({bool autoStartIfInZone = true}) async {
     state = state.copyWith(isLoadingKegiatan: true, error: null, clearError: true);
     try {
       final repo = ref.read(kknRepositoryProvider);
@@ -246,13 +246,13 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       final ongoingKegiatan = list.where((k) => k.isBerlangsung).firstOrNull;
       if (ongoingKegiatan != null && !state.isTracking) {
         // Pulihkan sesi yang sedang berlangsung
-        await selectAndStartKegiatan(ongoingKegiatan, context: context, isRestoring: true);
+        await selectAndStartKegiatan(ongoingKegiatan, isRestoring: true);
         return;
       }
 
       // Auto-start check jika belum tracking dan diminta
       if (autoStartIfInZone && !state.isTracking) {
-        await _checkAndAutoStart(list, context);
+        await _checkAndAutoStart(list);
       }
     } catch (e) {
       state = state.copyWith(
@@ -263,7 +263,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   }
 
   /// One-time GPS check untuk auto-start kegiatan aktif saat user berada di dalam zona
-  Future<void> _checkAndAutoStart(List<KegiatanKknItem> list, [BuildContext? context]) async {
+  Future<void> _checkAndAutoStart(List<KegiatanKknItem> list) async {
     final activeItems = list.where((k) => k.isAktif && k.isBelumPresensi && !k.isBerlangsung).toList();
     if (activeItems.isEmpty) return;
 
@@ -291,7 +291,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         if (inside) {
           debugPrint('[KKN-Controller] Auto-start matched for activity: ${item.namaKegiatan}');
           state = state.copyWith(isAutoStarting: true);
-          await selectAndStartKegiatan(item, context: context);
+          await selectAndStartKegiatan(item);
           state = state.copyWith(isAutoStarting: false);
           break;
         }
@@ -308,17 +308,11 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   /// Memulai tracking pada suatu kegiatan KKN
   Future<bool> selectAndStartKegiatan(
     KegiatanKknItem kegiatan, {
-    BuildContext? context,
     bool isRestoring = false,
   }) async {
-    LocationPermission permission;
-    if (context != null) {
-      permission = await LocationService.instance.checkAndRequestPermission(context);
-    } else {
-      permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
     }
 
     if (permission == LocationPermission.denied ||
@@ -425,7 +419,6 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   Future<bool> switchKegiatan({
     required KegiatanKknItem oldKegiatan,
     required KegiatanKknItem newKegiatan,
-    BuildContext? context,
   }) async {
     try {
       final repo = ref.read(kknRepositoryProvider);
@@ -445,11 +438,15 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
       // 3. Mulai kegiatan baru
       state = state.copyWith(clearConflict: true);
-      return await selectAndStartKegiatan(newKegiatan, context: context);
+      return await selectAndStartKegiatan(newKegiatan);
     } catch (e) {
       state = state.copyWith(error: NetworkExceptionHelper.getErrorMessage(e));
       return false;
     }
+  }
+
+  void clearConflict() {
+    state = state.copyWith(clearConflict: true);
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -655,11 +652,11 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     }
   }
 
-  Future<void> forceLocationUpdate([BuildContext? context]) async {
+  Future<void> forceLocationUpdate() async {
     if (state.isTracking && state.selectedKegiatan != null) {
       await _performLocationUpdate();
     } else {
-      await fetchKegiatanAktif(autoStartIfInZone: true, context: context);
+      await fetchKegiatanAktif(autoStartIfInZone: true);
     }
   }
 

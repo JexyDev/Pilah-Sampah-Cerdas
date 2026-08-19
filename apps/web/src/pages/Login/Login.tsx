@@ -678,7 +678,7 @@ const Login: React.FC = () => {
           <div className="relative z-10 space-y-6 my-auto">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-emerald-300/30 text-white text-xs font-extrabold tracking-wide shadow-xs">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-              <span>Portal Web Resmi TrashCare</span>
+              <span>Web Monitoring TrashCare</span>
             </div>
 
             <div className="space-y-3">
@@ -750,9 +750,9 @@ const Login: React.FC = () => {
             </div>
 
             <div className="space-y-2 text-left pt-1">
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Masuk ke Portal Web</h1>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Masuk ke Akun</h1>
               <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                Portal Web TrashCare diperuntukkan khusus bagi pengelola dan pimpinan, meliputi Admin, Pimpinan Perguruan Tinggi, TaskForce, Dosen Pendamping Lapangan (DPL), Dinas Lingkungan Hidup (DLH), Camat, Lurah, dan Rukun Warga (RW). Silakan masukkan nomor HP terdaftar dan kata sandi akun Anda.
+                Silakan masukkan nomor HP terdaftar dan kata sandi akun Anda.
               </p>
             </div>
 
@@ -761,14 +761,9 @@ const Login: React.FC = () => {
 
               {/* Phone Input */}
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
-                    Nomor HP Terdaftar
-                  </label>
-                  <span className="text-[10px] text-slate-400 font-medium">
-                    Format: 08xxx / +628xxx
-                  </span>
-                </div>
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                  Nomor HP
+                </label>
                 <div className="relative">
                   <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
@@ -785,7 +780,8 @@ const Login: React.FC = () => {
                     }}
                     onKeyDown={(e) => {
                       if (e.ctrlKey || e.metaKey) return;
-                      if (!/^[\d+]$/.test(e.key) && !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter", "Home", "End"].includes(e.key)) {
+                      const allowed = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter", "Home", "End"];
+                      if (!/^[0-9+]$/.test(e.key) && !allowed.includes(e.key)) {
                         e.preventDefault();
                       }
                     }}
@@ -887,7 +883,7 @@ const Login: React.FC = () => {
                 {isLocalLoading || isStoreLoading ? (
                   <><RefreshCcw className="animate-spin" size={16} /><span>Memproses...</span></>
                 ) : (
-                  <><LogIn size={18} /><span>Masuk ke Portal Web TrashCare</span></>
+                  <><LogIn size={18} /><span>Masuk</span></>
                 )}
               </button>
             </form>

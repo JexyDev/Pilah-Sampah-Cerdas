@@ -1026,19 +1026,19 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         <div className="flex items-center justify-between">
                           <h4 className="text-xs font-black text-amber-900 dark:text-amber-300 uppercase flex items-center gap-1.5">
                             <GraduationCap size={15} />
-                            <span>Porsi Akademik DPL (30%)</span>
+                            <span>Porsi Akademik DPL</span>
                           </h4>
                           <span className="text-base font-black text-amber-700 dark:text-amber-400">
                             {subtotalDpl.toFixed(2)}
                           </span>
                         </div>
                         <ul className="text-xs divide-y divide-amber-100 dark:divide-amber-900/40 text-slate-700 dark:text-slate-300">
-                          <li className="py-1.5 flex justify-between"><span>Perencanaan (5%):</span><span className="font-bold">{nilaiAspekDpl.perencanaan.toFixed(2)}</span></li>
-                          <li className="py-1.5 flex justify-between"><span>Kontribusi (5%):</span><span className="font-bold">{nilaiAspekDpl.kontribusi.toFixed(2)}</span></li>
-                          <li className="py-1.5 flex justify-between"><span>Logbook (5%):</span><span className="font-bold">{nilaiAspekDpl.logbook.toFixed(2)}</span></li>
-                          <li className="py-1.5 flex justify-between"><span>Analisis Solusi (5%):</span><span className="font-bold">{nilaiAspekDpl.analisis.toFixed(2)}</span></li>
-                          <li className="py-1.5 flex justify-between"><span>Output & Dampak (5%):</span><span className="font-bold">{nilaiAspekDpl.output.toFixed(2)}</span></li>
-                          <li className="py-1.5 flex justify-between"><span>Laporan Akhir (5%):</span><span className="font-bold">{nilaiAspekDpl.laporanAkhir.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Perencanaan:</span><span className="font-bold">{nilaiAspekDpl.perencanaan.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Kontribusi:</span><span className="font-bold">{nilaiAspekDpl.kontribusi.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Logbook:</span><span className="font-bold">{nilaiAspekDpl.logbook.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Analisis Solusi:</span><span className="font-bold">{nilaiAspekDpl.analisis.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Output & Dampak:</span><span className="font-bold">{nilaiAspekDpl.output.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Laporan Akhir:</span><span className="font-bold">{nilaiAspekDpl.laporanAkhir.toFixed(2)}</span></li>
                         </ul>
                       </div>
 
@@ -1047,21 +1047,21 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         <div className="flex items-center justify-between">
                           <h4 className="text-xs font-black text-emerald-900 dark:text-emerald-300 uppercase flex items-center gap-1.5">
                             <ClipboardList size={15} />
-                            <span>Porsi Lapangan MPL (70%)</span>
+                            <span>Porsi Lapangan MPL</span>
                           </h4>
                           <span className="text-base font-black text-emerald-700 dark:text-emerald-400">
                             {subtotalMitra.toFixed(2)}
                           </span>
                         </div>
                         <ul className="text-xs divide-y divide-emerald-100 dark:divide-emerald-900/40 text-slate-700 dark:text-slate-300">
-                          <li className="py-1.5 flex justify-between"><span>Kehadiran (10%):</span><span className="font-bold">{nilaiAspekMitra.kehadiran.toFixed(2)}</span></li>
-                          <li className="py-1.5 flex justify-between"><span>Warga Binaan (10%):</span><span className="font-bold">{nilaiAspekMitra.wargaBinaan.toFixed(2)}</span></li>
-                          <li className="py-1.5 flex justify-between"><span>Program Kerja (10%):</span><span className="font-bold">{nilaiAspekMitra.proker.toFixed(2)}</span></li>
-                          <li className="py-1.5 flex justify-between"><span>Komunikasi & Etika (8%):</span><span className="font-bold">{nilaiAspekMitra.komunikasi.toFixed(2)}</span></li>
-                          <li className="py-1.5 flex justify-between"><span>Tanggung Jawab (8%):</span><span className="font-bold">{nilaiAspekMitra.tanggungJawab.toFixed(2)}</span></li>
-                          <li className="py-1.5 flex justify-between"><span>Bukti Kegiatan (7%):</span><span className="font-bold">{nilaiAspekMitra.buktiKegiatan.toFixed(2)}</span></li>
-                          <li className="py-1.5 flex justify-between"><span>Dampak Warga (10%):</span><span className="font-bold">{nilaiAspekMitra.dampak.toFixed(2)}</span></li>
-                          <li className="py-1.5 flex justify-between"><span>Inisiatif (7%):</span><span className="font-bold">{nilaiAspekMitra.inisiatif.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Kehadiran:</span><span className="font-bold">{nilaiAspekMitra.kehadiran.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Warga Binaan:</span><span className="font-bold">{nilaiAspekMitra.wargaBinaan.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Program Kerja:</span><span className="font-bold">{nilaiAspekMitra.proker.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Komunikasi & Etika:</span><span className="font-bold">{nilaiAspekMitra.komunikasi.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Tanggung Jawab:</span><span className="font-bold">{nilaiAspekMitra.tanggungJawab.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Bukti Kegiatan:</span><span className="font-bold">{nilaiAspekMitra.buktiKegiatan.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Dampak Warga:</span><span className="font-bold">{nilaiAspekMitra.dampak.toFixed(2)}</span></li>
+                          <li className="py-1.5 flex justify-between"><span>Inisiatif:</span><span className="font-bold">{nilaiAspekMitra.inisiatif.toFixed(2)}</span></li>
                         </ul>
                       </div>
                     </div>
@@ -1150,11 +1150,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                 <span className="font-black text-slate-900 dark:text-slate-100">{studentInfo?.nama} ({studentInfo?.nim})</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-500">Subtotal DPL (Akademik 30%):</span>
+                <span className="text-slate-500">Subtotal DPL:</span>
                 <span className="font-bold text-amber-700 dark:text-amber-400">{subtotalDpl.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-500">Subtotal MPL (Lapangan 70%):</span>
+                <span className="text-slate-500">Subtotal MPL:</span>
                 <span className="font-bold text-emerald-700 dark:text-emerald-400">{subtotalMitra.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-700">

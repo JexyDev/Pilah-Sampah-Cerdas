@@ -85,6 +85,12 @@ export interface LaporanAkhirItem {
   updatedAt?: string;
 }
 
+export interface StudentPenilaianResponse {
+  student: StudentInfo;
+  requirements: RequirementsInfo;
+  assessment: AssessmentData;
+}
+
 export interface LaporanAkhirResponse {
   stats: {
     totalMahasiswa: number;

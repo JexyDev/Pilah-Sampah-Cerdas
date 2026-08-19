@@ -188,7 +188,7 @@ const ResiduDashboard: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] gap-4">
         <RefreshCw className="animate-spin text-primary w-12 h-12" />
-        <p className="text-on-surface-variant font-medium">Memuat Portal Petugas Residu...</p>
+        <p className="text-on-surface-variant font-medium">Memuat Data Residu...</p>
       </div>
     );
   }
@@ -198,16 +198,11 @@ const ResiduDashboard: React.FC = () => {
       {/* SUCCESS OVERLAY */}
       {showSuccessOverlay && (
         <div className="fixed inset-0 bg-red-600/95 flex flex-col items-center justify-center z-[100] animate-in fade-in duration-300">
-          <div className="text-center text-white space-y-4 max-w-sm px-6">
-            <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center mx-auto animate-bounce border border-white/30">
-              <ShieldAlert className="w-12 h-12 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold">Pelanggaran Dicatat!</h2>
-            <p className="text-sm text-red-100">
-              Pelanggaran residu telah tervalidasi. Poin warga dipotong dan peringatan otomatis
-              dikirimkan via WhatsApp.
-            </p>
+          <div className="w-20 h-20 rounded-full bg-white/20 border border-white/30 flex items-center justify-center mb-6 animate-bounce">
+            <CheckCircle size={48} className="text-white" />
           </div>
+          <h2 className="text-3xl font-black text-white tracking-tight mb-2">Penimbangan Berhasil Disimpan</h2>
+          <p className="text-white/80 text-sm">Data transaksi residu telah dicatat secara permanen.</p>
         </div>
       )}
 
@@ -217,10 +212,10 @@ const ResiduDashboard: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
             <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-              Portal Pengawasan Residu
+              Monitoring Residu
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Pusat validasi berat timbangan fisik hilir, rute penjemputan &amp; pelaporan residu
+              Validasi berat timbangan fisik hilir, rute penjemputan, dan pelaporan residu
             </p>
           </div>
 

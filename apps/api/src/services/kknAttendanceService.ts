@@ -490,12 +490,22 @@ export class KknAttendanceService {
   }
 
   /**
-   * Get all active student locations recorded in the last 30 minutes.
+   * Get all active student locations recorded in the last TTL minutes (default 5 minutes).
    * If dplUserId is provided, filters to students in DPL's assigned kelompok.
    */
   async getActiveStudentsLocations(dplUserId?: string, kelompokId?: string) {
-    // Only fetch fresh locations from the last 30 minutes
-    const cutoff = new Date(Date.now() - 30 * 60 * 1000);
+    let ttlMinutes = 5;
+    try {
+      const ttlConfig = await configService.getConfig("attendance_active_location_ttl_minutes");
+      if (ttlConfig && !isNaN(Number(ttlConfig)) && Number(ttlConfig) > 0) {
+        ttlMinutes = Number(ttlConfig);
+      }
+    } catch (_err) {
+      ttlMinutes = 5;
+    }
+
+    // Only fetch fresh locations from the last TTL minutes (default: 5 minutes)
+    const cutoff = new Date(Date.now() - ttlMinutes * 60 * 1000);
 
     // If DPL or specific kelompokId provided, find student user IDs
     let targetStudentIds: string[] | null = null;

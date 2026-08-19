@@ -1796,12 +1796,6 @@ const Monitoring: React.FC = () => {
                     {selectedBinDetail.latitude ? `${Number(selectedBinDetail.latitude).toFixed(5)}, ${Number(selectedBinDetail.longitude).toFixed(5)}` : "Belum terikat"}
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400 font-semibold">Waktu Verifikasi:</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-100">
-                    {(selectedBinDetail as any).verifiedAt || "Terverifikasi Otomatis"}
-                  </span>
-                </div>
                 <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
                   <span className="text-slate-400 font-semibold block mb-0.5">Log Terakhir:</span>
                   <p className="font-bold text-slate-800 dark:text-slate-100 text-[11.5px]">

@@ -321,7 +321,7 @@ const KknDashboard: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] gap-4">
         <Loader2 className="animate-spin text-emerald-600 w-12 h-12" />
-        <p className="text-slate-600 dark:text-slate-400 font-bold text-sm">Memuat Portal & Dashboard KKN...</p>
+        <p className="text-slate-600 dark:text-slate-400 font-bold text-sm">Memuat Data KKN...</p>
       </div>
     );
   }
@@ -371,12 +371,12 @@ const KknDashboard: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
             <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-slate-100">
-              {isSuperOrAdmin ? "Monitoring Aktivitas Mahasiswa KKN" : `Portal KKN: ${studentKkn?.nama || "Mahasiswa"}`}
+              {isSuperOrAdmin ? "Monitoring Aktivitas KKN" : `Dasbor KKN: ${studentKkn?.nama || "Mahasiswa"}`}
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               {isSuperOrAdmin
-                ? `Akses ${user?.peran || "SUPER_USER"} • Memantau seluruh progres aktivasi tempat sampah dan kepatuhan warga di wilayah binaan`
-                : "Pusat pencatatan pendampingan warga, aktivasi tempat sampah, dan logbook KKN"}
+                ? `Akses ${user?.peran || "SUPER_USER"} • Memantau progres aktivasi tempat sampah dan kepatuhan warga di wilayah binaan`
+                : "Pencatatan pendampingan warga, aktivasi tempat sampah, dan logbook kegiatan"}
             </p>
           </div>
 

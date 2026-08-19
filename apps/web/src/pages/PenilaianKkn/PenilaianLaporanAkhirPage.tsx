@@ -26,10 +26,7 @@ import {
   X,
   Save,
   Printer,
-  Download,
-  BookOpen,
   Award,
-  Filter,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {

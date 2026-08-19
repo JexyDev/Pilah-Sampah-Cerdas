@@ -75,7 +75,7 @@ export const RwApproval = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <h1 className="text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">Portal Approval RW</h1>
+      <h1 className="text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">Verifikasi RW</h1>
       
 
 

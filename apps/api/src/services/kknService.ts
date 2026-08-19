@@ -1780,9 +1780,12 @@ export class KknService {
 
     return {
       reportId: report.id,
+      id: report.id,
       earnedPoints,
       rwTerkait: rwName,
       dplId: dplUser?.id || dplId || null,
+      fotoDokumentasiUrl: report.fotoDokumentasiUrl,
+      program: report.program,
     };
   }
 

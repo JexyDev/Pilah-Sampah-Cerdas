@@ -430,7 +430,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             {
               to: "/penilaian-kkn/mahasiswa",
-              label: "Nilai Mahasiswa",
+              label: "Penilaian Mahasiswa",
               allowed: [
                 "DEVELOPER",
                 "DPL",
@@ -446,7 +446,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/penilaian-kkn/program-kerja",
-              label: "Nilai Proker",
+              label: "Penilaian Program Kerja",
               allowed: [
                 "DEVELOPER",
                 "DPL",
@@ -457,7 +457,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/penilaian-kkn/laporan-akhir",
-              label: "Nilai Laporan",
+              label: "Penilaian Laporan Akhir",
               allowed: [
                 "DEVELOPER",
                 "DPL",
@@ -469,7 +469,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/penilaian-kkn/rekap",
-              label: "Rekap Nilai",
+              label: "Rekap & Nilai Akhir",
               allowed: [
                 "DEVELOPER",
                 "DPL",
@@ -944,7 +944,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                         if (childrenToRender.length === 0) return null;
                         if (
                           childrenToRender.length === 1 &&
-                          !["Data Pengguna", "Data Wilayah", "Dataset"].includes(item.label)
+                          !["Pengguna", "Data Pengguna", "Wilayah", "Data Wilayah", "Dataset"].includes(item.label)
                         ) {
                           return (
                             <NavItem

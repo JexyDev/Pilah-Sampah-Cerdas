@@ -1009,10 +1009,22 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       );
     });
 
+    // Auto-decay stale student markers older than 5 minutes every 30 seconds
+    const decayInterval = setInterval(() => {
+      const now = Date.now();
+      setStudentLocations((prev) =>
+        prev.filter((loc) => {
+          const time = new Date(loc.recordedAt).getTime();
+          return !isNaN(time) && now - time < 5 * 60 * 1000;
+        })
+      );
+    }, 30000);
+
     return () => {
       unsubLoc();
       unsubLogout();
       unsubCheckout();
+      clearInterval(decayInterval);
     };
   }, []);
 

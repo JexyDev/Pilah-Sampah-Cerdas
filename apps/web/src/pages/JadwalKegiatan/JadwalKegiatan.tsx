@@ -108,19 +108,19 @@ const DualGeofencePickerMap: React.FC<{
 const JadwalKegiatan: React.FC = () => {
   const { user } = useAuthStore();
   const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
-  const canManageSchedules = [
-    "SUPER_USER",
-    "ADMIN_DLH",
-    "PEMIMPIN",
-    "PANITIA_TASKFORCE",
-    "DPL",
-    "DOSEN_PEMBIMBING",
-    "DEVELOPER",
-    "RW",
-    "RT",
-    "PETUGAS_RESIDU",
-  ].includes(userRole);
   const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
+  const canManageSchedules =
+    !isDpl &&
+    [
+      "SUPER_USER",
+      "ADMIN_DLH",
+      "PEMIMPIN",
+      "PANITIA_TASKFORCE",
+      "DEVELOPER",
+      "RW",
+      "RT",
+      "PETUGAS_RESIDU",
+    ].includes(userRole);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalStep, setModalStep] = useState(1);

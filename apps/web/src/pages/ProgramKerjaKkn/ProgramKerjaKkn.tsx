@@ -563,7 +563,7 @@ export const ProgramKerjaKkn: React.FC = () => {
           <div className="flex flex-col items-center gap-0.5">
             <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 rounded-full font-bold text-[11px]">
               <Clock size={11} className="shrink-0" />
-              Menunggu Persetujuan
+              Belum disetujui
             </span>
           </div>
         );
@@ -578,22 +578,22 @@ export const ProgramKerjaKkn: React.FC = () => {
         return (
           <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 rounded-full font-bold text-[11px]">
             <PlayCircle size={11} className="shrink-0" />
-            Sedang Dilaksanakan
+            Sedang dilaksanakan
           </span>
         );
       case "SELESAI":
         return (
           <span className="inline-flex items-center gap-1 px-3 py-1 bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800/60 rounded-full font-bold text-[11px]">
             <FolderCheck size={11} className="shrink-0" />
-            Selesai
+            Sudah selesai
           </span>
         );
       case "DITOLAK":
         return (
-          <div className="flex flex-col items-center gap-0.5" title={catatanDpl || "Ditolak DPL"}>
+          <div className="flex flex-col items-center gap-0.5" title={catatanDpl || "Tidak disetujui DPL"}>
             <span className="inline-flex items-center gap-1 px-3 py-1 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 rounded-full font-bold text-[11px]">
               <XCircle size={11} className="shrink-0" />
-              Ditolak
+              Tidak disetujui
             </span>
             {catatanDpl && (
               <span className="text-[10px] text-rose-600 dark:text-rose-400 font-medium max-w-[140px] truncate">
@@ -799,11 +799,11 @@ export const ProgramKerjaKkn: React.FC = () => {
               className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
             >
               <option value="ALL">Semua Status</option>
-              <option value="BELUM_DISETUJUI">Menunggu Persetujuan</option>
+              <option value="BELUM_DISETUJUI">Belum disetujui</option>
               <option value="DITERIMA">Disetujui</option>
-              <option value="SEDANG_BERJALAN">Sedang Dilaksanakan</option>
-              <option value="SELESAI">Selesai</option>
-              <option value="DITOLAK">Ditolak</option>
+              <option value="SEDANG_BERJALAN">Sedang dilaksanakan</option>
+              <option value="SELESAI">Sudah selesai</option>
+              <option value="DITOLAK">Tidak disetujui</option>
             </select>
           </div>
         </div>
