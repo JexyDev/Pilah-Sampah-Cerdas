@@ -10,6 +10,7 @@ type DepositCallback = (deposit: any) => void;
 type StudentLocationCallback = (locationData: any) => void;
 type StudentLogoutCallback = (data: { studentId: string; loggedOutAt?: string; removedAt?: string }) => void;
 type StudentCheckoutCallback = (checkoutData: any) => void;
+type StudentAttendanceCallback = (attendanceData: any) => void;
 type StatusCallback = (status: "CONNECTED" | "CONNECTING" | "DISCONNECTED") => void;
 
 class TrashcareWebSocketClient {
@@ -18,6 +19,7 @@ class TrashcareWebSocketClient {
   private studentLocationListeners: Set<StudentLocationCallback> = new Set();
   private studentLogoutListeners: Set<StudentLogoutCallback> = new Set();
   private studentCheckoutListeners: Set<StudentCheckoutCallback> = new Set();
+  private studentAttendanceListeners: Set<StudentAttendanceCallback> = new Set();
   private statusListeners: Set<StatusCallback> = new Set();
   private reconnectTimeout: any = null;
   private status: "CONNECTED" | "CONNECTING" | "DISCONNECTED" = "DISCONNECTED";
@@ -93,6 +95,14 @@ class TrashcareWebSocketClient {
                 console.error("[WS] studentCheckout listener error:", err);
               }
             });
+          } else if (msg.type === "STUDENT_ATTENDANCE_UPDATE" && msg.data) {
+            this.studentAttendanceListeners.forEach((listener) => {
+              try {
+                listener(msg.data);
+              } catch (err) {
+                console.error("[WS] studentAttendance listener error:", err);
+              }
+            });
           }
         } catch (e) {
           // Non-JSON or ignored frame
@@ -161,6 +171,14 @@ class TrashcareWebSocketClient {
     this.connect();
     return () => {
       this.studentCheckoutListeners.delete(callback);
+    };
+  }
+
+  public onStudentAttendance(callback: StudentAttendanceCallback): () => void {
+    this.studentAttendanceListeners.add(callback);
+    this.connect();
+    return () => {
+      this.studentAttendanceListeners.delete(callback);
     };
   }
 

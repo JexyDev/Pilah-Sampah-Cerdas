@@ -382,6 +382,34 @@ export class KknAttendanceService {
       return record;
     });
 
+    // Broadcast attendance check-in update via WebSocket
+    websocketService.broadcastStudentAttendance({
+      id: attendance.id,
+      studentId,
+      scheduleId,
+      status: attendance.status,
+      attendedAt: attendance.attendedAt,
+      completedAt: (attendance as any).checkOutAt || null,
+      method: attendance.method,
+      latitude,
+      longitude,
+      student: {
+        id: studentId,
+        name: finalNama,
+        phone: studentUser?.phone || "",
+        studentProfile: {
+          nim: finalNim,
+          jurusan: studentUser?.studentProfile?.jurusan || "-",
+          kelompok: studentUser?.studentProfile?.kelompok
+            ? {
+                id: studentUser.studentProfile.kelompok.id,
+                name: studentUser.studentProfile.kelompok.name,
+              }
+            : undefined,
+        },
+      },
+    });
+
     return {
       ...attendance,
       namaMahasiswa: finalNama,
@@ -471,6 +499,21 @@ export class KknAttendanceService {
       checkOutAt: updated.checkOutAt,
       durationMinutes,
       status: updated.status,
+      student: updated.student,
+    });
+
+    // Broadcast attendance update via WebSocket
+    websocketService.broadcastStudentAttendance({
+      id: updated.id,
+      studentId,
+      scheduleId: updated.scheduleId,
+      status: updated.status,
+      attendedAt: updated.attendedAt,
+      completedAt: updated.checkOutAt,
+      totalMinutes: durationMinutes,
+      method: updated.method,
+      latitude: updated.latitude,
+      longitude: updated.longitude,
       student: updated.student,
     });
 
@@ -1102,7 +1145,6 @@ export class KknAttendanceService {
       students: summary,
     };
   }
-
   /**
    * Mengambil daftar kegiatan KKN hari ini untuk mahasiswa yang sedang login.
    * Endpoint: GET /api/v1/kkn/kegiatan-aktif
@@ -1339,6 +1381,29 @@ export class KknAttendanceService {
       latitude,
       longitude,
       recordedAt: new Date().toISOString(),
+      student: {
+        id: studentUserId,
+        name: student.user.name,
+        phone: student.user.phone,
+        studentProfile: {
+          nim: student.nim,
+          jurusan: student.jurusan,
+          kelompokId: student.kelompokId,
+        },
+      },
+    });
+
+    // Broadcast realtime attendance start event via WebSocket
+    websocketService.broadcastStudentAttendance({
+      id: attendance.id,
+      studentId: studentUserId,
+      scheduleId,
+      status: attendance.status,
+      attendedAt: attendance.attendedAt,
+      completedAt: null,
+      method: "GPS_ACTIVITY",
+      latitude,
+      longitude,
       student: {
         id: studentUserId,
         name: student.user.name,

@@ -302,6 +302,26 @@ export const websocketService = {
   },
 
   /**
+   * Broadcast student attendance check-in or status update event
+   */
+  broadcastStudentAttendance: (attendanceData: any) => {
+    const message = JSON.stringify({
+      type: "STUDENT_ATTENDANCE_UPDATE",
+      data: attendanceData,
+    });
+
+    allSockets.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(message);
+        } catch (err) {
+          console.error("[WebSocketService] broadcastStudentAttendance send error:", err);
+        }
+      }
+    });
+  },
+
+  /**
    * Send realtime notification to specific Petugas Residu
    */
   broadcastPetugasNotification: (petugasUserId: string, notificationData: any) => {

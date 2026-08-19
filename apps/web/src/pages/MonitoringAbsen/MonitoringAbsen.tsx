@@ -446,6 +446,11 @@ const MonitoringAbsen: React.FC = () => {
   const [displayMode] = useState<"table" | "cards">("table");
   const [showMap, setShowMap] = useState<boolean>(false);
 
+  // Real-Time WebSocket & Pagination States
+  const [wsStatus, setWsStatus] = useState<"CONNECTED" | "CONNECTING" | "DISCONNECTED">("DISCONNECTED");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+
   // Export Modal State with Period Picker
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportPeriod, setExportPeriod] = useState<
@@ -938,8 +943,17 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     }
   }, [selectedKelompokId, activeSchedule, groups]);
 
-  // WebSocket Live GPS Tracking for Developer & Super Admin (and seamless real-time map updates)
+  // Reset page when filter or search changes
   useEffect(() => {
+    setCurrentPage(1);
+  }, [studentSearch, attendanceFilterTab, selectedKelompokId, selectedScheduleId]);
+
+  // WebSocket Live GPS & Attendance Tracking for Developer & Super Admin (and seamless real-time map/table updates)
+  useEffect(() => {
+    const unsubStatus = wsClient.onStatusChange((status) => {
+      setWsStatus(status);
+    });
+
     const unsubLoc = wsClient.onStudentLocation((locData) => {
       if (!locData || !locData.studentId) return;
       const lat = Number(locData.latitude);
@@ -1009,6 +1023,45 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       );
     });
 
+    const unsubAttendance = wsClient.onStudentAttendance((attData) => {
+      if (!attData || !attData.studentId) return;
+      setAttendance((prev) => {
+        const index = prev.findIndex((a) => a.studentId === attData.studentId);
+        if (index >= 0) {
+          const next = [...prev];
+          next[index] = {
+            ...next[index],
+            id: attData.id || next[index].id,
+            attendedAt: attData.attendedAt || next[index].attendedAt,
+            completedAt: attData.completedAt !== undefined ? attData.completedAt : next[index].completedAt,
+            status: attData.status || next[index].status,
+            currentStatus: attData.status || next[index].currentStatus,
+            method: attData.method || next[index].method,
+            latitude: attData.latitude !== undefined ? attData.latitude : next[index].latitude,
+            longitude: attData.longitude !== undefined ? attData.longitude : next[index].longitude,
+            totalMinutes: attData.totalMinutes !== undefined ? attData.totalMinutes : next[index].totalMinutes,
+          };
+          return next;
+        } else if (attData.student) {
+          const newRec: AttendanceRecord = {
+            id: attData.id || `att-${Date.now()}`,
+            scheduleId: attData.scheduleId || selectedScheduleId,
+            studentId: attData.studentId,
+            attendedAt: attData.attendedAt || new Date().toISOString(),
+            completedAt: attData.completedAt || null,
+            status: attData.status || "HADIR",
+            currentStatus: attData.status || "HADIR",
+            method: attData.method || "GPS_ACTIVITY",
+            latitude: attData.latitude,
+            longitude: attData.longitude,
+            student: attData.student,
+          };
+          return [newRec, ...prev];
+        }
+        return prev;
+      });
+    });
+
     // Auto-decay stale student markers older than 5 minutes every 30 seconds
     const decayInterval = setInterval(() => {
       const now = Date.now();
@@ -1021,12 +1074,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     }, 30000);
 
     return () => {
+      unsubStatus();
       unsubLoc();
       unsubLogout();
       unsubCheckout();
+      unsubAttendance();
       clearInterval(decayInterval);
     };
-  }, []);
+  }, [selectedScheduleId]);
 
   // Export Attendance Rekap to CSV
   const handleExportCSV = () => {
@@ -1176,6 +1231,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       return true;
     });
   }, [attendance, attendanceFilterTab, studentSearch]);
+
+  // Paginated Attendance for Table & Card views
+  const totalPages = Math.max(1, Math.ceil(filteredAttendance.length / pageSize));
+  const paginatedAttendance = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredAttendance.slice(start, start + pageSize);
+  }, [filteredAttendance, currentPage, pageSize]);
 
   // Active student markers with smart clustering (Anti-Numpuk)
   const activeStudentMarkers = useMemo(() => {
@@ -1776,6 +1838,35 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
         {/* Action Buttons Toolbar */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* WebSocket Live Status Indicator Badge */}
+          <div
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-bold shadow-2xs ${
+              wsStatus === "CONNECTED"
+                ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                : wsStatus === "CONNECTING"
+                ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700"
+            }`}
+            title={
+              wsStatus === "CONNECTED"
+                ? "WebSocket Realtime Terhubung: Presensi dan GPS otomatis diperbarui seketika tanpa perlu refresh halaman."
+                : wsStatus === "CONNECTING"
+                ? "Menghubungkan ke server realtime..."
+                : "WebSocket Terputus (mencoba menyambung kembali)"
+            }
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                wsStatus === "CONNECTED"
+                  ? "bg-emerald-500 animate-pulse"
+                  : wsStatus === "CONNECTING"
+                  ? "bg-amber-500 animate-ping"
+                  : "bg-slate-400"
+              }`}
+            />
+            <span>{wsStatus === "CONNECTED" ? "Live WebSocket" : wsStatus === "CONNECTING" ? "Menghubungkan..." : "Offline"}</span>
+          </div>
+
           {/* Filter Kelompok KKN (Multi-Tenant Selector untuk Developer / Super User / DLH / Camat) */}
           {!isDpl ? (
             <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
@@ -2390,9 +2481,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
         {/* Data List Display */}
         {filteredAttendance.length > 0 ? (
-          displayMode === "table" ? (
-            /* Mode 1: Table Pro */
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-2xs">
+          <>
+            {displayMode === "table" ? (
+              /* Mode 1: Table Pro */
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-2xs">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead className="bg-slate-50/90 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
@@ -2414,7 +2506,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
-                    {filteredAttendance.map((rec, idx) => {
+                    {paginatedAttendance.map((rec, idx) => {
+                      const itemNumber = (currentPage - 1) * pageSize + idx + 1;
                       const statusUpper = String(rec.status || "").toUpperCase();
                       const methodUpper = String(rec.method || "").toUpperCase();
                       const currentStatusUpper = String(rec.currentStatus || "").toUpperCase();
@@ -2494,7 +2587,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           className="hover:bg-slate-50/70 dark:hover:bg-slate-800/70 transition-colors"
                         >
                           <td className="py-3.5 px-4 text-center text-slate-500 font-bold">
-                            {idx + 1}
+                            {itemNumber}
                           </td>
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
@@ -2639,7 +2732,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           ) : (
             /* Mode 2: Cards Grid */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
-              {filteredAttendance.map((rec) => {
+              {paginatedAttendance.map((rec) => {
                 const isAttended = Boolean(rec.attendedAt);
                 const isCompleted = Boolean(rec.completedAt);
                 const isInsideZone = rec.currentStatus === "MASIH_DI_LOKASI" || rec.currentStatus === "DI_LOKASI_BELUM_ABSEN";
@@ -2838,7 +2931,100 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 );
               })}
             </div>
-          )
+          )}
+
+          {/* Kontrol Navigasi Pagination Pro */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3.5 bg-white dark:bg-slate-900 px-5 py-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs mt-4">
+            <div className="flex items-center gap-3 text-xs text-slate-500 font-semibold flex-wrap">
+              <span>
+                Menampilkan{" "}
+                <strong className="text-slate-800 dark:text-slate-100 font-bold">
+                  {(currentPage - 1) * pageSize + 1} -{" "}
+                  {Math.min(filteredAttendance.length, currentPage * pageSize)}
+                </strong>{" "}
+                dari{" "}
+                <strong className="text-slate-800 dark:text-slate-100 font-bold">
+                  {filteredAttendance.length}
+                </strong>{" "}
+                mahasiswa
+              </span>
+
+              <div className="flex items-center gap-1.5 pl-3 border-l border-slate-200 dark:border-slate-800">
+                <span className="text-[11px] text-slate-400">Baris:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+                >
+                  <option value={10}>10 / halaman</option>
+                  <option value={25}>25 / halaman</option>
+                  <option value={50}>50 / halaman</option>
+                  <option value={100}>100 / halaman</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Tombol Halaman */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
+              >
+                Sebelumnya
+              </button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((page) => {
+                    if (totalPages <= 7) return true;
+                    if (page === 1 || page === totalPages) return true;
+                    return Math.abs(page - currentPage) <= 1;
+                  })
+                  .reduce<(number | string)[]>((acc, page, idx, arr) => {
+                    if (idx > 0 && (page as number) - (arr[idx - 1] as number) > 1) {
+                      acc.push("...");
+                    }
+                    acc.push(page);
+                    return acc;
+                  }, [])
+                  .map((item, idx) =>
+                    typeof item === "string" ? (
+                      <span key={`ellipsis-${idx}`} className="px-2 text-slate-400 font-bold text-xs">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setCurrentPage(item as number)}
+                        className={`w-8 h-8 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center ${
+                          currentPage === item
+                            ? "bg-emerald-600 text-white shadow-xs"
+                            : "border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        {item}
+                      </button>
+                    )
+                  )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
+              >
+                Selanjutnya
+              </button>
+            </div>
+          </div>
+        </>
         ) : (
           <EmptyTableState
             entityName="Presensi Mahasiswa"
