@@ -42,7 +42,7 @@ class KelolaBinView extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.delete_outline, size: 64, color: AppColors.textHint),
+                  Image.asset('assets/icons/recycle-bin.png', color: AppColors.textHint, width: 64, height: 64),
                   SizedBox(height: 16),
                   Text(
                     'Belum ada tempat sampah terdaftar.',
@@ -111,7 +111,7 @@ class _BinCardLarge extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.delete_outline, color: color, size: 40),
+          Image.asset('assets/icons/recycle-bin.png', color: color, width: 40, height: 40),
           const SizedBox(width: 16),
           Expanded(
             child: Column(

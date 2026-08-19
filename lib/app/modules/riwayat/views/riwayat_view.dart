@@ -321,7 +321,6 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
                 children: [
                   Expanded(
                     child: _SummaryCard(
-                      icon: Icons.delete_rounded,
                       iconColor: AppColors.organicColor,
                       bgColor: AppColors.organicColor.withValues(alpha: 0.1),
                       label: 'Organik',
@@ -332,7 +331,6 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _SummaryCard(
-                      icon: Icons.delete_rounded,
                       iconColor: AppColors.warningYellow,
                       bgColor: AppColors.warningYellow.withValues(alpha: 0.15),
                       label: 'Anorganik',
@@ -407,7 +405,6 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
 
 class _SummaryCard extends StatelessWidget {
   const _SummaryCard({
-    required this.icon,
     required this.iconColor,
     required this.bgColor,
     required this.label,
@@ -415,7 +412,6 @@ class _SummaryCard extends StatelessWidget {
     required this.valueColor,
   });
 
-  final IconData icon;
   final Color iconColor;
   final Color bgColor;
   final String label;
@@ -439,7 +435,7 @@ class _SummaryCard extends StatelessWidget {
               color: bgColor,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: iconColor, size: 18),
+            child: Image.asset('assets/icons/recycle-bin.png', color: iconColor, width: 18, height: 18),
           ),
           const SizedBox(width: 8),
           Column(
@@ -496,7 +492,7 @@ class _RiwayatItem extends ConsumerWidget {
               color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(Icons.delete_rounded, color: color, size: 22),
+            child: Image.asset('assets/icons/recycle-bin.png', color: color, width: 22, height: 22),
           ),
           const SizedBox(width: 12),
           Expanded(

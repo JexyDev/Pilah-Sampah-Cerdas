@@ -290,17 +290,11 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                       children: [
                         Row(
                           children: [
-                            Icon(
-                              !isBinActive
-                                  ? Icons.do_not_disturb_on_rounded
-                                  : (isPendingBin
-                                      ? Icons.access_time_rounded
-                                      : (bin.binType == WasteType.organic
-                                          ? Icons.compost_rounded
-                                          : Icons.delete_outline_rounded)),
-                              color: iconColor,
-                              size: AppDimensions.iconMd,
-                            ),
+                            !isBinActive
+                                ? Icon(Icons.do_not_disturb_on_rounded, color: iconColor, size: AppDimensions.iconMd)
+                                : isPendingBin
+                                    ? Icon(Icons.access_time_rounded, color: iconColor, size: AppDimensions.iconMd)
+                                    : Image.asset('assets/icons/recycle-bin.png', color: iconColor, width: AppDimensions.iconMd, height: AppDimensions.iconMd),
                             const SizedBox(width: AppDimensions.sm),
                             Expanded(
                               child: Row(
