@@ -164,25 +164,10 @@ class _LoginViewState extends ConsumerState<LoginView> {
                       // Logo & Judul
                       Column(
                         children: [
-                          Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.06),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Image.asset(AppAssets.logo, fit: BoxFit.contain),
-                            ),
+                          Image.asset(
+                            AppAssets.logo,
+                            height: 70,
+                            fit: BoxFit.contain,
                           ),
                           const SizedBox(height: 16),
                           const Text(
@@ -353,24 +338,22 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                   return null;
                                 },
                               ),
-                              const SizedBox(height: 8),
-
-                              // Lupa sandi
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: GestureDetector(
-                                  onTap: () => Navigator.of(context)
-                                      .pushNamed(AppRoutes.forgotPassword),
-                                  child: const Text(
-                                    'Lupa kata sandi?',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.primaryGreen,
-                                    ),
-                                  ),
-                                ),
-                              ),
+                              // const SizedBox(height: 8),
+                              // Align(
+                              //   alignment: Alignment.centerRight,
+                              //   child: GestureDetector(
+                              //     onTap: () => Navigator.of(context)
+                              //         .pushNamed(AppRoutes.forgotPassword),
+                              //     child: const Text(
+                              //       'Lupa kata sandi?',
+                              //       style: TextStyle(
+                              //         fontSize: 12,
+                              //         fontWeight: FontWeight.w600,
+                              //         color: AppColors.primaryGreen,
+                              //       ),
+                              //     ),
+                              //   ),
+                              // ),
                               const SizedBox(height: 24),
 
                               // Tombol Masuk
