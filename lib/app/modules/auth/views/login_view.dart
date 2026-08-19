@@ -256,6 +256,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                 textInputAction: TextInputAction.next,
                                 inputFormatters: [
                                   FilteringTextInputFormatter.digitsOnly,
+                                  PhonePrefixFormatter(),
                                 ],
                                 decoration: InputDecoration(
                                   hintText: '81112345678',

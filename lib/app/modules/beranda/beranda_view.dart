@@ -1038,7 +1038,7 @@ class _RiwayatCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isOrganic ? 'Sampah Organik' : 'Sampah Non Organik',
+                  isOrganic ? 'Sampah Organik' : 'Sampah Anorganik',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,

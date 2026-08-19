@@ -1249,7 +1249,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     final String detectedName = aiResult?.detectedType.displayName ?? 'Organik';
     // Tempat sampah yang salah = kebalikan dari yang terdeteksi
     final String tongName = aiResult?.detectedType == WasteType.organic
-        ? 'Non-Organik'
+        ? 'Anorganik'
         : 'Organik';
 
     showDialog(
@@ -1553,42 +1553,6 @@ class _AiSuccessSheet extends StatelessWidget {
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 16),
-                const Divider(height: 1, color: AppColors.border),
-                const SizedBox(height: 12),
-                
-                // Estimasi Poin
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Estimasi Poin:',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.stars_rounded,
-                          color: AppColors.warningYellow,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '+${result.estimatedPoints ?? 0} Pts',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.warningYellow,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                 ),
               ],
             ),
