@@ -70,7 +70,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge }) => {
     >
       {/* Left Curved Accent Indicator Bar */}
       {isCurrentActive && (
-        <span className="absolute left-0 top-2 bottom-2 w-1.5 bg-[#549e26] dark:bg-emerald-500 rounded-r-full shadow-xs animate-pulse" />
+        <span className="absolute left-0 top-2 bottom-2 w-1.5 bg-[#549e26] dark:bg-emerald-500 rounded-r-full shadow-xs" />
       )}
 
       <Icon className={`shrink-0 transition-all duration-300 ease-out ${isCurrentActive ? "text-[#055c46] dark:text-emerald-400 scale-110" : "text-slate-400 dark:text-slate-400 group-hover:text-[#055c46] dark:group-hover:text-emerald-400 group-hover:scale-110"}`} size={17} />
@@ -823,8 +823,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           isOpen ? "translate-x-0" : "-translate-x-full"
         } overflow-hidden shadow-lg`}
       >
-        {/* Animated Falling Leaves Background */}
-        <FallingLeavesBackground />
         {/* Render Collapsed Mini Sidebar */}
         {isCollapsed ? (
           <div className="relative z-10 flex flex-col h-full items-center justify-between py-3">
@@ -899,6 +897,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           <div className="relative z-10 flex flex-col h-full justify-between overflow-hidden">
             {/* Top Brand Logo Header Section with Real-Time Clock */}
             <div className="pt-4 pb-3 px-3.5 border-b border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-[#f3fbf5]/40 dark:from-emerald-950/20 via-transparent to-transparent shrink-0">
+              {/* Animated Falling Leaves restricted to top logo header */}
+              <FallingLeavesBackground />
               <Link to="/dasbor" className="flex items-center justify-center gap-3 group cursor-pointer relative z-10 mb-3 px-2 w-full text-center">
                 <img
                   src="/app-logo.png"
@@ -919,7 +919,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               {/* Real-time System Clock Card */}
               <div className="w-full bg-[#f3fbf5]/90 dark:bg-slate-800/90 hover:bg-[#ebf7ee] dark:hover:bg-slate-700/90 p-2.5 rounded-2xl border border-[#c8e6b2]/80 dark:border-slate-700/80 shadow-xs text-center space-y-0.5 transition-all duration-300 relative z-10 hover:scale-[1.02] backdrop-blur-xs">
                 <div className="flex items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400 mb-0.5">
-                  <Clock size={13} className="text-[#055c46] dark:text-emerald-400 animate-pulse" />
+                  <Clock size={13} className="text-[#055c46] dark:text-emerald-400" />
                   <p className="text-[10.5px] font-black text-slate-600 dark:text-slate-300 truncate">
                     {dateStr || "Kamis, 20 Agustus 2026"}
                   </p>
