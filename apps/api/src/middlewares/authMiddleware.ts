@@ -28,13 +28,13 @@ export const authMiddleware = async (
   try {
     let token = "";
 
-    // 1. Try to get token from HttpOnly Cookie (Web Client)
-    if (req.cookies && req.cookies.accessToken) {
-      token = req.cookies.accessToken;
-    }
-    // 2. Try to get token from Authorization header (Mobile App)
-    else if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+    // 1. Try to get token from Authorization header (Bearer token - primary for API/Web/Mobile)
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
       token = req.headers.authorization.split(" ")[1];
+    }
+    // 2. Try to get token from HttpOnly Cookie (Fallback for Cookie-based sessions)
+    else if (req.cookies && req.cookies.accessToken) {
+      token = req.cookies.accessToken;
     }
 
     if (!token) {
@@ -123,10 +123,10 @@ export const optionalAuthMiddleware = async (
 ): Promise<void> => {
   try {
     let token = "";
-    if (req.cookies && req.cookies.accessToken) {
-      token = req.cookies.accessToken;
-    } else if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
       token = req.headers.authorization.split(" ")[1];
+    } else if (req.cookies && req.cookies.accessToken) {
+      token = req.cookies.accessToken;
     }
 
     if (!token) {

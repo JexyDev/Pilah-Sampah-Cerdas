@@ -17,17 +17,17 @@ export interface TokenPayload {
 }
 
 // In production, these should be loaded from environment variables (.env)
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "access_secret_super_secure_key_123";
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || "access_secret_super_secure_key_123";
 
 // Expiration times
-const ACCESS_TOKEN_EXPIRES_IN = "1h"; // 1 hour for access token
+const ACCESS_TOKEN_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "24h"; // 24 hours for access token
 const REFRESH_TOKEN_EXPIRES_DAYS = 7; // 7 days for refresh token
 
 /**
  * Generate Access Token
  */
 export const generateAccessToken = (payload: TokenPayload): string => {
-  return jwt.sign(payload, JWT_ACCESS_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
+  return jwt.sign(payload, JWT_ACCESS_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN } as any);
 };
 
 /**

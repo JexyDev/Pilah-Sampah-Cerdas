@@ -43,27 +43,109 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor — normalisasi error
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: any) => void;
+  reject: (reason?: any) => void;
+}> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+const handleForceLogout = () => {
+  localStorage.removeItem("psc_access_token");
+  localStorage.removeItem("psc_refresh_token");
+  localStorage.removeItem("psc_user");
+  sessionStorage.removeItem("psc_access_token");
+  sessionStorage.removeItem("psc_refresh_token");
+  sessionStorage.removeItem("psc_user");
+
+  const publicPaths = ["/", "/login", "/register", "/register-mahasiswa", "/tentang", "/panduan"];
+  const currentPath = typeof window !== "undefined" ? window.location.pathname : "";
+  if (currentPath && !publicPaths.includes(currentPath)) {
+    window.location.href = "/login";
+  }
+};
+
+// Response interceptor — Auto-refresh token on 401
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
     const status = error.response?.status;
-    if (
-      status === 401 && 
-      !error.config?.url?.includes("/auth/login") && 
-      !error.config?.url?.includes("/auth/verify-otp")
-    ) {
-      localStorage.removeItem("psc_access_token");
-      localStorage.removeItem("psc_user");
-      sessionStorage.removeItem("psc_access_token");
-      sessionStorage.removeItem("psc_user");
-      
-      const publicPaths = ["/", "/login", "/register", "/register-mahasiswa", "/tentang", "/panduan"];
-      const currentPath = window.location.pathname;
-      if (!publicPaths.includes(currentPath)) {
-        window.location.href = "/login";
+
+    // Check if error is 401 and request hasn't been retried yet
+    const isAuthUrl =
+      originalRequest?.url?.includes("/auth/login") ||
+      originalRequest?.url?.includes("/auth/verify-otp") ||
+      originalRequest?.url?.includes("/auth/refresh");
+
+    if (status === 401 && !isAuthUrl && !originalRequest?._retry) {
+      const refreshToken =
+        localStorage.getItem("psc_refresh_token") ?? sessionStorage.getItem("psc_refresh_token");
+
+      if (!refreshToken) {
+        handleForceLogout();
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const response = await axios.post(
+          `${getApiBaseUrl()}/auth/refresh`,
+          { refreshToken },
+          { headers: { "Content-Type": "application/json" } }
+        );
+
+        const newAccessToken =
+          response.data?.data?.accessToken || response.data?.accessToken;
+
+        if (newAccessToken) {
+          const isRemember = localStorage.getItem("psc_remember_me") === "1";
+          if (isRemember) {
+            localStorage.setItem("psc_access_token", newAccessToken);
+          } else {
+            sessionStorage.setItem("psc_access_token", newAccessToken);
+          }
+
+          api.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+          processQueue(null, newAccessToken);
+          return api(originalRequest);
+        } else {
+          throw new Error("No access token returned from refresh");
+        }
+      } catch (refreshErr) {
+        processQueue(refreshErr, null);
+        handleForceLogout();
+        return Promise.reject(refreshErr);
+      } finally {
+        isRefreshing = false;
       }
     }
+
     console.error("[API Error]", error.response?.data || error.message);
     return Promise.reject(error);
   }

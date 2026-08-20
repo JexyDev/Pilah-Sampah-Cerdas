@@ -257,6 +257,10 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
 
   // Auto Fetch System Notifications
   const fetchNotifications = async () => {
+    const token =
+      localStorage.getItem("psc_access_token") ?? sessionStorage.getItem("psc_access_token");
+    if (!token) return;
+
     try {
       setLoadingNotifs(true);
       const res = await api.get("/notifications");
