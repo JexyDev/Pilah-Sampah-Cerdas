@@ -347,6 +347,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           ] as UserRole[],
           children: [
             {
+              to: "/dashboard-dpl",
+              label: "Dasbor DPL",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "DPL",
+                "DOSEN_PEMBIMBING",
+                "PANITIA_TASKFORCE",
+                "PEMIMPIN",
+              ] as UserRole[],
+            },
+            {
               to: "/jadwal-kegiatan",
               label: "Linimasa Kegiatan",
               allowed: [

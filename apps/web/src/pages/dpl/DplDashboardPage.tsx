@@ -890,7 +890,7 @@ export const DplDashboardPage: React.FC = () => {
                           </p>
                         </div>
                         <div className="shrink-0 flex items-center gap-1.5">
-                          {(p.status === "DITERIMA" || p.status === "DISETUJUI") && (
+                          {(p.status === "DITERIMA" || p.status === "DISETUJUI" || p.status === "SEDANG_BERJALAN" || p.status === "SELESAI") && (
                             <span className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 rounded-full font-bold text-[10px]">
                               Disetujui
                             </span>
@@ -900,9 +900,9 @@ export const DplDashboardPage: React.FC = () => {
                               Ditolak
                             </span>
                           )}
-                          {(p.status !== "DITERIMA" && p.status !== "DISETUJUI" && p.status !== "DITOLAK" && p.status !== "TIDAK_DISETUJUI") && (
-                            <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-full font-bold text-[10px]">
-                              Sedang Dilaksanakan
+                          {(p.status === "BELUM_DISETUJUI" || (!["DITERIMA", "DISETUJUI", "SEDANG_BERJALAN", "SELESAI", "DITOLAK", "TIDAK_DISETUJUI"].includes(p.status))) && (
+                            <span className="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40 rounded-full font-bold text-[10px]">
+                              Menunggu Persetujuan
                             </span>
                           )}
                         </div>
@@ -917,14 +917,14 @@ export const DplDashboardPage: React.FC = () => {
                 <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 flex-wrap gap-2">
                   <span>Total Proker: <strong className="text-slate-800 dark:text-slate-200">{groups.flatMap((g: any) => g.programKerja || []).length} Kegiatan</strong></span>
                   <div className="flex items-center gap-1.5 flex-wrap text-[10.5px]">
+                    <span className="px-2.5 py-0.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40 rounded-md font-bold">
+                      Menunggu: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "BELUM_DISETUJUI" || (!["DITERIMA", "DISETUJUI", "SEDANG_BERJALAN", "SELESAI", "DITOLAK", "TIDAK_DISETUJUI"].includes(p.status))).length}
+                    </span>
                     <span className="px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 rounded-md font-bold">
-                      Disetujui: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "DITERIMA" || p.status === "DISETUJUI").length}
+                      Disetujui: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "DITERIMA" || p.status === "DISETUJUI" || p.status === "SEDANG_BERJALAN" || p.status === "SELESAI").length}
                     </span>
                     <span className="px-2.5 py-0.5 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-700/40 rounded-md font-bold">
                       Ditolak: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "DITOLAK" || p.status === "TIDAK_DISETUJUI").length}
-                    </span>
-                    <span className="px-2.5 py-0.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-md font-bold">
-                      Sedang Dilaksanakan: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status !== "DITERIMA" && p.status !== "DISETUJUI" && p.status !== "DITOLAK" && p.status !== "TIDAK_DISETUJUI").length}
                     </span>
                   </div>
                 </div>

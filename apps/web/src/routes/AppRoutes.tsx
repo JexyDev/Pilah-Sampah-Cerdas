@@ -454,7 +454,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/dashboard-dpl"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
               <DplDashboardPage />
             </ProtectedRoute>
           }
