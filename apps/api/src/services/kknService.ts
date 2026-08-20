@@ -12,7 +12,6 @@ import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
 import { calculateDistance } from "./kknAttendanceService.js";
 import { pointService } from "./pointService.js";
-import { notificationService } from "./notificationService.js";
 
 export class KknService {
   async getDashboardStats(userId: string) {
@@ -1498,7 +1497,7 @@ export class KknService {
     const endDate = new Date(targetDate);
     endDate.setHours(23, 59, 59, 999);
 
-    // 🎯 VALIDASI ANTI-TUMPUK (1 Hari/Pertemuan = 1 Status Pengajuan)
+    // Ã°Å¸Å½Â¯ VALIDASI ANTI-TUMPUK (1 Hari/Pertemuan = 1 Status Pengajuan)
     const studentProfile = await prisma.studentKkn.findFirst({
       where: { OR: [{ userId: studentId }, { id: studentId }] },
       include: { kelompok: { include: { dpl: true } }, user: true },
@@ -1888,7 +1887,7 @@ export class KknService {
     const ruleTargetMinutes = (ruleConfigs.attendanceMinDurationHours * 60) + ruleConfigs.attendanceMinDurationMinutes + (ruleConfigs.attendanceMinDurationSeconds / 60);
     const targetDurationMinutes = ruleTargetMinutes > 0 ? ruleTargetMinutes : 2;
 
-    // Hitung batas hari WIB (UTC+7) — jadwal disimpan UTC, harus query dengan window WIB
+    // Hitung batas hari WIB (UTC+7) Ã¢â‚¬â€ jadwal disimpan UTC, harus query dengan window WIB
     const nowForBoundary = new Date();
     const nowWibBoundary = new Date(nowForBoundary.getTime() + 7 * 60 * 60 * 1000);
     const todayWibStr = nowWibBoundary.toISOString().slice(0, 10);
@@ -1926,7 +1925,7 @@ export class KknService {
     });
     const completedScheduleIds = new Set(completedAttendances.map((a) => a.scheduleId));
 
-    // 🎯 Filter jadwal aktif khusus untuk kelompok KKN mahasiswa ybs (isActive: true)
+    // Ã°Å¸Å½Â¯ Filter jadwal aktif khusus untuk kelompok KKN mahasiswa ybs (isActive: true)
     let activeSchedules: any[] = [];
     if (student?.kelompokId) {
       activeSchedules = await prisma.schedule.findMany({
@@ -1980,7 +1979,7 @@ export class KknService {
       // Strip suffix WIB/WITA/WIT dan normalize separator ke "-"
       const normalizedTime = (sch.time || "")
         .replace(/\s*(WIB|WITA|WIT)\s*/gi, "")
-        .replace(/[–—~]|s\/d|sd/gi, "-")
+        .replace(/[Ã¢â‚¬â€œÃ¢â‚¬â€~]|s\/d|sd/gi, "-")
         .trim();
       if (normalizedTime.includes("-")) {
         const parts = normalizedTime.split("-");
@@ -2356,9 +2355,9 @@ export class KknService {
     };
   }
 
-  // ──────────────────────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   // 3 Pilar KKN (Perencanaan, Aksi, Panen)
-  // ──────────────────────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   async createProgramKerja(userId: string, payload: any) {
     const student = await prisma.studentKkn.findUnique({
@@ -2372,6 +2371,18 @@ export class KknService {
     const { judul, kategori, rencanaAnggaran, targetTanggal, deskripsi } = payload;
     const combinedDeskripsi = `**${judul}**\n\n${deskripsi}`;
 
+    // Notify DPL
+    if (student.kelompok.dplUserId) {
+      await prisma.notification.create({
+        data: {
+          userId: student.kelompok.dplUserId,
+          title: "Program Kerja Baru",
+          message: `Mahasiswa ${student.user.name} mengajukan ide program kerja: ${judul}. Silakan ditinjau.`,
+          isRead: false
+        }
+      });
+    }
+
     const proker = await prisma.programKerjaKkn.create({
       data: {
         kelompokId: student.kelompok.id,
@@ -2382,16 +2393,6 @@ export class KknService {
         sumber: "MAHASISWA",
       },
     });
-
-    // Notify DPL
-    if (student.kelompok.dplUserId) {
-      await notificationService.createNotification(
-        student.kelompok.dplUserId,
-        "Program Kerja Baru",
-        `Mahasiswa ${student.user.name} mengajukan ide program kerja: ${judul}. Silakan ditinjau.`,
-        "PROGRAM_KERJA"
-      );
-    }
 
     return proker;
   }
@@ -2437,7 +2438,7 @@ export class KknService {
         judul,
         kategori: item.kategori,
         rencanaAnggaran: Number(item.kebutuhanBiaya) || 0,
-        status: item.status === "DISETUJUI" ? "APPROVED" : (item.status === "DITOLAK" ? "REJECTED" : "PENDING"),
+        status: (item.status === "DISETUJUI" || item.status === "DITERIMA" || item.status === "SEDANG_BERJALAN" || item.status === "SELESAI") ? "APPROVED" : (item.status === "DITOLAK" ? "REJECTED" : "PENDING"),
         catatanDpl: catatan,
         tanggal: item.createdAt.toISOString(), // Fallback ke createdAt karena skema tidak punya targetTanggal
       };
@@ -2457,8 +2458,8 @@ export class KknService {
     // Validasi apakah proker ada dan disetujui (opsional, tapi disarankan)
     if (programKerjaId) {
       const proker = await prisma.programKerjaKkn.findUnique({ where: { id: programKerjaId } });
-      if (proker && proker.status !== "DISETUJUI") {
-        throw new Error("Program kerja belum disetujui DPL, tidak bisa menambah logbook pemanfaatan.");
+      if (proker && (proker.status === "BELUM_DISETUJUI" || proker.status === "DITOLAK")) {
+        throw new Error("Program kerja belum disetujui atau ditolak DPL, tidak bisa menambah logbook pemanfaatan.");
       }
     }
 
@@ -2532,3 +2533,5 @@ export class KknService {
 }
 
 export const kknService = new KknService();
+
+
