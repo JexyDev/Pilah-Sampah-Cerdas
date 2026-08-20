@@ -575,9 +575,9 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> w
         
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.white,
+          labelColor: AppColors.primaryGreen,
+          unselectedLabelColor: Colors.grey.shade600,
+          indicatorColor: AppColors.primaryGreen,
           indicatorWeight: 3,
           tabs: const [
             Tab(text: 'Pemanfaatan Sampah'),
