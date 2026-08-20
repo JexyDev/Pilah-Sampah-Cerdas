@@ -141,7 +141,8 @@ export const facilityService = {
   /**
    * Get all facilities with optional type filtering
    */
-  getFacilities: async (jenis?: string) => {
+  getFacilities: async (jenis?: string, user?: any) => {
+    let whereClause: any = {};
     if (jenis) {
       const validTypes = [
         "loseda",
@@ -156,22 +157,29 @@ export const facilityService = {
       if (!validTypes.includes(jenis)) {
         throw new Error("INVALID_FACILITY_TYPE");
       }
-      return prisma.facility.findMany({
-        where: { jenis: jenis as FacilityType },
-        include: {
-          rw: true,
-          registeredBy: {
-            select: {
-              id: true,
-              name: true,
-              phone: true,
-            },
-          },
-        },
-        orderBy: { nama: "asc" },
-      });
+      whereClause.jenis = jenis as any;
     }
+
+    if (user && user.role !== "SUPER_USER" && user.role !== "ADMIN_DLH") {
+      let allowedRwIds: number[] = [];
+      if (user.role === "MAHASISWA_KKN") {
+        const student = await prisma.studentKkn.findUnique({ where: { userId: user.userId }, include: { kelompok: true, user: true } });
+        if (student?.assignedRwId) allowedRwIds.push(student.assignedRwId);
+        if (student?.user?.rwId) allowedRwIds.push(student.user.rwId);
+      } else if (user.rwId) {
+        allowedRwIds.push(user.rwId);
+      }
+      
+      if (allowedRwIds.length > 0) {
+        whereClause.rwId = { in: allowedRwIds };
+      } else if (user.role === "MAHASISWA_KKN") {
+        // If student has no assigned RW, maybe they can only see what they registered
+        whereClause.registeredByUserId = user.userId;
+      }
+    }
+
     return prisma.facility.findMany({
+      where: whereClause,
       include: {
         rw: true,
         registeredBy: {
@@ -182,7 +190,7 @@ export const facilityService = {
           },
         },
       },
-      orderBy: { nama: "asc" },
+      orderBy: { createdAt: "desc" },
     });
   },
 

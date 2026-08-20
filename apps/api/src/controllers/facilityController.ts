@@ -47,7 +47,8 @@ export class FacilityController {
   async getFacilities(req: Request, res: Response): Promise<void> {
     try {
       const { jenis } = req.query;
-      const list = await facilityService.getFacilities(jenis as string);
+      const user = (req as any).user;
+      const list = await facilityService.getFacilities(jenis as string, user);
       res.status(200).json({ success: true, data: list });
     } catch (error: any) {
       res
