@@ -588,18 +588,44 @@ export class KknAttendanceService {
     const { studentId, scheduleId, latitude, longitude, method, nim: inputNim, namaMahasiswa: inputNama, kodeZona: inputKodeZona } = params;
     const isAutoAlpa = method?.toUpperCase() === "ALPA_AUTO" || method?.toUpperCase() === "ALPA";
 
-    // 0. Validate operational hours (05:00 - 23:59 WIB)
+    // 0. Validate operational hours berdasarkan jam jadwal (bukan hardcoded)
     if (!isAutoAlpa) {
-      const now = new Date();
-      // WIB is UTC + 7
-      const utcHours = now.getUTCHours();
-      const wibHours = (utcHours + 7) % 24;
-      if (wibHours < 5 || wibHours >= 24) {
+      const nowMs = Date.now();
+      const wibHours = ((new Date(nowMs).getUTCHours() + 7) % 24);
+      const wibMinutes = new Date(nowMs).getUTCMinutes();
+      const currentWibTotal = wibHours * 60 + wibMinutes;
+
+      // Ambil jam jadwal dari DB untuk menentukan window yang valid
+      let scheduleStartTotal = 0;       // default: 00:00
+      let scheduleEndTotal = 24 * 60;   // default: 24:00 (allow all day)
+      try {
+        const sched = await prisma.schedule.findUnique({ where: { id: scheduleId }, select: { time: true } });
+        if (sched?.time) {
+          const stripped = sched.time.replace(/\s*(WIB|WITA|WIT)\s*/gi, "").trim();
+          const parts = stripped.split("-");
+          if (parts.length >= 2) {
+            const [sH, sM] = parts[0].trim().replace(".", ":").split(":").map(Number);
+            const [eH, eM] = parts[1].trim().replace(".", ":").split(":").map(Number);
+            if (!isNaN(sH) && !isNaN(sM)) scheduleStartTotal = sH * 60 + sM;
+            if (!isNaN(eH) && !isNaN(eM)) scheduleEndTotal = eH * 60 + eM;
+          }
+        }
+      } catch (_) { /* keep defaults */ }
+
+      // Beri toleransi ±60 menit sebelum/sesudah jam jadwal
+      const tolerance = 60;
+      const windowStart = Math.max(0, scheduleStartTotal - tolerance);
+      const windowEnd = Math.min(24 * 60, scheduleEndTotal + tolerance);
+
+      if (currentWibTotal < windowStart || currentWibTotal > windowEnd) {
+        const fmtStart = `${String(Math.floor(scheduleStartTotal / 60)).padStart(2, "0")}:${String(scheduleStartTotal % 60).padStart(2, "0")}`;
+        const fmtEnd = `${String(Math.floor(scheduleEndTotal / 60)).padStart(2, "0")}:${String(scheduleEndTotal % 60).padStart(2, "0")}`;
         throw new Error(
-          "OUT_OF_OPERATIONAL_HOURS: Presensi kegiatan KKN hanya dapat dilakukan pada jam operasional 05:00 - 23:59 WIB."
+          `OUT_OF_OPERATIONAL_HOURS: Presensi kegiatan KKN hanya dapat dilakukan pada jam ${fmtStart} - ${fmtEnd} WIB (±60 menit toleransi).`
         );
       }
     }
+
 
     // 1. Get activity location configuration if exists
     let actLoc: any = null;
@@ -1822,6 +1848,7 @@ export class KknAttendanceService {
         },
         status: scheduleStatus,
         statusKehadiran,
+        time: `${jamMulai} - ${jamSelesai}`,
         kelompok: {
           id: sch.kelompok?.id || student?.kelompok?.id || "KLP-001",
           nama: sch.kelompok?.name || student?.kelompok?.name || "Kelompok KKN",
