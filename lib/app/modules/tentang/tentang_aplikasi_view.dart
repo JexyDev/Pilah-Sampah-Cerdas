@@ -127,7 +127,7 @@ class _TentangAplikasiViewState extends State<TentangAplikasiView> {
               ),
               const SizedBox(height: 8),
               Text(
-                '© ${DateTime.now().year} BERSEKA Team. All rights reserved.',
+                '© ${DateTime.now().year} Universitas Komputer Indonesia. All Rights Reserved.',
                 style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.textHint,
