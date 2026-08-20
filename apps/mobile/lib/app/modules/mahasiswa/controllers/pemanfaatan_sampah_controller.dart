@@ -5,6 +5,7 @@ import '../../../data/services/firebase_notification_service.dart';
 import '../../../data/services/local_notification_cache_service.dart';
 import '../../../core/utils/network_exception_helper.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../../data/services/notification_engine.dart';
 import 'mahasiswa_notifikasi_controller.dart';
 
 class PemanfaatanSampahState {
@@ -62,6 +63,13 @@ class PemanfaatanSampahNotifier extends StateNotifier<PemanfaatanSampahState> {
             type: 'LAPORAN_PEMANFAATAN',
           );
         }
+        
+        NotificationEngine().showGenericNotification(
+          id: DateTime.now().millisecondsSinceEpoch.remainder(10000),
+          title: 'Laporan Pemanfaatan Sampah Tersimpan ♻️',
+          body: 'Laporan ${request.jenisPemanfaatan} berhasil dikirim dan ditambahkan ke poin Anda.',
+        );
+
         ref.invalidate(mahasiswaNotificationsProvider);
         return true;
       }

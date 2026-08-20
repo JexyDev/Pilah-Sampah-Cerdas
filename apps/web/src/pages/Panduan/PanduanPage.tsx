@@ -31,22 +31,22 @@ const PanduanPage: React.FC = () => {
   }, []);
 
   const handleDownloadPdf = () => {
-    toast.success("Membuka dokumen Buku Panduan Trashcare (PDF)...");
+    toast.success("Membuka dokumen Buku Panduan BERSEKA (PDF)...");
     downloadPanduanPdf();
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6 text-on-surface">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto animate-fade-in text-slate-800 dark:text-slate-100 font-sans">
       {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-8 rounded-3xl shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gradient-to-r from-emerald-600 to-teal-700 p-6 sm:p-8 rounded-3xl text-white shadow-lg">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-semibold">
             <BookOpen size={14} />
-            Pusat Edukasi & Dokumentasi
+            <span>Dokumentasi Resmi</span>
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Buku Panduan & Operasional Trashcare</h1>
-          <p className="text-emerald-100 text-sm mt-2 max-w-2xl">
-            Panduan lengkap alur pemilahan sampah, aktivasi sticker QR tempat sampah, tata cara pendampingan KKN, serta SOP petugas residu Kecamatan Coblong.
+          <h1 className="text-3xl font-extrabold tracking-tight">Buku Panduan &amp; Operasional BERSEKA</h1>
+          <p className="text-emerald-100 text-sm max-w-2xl font-medium">
+            Panduan lengkap penggunaan sistem BERSEKA (Bersih, Sehat, Kampung Asri) untuk seluruh role dan pemangku kepentingan.
           </p>
         </div>
         <button

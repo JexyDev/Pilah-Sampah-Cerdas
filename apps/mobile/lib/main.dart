@@ -22,6 +22,9 @@ import 'app/data/services/notification_engine.dart';
 import 'app/modules/mahasiswa/services/kkn_background_task_handler.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
+import 'app/data/models/user_entity.dart';
+import 'app/modules/mahasiswa/controllers/location_ping_controller.dart';
+import 'app/modules/mahasiswa/controllers/kkn_location_controller.dart';
 import 'app/modules/notifikasi/controllers/warga_notifikasi_controller.dart';
 import 'app/modules/mahasiswa/controllers/mahasiswa_notifikasi_controller.dart';
 import 'app/modules/petugas_pemilahan/controllers/petugas_pemilahan_notifikasi_controller.dart';
@@ -70,7 +73,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   }
 }
 
-/// Entry point aplikasi TrashCare â€” Mobile (Warga).
+/// Entry point aplikasi Berseka â€” Mobile (Warga).
 ///
 /// Arsitektur: Clean Architecture + Riverpod
 /// - Presentation Layer: lib/app/modules/
@@ -327,6 +330,16 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.user?.role == UserRole.mahasiswaKkn) {
+        ref.read(locationPingControllerProvider.notifier).startTracking();
+        ref.read(kknLocationProvider.notifier).startTracking();
+      } else if (previous?.user?.role == UserRole.mahasiswaKkn && next.user == null) {
+        ref.read(locationPingControllerProvider.notifier).stopTracking();
+        ref.read(kknLocationProvider.notifier).stopTracking();
+      }
+    });
+
     return MaterialApp(
       navigatorKey: navigatorKey,
       title: AppStrings.appName,

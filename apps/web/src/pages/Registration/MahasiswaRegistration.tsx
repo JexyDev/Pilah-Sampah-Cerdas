@@ -58,7 +58,7 @@ const MahasiswaRegistration: React.FC = () => {
             <GraduationCap className="w-8 h-8" />
           </div>
           <h2 className="text-3xl font-bold text-slate-800">Registrasi Mahasiswa KKN</h2>
-          <p className="text-slate-500 mt-2">Daftarkan diri Anda untuk menjadi fasilitator TrashCare</p>
+          <p className="text-slate-500 mt-2">Daftarkan diri Anda untuk menjadi fasilitator program BERSEKA</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

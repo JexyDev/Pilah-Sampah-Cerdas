@@ -25,6 +25,8 @@ class UserEntity extends Equatable {
     this.kota = '',
     this.jenjangPendidikan = 'S1',
     this.pendampingName,
+    this.kelompokName = '',
+    this.dplName = '',
     this.familySize = 1,
   });
 
@@ -49,6 +51,8 @@ class UserEntity extends Equatable {
   final String universitas;
   final String jenjangPendidikan;
   final String? pendampingName;
+  final String kelompokName;
+  final String dplName;
   final int familySize;
 
 
@@ -75,6 +79,8 @@ class UserEntity extends Equatable {
     String? universitas,
     String? jenjangPendidikan,
     String? pendampingName,
+    String? kelompokName,
+    String? dplName,
     int? familySize,
   }) {
     return UserEntity(
@@ -99,16 +105,18 @@ class UserEntity extends Equatable {
       universitas: universitas ?? this.universitas,
       jenjangPendidikan: jenjangPendidikan ?? this.jenjangPendidikan,
       pendampingName: pendampingName ?? this.pendampingName,
+      kelompokName: kelompokName ?? this.kelompokName,
+      dplName: dplName ?? this.dplName,
       familySize: familySize ?? this.familySize,
     );
   }
 
   @override
-  List<Object?> get props => [id, phone, address, role, nim, jurusan, prodi, fakultas, jenjangPendidikan, kecamatan, kelurahan, rw, pendampingName];
+  List<Object?> get props => [id, phone, address, role, nim, jurusan, prodi, fakultas, jenjangPendidikan, kecamatan, kelurahan, rw, pendampingName, kelompokName, dplName];
 }
 
 /// 5 role RBAC sesuai backend tabel `roles`.
-enum UserRole { admin, petugasKelurahan, petugasRw, petugasRt, warga, mahasiswaKkn, petugasPemilahan }
+enum UserRole { admin, petugasKelurahan, petugasRw, petugasRt, warga, mahasiswaKkn, petugasPemilahan, dpl, unknown }
 
 extension UserRoleExtension on UserRole {
   String get displayName {
@@ -127,6 +135,10 @@ extension UserRoleExtension on UserRole {
         return 'Mahasiswa KKN';
       case UserRole.petugasPemilahan:
         return 'Petugas Pemilahan';
+      case UserRole.dpl:
+        return 'DPL';
+      case UserRole.unknown:
+        return 'Tidak Diketahui';
     }
   }
 
@@ -146,6 +158,10 @@ extension UserRoleExtension on UserRole {
         return 'MAHASISWA_KKN';
       case UserRole.petugasPemilahan:
         return 'PETUGAS_RESIDU';
+      case UserRole.dpl:
+        return 'DPL';
+      case UserRole.unknown:
+        return 'UNKNOWN';
     }
   }
 
@@ -177,14 +193,32 @@ extension UserRoleExtension on UserRole {
       case 'PEMILAHAN':
       case 'OFFICER':
         return UserRole.petugasPemilahan;
+      case 'DPL':
+      case 'DOSEN_PEMBIMBING':
+      case 'DOSEN':
+        return UserRole.dpl;
       default:
-        if (v.contains('PETUGAS') || v.contains('RESIDU') || v.contains('PEMILAHAN')) {
+        if (v.contains('KELURAHAN')) return UserRole.petugasKelurahan;
+        if (v.contains('RW')) return UserRole.petugasRw;
+        if (v.contains('RT')) return UserRole.petugasRt;
+        if (v.contains('ADMIN')) return UserRole.admin;
+        if (v.contains('RESIDU') || v.contains('PEMILAHAN')) {
+          return UserRole.petugasPemilahan;
+        }
+        if (v.contains('PETUGAS') && !(v.contains('KELURAHAN') || v.contains('RW') || v.contains('RT'))) {
           return UserRole.petugasPemilahan;
         }
         if (v.contains('MAHASISWA') || v.contains('KKN')) {
           return UserRole.mahasiswaKkn;
         }
-        return UserRole.warga;
+        if (v.contains('WARGA')) {
+          return UserRole.warga;
+        }
+        if (v.contains('DPL')) {
+          return UserRole.dpl;
+        }
+        // Previously defaulted to warga which allowed other roles like DPL to login
+        return UserRole.unknown;
     }
   }
 }

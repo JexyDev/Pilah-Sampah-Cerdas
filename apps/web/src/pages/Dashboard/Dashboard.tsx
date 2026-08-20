@@ -1873,7 +1873,7 @@ const Dashboard: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
             <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-              Dasbor Monitoring TrashCare
+              Dasbor Monitoring BERSEKA
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               Pusat komando pemantauan pemilahan sampah cerdas, sektor kebersihan &amp; residu Rukun Warga (RW)
@@ -2493,7 +2493,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10.5px]">
-              <span className="text-slate-500 dark:text-slate-400 font-medium">Auto-Audit AI TrashCare</span>
+              <span className="text-slate-500 dark:text-slate-400 font-medium">Auto-Audit AI BERSEKA</span>
               <span className="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400" />
                 Aktif

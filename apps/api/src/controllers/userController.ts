@@ -208,11 +208,11 @@ export const userController = {
           error: "VALIDATION_ERROR",
           message: `Role '${req.body.roleName}' tidak ditemukan`,
         });
-      } else if (error.message === "NIM_CONFLICT" || (error.code === "P2002" && String(error.meta?.target || "").includes("nim"))) {
-        res.status(409).json({
+      } else if (error.message === "NIM_ALREADY_REGISTERED") {
+        res.status(400).json({
           success: false,
-          error: "CONFLICT",
-          message: "NIM (Nomor Induk Mahasiswa) sudah terdaftar di sistem TrashCare",
+          code: "VALIDATION_ERROR",
+          message: "NIM (Nomor Induk Mahasiswa) sudah terdaftar di sistem BERSEKA",
         });
       } else if (error.message === "PHONE_CONFLICT" || (error.code === "P2002" && (String(error.meta?.target || "").includes("phone") || String(error.meta?.target || "").includes("no_telepon")))) {
         res.status(409).json({

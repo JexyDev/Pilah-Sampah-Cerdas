@@ -182,7 +182,7 @@ export class AuthController {
         res.status(401).json({
           success: false,
           code: "USER_NOT_FOUND",
-          message: "Nomor HP atau NIM tidak terdaftar di sistem TrashCare",
+          message: "Nomor HP atau NIM tidak terdaftar di sistem BERSEKA",
         });
       } else if (error.message === "WRONG_PASSWORD" || error.message?.includes("WRONG_PASSWORD")) {
         res.status(401).json({

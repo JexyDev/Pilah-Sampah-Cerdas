@@ -165,24 +165,21 @@ class MahasiswaPoinView extends ConsumerWidget {
   }
 
   Widget _buildStatsRow(MahasiswaState mhsState, WidgetRef ref) {
-    final user = ref.watch(authProvider).user;
-    final userName = user?.name ?? '';
-
-    // Warga dampingan mahasiswa ini
-    final myWargaList = mhsState.wargaList.where((w) {
-      if (w.role != 'WARGA') return false;
-      final isMyCitizen = w.pendampingName.trim().toLowerCase() == userName.trim().toLowerCase();
-      return isMyCitizen;
-    }).toList();
-
-    // Warga dampingan mahasiswa ini yang tempat sampahnya sudah aktif
-    final wargaCount = myWargaList.where((w) => w.binId.isNotEmpty && w.binId != 'Belum Ada Tempat Sampah').length;
     final points = mhsState.dashboard?.contributionPoints ?? 0;
     
-    final riwayatState = ref.watch(riwayatKknControllerProvider);
+    final asyncHistory = ref.watch(pointHistoryProvider);
     int laporanCount = 0;
-    if (!riwayatState.isLoading && riwayatState.logs.isNotEmpty) {
-      laporanCount = riwayatState.logs.where((h) => h.title.toLowerCase().contains('pemanfaatan') || h.subtitle.toLowerCase().contains('pemanfaatan')).length;
+    int wargaCount = 0;
+    
+    if (asyncHistory.hasValue && asyncHistory.value != null) {
+      for (final ph in asyncHistory.value!) {
+        final lowerDesc = ph.description.toLowerCase();
+        if (lowerDesc.contains('pemanfaatan')) {
+          laporanCount++;
+        } else if (lowerDesc.contains('aktivasi')) {
+          wargaCount++;
+        }
+      }
     }
 
     final izinCount = ref.watch(pengajuanIzinCountProvider).value ?? 0;
@@ -326,7 +323,7 @@ class MahasiswaPoinView extends ConsumerWidget {
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Poin KKN diperoleh dari presensi geofence (+10 PTS), aktivasi tempat sampah warga (+15 PTS), dan laporan pemanfaatan daur ulang.',
+              'Poin KKN diperoleh dari presensi geofence (+10 PTS), aktivasi tempat sampah warga (+10 PTS), dan laporan pemanfaatan daur ulang.',
               style: TextStyle(fontSize: 11, color: AppColors.primaryGreen, height: 1.3),
             ),
           ),

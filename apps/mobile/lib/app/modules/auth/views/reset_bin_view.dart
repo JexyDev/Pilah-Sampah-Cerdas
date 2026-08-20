@@ -290,17 +290,11 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                       children: [
                         Row(
                           children: [
-                            Icon(
-                              !isBinActive
-                                  ? Icons.do_not_disturb_on_rounded
-                                  : (isPendingBin
-                                      ? Icons.access_time_rounded
-                                      : (bin.binType == WasteType.organic
-                                          ? Icons.compost_rounded
-                                          : Icons.delete_outline_rounded)),
-                              color: iconColor,
-                              size: AppDimensions.iconMd,
-                            ),
+                            !isBinActive
+                                ? Icon(Icons.do_not_disturb_on_rounded, color: iconColor, size: AppDimensions.iconMd)
+                                : isPendingBin
+                                    ? Icon(Icons.access_time_rounded, color: iconColor, size: AppDimensions.iconMd)
+                                    : Image.asset('assets/icons/recycle-bin.png', color: iconColor, width: AppDimensions.iconMd, height: AppDimensions.iconMd),
                             const SizedBox(width: AppDimensions.sm),
                             Expanded(
                               child: Row(
@@ -468,7 +462,8 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
           });
           
           final bool isFotoEmpty = _evidencePhotoPath == null;
-          final bool isPetugasInvalid = _selectedPetugasId == null || _selectedPetugasId!.isEmpty || _selectedPetugasId == 'CHANGE_REQUESTED';
+          final bool isPetugasListEmpty = ref.read(petugasPengosonganProvider).petugasWilayah.isEmpty;
+          final bool isPetugasInvalid = !isPetugasListEmpty && (_selectedPetugasId == null || _selectedPetugasId!.isEmpty || _selectedPetugasId == 'CHANGE_REQUESTED');
           
           final bool canSubmit = !isFotoEmpty && _selectedBinIds.isNotEmpty && !isPetugasInvalid;
 
@@ -553,10 +548,11 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                                     ? 'Pilih Tempat Sampah'
                                     : 'Ajukan Pengosongan (${_selectedBinIds.length} Tempat Sampah)'),
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: isPending || hasInvalidSelectedBin || isPetugasInvalid || isFotoEmpty || canSubmit ? Colors.white : Colors.grey.shade700,
                 ),
+                textAlign: TextAlign.center,
               ),
             ),
           );

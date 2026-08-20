@@ -622,7 +622,7 @@ export class KknAttendanceService {
             longitude,
             status: isAutoAlpa ? "ALPA" : "HADIR",
             attendedAt: existing.attendedAt || new Date(),
-            checkOutAt: method?.toUpperCase() === "OTOMATIS" ? new Date() : existing.checkOutAt,
+            checkOutAt: existing.checkOutAt,
           },
         });
 
@@ -671,7 +671,7 @@ export class KknAttendanceService {
           latitude,
           longitude,
           status: isAutoAlpa ? "ALPA" : "HADIR",
-          checkOutAt: method?.toUpperCase() === "OTOMATIS" ? new Date() : null,
+          checkOutAt: null,
         },
       });
 
@@ -1099,7 +1099,7 @@ export class KknAttendanceService {
       const latestLoc = locMap.get(att.studentId);
       const leave = leaveMap.get(att.studentId);
 
-      const isFinished = att.checkOutAt !== null || att.status === "SELESAI" || att.status === "HADIR";
+      const isFinished = att.checkOutAt !== null || att.status === "SELESAI";
 
       let currentStatus = "TERCATAT_ABSEN";
       let status = att.status;
@@ -1112,7 +1112,7 @@ export class KknAttendanceService {
         status = "HADIR";
       } else if (isFinished) {
         currentStatus = "SELESAI";
-        status = att.status === "SELESAI" ? "SELESAI" : "HADIR";
+        status = "SELESAI";
       } else if (latestLoc) {
         let isInside = false;
         if (
@@ -1139,10 +1139,10 @@ export class KknAttendanceService {
           isInside = dist <= scheduleLoc.radius + 15;
         }
         currentStatus = isInside ? "MASIH_DI_LOKASI" : "SUDAH_MENINGGALKAN_RADIUS";
-        status = isInside ? "LAPANGAN" : "LEPAS_RADIUS";
+        status = isInside ? "HADIR" : "LEPAS_RADIUS";
       } else {
         currentStatus = "MASIH_DI_LOKASI";
-        status = "LAPANGAN";
+        status = "HADIR";
       }
 
       const isLeave = att.method === "IZIN_DPL" || String(att.status).toUpperCase().includes("IZIN") || String(att.status).toUpperCase().includes("SAKIT");
@@ -1150,9 +1150,9 @@ export class KknAttendanceService {
         ...att,
         status,
         currentStatus,
-        statusDisplay: status === "LAPANGAN" ? "Lapangan" : status === "HADIR" ? "Hadir" : status === "SELESAI" ? "Selesai" : status,
+        statusDisplay: status === "HADIR" ? "Hadir" : status === "SELESAI" ? "Selesai" : status === "LEPAS_RADIUS" ? "Lepas Radius" : status,
         attendedAt: isLeave ? null : att.attendedAt,
-        completedAt: att.checkOutAt || (att as any).completedAt || null,
+        completedAt: isFinished ? (att.checkOutAt || (att as any).completedAt || null) : null,
         leaveRequest: leave
           ? {
               id: leave.id,

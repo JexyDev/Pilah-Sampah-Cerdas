@@ -758,9 +758,10 @@ class ApiBinRepository implements BinRepository {
 
   WasteType _parseWasteType(String? value) {
     if (value == null) return WasteType.organic;
-    return value.toUpperCase() == 'ORGANIC'
-        ? WasteType.organic
-        : WasteType.nonOrganic;
+    final upper = value.toUpperCase();
+    if (upper.contains('NON') || upper.contains('ANORG')) return WasteType.nonOrganic;
+    if (upper.contains('ORG')) return WasteType.organic;
+    return WasteType.nonOrganic; // Default
   }
 
   double _parseDouble(dynamic value) {
@@ -787,9 +788,12 @@ class ApiBinRepository implements BinRepository {
         (json['category'] ?? json['type'] ?? json['binType'] ?? 'ORGANIC')
             .toString()
             .toUpperCase();
-    final WasteType binType = (typeStr == 'ORGANIC' || typeStr == 'ORGANIK')
-        ? WasteType.organic
-        : WasteType.nonOrganic;
+    WasteType binType = WasteType.nonOrganic;
+    if (typeStr.contains('NON') || typeStr.contains('ANORG')) {
+      binType = WasteType.nonOrganic;
+    } else if (typeStr.contains('ORG')) {
+      binType = WasteType.organic;
+    }
 
     final bool isResetPending =
         json['isResetPending'] == true ||

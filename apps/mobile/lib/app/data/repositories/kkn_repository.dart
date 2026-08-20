@@ -80,10 +80,6 @@ abstract class KknRepository {
   /// GET /api/v1/kkn/pengajuan-izin
   Future<List<dynamic>> getPengajuanIzin();
 
-  /// Membatalkan pengajuan izin / sakit (Skenario A & B)
-  /// PUT /api/v1/kkn/pengajuan-izin/:id/batal
-  Future<Map<String, dynamic>> cancelPengajuanIzin(String izinId, {String? alasan});
-
   /// Mengambil data statistik dampak kelurahan (GET /api/v1/kkn/dampak-kelurahan)
   Future<DampakKelurahanData> getDampakKelurahan();
 
@@ -96,29 +92,27 @@ abstract class KknRepository {
   /// Mendaftarkan fasilitas daur ulang (Rumah Maggot dll)
   Future<Map<String, dynamic>> registerFasilitas(Map<String, dynamic> data, {String? imagePath});
 
-  /// Mengambil daftar kegiatan KKN aktif hari ini (GET /api/v1/kkn/kegiatan-aktif)
-  Future<List<KegiatanKknItem>> getKegiatanAktif({String? tanggal});
+  /// Serah terima (handover) KKN — mengirim laporan final ke DPL / admin
+  /// POST /api/v1/kkn/handover
+  Future<Map<String, dynamic>> submitHandover(Map<String, dynamic> data);
 
-  /// Memulai kegiatan KKN dan inisialisasi sesi tracking (POST /api/v1/kkn/kegiatan/:id/mulai)
-  Future<MulaiKegiatanResponse> mulaiKegiatan({
-    required String scheduleId,
-    required double latitude,
-    required double longitude,
-    String? deviceInfo,
-  });
+  // ═══════════════════════════════════════════════════════════════
+  // GPS Presensi Berbasis Kegiatan
+  // ═══════════════════════════════════════════════════════════════
 
-  /// Mengakhiri kegiatan KKN (POST /api/v1/kkn/kegiatan/:id/selesai)
-  Future<Map<String, dynamic>> selesaiKegiatan({
-    required String scheduleId,
-    String? sessionId,
-    int? totalDurasiDalamZonaMenit,
-    String? alasan,
-  });
+  /// Mengambil daftar kegiatan KKN aktif hari ini
+  /// GET /api/v1/kkn/kegiatan-aktif
+  Future<List<Map<String, dynamic>>> getKegiatanAktif();
 
-  /// Mencatat penalti keluar zona melebihi batas toleransi (POST /api/v1/kkn/out-of-zone-violation)
-  Future<OutOfZoneViolationResult> recordOutOfZoneViolation({
-    required String scheduleId,
-    required double outOfZoneMinutes,
-  });
+  /// Konfirmasi mulai kegiatan KKN (check-in awal)
+  /// POST /api/v1/kkn/kegiatan/{id}/mulai
+  Future<Map<String, dynamic>> mulaiKegiatan(String id, double latitude, double longitude, {String? deviceInfo});
+
+  /// Akhiri kegiatan KKN
+  /// POST /api/v1/kkn/kegiatan/{id}/selesai
+  Future<Map<String, dynamic>> selesaiKegiatan(String id, {required String sessionId, required int totalDurasiDalamZonaMenit, required String alasan});
+
+  /// Catat pelanggaran keluar zona (penalti poin)
+  /// POST /api/v1/kkn/out-of-zone-violation
+  Future<Map<String, dynamic>> recordOutOfZoneViolation({required String scheduleId, required double outOfZoneMinutes});
 }
-

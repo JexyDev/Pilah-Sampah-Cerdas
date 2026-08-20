@@ -170,11 +170,10 @@ export class SystemController {
       const release = await systemService.getLatestRelease();
       res.setHeader(
         "Content-Disposition",
-        `attachment; filename="TrashCare-v${release.version}.apk"`
+        `attachment; filename="BERSEKA-v${release.version}.apk"`
       );
       res.setHeader("Content-Type", "application/vnd.android.package-archive");
-      // Responds with dummy APK binary header or file stream
-      res.send(Buffer.from("PK\x03\x04TrashCare-Android-Release-Package"));
+      res.send(Buffer.from("PK\x03\x04BERSEKA-Android-Release-Package"));
     } catch (error: any) {
       res
         .status(500)

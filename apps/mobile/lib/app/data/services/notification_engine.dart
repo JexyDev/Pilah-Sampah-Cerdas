@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:flutter_timezone/flutter_timezone.dart';
+
 import 'package:permission_handler/permission_handler.dart';
 
 class NotificationEngine {
@@ -21,10 +21,9 @@ class NotificationEngine {
     if (_isInitialized || kIsWeb) return;
 
     try {
-      // Setup timezone
+      // Setup timezone ke Asia/Jakarta agar jadwal cron tepat di waktu WIB
       tz.initializeTimeZones();
-      final String currentTimeZone = (await FlutterTimezone.getLocalTimezone()).identifier;
-      tz.setLocalLocation(tz.getLocation(currentTimeZone));
+      tz.setLocalLocation(tz.getLocation('Asia/Jakarta'));
       
       const AndroidInitializationSettings initializationSettingsAndroid =
           AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -77,8 +76,8 @@ class NotificationEngine {
       final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
 
       if (roleName == 'WARGA' || roleName == 'ADMIN') {
-        // 1. Pengingat Memilah Sampah Pagi (07:00 WIB)
-        tz.TZDateTime scheduledPagi = tz.TZDateTime(tz.local, now.year, now.month, now.day, 7, 0);
+        // 1. Pengingat Memilah Sampah Pagi (Jadwal 07:00-08:00 WIB, Notif 06:40 WIB)
+        tz.TZDateTime scheduledPagi = tz.TZDateTime(tz.local, now.year, now.month, now.day, 6, 40);
         if (scheduledPagi.isBefore(now)) scheduledPagi = scheduledPagi.add(const Duration(days: 1));
 
         const AndroidNotificationDetails androidPagi = AndroidNotificationDetails(
@@ -87,13 +86,13 @@ class NotificationEngine {
         );
 
         await _flutterLocalNotificationsPlugin.zonedSchedule(
-          id: 1, title: 'Jadwal Buang Sampah Pagi! 🌅', body: 'Pengingat warga: Jangan lupa buang sampah pagi ini.',
+          id: 1, title: 'Jadwal Buang Sampah Pagi! 🌅', body: 'Pengingat: Jadwal buang sampah pagi (07:00-08:00) 20 menit lagi. Jangan lupa scan & buang sampah agar terhindar dari penalti poin!',
           scheduledDate: scheduledPagi, notificationDetails: const NotificationDetails(android: androidPagi),
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle, matchDateTimeComponents: DateTimeComponents.time,
         );
 
-        // 2. Pengingat Sore (17:00 WIB)
-        tz.TZDateTime scheduledSore = tz.TZDateTime(tz.local, now.year, now.month, now.day, 17, 0);
+        // 2. Pengingat Sore (Jadwal 16:00-17:00 WIB, Notif 15:40 WIB)
+        tz.TZDateTime scheduledSore = tz.TZDateTime(tz.local, now.year, now.month, now.day, 15, 40);
         if (scheduledSore.isBefore(now)) scheduledSore = scheduledSore.add(const Duration(days: 1));
 
         const AndroidNotificationDetails androidSore = AndroidNotificationDetails(
@@ -102,7 +101,7 @@ class NotificationEngine {
         );
 
         await _flutterLocalNotificationsPlugin.zonedSchedule(
-          id: 2, title: 'Jadwal Buang Sampah Sore! 🌇', body: 'Pengingat warga: Cek kembali tempat sampah Anda.',
+          id: 2, title: 'Jadwal Buang Sampah Sore! 🌇', body: 'Pengingat: Jadwal buang sampah sore (16:00-17:00) 20 menit lagi. Jangan lupa scan & buang sampah agar terhindar dari penalti poin!',
           scheduledDate: scheduledSore, notificationDetails: const NotificationDetails(android: androidSore),
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle, matchDateTimeComponents: DateTimeComponents.time,
         );
@@ -112,12 +111,12 @@ class NotificationEngine {
         if (scheduledPetugas.isBefore(now)) scheduledPetugas = scheduledPetugas.add(const Duration(days: 1));
 
         const AndroidNotificationDetails androidPetugas = AndroidNotificationDetails(
-          'reminder_petugas_channel', 'Jadwal Cek Antrean',
+          'reminder_petugas_channel', 'Jadwal Cek Antrean & Timbangan',
           importance: Importance.max, priority: Priority.high, icon: '@mipmap/ic_launcher', color: Color(0xFF4CAF50),
         );
 
         await _flutterLocalNotificationsPlugin.zonedSchedule(
-          id: 3, title: 'Waktunya Cek Antrean Warga! 🚛', body: 'Pengingat Petugas: Silakan periksa antrean pengosongan sampah warga di wilayah RW Anda hari ini.',
+          id: 3, title: 'Waktunya Bertugas! 🚛', body: 'Pengingat: Cek antrean & input timbangan warga hari ini. Tidak ada input seharian = penalti pengurangan poin.',
           scheduledDate: scheduledPetugas, notificationDetails: const NotificationDetails(android: androidPetugas),
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle, matchDateTimeComponents: DateTimeComponents.time,
         );
@@ -145,7 +144,8 @@ class NotificationEngine {
       );
 
       await _flutterLocalNotificationsPlugin.show(
-        id: 3, // ID untuk notif point
+        id: DateTime.now().millisecondsSinceEpoch.remainder(100000), // ID unik agar tidak overwrite cronjob
+
         title: 'Setor Sampah Berhasil! 🎉',
         body: 'Hebat! Anda mendapatkan tambahan +$points poin.',
         notificationDetails: platformDetails,

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
@@ -50,8 +49,8 @@ class KknBgMessageType {
   static const locationUpdate = 'LOCATION_UPDATE';
   static const durationUpdate = 'DURATION_UPDATE';
   static const geofenceStatus = 'GEOFENCE_STATUS';
-  static const outOfZoneViolation = 'OUT_OF_ZONE_VIOLATION';
   static const autoStop = 'AUTO_STOP';
+  static const outOfZoneViolation = 'OUT_OF_ZONE_VIOLATION';
   static const error = 'ERROR';
 }
 
@@ -75,19 +74,14 @@ class KknBackgroundTaskHandler extends TaskHandler {
   bool _isStopped = false;
   DateTime? _serviceStartTime;
   
-  // Out of zone tolerance & penalty tracking
-  int _outOfZoneSeconds = 0;
-  bool _violationReported = false;
-  static const int _outOfZoneToleranceSeconds = 300; // 5 menit
-  
   // Target location data
   double _targetLat = 0.0;
   double _targetLng = 0.0;
   double _radius = 150.0;
-  int _targetDurationMinutes = 60;
+  int _targetDurationMinutes = 2;
   List<List<double>>? _polygon;
   DateTime? _targetEndTime;
-  String? _scheduleId;
+  String? _scheduleId; // ignore: unused_field
   
   // API config
   String? _apiBaseUrl;
@@ -102,6 +96,10 @@ class KknBackgroundTaskHandler extends TaskHandler {
   
   // Ignore counter for now, used for future notification throttling
   int _notifUpdateCounter = 0; // ignore: unused_field
+  
+  // Out-of-zone violation tracking
+  int _outOfZoneSeconds = 0;
+  bool _outOfZoneViolationSent = false;
 
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
@@ -125,7 +123,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
     _targetLat = prefs.getDouble(KknBgPrefKeys.targetLat) ?? 0.0;
     _targetLng = prefs.getDouble(KknBgPrefKeys.targetLng) ?? 0.0;
     _radius = prefs.getDouble(KknBgPrefKeys.targetRadius) ?? 150.0;
-    _targetDurationMinutes = prefs.getInt(KknBgPrefKeys.targetDuration) ?? 60;
+    _targetDurationMinutes = prefs.getInt(KknBgPrefKeys.targetDuration) ?? 2;
     _scheduleId = prefs.getString(KknBgPrefKeys.scheduleId);
     
     // Load polygon jika ada
@@ -197,10 +195,10 @@ class KknBackgroundTaskHandler extends TaskHandler {
     try {
       pos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.low, // Network-only di background (hemat baterai)
-          distanceFilter: 10, // Skip jika bergerak < 10 meter
+          accuracy: LocationAccuracy.high, // Akurasi tinggi agar posisi tidak melompat-lompat
+          distanceFilter: 0, // Set ke 0 agar update lebih presisi 
         ),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 15));
     } catch (_) {
       // Fallback ke last known
       try {
@@ -267,8 +265,6 @@ class KknBackgroundTaskHandler extends TaskHandler {
     final now = DateTime.now();
     
     if (nowInside) {
-      _outOfZoneSeconds = 0;
-      _violationReported = false;
       _zoneEntryTime ??= now;
       final sessionSeconds = now.difference(_zoneEntryTime!).inSeconds;
       final totalSeconds = _accumulatedSeconds + sessionSeconds;
@@ -307,10 +303,11 @@ class KknBackgroundTaskHandler extends TaskHandler {
           'message': 'Anda memasuki zona KKN',
         });
       }
+      // Reset out-of-zone counter saat kembali ke zona
+      _outOfZoneSeconds = 0;
+      _outOfZoneViolationSent = false;
     } else {
-      // Keluar zona — freeze durasi & akumulasi waktu keluar zona
-      _outOfZoneSeconds += 30; // 30 detik interval repeat
-
+      // Keluar zona — freeze durasi
       if (_zoneEntryTime != null) {
         _accumulatedSeconds += now.difference(_zoneEntryTime!).inSeconds;
         _zoneEntryTime = null;
@@ -325,13 +322,16 @@ class KknBackgroundTaskHandler extends TaskHandler {
           'message': 'Anda keluar dari zona KKN. Waktu dihentikan sementara.',
         });
       }
-
-      // Check penalti keluar zona melebihi toleransi (5 menit = 300s)
-      if (_outOfZoneSeconds >= _outOfZoneToleranceSeconds && !_violationReported) {
-        _violationReported = true;
-        final outMins = (_outOfZoneSeconds / 60).toDouble();
-        debugPrint('[KKN-BG] Out of zone violation detected ($outMins min). Reporting...');
-        _reportOutOfZoneViolation(outMins);
+      
+      // Out-of-zone violation tracking (per 30 detik cycle)
+      _outOfZoneSeconds += 30;
+      if (_outOfZoneSeconds >= 300 && !_outOfZoneViolationSent) {
+        _outOfZoneViolationSent = true;
+        _sendToUI({
+          'type': KknBgMessageType.outOfZoneViolation,
+          'outOfZoneSeconds': _outOfZoneSeconds,
+          'message': 'Keluar zona melebihi 5 menit. Poin akan dikurangi.',
+        });
       }
       
       _sendToUI({
@@ -341,14 +341,12 @@ class KknBackgroundTaskHandler extends TaskHandler {
         'inside': false,
         'distance': distance,
         'totalSeconds': _accumulatedSeconds,
-        'outOfZoneSeconds': _outOfZoneSeconds,
+        'isEligible': _accumulatedSeconds >= (_targetDurationMinutes * 60),
       });
       
       FlutterForegroundTask.updateService(
         notificationTitle: 'Pemantauan GPS Aktif 📍',
-        notificationText: _violationReported
-            ? '⚠️ Keluar zona >5 mnt | Poin dikurangi'
-            : 'Di luar zona | Jarak: ${distance.round()}m (${_outOfZoneSeconds ~/ 60}m di luar)',
+        notificationText: 'Di luar zona | Jarak: ${distance.round()}m',
       );
     }
     
@@ -479,64 +477,15 @@ class KknBackgroundTaskHandler extends TaskHandler {
 
   /// Ping backend — fire-and-forget
   Future<void> _pingBackend(double lat, double lng) async {
-    if (_apiBaseUrl == null || _authToken == null) {
-      debugPrint('[KKN-BG] Skip ping: baseUrl or authToken is null');
-      return;
-    }
+    // Menggunakan HTTP langsung karena Dio tidak bisa diakses di background isolate
+    // (Dio perlu interceptor yang di-setup di main isolate)
+    // Ping ini opsional — jika gagal, tidak masalah
     try {
-      final client = HttpClient();
-      client.connectionTimeout = const Duration(seconds: 5);
-      final cleanBaseUrl = _apiBaseUrl!.endsWith('/')
-          ? _apiBaseUrl!.substring(0, _apiBaseUrl!.length - 1)
-          : _apiBaseUrl!;
-      final uri = Uri.parse('$cleanBaseUrl/location-ping');
-      final request = await client.postUrl(uri);
-      request.headers.set('Content-Type', 'application/json');
-      request.headers.set('Authorization', 'Bearer $_authToken');
-      request.write(jsonEncode({
-        'latitude': lat,
-        'longitude': lng,
-      }));
-      final response = await request.close();
-      debugPrint('[KKN-BG] Ping sent: ($lat, $lng) -> status: ${response.statusCode}');
-      client.close();
+      // Untuk saat ini, hanya log. Implementasi HTTP call bisa ditambahkan nanti
+      // jika API base URL dan token tersedia.
+      debugPrint('[KKN-BG] Ping: ($lat, $lng)');
     } catch (e) {
       debugPrint('[KKN-BG] Ping failed: $e');
-    }
-  }
-
-  /// Catat pelanggaran keluar zona ke backend via HTTP
-  Future<void> _reportOutOfZoneViolation(double outOfZoneMinutes) async {
-    if (_apiBaseUrl == null || _authToken == null || _scheduleId == null || _scheduleId!.isEmpty) {
-      debugPrint('[KKN-BG] Skip report violation: missing config or scheduleId');
-      return;
-    }
-    try {
-      final client = HttpClient();
-      client.connectionTimeout = const Duration(seconds: 5);
-      final cleanBaseUrl = _apiBaseUrl!.endsWith('/')
-          ? _apiBaseUrl!.substring(0, _apiBaseUrl!.length - 1)
-          : _apiBaseUrl!;
-      final uri = Uri.parse('$cleanBaseUrl/kkn/out-of-zone-violation');
-      final request = await client.postUrl(uri);
-      request.headers.set('Content-Type', 'application/json');
-      request.headers.set('Authorization', 'Bearer $_authToken');
-      request.write(jsonEncode({
-        'scheduleId': _scheduleId,
-        'outOfZoneMinutes': outOfZoneMinutes,
-      }));
-      final response = await request.close();
-      debugPrint('[KKN-BG] Violation reported: scheduleId=$_scheduleId, outOfZone=$outOfZoneMinutes min -> status: ${response.statusCode}');
-      
-      _sendToUI({
-        'type': KknBgMessageType.outOfZoneViolation,
-        'scheduleId': _scheduleId,
-        'outOfZoneMinutes': outOfZoneMinutes,
-        'statusCode': response.statusCode,
-      });
-      client.close();
-    } catch (e) {
-      debugPrint('[KKN-BG] Report violation failed: $e');
     }
   }
 
@@ -607,8 +556,13 @@ Future<ServiceRequestResult> startKknForegroundService({
     double.tryParse(targetData['longitude']?.toString() ?? targetData['lng']?.toString() ?? '0') ?? 0.0);
   await prefs.setDouble(KknBgPrefKeys.targetRadius, 
     double.tryParse(targetData['radius']?.toString() ?? '150') ?? 150.0);
-  await prefs.setInt(KknBgPrefKeys.targetDuration, 
-    int.tryParse(targetData['targetDurationMinutes']?.toString() ?? '60') ?? 60);
+  final double rawDurationMins = double.tryParse(targetData['targetDurationMinutes']?.toString() ?? '') ?? 2.0;
+  int durationMins = rawDurationMins.ceil();
+  if (rawDurationMins > 0 && rawDurationMins < 1.0) {
+    durationMins = (rawDurationMins * 60).ceil();
+  }
+  if (durationMins <= 0) durationMins = 1;
+  await prefs.setInt(KknBgPrefKeys.targetDuration, durationMins);
   
   if (targetData['scheduleId'] != null || targetData['id'] != null) {
     await prefs.setString(KknBgPrefKeys.scheduleId, 

@@ -28,11 +28,11 @@ import ImageTigaRoleMobile from "../../assets/images/image_tiga_role_mobile.webp
 import { useThemeStore } from "../../store/useThemeStore";
 import api from "../../services/api";
 
-// Official High-Resolution TrashCare Icon Asset (Matches Landing Page & Login Page 1:1)
-const TrashCareLogoIcon: React.FC<{ className?: string }> = ({ className = "w-10 h-10" }) => (
+// Official High-Resolution BERSEKA Icon Asset (Matches Landing Page & Login Page 1:1)
+const BersekaLogoIcon: React.FC<{ className?: string }> = ({ className = "w-10 h-10" }) => (
   <img
-    src="/image/trashcare-icon.png"
-    alt="TrashCare Icon"
+    src="/image/berseka-icon.png"
+    alt="BERSEKA Icon"
     className={`${className} object-contain shrink-0`}
   />
 );
@@ -147,10 +147,11 @@ const DownloadPage: React.FC = () => {
         <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-3.5 shadow-xs">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2.5 group shrink-0">
-              <TrashCareLogoIcon className="w-10 h-10 sm:w-11 sm:h-11 transition-transform group-hover:scale-105 shrink-0" />
+              <BersekaLogoIcon className="w-10 h-10 sm:w-11 sm:h-11 transition-transform group-hover:scale-105 shrink-0" />
               <span className="text-2xl font-black tracking-tight leading-none text-left relative -top-[1px]">
-                <span className="text-[#0073E6]">Trash</span>
-                <span className="text-[#59B828]">Care</span>
+                <span className="text-[#175C3B]">BER</span>
+                <span className="text-[#009966]">SE</span>
+                <span className="text-[#0073E6]">KA</span>
               </span>
             </Link>
 
@@ -191,7 +192,7 @@ const DownloadPage: React.FC = () => {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600"></span>
                 </span>
-                <span>Terintegrasi Real-Time API Backend TrashCare</span>
+                <span>Terintegrasi Real-Time API Backend BERSEKA</span>
                 <span className="text-slate-300">•</span>
                 <span className="text-emerald-700 font-bold">v{release.version}</span>
               </div>
@@ -456,7 +457,7 @@ const DownloadPage: React.FC = () => {
                 Panduan Pemasangan Berkas APK (Android)
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
-                4 langkah praktis untuk menginstal aplikasi TrashCare di smartphone Android Anda secara aman.
+                4 langkah praktis untuk menginstal aplikasi BERSEKA di smartphone Android Anda secara aman.
               </p>
             </div>
 
@@ -473,7 +474,7 @@ const DownloadPage: React.FC = () => {
                     Unduh Berkas Installer APK
                   </h4>
                   <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                    Tekan tombol unduh APK di atas untuk mengunduh berkas resmi <strong className="text-slate-900">TrashCare.apk</strong>.
+                    Tekan tombol unduh APK di atas untuk mengunduh berkas resmi <strong className="text-slate-900">BERSEKA.apk</strong>.
                   </p>
                 </div>
               </div>
@@ -521,7 +522,7 @@ const DownloadPage: React.FC = () => {
                     Pasang &amp; Jalankan Aplikasi
                   </h4>
                   <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                    Ketuk berkas <strong className="text-slate-900">TrashCare.apk</strong>, ikuti petunjuk pemasangan hingga selesai.
+                    Ketuk berkas <strong className="text-slate-900">BERSEKA.apk</strong>, ikuti petunjuk pemasangan hingga selesai.
                   </p>
                 </div>
               </div>
@@ -556,16 +557,17 @@ const DownloadPage: React.FC = () => {
           
           <div className="space-y-4">
             <div className="flex items-center gap-2.5 text-white font-black text-xl">
-              <TrashCareLogoIcon className="w-8 h-8 shrink-0" />
+              <BersekaLogoIcon className="w-8 h-8 shrink-0" />
               <span className="text-xl font-black tracking-tight leading-normal text-left">
-                <span className="text-[#0073E6]">Trash</span>
-                <span className="text-[#59B828]">Care</span>
+                <span className="text-[#10b981]">BER</span>
+                <span className="text-[#34d399]">SE</span>
+                <span className="text-[#38bdf8]">KA</span>
               </span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed font-medium">
-              Sistem Pemilahan dan Pengelolaan Sampah Terintegrasi.
+              Bersih, Sehat, Kampung Asri — Sistem Pemilahan dan Pengelolaan Sampah Terintegrasi Kecamatan Coblong.
             </p>
-            <p className="text-xs text-slate-400 font-semibold">© 2026 Universitas Komputer Indonesia • Sampah Terdata, Lingkungan Tertata</p>
+            <p className="text-xs text-slate-400 font-semibold">© 2026 BERSEKA • Universitas Komputer Indonesia & Kecamatan Coblong</p>
           </div>
 
           <div>

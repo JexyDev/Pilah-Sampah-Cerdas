@@ -259,7 +259,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
         category="Master Data & Audit Telemetri"
         scope="Sistem Klasifikasi AI"
         title="Dataset Hasil Klasifikasi AI"
-        description="Stream data telemetri real-time hasil inferensi model AI (Organik & Anorganik) yang diunggah warga melalui aplikasi mobile TrashCare secara otomatis dan terintegrasi penuh ke database."
+        description="Stream data telemetri real-time hasil inferensi model AI (Organik & Anorganik) yang diunggah warga melalui aplikasi mobile BERSEKA secara otomatis dan terintegrasi penuh ke database."
         actions={
           <button
             onClick={handleExportJSON}

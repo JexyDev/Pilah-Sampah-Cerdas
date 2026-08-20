@@ -98,6 +98,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
         phone: phone,
         password: password,
       );
+
+      if (user.role != UserRole.warga && 
+          user.role != UserRole.mahasiswaKkn && 
+          user.role != UserRole.petugasPemilahan) {
+        await _authRepository.logout();
+        throw const AuthException(
+          'UNAUTHORIZED_ROLE', 
+          'Akses ditolak. Aplikasi mobile hanya untuk Warga, Petugas Pemilah, dan Mahasiswa.'
+        );
+      }
+
       state = state.copyWith(user: user, isLoading: false);
       // Daftarkan FCM token setelah login berhasil
       _registerFcmToken();
@@ -175,6 +186,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final user = await _authRepository.verifyOtp(phone: phone, otp: otp);
+
+      if (user.role != UserRole.warga && 
+          user.role != UserRole.mahasiswaKkn && 
+          user.role != UserRole.petugasPemilahan) {
+        await _authRepository.logout();
+        throw const AuthException(
+          'UNAUTHORIZED_ROLE', 
+          'Akses ditolak. Aplikasi mobile hanya untuk Warga, Petugas Pemilah, dan Mahasiswa.'
+        );
+      }
+
       state = state.copyWith(user: user, isLoading: false);
       _registerFcmToken();
       return true;

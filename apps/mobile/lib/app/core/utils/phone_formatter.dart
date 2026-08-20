@@ -53,19 +53,14 @@ class PhonePrefixFormatter extends TextInputFormatter {
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
     String text = newValue.text;
     
-    // Hapus awalan 0
-    if (text.startsWith('0')) {
-      text = text.substring(1);
-    }
-    // Hapus awalan 62
-    if (text.startsWith('62')) {
-      text = text.substring(2);
-    }
+    // Gunakan regex untuk menghapus kombinasi awalan '0' dan '62' berulang kali.
+    // Contoh: '0812', '62812', '0062812', '620812' semuanya akan jadi '812'.
+    String newText = text.replaceFirst(RegExp(r'^(0|62)+'), '');
     
-    if (text != newValue.text) {
+    if (newText != newValue.text) {
       return TextEditingValue(
-        text: text,
-        selection: TextSelection.collapsed(offset: text.length),
+        text: newText,
+        selection: TextSelection.collapsed(offset: newText.length),
       );
     }
     return newValue;

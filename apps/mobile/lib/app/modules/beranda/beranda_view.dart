@@ -21,8 +21,9 @@ import '../shared/widgets/skeleton_loading.dart';
 import '../shared/widgets/empty_state.dart';
 import '../../core/utils/network_exception_helper.dart';
 import '../../core/utils/scan_guard.dart';
+import '../mahasiswa/controllers/location_ping_controller.dart';
 
-/// Halaman beranda ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â sesuai desain:
+/// Halaman beranda — sesuai desain:
 /// Header biru, avatar+nama+RW, stats card, Aksi Cepat, Riwayat.
 class BerandaView extends ConsumerStatefulWidget {
   const BerandaView({
@@ -37,6 +38,17 @@ class BerandaView extends ConsumerStatefulWidget {
 }
 
 class _BerandaViewState extends ConsumerState<BerandaView> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = ref.read(authProvider).user;
+      if (user?.role == UserRole.mahasiswaKkn) {
+        ref.read(locationPingControllerProvider.notifier).startTracking();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
@@ -626,14 +638,14 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
           return Row(
             children: [
               _StatItem(
-                icon: Icons.star_border_rounded,
+                icon: Icons.star_rounded,
                 iconColor: AppColors.primaryBlue,
                 numericValue: daily,
                 label: 'Hari Ini',
               ),
               _VerticalDivider(),
               _StatItem(
-                icon: Icons.account_balance_wallet_outlined,
+                icon: Icons.account_balance_wallet_rounded,
                 iconColor: AppColors.primaryGreen,
                 numericValue: totalPoints,
                 label: 'Total Points',
@@ -641,7 +653,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
               ),
               _VerticalDivider(),
               _StatItem(
-                icon: Icons.emoji_events_outlined,
+                icon: Icons.emoji_events_rounded,
                 iconColor: AppColors.warningYellow,
                 value: rankValue,
                 label: 'Peringkat',
@@ -861,16 +873,17 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.primaryGreen, width: 1.5),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.delete_sweep_rounded,
+                  Image.asset(
+                    'assets/icons/waste.png',
                     color: AppColors.primaryGreen,
-                    size: 28,
+                    width: 28,
+                    height: 28,
                   ),
-                  SizedBox(height: 8),
-                  Text(
+                  const SizedBox(height: 8),
+                  const Text(
                     'Minta Kosongkan',
                     style: TextStyle(
                       color: AppColors.primaryGreen,
@@ -1026,7 +1039,7 @@ class _RiwayatCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isOrganic ? 'Sampah Organik' : 'Sampah Non Organik',
+                  isOrganic ? 'Sampah Organik' : 'Sampah Anorganik',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -1043,72 +1056,9 @@ class _RiwayatCard extends ConsumerWidget {
               ],
             ),
           ),
-          // Points & Schedule badge
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '+${log.pointsAwarded.abs()} pts',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.warningYellow,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              if (log.pointsAwarded > 0) ...[
-                const SizedBox(height: 6),
-                _buildScheduleBadge(log.createdAt.toLocal()),
-              ],
-            ],
-          ),
         ],
       ),
     );
-  }
-
-  Widget _buildScheduleBadge(DateTime date) {
-    final hour = date.hour;
-    // Window Pagi: 06:00-08:59, Window Sore: 15:00-17:59
-    final isFullPoin = (hour >= 6 && hour < 9) || (hour >= 15 && hour < 18);
-    
-    if (isFullPoin) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: AppColors.primaryGreen.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.35), width: 0.5),
-        ),
-        child: const Text(
-          'FULL POIN',
-          style: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.w800,
-            color: AppColors.primaryGreen,
-            letterSpacing: 0.2,
-          ),
-        ),
-      );
-    } else {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: AppColors.warningYellow.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.35), width: 0.5),
-        ),
-        child: const Text(
-          'SEBAGIAN',
-          style: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.w800,
-            color: AppColors.warningYellow,
-            letterSpacing: 0.2,
-          ),
-        ),
-      );
-    }
   }
 }
 
@@ -1141,7 +1091,7 @@ class _BerandaBinCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(Icons.delete_rounded, color: color, size: 24),
+              Image.asset('assets/icons/recycle-bin.png', color: color, width: 24, height: 24),
               if (bin.isResetPending)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

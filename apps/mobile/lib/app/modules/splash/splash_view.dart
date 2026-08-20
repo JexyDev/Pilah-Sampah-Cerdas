@@ -144,47 +144,14 @@ class _SplashViewState extends ConsumerState<SplashView>
                           opacity: _titleFade,
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 24),
-                            child: Container(
-                              width: 100,
+                            child: Image.asset(
+                              AppAssets.logo,
                               height: 100,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.05),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              clipBehavior: Clip.antiAlias,
-                              child: Image.asset(
-                                AppAssets.logo,
-                                fit: BoxFit.cover,
-                              ),
+                              fit: BoxFit.contain,
                             ),
                           ),
                         ),
                       ),
-                      // Judul
-                      SlideTransition(
-                        position: _titleSlide,
-                        child: FadeTransition(
-                          opacity: _titleFade,
-                          child: Text(
-                            'TrashCare',
-                            style: GoogleFonts.poppins(
-                              color: AppColors.primaryGreen,
-                              fontSize: 26,
-                              fontWeight: FontWeight.w700,
-                              height: 1.2,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
                       // Tagline
                       SlideTransition(
                         position: _taglineSlide,

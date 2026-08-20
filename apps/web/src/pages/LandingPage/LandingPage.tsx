@@ -23,11 +23,11 @@ const Icon: React.FC<{ icon: string; className?: string }> = ({ icon, className 
   return <span className={`material-symbols-outlined ${className}`}>{iconMap[icon] || "star"}</span>;
 };
 
-// Official High-Resolution TrashCare Icon Mark Asset (Matches user's reference image 1:1)
-const TrashCareLogoIcon: React.FC<{ className?: string }> = ({ className = "w-10 h-10" }) => (
+// Official High-Resolution BERSEKA Icon Mark Asset (Matches user's reference image 1:1)
+const BersekaLogoIcon: React.FC<{ className?: string }> = ({ className = "w-10 h-10" }) => (
   <img
-    src="/image/trashcare-icon.png"
-    alt="TrashCare Icon"
+    src="/image/berseka-icon.png"
+    alt="BERSEKA Icon"
     className={`${className} object-contain shrink-0`}
   />
 );
@@ -245,10 +245,11 @@ export const LandingPage: React.FC = () => {
             onClick={handleLogoClick}
             className="flex items-center gap-2.5 group shrink-0"
           >
-            <TrashCareLogoIcon className="w-10 h-10 sm:w-11 sm:h-11 transition-transform group-hover:scale-105 shrink-0" />
+            <BersekaLogoIcon className="w-10 h-10 sm:w-11 sm:h-11 transition-transform group-hover:scale-105 shrink-0" />
             <span className="text-2xl sm:text-[1.75rem] font-black tracking-tight leading-normal text-left relative -top-[2px]">
-              <span className="text-[#0073E6]">Trash</span>
-              <span className="text-[#59B828]">Care</span>
+              <span className="text-[#175C3B]">BER</span>
+              <span className="text-[#009966]">SE</span>
+              <span className="text-[#0073E6]">KA</span>
             </span>
           </Link>
 
@@ -420,11 +421,11 @@ export const LandingPage: React.FC = () => {
           <div className="lg:col-span-6 xl:col-span-5 space-y-6 text-left relative z-20 pl-4 sm:pl-8 lg:pl-16 xl:pl-24 pr-4 animate-fade-in-up">
             <h1 className="text-3xl sm:text-4xl lg:text-[3rem] font-black text-slate-900 leading-[1.15] tracking-tight">
               Sampah <span className="text-[#0073E6]">Terdata</span>,<br />
-              Lingkungan <span className="text-[#59B828]">Tertata</span>
+              Kampung <span className="text-[#175C3B]">Berseka</span>
             </h1>
 
             <p className="text-slate-600 text-sm sm:text-base font-medium leading-relaxed max-w-xl">
-              Sistem tata kelola sampah terintegrasi dengan pendekatan kegiatan KKN berdampak yang menghubungkan warga, petugas residu, mahasiswa, dosen pendamping lapangan, pimpinan perguruan tinggi, RW, kelurahan, kecamatan, dan Dinas Lingkungan Hidup.
+              Sistem tata kelola sampah cerdas terpadu <strong className="text-slate-800 font-extrabold">BERSEKA (Bersih, Sehat, Kampung Asri)</strong> berbasis AI dan partisipasi masyarakat yang menghubungkan warga, pengurus RW, petugas residu, mahasiswa KKN, dosen pembimbing (DPL), pihak kelurahan, kecamatan, dan Dinas Lingkungan Hidup.
             </p>
 
             <div className="flex flex-wrap items-center gap-3.5 pt-2">
@@ -521,12 +522,16 @@ export const LandingPage: React.FC = () => {
           {/* About Header Narrative */}
           <div className="text-center max-w-3xl mx-auto space-y-4">
             <h2 className="text-4xl sm:text-5xl font-black tracking-tight leading-tight">
-              <span className="text-[#0073E6]">Trash</span>
-              <span className="text-[#59B828]">Care</span>
+              <span className="text-[#175C3B]">BER</span>
+              <span className="text-[#009966]">SE</span>
+              <span className="text-[#0073E6]">KA</span>
             </h2>
+            <p className="text-xs sm:text-sm font-extrabold uppercase tracking-widest text-[#009966] -mt-2">
+              Bersih, Sehat, Kampung Asri
+            </p>
 
             <p className="text-slate-600 text-base sm:text-lg leading-relaxed font-medium">
-              Sistem tata kelola sampah terintegrasi dengan kegiatan KKN Berdampak yang menghubungkan warga, petugas residu, mahasiswa, dosen pendamping lapangan (DPL), pimpinan perguruan tinggi, RW, kelurahan, kecamatan, dan Dinas Lingkungan Hidup.
+              Mengangkat nilai kearifan lokal Sunda <em>"Berseka"</em> yang bermakna hidup bersih, apik, dan tertata rapi. BERSEKA mengintegrasikan pemilahan sampah di sumber rumah tangga, verifikasi QR Code fisik tempat sampah, audit klasifikasi berbasis AI, serta pengangkutan residu terjadwal di wilayah Kecamatan Coblong.
             </p>
           </div>
 
@@ -577,7 +582,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <p className="sdg-bottom-text text-center text-sm text-slate-600 font-medium mt-10 max-w-3xl mx-auto leading-relaxed">
-              Bersama <span className="font-black"><span className="text-[#0073E6]">Trash</span><span className="text-[#59B828]">Care</span></span>, pengelolaan sampah menjadi bagian dari solusi untuk lingkungan yang lebih bersih dan berkelanjutan.
+              Bersama <span className="font-black"><span className="text-[#175C3B]">BER</span><span className="text-[#009966]">SE</span><span className="text-[#0073E6]">KA</span></span>, pengelolaan sampah menjadi bagian dari solusi nyata untuk mewujudkan kampung yang bersih, sehat, dan berkelanjutan.
             </p>
           </div>
 
@@ -749,7 +754,7 @@ export const LandingPage: React.FC = () => {
             {/* Eyebrow */}
             <div className="mx-auto w-fit">
               <p className="why-us-eyebrow">
-                MENGAPA TRASHCARE
+                MENGAPA BERSEKA
               </p>
 
               <div className="mt-3 h-1 w-12 rounded-full bg-emerald-600 mx-auto"></div>
@@ -760,8 +765,8 @@ export const LandingPage: React.FC = () => {
             </h2>
 
             <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto mt-3">
-              Bukan sekadar mencatat sampah, TrashCare menghubungkan teknologi,
-              partisipasi masyarakat, dan pengelolaan lingkungan dalam satu sistem.
+              Bukan sekadar mencatat sampah, BERSEKA menghubungkan kecerdasan buatan,
+              partisipasi masyarakat, dan tata kelola lingkungan terpadu dalam satu ekosistem.
             </p>
 
             {/* Clean Interactive Pills */}
@@ -949,7 +954,7 @@ export const LandingPage: React.FC = () => {
                 </div>
 
                 <p className="text-sm text-slate-600 leading-relaxed font-medium">
-                  TrashCare dirancang untuk dapat terintegrasi dengan perangkat Internet of Things (IoT) pada tahap pengembangan masa depan untuk memantau kondisi tempat sampah secara otomatis dan terukur guna mendukung efisiensi rute penjemputan.
+                  BERSEKA dirancang untuk dapat terintegrasi dengan perangkat sensor Internet of Things (IoT) pada tahap pengembangan lanjutan guna memantau kapasitas Tempat Sampah secara otomatis dan terukur demi mendukung efisiensi rute penjemputan.
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
@@ -1151,9 +1156,9 @@ export const LandingPage: React.FC = () => {
               </h2>
 
               <p className="mitra-description">
-                Bersama berbagai pihak, TrashCare membangun kolaborasi
+                Bersama berbagai pihak, BERSEKA membangun kolaborasi
                 untuk menciptakan lingkungan yang lebih bersih,
-                sehat, and berkelanjutan.
+                sehat, dan berkelanjutan di Kecamatan Coblong.
               </p>
             </div>
 
@@ -1225,7 +1230,7 @@ export const LandingPage: React.FC = () => {
             </h2>
 
             <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto mt-4">
-              Temukan jawaban atas pertanyaan umum mengenai TrashCare,
+              Temukan jawaban atas pertanyaan umum mengenai BERSEKA,
               pengelolaan sampah, dan cara menggunakan platform kami.
             </p>
 
@@ -1242,7 +1247,7 @@ export const LandingPage: React.FC = () => {
                 onClick={() => setOpenFaq(openFaq === 0 ? null : 0)}
               >
                 <span>
-                  Apa itu TrashCare?
+                  Apa itu BERSEKA?
                 </span>
 
                 <span className="faq-icon">
@@ -1255,9 +1260,7 @@ export const LandingPage: React.FC = () => {
               {openFaq === 0 && (
                 <div className="faq-answer">
                   <p>
-                    TrashCare merupakan platform pengelolaan sampah yang membantu
-                    masyarakat dalam memilah, menyetorkan, dan memantau pengelolaan
-                    sampah secara lebih terstruktur melalui teknologi digital.
+                    BERSEKA (Bersih, Sehat, Kampung Asri) merupakan sistem tata kelola pemilahan sampah cerdas terpadu di Kecamatan Coblong yang menghubungkan warga, pengurus RW, petugas residu, mahasiswa KKN UNIKOM, dan instansi pemerintah melalui pemindaian QR Code Tempat Sampah fisik dan verifikasi berbasis AI.
                   </p>
                 </div>
               )}
@@ -1271,7 +1274,7 @@ export const LandingPage: React.FC = () => {
                 onClick={() => setOpenFaq(openFaq === 1 ? null : 1)}
               >
                 <span>
-                  Bagaimana cara menggunakan TrashCare?
+                  Bagaimana cara menggunakan BERSEKA?
                 </span>
 
                 <span className="faq-icon">
@@ -1284,9 +1287,7 @@ export const LandingPage: React.FC = () => {
               {openFaq === 1 && (
                 <div className="faq-answer">
                   <p>
-                    Pengguna dapat mendaftar dan masuk ke dalam platform,
-                    kemudian mengikuti proses pengelolaan sampah sesuai layanan
-                    yang tersedia, mulai dari pemilahan hingga penyetoran sampah.
+                    Warga cukup memilah sampah dari rumah ke Tempat Sampah Organik dan Anorganik ber-QR Code, melakukan pemindaian melalui aplikasi mobile saat penyetoran, dan memperoleh poin reward atas kepatuhan pemilahan yang terverifikasi.
                   </p>
                 </div>
               )}
@@ -1302,7 +1303,7 @@ export const LandingPage: React.FC = () => {
                 onClick={() => setOpenFaq(openFaq === 3 ? null : 3)}
               >
                 <span>
-                  Apa saja jenis sampah yang dapat dikelola?
+                  Apa saja jenis sampah yang dikelola dalam sistem BERSEKA?
                 </span>
 
                 <span className="faq-icon">
@@ -1315,9 +1316,7 @@ export const LandingPage: React.FC = () => {
               {openFaq === 3 && (
                 <div className="faq-answer">
                   <p>
-                    TrashCare mendukung pengelolaan beberapa kategori sampah,
-                    seperti sampah organik, anorganik, dan residu sesuai dengan
-                    sistem pemilahan yang diterapkan.
+                    Sistem BERSEKA memfasilitasi 2 jenis Tempat Sampah di rumah warga: Tempat Sampah Organik (diolah menjadi kompos/budidaya maggot) dan Anorganik (disalurkan ke Bank Sampah/daur ulang), sedangkan sampah residu diangkut terjadwal oleh Petugas Residu ke TPA.
                   </p>
                 </div>
               )}
@@ -1333,7 +1332,7 @@ export const LandingPage: React.FC = () => {
                 onClick={() => setOpenFaq(openFaq === 5 ? null : 5)}
               >
                 <span>
-                  Siapa saja yang dapat menggunakan TrashCare?
+                  Siapa saja yang dapat menggunakan sistem BERSEKA?
                 </span>
 
                 <span className="faq-icon">
@@ -1346,9 +1345,7 @@ export const LandingPage: React.FC = () => {
               {openFaq === 5 && (
                 <div className="faq-answer">
                   <p>
-                    TrashCare dirancang untuk mendukung masyarakat, petugas,
-                    pengelola lingkungan, serta pihak lain yang terlibat dalam
-                    proses pengelolaan sampah.
+                    BERSEKA dirancang multi-peran untuk mendukung seluruh pemangku kepentingan: Warga, Mahasiswa KKN, Dosen Pembimbing (DPL), Pengurus RW, Petugas Residu, Lurah se-Kecamatan Coblong, Camat, hingga Dinas Lingkungan Hidup (DLH) Kota Bandung.
                   </p>
                 </div>
               )}
@@ -1464,16 +1461,17 @@ export const LandingPage: React.FC = () => {
         <div className="container-custom grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="space-y-4">
             <div className="flex items-center gap-2.5 text-white font-black text-xl">
-              <TrashCareLogoIcon className="w-8 h-8 shrink-0" />
+              <BersekaLogoIcon className="w-8 h-8 shrink-0" />
               <span className="text-xl font-black tracking-tight leading-normal text-left">
-                <span className="text-[#0073E6]">Trash</span>
-                <span className="text-[#59B828]">Care</span>
+                <span className="text-[#10b981]">BER</span>
+                <span className="text-[#34d399]">SE</span>
+                <span className="text-[#38bdf8]">KA</span>
               </span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed font-medium">
-              Sistem Pemilahan dan Pengelolaan Sampah Terintegrasi.
+              Bersih, Sehat, Kampung Asri — Sistem Pemilahan dan Pengelolaan Sampah Terintegrasi Kecamatan Coblong.
             </p>
-            <p className="text-xs text-slate-400 font-semibold">© 2026 Universitas Komputer Indonesia • Sampah Terdata, Lingkungan Tertata</p>
+            <p className="text-xs text-slate-400 font-semibold">© 2026 BERSEKA • Universitas Komputer Indonesia & Kecamatan Coblong</p>
           </div>
 
           <div>
@@ -1648,7 +1646,7 @@ export const LandingPage: React.FC = () => {
                 <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
                   <span className="material-symbols-outlined text-3xl">download_for_offline</span>
                 </div>
-                <h4 className="font-bold text-slate-900 text-base">TrashCare Mobile App</h4>
+                <h4 className="font-bold text-slate-900 text-base">BERSEKA Mobile App</h4>
                 <p className="text-xs text-slate-500 leading-relaxed font-medium">
                   File instalasi rilis APK Android sedang diproses. Tautan unduhan langsung akan segera aktif.
                 </p>
@@ -1674,7 +1672,7 @@ export const LandingPage: React.FC = () => {
           <Link
             to="/download"
             className="relative w-14 h-14 bg-gradient-to-r from-[#009966] to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white rounded-full flex items-center justify-center shadow-xl shadow-emerald-900/30 hover:scale-110 active:scale-95 transition-all duration-300 border border-white/40 cursor-pointer shrink-0"
-            aria-label="Unduh Aplikasi Mobile TrashCare (APK)"
+            aria-label="Unduh Aplikasi Mobile BERSEKA (APK)"
           >
             <span className="material-symbols-outlined text-2xl text-white group-hover:rotate-12 transition-transform">
               download
@@ -1682,7 +1680,7 @@ export const LandingPage: React.FC = () => {
             
             {/* Tooltip on Hover */}
             <span className="absolute right-16 top-1/2 -translate-y-1/2 px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-black tracking-wide whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 translate-x-2 transition-all duration-300 shadow-xl border border-slate-800">
-              Unduh Aplikasi Mobile (APK)
+              Unduh Aplikasi Mobile BERSEKA (APK)
             </span>
           </Link>
         </div>

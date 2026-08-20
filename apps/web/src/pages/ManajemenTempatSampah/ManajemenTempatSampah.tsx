@@ -1562,7 +1562,7 @@ const ManajemenTempatSampah: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-xs font-black text-slate-800 dark:text-slate-200">Memuat Data Tempat Sampah...</p>
-                      <p className="text-[11px] text-slate-400 font-medium mt-0.5">Menghubungkan ke server TrashCare real-time.</p>
+                      <p className="text-[11px] text-slate-400 font-medium mt-0.5">Menghubungkan ke server BERSEKA real-time.</p>
                     </div>
                   </div>
                 </td>

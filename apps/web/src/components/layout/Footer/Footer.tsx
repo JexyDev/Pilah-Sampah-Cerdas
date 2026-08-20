@@ -12,11 +12,11 @@ export const Footer: React.FC = () => {
     <footer className="mt-4 py-3 px-6 border border-slate-200/70 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 font-medium shadow-2xs transition-all">
       <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-center sm:text-left">
         <span className="font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-          © 2026 Universitas Komputer Indonesia
+          © 2026 BERSEKA • Universitas Komputer Indonesia
         </span>
         <span className="hidden sm:inline text-slate-300 dark:text-slate-600">•</span>
         <span className="text-slate-600 dark:text-slate-400 font-semibold">
-          Sampah Terdata, Lingkungan Tertata
+          Bersih, Sehat, Kampung Asri
         </span>
       </div>
 

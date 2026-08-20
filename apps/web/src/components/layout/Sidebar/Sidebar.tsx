@@ -830,12 +830,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {/* Top Brand Logo & Clock */}
             <div className="flex flex-col items-center w-full border-b border-slate-100 dark:border-slate-800 pb-2 mb-1 gap-2 shrink-0">
               <div
-                title="TrashCare"
+                title="BERSEKA"
                 className="w-12 h-12 rounded-2xl bg-[#e5f7ed] dark:bg-emerald-950/60 border border-[#009966]/20 dark:border-emerald-700/30 flex items-center justify-center p-1.5 shadow-sm hover:scale-105 transition-all cursor-pointer"
               >
                 <img
-                  src="/image/trashcare-icon.png"
-                  alt="TrashCare Logo"
+                  src="/image/berseka-icon.png"
+                  alt="BERSEKA Logo"
                   className="w-full h-full object-contain"
                 />
               </div>
@@ -906,13 +906,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
 
               <Link to="/dasbor" className="flex flex-col items-center group cursor-pointer relative z-10 mb-3">
                 <img
-                  src="/image/trashcare-icon.png"
-                  alt="TrashCare Icon"
+                  src="/image/berseka-icon.png"
+                  alt="BERSEKA Icon"
                   className="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105 mb-1"
                 />
                 <span className="text-lg font-black tracking-tight leading-none">
-                  <span className="text-[#0284c7] dark:text-sky-400">Trash</span>
-                  <span className="text-[#009966] dark:text-emerald-400">Care</span>
+                  <span className="text-[#175C3B] dark:text-emerald-400">BER</span>
+                  <span className="text-[#009966] dark:text-emerald-300">SE</span>
+                  <span className="text-[#0073E6] dark:text-sky-400">KA</span>
                 </span>
               </Link>
 
@@ -997,7 +998,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             <div className="space-y-1">
               <h3 className="text-base font-black text-slate-900 dark:text-slate-100">Konfirmasi Sesi Keluar</h3>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 leading-relaxed">
-                Apakah Anda yakin ingin mengakhiri sesi dan keluar dari sistem TrashCare?
+                Apakah Anda yakin ingin mengakhiri sesi dan keluar dari sistem BERSEKA?
               </p>
             </div>
             <div className="flex gap-3 pt-2">

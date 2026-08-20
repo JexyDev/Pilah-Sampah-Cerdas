@@ -116,22 +116,16 @@ class ApiAuthRepository implements AuthRepository {
       final message = e.response?.data?['message']?.toString();
       
       if (status == 401 || status == 404) {
-        if (message != null && message.toLowerCase().contains('approve')) {
-          throw AuthException(
-            'UNAPPROVED_ACCOUNT',
-            message,
-          );
-        }
         throw const AuthException(
           'INVALID_CREDENTIALS',
           'Nomor telepon/NIM atau password salah',
         );
       }
-      
+
       if (status == 403) {
-        throw AuthException(
-          'UNAPPROVED_ACCOUNT',
-          message ?? 'Akun Anda sedang menunggu persetujuan (approval) dari pihak Admin. Silakan coba login kembali nanti.',
+        throw const AuthException(
+          'INVALID_CREDENTIALS',
+          'Nomor telepon/NIM atau password salah',
         );
       }
       if (status == 429) {
@@ -140,14 +134,8 @@ class ApiAuthRepository implements AuthRepository {
           message ?? 'Terlalu banyak percobaan login gagal. Silakan tunggu 15 menit.',
         );
       }
-      
+
       if (status != null && status >= 500) {
-        if (message != null && (message.toLowerCase().contains('approve') || message.toLowerCase().contains('izin') || message.toLowerCase().contains('tunggu') || message.toLowerCase().contains('setuju'))) {
-          throw AuthException(
-            'UNAPPROVED_ACCOUNT',
-            message,
-          );
-        }
         throw AuthException(
           'SERVER_ERROR',
           message ?? 'Server sedang mengalami gangguan (Error $status). Silakan coba lagi nanti.',
@@ -262,17 +250,6 @@ class ApiAuthRepository implements AuthRepository {
     apiClient.clearTokenCache();
     final cleanPhone = PhoneFormatter.prepareLoginPhoneInput(phone);
 
-    // Bypass kode khusus dev
-    if (kDebugMode && (otp == '123456' || otp == '000000')) {
-      return UserEntity(
-        id: 'temp_otp_user',
-        name: 'User',
-        email: '',
-        phone: cleanPhone,
-        role: UserRole.warga,
-      );
-    }
-    
     try {
       final response = await apiClient.dio.post(
         '/auth/verify-otp',
@@ -303,7 +280,7 @@ class ApiAuthRepository implements AuthRepository {
         name: 'User',
         email: '',
         phone: cleanPhone,
-        role: UserRole.warga,
+        role: UserRole.unknown,
       );
     } on DioException catch (e) {
       final status = e.response?.statusCode;
@@ -761,6 +738,13 @@ class ApiAuthRepository implements AuthRepository {
           rw = '${sp['penugasanRt']}/${sp['penugasanRw']}';
         } else if (sp['kelompok']?['rw'] != null && sp['kelompok']['rw'].toString() != '-') {
           rw = sp['kelompok']['rw'].toString();
+        } else if (sp['kelompok']?['cakupanRw'] != null) {
+          final cRw = sp['kelompok']['cakupanRw'];
+          if (cRw is List) {
+            rw = cRw.map((e) => e.toString().replaceAll(RegExp(r'^RW\s*', caseSensitive: false), '').trim()).join(', ');
+          } else {
+            rw = cRw.toString().replaceAll(RegExp(r'^RW\s*', caseSensitive: false), '').trim();
+          }
         } else if (sp['assignedRw']?['name'] != null && sp['assignedRw']['name'].toString() != '-') {
           rw = sp['assignedRw']['name'].toString();
         }
@@ -802,13 +786,18 @@ class ApiAuthRepository implements AuthRepository {
       ];
       for (final c in candidates) {
         if (c != null) {
-          final str = c.toString().trim();
+          String str = '';
+          if (c is Map) {
+             str = (c['name'] ?? c['roleName'] ?? c['type'] ?? c.toString()).toString().trim();
+          } else {
+             str = c.toString().trim();
+          }
           if (str.isNotEmpty && str.toLowerCase() != 'null') {
             return str;
           }
         }
       }
-      return 'WARGA';
+      return 'UNKNOWN';
     }
 
     String provinsi = userMap['provinsi']?.toString() ?? '';
@@ -908,6 +897,8 @@ class ApiAuthRepository implements AuthRepository {
       universitas: universitas,
       jenjangPendidikan: jenjang,
       pendampingName: userMap['pendampingName']?.toString() ?? userMap['mahasiswaPendamping']?.toString(),
+      kelompokName: userMap['kelompokName']?.toString() ?? userMap['kelompok']?['name']?.toString() ?? '',
+      dplName: userMap['dplName']?.toString() ?? userMap['kelompok']?['dpl']?['name']?.toString() ?? userMap['kelompok']?['dosenPembimbing']?.toString() ?? '',
       familySize: int.tryParse(userMap['familySize']?.toString() ?? '') ??
                   int.tryParse(userMap['jumlahAnggotaKeluarga']?.toString() ?? '') ?? 
                   int.tryParse(userMap['jumlah_anggota_keluarga']?.toString() ?? '') ?? 1,
@@ -958,6 +949,8 @@ class ApiAuthRepository implements AuthRepository {
             fakultas: fetched.fakultas.isNotEmpty ? fetched.fakultas : user.fakultas,
             universitas: fetched.universitas.isNotEmpty ? fetched.universitas : user.universitas,
             jenjangPendidikan: fetched.jenjangPendidikan.isNotEmpty ? fetched.jenjangPendidikan : user.jenjangPendidikan,
+            kelompokName: fetched.kelompokName.isNotEmpty ? fetched.kelompokName : user.kelompokName,
+            dplName: fetched.dplName.isNotEmpty ? fetched.dplName : user.dplName,
           );
         }
       }

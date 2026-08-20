@@ -104,8 +104,8 @@ const Informasi: React.FC = () => {
         };
       default:
         return {
-          title: "Pengguna Sistem TrashCare",
-          desc: "Panduan umum operasional dan standar prosedur pemilahan sampah terpadu Kecamatan Coblong.",
+          title: "Pengguna Sistem BERSEKA",
+          desc: "Panduan umum operasional dan standar prosedur pemilahan sampah terpadu BERSEKA (Bersih, Sehat, Kampung Asri) di Kecamatan Coblong.",
           icon: Users,
           color: "bg-slate-50 text-slate-700 border-slate-200",
         };
@@ -120,13 +120,13 @@ const Informasi: React.FC = () => {
       {/* ---------------- 1. CLEAN ENTERPRISE PAGE HEADER ---------------- */}
       <PageHeader
         icon={Info}
-        category={isTechnicalRole ? `Sistem TrashCare v${APP_CONFIG.version}` : "Pusat Panduan & SOP"}
+        category={isTechnicalRole ? `Sistem BERSEKA v${APP_CONFIG.version}` : "Pusat Panduan & SOP"}
         scope="Kecamatan Coblong"
-        title={isTechnicalRole ? "Informasi Sistem TrashCare" : "Pusat Panduan & Informasi Operasional"}
+        title={isTechnicalRole ? "Informasi Sistem BERSEKA" : "Pusat Panduan & Informasi Operasional"}
         description={
           isTechnicalRole
-            ? "Platform manajemen pemilahan sampah cerdas berbasis inferensi AI, gamifikasi insentif poin warga, serta pemantauan telemetri real-time yang terintegrasi dari aplikasi mobile hingga dashboard eksekutif."
-            : "Pedoman resmi pemilahan sampah cerdas terpadu di Kecamatan Coblong. Pelajari alur operasional pemilahan, standar prosedur layanan, serta panduan fitur sesuai tugas peran Anda."
+            ? "Platform manajemen pemilahan sampah cerdas BERSEKA berbasis inferensi AI, gamifikasi insentif poin warga, serta pemantauan telemetri real-time yang terintegrasi dari aplikasi mobile hingga dashboard eksekutif."
+            : "Pedoman resmi pemilahan sampah cerdas terpadu BERSEKA (Bersih, Sehat, Kampung Asri) di Kecamatan Coblong. Pelajari alur operasional pemilahan, standar prosedur layanan, serta panduan fitur sesuai tugas peran Anda."
         }
         actions={
           <div className="bg-emerald-50 border border-emerald-200/80 px-4 py-2 rounded-xl text-center">
@@ -659,7 +659,7 @@ const Informasi: React.FC = () => {
                     <BrainCircuit size={22} />
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-slate-800 dark:text-slate-100">Model Spesifikasi AI TrashCare Engine</h3>
+                    <h3 className="text-base font-black text-slate-800 dark:text-slate-100">Model Spesifikasi AI BERSEKA Vision Engine</h3>
                     <p className="text-xs font-semibold text-slate-400">YOLOv8 Small Instance Segmentation (yolov8s-seg.onnx)</p>
                   </div>
                 </div>

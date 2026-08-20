@@ -13,39 +13,13 @@ import { User, Phone, Lock, Eye, EyeOff, MapPin, GraduationCap, Truck, ArrowRigh
 import { useThemeStore } from "../../store/useThemeStore";
 import api from "../../utils/api";
 
-// Exact Vector SVG Icon matching the TrashCare logo
-const TrashCareLogoIcon: React.FC<{ className?: string }> = ({ className = "w-10 h-10" }) => (
-  <svg viewBox="-6 -8 112 116" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path
-      d="M 25 54 A 31 31 0 1 1 76 34"
-      fill="none"
-      stroke="#0284c7"
-      strokeWidth="7.5"
-      strokeLinecap="round"
-    />
-    <polygon points="76,20 88,36 68,36" fill="#0284c7" />
-    <path
-      d="M 76 46 A 31 31 0 0 1 25 64"
-      fill="none"
-      stroke="#16a34a"
-      strokeWidth="7.5"
-      strokeLinecap="round"
-    />
-    <rect x="36" y="27" width="28" height="6" rx="2" fill="#0284c7" />
-    <path d="M43 27 C43 23 57 23 57 27 Z" fill="#0284c7" />
-    <path d="M38 35 L41 68 C41 71 44 73 48 73 L52 73 L48 55 C48 45 58 40 62 35 Z" fill="#0284c7" />
-    <path
-      d="M 46 68 C 46 47 70 41 70 41 C 70 41 74 61 58 68 C 50 71 46 68 46 68 Z"
-      fill="#16a34a"
-    />
-    <path
-      d="M 48 66 Q 58 56 68 43"
-      fill="none"
-      stroke="#ffffff"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-    />
-  </svg>
+// Official High-Resolution BERSEKA Icon Mark Asset
+const BersekaLogoIcon: React.FC<{ className?: string }> = ({ className = "w-10 h-10" }) => (
+  <img
+    src="/image/berseka-icon.png"
+    alt="BERSEKA Icon"
+    className={`${className} object-contain shrink-0`}
+  />
 );
 
 export const Register: React.FC = () => {
@@ -260,10 +234,11 @@ export const Register: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between">
               <Link to="/" className="flex items-center gap-2.5 group">
-                <TrashCareLogoIcon className="w-9 h-9 transition-transform group-hover:scale-105 shrink-0" />
+                <BersekaLogoIcon className="w-9 h-9 transition-transform group-hover:scale-105 shrink-0" />
                 <span className="text-lg font-black tracking-tight leading-normal text-left relative -top-[2px]">
-                  <span className="text-sky-600">Trash</span>
-                  <span className="text-emerald-600">Care</span>
+                  <span className="text-[#175C3B]">BER</span>
+                  <span className="text-[#009966]">SE</span>
+                  <span className="text-[#0073E6]">KA</span>
                 </span>
               </Link>
 
@@ -282,7 +257,7 @@ export const Register: React.FC = () => {
                   <span>Akses Warga, Mahasiswa, & Petugas Residu Khusus Mobile App</span>
                 </div>
                 <p className="text-xs leading-relaxed text-amber-800/90 font-medium">
-                  Sesuai kebijakan tata kelola sistem, pendaftaran dan pengoperasian akun Warga, Mahasiswa KKN, dan Petugas Residu **hanya dapat dilakukan melalui Aplikasi Mobile TrashCare**.
+                  Sesuai kebijakan tata kelola sistem, pendaftaran dan pengoperasian akun Warga, Mahasiswa KKN, dan Petugas Residu **hanya dapat dilakukan melalui Aplikasi Mobile BERSEKA**.
                 </p>
                 <div className="pt-1 flex items-center gap-2">
                   <Link

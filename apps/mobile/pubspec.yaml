@@ -78,6 +78,7 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
 
   http: any
+  flutter_native_splash: ^2.4.8
 flutter:
   uses-material-design: true
 
@@ -86,9 +87,10 @@ flutter:
     # - assets/on_boarding/
 
     # Logo aplikasi
-    - assets/logos.webp
-    - assets/logos.jpeg
+    - assets/logo_berseka.webp
     - assets/icons/
+    - assets/icons/recycle-bin.png
+    - assets/icons/waste.png
     - assets/icons/notification.png
 
     # Stitch UI — screen reference assets

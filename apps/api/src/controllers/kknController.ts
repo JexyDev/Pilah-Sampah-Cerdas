@@ -26,7 +26,7 @@ export class KknController {
       if (!existingBin) {
         res.status(404).json({
           error: "QR_NOT_FOUND",
-          message: "QR Code Master tidak ditemukan dalam database sistem. Pastikan QR dicetak melalui sistem TrashCare.",
+          message: "QR Code Master tidak ditemukan dalam database sistem. Pastikan QR dicetak melalui sistem BERSEKA.",
         });
         return;
       }

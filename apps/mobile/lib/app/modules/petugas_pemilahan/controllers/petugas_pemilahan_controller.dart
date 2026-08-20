@@ -77,7 +77,11 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     // 1. Load from cache first
     final cachedDash = await repo.getCachedDashboard();
     final cachedJadwal = await repo.getCachedJadwalHarian();
-    final cachedHistory = await repo.getCachedHistory(dateRange: state.selectedDateRange, type: state.selectedTypeFilter);
+    final cachedHistoryRaw = await repo.getCachedHistory();
+    
+    final cachedHistory = cachedHistoryRaw != null 
+        ? _filterLocally(cachedHistoryRaw, state.selectedDateRange, state.selectedTypeFilter) 
+        : null;
     
     if (cachedDash != null || cachedJadwal != null || cachedHistory != null) {
       state = state.copyWith(
@@ -114,8 +118,13 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
 
   Future<void> _fetchHistoryFresh(var repo) async {
     try {
-      final history = await repo.getHistory(dateRange: state.selectedDateRange, type: state.selectedTypeFilter);
-      if (mounted) state = state.copyWith(historyList: history, isLoading: false);
+      final history = await repo.getHistory();
+      if (mounted) {
+        state = state.copyWith(
+          historyList: _filterLocally(history, state.selectedDateRange, state.selectedTypeFilter), 
+          isLoading: false
+        );
+      }
     } catch (_) {
       if (mounted && state.historyList.isEmpty) state = state.copyWith(isLoading: false);
     }
@@ -142,7 +151,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final repo = _ref.read(petugasPemilahanRepositoryProvider);
-      final success = await repo.submitLog(
+      final result = await repo.submitLog(
         binId: binId,
         actualWeightKg: actualWeightKg,
         classification: classification,
@@ -151,47 +160,69 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
         longitude: longitude,
       );
 
-      if (success) {
-        // Simpan notifikasi aksi ke cache lokal agar muncul di halaman Notifikasi
-        final user = _ref.read(authProvider).user;
-        if (user != null) {
-          final poin = (actualWeightKg.round() * 2) + 10; // 2 poin/kg + 10 bonus foto
-          final now = DateTime.now();
-          final timeStr =
-              '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year} '
-              '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+      // Baca poin dari response backend (tidak kalkulasi lokal)
+      final poinFromBackend = (result['pointsEarned'] as num?)?.toInt()
+          ?? (result['points'] as num?)?.toInt()
+          ?? (result['poin'] as num?)?.toInt()
+          ?? 0;
 
-          LocalNotificationCacheService().addNotification(
-            userId: user.id,
-            role: 'PETUGAS_PEMILAHAN',
-            title: 'Input Timbangan Berhasil',
-            desc: '${actualWeightKg.toStringAsFixed(1)} kg $classification tercatat. '
-                'Estimasi poin: +$poin pts.',
-            type: 'TIMBANGAN_PEMILAHAN',
-            id: 'timbangan_${now.millisecondsSinceEpoch}',
-            icon: 'scale',
-          );
-          LocalNotificationCacheService().addNotification(
-            userId: user.id,
-            role: 'PETUGAS_PEMILAHAN',
-            title: 'Poin Petugas Bertambah!',
-            desc: 'Anda mendapatkan +$poin poin dari input timbangan $classification '
-                '${actualWeightKg.toStringAsFixed(1)} kg. ($timeStr)',
-            type: 'POIN_PETUGAS',
-            id: 'poin_timbangan_${now.millisecondsSinceEpoch}',
-            icon: 'star',
-          );
-        }
-
-        await refreshAll();
-        return true;
+      // Tampilkan notifikasi sistem (snackbar / push) dengan poin dari backend
+      final user = _ref.read(authProvider).user;
+      if (user != null && poinFromBackend > 0) {
+        LocalNotificationCacheService().addNotification(
+          userId: user.id,
+          role: 'PETUGAS_PEMILAHAN',
+          title: 'Input Timbangan Berhasil',
+          desc: '${actualWeightKg.toStringAsFixed(1)} kg $classification tercatat. '
+              'Poin: +$poinFromBackend pts.',
+          type: 'TIMBANGAN_PEMILAHAN',
+          id: 'timbangan_${DateTime.now().millisecondsSinceEpoch}',
+          icon: 'scale',
+        );
       }
-      state = state.copyWith(isLoading: false, errorMessage: 'Gagal mengirim timbangan pemilahan.');
-      return false;
+
+      await refreshAll();
+      return true;
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: NetworkExceptionHelper.getErrorMessage(e));
       return false;
     }
+  }
+
+  List<Map<String, dynamic>> _filterLocally(List<Map<String, dynamic>> rawList, String dateRange, String type) {
+    return rawList.where((item) {
+      // 1. Filter Date Range
+      final rawDate = item['timestamp']?.toString() ?? item['submittedAt']?.toString() ?? item['createdAt']?.toString();
+      if (rawDate == null || rawDate.isEmpty) return false;
+      DateTime dt;
+      try {
+        dt = DateTime.parse(rawDate).toLocal();
+      } catch (_) {
+        return true;
+      }
+
+      final now = DateTime.now();
+      if (dateRange == 'HARI_INI') {
+        if (dt.year != now.year || dt.month != now.month || dt.day != now.day) return false;
+      } else if (dateRange == 'MINGGU_INI') {
+        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+        final endOfWeek = startOfWeek.add(const Duration(days: 6));
+        final dtDate = DateTime(dt.year, dt.month, dt.day);
+        final start = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
+        final end = DateTime(endOfWeek.year, endOfWeek.month, endOfWeek.day);
+        if (dtDate.isBefore(start) || dtDate.isAfter(end)) return false;
+      } else if (dateRange == 'BULAN_INI') {
+        if (dt.year != now.year || dt.month != now.month) return false;
+      }
+
+      // 2. Filter Type (Timbangan only, if SETORAN)
+      if (type == 'SETORAN') {
+        final title = item['title']?.toString().toUpperCase() ?? '';
+        final classification = item['classification']?.toString().toUpperCase() ?? '';
+        if (!title.contains('TIMBANGAN') && !title.contains('SETORAN') && !classification.contains('TIMBANGAN')) return false;
+      }
+      return true;
+    }).toList();
   }
 
   Future<void> setHistoryFilters({String? dateRange, String? type}) async {
@@ -199,12 +230,12 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     final newTypeFilter = type ?? state.selectedTypeFilter;
     
     final repo = _ref.read(petugasPemilahanRepositoryProvider);
-    final cachedList = await repo.getCachedHistory(dateRange: newDateRange, type: newTypeFilter);
+    final cachedList = await repo.getCachedHistory();
     if (cachedList != null && cachedList.isNotEmpty) {
       state = state.copyWith(
         selectedDateRange: newDateRange,
         selectedTypeFilter: newTypeFilter,
-        historyList: cachedList,
+        historyList: _filterLocally(cachedList, newDateRange, newTypeFilter),
       );
     } else {
       state = state.copyWith(
@@ -215,11 +246,11 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     }
     
     try {
-      final list = await repo.getHistory(
-        dateRange: newDateRange,
-        type: newTypeFilter,
+      final list = await repo.getHistory();
+      state = state.copyWith(
+        isLoading: false, 
+        historyList: _filterLocally(list, newDateRange, newTypeFilter),
       );
-      state = state.copyWith(isLoading: false, historyList: list);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: NetworkExceptionHelper.getErrorMessage(e));
     }
@@ -252,38 +283,8 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     try {
       final repo = _ref.read(petugasPemilahanRepositoryProvider);
       final ok = await repo.claimPengajuanReset(pengajuanId);
-      if (ok) {
-        // Simpan notifikasi pengangkutan ke cache lokal
-        // Pengangkutan sampah memberikan 20 poin sesuai ketentuan sistem
-        final user = _ref.read(authProvider).user;
-        if (user != null) {
-          const poinPengangkutan = 20;
-          final now = DateTime.now();
-          final timeStr =
-              '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year} '
-              '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-
-          LocalNotificationCacheService().addNotification(
-            userId: user.id,
-            role: 'PETUGAS_PEMILAHAN',
-            title: 'Pengangkutan Sampah Berhasil',
-            desc: 'Konfirmasi pengangkutan sampah warga telah tercatat. '
-                'Anda mendapatkan +$poinPengangkutan poin. ($timeStr)',
-            type: 'PENGANGKUTAN_SAMPAH',
-            id: 'angkut_${now.millisecondsSinceEpoch}',
-            icon: 'local_shipping',
-          );
-          LocalNotificationCacheService().addNotification(
-            userId: user.id,
-            role: 'PETUGAS_PEMILAHAN',
-            title: 'Poin Petugas Bertambah!',
-            desc: 'Anda mendapatkan +$poinPengangkutan poin dari konfirmasi pengangkutan sampah. ($timeStr)',
-            type: 'POIN_PETUGAS',
-            id: 'poin_angkut_${now.millisecondsSinceEpoch}',
-            icon: 'star',
-          );
-        }
-      }
+      // Notifikasi dikonfirmasi oleh server via FCM — tidak simpan ke LocalCache
+      // agar tidak terjadi duplikasi dengan notifikasi server.
       await refreshAll();
       state = state.copyWith(isLoading: false);
       return ok;

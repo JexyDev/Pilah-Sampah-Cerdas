@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../data/services/notification_engine.dart';
 import '../../../data/models/bin_entity.dart';
 import '../../../data/models/ai_detection_entity.dart';
 import '../../../data/models/bin_reset_entity.dart';
@@ -149,6 +150,11 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
         scanResult: result,
         currentStep: 3,
       );
+      
+      // Panggil notifikasi latar belakang
+      if (result.pointsAwarded > 0) {
+        NotificationEngine().showPointsNotification(result.pointsAwarded);
+      }
     } on BinException catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -163,7 +169,7 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
   void goToStep(int step) => state = state.copyWith(currentStep: step);
 }
 
-final scanFlowProvider = StateNotifierProvider<ScanFlowNotifier, ScanFlowState>(
+final scanFlowProvider = StateNotifierProvider.autoDispose<ScanFlowNotifier, ScanFlowState>(
   (ref) {
     final user = ref.watch(authProvider).user;
     final userId = user?.id ?? '';
@@ -273,7 +279,7 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
 }
 
 final aktivasiBinProvider =
-    StateNotifierProvider<AktivasiBinNotifier, AktivasiBinState>((ref) {
+    StateNotifierProvider.autoDispose<AktivasiBinNotifier, AktivasiBinState>((ref) {
       return AktivasiBinNotifier(ref.watch(binRepositoryProvider));
     });
 
@@ -322,6 +328,8 @@ class ResetBinNotifier extends StateNotifier<ResetBinState> {
         );
       }
       state = ResetBinState(result: lastResult);
+      // Panggil notifikasi latar belakang
+      NotificationEngine().showResetPendingNotification();
     } on BinException catch (e) {
       state = ResetBinState(errorCode: e.code, errorMessage: e.message);
     }
@@ -344,7 +352,7 @@ class ResetBinNotifier extends StateNotifier<ResetBinState> {
   void reset() => state = const ResetBinState();
 }
 
-final resetBinProvider = StateNotifierProvider<ResetBinNotifier, ResetBinState>(
+final resetBinProvider = StateNotifierProvider.autoDispose<ResetBinNotifier, ResetBinState>(
   (ref) {
     return ResetBinNotifier(ref.watch(binRepositoryProvider));
   },
@@ -418,7 +426,7 @@ class PetugasPengosonganNotifier extends StateNotifier<PetugasPengosonganState> 
   }
 }
 
-final petugasPengosonganProvider = StateNotifierProvider<PetugasPengosonganNotifier, PetugasPengosonganState>((ref) {
+final petugasPengosonganProvider = StateNotifierProvider.autoDispose<PetugasPengosonganNotifier, PetugasPengosonganState>((ref) {
   return PetugasPengosonganNotifier(ref.watch(binRepositoryProvider));
 });
 

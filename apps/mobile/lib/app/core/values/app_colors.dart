@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 
 /// Palet warna resmi aplikasi â€” sesuai perombakan desain (Clean Design).
 /// Primary color adalah HIJAU ORGANIK (#2E7D32).
-/// Biru digunakan untuk sekunder/non-organik.
+/// Biru digunakan untuk sekunder/Anorganik.
 class AppColors {
   AppColors._();
 
-  // --- Primary Blue (non-organik / sky blue accents) ---
+  // --- Primary Blue (Anorganik / sky blue accents) ---
   static const Color primaryBlue = Color(0xFF0084DC); // Dari palette
   static const Color primaryBlueDark = Color(0xFF0267AC); // Deep Sky Blue
   static const Color primaryBlueLight = Color(0xFFFAFBFF); // Dari palette

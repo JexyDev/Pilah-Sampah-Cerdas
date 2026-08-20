@@ -4,8 +4,8 @@ import '../../../data/providers/repository_providers.dart';
 
 import '../../auth/controllers/auth_controller.dart';
 
-import '../../../data/services/local_notification_cache_service.dart';
 import '../../../data/services/firebase_notification_service.dart';
+import '../../../data/services/local_notification_cache_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final Set<String> _petugasShownNotifIds = {};
@@ -38,14 +38,15 @@ bool _isPetugasPemilahanNotification(NotificationEntity notif) {
   // 4. Penalti, KPI, Kinerja, Jadwal Pengangkutan
   final isPetugasTopic = type.contains('TIMBANGAN') ||
       type.contains('PEMILAHAN') ||
-      type.contains('POIN_PETUGAS') ||
+      type == 'POIN_PETUGAS' ||
+      type == 'POIN_BERTAMBAH' ||
+      type == 'PUNISHMENT' ||
       type.contains('PENGANGKUTAN') ||
       type.contains('WHITELIST') ||
       type.contains('VERIFIKASI') ||
       type.contains('WELCOME_PETUGAS') ||
       title.contains('TIMBANGAN') ||
       title.contains('PEMILAHAN') ||
-      title.contains('POIN') ||
       title.contains('PETUGAS') ||
       title.contains('WHITELIST') ||
       title.contains('VERIFIKASI') ||
@@ -96,7 +97,7 @@ final petugasPemilahanNotificationsProvider = FutureProvider<List<NotificationEn
     final markAllTimestamp = prefs.getInt('mark_all_notifs_${userId}_$role') ?? 0;
     
     for (final ph in pointHistory) {
-      if (ph.points != 0) {
+      if (ph.points < 0) {
         final notifId = 'point_${ph.id}';
         final isRead = readSet.contains(notifId) || 
             ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
@@ -129,24 +130,25 @@ final petugasPemilahanNotificationsProvider = FutureProvider<List<NotificationEn
     }
   }
 
-  // Gabungkan dengan LocalNotificationCacheService & FirebaseNotificationService
-  final localNotifs = LocalNotificationCacheService().getNotifications(userId, role);
-  for (final localItem in localNotifs) {
-    if (!_isPetugasPemilahanNotification(localItem)) continue;
-
-    if (!result.any((n) => n.id == localItem.id)) {
-      result.insert(0, localItem);
+  // Ambil notifikasi dari Firebase local storage
+  try {
+    final firebaseNotifs = await FirebaseNotificationService().getNotifications(userId, role);
+    for (final fn in firebaseNotifs) {
+      if (result.any((n) => n.id == fn.id || (n.title == fn.title && n.desc == fn.desc && n.type == fn.type))) {
+        continue;
+      }
+      if (!_isPetugasPemilahanNotification(fn)) continue;
+      
+      result.add(fn);
     }
-  }
+  } catch (_) {}
 
-  final firebaseNotifs = await FirebaseNotificationService().getNotifications(userId, role);
-  for (final fbItem in firebaseNotifs) {
-    if (!_isPetugasPemilahanNotification(fbItem)) continue;
-
-    if (!result.any((n) => n.id == fbItem.id)) {
-      result.insert(0, fbItem);
-    }
-  }
+  // Urutkan: terbaru di atas — parse waktu dari string lokal format "YYYY-MM-DD HH:mm"
+  result.sort((a, b) {
+    final ta = DateTime.tryParse(a.time) ?? DateTime(2000);
+    final tb = DateTime.tryParse(b.time) ?? DateTime(2000);
+    return tb.compareTo(ta); // descending (terbaru di atas)
+  });
 
   return result;
 });

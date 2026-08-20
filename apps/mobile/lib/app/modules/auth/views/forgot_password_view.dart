@@ -152,7 +152,7 @@ class _ForgotPasswordViewState
       setState(() => _currentStep = 2);
       _startResendCountdown();
       _showToast(
-        'OTP dikirim ke ${_maskPhone(phone)} (Gunakan Kode OTP Dev: 123456)',
+        'OTP dikirim ke ${_maskPhone(phone)}',
         isError: false,
       );
     }
@@ -185,7 +185,12 @@ class _ForgotPasswordViewState
     if (ok && mounted) {
       setState(() => _currentStep = 3);
     } else if (mounted) {
-      _showToast('Kode OTP salah atau kedaluwarsa');
+      final authState = ref.read(authProvider);
+      if (authState.errorCode == 'UNAUTHORIZED_ROLE') {
+        _showToast('Akses ditolak. Aplikasi mobile hanya untuk Warga, Petugas Pemilah, dan Mahasiswa.');
+      } else {
+        _showToast('Kode OTP salah atau kedaluwarsa');
+      }
     }
   }
 
@@ -284,14 +289,17 @@ class _ForgotPasswordViewState
                               ],
                             ),
                             clipBehavior: Clip.antiAlias,
-                            child: Image.asset(
-                              AppAssets.logo,
-                              fit: BoxFit.cover,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Image.asset(
+                                AppAssets.logo,
+                                fit: BoxFit.contain,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 12),
                           const Text(
-                            'TrashCare',
+                            'Berseka',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
@@ -360,15 +368,25 @@ class _ForgotPasswordViewState
                       ),
                       const SizedBox(height: 24),
 
-                      const Opacity(
-                        opacity: 0.6,
-                        child: Text(
-                          '© 2026 Universitas Komputer Indonesia. All rights reserved.',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppColors.textSecondary,
+                      const Column(
+                        children: [
+                          Text(
+                            '© 2026 Universitas Komputer Indonesia',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
-                        ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Versi 1.0.0',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppColors.textHint,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -533,13 +551,9 @@ class _ForgotPasswordViewState
           ),
           const SizedBox(height: 24),
 
-          Text(
-            _phoneController.text.isEmpty
-                ? 'NOMOR TELEPON ATAU NIM'
-                : (_phoneController.text.length >= 11 && _phoneController.text.length <= 13)
-                    ? 'NOMOR TELEPON'
-                    : 'NIM',
-            style: const TextStyle(
+          const Text(
+            'NOMOR TELEPON',
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
               color: AppColors.textSecondary,
@@ -558,9 +572,7 @@ class _ForgotPasswordViewState
               PhonePrefixFormatter(),
             ],
             decoration: InputDecoration(
-              hintText: _phoneController.text.isEmpty || (_phoneController.text.length >= 11 && _phoneController.text.length <= 13)
-                  ? '81234567890'
-                  : '1301210000',
+              hintText: '81234567890',
               prefixIcon: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 margin: const EdgeInsets.only(right: 8),
@@ -688,27 +700,7 @@ class _ForgotPasswordViewState
         ),
         const SizedBox(height: 16),
 
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: AppColors.primaryBlueLight,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.info_outline_rounded, size: 18, color: AppColors.primaryBlueDark),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Mode Pengujian: Masukkan kode OTP 123456 untuk melanjutkan.',
-                  style: TextStyle(fontSize: 11, color: AppColors.primaryBlueDark, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
+
 
         // OTP Input
         Center(

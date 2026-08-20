@@ -13,7 +13,7 @@ class RiwayatPetugasPemilahanView extends ConsumerStatefulWidget {
 
 class _RiwayatPetugasPemilahanViewState extends ConsumerState<RiwayatPetugasPemilahanView> {
   String _dateRange = 'HARI_INI';
-  String _typeFilter = 'SEMUA';
+  final String _typeFilter = 'SETORAN';
 
   String _formatDateTime(String? rawStr) {
     if (rawStr == null || rawStr.isEmpty || rawStr == '-') return '-';
@@ -154,7 +154,7 @@ class _RiwayatPetugasPemilahanViewState extends ConsumerState<RiwayatPetugasPemi
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
         automaticallyImplyLeading: Navigator.of(context).canPop(),
-        title: const Text('Riwayat Tugas & Pelanggaran', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryGreen)),
+        title: const Text('Riwayat Tugas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryGreen)),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primaryGreen,
         elevation: 2,
@@ -180,67 +180,32 @@ class _RiwayatPetugasPemilahanViewState extends ConsumerState<RiwayatPetugasPemi
                   ),
                 ],
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _dateRange,
-                      isExpanded: true,
-                      icon: const Icon(Icons.keyboard_arrow_down, size: 20, color: AppColors.textSecondary),
-                      dropdownColor: Colors.white,
-                      menuMaxHeight: 300,
-                      decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        labelText: 'Pilih Tanggal',
-                        labelStyle: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                        filled: true,
-                        fillColor: AppColors.backgroundCanvas,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                      ),
-                      style: const TextStyle(fontSize: 14, color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-                      items: const [
-                        DropdownMenuItem(value: 'HARI_INI', child: Text('Hari Ini', overflow: TextOverflow.ellipsis)),
-                        DropdownMenuItem(value: 'MINGGU_INI', child: Text('Minggu Ini', overflow: TextOverflow.ellipsis)),
-                        DropdownMenuItem(value: 'BULAN_INI', child: Text('Bulan Ini', overflow: TextOverflow.ellipsis)),
-                      ],
-                      onChanged: (v) {
-                        if (v != null) {
-                          setState(() => _dateRange = v);
-                          ref.read(petugasPemilahanControllerProvider.notifier).setHistoryFilters(dateRange: v);
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _typeFilter,
-                      isExpanded: true,
-                      icon: const Icon(Icons.keyboard_arrow_down, size: 20, color: AppColors.textSecondary),
-                      dropdownColor: Colors.white,
-                      menuMaxHeight: 300,
-                      decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        labelText: 'Jenis Log',
-                        labelStyle: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                        filled: true,
-                        fillColor: AppColors.backgroundCanvas,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                      ),
-                      style: const TextStyle(fontSize: 14, color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-                      items: const [
-                        DropdownMenuItem(value: 'SEMUA', child: Text('Semua Log', overflow: TextOverflow.ellipsis)),
-                        DropdownMenuItem(value: 'SETORAN', child: Text('Timbangan', overflow: TextOverflow.ellipsis)),
-                      ],
-                      onChanged: (v) {
-                        if (v != null) {
-                          setState(() => _typeFilter = v);
-                          ref.read(petugasPemilahanControllerProvider.notifier).setHistoryFilters(type: v);
-                        }
-                      },
-                    ),
-                  ),
+              child: DropdownButtonFormField<String>(
+                initialValue: _dateRange,
+                isExpanded: true,
+                icon: const Icon(Icons.keyboard_arrow_down, size: 20, color: AppColors.textSecondary),
+                dropdownColor: Colors.white,
+                menuMaxHeight: 300,
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  labelText: 'Pilih Waktu Riwayat',
+                  labelStyle: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  filled: true,
+                  fillColor: AppColors.backgroundCanvas,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+                style: const TextStyle(fontSize: 14, color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                items: const [
+                  DropdownMenuItem(value: 'HARI_INI', child: Text('Hari Ini', overflow: TextOverflow.ellipsis)),
+                  DropdownMenuItem(value: 'MINGGU_INI', child: Text('Minggu Ini', overflow: TextOverflow.ellipsis)),
+                  DropdownMenuItem(value: 'BULAN_INI', child: Text('Bulan Ini', overflow: TextOverflow.ellipsis)),
                 ],
+                onChanged: (v) {
+                  if (v != null) {
+                    setState(() => _dateRange = v);
+                    ref.read(petugasPemilahanControllerProvider.notifier).setHistoryFilters(dateRange: v, type: _typeFilter);
+                  }
+                },
               ),
             ),
             // Remove excessive SizedBox to bring History list closer to the filter
@@ -254,7 +219,7 @@ class _RiwayatPetugasPemilahanViewState extends ConsumerState<RiwayatPetugasPemi
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.history_toggle_off_rounded, size: 56, color: AppColors.textHint),
+                              Icon(Icons.history_rounded, size: 56, color: AppColors.textHint),
                               SizedBox(height: 12),
                               Text('Belum ada riwayat aktivitas tugas', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
                             ],
@@ -337,7 +302,7 @@ class _RiwayatPetugasPemilahanViewState extends ConsumerState<RiwayatPetugasPemi
                                               if (subtitle.isNotEmpty && subtitle != '-')
                                                 Row(
                                                   children: [
-                                                    const Icon(Icons.person_outline, size: 14, color: AppColors.textSecondary),
+                                                    const Icon(Icons.person_rounded, size: 14, color: AppColors.textSecondary),
                                                     const SizedBox(width: 4),
                                                     Expanded(child: Text(subtitle, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis)),
                                                   ],
@@ -346,7 +311,7 @@ class _RiwayatPetugasPemilahanViewState extends ConsumerState<RiwayatPetugasPemi
                                               if (address.isNotEmpty && address != '-')
                                                 Row(
                                                   children: [
-                                                    const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
+                                                    const Icon(Icons.location_on_rounded, size: 14, color: AppColors.textSecondary),
                                                     const SizedBox(width: 4),
                                                     Expanded(child: Text(address, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis)),
                                                   ],

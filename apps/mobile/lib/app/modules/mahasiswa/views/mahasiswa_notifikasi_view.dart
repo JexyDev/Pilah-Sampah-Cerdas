@@ -130,7 +130,7 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.notifications_off_outlined, size: 56, color: AppColors.textHint),
+                              Icon(Icons.notifications_off_rounded, size: 56, color: AppColors.textHint),
                               SizedBox(height: 12),
                               Text(
                                 'Belum Ada Notifikasi Mahasiswa KKN',

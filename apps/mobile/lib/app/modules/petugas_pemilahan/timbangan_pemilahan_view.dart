@@ -95,12 +95,12 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
     final weightStr = _weightController.text.trim().replaceAll(',', '.');
     final weight = double.tryParse(weightStr) ?? 0.0;
     
-    // Skala KPI Petugas: 1 Poin per 1 Kg (Dibulatkan)
-    int points = weight.round();
+    // Skala KPI Petugas: 2 Poin per 1 Kg (Dibulatkan)
+    int points = weight.round() * 2;
     
-    // Bonus kehadiran & foto bukti di titik kumpul
+    // Bonus kehadiran & foto bukti di titik kumpul (+10)
     if (weight > 0 && _photoPath != null) {
-      points += 2;
+      points += 10;
     }
     
     if (points != _estimatedPoints) {

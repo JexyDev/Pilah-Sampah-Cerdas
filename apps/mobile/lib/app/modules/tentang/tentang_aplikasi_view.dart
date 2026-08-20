@@ -64,7 +64,7 @@ class TentangAplikasiView extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               const Text(
-                'TrashCare adalah platform manajemen pemilahan sampah cerdas yang bertujuan untuk meningkatkan kepatuhan dan efisiensi pengelolaan sampah di lingkungan masyarakat.',
+                'Berseka adalah platform manajemen pemilahan sampah cerdas yang bertujuan untuk meningkatkan kepatuhan dan efisiensi pengelolaan sampah di lingkungan masyarakat.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
@@ -73,14 +73,26 @@ class TentangAplikasiView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
-              const Text(
-                'Hak Cipta © 2026 Universitas Komputer Indonesia.\nSeluruh hak dilindungi undang-undang.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                  height: 1.4,
-                ),
+              const Column(
+                children: [
+                  Text(
+                    '© 2026 Universitas Komputer Indonesia',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Versi 1.0.0',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textHint,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

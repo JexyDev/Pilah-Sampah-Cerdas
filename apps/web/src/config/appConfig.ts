@@ -1,6 +1,6 @@
 export const APP_CONFIG = {
-  appName: "TrashCare",
-  tagline: "Sampah Terdata, Lingkungan Tertata",
+  appName: "BERSEKA",
+  tagline: "Bersih, Sehat, Kampung Asri",
   version: "1.0.0",
 };
 

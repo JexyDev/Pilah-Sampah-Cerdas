@@ -27,18 +27,13 @@ import { useThemeStore } from "../../store/useThemeStore";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 
-// Exact Vector SVG Icon matching the TrashCare logo
-const TrashCareLogoIcon: React.FC<{ className?: string }> = ({ className = "w-12 h-12" }) => (
-  <svg viewBox="-6 -8 112 116" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M 25 54 A 31 31 0 1 1 76 34" fill="none" stroke="#0284c7" strokeWidth="7.5" strokeLinecap="round" />
-    <polygon points="76,20 88,36 68,36" fill="#0284c7" />
-    <path d="M 76 46 A 31 31 0 0 1 25 64" fill="none" stroke="#16a34a" strokeWidth="7.5" strokeLinecap="round" />
-    <rect x="36" y="27" width="28" height="6" rx="2" fill="#0284c7" />
-    <path d="M43 27 C43 23 57 23 57 27 Z" fill="#0284c7" />
-    <path d="M38 35 L41 68 C41 71 44 73 48 73 L52 73 L48 55 C48 45 58 40 62 35 Z" fill="#0284c7" />
-    <path d="M 46 68 C 46 47 70 41 70 41 C 70 41 74 61 58 68 C 50 71 46 68 46 68 Z" fill="#16a34a" />
-    <path d="M 48 66 Q 58 56 68 43" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" />
-  </svg>
+// Official High-Resolution BERSEKA Icon Mark Asset
+const BersekaLogoIcon: React.FC<{ className?: string }> = ({ className = "w-12 h-12" }) => (
+  <img
+    src="/image/berseka-icon.png"
+    alt="BERSEKA Icon"
+    className={`${className} object-contain shrink-0`}
+  />
 );
 
 // Hanya menerima format nomor telepon Indonesia: 08xxx, 628xxx, +628xxx, 8xxx
@@ -124,7 +119,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
     } catch (err: any) {
       const msg = err.response?.data?.message || "";
       if (msg.includes("PHONE_NOT_REGISTERED") || msg.includes("tidak terdaftar")) {
-        setPhoneError("Nomor HP ini tidak terdaftar di sistem TrashCare");
+        setPhoneError("Nomor HP ini tidak terdaftar di sistem BERSEKA");
       } else if (msg.includes("USER_INACTIVE") || msg.includes("tidak aktif")) {
         setPhoneError("Akun dengan nomor ini tidak aktif");
       } else {
@@ -436,7 +431,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                   <Lock size={26} />
                 </div>
                 <p className="text-sm text-slate-600 font-medium leading-relaxed max-w-xs mx-auto">
-                  Buat kata sandi baru yang kuat untuk akun TrashCare Anda.
+                  Buat kata sandi baru yang kuat untuk akun BERSEKA Anda.
                 </p>
               </div>
 
@@ -678,15 +673,15 @@ const Login: React.FC = () => {
           <div className="relative z-10 space-y-6 my-auto">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-emerald-300/30 text-white text-xs font-extrabold tracking-wide shadow-xs">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-              <span>Web Monitoring TrashCare</span>
+              <span>Web Monitoring BERSEKA</span>
             </div>
 
             <div className="space-y-3">
               <h2 className="text-3xl sm:text-4xl font-black leading-tight tracking-tight text-white">
-                Sampah Terdata,<br />Lingkungan Tertata.
+                Sampah Terdata,<br />Kampung Berseka.
               </h2>
               <p className="text-xs text-emerald-100/90 leading-relaxed font-medium">
-                Sistem pemantauan dan tata kelola sampah terintegrasi dalam kerangka kegiatan Kuliah Kerja Nyata (KKN) Berdampak Universitas Komputer Indonesia.
+                Sistem pemantauan dan tata kelola sampah terpadu BERSEKA (Bersih, Sehat, Kampung Asri) dalam kerangka kegiatan KKN Berdampak UNIKOM dan Pemerintah Kecamatan Coblong.
               </p>
             </div>
 
@@ -737,10 +732,11 @@ const Login: React.FC = () => {
             {/* Header Brand Block */}
             <div className="flex items-center justify-between flex-wrap gap-3">
               <Link to="/" className="flex items-center gap-2.5 group">
-                <TrashCareLogoIcon className="w-10 h-10 transition-transform group-hover:scale-105 shrink-0" />
+                <BersekaLogoIcon className="w-10 h-10 transition-transform group-hover:scale-105 shrink-0" />
                 <span className="text-xl font-black tracking-tight leading-normal text-left relative -top-[2px]">
-                  <span className="text-[#0073E6]">Trash</span>
-                  <span className="text-[#59B828]">Care</span>
+                  <span className="text-[#175C3B]">BER</span>
+                  <span className="text-[#009966]">SE</span>
+                  <span className="text-[#0073E6]">KA</span>
                 </span>
               </Link>
 
@@ -902,7 +898,7 @@ const Login: React.FC = () => {
           <Link
             to="/download"
             className="relative w-14 h-14 bg-gradient-to-r from-[#009966] to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white rounded-full flex items-center justify-center shadow-xl shadow-emerald-900/30 hover:scale-110 active:scale-95 transition-all duration-300 border border-white/40 cursor-pointer shrink-0"
-            aria-label="Unduh Aplikasi Mobile TrashCare (APK)"
+            aria-label="Unduh Aplikasi Mobile BERSEKA (APK)"
           >
             <Download size={22} className="text-white group-hover:rotate-12 transition-transform" />
             

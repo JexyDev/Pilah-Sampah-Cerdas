@@ -348,10 +348,16 @@ export const dplService = {
         for (const a of attendances) {
           if (a.checkOutAt && a.attendedAt) {
             const diffMs = Math.max(0, new Date(a.checkOutAt).getTime() - new Date(a.attendedAt).getTime());
-            const mins = Math.round(diffMs / (1000 * 60));
+            const mins = Math.min(480, Math.round(diffMs / (1000 * 60)));
             totalMinutes += mins;
           } else if (a.attendedAt) {
-            totalMinutes += (configTargets.targetHarianJam || 4) * 60;
+            const isToday = new Date(a.attendedAt).toDateString() === new Date().toDateString();
+            if (isToday) {
+              const diffMs = Math.max(0, Date.now() - new Date(a.attendedAt).getTime());
+              totalMinutes += Math.min(480, Math.round(diffMs / (1000 * 60)));
+            } else {
+              totalMinutes += Math.round((configTargets.targetHarianJam || 2) * 60);
+            }
           }
         }
         const totalHours = Math.floor(totalMinutes / 60);

@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../data/models/user_entity.dart';
+import '../modules/auth/controllers/auth_controller.dart';
+import '../modules/poin/poin_view.dart';
+import '../modules/mahasiswa/views/mahasiswa_poin_view.dart';
+import '../modules/petugas_pemilahan/views/petugas_pemilahan_poin_view.dart';
 import '../modules/notifikasi/views/detail_notifikasi_view.dart';
 import '../modules/splash/splash_view.dart';
 import '../modules/auth/views/login_view.dart';
@@ -119,6 +125,23 @@ class AppPages {
         return _buildRoute(const RegisterFasilitasView(), settings);
       case AppRoutes.riwayatKkn:
         return _buildRoute(const RiwayatKknView(), settings);
+      case AppRoutes.poin:
+        return _buildRoute(
+          Consumer(
+            builder: (context, ref, _) {
+              final user = ref.watch(authProvider).user;
+              final role = user?.role ?? UserRole.warga;
+              if (role == UserRole.mahasiswaKkn) {
+                return const MahasiswaPoinView();
+              } else if (role == UserRole.petugasPemilahan) {
+                return const PetugasPemilahanPoinView();
+              } else {
+                return const PoinView();
+              }
+            },
+          ),
+          settings,
+        );
       default:
         return _buildRoute(const _NotFoundScreen(), settings);
     }

@@ -232,24 +232,21 @@ class _FeatureRatingDialogState extends State<FeatureRatingDialog> {
             ),
             const SizedBox(height: 16),
 
-            // ─── Optional Feedback Input ───────────────────────────
-            TextField(
-              controller: _feedbackController,
-              maxLines: 2,
-              style: const TextStyle(fontSize: 13),
-              decoration: InputDecoration(
-                hintText: 'Tulis kesan atau saran singkat (opsional)...',
-                hintStyle: const TextStyle(fontSize: 12, color: AppColors.textHint),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC), // Subtle light background
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: TextField(
+                controller: _feedbackController,
+                maxLines: 3,
+                style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+                decoration: const InputDecoration(
+                  hintText: 'Bagikan pengalaman atau saran perbaikan (opsional)',
+                  hintStyle: TextStyle(fontSize: 12, color: AppColors.textHint),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(14),
                 ),
               ),
             ),

@@ -163,7 +163,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
               ),
             ),
 
-            // Card Non-Organik
+            // Card Anorganik
             Padding(
               padding: const EdgeInsets.only(bottom: 32),
               child: _buildBinCard(

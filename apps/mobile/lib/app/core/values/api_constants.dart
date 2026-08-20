@@ -63,9 +63,13 @@ class ApiEndpoints {
   static const String kknPoskoRegister = '/kkn/posko/register';
   static const String kknPoskoMe = '/kkn/posko/me';
   static const String kknFasilitasBantuInput = '/kkn/fasilitas/bantu-input';
+  static const String kknHandover = '/kkn/handover';
+
+  // KKN Kegiatan (GPS Presensi Berbasis Kegiatan)
   static const String kknKegiatanAktif = '/kkn/kegiatan-aktif';
   static String kknMulaiKegiatan(String id) => '/kkn/kegiatan/$id/mulai';
   static String kknSelesaiKegiatan(String id) => '/kkn/kegiatan/$id/selesai';
+  static String kknCheckOut(String id) => '/kkn-attendance/kegiatan/$id/check-out';
   static const String kknOutOfZoneViolation = '/kkn/out-of-zone-violation';
 
   // Schedules

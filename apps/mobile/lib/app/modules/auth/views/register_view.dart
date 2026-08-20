@@ -39,7 +39,6 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   final _kecamatanController = TextEditingController();
   final _provinsiController = TextEditingController();
   final _kotaController = TextEditingController();
-  final _dplNameController = TextEditingController();
   String _selectedJenjang = 'S1';
   String? _selectedKelurahan;
   String? _selectedRw;
@@ -241,7 +240,6 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
     _fakultasController.dispose();
     _universitasController.dispose();
     _kecamatanController.dispose();
-    _dplNameController.dispose();
     _toastTimer?.cancel();
     super.dispose();
   }
@@ -332,8 +330,8 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       if (prov.isNotEmpty) addrParts.add(prov);
       
       data['address'] = addrParts.join(', ');
-      data['rw'] = _selectedRw ?? '';
-      data['rtRw'] = _selectedRw ?? '';
+      data['rw'] = _selectedRw != null ? 'RW $_selectedRw' : '';
+      data['rtRw'] = _selectedRw != null ? 'RW $_selectedRw' : '';
       data['kelurahan'] = _selectedKelurahan ?? '';
       data['jumlahAnggotaKeluarga'] = int.tryParse(_familySizeController.text) ?? 1;
       data['familySize'] = int.tryParse(_familySizeController.text) ?? 1;
@@ -346,20 +344,18 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       final jenjang = _selectedJenjang;
       data['fakultas'] = [jenjang, fak, univ].where((e) => e.isNotEmpty).join(' - ');
 
-      // Gabungkan DPL ke jurusan
       final jur = InputSanitizer.sanitize(_jurusanController.text);
-      final dpl = InputSanitizer.sanitize(_dplNameController.text);
-      data['jurusan'] = dpl.isNotEmpty ? '$jur (DPL: $dpl)' : jur;
-      data['prodi'] = data['jurusan'];
+      data['jurusan'] = jur;
+      data['prodi'] = jur;
 
-      data['rw'] = _selectedRw ?? '';
-      data['rtRw'] = _selectedRw ?? '';
+      data['rw'] = _selectedRw != null ? 'RW $_selectedRw' : '';
+      data['rtRw'] = _selectedRw != null ? 'RW $_selectedRw' : '';
       data['kelurahan'] = _selectedKelurahan ?? '';
       if (_tglMulaiKKN != null) data['startDate'] = _tglMulaiKKN!.toIso8601String();
       if (_tglSelesaiKKN != null) data['endDate'] = _tglSelesaiKKN!.toIso8601String();
     } else if (_selectedRole == 'Petugas Pemilahan' || _selectedRole == 'Petugas') {
-      data['rw'] = _selectedRw ?? '';
-      data['rtRw'] = _selectedRw ?? '';
+      data['rw'] = _selectedRw != null ? 'RW $_selectedRw' : '';
+      data['rtRw'] = _selectedRw != null ? 'RW $_selectedRw' : '';
       data['kelurahan'] = _selectedKelurahan ?? '';
       final kel = _selectedKelurahan ?? '';
       final kec = InputSanitizer.sanitize(_kecamatanController.text);
@@ -556,11 +552,14 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                               ],
                             ),
                             clipBehavior: Clip.antiAlias,
-                            child: Image.asset(AppAssets.logo, fit: BoxFit.cover),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Image.asset(AppAssets.logo, fit: BoxFit.contain),
+                            ),
                           ),
                           const SizedBox(height: 12),
                           const Text(
-                            'TrashCare',
+                            'Berseka',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
@@ -950,31 +949,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                    ],
                                  ),
                                  const SizedBox(height: 16),
-                                 Row(
-                                   children: [
-                                     Expanded(
-                                       child: Column(
-                                         crossAxisAlignment: CrossAxisAlignment.start,
-                                         children: [
-                                           _buildLabel('NAMA DPL'),
-                                           const SizedBox(height: 6),
-                                           TextFormField(
-                                             controller: _dplNameController,
-                                             decoration: const InputDecoration(
-                                               hintText: 'Nama Dosen DPL',
-                                               prefixIcon: Icon(Icons.person_pin_rounded, color: AppColors.textSecondary, size: 20),
-                                             ),
-                                             validator: (v) {
-                                               if (_selectedRole == 'Mahasiswa' && (v == null || v.trim().isEmpty)) return 'Wajib diisi';
-                                               return null;
-                                             },
-                                           ),
-                                         ],
-                                       ),
-                                     ),
-                                   ],
-                                 ),
-                                 const SizedBox(height: 16),
+
                                  Row(
                                    children: [
                                      Expanded(
@@ -1244,15 +1219,25 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                       ),
                       const SizedBox(height: 24),
 
-                      const Opacity(
-                        opacity: 0.6,
-                        child: Text(
-                          '© 2026 Universitas Komputer Indonesia. All rights reserved.',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppColors.textSecondary,
+                      const Column(
+                        children: [
+                          Text(
+                            '© 2026 Universitas Komputer Indonesia',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
-                        ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Versi 1.0.0',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppColors.textHint,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

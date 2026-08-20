@@ -39,8 +39,8 @@ void main() {
     });
 
     test('evaluatePosition with radius works correctly', () {
-      final targetLat = -6.890500;
-      final targetLng = 107.616000;
+      const targetLat = -6.890500;
+      const targetLng = 107.616000;
 
       // User 20 meter dari target (radius 150m)
       final resInside = GeofenceZoneEngine.evaluatePosition(

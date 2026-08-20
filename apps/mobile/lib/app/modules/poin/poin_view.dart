@@ -62,7 +62,7 @@ class PoinView extends ConsumerWidget {
                   historyAsync.when(skipLoadingOnReload: true, data: (history) => history.isEmpty
                         ? const EmptyState(
                             message: 'Belum ada riwayat poin.',
-                            icon: Icons.monetization_on_outlined,
+                            icon: Icons.monetization_on_rounded,
                           )
                         : Column(
                             children: history
@@ -110,7 +110,7 @@ class PoinView extends ConsumerWidget {
                     child: const Row(
                       children: [
                         Icon(
-                          Icons.info_outline_rounded,
+                          Icons.info_rounded,
                           color: AppColors.primaryGreen,
                           size: 18,
                         ),
@@ -529,20 +529,41 @@ class _PoinHistoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isAktivasi = item.description.toLowerCase().contains('aktivasi');
-    final bool isPunishment = item.points < 0 || item.description.toLowerCase().contains('penalti') || item.description.toLowerCase().contains('punishment');
-    final bool isSetorSampah = !isPunishment && !isAktivasi && !item.description.toLowerCase().contains('redeem') && !item.description.toLowerCase().contains('tukar');
+    final String descLower = item.description.toLowerCase();
+    
+    // Cek tipe transaksi berdasarkan deskripsi
+    bool isAktivasi = descLower.contains('aktivasi') || descLower.contains('activation');
+    bool isPunishment = item.points < 0 || descLower.contains('penalti') || descLower.contains('punishment');
+    bool isRedeem = descLower.contains('redeem') || descLower.contains('tukar');
+    bool isPresensi = descLower.contains('presensi') || descLower.contains('geofence');
+    
+    // Fallback: Jika deskripsi kosong atau tidak jelas, tapi poinnya tepat 10 (dan bukan penalti), 
+    // asumsikan ini adalah Aktivasi Tempat Sampah (sesuai role Warga/Mahasiswa).
+    if (!isAktivasi && !isPunishment && !isRedeem && !isPresensi) {
+      if (item.points == 10 && !descLower.contains('setor') && !descLower.contains('sampah')) {
+        isAktivasi = true;
+      }
+    }
+
     final bool isOrganic = item.wasteType == WasteType.organic;
+    
     final Color color = isPunishment
         ? AppColors.dangerRed
-        : (isOrganic ? AppColors.organicColor : AppColors.nonOrganicColor);
-    final IconData iconData = isPunishment ? Icons.warning_rounded : Icons.delete_rounded;
+        : (isAktivasi || isPresensi ? Colors.blue : (isOrganic ? AppColors.organicColor : AppColors.nonOrganicColor));
+        
+    final IconData iconData = isPunishment 
+        ? Icons.warning_rounded 
+        : (isAktivasi ? Icons.qr_code_scanner_rounded : (isPresensi ? Icons.location_on_rounded : Icons.delete_rounded));
 
     String title = isOrganic ? 'Setor Sampah Organik' : 'Setor Sampah Anorganik';
     if (isAktivasi) {
       title = 'Aktivasi Tempat Sampah Berhasil';
     } else if (isPunishment) {
-      title = 'Punishment Pengurangan Poin';
+      title = 'Penalti Pengurangan Poin';
+    } else if (isPresensi) {
+      title = 'Presensi Berhasil';
+    } else if (isRedeem) {
+      title = 'Penukaran Poin';
     }
 
     return Container(
@@ -556,11 +577,14 @@ class _PoinHistoryItem extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(iconData, color: color, size: 20),
+            child: iconData == Icons.delete_rounded
+                ? Image.asset('assets/icons/recycle-bin.png', color: color, width: 20, height: 20)
+                : Icon(iconData, color: color, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -608,61 +632,10 @@ class _PoinHistoryItem extends StatelessWidget {
                   ),
                 ],
               ),
-              // HANYA transaksi Setor Sampah yang mendapatkan badge FULL POIN / SEBAGIAN
-              if (isSetorSampah && item.points > 0) ...[
-                const SizedBox(height: 4),
-                _buildScheduleBadge(item.createdAt.toLocal()),
-              ],
             ],
           ),
         ],
       ),
     );
   }
-
-  Widget _buildScheduleBadge(DateTime date) {
-    final hour = date.hour;
-    // Window Pagi: 06:00-08:59, Window Sore: 15:00-17:59
-    final isFullPoin = (hour >= 6 && hour < 9) || (hour >= 15 && hour < 18);
-    
-    if (isFullPoin) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-        decoration: BoxDecoration(
-          color: AppColors.primaryGreen.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.35), width: 0.5),
-        ),
-        child: const Text(
-          'FULL POIN',
-          style: TextStyle(
-            fontSize: 8,
-            fontWeight: FontWeight.w800,
-            color: AppColors.primaryGreen,
-            letterSpacing: 0.2,
-          ),
-        ),
-      );
-    } else {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-        decoration: BoxDecoration(
-          color: AppColors.warningYellow.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.35), width: 0.5),
-        ),
-        child: const Text(
-          'SEBAGIAN',
-          style: TextStyle(
-            fontSize: 8,
-            fontWeight: FontWeight.w800,
-            color: AppColors.warningYellow,
-            letterSpacing: 0.2,
-          ),
-        ),
-      );
-    }
-  }
 }
-
-

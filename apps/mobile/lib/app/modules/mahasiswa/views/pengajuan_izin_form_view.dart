@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/models/pengajuan_izin_mahasiswa_entity.dart';
 import '../../../data/providers/repository_providers.dart';
+import '../../../data/services/notification_engine.dart';
 
 class PengajuanIzinFormView extends ConsumerStatefulWidget {
   const PengajuanIzinFormView({
@@ -27,7 +28,7 @@ class PengajuanIzinFormView extends ConsumerStatefulWidget {
 class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
   final _formKey = GlobalKey<FormState>();
   KategoriIzin _selectedKategori = KategoriIzin.sakit;
-  DateTime _tanggalKegiatan = DateTime.now();
+  DateTime _tanggalKegiatan = DateTime.now().add(const Duration(days: 1));
   final TextEditingController _deskripsiController = TextEditingController();
   String? _photoPath;
   bool _isSubmitting = false;
@@ -81,6 +82,11 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
         _isSubmitting = false;
         _isSuccess = true;
       });
+      NotificationEngine().showGenericNotification(
+        id: DateTime.now().millisecondsSinceEpoch.remainder(10000),
+        title: 'Pengajuan Izin/Sakit Terkirim ⏳',
+        body: 'Pengajuan ${_selectedKategori.displayName} sedang menunggu verifikasi DPL.',
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
@@ -318,15 +324,19 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             const SizedBox(height: 20),
 
             // Tanggal Kegiatan
-            const Text('Tanggal Kegiatan Terkait', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const Text('Tanggal Kegiatan Terkait (Minimal H-1)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 8),
             InkWell(
               onTap: () async {
+                final now = DateTime.now();
+                final tomorrow = DateTime(now.year, now.month, now.day + 1);
+                final initial = _tanggalKegiatan.isBefore(tomorrow) ? tomorrow : _tanggalKegiatan;
+
                 final picked = await showDatePicker(
                   context: context,
-                  initialDate: _tanggalKegiatan,
-                  firstDate: DateTime(2025),
-                  lastDate: DateTime(2027),
+                  initialDate: initial,
+                  firstDate: tomorrow,
+                  lastDate: DateTime(tomorrow.year + 1),
                   builder: (context, child) => Theme(
                     data: Theme.of(context).copyWith(
                       colorScheme: const ColorScheme.light(primary: AppColors.primaryGreen),
