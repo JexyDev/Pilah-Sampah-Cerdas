@@ -1965,7 +1965,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
               showMap
                 ? "bg-emerald-50 text-emerald-800 border-emerald-300 shadow-2xs"
-                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
             }`}
             title="Tampilkan / Sembunyikan Peta Geofence"
           >
@@ -2454,13 +2454,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           {/* Filter Status Chips & Mode Switcher (Disembunyikan untuk role DPL) */}
           {!isDpl && (
             <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
-              <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/60 text-[11px] font-bold text-slate-600 dark:text-slate-400">
+              <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-[11px] font-bold text-slate-600 dark:text-slate-400">
                 <button
                   type="button"
                   onClick={() => setAttendanceFilterTab("ALL")}
                   className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
                     attendanceFilterTab === "ALL"
-                      ? "bg-white text-slate-900 shadow-xs font-black"
+                      ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs font-black"
                       : "hover:text-slate-900"
                   }`}
                 >
@@ -2471,7 +2471,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   onClick={() => setAttendanceFilterTab("ACTIVE")}
                   className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
                     attendanceFilterTab === "ACTIVE"
-                      ? "bg-white text-emerald-800 shadow-xs font-black"
+                      ? "bg-white dark:bg-slate-800 text-emerald-800 dark:text-emerald-400 shadow-xs font-black"
                       : "hover:text-slate-900"
                   }`}
                 >
@@ -2482,7 +2482,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   onClick={() => setAttendanceFilterTab("COMPLETED")}
                   className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
                     attendanceFilterTab === "COMPLETED"
-                      ? "bg-white text-teal-800 shadow-xs font-black"
+                      ? "bg-white dark:bg-slate-800 text-teal-800 dark:text-teal-400 shadow-xs font-black"
                       : "hover:text-slate-900"
                   }`}
                 >
@@ -2493,7 +2493,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   onClick={() => setAttendanceFilterTab("IZIN_SAKIT")}
                   className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
                     attendanceFilterTab === "IZIN_SAKIT"
-                      ? "bg-white text-blue-800 shadow-xs font-black"
+                      ? "bg-white dark:bg-slate-800 text-blue-800 dark:text-blue-400 shadow-xs font-black"
                       : "hover:text-slate-900"
                   }`}
                 >
@@ -2504,7 +2504,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   onClick={() => setAttendanceFilterTab("NOT_ATTENDED")}
                   className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
                     attendanceFilterTab === "NOT_ATTENDED"
-                      ? "bg-white text-slate-900 shadow-xs font-black"
+                      ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs font-black"
                       : "hover:text-slate-900"
                   }`}
                 >
@@ -3132,7 +3132,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-200/60 transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors cursor-pointer"
               >
                 <X size={20} />
               </button>
@@ -3144,7 +3144,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 onClick={() => setModalStep(1)}
                 className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   modalStep === 1
-                    ? "bg-white text-emerald-800 shadow-2xs border border-slate-200"
+                    ? "bg-white dark:bg-slate-800 text-emerald-800 dark:text-emerald-400 shadow-2xs border border-slate-200 dark:border-slate-700"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
@@ -3168,7 +3168,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 }}
                 className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   modalStep === 2
-                    ? "bg-white text-emerald-800 shadow-2xs border border-slate-200"
+                    ? "bg-white dark:bg-slate-800 text-emerald-800 dark:text-emerald-400 shadow-2xs border border-slate-200 dark:border-slate-700"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
@@ -3611,7 +3611,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       className={`py-2 px-3 rounded-xl text-xs font-bold transition border text-left flex items-center justify-between cursor-pointer ${
                         exportPeriod === p.id
                           ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                          : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
                       }`}
                     >
                       <span>{p.label}</span>

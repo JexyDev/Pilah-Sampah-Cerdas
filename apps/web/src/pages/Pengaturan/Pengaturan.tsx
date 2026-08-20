@@ -267,7 +267,7 @@ const Pengaturan: React.FC = () => {
     <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-100">
       <div>
         <h1 className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">Pengaturan Profil</h1>
-        <p className="text-slate-500 text-sm mt-1">
+        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
           Kelola profil pengguna, keamanan akun, peranan wilayah, serta preferensi sistem.
         </p>
       </div>
@@ -283,11 +283,11 @@ const Pengaturan: React.FC = () => {
                 key={item.id}
                 onClick={() => handleTabChange(item.id)}
                 className={`w-full px-4 py-3.5 rounded-2xl font-bold text-xs sm:text-sm transition-all duration-200 flex items-center gap-3.5 cursor-pointer text-left ${
-                  isActive ? "bg-[#e5f7ed] text-[#009966] border border-[#009966]/20 shadow-[0_2px_10px_rgba(0,153,102,0.12)] font-black" : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/80 shadow-2xs hover:shadow-xs font-semibold"
+                  isActive ? "bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-[#009966]/20 dark:border-emerald-700/40 shadow-[0_2px_10px_rgba(0,153,102,0.12)] font-black" : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-xs font-semibold"
                 }`}
               >
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                  isActive ? "bg-[#009966] text-white shadow-xs" : "bg-slate-100 text-slate-500 group-hover:bg-slate-200"
+                  isActive ? "bg-[#009966] text-white shadow-xs" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-700"
                 }`}>
                   <Icon size={18} />
                 </div>
@@ -303,11 +303,11 @@ const Pengaturan: React.FC = () => {
               <span>Peran & Domisili</span>
             </div>
             <div className="space-y-2 text-xs">
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/60">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
                 <span className="text-[10px] font-black uppercase text-slate-400 block">Tingkat Akses / Role</span>
                 <p className="font-black text-[#009966] uppercase mt-0.5">{profileData.role}</p>
               </div>
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/60">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
                 <span className="text-[10px] font-black uppercase text-slate-400 block">Wilayah Tugas</span>
                 <p className="font-bold text-slate-800 dark:text-slate-100 mt-0.5">Kel. {profileData.kelurahan}</p>
                 <p className="text-[11px] text-slate-500">Kec. {profileData.kecamatan} • {profileData.rw}</p>

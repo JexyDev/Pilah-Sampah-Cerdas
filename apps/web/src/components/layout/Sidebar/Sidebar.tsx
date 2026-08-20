@@ -872,7 +872,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 if (visibleItems.length === 0) return null;
                 return (
                   <React.Fragment key={sec.header}>
-                    {idx > 0 && <div className="w-6 h-px bg-slate-200/80 dark:bg-slate-800 my-1.5 mx-auto shrink-0" />}
+                    {idx > 0 && <div className="w-6 h-px bg-slate-200/80 dark:bg-slate-800/80 dark:bg-slate-800 my-1.5 mx-auto shrink-0" />}
                     {visibleItems.map((item: any) =>
                       item.type === "group" ? (
                         <NavItemCollapsed

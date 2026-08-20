@@ -157,7 +157,7 @@ const DownloadPage: React.FC = () => {
             <div className="flex items-center gap-3">
               <Link
                 to="/"
-                className="hidden sm:inline-flex items-center gap-1.5 px-4 h-9.5 rounded-xl text-slate-700 hover:text-emerald-700 hover:bg-slate-100 text-xs font-bold transition"
+                className="hidden sm:inline-flex items-center gap-1.5 px-4 h-9.5 rounded-xl text-slate-700 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition"
               >
                 <ArrowLeft size={15} />
                 <span>Beranda</span>
@@ -287,7 +287,7 @@ const DownloadPage: React.FC = () => {
                   </div>
 
                   {/* Mobile Roles Illustration Image */}
-                  <div className="w-full bg-slate-50/80 dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200/60 flex items-center justify-center">
+                  <div className="w-full bg-slate-50/80 dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200/60 dark:border-slate-800/60 flex items-center justify-center">
                     <img
                       src={ImageTigaRoleMobile}
                       alt="Ilustrasi Warga, Mahasiswa KKN, dan Petugas Residu"

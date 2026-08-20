@@ -145,7 +145,7 @@ export const AuditTrailList: React.FC = () => {
             <button
               type="button"
               onClick={handleResetFilters}
-              className="bg-gray-100 text-gray-600 font-semibold py-2 px-3 rounded-lg text-sm hover:bg-gray-200 transition shadow-sm"
+              className="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 font-semibold py-2 px-3 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-slate-700 transition shadow-sm"
             >
               Reset
             </button>
@@ -163,7 +163,7 @@ export const AuditTrailList: React.FC = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
-                <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                <thead className="bg-gray-50 dark:bg-slate-800 text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                   <tr>
                     <th className="px-6 py-3">Timestamp</th>
                     <th className="px-6 py-3">Aksi</th>
@@ -181,7 +181,7 @@ export const AuditTrailList: React.FC = () => {
                     </tr>
                   ) : (
                     logs.map((l, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50 transition cursor-pointer" onClick={() => setSelectedLog(l)}>
+                      <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition cursor-pointer" onClick={() => setSelectedLog(l)}>
                         <td className="px-6 py-4 text-xs font-semibold text-gray-500">
                           {new Date(l.timestamp).toLocaleString("id-ID")}
                         </td>
@@ -226,14 +226,14 @@ export const AuditTrailList: React.FC = () => {
               </div>
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-gray-400 uppercase">Nilai Baru (New Value)</span>
-                <pre className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-[10px] font-mono text-gray-700 overflow-x-auto whitespace-pre-wrap max-h-48">
+                <pre className="p-3 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-100 dark:border-slate-800 text-[10px] font-mono text-gray-700 dark:text-slate-300 overflow-x-auto whitespace-pre-wrap max-h-48">
                   {JSON.stringify(selectedLog.newValue, null, 2)}
                 </pre>
               </div>
               {selectedLog.oldValue && (
                 <div className="space-y-1">
                   <span className="text-[10px] font-bold text-gray-400 uppercase">Nilai Lama (Old Value)</span>
-                  <pre className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-[10px] font-mono text-gray-700 overflow-x-auto whitespace-pre-wrap max-h-48">
+                  <pre className="p-3 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-100 dark:border-slate-800 text-[10px] font-mono text-gray-700 dark:text-slate-300 overflow-x-auto whitespace-pre-wrap max-h-48">
                     {JSON.stringify(selectedLog.oldValue, null, 2)}
                   </pre>
                 </div>

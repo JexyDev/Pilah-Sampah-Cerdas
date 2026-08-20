@@ -230,7 +230,7 @@ const MasterRuleEngine: React.FC = () => {
             className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 shadow-sm cursor-pointer ${
               hasChanges
                 ? "bg-[#009966] hover:bg-[#008855] text-white shadow-emerald-700/20"
-                : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                : "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed"
             }`}
           >
             <Save size={16} />
@@ -406,7 +406,7 @@ const MasterRuleEngine: React.FC = () => {
                     onChange={(e) => handleChange("wargaReminderNotificationEnabled", e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#009966]" />
+                  <div className="w-10 h-5 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#009966]" />
                 </label>
               </div>
             </div>
@@ -455,7 +455,7 @@ const MasterRuleEngine: React.FC = () => {
                       onChange={(e) => handleChange("lateSubmissionPenaltyActive", e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#009966]" />
+                    <div className="w-10 h-5 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#009966]" />
                   </label>
                 </div>
 
@@ -661,7 +661,7 @@ const MasterRuleEngine: React.FC = () => {
                           onChange={(e) => handleChange("attendanceOutOfZonePenaltyActive", e.target.checked)}
                           className="sr-only peer"
                         />
-                        <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600" />
+                        <div className="w-10 h-5 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600" />
                       </label>
                     </div>
 
@@ -787,7 +787,7 @@ const MasterRuleEngine: React.FC = () => {
                     <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
                       <AlertTriangle size={16} className="text-emerald-700" /> Daftar Hari Libur Khusus &amp; Nasional
                     </span>
-                    <span className="text-xs font-black text-slate-800 dark:text-slate-100 bg-slate-200/80 px-2 py-0.5 rounded-md">
+                    <span className="text-xs font-black text-slate-800 dark:text-slate-100 bg-slate-200/80 dark:bg-slate-800/80 px-2 py-0.5 rounded-md">
                       {(config.kknHolidays || []).length} Hari Libur
                     </span>
                   </div>

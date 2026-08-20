@@ -1068,7 +1068,7 @@ const JadwalKegiatan: React.FC = () => {
                                 {group.items.map((item, idx) => (
                                   <div
                                     key={item.id || idx}
-                                    className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/60 flex items-center justify-between text-[11px] hover:border-emerald-300 transition-colors"
+                                    className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[11px] hover:border-emerald-300 transition-colors"
                                   >
                                     <div className="flex items-center gap-2">
                                       <div className={`w-1.5 h-1.5 rounded-full ${catTheme.dot}`}></div>
@@ -1111,7 +1111,7 @@ const JadwalKegiatan: React.FC = () => {
 
                 // Standard full timeline view
                 return (
-                  <div className="relative pl-3 space-y-3 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                  <div className="relative pl-3 space-y-3 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
                     {daySchedules.map((schedule) => {
                       const categoryColors: Record<string, { badge: string; dot: string }> = {
                         Pengangkutan: { badge: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
@@ -1191,7 +1191,7 @@ const JadwalKegiatan: React.FC = () => {
                   </p>
                 </div>
                 <button
-                  className="text-slate-400 hover:text-slate-700 p-1.5 rounded-full hover:bg-slate-200/60 transition-colors cursor-pointer"
+                  className="text-slate-400 hover:text-slate-700 p-1.5 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors cursor-pointer"
                   onClick={() => {
                     setIsModalOpen(false);
                     setEditId(null);
@@ -1624,7 +1624,7 @@ const JadwalKegiatan: React.FC = () => {
                   <>
                     <button
                       type="button"
-                      className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
+                      className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 rounded-xl transition-colors cursor-pointer"
                       onClick={() => {
                         setIsModalOpen(false);
                         setEditId(null);
@@ -1650,7 +1650,7 @@ const JadwalKegiatan: React.FC = () => {
                   <>
                     <button
                       type="button"
-                      className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
+                      className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 rounded-xl transition-colors cursor-pointer"
                       onClick={() => setModalStep(1)}
                     >
                       Kembali ke Peta

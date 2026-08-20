@@ -379,7 +379,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
               <div className="flex gap-3 pt-1">
                 <button
                   onClick={() => { setStep("phone"); setOtp(["", "", "", "", "", ""]); setOtpError(""); }}
-                  className="flex-1 h-12 border border-slate-200 text-slate-700 text-xs font-bold rounded-2xl hover:bg-slate-50 transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="flex-1 h-12 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <ArrowLeft size={16} /> Kembali
                 </button>
@@ -805,7 +805,7 @@ const Login: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-slate-200/60 transition cursor-pointer"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition cursor-pointer"
                     disabled={isStoreLoading || isLocalLoading}
                     title={showPassword ? "Sembunyikan Kata Sandi" : "Tampilkan Kata Sandi"}
                   >
@@ -832,7 +832,7 @@ const Login: React.FC = () => {
                     className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${
                       rememberMe
                         ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
-                        : "bg-white border-slate-300 hover:border-emerald-400"
+                        : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 hover:border-emerald-400"
                     }`}
                   >
                     {rememberMe && (

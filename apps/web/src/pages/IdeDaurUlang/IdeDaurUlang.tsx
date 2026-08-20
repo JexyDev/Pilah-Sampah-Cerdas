@@ -425,7 +425,7 @@ const IdeDaurUlang: React.FC = () => {
             <div className="px-6 py-4 border-t border-outline-variant/30 flex justify-end gap-3 bg-gray-50 dark:bg-slate-800/60">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2 text-sm font-bold text-gray-600 dark:text-slate-400 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800/60"
+                className="px-4 py-2 text-sm font-bold text-gray-600 dark:text-slate-400 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800/60"
               >
                 Batal
               </button>

@@ -468,7 +468,7 @@ export const MasterQrManager: React.FC = () => {
           {/* Table */}
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
-              <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+              <thead className="bg-gray-50 dark:bg-slate-800 text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-3">Kode QR</th>
                   <th className="px-6 py-3">Status</th>
@@ -488,7 +488,7 @@ export const MasterQrManager: React.FC = () => {
                 ) : (
                   qrs.map((q, idx) => {
                     return (
-                      <tr key={idx} className="hover:bg-gray-50 transition">
+                      <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition">
                         <td className="px-6 py-4">
                           <div className="flex flex-col items-center gap-1 bg-white dark:bg-slate-800 p-2 rounded-xl border border-gray-200/60 dark:border-slate-700 w-fit shadow-sm">
                             <img
@@ -554,7 +554,7 @@ export const MasterQrManager: React.FC = () => {
               <p className="text-gray-500 text-sm p-4 text-center">Tidak ada pengajuan petugas residu baru.</p>
             ) : (
               <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
-                <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                <thead className="bg-gray-50 dark:bg-slate-800 text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                   <tr>
                     <th className="px-6 py-3">Nama & Kontak</th>
                     <th className="px-6 py-3">Zona Tugas</th>
@@ -611,7 +611,7 @@ export const MasterQrManager: React.FC = () => {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setRejectBinId(null)}
-                className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                className="px-4 py-2 text-xs font-bold text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
               >
                 Batal
               </button>
@@ -647,7 +647,7 @@ export const MasterQrManager: React.FC = () => {
                   type="text"
                   value="Otomatis (Sistem)"
                   disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 text-gray-500 cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-700 rounded-lg text-sm bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 cursor-not-allowed"
                 />
               </div>
 
@@ -697,11 +697,11 @@ export const MasterQrManager: React.FC = () => {
                 </select>
               </div>
             </div>
-            <div className="p-4 bg-gray-50 border-t border-gray-100 flex gap-2 justify-end">
+            <div className="p-4 bg-gray-50 dark:bg-slate-850 border-t border-gray-100 dark:border-slate-800 flex gap-2 justify-end">
               <button
                 type="button"
                 onClick={() => setShowGenerateModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-100"
+                className="px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800"
               >
                 Batal
               </button>

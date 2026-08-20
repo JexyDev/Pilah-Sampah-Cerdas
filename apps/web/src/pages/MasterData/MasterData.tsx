@@ -417,7 +417,7 @@ const MasterData: React.FC = () => {
               </h3>
               <button
                 onClick={() => setSelectedMhsDetail(null)}
-                className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
               >
                 ✕
               </button>

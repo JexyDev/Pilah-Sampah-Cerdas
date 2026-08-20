@@ -145,7 +145,7 @@ export const ManageConfigs: React.FC = () => {
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
-              <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+              <thead className="bg-gray-50 dark:bg-slate-800 text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-3">Nama Kunci (Key)</th>
                   <th className="px-6 py-3">Nilai Konfigurasi</th>
@@ -155,7 +155,7 @@ export const ManageConfigs: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {configs.map((c, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50 transition">
+                  <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition">
                     <td className="px-6 py-4 font-mono text-xs text-primary font-bold">{c.key}</td>
                     <td className="px-6 py-4 font-medium text-gray-900 max-w-[200px] truncate">{c.value}</td>
                     <td className="px-6 py-4 text-gray-500 max-w-xs truncate">{c.deskripsi || "-"}</td>
@@ -294,7 +294,7 @@ export const ManageConfigs: React.FC = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setSelectedConfig(null)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
                 >
                   Batal
                 </button>
@@ -332,7 +332,7 @@ export const ManageConfigs: React.FC = () => {
 
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-gray-700">Hierarki Tingkat Approval</label>
-                <div className="space-y-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                <div className="space-y-2 bg-gray-50 dark:bg-slate-850 p-3 rounded-xl border border-gray-100 dark:border-slate-800">
                   <div className="flex items-center justify-between text-xs font-medium text-gray-700">
                     <span>1. Input (Mahasiswa)</span>
                     <CheckCircle2 className="text-green-500" size={16} />

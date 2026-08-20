@@ -589,7 +589,7 @@ const Monitoring: React.FC = () => {
         <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
           <div className="flex items-center gap-2">
             <span className="text-slate-400">Cakupan Wilayah:</span>
-            <strong className="text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200/60">
+            <strong className="text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200/60 dark:border-slate-800/60">
               {getScopeLabel()}
             </strong>
           </div>
@@ -990,7 +990,7 @@ const Monitoring: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-100/90 dark:bg-slate-800/90 dark:bg-slate-800/90 rounded-xl border border-slate-200/60 dark:border-slate-700">
+                  <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-100/90 dark:bg-slate-800/90 dark:bg-slate-800/90 rounded-xl border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700">
                     <button
                       type="button"
                       onClick={() => setActiveLegendTab("sampah")}

@@ -358,7 +358,7 @@ export const ReviewDiscrepancy: React.FC = () => {
                     <tr
                       key={log.id}
                       onClick={() => setSelectedLog(log)}
-                      className={`hover:bg-gray-50 dark:hover:bg-slate-800/50 transition cursor-pointer ${
+                      className={`hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800/50 transition cursor-pointer ${
                         selectedLog?.id === log.id ? "bg-emerald-50/60 dark:bg-emerald-950/40 border-l-4 border-l-emerald-600 dark:border-l-emerald-500" : "border-l-4 border-l-transparent"
                       }`}
                     >
@@ -506,7 +506,7 @@ export const ReviewDiscrepancy: React.FC = () => {
                       <button
                         disabled={isSubmitting}
                         onClick={openKoreksiModal}
-                        className="w-full py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg text-[11px] font-bold shadow-sm transition disabled:opacity-50 cursor-pointer"
+                        className="w-full py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:bg-slate-700 rounded-lg text-[11px] font-bold shadow-sm transition disabled:opacity-50 cursor-pointer"
                       >
                         Koreksi Manual / Reject
                       </button>

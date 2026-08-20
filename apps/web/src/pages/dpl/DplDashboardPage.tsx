@@ -2124,11 +2124,11 @@ export const DplDashboardPage: React.FC = () => {
               </div>
             ) : assistedCitizensData && assistedCitizensData.citizens.length > 0 ? (
               <div className="space-y-3">
-                <div className="bg-slate-50 dark:bg-slate-800/80 p-3 rounded-lg flex items-center justify-between text-xs text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
+                <div className="bg-slate-50 dark:bg-slate-800/80 p-3 rounded-lg flex items-center justify-between text-xs text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700">
                   <span>Total Warga Didampingi: <strong>{assistedCitizensData.totalCitizensAssisted} Warga</strong></span>
                 </div>
                 {assistedCitizensData.citizens.map((c) => (
-                  <div key={c.binId} className="p-4 border border-slate-200/60 dark:border-slate-800 rounded-xl bg-slate-50/40 dark:bg-slate-800/40 dark:bg-slate-800/50 space-y-2">
+                  <div key={c.binId} className="p-4 border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-800 rounded-xl bg-slate-50/40 dark:bg-slate-800/40 dark:bg-slate-800/50 space-y-2">
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-bold text-slate-900 dark:text-slate-100 text-xs">{c.warga?.nama || "Warga Binaan"}</p>

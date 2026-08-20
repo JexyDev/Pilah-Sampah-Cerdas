@@ -171,7 +171,7 @@ export const ReviewDiscrepancy: React.FC = () => {
           </div>
           <div className="overflow-y-auto flex-1">
             <table className="min-w-full divide-y divide-gray-200 text-sm text-left relative">
-              <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider sticky top-0 z-10">
+              <thead className="bg-gray-50 dark:bg-slate-800 text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider sticky top-0 z-10">
                 <tr>
                   <th className="px-6 py-3">Tanggal</th>
                   <th className="px-6 py-3">Warga</th>
@@ -192,7 +192,7 @@ export const ReviewDiscrepancy: React.FC = () => {
                     <tr
                       key={log.id}
                       onClick={() => setSelectedLog(log)}
-                      className={`hover:bg-gray-50 transition cursor-pointer ${
+                      className={`hover:bg-gray-50 dark:hover:bg-slate-800 transition cursor-pointer ${
                         selectedLog?.id === log.id ? "bg-primary/5 border-l-4 border-l-primary" : "border-l-4 border-l-transparent"
                       }`}
                     >
@@ -253,7 +253,7 @@ export const ReviewDiscrepancy: React.FC = () => {
               {/* Image Preview Thumbnail */}
               {selectedLog.evidencePhotoUrl ? (
                 <div 
-                  className="w-full h-40 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-pointer group relative shadow-sm"
+                  className="w-full h-40 bg-gray-100 dark:bg-slate-800 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 cursor-pointer group relative shadow-sm"
                   onClick={() => setIsPhotoModalOpen(true)}
                 >
                   <img 
@@ -268,14 +268,14 @@ export const ReviewDiscrepancy: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="w-full h-32 bg-gray-50 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400">
+                <div className="w-full h-32 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 flex flex-col items-center justify-center text-gray-400 dark:text-slate-500">
                   <ImageIcon size={24} className="mb-2 opacity-50" />
                   <span className="text-[10px] font-medium">Foto bukti tidak tersedia</span>
                 </div>
               )}
 
               {/* Contrast Panel */}
-              <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+              <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-slate-850 p-4 rounded-xl border border-gray-100 dark:border-slate-800">
                 <div className="space-y-1">
                   <span className="text-[9px] uppercase font-bold text-gray-400">Model AI</span>
                   <div className="text-sm font-bold text-indigo-700 font-mono">{selectedLog.aiClassification}</div>
@@ -317,14 +317,14 @@ export const ReviewDiscrepancy: React.FC = () => {
                       <button
                         disabled={isSubmitting}
                         onClick={openKoreksiModal}
-                        className="w-full py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg text-[11px] font-bold shadow-sm transition disabled:opacity-50"
+                        className="w-full py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:bg-slate-700 rounded-lg text-[11px] font-bold shadow-sm transition disabled:opacity-50"
                       >
                         Koreksi Manual / Reject
                       </button>
                     </div>
                   </>
                 ) : (
-                  <p className="text-xs text-center text-gray-400 italic bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <p className="text-xs text-center text-gray-400 dark:text-slate-400 italic bg-gray-50 dark:bg-slate-850 p-3 rounded-lg border border-gray-100 dark:border-slate-800">
                     Diskrepansi ini telah diputuskan.
                   </p>
                 )}
@@ -371,7 +371,7 @@ export const ReviewDiscrepancy: React.FC = () => {
               <h3 className="text-lg font-bold text-gray-900">Koreksi Manual Hasil Tinjauan</h3>
               <button
                 onClick={() => setIsKoreksiModalOpen(false)}
-                className="text-gray-400 hover:bg-gray-100 p-1.5 rounded-full transition-colors"
+                className="text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 p-1.5 rounded-full transition-colors"
               >
                 <X size={18} />
               </button>
@@ -417,7 +417,7 @@ export const ReviewDiscrepancy: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsKoreksiModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                  className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
                 >
                   Batal
                 </button>

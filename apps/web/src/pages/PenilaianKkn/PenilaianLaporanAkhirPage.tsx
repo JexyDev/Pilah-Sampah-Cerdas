@@ -797,7 +797,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={handlePrintEvaluation}
-                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 transition flex items-center gap-1.5 cursor-pointer"
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-200/80 dark:bg-slate-800/80 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 transition flex items-center gap-1.5 cursor-pointer"
                   >
                     <Printer size={14} />
                     <span>Cetak Lembar Nilai</span>
@@ -919,7 +919,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center py-12 px-6 flex flex-col items-center justify-center space-y-3">
-                  <div className="w-16 h-16 rounded-3xl bg-slate-200/80 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                  <div className="w-16 h-16 rounded-3xl bg-slate-200/80 dark:bg-slate-800/80 dark:bg-slate-800 flex items-center justify-center text-slate-400">
                     <FileText size={32} />
                   </div>
                   <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">

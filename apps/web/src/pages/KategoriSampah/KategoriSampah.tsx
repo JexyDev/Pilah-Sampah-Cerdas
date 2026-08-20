@@ -250,7 +250,7 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
                 className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between group"
               >
                 {/* Illustration Banner */}
-                <div className="h-44 w-full relative overflow-hidden bg-slate-100 dark:bg-slate-800">
+                <div className="h-44 w-full relative overflow-hidden bg-slate-100 dark:bg-slate-800 dark:bg-slate-800">
                   <img
                     src={getCategoryIllustration(cat)}
                     alt={cat.name}

@@ -733,7 +733,7 @@ const ManajemenTempatSampah: React.FC = () => {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
                 activeTab === "kodefikasi"
                   ? "bg-[#009966] text-white shadow-xs"
-                  : "bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700"
+                  : "bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700"
               }`}
             >
               <QrCode size={15} />
@@ -745,7 +745,7 @@ const ManajemenTempatSampah: React.FC = () => {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
                 activeTab === "monitoring"
                   ? "bg-[#009966] text-white shadow-xs"
-                  : "bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700"
+                  : "bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700"
               }`}
             >
               <Map size={15} />
@@ -757,7 +757,7 @@ const ManajemenTempatSampah: React.FC = () => {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
                 activeTab === "kategori"
                   ? "bg-[#009966] text-white shadow-xs"
-                  : "bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700"
+                  : "bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700"
               }`}
             >
               <Tags size={15} />
@@ -1665,7 +1665,7 @@ const ManajemenTempatSampah: React.FC = () => {
                             {bin.kapasitas}%
                           </span>
                         </div>
-                        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-200/60 dark:border-slate-700">
+                        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700">
                           <div
                             className={`h-full rounded-full transition-all duration-500 ${
                               bin.kapasitas > 90 ? "bg-rose-500" : bin.kapasitas >= 70 ? "bg-amber-500" : "bg-emerald-500"

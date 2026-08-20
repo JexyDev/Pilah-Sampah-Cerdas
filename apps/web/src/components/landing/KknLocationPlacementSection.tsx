@@ -40,7 +40,7 @@ export const KknLocationPlacementSection: React.FC = () => {
                       <span>{item.name}</span>
                       <span className="text-slate-900 dark:text-slate-100">{item.mhsCount} Mahasiswa</span>
                     </div>
-                    <div className="h-9 w-full bg-slate-200/80 dark:bg-slate-700 rounded-xl overflow-hidden p-1 flex items-center">
+                    <div className="h-9 w-full bg-slate-200/80 dark:bg-slate-800/80 dark:bg-slate-700 rounded-xl overflow-hidden p-1 flex items-center">
                       <div
                         className="h-full bg-[#1D3B2F] dark:bg-emerald-600 rounded-lg transition-all duration-700 ease-out flex items-center justify-end px-3"
                         style={{ width: `${widthPct}%` }}

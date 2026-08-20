@@ -446,7 +446,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">Kelompok Dampingan KKN</h1>
-          <p className="text-slate-500 text-sm mt-1">
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
             Pengelolaan kelompok mahasiswa KKN, alokasi wilayah dampingan, dan struktur dosen pendamping lapangan.
           </p>
         </div>
@@ -753,7 +753,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                               className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                                 currentPage === btn
                                   ? "bg-emerald-600 text-white shadow-xs"
-                                  : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                                  : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
                               }`}
                             >
                               {btn}
@@ -1408,7 +1408,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     Kel. {selectedDetailKelompok.kelurahan || "Wilayah Dampingan"}
                   </span>
                   {selectedDetailKelompok.cakupanRw && (
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-200/80 text-slate-700 dark:text-slate-300">
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-200/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300">
                       RW: {Array.isArray(selectedDetailKelompok.cakupanRw) ? selectedDetailKelompok.cakupanRw.join(", ") : selectedDetailKelompok.cakupanRw}
                     </span>
                   )}
@@ -1417,7 +1417,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               </div>
               <button
                 onClick={() => setIsDetailModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-200/60 transition cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition cursor-pointer"
               >
                 <X size={20} />
               </button>

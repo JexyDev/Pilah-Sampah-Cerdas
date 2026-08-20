@@ -335,7 +335,7 @@ export const LandingPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 transition shrink-0 cursor-pointer"
+              className="lg:hidden p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition shrink-0 cursor-pointer"
               aria-label="Toggle Navigation Menu"
               aria-expanded={isMobileMenuOpen}
             >
@@ -403,7 +403,7 @@ export const LandingPage: React.FC = () => {
 
               <button
                 onClick={() => { setIsMobileMenuOpen(false); setShowContactModal(true); }}
-                className="w-full py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-extrabold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                className="w-full py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-sm font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
               >
                 Hubungi Kami
               </button>
@@ -690,7 +690,7 @@ export const LandingPage: React.FC = () => {
                           className="kegiatan-card-modern group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between cursor-pointer h-full"
                         >
                           {/* Thumbnail Photo Container */}
-                          <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-100">
+                          <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
                             <img
                               src={item.imageUrl || fallbackImg}
                               alt={item.title}
@@ -702,7 +702,7 @@ export const LandingPage: React.FC = () => {
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
 
                             {/* Floating Date Badge */}
-                            <div className="absolute top-3.5 left-3.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-md border border-white/60 flex flex-col items-center justify-center text-center">
+                            <div className="absolute top-3.5 left-3.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-md border border-white/60 dark:border-slate-800 flex flex-col items-center justify-center text-center">
                               <span className="text-sm font-black text-slate-900 leading-none">{day}</span>
                               <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-wider leading-none mt-0.5">{month}</span>
                             </div>
@@ -827,7 +827,7 @@ export const LandingPage: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 pt-2 text-center">
 
-                  <div className="p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                  <div className="p-3.5 sm:p-4 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-1">
                     <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
                       Warga Terdaftar
                     </span>
@@ -836,7 +836,7 @@ export const LandingPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                  <div className="p-3.5 sm:p-4 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-1">
                     <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
                       Total Poin Terdistribusi
                     </span>
@@ -845,7 +845,7 @@ export const LandingPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                  <div className="p-3.5 sm:p-4 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-1">
                     <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
                       Hadiah Ide Daur Ulang
                     </span>
@@ -891,7 +891,7 @@ export const LandingPage: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
 
-                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                  <div className="p-5 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <div>
                       <p className="text-sm font-black text-slate-900">
                         Total Tempat Sampah Terdaftar
@@ -906,7 +906,7 @@ export const LandingPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                  <div className="p-5 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <div>
                       <p className="text-sm font-black text-slate-900">
                         Total Penjemputan dan Residu
@@ -958,7 +958,7 @@ export const LandingPage: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
 
-                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="p-5 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800">
                     <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mb-3">
                       <span className="material-symbols-outlined">
                         sensors
@@ -974,7 +974,7 @@ export const LandingPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="p-5 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800">
                     <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-3">
                       <span className="material-symbols-outlined">
                         monitoring
@@ -990,7 +990,7 @@ export const LandingPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="p-5 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800">
                     <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-3">
                       <span className="material-symbols-outlined">
                         route
@@ -1409,7 +1409,7 @@ export const LandingPage: React.FC = () => {
                 { title: "Organik", icon: "eco", color: "text-green-600", desc: "Sisa dapur diolah di Loseda, Bata Terawang, dan Budidaya Maggot BSF." },
               ].map((cat, idx) => (
                 <div key={idx} className="waste-cat-card text-center space-y-3">
-                  <div className={`w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto border border-slate-100 ${cat.color}`}>
+                  <div className={`w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-850 flex items-center justify-center mx-auto border border-slate-100 dark:border-slate-800 ${cat.color}`}>
                     <span className="material-symbols-outlined text-3xl">{cat.icon}</span>
                   </div>
                   <h4 className="font-extrabold text-slate-900 text-base">{cat.title}</h4>
@@ -1444,7 +1444,7 @@ export const LandingPage: React.FC = () => {
                     <span className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                       <span className="material-symbols-outlined text-2xl">{item.icon}</span>
                     </span>
-                    <span className="text-xs font-extrabold px-3 py-1 bg-slate-100 text-slate-700 rounded-full">{item.type}</span>
+                    <span className="text-xs font-extrabold px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-full">{item.type}</span>
                   </div>
                   <h4 className="font-extrabold text-slate-900 text-lg">{item.title}</h4>
                   <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
@@ -1540,7 +1540,7 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setShowContactModal(false)}
-                  className="w-9 h-9 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700 hover:bg-slate-200 flex items-center justify-center transition cursor-pointer"
+                  className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition cursor-pointer"
                   aria-label="Tutup modal"
                 >
                   <span className="material-symbols-outlined text-xl">close</span>

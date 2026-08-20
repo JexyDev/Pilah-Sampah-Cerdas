@@ -548,7 +548,7 @@ const Notifikasi: React.FC = () => {
               </span>
             )}
           </div>
-          <p className="text-slate-500 text-sm mt-1">
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
             Daftar pemberitahuan terkini pemantauan tempat sampah, jadwal penjemputan residu, dan aktivitas KKN.
           </p>
         </div>

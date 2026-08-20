@@ -949,7 +949,7 @@ export const PenilaianProkerPage: React.FC = () => {
                     <span className="text-xs font-medium">Memuat dokumentasi foto kegiatan...</span>
                   </div>
                 ) : !buktiData?.attendances || buktiData.attendances.length === 0 ? (
-                  <div className="p-8 text-center text-slate-400 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/60 dark:border-slate-800">
+                  <div className="p-8 text-center text-slate-400 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-800">
                     <AlertCircle size={24} className="mx-auto mb-1.5 text-slate-300" />
                     <p className="text-xs">Belum ada foto dokumentasi aktivitas dari kelompok ini.</p>
                   </div>
