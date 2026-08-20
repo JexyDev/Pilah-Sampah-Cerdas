@@ -162,14 +162,27 @@ export interface RekapNilaiStudent {
   kelompokName: string;
   kelurahan: string;
   isKetua: boolean;
-  skorIndividu: number;
-  catatanIndividu: string;
-  skorProkerKelompok: number;
-  tingkatKehadiran: number;
-  poinDampingan: number;
-  nilaiAkhir: number;
-  hurufMutu: string;
-  statusLulus: string;
+  kehadiran?: number | null;
+  poinDampingan?: number | null;
+  individuDpl?: number | null;
+  individuMpl?: number | null;
+  individuGabungan?: number | null;
+  prokerDpl?: number | null;
+  prokerMpl?: number | null;
+  prokerGabungan?: number | null;
+  kelompokDpl?: number | null;
+  kelompokMpl?: number | null;
+  kelompokGabungan?: number | null;
+  nilaiAkhir?: number | null;
+  predikat?: string | null;
+  status?: string;
+  // Backward compatibility fields
+  skorIndividu?: number;
+  catatanIndividu?: string;
+  skorProkerKelompok?: number;
+  tingkatKehadiran?: number;
+  hurufMutu?: string;
+  statusLulus?: string;
 }
 
 export interface RekapNilaiResponse {
