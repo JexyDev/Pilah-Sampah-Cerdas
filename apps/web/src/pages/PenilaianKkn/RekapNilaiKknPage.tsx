@@ -661,9 +661,9 @@ export const RekapNilaiKknPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [students, setStudents] = useState<RekapNilaiStudent[]>(DEFAULT_STUDENTS);
 
-  // Pagination states
+  // Pagination states - 10 mahasiswa per halaman
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -835,11 +835,11 @@ export const RekapNilaiKknPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-4 sm:p-6 lg:p-8 space-y-6 text-slate-800 dark:text-slate-100 max-w-[1600px] mx-auto">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-3 sm:p-6 lg:p-8 space-y-5 sm:space-y-6 text-slate-800 dark:text-slate-100 max-w-[1600px] mx-auto overflow-x-hidden">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl sm:text-[26px] font-extrabold text-[#0f172a] dark:text-slate-100 tracking-tight">
+          <h1 className="text-xl sm:text-2xl lg:text-[26px] font-extrabold text-[#0f172a] dark:text-slate-100 tracking-tight">
             Rekap & Nilai Akhir
           </h1>
           <p className="text-xs sm:text-[13px] text-slate-600 dark:text-slate-400 mt-1 font-medium">
@@ -847,11 +847,11 @@ export const RekapNilaiKknPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3 self-start sm:self-auto">
+        <div className="flex items-center gap-3 self-stretch sm:self-auto justify-end">
           {/* Button Ekspor Excel */}
           <button
             onClick={handleExportExcel}
-            className="flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-slate-900 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/40 text-slate-800 dark:text-slate-200 border border-[#009966] rounded-lg text-xs font-bold shadow-2xs transition-all cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/40 text-slate-800 dark:text-slate-200 border border-[#009966] rounded-lg text-xs font-bold shadow-2xs transition-all cursor-pointer w-full sm:w-auto"
           >
             <div className="w-4 h-4 rounded border border-[#009966] flex items-center justify-center text-[10px] text-[#009966] font-black">
               X
@@ -862,19 +862,19 @@ export const RekapNilaiKknPage: React.FC = () => {
       </div>
 
       {/* Legend & Info Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Badge 1: Otomatis dari Sistem */}
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900/60 px-3.5 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#1d4ed8]" />
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900/60 px-3.5 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs w-full sm:w-auto">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#1d4ed8] shrink-0" />
             <span>
               <strong className="text-[#1d4ed8] font-bold">Otomatis dari Sistem:</strong> Kehadiran 25% • Poin Dampingan 15%
             </span>
           </div>
 
           {/* Badge 2: Penilaian DPL & MPL */}
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/60 px-3.5 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#008055]" />
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/60 px-3.5 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs w-full sm:w-auto">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#008055] shrink-0" />
             <span>
               <strong className="text-[#008055] font-bold">Penilaian DPL & MPL:</strong> Nilai Individu 20% • Program Kerja 20% • Nilai Kelompok 20%
             </span>
@@ -882,7 +882,7 @@ export const RekapNilaiKknPage: React.FC = () => {
         </div>
 
         {/* Badge 3: Info Komposisi */}
-        <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-400 font-medium shadow-2xs">
+        <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-400 font-medium shadow-2xs w-full lg:w-auto">
           <Info size={14} className="text-slate-500 shrink-0" />
           <span>
             Komposisi Penilai: DPL 30% • MPL 60% • Dinormalisasi terhadap total 90%
@@ -898,8 +898,8 @@ export const RekapNilaiKknPage: React.FC = () => {
             <span className="text-xs font-semibold">Memuat rekapitulasi nilai...</span>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-center text-[11.5px] border-collapse">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full min-w-[1050px] text-center text-[11.5px] border-collapse">
               {/* Table Head Multi-Tier */}
               <thead>
                 <tr className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-800">
@@ -1114,13 +1114,13 @@ export const RekapNilaiKknPage: React.FC = () => {
       </div>
 
       {/* Pagination Controls Section */}
-      <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-medium px-1 py-1">
-        <div>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium px-1 py-1">
+        <div className="text-center sm:text-left">
           Menampilkan {(currentPage - 1) * itemsPerPage + 1}–
           {Math.min(currentPage * itemsPerPage, totalStudentsCount)} dari {totalStudentsCount} mahasiswa
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap justify-center">
           {/* Tombol Previous */}
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -1130,7 +1130,7 @@ export const RekapNilaiKknPage: React.FC = () => {
             <ChevronLeft size={16} />
           </button>
 
-          {/* Tombol Nomor Halaman 1-5 */}
+          {/* Tombol Nomor Halaman */}
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
             <button
               key={pageNum}
@@ -1157,12 +1157,12 @@ export const RekapNilaiKknPage: React.FC = () => {
       </div>
 
       {/* Dasar Perhitungan Nilai Card */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-2xs space-y-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-6 shadow-2xs space-y-4">
         <h2 className="text-base sm:text-[17px] font-extrabold text-[#0f172a] dark:text-slate-100 tracking-tight">
           Dasar Perhitungan Nilai
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative">
           {/* Card 1: Sumber Nilai Otomatis */}
           <div className="space-y-2 lg:pr-4 lg:border-r border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center gap-2 text-[#00704a] dark:text-emerald-400 font-bold text-xs">
