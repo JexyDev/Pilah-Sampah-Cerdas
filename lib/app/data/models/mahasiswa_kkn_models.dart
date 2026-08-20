@@ -536,20 +536,33 @@ class KelompokKknData extends Equatable {
             .toList() ??
         [];
 
-    String dpl = json['dosenPembimbing']?.toString() ??
-        json['dplName']?.toString() ??
-        json['dpsName']?.toString() ??
-        json['dpl']?.toString() ??
-        json['dosen']?.toString() ??
-        '';
-
+    String dpl = '';
+    
+    // 1. Check if 'dpl' is an object containing the user's details
+    if (json['dpl'] is Map) {
+      dpl = json['dpl']['name']?.toString() ?? json['dpl']['nama']?.toString() ?? '';
+    } 
+    // 2. Fallback to direct string properties
+    if (dpl.isEmpty) {
+      dpl = (json['dpl'] is String ? json['dpl'] : null) ??
+          json['dplNamaMentah']?.toString() ??
+          json['dpl_nama_mentah']?.toString() ??
+          json['dosenPembimbing']?.toString() ??
+          json['dosen_pembimbing']?.toString() ??
+          json['dplName']?.toString() ??
+          json['dpl_name']?.toString() ??
+          json['dpsName']?.toString() ??
+          json['dosen']?.toString() ??
+          '';
+    }
+    // 3. Check for 'dps' or 'dplObj' maps if still empty
     if (dpl.isEmpty && json['dps'] is Map) {
       dpl = json['dps']['name']?.toString() ?? json['dps']['nama']?.toString() ?? '';
     } else if (dpl.isEmpty && json['dplObj'] is Map) {
       dpl = json['dplObj']['name']?.toString() ?? json['dplObj']['nama']?.toString() ?? '';
     }
 
-    if (dpl.isEmpty) dpl = '-';
+    if (dpl.isEmpty || dpl == 'null') dpl = '-';
 
     return KelompokKknData(
       groupId: json['groupId']?.toString() ?? json['id']?.toString() ?? '',
