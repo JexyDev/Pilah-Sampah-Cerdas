@@ -367,30 +367,13 @@ class ApiKknRepository implements KknRepository {
       }
       return null;
     } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
       debugPrint('Error getKelompokKkn (Dio): ${e.response?.data}');
-      // Fallback ke Dummy Data untuk keperluan presentasi karena API live masih 500/Belum deploy
-      return _generateDummyData();
+      throw Exception('Gagal memuat kelompok: ${e.response?.statusCode} ${e.message}');
     } catch (e, stack) {
       debugPrint('Error getKelompokKkn (Parsing/Lainnya): $e\n$stack');
-      return _generateDummyData();
+      throw Exception('Gagal parsing data kelompok: $e');
     }
-  }
-
-  KelompokKknData _generateDummyData() {
-    return KelompokKknData(
-      groupId: 'dummy_group_1',
-      groupName: 'Kelompok 1 Cipaganti',
-      dosenPembimbing: 'Iqbal Dzulfiqar, S.Kom., M.Kom',
-      poskoLocation: 'Posko KKN RW 1, Kel. Cipaganti',
-      totalGroupPoints: 0,
-      members: [
-        KelompokMemberData(userId: 'dummy_1', nim: '10124071', name: 'Panji Gumilang', jurusan: 'S1 Teknik Informatika', individualPoints: 0, isLeader: true),
-        KelompokMemberData(userId: 'dummy_2', nim: '10124072', name: 'Nico Luthfiano', jurusan: 'S1 Sistem Informasi', individualPoints: 0, isLeader: false),
-        KelompokMemberData(userId: 'dummy_3', nim: '1208331', name: 'Habiltrush', jurusan: 'S1 Sistem Informasi', individualPoints: 0, isLeader: false),
-        KelompokMemberData(userId: 'dummy_4', nim: '10124074', name: 'Faisal Hawari', jurusan: 'S1 Ilmu Komunikasi', individualPoints: 0, isLeader: false),
-        KelompokMemberData(userId: 'dummy_5', nim: '10124075', name: 'Syifa Rahmatika', jurusan: 'S1 Desain Komunikasi Visual', individualPoints: 0, isLeader: false),
-      ],
-    );
   }
 
   @override
