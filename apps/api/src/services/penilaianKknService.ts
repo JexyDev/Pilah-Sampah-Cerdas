@@ -20,12 +20,9 @@ export const calculateGradeCategory = (score: number): string => {
   return "Belum Dinilai";
 };
 
-// Helper for exact aspect calculation: supports 0-100 percentage & 0-4 scale
+// Helper for exact aspect calculation: 0-100 percentage scale
 export const calculateAspectScore = (score: number, weight: number): number => {
   const num = Number(score) || 0;
-  if (num <= 4 && num > 0) {
-    return Number(((num / 4) * weight).toFixed(2));
-  }
   const safeScore = Math.max(0, Math.min(100, num));
   return Number(((safeScore * weight) / 100).toFixed(2));
 };

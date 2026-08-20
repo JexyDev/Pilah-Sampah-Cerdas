@@ -25,6 +25,34 @@ export interface StudentInfo {
   namaMitraPenilai: string;
 }
 
+export interface StudentRekapItem {
+  studentId: string;
+  nama: string;
+  nim: string;
+  jenjangPendidikan?: string;
+  jurusan?: string;
+  programStudi?: string;
+  fakultas?: string;
+  kelompok: string;
+  kelurahan?: string;
+  rw?: string;
+  dplNama?: string;
+  subtotalMitra: number;
+  subtotalDpl: number;
+  nilaiAkhir: number;
+  kategori: string;
+  status: string;
+  statusDpl: "BELUM_DINILAI" | "SEDANG_DINILAI" | "SUDAH_DINILAI";
+  isFinalized: boolean;
+  skorDplPerencanaan?: number;
+  skorDplKontribusi?: number;
+  skorDplLogbook?: number;
+  skorDplAnalisis?: number;
+  skorDplOutput?: number;
+  skorDplLaporanAkhir?: number;
+  catatanDpl?: string;
+}
+
 export interface RequirementsInfo {
   attendanceRate: number;
   isAttendanceValid: boolean;
