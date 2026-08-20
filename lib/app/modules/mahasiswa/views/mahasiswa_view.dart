@@ -692,8 +692,8 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
               child: _MenuTileCard(
                   icon: Icons.assignment_rounded,
                   iconAsset: 'assets/icons/activity.png',
-                  title: 'Proker KKN (Pilar 1)',
-                  subtitle: 'Pengajuan & Status Ide',
+                  title: 'Program & Aksi KKN',
+                  subtitle: 'Proker, Logbook, Panen',
                 gradientColors: const [
                   AppColors.primaryBlueLight,
                     AppColors.primaryBlue,
@@ -725,6 +725,22 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                               Navigator.pushNamed(context, AppRoutes.riwayatProgramKerja);
                             },
                           ),
+                          ListTile(
+                            leading: const Icon(Icons.recycling_rounded, color: AppColors.primaryBlue),
+                            title: const Text('Logbook Pemanfaatan (Pilar 2)'),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.pushNamed(context, AppRoutes.logbookPemanfaatan);
+                            },
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.eco_rounded, color: AppColors.primaryGreen),
+                            title: const Text('Catat Panen Hasil (Pilar 3)'),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.pushNamed(context, AppRoutes.catatPanen);
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -745,38 +761,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                 ],
                 onTap: () =>
                     Navigator.pushNamed(context, AppRoutes.pengajuanIzin),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _MenuTileCard(
-                icon: Icons.recycling_rounded,
-                  iconAsset: 'assets/icons/recycle-bin.png',
-                  title: 'Aksi Pemanfaatan (Pilar 2)',
-                subtitle: 'Logbook olah sampah',
-                gradientColors: const [
-                  AppColors.primaryBlueLight,
-                    AppColors.primaryBlue,
-                ],
-                onTap: () => Navigator.pushNamed(context, AppRoutes.logbookPemanfaatan),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MenuTileCard(
-                icon: Icons.eco_rounded,
-                  iconAsset: 'assets/icons/verified-user.png',
-                  title: 'Panen / Hasil (Pilar 3)',
-                subtitle: 'Catat hasil olahan',
-                gradientColors: const [
-                  AppColors.primaryBlueLight,
-                  AppColors.primaryBlue,
-                ],
-                onTap: () => Navigator.pushNamed(context, AppRoutes.catatPanen),
               ),
             ),
           ],
