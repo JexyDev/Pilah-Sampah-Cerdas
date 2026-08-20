@@ -819,8 +819,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
       if (mergedData['actualInZoneMinutes'] != null) {
         final actualMins = num.tryParse(mergedData['actualInZoneMinutes'].toString()) ?? 0;
-        if (actualMins > 0) {
-          _accumulatedSeconds = actualMins.toInt() * 60;
+        final serverSecs = (actualMins * 60).toInt();
+        if (serverSecs > _accumulatedSeconds) {
+          _accumulatedSeconds = serverSecs;
           await _savePersistentTimer();
         }
       }
