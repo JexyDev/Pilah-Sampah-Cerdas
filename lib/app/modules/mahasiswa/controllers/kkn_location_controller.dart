@@ -171,45 +171,15 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   static const _prefKeyTarget = 'kkn_accumulated_target';
 
   Future<void> _loadPersistentTimer() async {
-    final prefs = await SharedPreferences.getInstance();
-    final targetKey = _currentTargetScheduleId != null && _currentTargetScheduleId != 'SCH-TODAY'
-        ? '_$_currentTargetScheduleId'
-        : '';
-    final savedDate = prefs.getString('$_prefKeyDate$targetKey');
-    final today = DateTime.now().toLocal().toString().substring(0, 10);
-
-    if (savedDate != today) {
-      _accumulatedSeconds = 0;
-      await _savePersistentTimer();
-    } else {
-      _accumulatedSeconds = prefs.getInt('$_prefKeyAccumulated$targetKey') ?? 0;
-    }
+    _accumulatedSeconds = 0;
   }
 
   Future<void> _savePersistentTimer() async {
-    final prefs = await SharedPreferences.getInstance();
-    final today = DateTime.now().toLocal().toString().substring(0, 10);
-    final targetKey = _currentTargetScheduleId != null && _currentTargetScheduleId != 'SCH-TODAY'
-        ? '_$_currentTargetScheduleId'
-        : '';
-    await prefs.setString('$_prefKeyDate$targetKey', today);
-    await prefs.setInt('$_prefKeyAccumulated$targetKey', _accumulatedSeconds);
-    if (_currentTargetScheduleId != null) {
-      await prefs.setString(_prefKeyTarget, _currentTargetScheduleId!);
-    }
+    // Rely 100% on Backend DB for duration actual seconds
   }
 
   Future<void> _savePersistentTimerTempValue(int tempSeconds) async {
-    final prefs = await SharedPreferences.getInstance();
-    final today = DateTime.now().toLocal().toString().substring(0, 10);
-    final targetKey = _currentTargetScheduleId != null && _currentTargetScheduleId != 'SCH-TODAY'
-        ? '_$_currentTargetScheduleId'
-        : '';
-    await prefs.setString('$_prefKeyDate$targetKey', today);
-    await prefs.setInt('$_prefKeyAccumulated$targetKey', tempSeconds);
-    if (_currentTargetScheduleId != null) {
-      await prefs.setString(_prefKeyTarget, _currentTargetScheduleId!);
-    }
+    // Rely 100% on Backend DB for duration actual seconds
   }
 
   Future<void> checkActiveSchedule() async {
