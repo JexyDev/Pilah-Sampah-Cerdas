@@ -1479,13 +1479,18 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 </div>
                 <div className="space-y-1.5 divide-y divide-slate-100 dark:divide-slate-800">
                   {grp.students.map((s, sIdx) => {
-                    const isHadir = Boolean(s.record && (s.record.status === "HADIR" || s.record.attendedAt));
+                    const statusUpper = String(s.record?.status || "").toUpperCase();
+                    const isHadir = Boolean(s.record && (statusUpper === "HADIR" || statusUpper === "SELESAI"));
+                    const isBerlangsung = Boolean(s.record && (statusUpper === "BERLANGSUNG" || statusUpper === "DALAM_RADIUS" || statusUpper === "DI_ZONA"));
                     let badgeText = "Standby";
                     let badgeClass = "bg-slate-100 dark:bg-slate-800 text-slate-500 text-[8.5px] px-1 py-0.2 rounded";
 
                     if (isHadir) {
                       badgeText = "Hadir";
                       badgeClass = "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-bold text-[8.5px] px-1 py-0.2 rounded border border-emerald-200 dark:border-emerald-800";
+                    } else if (isBerlangsung) {
+                      badgeText = "Berlangsung";
+                      badgeClass = "bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 font-bold text-[8.5px] px-1 py-0.2 rounded border border-amber-200 dark:border-amber-850";
                     } else if (s.isInsideZone) {
                       badgeText = "Di Zona";
                       badgeClass = "bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-400 font-bold text-[8.5px] px-1 py-0.2 rounded border border-teal-200 dark:border-teal-800";
@@ -2611,9 +2616,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
                       
                       const isLeaveOrPending = isSakit || isIzin || isSakitPending || isIzinPending || isCancelRequested;
+                      const isBerlangsung = statusUpper === "BERLANGSUNG" || statusUpper === "DALAM_RADIUS" || statusUpper === "DI_ZONA";
                       const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
                       const durationMins = isLeaveOrPending ? 0 : calculateDurationMinutes(rec.attendedAt, rec.completedAt);
-                      const isHadir = isAttended && !isOverrideDpl;
+                      const isHadir = (statusUpper === "HADIR" || statusUpper === "SELESAI" || rec.completedAt !== null) && isAttended && !isOverrideDpl;
 
                       const formattedHours = isLeaveOrPending
                         ? "-"
@@ -2655,7 +2661,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               )
                             : `${isAttended ? (durationMins > 0 ? formatDurationUnits(durationMins) : "< 1 Menit") : "0 Menit"} / ${formatHoursToUnits(scheduleTargetHours)}`);
 
-                      const poinDampingan = (isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal) ? 0 : (isAttended ? 10 : 0);
+                      const poinDampingan = (isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal || isBerlangsung) ? 0 : (isHadir ? 10 : 0);
 
                       // Pastel avatar backgrounds
                       const avatarColors = [
@@ -2760,6 +2766,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
                                 <XCircle size={13} className="text-rose-600" />
                                 Tanpa Keterangan
+                              </span>
+                            ) : isBerlangsung ? (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700 animate-pulse">
+                                <Clock size={13} className="text-amber-600 animate-spin" />
+                                <span>Berlangsung</span>
                               </span>
                             ) : isHadir ? (
                               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
