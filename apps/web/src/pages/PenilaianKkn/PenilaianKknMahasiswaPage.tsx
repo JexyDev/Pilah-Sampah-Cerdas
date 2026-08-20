@@ -4,7 +4,7 @@
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
  * Halaman Penilaian Individu Mahasiswa KKN (6 Aspek Akademik DPL)
- * Desain Full Tabel dengan Form Penilaian Berbentuk Pop-up Modal
+ * Desain Full Tabel dengan Form Penilaian Berbentuk Pop-up Modal Ringkas & Efisien
  * 100% Real Database PostgreSQL Integration via Prisma
  */
 
@@ -17,10 +17,8 @@ import {
   Edit3,
   CheckCircle2,
   RefreshCw,
-  X,
   Award,
   Users,
-  Eye,
   FileText,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -112,7 +110,6 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [activeStudent, setActiveStudent] = useState<StudentRekapItem | null>(null);
-  const [isEditMode, setIsEditMode] = useState<boolean>(false);
 
   // Filters & Pagination
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -159,12 +156,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     fetchStudents();
   }, []);
 
-  // Modal Open Handler
-  const handleOpenModal = (student: StudentRekapItem, forceEdit?: boolean) => {
+  // Modal Open Handler (Direct Editable Form)
+  const handleOpenModal = (student: StudentRekapItem) => {
     setActiveStudent(student);
-    const shouldEdit =
-      forceEdit !== undefined ? forceEdit : student.statusDpl !== "SUDAH_DINILAI";
-    setIsEditMode(shouldEdit);
     setFormScores({
       skorDplPerencanaan: student.skorDplPerencanaan || "",
       skorDplKontribusi: student.skorDplKontribusi || "",
@@ -177,6 +171,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  // Cancel & Close Modal Directly without saving
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setActiveStudent(null);
@@ -296,7 +291,6 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     key: keyof typeof formScores,
     val: string
   ) => {
-    if (!isEditMode) return;
     if (val === "") {
       setFormScores((prev) => ({ ...prev, [key]: "" }));
       return;
@@ -305,25 +299,6 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     if (!isNaN(num)) {
       const clamped = Math.max(0, Math.min(100, num));
       setFormScores((prev) => ({ ...prev, [key]: clamped }));
-    }
-  };
-
-  // Reset Form inside Modal
-  const handleResetModalForm = () => {
-    if (activeStudent) {
-      setFormScores({
-        skorDplPerencanaan: activeStudent.skorDplPerencanaan || "",
-        skorDplKontribusi: activeStudent.skorDplKontribusi || "",
-        skorDplLogbook: activeStudent.skorDplLogbook || "",
-        skorDplAnalisis: activeStudent.skorDplAnalisis || "",
-        skorDplOutput: activeStudent.skorDplOutput || "",
-        skorDplLaporanAkhir: activeStudent.skorDplLaporanAkhir || "",
-        catatanDpl: activeStudent.catatanDpl || "",
-      });
-      if (activeStudent.statusDpl === "SUDAH_DINILAI") {
-        setIsEditMode(false);
-      }
-      toast("Nilai dikembalikan ke data sebelumnya", { icon: "↩️" });
     }
   };
 
@@ -382,14 +357,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
       setStudents((prev) =>
         prev.map((s) => (s.studentId === activeStudent.studentId ? updatedStudent : s))
       );
-      setActiveStudent(updatedStudent);
-
-      // Switch to view mode if finished
-      if (newStatusDpl === "SUDAH_DINILAI") {
-        setIsEditMode(false);
-      }
 
       toast.success("Penilaian berhasil disimpan ke database!");
+      handleCloseModal();
     } catch (err: any) {
       console.error("Save error:", err);
       toast.error(err.response?.data?.message || err.message || "Gagal menyimpan penilaian");
@@ -615,7 +585,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         {s.statusDpl === "SEDANG_DINILAI" ? (
                           <button
                             type="button"
-                            onClick={() => handleOpenModal(s, true)}
+                            onClick={() => handleOpenModal(s)}
                             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#009966] hover:bg-[#008055] text-white shadow-2xs transition cursor-pointer"
                           >
                             <Edit3 size={12} />
@@ -624,16 +594,16 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         ) : s.statusDpl === "SUDAH_DINILAI" ? (
                           <button
                             type="button"
-                            onClick={() => handleOpenModal(s, false)}
+                            onClick={() => handleOpenModal(s)}
                             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold border border-[#009966] text-[#009966] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition cursor-pointer"
                           >
-                            <Eye size={12} />
-                            <span>Lihat Nilai</span>
+                            <Edit3 size={12} />
+                            <span>Ubah Nilai</span>
                           </button>
                         ) : (
                           <button
                             type="button"
-                            onClick={() => handleOpenModal(s, true)}
+                            onClick={() => handleOpenModal(s)}
                             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#009966] hover:bg-[#008055] text-white shadow-2xs transition cursor-pointer"
                           >
                             <Award size={12} />
@@ -669,41 +639,19 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden my-auto animate-in zoom-in-95 duration-200">
             
             {/* Modal Header */}
-            <div className="px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-800/30">
-              <div className="flex items-center gap-3 min-w-0">
+            <div className="px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+              <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-[#009966] flex items-center justify-center shrink-0">
                   <GraduationCap size={20} />
                 </div>
-                <div className="min-w-0">
-                  <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 truncate">
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
                     Form Penilaian Individu Mahasiswa
                   </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     6 Aspek Akademik Dosen Pendamping Lapangan (DPL)
                   </p>
                 </div>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                {activeStudent.statusDpl === "SUDAH_DINILAI" && (
-                  <span
-                    className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
-                      isEditMode
-                        ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/60"
-                        : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
-                    }`}
-                  >
-                    {isEditMode ? "Mode Edit" : "Mode Lihat"}
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
-                  title="Tutup Modal"
-                >
-                  <X size={18} />
-                </button>
               </div>
             </div>
 
@@ -780,24 +728,17 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                               {aspek.bobot}%
                             </td>
                             <td className="py-2.5 px-3 text-center">
-                              <div
-                                className={`inline-flex items-center gap-1 border rounded-xl px-2 py-1 transition ${
-                                  isEditMode
-                                    ? "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-2xs focus-within:ring-2 focus-within:ring-[#009966]/20 focus-within:border-[#009966]"
-                                    : "bg-slate-100/70 dark:bg-slate-800/70 dark:bg-slate-800/50 border-slate-200/60 dark:border-slate-800 text-slate-600 dark:text-slate-400"
-                                }`}
-                              >
+                              <div className="inline-flex items-center gap-1 border rounded-xl px-2 py-1 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-2xs focus-within:ring-2 focus-within:ring-[#009966]/20 focus-within:border-[#009966] transition">
                                 <input
                                   type="number"
                                   min={0}
                                   max={100}
-                                  disabled={!isEditMode}
                                   value={val}
                                   onChange={(e) =>
                                     handleScoreChange(aspek.key, e.target.value)
                                   }
                                   placeholder="0"
-                                  className="w-10 text-center text-xs font-black text-slate-900 dark:text-slate-100 bg-transparent focus:outline-none disabled:cursor-not-allowed"
+                                  className="w-10 text-center text-xs font-black text-slate-900 dark:text-slate-100 bg-transparent focus:outline-none"
                                 />
                                 <span className="text-[10px] text-slate-400 font-medium">/ 100</span>
                               </div>
@@ -857,7 +798,6 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                 </label>
                 <textarea
                   rows={3}
-                  disabled={!isEditMode}
                   value={formScores.catatanDpl}
                   onChange={(e) =>
                     setFormScores((prev) => ({
@@ -866,69 +806,43 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                     }))
                   }
                   placeholder="Tuliskan catatan apresiasi, evaluasi, atau rekomendasi perbaikan untuk mahasiswa..."
-                  className={`w-full border rounded-2xl p-3.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none transition resize-none ${
-                    isEditMode
-                      ? "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966]"
-                      : "bg-slate-100/60 dark:bg-slate-800/60 dark:bg-slate-800/30 border-slate-200/60 dark:border-slate-800 cursor-not-allowed"
-                  }`}
+                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] rounded-2xl p-3.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none transition resize-none"
                 />
               </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="px-5 sm:px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between gap-3">
+            {/* Modal Footer (Clean Action Bar) */}
+            <div className="px-5 sm:px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={handleCloseModal}
-                className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                className="px-4 py-2.5 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
               >
-                Tutup
+                Batal
               </button>
 
-              <div className="flex items-center gap-2">
-                {!isEditMode && activeStudent.statusDpl === "SUDAH_DINILAI" ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsEditMode(true)}
-                    className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#009966] hover:bg-[#008055] text-white shadow-sm transition flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Edit3 size={14} />
-                    <span>Ubah Nilai</span>
-                  </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={handleSave}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#009966] hover:bg-[#008055] text-white shadow-sm transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Menyimpan...</span>
+                  </>
                 ) : (
                   <>
-                    <button
-                      type="button"
-                      onClick={handleResetModalForm}
-                      className="px-4 py-2.5 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="button"
-                      disabled={saving}
-                      onClick={handleSave}
-                      className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#009966] hover:bg-[#008055] text-white shadow-sm transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                    >
-                      {saving ? (
-                        <>
-                          <Loader2 size={14} className="animate-spin" />
-                          <span>Menyimpan...</span>
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 size={14} />
-                          <span>
-                            {activeStudent.statusDpl === "SUDAH_DINILAI"
-                              ? "Simpan Perubahan"
-                              : "Simpan Nilai"}
-                          </span>
-                        </>
-                      )}
-                    </button>
+                    <CheckCircle2 size={14} />
+                    <span>
+                      {activeStudent.statusDpl === "SUDAH_DINILAI"
+                        ? "Simpan Perubahan"
+                        : "Simpan Nilai"}
+                    </span>
                   </>
                 )}
-              </div>
+              </button>
             </div>
           </div>
         </div>
