@@ -2115,31 +2115,17 @@ export class KknService {
     // Calculate precise total seconds in zone from studentLocation logs for this schedule window
     let actualInZoneSeconds = 0;
     if (activeSchedule) {
-      try {
-        const schedDate = activeSchedule.date ? new Date(activeSchedule.date) : new Date();
-        const year = schedDate.getFullYear();
-        const month = schedDate.getMonth();
-        const day = schedDate.getDate();
+      if (attendanceForActiveSchedule) {
+        try {
+          const queryStartLogs = new Date(attendanceForActiveSchedule.attendedAt);
 
-        let startHour = 0;
-        let startMin = 0;
-        if (activeSchedule?.time && activeSchedule.time.includes("-")) {
-          const startParts = activeSchedule.time.split("-")[0].trim().replace(".", ":").split(":");
-          if (startParts.length >= 2) {
-            startHour = parseInt(startParts[0], 10);
-            startMin = parseInt(startParts[1], 10);
-          }
-        }
-        const scheduleStartDateTime = new Date(year, month, day, startHour, startMin, 0, 0);
-        const queryStartLogs = new Date(scheduleStartDateTime.getTime() - 30 * 60 * 1000);
-
-        const logs = await prisma.studentLocation.findMany({
-          where: {
-            studentId: { in: studentUserIds },
-            recordedAt: { gte: queryStartLogs },
-          },
-          orderBy: { recordedAt: "asc" },
-        });
+          const logs = await prisma.studentLocation.findMany({
+            where: {
+              studentId: { in: studentUserIds },
+              recordedAt: { gte: queryStartLogs },
+            },
+            orderBy: { recordedAt: "asc" },
+          });
         if (logs.length >= 2) {
           const bufferMeters = (ruleConfigs as any).geofenceBufferMeters || 15.0;
           const geofence = {
@@ -2176,7 +2162,10 @@ export class KknService {
       } catch (_) {
         // Fallback jika query bermasalah
       }
+    } else {
+      actualInZoneSeconds = 0;
     }
+  }
     if (actualInZoneSeconds === 0 && attendanceForActiveSchedule?.actualInZoneMinutes) {
       actualInZoneSeconds = attendanceForActiveSchedule.actualInZoneMinutes * 60;
     }

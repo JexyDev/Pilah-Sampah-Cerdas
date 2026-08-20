@@ -218,7 +218,10 @@ export class KknAttendanceService {
           polygon: sch.polygon,
         };
 
-        const durationInZone = calculateInZoneDurationMinutes(todayLogs, geofence, bufferMeters);
+        const scheduleLogs = existingAtt?.attendedAt
+          ? todayLogs.filter((l) => new Date(l.recordedAt) >= new Date(existingAtt.attendedAt))
+          : [];
+        const durationInZone = calculateInZoneDurationMinutes(scheduleLogs, geofence, bufferMeters);
         inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
 
         // Cek posisi saat ini menggunakan buffer dinamis
