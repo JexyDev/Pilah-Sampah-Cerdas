@@ -375,7 +375,7 @@ export default function RekapSetoran() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80">
+                <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80">
                   <th className="py-3.5 px-4 rounded-l-2xl">ID Transaksi</th>
                   <th className="py-3.5 px-4">Nama Warga</th>
                   <th className="py-3.5 px-4">Rukun Warga</th>
@@ -392,7 +392,7 @@ export default function RekapSetoran() {
                     <tr
                       key={item.id}
                       onClick={() => setSelectedDeposit(item)}
-                      className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
+                      className="hover:bg-slate-50/90 dark:bg-slate-800/90 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
                     >
                       {/* ID */}
                       <td className="py-3.5 px-4 font-mono font-black text-slate-900 dark:text-slate-100 tracking-tight group-hover:text-[#009966] dark:group-hover:text-emerald-400">
@@ -640,7 +640,7 @@ export default function RekapSetoran() {
             </div>
 
             {/* Modal Action Footer */}
-            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 flex justify-end">
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 flex justify-end">
               <button
                 onClick={() => setSelectedDeposit(null)}
                 className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black transition cursor-pointer"

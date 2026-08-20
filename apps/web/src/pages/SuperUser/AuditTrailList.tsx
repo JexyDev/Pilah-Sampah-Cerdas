@@ -413,7 +413,7 @@ export const AuditTrailList: React.FC = () => {
                 placeholder="Cari nama pengguna, email, atau aksi..."
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-[#009966] bg-slate-50/50 dark:bg-slate-800"
+                className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-[#009966] bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800"
               />
             </div>
           </div>
@@ -502,7 +502,7 @@ export const AuditTrailList: React.FC = () => {
             <>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-xs text-left">
-                  <thead className="bg-slate-50/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
+                  <thead className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                     <tr>
                       <th className="py-3.5 px-4">Waktu Kejadian</th>
                       <th className="py-3.5 px-4">Pelaku Aktivitas</th>
@@ -539,7 +539,7 @@ export const AuditTrailList: React.FC = () => {
                             key={l.id}
                             onClick={() => setSelectedLog(l)}
                             className={`transition-colors cursor-pointer ${
-                              isSelected ? "bg-emerald-50/60 dark:bg-emerald-950/40 font-semibold" : "hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
+                              isSelected ? "bg-emerald-50/60 dark:bg-emerald-950/40 font-semibold" : "hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50"
                             }`}
                           >
                             {/* Waktu Kejadian */}
@@ -694,7 +694,7 @@ export const AuditTrailList: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="text-center text-xs text-slate-400 dark:text-slate-500 font-semibold py-16 bg-slate-50/60 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 space-y-2">
+            <div className="text-center text-xs text-slate-400 dark:text-slate-500 font-semibold py-16 bg-slate-50/60 dark:bg-slate-800/60 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 space-y-2">
               <Sparkles className="mx-auto text-slate-300 dark:text-slate-600" size={28} />
               <p>Pilih salah satu baris log pada tabel untuk melihat detail perubahan data.</p>
             </div>

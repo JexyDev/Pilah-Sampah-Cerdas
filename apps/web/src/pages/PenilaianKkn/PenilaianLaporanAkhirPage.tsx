@@ -27,6 +27,8 @@ import {
   Save,
   Printer,
   Award,
+  RefreshCw,
+  Folder,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -42,6 +44,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
   const [students, setStudents] = useState<LaporanAkhirItem[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [kelompokFilter, setKelompokFilter] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10;
 
@@ -86,6 +89,15 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
     fetchData();
   }, []);
 
+  // Unique Kelompok List
+  const uniqueKelompokList = useMemo(() => {
+    const set = new Set<string>();
+    students.forEach((s) => {
+      if (s.kelompok) set.add(s.kelompok);
+    });
+    return Array.from(set).sort();
+  }, [students]);
+
   // Filtered Data
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
@@ -100,9 +112,12 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
         (statusFilter === "SUDAH" && s.status === "Sudah Dinilai") ||
         (statusFilter === "BELUM" && s.status === "Belum Dinilai");
 
-      return matchSearch && matchStatus;
+      const matchKelompok =
+        kelompokFilter === "ALL" || s.kelompok === kelompokFilter;
+
+      return matchSearch && matchStatus && matchKelompok;
     });
-  }, [students, searchQuery, statusFilter]);
+  }, [students, searchQuery, statusFilter, kelompokFilter]);
 
   // Statistics Calculation
   const totalMahasiswa = students.length;
@@ -121,7 +136,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter]);
+  }, [searchQuery, statusFilter, kelompokFilter]);
 
   // Open Assessment Modal
   const handleOpenAssessment = (student: LaporanAkhirItem, editMode: boolean = false) => {
@@ -148,23 +163,19 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
   // Handle Score Aspect Change
   const handleAspectChange = (aspect: keyof typeof aspectScores, val: number) => {
     const safeVal = Math.max(0, Math.min(100, val));
-    const nextScores = { ...aspectScores, [aspect]: safeVal };
-    setAspectScores(nextScores);
-    // Average
-    const avg = Math.round(
-      (nextScores.sistematika + nextScores.analisis + nextScores.dampak + nextScores.rekomendasi) / 4
-    );
-    setScoreInput(avg);
+    setAspectScores((prev) => {
+      const updated = { ...prev, [aspect]: safeVal };
+      const avg = Math.round(
+        (updated.sistematika + updated.analisis + updated.dampak + updated.rekomendasi) / 4
+      );
+      setScoreInput(avg);
+      return updated;
+    });
   };
 
-  // Save Score Assessment
+  // Save Assessment to Backend
   const handleSaveScore = async () => {
     if (!selectedStudent) return;
-    if (isNaN(scoreInput) || scoreInput < 0 || scoreInput > 100) {
-      toast.error("Nilai harus berupa angka di rentang 0 - 100");
-      return;
-    }
-
     setSaving(true);
     try {
       await penilaianKknApiService.saveLaporanAkhirScore(
@@ -173,25 +184,27 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
         catatanInput
       );
 
-      // Local optimistic update
+      toast.success(`Nilai laporan akhir untuk ${selectedStudent.nama} berhasil disimpan!`);
+
+      // Update local state
       setStudents((prev) =>
-        prev.map((s) =>
-          s.studentId === selectedStudent.studentId
-            ? {
-                ...s,
-                status: "Sudah Dinilai",
-                nilai: scoreInput,
-                catatan: catatanInput,
-              }
-            : s
-        )
+        prev.map((s) => {
+          if (s.studentId === selectedStudent.studentId) {
+            return {
+              ...s,
+              nilai: scoreInput,
+              status: "Sudah Dinilai",
+              catatan: catatanInput,
+            };
+          }
+          return s;
+        })
       );
 
-      toast.success(`Nilai laporan akhir untuk ${selectedStudent.nama} berhasil disimpan!`);
       setIsAssessmentModalOpen(false);
     } catch (err: any) {
-      console.error("Gagal menyimpan nilai laporan:", err);
-      toast.error(err.response?.data?.message || "Gagal menyimpan penilaian laporan");
+      console.error("Gagal menyimpan nilai laporan akhir:", err);
+      toast.error(err.response?.data?.message || "Gagal menyimpan nilai laporan akhir");
     } finally {
       setSaving(false);
     }
@@ -287,32 +300,76 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 space-y-5 text-slate-800 dark:text-slate-100 max-w-[1400px] mx-auto min-h-screen">
-      {/* Top Section: Header, Subtitle, Search/Filter & KPI Summary Cards */}
+    <div className="min-h-[calc(100vh-64px)] bg-[#f8fafc] dark:bg-slate-950 p-4 sm:p-6 lg:p-8 space-y-6 text-slate-800 dark:text-slate-100 max-w-[1600px] mx-auto">
+      {/* Header Halaman */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            Penilaian Laporan Akhir
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Evaluasi kualitas sistematika, analisis masalah, output, dan refleksi laporan akhir mahasiswa KKN
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={fetchData}
+          disabled={loading}
+          className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all shadow-2xs cursor-pointer self-start sm:self-auto"
+        >
+          <RefreshCw size={13} className={loading ? "animate-spin text-[#009966]" : "text-[#009966]"} />
+          <span>Segarkan Data</span>
+        </button>
+      </div>
+
+      {/* Top Section: Search/Filter & KPI Summary Cards */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         {/* Left: Search & Filter */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
           {/* Search Box */}
-          <div className="relative min-w-[260px] sm:min-w-[280px]">
+          <div className="relative min-w-[240px] sm:min-w-[280px] flex-1 sm:flex-initial">
             <Search
-              size={17}
+              size={16}
               className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
             />
             <input
               type="text"
-              placeholder="Cari mahasiswa..."
+              placeholder="Cari mahasiswa, NIM, judul..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition shadow-2xs placeholder:text-slate-400"
+              className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] transition shadow-2xs placeholder:text-slate-400"
             />
           </div>
 
+          {/* Filter Kelompok */}
+          <div className="relative min-w-[170px]">
+            <Folder size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <select
+              value={kelompokFilter}
+              onChange={(e) => setKelompokFilter(e.target.value)}
+              className="w-full pl-9 pr-8 py-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] transition shadow-2xs cursor-pointer appearance-none"
+            >
+              <option value="ALL">Semua Kelompok</option>
+              {uniqueKelompokList.map((k) => (
+                <option key={k} value={k}>
+                  {k}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+              </svg>
+            </div>
+          </div>
+
           {/* Filter Status Dropdown */}
-          <div className="relative">
+          <div className="relative min-w-[150px]">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full sm:w-auto px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition shadow-2xs cursor-pointer appearance-none pr-9"
+              className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] transition shadow-2xs cursor-pointer appearance-none pr-9"
             >
               <option value="ALL">Semua Status</option>
               <option value="SUDAH">Sudah Dinilai</option>
@@ -327,7 +384,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
         </div>
 
         {/* Right: 3 KPI Cards matching exact reference UI */}
-        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap shrink-0">
           {/* Card 1: Total Mahasiswa */}
           <div className="flex-1 sm:flex-initial min-w-[130px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-2.5 sm:px-3.5 sm:py-2.5 flex items-center gap-3 shadow-2xs">
             <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
@@ -352,7 +409,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
               <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block whitespace-nowrap">
                 Sudah Dinilai
               </span>
-              <span className="text-xl sm:text-2xl font-black text-emerald-700 dark:text-emerald-400 leading-tight">
+              <span className="text-xl sm:text-2xl font-black text-[#009966] dark:text-emerald-400 leading-tight">
                 {sudahDinilaiCount}
               </span>
             </div>
@@ -379,24 +436,25 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center gap-3 text-slate-400">
-            <Loader2 className="animate-spin text-teal-600" size={32} />
+            <Loader2 className="animate-spin text-[#009966]" size={32} />
             <span className="text-xs font-semibold">Memuat daftar laporan akhir mahasiswa...</span>
           </div>
         ) : filteredStudents.length === 0 ? (
           <EmptyTableState
             entityName="Laporan Akhir Mahasiswa"
-            isSearch={!!searchQuery || statusFilter !== "ALL"}
+            isSearch={!!searchQuery || statusFilter !== "ALL" || kelompokFilter !== "ALL"}
             searchQuery={searchQuery}
             onResetSearch={() => {
               setSearchQuery("");
               setStatusFilter("ALL");
+              setKelompokFilter("ALL");
             }}
           />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs sm:text-sm text-slate-700 dark:text-slate-300 border-collapse">
               <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-extrabold text-[12px] sm:text-[13px] bg-slate-50/50 dark:bg-slate-900/50">
+                <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-extrabold text-[12px] sm:text-[13px] bg-slate-50/50 dark:bg-slate-800/50">
                   <th className="py-4 px-4 w-12 text-center">No.</th>
                   <th className="py-4 px-4 font-bold">NIM</th>
                   <th className="py-4 px-4 font-bold">Nama Mahasiswa</th>
@@ -454,7 +512,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => handleOpenPdf(st)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-400 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-400/80 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition cursor-pointer"
                           >
                             <FileText size={14} className="text-blue-500" />
                             <span>Lihat PDF</span>
@@ -469,12 +527,14 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                       {/* 7. Status */}
                       <td className="py-3.5 px-4 text-center">
                         {isGraded ? (
-                          <span className="inline-block px-3 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                            Sudah Dinilai
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#009966]"></span>
+                            <span>Sudah Dinilai</span>
                           </span>
                         ) : (
-                          <span className="inline-block px-3 py-1 rounded-md text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                            Belum Dinilai
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                            <span>Belum Dinilai</span>
                           </span>
                         )}
                       </td>
@@ -482,7 +542,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                       {/* 8. Nilai */}
                       <td className="py-3.5 px-4 text-center">
                         {isGraded && st.nilai !== null ? (
-                          <span className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
+                          <span className="font-extrabold text-sm text-[#009966] dark:text-emerald-400">
                             {st.nilai}
                           </span>
                         ) : (
@@ -490,13 +550,13 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                         )}
                       </td>
 
-                      {/* 9. Aksi: 'Lihat Nilai' jika sudah dinilai, 'Beri Nilai' jika belum dinilai */}
+                      {/* 9. Aksi */}
                       <td className="py-3.5 px-4 text-center">
                         {isGraded ? (
                           <button
                             type="button"
                             onClick={() => handleOpenAssessment(st, false)}
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-400 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition cursor-pointer w-28 shadow-2xs"
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border border-[#009966] text-[#009966] bg-white hover:bg-emerald-50 dark:bg-slate-900 dark:hover:bg-emerald-950/30 transition cursor-pointer w-28 shadow-2xs"
                           >
                             <Eye size={14} />
                             <span>Lihat Nilai</span>
@@ -505,7 +565,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => handleOpenAssessment(st, true)}
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-teal-600 hover:bg-teal-700 text-white transition cursor-pointer w-28 shadow-2xs"
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-[#009966] hover:bg-[#008055] text-white transition cursor-pointer w-28 shadow-2xs"
                           >
                             <Edit3 size={14} />
                             <span>Beri Nilai</span>
@@ -543,9 +603,9 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
             aria-modal="true"
           >
             {/* Header Modal */}
-            <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 flex items-center justify-between">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/70 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center font-black text-base shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-[#009966] text-white flex items-center justify-center font-black text-base shadow-sm">
                   <Award size={20} />
                 </div>
                 <div>
@@ -624,7 +684,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     Rubrik Penilaian Aspek (Bobot 100%)
                   </span>
-                  <span className="text-xs font-black text-teal-600 dark:text-teal-400">
+                  <span className="text-xs font-black text-[#009966] dark:text-emerald-400">
                     Skor Kumulatif: {scoreInput} / 100
                   </span>
                 </div>
@@ -646,7 +706,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                     disabled={!isEditMode}
                     value={aspectScores.sistematika}
                     onChange={(e) => handleAspectChange("sistematika", Number(e.target.value))}
-                    className="w-16 px-2 py-1.5 text-center font-bold text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-16 px-2 py-1.5 text-center font-bold text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009966]"
                   />
                 </div>
 
@@ -667,7 +727,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                     disabled={!isEditMode}
                     value={aspectScores.analisis}
                     onChange={(e) => handleAspectChange("analisis", Number(e.target.value))}
-                    className="w-16 px-2 py-1.5 text-center font-bold text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-16 px-2 py-1.5 text-center font-bold text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009966]"
                   />
                 </div>
 
@@ -688,7 +748,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                     disabled={!isEditMode}
                     value={aspectScores.dampak}
                     onChange={(e) => handleAspectChange("dampak", Number(e.target.value))}
-                    className="w-16 px-2 py-1.5 text-center font-bold text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-16 px-2 py-1.5 text-center font-bold text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009966]"
                   />
                 </div>
 
@@ -709,7 +769,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                     disabled={!isEditMode}
                     value={aspectScores.rekomendasi}
                     onChange={(e) => handleAspectChange("rekomendasi", Number(e.target.value))}
-                    className="w-16 px-2 py-1.5 text-center font-bold text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-16 px-2 py-1.5 text-center font-bold text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009966]"
                   />
                 </div>
               </div>
@@ -725,13 +785,13 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                   placeholder="Berikan masukan atau catatan konstruktif untuk laporan mahasiswa..."
                   value={catatanInput}
                   onChange={(e) => setCatatanInput(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 resize-none placeholder:text-slate-400"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] resize-none placeholder:text-slate-400"
                 />
               </div>
             </div>
 
             {/* Footer Modal */}
-            <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between gap-3">
+            <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between gap-3">
               <div>
                 {!isEditMode && (
                   <button
@@ -770,7 +830,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                       type="button"
                       onClick={handleSaveScore}
                       disabled={saving}
-                      className="px-5 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                      className="px-5 py-2 rounded-xl text-xs font-bold bg-[#009966] hover:bg-[#008055] text-white transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
                     >
                       {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                       <span>Simpan Penilaian</span>
@@ -802,7 +862,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
             aria-modal="true"
           >
             {/* Header Modal */}
-            <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 flex items-center justify-between">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/70 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-base shadow-sm">
                   <FileText size={20} />
@@ -854,7 +914,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                   <iframe
                     src={selectedStudent.fileUrl}
                     title="Dokumen Laporan Akhir"
-                    className="w-full h-[55vh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white"
+                    className="w-full h-[55vh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                   />
                 </div>
               ) : (
@@ -873,7 +933,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
             </div>
 
             {/* Footer Modal */}
-            <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
+            <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
               <span className="text-xs text-slate-500">
                 {selectedStudent.fileUrl ? "Status: Dokumen Tersedia" : "Status: Berkas Kosong"}
               </span>
@@ -884,7 +944,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                     handleOpenAssessment(selectedStudent, selectedStudent.status === "Belum Dinilai");
                     setIsPdfModalOpen(false);
                   }}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-[#009966] hover:bg-[#008055] text-white transition flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <Award size={14} />
                   <span>{selectedStudent.status === "Sudah Dinilai" ? "Lihat Nilai" : "Beri Nilai Laporan"}</span>

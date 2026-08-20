@@ -344,7 +344,7 @@ const ResiduDashboard: React.FC = () => {
                   const max = Number(j.maxCapacityLiter);
                   const percentage = max > 0 ? (vol/max)*100 : 0;
                   return (
-                    <div key={j.id} className="p-4 border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl flex justify-between items-center shadow-sm">
+                    <div key={j.id} className="p-4 border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800/50 rounded-xl flex justify-between items-center shadow-sm">
                       <div>
                         <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{j.rtRw?.name}</p>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">QR: {j.qrCode}</p>
@@ -441,7 +441,7 @@ const ResiduDashboard: React.FC = () => {
               summary.recentViolations.map((v: any) => (
                 <div
                   key={v.id}
-                  className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col gap-2 text-xs"
+                  className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800/50 flex flex-col gap-2 text-xs"
                 >
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-slate-800 dark:text-slate-200">{v.wargaName}</span>
@@ -471,7 +471,7 @@ const ResiduDashboard: React.FC = () => {
       {showViolationModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
-            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
               <h3 className="font-extrabold text-lg flex items-center gap-2 text-on-surface">
                 <ShieldAlert className="text-red-600 w-5 h-5" />
                 Form Laporan Ketidakpatuhan
@@ -547,7 +547,7 @@ const ResiduDashboard: React.FC = () => {
               </div>
 
               {/* Foto Bukti Pelanggaran */}
-              <div className="border border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 flex flex-col gap-3">
+              <div className="border border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col gap-3">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Foto Bukti Pelanggaran *</span>
                   <button
@@ -613,7 +613,7 @@ const ResiduDashboard: React.FC = () => {
       {showSubmitLogModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-xl overflow-hidden border border-outline-variant animate-in zoom-in-95 duration-200">
-            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
               <h3 className="font-extrabold text-lg flex items-center gap-2 text-on-surface">
                 <CheckCircle className="text-indigo-600 w-5 h-5" />
                 Validasi Berat Aktual Setoran
@@ -694,7 +694,7 @@ const ResiduDashboard: React.FC = () => {
               </div>
 
               <div className="flex flex-col gap-1">
-                <div className="border border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 flex flex-col gap-3">
+                <div className="border border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col gap-3">
                   <div className="flex justify-between items-center">
                     <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Foto Dokumentasi Riil *</span>
                     <button

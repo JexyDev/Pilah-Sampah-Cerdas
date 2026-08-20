@@ -60,7 +60,7 @@ const ROLE_COLORS: Record<string, string> = {
   PEMIMPIN: "bg-orange-100 text-orange-800 border-orange-200",
   PANITIA_TASKFORCE: "bg-yellow-100 text-yellow-800 border-yellow-200",
   PETUGAS_RESIDU: "bg-red-100 text-red-800 border-red-200",
-  WARGA: "bg-slate-100 text-slate-800 border-slate-200",
+  WARGA: "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700",
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -217,7 +217,7 @@ const RolePermissionPage: React.FC = () => {
               className={`w-full text-left px-3 py-2.5 rounded-xl border text-sm font-semibold transition cursor-pointer flex items-center justify-between gap-2 ${
                 selectedRoleId === role.roleId
                   ? "bg-slate-800 text-white border-slate-700 shadow-md"
-                  : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                  : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
               }`}
             >
               <span className="truncate">{role.roleName}</span>
@@ -237,7 +237,7 @@ const RolePermissionPage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <span
                     className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
-                      ROLE_COLORS[selectedRole.roleName] ?? "bg-slate-100 text-slate-800 border-slate-200"
+                      ROLE_COLORS[selectedRole.roleName] ?? "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700"
                     }`}
                   >
                     {selectedRole.roleName}
@@ -280,7 +280,7 @@ const RolePermissionPage: React.FC = () => {
                       {/* Group Header */}
                       <button
                         onClick={() => toggleGroup(group)}
-                        className="w-full grid grid-cols-[1fr_repeat(4,_80px)] px-5 py-2.5 bg-slate-100/70 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                        className="w-full grid grid-cols-[1fr_repeat(4,_80px)] px-5 py-2.5 bg-slate-100/70 dark:bg-slate-800/70 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                       >
                         <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-500 uppercase tracking-wider">
                           {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
@@ -303,7 +303,7 @@ const RolePermissionPage: React.FC = () => {
                           return (
                             <div
                               key={resource.key}
-                              className="grid grid-cols-[1fr_repeat(4,_80px)] px-5 py-3 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition items-center"
+                              className="grid grid-cols-[1fr_repeat(4,_80px)] px-5 py-3 hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/80 transition items-center"
                             >
                               <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{resource.label}</span>
                               {PERMISSION_COLS.map((col) => {

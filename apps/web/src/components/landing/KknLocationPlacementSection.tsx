@@ -26,7 +26,7 @@ export const KknLocationPlacementSection: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Column: Horizontal Bar Chart (Terurut Ascending 38 -> 163) */}
-          <div className="lg:col-span-7 bg-slate-50/70 dark:bg-slate-800/60 p-6 md:p-8 rounded-3xl border border-slate-200/70 dark:border-slate-700 shadow-sm space-y-6">
+          <div className="lg:col-span-7 bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800/60 p-6 md:p-8 rounded-3xl border border-slate-200/70 dark:border-slate-700 shadow-sm space-y-6">
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 text-center uppercase tracking-wider mb-6">
               Sebaran Mahasiswa per Kelurahan
             </h3>
@@ -58,7 +58,7 @@ export const KknLocationPlacementSection: React.FC = () => {
 
           {/* Right Column: Rekapitulasi Data (Dago 10 Klp/10 DPL, Total 38 Klp/38 DPL) */}
           <div className="lg:col-span-5 space-y-4">
-            <div className="bg-slate-50/70 dark:bg-slate-800/60 rounded-3xl border border-slate-200/70 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div className="bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800/60 rounded-3xl border border-slate-200/70 dark:border-slate-700 shadow-sm overflow-hidden">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-[#1D3B2F] dark:bg-slate-800 text-white text-xs font-bold uppercase tracking-wider">
@@ -72,7 +72,7 @@ export const KknLocationPlacementSection: React.FC = () => {
                   {KKN_DISTRIBUTION_DATA.map((item: KelurahanDistribution, idx: number) => (
                     <tr
                       key={item.id}
-                      className={idx % 2 === 1 ? "bg-slate-100/50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-700/50" : "bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-700/50"}
+                      className={idx % 2 === 1 ? "bg-slate-100/50 dark:bg-slate-800/50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-700/50" : "bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-700/50"}
                     >
                       <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100">{item.name}</td>
                       <td className="py-3 px-3 text-center font-bold">{item.mhsCount}</td>

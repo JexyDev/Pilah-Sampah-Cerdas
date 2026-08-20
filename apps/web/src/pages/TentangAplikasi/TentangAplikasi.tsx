@@ -107,7 +107,7 @@ const Informasi: React.FC = () => {
           title: "Pengguna Sistem BERSEKA",
           desc: "Panduan umum operasional dan standar prosedur pemilahan sampah terpadu BERSEKA (Bersih, Sehat, Kampung Asri) di Kecamatan Coblong.",
           icon: Users,
-          color: "bg-slate-50 text-slate-700 border-slate-200",
+          color: "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700",
         };
     }
   };

@@ -410,7 +410,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
       {/* 4. READ-ONLY DATASET CLASSIFICATION TABLE */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden space-y-4">
         {/* Table Control Header */}
-        <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
+        <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-[#009966] flex items-center justify-center font-bold shrink-0">
               <Smartphone size={20} />
@@ -515,7 +515,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                 />
               ) : (
                 paginatedDataset.map((item, index) => (
-                  <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60 transition-colors">
+                  <tr key={item.id} className="hover:bg-slate-50/60 dark:bg-slate-800/60 dark:hover:bg-slate-800/60 transition-colors">
                     {/* Number (No. Kolom Paling Kiri) */}
                     <td className="py-4 px-4 text-center font-black text-slate-500 text-xs">
                       {(currentPage - 1) * itemsPerPage + index + 1}

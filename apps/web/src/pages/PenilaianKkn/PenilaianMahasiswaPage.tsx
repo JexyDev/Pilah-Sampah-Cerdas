@@ -174,7 +174,7 @@ export const PenilaianMahasiswaPage: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
               <thead>
-                <tr className="bg-slate-50/90 text-slate-500 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
+                <tr className="bg-slate-50/90 dark:bg-slate-800/90 text-slate-500 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4 min-w-[200px]">Mahasiswa & NIM</th>
                   <th className="py-3.5 px-4 w-40">Kelompok & Prodi</th>
@@ -189,7 +189,7 @@ export const PenilaianMahasiswaPage: React.FC = () => {
                   const isSaving = savingStudentId === st.id;
 
                   return (
-                    <tr key={st.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors">
+                    <tr key={st.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/80 transition-colors">
                       <td className="py-3.5 px-4 text-center font-bold text-slate-500">
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>

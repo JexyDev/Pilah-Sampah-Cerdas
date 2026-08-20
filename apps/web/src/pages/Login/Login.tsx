@@ -216,7 +216,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
       <div
-        className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200"
+        className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Banner - Emerald Green #009966 */}
@@ -244,7 +244,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
         </div>
 
         {/* 3-Step Progress Bar */}
-        <div className="w-full h-1.5 bg-slate-100">
+        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800">
           <div
             className="h-full bg-emerald-400 transition-all duration-500"
             style={{ width: step === "phone" ? "33%" : step === "otp" ? "66%" : "100%" }}
@@ -272,7 +272,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                 </label>
 
                 {/* Rules Guidance Card matching reference image 1:1 */}
-                <div className="text-[11px] text-slate-500 font-medium bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80 space-y-1.5">
+                <div className="text-[11px] text-slate-500 font-medium bg-slate-50/80 dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200/80 space-y-1.5">
                   <p className="flex items-center gap-1.5 text-slate-600 font-semibold">
                     <span className="text-emerald-600 font-extrabold">✓</span> Hanya angka — format nomor Indonesia (+62/08/628)
                   </p>
@@ -288,7 +288,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                 <div className="relative">
                   <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={19} />
                   <input
-                    className={`w-full pl-11 pr-4 h-13 bg-white border ${phoneError ? "border-rose-500 focus:ring-rose-500" : "border-slate-300 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl text-base font-bold text-slate-900 outline-none transition-all`}
+                    className={`w-full pl-11 pr-4 h-13 bg-white dark:bg-slate-800 border ${phoneError ? "border-rose-500 focus:ring-rose-500" : "border-slate-300 dark:border-slate-700 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl text-base font-bold text-slate-900 dark:text-slate-100 outline-none transition-all`}
                     placeholder="08123456789 atau +6281234567890"
                     type="tel"
                     inputMode="numeric"
@@ -356,7 +356,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                   <input
                     key={i}
                     ref={(el) => { otpRefs.current[i] = el; }}
-                    className={`w-12 h-14 text-center text-2xl font-black border-2 ${otpError ? "border-rose-400" : "border-slate-200 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl bg-slate-50 focus:bg-white text-slate-900 outline-none transition-all shadow-2xs`}
+                    className={`w-12 h-14 text-center text-2xl font-black border-2 ${otpError ? "border-rose-400" : "border-slate-200 dark:border-slate-700 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-700 text-slate-900 dark:text-slate-100 outline-none transition-all shadow-2xs`}
                     type="text"
                     inputMode="numeric"
                     maxLength={1}
@@ -427,7 +427,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
               </div>
 
               {/* Ketentuan password */}
-              <div className="text-[11px] text-slate-500 bg-slate-50/80 border border-slate-200/80 rounded-2xl p-4 space-y-1.5">
+              <div className="text-[11px] text-slate-500 bg-slate-50/80 dark:bg-slate-800/80 border border-slate-200/80 rounded-2xl p-4 space-y-1.5">
                 <p className="font-extrabold text-slate-800 uppercase tracking-wider mb-1">Ketentuan Kata Sandi:</p>
                 <p className={newPassword.length >= PASSWORD_MIN_LEN ? "text-emerald-700 font-bold" : "text-slate-600 font-medium"}>
                   {newPassword.length >= PASSWORD_MIN_LEN ? "✓" : "○"} Minimal {PASSWORD_MIN_LEN} karakter
@@ -446,7 +446,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input
-                      className={`w-full pl-11 pr-11 h-12 bg-white border ${pwError ? "border-rose-500" : "border-slate-300 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl text-sm font-bold text-slate-900 outline-none transition-all`}
+                      className={`w-full pl-11 pr-11 h-12 bg-white dark:bg-slate-800 border ${pwError ? "border-rose-500" : "border-slate-300 dark:border-slate-700 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none transition-all`}
                       placeholder="Kata sandi baru (min. 8 karakter)"
                       type={showNewPw ? "text" : "password"}
                       value={newPassword}
@@ -465,7 +465,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input
-                      className={`w-full pl-11 pr-11 h-12 bg-white border ${(pwError && confirmPassword) ? "border-rose-500" : "border-slate-300 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl text-sm font-bold text-slate-900 outline-none transition-all`}
+                      className={`w-full pl-11 pr-11 h-12 bg-white dark:bg-slate-800 border ${(pwError && confirmPassword) ? "border-rose-500" : "border-slate-300 dark:border-slate-700 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none transition-all`}
                       placeholder="Ulangi kata sandi baru"
                       type={showConfirmPw ? "text" : "password"}
                       value={confirmPassword}
@@ -653,7 +653,7 @@ const Login: React.FC = () => {
       {showForgotModal && <ForgotPasswordModal onClose={() => setShowForgotModal(false)} />}
 
       {/* Main Split Container Card */}
-      <div className="w-full max-w-[1120px] bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden grid grid-cols-1 md:grid-cols-12 z-10 transition-all duration-500 animate-fade-in-up">
+      <div className="w-full max-w-[1120px] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden grid grid-cols-1 md:grid-cols-12 z-10 transition-all duration-500 animate-fade-in-up">
 
         {/* Left Side: Rich Eco Feature Panel (Desktop Eco-Monitoring Showcase) */}
         <div className="hidden md:flex md:col-span-5 bg-gradient-to-br from-[#0f3d2e] via-[#14532d] to-[#064e3b] text-white p-8 sm:p-10 flex-col justify-between relative overflow-hidden">
@@ -716,7 +716,7 @@ const Login: React.FC = () => {
         </div>
 
         {/* Right Side: Clean Modern Login Form */}
-        <div className="col-span-12 md:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-white space-y-6">
+        <div className="col-span-12 md:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-white dark:bg-slate-900 space-y-6">
 
           <div className="space-y-5">
 
@@ -755,7 +755,7 @@ const Login: React.FC = () => {
                   <input
                     id="login-phone"
                     autoFocus
-                    className={`w-full pl-10 pr-4 h-12 bg-white text-slate-900 placeholder:text-slate-400 border ${identifierError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-semibold focus:ring-1 outline-none transition-all shadow-2xs`}
+                    className={`w-full pl-10 pr-4 h-12 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 border ${identifierError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-emerald-600"} rounded-xl text-sm font-semibold focus:ring-1 outline-none transition-all shadow-2xs`}
                     placeholder="08123456789 atau +6281234567890"
                     type="text"
                     value={identifier}
@@ -793,7 +793,7 @@ const Login: React.FC = () => {
                   <input
                     id="login-password"
                     ref={passwordInputRef}
-                    className={`w-full pl-10 pr-11 h-12 bg-white text-slate-900 placeholder:text-slate-400 border ${passwordError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-semibold focus:ring-1 outline-none transition-all shadow-2xs`}
+                    className={`w-full pl-10 pr-11 h-12 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 border ${passwordError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-emerald-600"} rounded-xl text-sm font-semibold focus:ring-1 outline-none transition-all shadow-2xs`}
                     placeholder="Masukkan kata sandi akun"
                     type={showPassword ? "text" : "password"}
                     value={password}

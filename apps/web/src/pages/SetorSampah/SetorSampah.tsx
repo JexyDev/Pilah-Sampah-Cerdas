@@ -859,7 +859,7 @@ export default function SetorSampah() {
             </div>
 
             {/* Modal Action Footer */}
-            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900 flex justify-end">
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-900 flex justify-end">
               <button
                 onClick={() => setSelectedLog(null)}
                 className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 rounded-xl text-xs font-black transition cursor-pointer"

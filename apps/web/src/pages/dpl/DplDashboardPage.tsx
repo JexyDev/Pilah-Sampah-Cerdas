@@ -402,7 +402,7 @@ export const DplDashboardPage: React.FC = () => {
       return {
         letter: "-",
         label: "Belum Dinilai",
-        bg: "bg-slate-100 text-slate-500 border-slate-200",
+        bg: "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700",
       };
     }
     if (score >= 85) {
@@ -689,7 +689,7 @@ export const DplDashboardPage: React.FC = () => {
 
       {/* Modern Segmented Navigation Tabs (Hanya untuk Developer) */}
       {isDeveloper && (
-        <div className="bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1 overflow-x-auto scrollbar-none">
+        <div className="bg-slate-100/90 dark:bg-slate-800/90 dark:bg-slate-800/90 p-1.5 rounded-xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1 overflow-x-auto scrollbar-none">
           {(
             [
               { key: "OVERVIEW" as TabType, label: "Ringkasan Eksekutif", icon: LayoutDashboard },
@@ -766,7 +766,7 @@ export const DplDashboardPage: React.FC = () => {
 
             {/* Grid 4 Metrik Kunci Terpadu */}
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-              <div className="bg-slate-50/80 dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between">
+              <div className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Mahasiswa Dampingan</span>
                 <div className="mt-1">
                   <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{totalAllStudents}</span>
@@ -777,7 +777,7 @@ export const DplDashboardPage: React.FC = () => {
                 </span>
               </div>
 
-              <div className="bg-slate-50/80 dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between">
+              <div className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Jam Presensi KKN</span>
                 <div className="mt-1">
                   <span className="text-2xl font-black text-indigo-700 dark:text-indigo-400">
@@ -790,7 +790,7 @@ export const DplDashboardPage: React.FC = () => {
                 </span>
               </div>
 
-              <div className="bg-slate-50/80 dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between">
+              <div className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Tempat Sampah Teraktivasi</span>
                 <div className="mt-1">
                   <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400">
@@ -803,7 +803,7 @@ export const DplDashboardPage: React.FC = () => {
                 </span>
               </div>
 
-              <div className="bg-slate-50/80 dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between">
+              <div className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Sampah Terpilah</span>
                 <div className="mt-1">
                   <span className="text-2xl font-black text-slate-900 dark:text-slate-100">
@@ -874,7 +874,7 @@ export const DplDashboardPage: React.FC = () => {
                     return (
                       <div
                         key={p.id}
-                        className="p-3 bg-slate-50/80 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700 flex items-center justify-between gap-3 text-xs"
+                        className="p-3 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700 flex items-center justify-between gap-3 text-xs"
                       >
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
@@ -1065,7 +1065,7 @@ export const DplDashboardPage: React.FC = () => {
               <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-50/90 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 font-extrabold uppercase text-[10.5px] tracking-wider border-b border-slate-200 dark:border-slate-700">
+                    <tr className="bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 font-extrabold uppercase text-[10.5px] tracking-wider border-b border-slate-200 dark:border-slate-700">
                       <th className="py-3 px-3 text-center w-10">No</th>
                       <th className="py-3 px-3">NIM</th>
                       <th className="py-3 px-3">Nama Mahasiswa</th>
@@ -1081,7 +1081,7 @@ export const DplDashboardPage: React.FC = () => {
                     {students.slice(0, 6).map((st, idx) => {
                       const grade = getGradeBadge(st.assessmentScore);
                       return (
-                        <tr key={st.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition">
+                        <tr key={st.id} className="hover:bg-slate-50/70 dark:bg-slate-800/70 dark:hover:bg-slate-800/50 transition">
                           <td className="py-2.5 px-3 text-center font-bold text-slate-400">{idx + 1}</td>
                           <td className="py-2.5 px-3 font-mono font-bold text-slate-800 dark:text-slate-200">{st.nim || "-"}</td>
                           <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-slate-100">{st.name}</td>
@@ -1185,7 +1185,7 @@ export const DplDashboardPage: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {paginatedKelompok.map((grp, idx) => (
-                    <tr key={grp.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
+                    <tr key={grp.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition">
                       <td className="px-4 py-3.5 text-center font-bold text-slate-400">
                         {(kelompokPage - 1) * ITEMS_PER_PAGE + idx + 1}
                       </td>
@@ -1381,7 +1381,7 @@ export const DplDashboardPage: React.FC = () => {
                     const grade = getGradeBadge(st.assessmentScore);
                     const hasScore = st.assessmentScore !== null && st.assessmentScore !== undefined && st.assessmentScore > 0;
                     return (
-                      <tr key={st.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
+                      <tr key={st.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition">
                         <td className="px-3 py-3.5 text-center font-bold text-slate-400">
                           {(mahasiswaPage - 1) * ITEMS_PER_PAGE + idx + 1}
                         </td>
@@ -1753,7 +1753,7 @@ export const DplDashboardPage: React.FC = () => {
                     const isCanc = st === "CANCELLED";
                     const isOverr = st === "OVERRIDDEN_HADIR";
 
-                    let badgeClass = "bg-slate-100 text-slate-700 border-slate-200";
+                    let badgeClass = "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700";
                     let badgeLabel = log.status || "-";
 
                     if (isAppr) {
@@ -1774,7 +1774,7 @@ export const DplDashboardPage: React.FC = () => {
                     }
 
                     return (
-                      <tr key={log.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
+                      <tr key={log.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition">
                         <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-slate-100">{log.studentName}</td>
                         <td className="px-4 py-3.5">
                           <span className={`px-2 py-0.5 rounded font-bold text-[11px] border ${
@@ -2128,7 +2128,7 @@ export const DplDashboardPage: React.FC = () => {
                   <span>Total Warga Didampingi: <strong>{assistedCitizensData.totalCitizensAssisted} Warga</strong></span>
                 </div>
                 {assistedCitizensData.citizens.map((c) => (
-                  <div key={c.binId} className="p-4 border border-slate-200/60 dark:border-slate-800 rounded-xl bg-slate-50/40 dark:bg-slate-800/50 space-y-2">
+                  <div key={c.binId} className="p-4 border border-slate-200/60 dark:border-slate-800 rounded-xl bg-slate-50/40 dark:bg-slate-800/40 dark:bg-slate-800/50 space-y-2">
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-bold text-slate-900 dark:text-slate-100 text-xs">{c.warga?.nama || "Warga Binaan"}</p>
@@ -2229,7 +2229,7 @@ export const DplDashboardPage: React.FC = () => {
                       const isApproved = ide.status === "APPROVED" || ide.status === "DISETUJUI";
                       const isRejected = ide.status === "REJECTED" || ide.status === "DITOLAK";
                       return (
-                        <tr key={ide.id || idx} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
+                        <tr key={ide.id || idx} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition">
                           <td className="px-4 py-3.5 text-center font-bold text-slate-400">{idx + 1}</td>
                           <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
                             {ide.createdAt ? new Date(ide.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "-"}

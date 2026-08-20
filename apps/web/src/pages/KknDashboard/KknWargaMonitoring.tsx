@@ -59,7 +59,7 @@ export const KknWargaMonitoring: React.FC = () => {
                   const isOrganik = (category || "").toLowerCase().includes("organik");
 
                   return (
-                    <tr key={w.id || i} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
+                    <tr key={w.id || i} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition">
                       <td className="p-3.5">
                         <p className="font-bold text-slate-900 dark:text-slate-100">{w.wargaName || w.name || "Nama Warga"}</p>
                         <p className="text-[11px] text-slate-500 dark:text-slate-400">{w.address || "Wilayah Binaan"}</p>

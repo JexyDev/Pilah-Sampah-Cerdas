@@ -164,7 +164,7 @@ const NavGroup: React.FC<{
         className={`w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl transition-all duration-200 text-[12.5px] text-left group relative overflow-hidden ${
           isAnySubActive
             ? "bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-semibold"
-            : "text-slate-600 dark:text-slate-400 hover:text-[#009966] dark:hover:text-emerald-400 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 font-medium"
+            : "text-slate-600 dark:text-slate-400 hover:text-[#009966] dark:hover:text-emerald-400 hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/80 font-medium"
         }`}
       >
         {isAnySubActive && (
@@ -913,7 +913,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               </Link>
 
               {/* Real-time System Clock Card (Placed at top) */}
-              <div className="w-full bg-slate-50/90 dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xs text-center space-y-0.5 transition-all relative z-10">
+              <div className="w-full bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xs text-center space-y-0.5 transition-all relative z-10">
                 <div className="flex items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400 mb-0.5">
                   <Clock size={12} className="text-[#009966] dark:text-emerald-400" />
                   <p className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 truncate">

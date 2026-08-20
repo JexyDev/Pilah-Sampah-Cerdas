@@ -402,7 +402,7 @@ const MasterKelurahan: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
+              <tr className="bg-slate-50/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                 <th className="py-3.5 px-4 text-center w-16 whitespace-nowrap">NO</th>
                 <th className="py-3.5 px-4 whitespace-nowrap">PROVINSI</th>
                 <th className="py-3.5 px-4 whitespace-nowrap">KOTA, KABUPATEN</th>
@@ -445,7 +445,7 @@ const MasterKelurahan: React.FC = () => {
                   return (
                     <tr
                       key={group.kecamatanId}
-                      className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors text-xs text-slate-700 dark:text-slate-300 font-medium"
+                      className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/80 transition-colors text-xs text-slate-700 dark:text-slate-300 font-medium"
                     >
                       {/* NO */}
                       <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-500 whitespace-nowrap">
@@ -761,7 +761,7 @@ const MasterKelurahan: React.FC = () => {
                       className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
                         isChecked
                           ? "bg-rose-50/70 border-rose-200 text-rose-900 font-extrabold"
-                          : "bg-white border-slate-200 hover:border-slate-300 text-slate-700 font-bold"
+                          : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-700 dark:text-slate-300 font-bold"
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -777,7 +777,7 @@ const MasterKelurahan: React.FC = () => {
                         className={`text-[10px] font-black px-2 py-0.5 rounded-md uppercase ${
                           isChecked
                             ? "bg-rose-100 text-rose-700 border border-rose-200"
-                            : "bg-slate-100 text-slate-400"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
                         }`}
                       >
                         {isChecked ? "Akan Dihapus" : "Tetap Simpan"}
@@ -797,7 +797,7 @@ const MasterKelurahan: React.FC = () => {
             </div>
 
             {/* Footer Buttons */}
-            <div className="p-4 bg-slate-50/80 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+            <div className="p-4 bg-slate-50/80 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setIsDeleteModalOpen(false)}

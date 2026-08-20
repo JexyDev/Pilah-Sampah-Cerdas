@@ -348,7 +348,7 @@ export const LandingPage: React.FC = () => {
 
         {/* Mobile Navigation Drawer */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden bg-white/95 backdrop-blur-xl border-b border-slate-200/80 px-6 py-5 space-y-4 animate-in slide-in-from-top duration-300 shadow-xl">
+          <div className="lg:hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800 px-6 py-5 space-y-4 animate-in slide-in-from-top duration-300 shadow-xl">
             <div className="flex flex-col space-y-3 font-bold text-slate-800 text-sm text-left">
               <button
                 onClick={() => scrollToSection("#about")}
@@ -413,7 +413,7 @@ export const LandingPage: React.FC = () => {
       </nav>
 
       {/* ----------------- HERO SECTION (FULL WEB RESPONSIF EDGE-TO-EDGE) ----------------- */}
-      <section className="relative pt-8 sm:pt-10 lg:pt-2 pb-12 lg:pb-16 bg-white overflow-hidden">
+      <section className="relative pt-8 sm:pt-10 lg:pt-2 pb-12 lg:pb-16 bg-white dark:bg-slate-950 overflow-hidden">
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
 
           {/* Hero Left Column */}
@@ -437,7 +437,7 @@ export const LandingPage: React.FC = () => {
 
               <button
                 onClick={() => scrollToSection("#about")}
-                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-900 font-extrabold text-sm transition shadow-xs hover:shadow-md cursor-pointer"
+                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-slate-100 font-extrabold text-sm transition shadow-xs hover:shadow-md cursor-pointer"
               >
                 Pelajari Lebih Lanjut
               </button>
@@ -458,7 +458,7 @@ export const LandingPage: React.FC = () => {
 
         {/* Quick Stat Highlights (Connected to Live Database API) */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-12">
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-lg shadow-slate-200/50 p-6 sm:p-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-lg shadow-slate-200/50 p-6 sm:p-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
 
             <div className="flex flex-col items-center justify-center text-center space-y-2 pt-2 sm:pt-0 sm:px-4">
               <div className="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
@@ -515,7 +515,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* ----------------- 01. ABOUT US ----------------- */}
-      <section id="about" className="py-24 bg-white border-y border-slate-200/80 relative overflow-hidden">
+      <section id="about" className="py-24 bg-white dark:bg-slate-950 border-y border-slate-200/80 dark:border-slate-800 relative overflow-hidden">
         <div className="container-custom space-y-16">
 
           {/* About Header Narrative */}
@@ -549,7 +549,7 @@ export const LandingPage: React.FC = () => {
               {sdgs.map((sdg) => (
                 <div
                   key={sdg.num}
-                  className="group relative bg-white rounded-3xl p-5 md:p-6 border border-slate-200/80 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer"
+                  className="group relative bg-white dark:bg-slate-900 rounded-3xl p-5 md:p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer"
                 >
                   {/* Top Badge (Clean Tag & Number) */}
                   <div className="flex items-center justify-between mb-4">
@@ -562,7 +562,7 @@ export const LandingPage: React.FC = () => {
                   </div>
 
                   {/* SVG Icon Image Box (Fixed Height, Proportional, Non-Lonjong) */}
-                  <div className="relative rounded-2xl overflow-hidden mb-4 h-32 sm:h-36 w-full bg-slate-50 flex items-center justify-center p-3 border border-slate-100/80 group-hover:bg-white group-hover:border-slate-200 transition-colors">
+                  <div className="relative rounded-2xl overflow-hidden mb-4 h-32 sm:h-36 w-full bg-slate-50 dark:bg-slate-800/60 flex items-center justify-center p-3 border border-slate-100/80 group-hover:bg-white dark:group-hover:bg-slate-800 group-hover:border-slate-200 dark:group-hover:border-slate-700 transition-colors">
                     <img
                       src={sdg.img}
                       alt={`SDG ${sdg.num}`}
@@ -687,7 +687,7 @@ export const LandingPage: React.FC = () => {
                         className="block text-left"
                       >
                         <article
-                          className="kegiatan-card-modern group bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between cursor-pointer h-full"
+                          className="kegiatan-card-modern group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between cursor-pointer h-full"
                         >
                           {/* Thumbnail Photo Container */}
                           <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-100">
@@ -769,7 +769,7 @@ export const LandingPage: React.FC = () => {
             </p>
 
             {/* Clean Interactive Pills */}
-            <div className="flex flex-wrap sm:inline-flex items-center justify-center gap-2.5 p-2 sm:p-1.5 bg-white rounded-2xl sm:rounded-full border border-slate-200/80 shadow-2xs mt-4 max-w-full">
+            <div className="flex flex-wrap sm:inline-flex items-center justify-center gap-2.5 p-2 sm:p-1.5 bg-white dark:bg-slate-900 rounded-2xl sm:rounded-full border border-slate-200/80 dark:border-slate-800 shadow-2xs mt-4 max-w-full">
               <button
                 onClick={() => setWhyUsTab("points")}
                 className={`clean-interactive-tab ${whyUsTab === "points" ? "active" : ""
@@ -801,7 +801,7 @@ export const LandingPage: React.FC = () => {
             {whyUsTab === "points" ? (
 
               /* ================= POINT ================= */
-              <div className="bg-white text-slate-900 p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-md space-y-6">
+              <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-8 sm:p-10 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-md space-y-6">
 
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                   <div className="flex items-center gap-2.5">
@@ -861,7 +861,7 @@ export const LandingPage: React.FC = () => {
             ) : whyUsTab === "bins" ? (
 
               /* ================= TEMPAT SAMPAH ================= */
-              <div className="bg-white text-slate-900 p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-md space-y-6">
+              <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-8 sm:p-10 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-md space-y-6">
 
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
 
@@ -928,7 +928,7 @@ export const LandingPage: React.FC = () => {
             ) : (
 
               /* ================= IOT ================= */
-              <div className="bg-white text-slate-900 p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-md space-y-6">
+              <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-8 sm:p-10 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-md space-y-6">
 
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
 
@@ -1018,7 +1018,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* ----------------- 03. HOW IT WORKS -----------------
-      <section id="how-it-works" className="py-24 bg-white border-b border-slate-200/80">
+      <section id="how-it-works" className="py-24 bg-white dark:bg-slate-950 border-b border-slate-200/80 dark:border-slate-800">
         <div className="container-custom space-y-16">
           <div className="text-center space-y-2">
             <span className="text-emerald-600 font-extrabold text-sm uppercase tracking-wider">03. How</span>
@@ -1048,7 +1048,7 @@ export const LandingPage: React.FC = () => {
       </section> */}
 
       {/* ---------- Dampak Nyata ---------- */}
-      <section className="py-24 bg-slate-50/70 border-b border-slate-200/80" id="dampak">
+      <section className="py-24 bg-slate-50/70 dark:bg-slate-800/70 border-b border-slate-200/80" id="dampak">
         <div className="container-custom">
 
           <div className="dampak-grid">
@@ -1214,7 +1214,7 @@ export const LandingPage: React.FC = () => {
     FAQ SECTION
 ========================================================= */}
 
-      <section id="faq" className="py-24 bg-white">
+      <section id="faq" className="py-24 bg-white dark:bg-slate-950">
         <div className="container-custom">
 
           {/* Header */}
@@ -1376,14 +1376,14 @@ export const LandingPage: React.FC = () => {
 
 
       {/* ----------------- 05. WHAT WE DO -----------------
-      <section id="Mitra" className="py-24 bg-slate-50/50">
+      <section id="Mitra" className="py-24 bg-slate-50/50 dark:bg-slate-800/50">
         <div className="container-custom space-y-12">
           <div className="text-center space-y-2">
             <span className="text-emerald-600 font-extrabold text-sm uppercase tracking-wider">05. What</span>
             <h2 className="text-4xl font-extrabold text-slate-900">Pemanfaatan Hilir dan Fasilitas GIS</h2>
             <p className="text-slate-500 text-sm font-medium">Pengolahan sampah terintegrasi di seluruh wilayah operasional</p>
 
-            <div className="inline-flex p-1 bg-white border border-slate-200 rounded-full mt-4">
+            <div className="inline-flex p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full mt-4">
               <button
                 onClick={() => setWhatTab("pemilahan")}
                 className={`clean-interactive-tab ${whatTab === "pemilahan" ? "active" : ""}`}
@@ -1439,7 +1439,7 @@ export const LandingPage: React.FC = () => {
                   icon: "layers"
                 },
               ].map((item, idx) => (
-                <div key={idx} className="bg-white border border-slate-200/80 rounded-3xl p-8 space-y-4 hover:shadow-xl transition duration-300">
+                <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-8 space-y-4 hover:shadow-xl transition duration-300">
                   <div className="flex items-center justify-between">
                     <span className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                       <span className="material-symbols-outlined text-2xl">{item.icon}</span>
@@ -1524,7 +1524,7 @@ export const LandingPage: React.FC = () => {
       {
         showContactModal && (
           <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
               {/* Header */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-3">
@@ -1553,7 +1553,7 @@ export const LandingPage: React.FC = () => {
                   Untuk informasi seputar sistem pemilahan sampah cerdas atau kerja sama operasional:
                 </p>
 
-                <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200/70 space-y-4">
+                <div className="bg-slate-50/80 dark:bg-slate-800/80 p-5 rounded-2xl border border-slate-200/70 space-y-4">
                   {/* Location Item */}
                   <div className="flex items-start gap-3.5">
                     <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
@@ -1630,7 +1630,7 @@ export const LandingPage: React.FC = () => {
       {
         showApkModal && (
           <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl max-w-md w-full p-8 space-y-6 shadow-2xl border border-slate-100">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-8 space-y-6 shadow-2xl border border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <h3 className="font-extrabold text-slate-900 text-lg flex items-center gap-2">
                   <span className="material-symbols-outlined text-emerald-600">android</span>

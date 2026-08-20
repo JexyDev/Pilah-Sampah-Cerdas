@@ -339,7 +339,7 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800/50">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-[#009966]/10 text-[#009966] dark:text-emerald-400 flex items-center justify-center border border-[#009966]/20 dark:border-emerald-700/40">
                   <Tags size={16} />
@@ -368,7 +368,7 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all"
+                  className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all"
                   placeholder="Contoh: Organik, Anorganik, Kertas, Plastik"
                 />
               </div>
@@ -384,7 +384,7 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
                   max="500"
                   value={formData.pointsPerKg}
                   onChange={(e) => setFormData({ ...formData, pointsPerKg: parseInt(e.target.value, 10) || 0 })}
-                  className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all"
+                  className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all"
                 />
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-[10px] font-bold text-slate-400 uppercase">Preset:</span>
@@ -416,7 +416,7 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
                       value={formData.imageUrl}
                       onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                       placeholder="URL Gambar (https://...) atau Unggah Berkas"
-                      className="flex-1 h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all"
+                      className="flex-1 h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all"
                     />
                     <label className="h-11 px-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-[#009966] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/50 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 shadow-2xs">
                       <Upload size={15} />
@@ -471,7 +471,7 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all min-h-[80px]"
+                  className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all min-h-[80px]"
                   placeholder="Masukkan keterangan jenis sampah atau petunjuk pemilahan..."
                 />
               </div>
@@ -502,7 +502,7 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
       {detailModalCat && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800">
-            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800/50">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-[#009966]/10 text-[#009966] dark:text-emerald-400 flex items-center justify-center border border-[#009966]/20 dark:border-emerald-700/40">
                   <Sparkles size={16} />

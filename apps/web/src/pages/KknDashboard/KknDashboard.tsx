@@ -638,7 +638,7 @@ const KknDashboard: React.FC = () => {
             <h4 className="font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
               <TrendingUp size={16} className="text-emerald-600 dark:text-emerald-400" /> Tren Registrasi Warga (7 Tanggal Terakhir)
             </h4>
-            <div className="h-64 w-full bg-slate-50/50 dark:bg-slate-800/40 p-2 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-center">
+            <div className="h-64 w-full bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800/40 p-2 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-center">
               {registrationTrendData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={registrationTrendData}>
@@ -686,7 +686,7 @@ const KknDashboard: React.FC = () => {
             <h4 className="font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
               <Sparkles size={16} className="text-sky-600 dark:text-sky-400" /> Skor Kepatuhan per Warga Dampingan (Top 10)
             </h4>
-            <div className="h-64 w-full bg-slate-50/50 dark:bg-slate-800/40 p-2 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-center">
+            <div className="h-64 w-full bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800/40 p-2 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-center">
               {complianceData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={complianceData}>
@@ -842,7 +842,7 @@ const KknDashboard: React.FC = () => {
                   const score = Number(w.complianceScore) || 0;
 
                   return (
-                    <tr key={w.wargaId || w.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                    <tr key={w.wargaId || w.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="p-3.5">
                         <div className="font-extrabold text-slate-900 dark:text-slate-100">{w.name || w.wargaName}</div>
                         <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
@@ -1289,7 +1289,7 @@ const KknDashboard: React.FC = () => {
                     selectedWarga.recentLogs.map((log: any) => (
                       <div
                         key={log.id}
-                        className="flex justify-between items-center p-3 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 text-xs"
+                        className="flex justify-between items-center p-3 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800/50 text-xs"
                       >
                         <div>
                           <p className="font-bold text-slate-800 dark:text-slate-200">{log.category}</p>

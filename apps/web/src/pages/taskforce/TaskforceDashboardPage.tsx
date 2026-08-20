@@ -438,7 +438,7 @@ export const TaskforceDashboardPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 dark:bg-slate-800/80 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
+              <tr className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
                 <th className="px-6 py-4">Kelompok &amp; Wilayah</th>
                 <th className="px-6 py-4">DPL Pengampu</th>
                 <th className="px-6 py-4">Ketua Kelompok</th>
@@ -469,7 +469,7 @@ export const TaskforceDashboardPage: React.FC = () => {
                   const rwCoverage = group.cakupanRw && Array.isArray(group.cakupanRw) ? group.cakupanRw.join(", ") : "-";
 
                   return (
-                    <tr key={group.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition">
+                    <tr key={group.id} className="hover:bg-slate-50/70 dark:bg-slate-800/70 dark:hover:bg-slate-800/50 transition">
                       <td className="px-6 py-4">
                         <span className="font-extrabold text-slate-900 dark:text-slate-100 block text-sm">{group.name}</span>
                         <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1 mt-0.5">
@@ -520,7 +520,7 @@ export const TaskforceDashboardPage: React.FC = () => {
 
         {/* Table Footer: Pagination Bar */}
         {!loading && filteredGroups.length > 0 && (
-          <div className="p-4 bg-slate-50/70 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-slate-600 dark:text-slate-300">
+          <div className="p-4 bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-slate-600 dark:text-slate-300">
             <div>
               Menampilkan <span className="font-black text-slate-900 dark:text-slate-100">{startRecord}</span> - <span className="font-black text-slate-900 dark:text-slate-100">{endRecord}</span> dari <span className="font-black text-slate-900 dark:text-slate-100">{filteredGroups.length}</span> data kelompok
             </div>

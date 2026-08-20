@@ -92,7 +92,7 @@ export const BarChartRace: React.FC = () => {
         </div>
 
         {/* Metric Selector Pills */}
-        <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700 self-stretch sm:self-auto justify-center">
+        <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700 self-stretch sm:self-auto justify-center">
           <button
             onClick={() => setMetricTab("TONASE")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${

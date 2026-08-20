@@ -4,7 +4,7 @@ import type { KelurahanIssueSolution } from "../../constants/kknInfographicsData
 
 export const KelurahanGovernanceSection: React.FC = () => {
   return (
-    <section className="py-16 md:py-24 bg-slate-50/50 dark:bg-slate-950/50 border-b border-slate-200/80 dark:border-slate-800 relative overflow-hidden">
+    <section className="py-16 md:py-24 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-950/50 border-b border-slate-200/80 dark:border-slate-800 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="mb-12">
@@ -37,7 +37,7 @@ export const KelurahanGovernanceSection: React.FC = () => {
                       key={item.id}
                       className={
                         idx % 2 === 1
-                          ? "bg-slate-50/60 dark:bg-slate-800/40 hover:bg-emerald-50/30 dark:hover:bg-slate-800/80 transition-colors"
+                          ? "bg-slate-50/60 dark:bg-slate-800/60 dark:bg-slate-800/40 hover:bg-emerald-50/30 dark:hover:bg-slate-800/80 transition-colors"
                           : "bg-white dark:bg-slate-900 hover:bg-emerald-50/30 dark:hover:bg-slate-800/80 transition-colors"
                       }
                     >

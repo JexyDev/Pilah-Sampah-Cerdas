@@ -136,7 +136,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                 onItemsPerPageChange(Number(e.target.value));
                 onPageChange(1);
               }}
-              className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-100 font-extrabold focus:outline-none focus:ring-2 focus:ring-emerald-500/40 cursor-pointer transition"
+              className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-100 font-extrabold focus:outline-none focus:ring-2 focus:ring-emerald-500/40 cursor-pointer transition"
             >
               {itemsPerPageOptions.map((opt) => (
                 <option key={opt} value={opt}>

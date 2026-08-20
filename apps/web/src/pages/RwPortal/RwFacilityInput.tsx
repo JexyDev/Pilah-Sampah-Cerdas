@@ -82,7 +82,7 @@ export const RwFacilityInput = () => {
 
       {/* Pending Ide Daur Ulang */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
           <h3 className="font-bold text-gray-800 dark:text-slate-100 text-sm">Ide Daur Ulang Warga (Menunggu Persetujuan)</h3>
         </div>
         <div className="p-4">
@@ -111,7 +111,7 @@ export const RwFacilityInput = () => {
 
       {/* Pending Facilities */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
           <h3 className="font-bold text-gray-800 dark:text-slate-100 text-sm">Pendaftaran Fasilitas Lingkungan Baru</h3>
         </div>
         <div className="p-4">
@@ -130,7 +130,7 @@ export const RwFacilityInput = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
                   {pendingFacilities.map((fac) => (
-                    <tr key={fac.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                    <tr key={fac.id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/30 transition-colors">
                       <td className="px-4 py-3">
                         <p className="font-bold text-slate-800 dark:text-slate-100">{fac.nama}</p>
                         <div className="flex items-center gap-2 mt-1">
@@ -171,7 +171,7 @@ export const RwFacilityInput = () => {
 
       {/* Input Fasilitas */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
           <h3 className="font-bold text-gray-800 dark:text-slate-100 text-sm">Input Manual Data Produksi Fasilitas</h3>
         </div>
         <div className="p-4">

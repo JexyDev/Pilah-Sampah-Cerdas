@@ -102,7 +102,7 @@ const PoinWarga: React.FC = () => {
       };
     if (rank === 2)
       return {
-        bg: "bg-gray-100",
+        bg: "bg-gray-100 dark:bg-slate-800",
         color: "text-gray-600",
         border: "border-gray-200",
         medal: "🥈",

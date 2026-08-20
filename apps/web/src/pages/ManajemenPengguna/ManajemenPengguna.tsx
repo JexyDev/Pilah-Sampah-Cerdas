@@ -1247,7 +1247,7 @@ const ManajemenPengguna: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
+              <tr className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                 {["DEVELOPER", "SUPER_USER"].includes(selectedRole) ? (
                   <>
                     <th className="py-3 px-4">NAMA LENGKAP</th>
@@ -1719,7 +1719,7 @@ const ManajemenPengguna: React.FC = () => {
                     {/* Foto Profil Input & Live Preview */}
                     <div>
                       <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Foto Profil</label>
-                      <div className="flex items-center gap-3.5 bg-slate-50/90 dark:bg-slate-800/90 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-2xs">
+                      <div className="flex items-center gap-3.5 bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/90 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-2xs">
                         <div className="w-13 h-13 rounded-full bg-[#009966] text-white font-black text-xs flex items-center justify-center shrink-0 overflow-hidden border-2 border-white dark:border-slate-700 shadow-md font-sans tracking-wider">
                           {formData.fotoProfil ? (
                             <img
@@ -1780,7 +1780,7 @@ const ManajemenPengguna: React.FC = () => {
 
                     <div>
                       <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Nama Lengkap <span className="text-rose-500">*</span></label>
-                      <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Masukkan nama lengkap" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                      <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Masukkan nama lengkap" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
                     </div>
 
                     <div>
@@ -1797,7 +1797,7 @@ const ManajemenPengguna: React.FC = () => {
                           }
                         }}
                         placeholder="+628xxxxxxxxxx"
-                        className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
+                        className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
                       />
                     </div>
                     <div>
@@ -1820,12 +1820,12 @@ const ManajemenPengguna: React.FC = () => {
                         <>
                           <div>
                             <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIP / NIDN</label>
-                            <input type="text" value={formData.nip} onChange={(e) => setFormData({ ...formData, nip: e.target.value })} placeholder="4127.34.02.006" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                            <input type="text" value={formData.nip} onChange={(e) => setFormData({ ...formData, nip: e.target.value })} placeholder="4127.34.02.006" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jenjang Pendidikan</label>
-                              <select value={formData.jenjangPendidikan} onChange={(e) => setFormData({...formData, jenjangPendidikan: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none">
+                              <select value={formData.jenjangPendidikan} onChange={(e) => setFormData({...formData, jenjangPendidikan: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none">
                                 <option value="S1">S1 (Sarjana)</option>
                                 <option value="S2">S2 (Magister)</option>
                                 <option value="S3">S3 (Doktor)</option>
@@ -1835,7 +1835,7 @@ const ManajemenPengguna: React.FC = () => {
                             </div>
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Program Studi</label>
-                              <input type="text" value={formData.programStudi || formData.prodi} onChange={(e) => setFormData({ ...formData, programStudi: e.target.value, prodi: e.target.value })} placeholder="Manajemen" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                              <input type="text" value={formData.programStudi || formData.prodi} onChange={(e) => setFormData({ ...formData, programStudi: e.target.value, prodi: e.target.value })} placeholder="Manajemen" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
                             </div>
                           </div>
                           <div>
@@ -1846,7 +1846,7 @@ const ManajemenPengguna: React.FC = () => {
                                 const val = e.target.value;
                                 setFormData({ ...formData, dplKelompokIds: val ? [val] : [] });
                               }}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                             >
                                <option value="">-- Pilih Kelompok Bimbingan KKN --</option>
                               {kelompokList.map((k: any) => (
@@ -1866,7 +1866,7 @@ const ManajemenPengguna: React.FC = () => {
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIM (Nomor Induk Mahasiswa)</label>
-                              <input type="text" inputMode="numeric" pattern="[0-9]*" value={formData.nim} onChange={(e) => setFormData({ ...formData, nim: e.target.value.replace(/\D/g, "") })} placeholder="10123047" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                              <input type="text" inputMode="numeric" pattern="[0-9]*" value={formData.nim} onChange={(e) => setFormData({ ...formData, nim: e.target.value.replace(/\D/g, "") })} placeholder="10123047" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
                             </div>
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kelompok KKN</label>
@@ -1894,7 +1894,7 @@ const ManajemenPengguna: React.FC = () => {
                                     dplId: autoDplId,
                                   });
                                 }}
-                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                               >
                                 <option value="">-- Tanpa Kelompok (Mandiri / Unassigned) --</option>
                                 {kelompokList.map((k: any) => (
@@ -1930,7 +1930,7 @@ const ManajemenPengguna: React.FC = () => {
                                   dplKelompokIds: autoKelompokId ? [autoKelompokId] : [],
                                 });
                               }}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                             >
                               <option value="">-- Tanpa Dosen Pendamping --</option>
                               {dplList.map((d: any) => (
@@ -1944,7 +1944,7 @@ const ManajemenPengguna: React.FC = () => {
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jenjang Pendidikan</label>
-                              <select value={formData.jenjangPendidikan} onChange={(e) => setFormData({...formData, jenjangPendidikan: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none">
+                              <select value={formData.jenjangPendidikan} onChange={(e) => setFormData({...formData, jenjangPendidikan: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none">
                                 <option value="S1">S1 (Sarjana)</option>
                                 <option value="S2">S2 (Magister)</option>
                                 <option value="S3">S3 (Doktor)</option>
@@ -1954,7 +1954,7 @@ const ManajemenPengguna: React.FC = () => {
                             </div>
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Program Studi</label>
-                              <input type="text" value={formData.prodi} onChange={(e) => setFormData({ ...formData, prodi: e.target.value })} placeholder="S1 Teknik Informatika" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                              <input type="text" value={formData.prodi} onChange={(e) => setFormData({ ...formData, prodi: e.target.value })} placeholder="S1 Teknik Informatika" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
                             </div>
                           </div>
                         </>
@@ -1966,16 +1966,16 @@ const ManajemenPengguna: React.FC = () => {
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIP</label>
-                              <input type="text" value={formData.nip} onChange={(e) => setFormData({ ...formData, nip: e.target.value })} placeholder="4127.34.02.001" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                              <input type="text" value={formData.nip} onChange={(e) => setFormData({ ...formData, nip: e.target.value })} placeholder="4127.34.02.001" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
                             </div>
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Institusi</label>
-                              <input type="text" value={formData.institusi || (formData.roleName === "PEMIMPIN" ? formData.prodi : "")} onChange={(e) => setFormData({ ...formData, institusi: e.target.value })} placeholder="Universitas Komputer Indonesia" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                              <input type="text" value={formData.institusi || (formData.roleName === "PEMIMPIN" ? formData.prodi : "")} onChange={(e) => setFormData({ ...formData, institusi: e.target.value })} placeholder="Universitas Komputer Indonesia" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
                             </div>
                           </div>
                           <div>
                             <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jabatan</label>
-                            <input type="text" value={formData.jabatan || ""} onChange={(e) => setFormData({ ...formData, jabatan: e.target.value })} placeholder={formData.roleName === "PEMIMPIN" ? "Rektor / Dekan / Pimpinan Utama" : "Ketua Task Force / Anggota Tim KKN"} className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                            <input type="text" value={formData.jabatan || ""} onChange={(e) => setFormData({ ...formData, jabatan: e.target.value })} placeholder={formData.roleName === "PEMIMPIN" ? "Rektor / Dekan / Pimpinan Utama" : "Ketua Task Force / Anggota Tim KKN"} className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
                           </div>
                         </>
                       )}
@@ -1988,7 +1988,7 @@ const ManajemenPengguna: React.FC = () => {
                             <select
                               value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
                               onChange={(e) => handleProvinsiSelect(e.target.value)}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                             >
                               {provinsiList.map((p: any) => (
                                 <option key={p.id} value={p.name || p.nama}>
@@ -2002,7 +2002,7 @@ const ManajemenPengguna: React.FC = () => {
                             <select
                               value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
                               onChange={(e) => handleKabupatenSelect(e.target.value)}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                             >
                               {filteredKabupatenList.length === 0 ? (
                                 <option value="">-- Belum ada Kota/Kabupaten di Master Data --</option>
@@ -2025,7 +2025,7 @@ const ManajemenPengguna: React.FC = () => {
                               <select
                                 value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
                                 onChange={(e) => handleProvinsiSelect(e.target.value)}
-                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                               >
                                 {provinsiList.map((p: any) => (
                                   <option key={p.id} value={p.name || p.nama}>
@@ -2039,7 +2039,7 @@ const ManajemenPengguna: React.FC = () => {
                               <select
                                 value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
                                 onChange={(e) => handleKabupatenSelect(e.target.value)}
-                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                               >
                                 {filteredKabupatenList.length === 0 ? (
                                   <option value="">-- Belum ada Kota/Kabupaten di Master Data --</option>
@@ -2056,7 +2056,7 @@ const ManajemenPengguna: React.FC = () => {
                             <select
                               value={formData.kecamatan || (filteredKecamatanList[0]?.name || "")}
                               onChange={(e) => setFormData({ ...formData, kecamatan: e.target.value })}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                             >
                               {filteredKecamatanList.length === 0 ? (
                                 <option value="">-- Belum ada Kecamatan di Master Data --</option>
@@ -2102,7 +2102,7 @@ const ManajemenPengguna: React.FC = () => {
                               <select
                                 value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
                                 onChange={(e) => handleProvinsiSelect(e.target.value)}
-                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                               >
                                 {provinsiList.map((p: any) => (
                                   <option key={p.id} value={p.name || p.nama}>
@@ -2116,7 +2116,7 @@ const ManajemenPengguna: React.FC = () => {
                               <select
                                 value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
                                 onChange={(e) => handleKabupatenSelect(e.target.value)}
-                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                               >
                                 {filteredKabupatenList.length === 0 ? (
                                   <option value="">-- Belum ada Kota/Kabupaten di Master Data --</option>
@@ -2135,7 +2135,7 @@ const ManajemenPengguna: React.FC = () => {
                             <select
                               value={formData.kecamatan || (filteredKecamatanList[0]?.name || "")}
                               onChange={(e) => handleKecamatanSelect(e.target.value)}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                             >
                               {filteredKecamatanList.length === 0 ? (
                                 <option value="">-- Belum ada Kecamatan di Master Data --</option>
@@ -2184,7 +2184,7 @@ const ManajemenPengguna: React.FC = () => {
                                   };
                                 });
                               }}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                               disabled={filteredKelurahanList.length === 0}
                             >
                               {(() => {
@@ -2234,7 +2234,7 @@ const ManajemenPengguna: React.FC = () => {
                                     };
                                   });
                                 }}
-                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                                 disabled={filteredRwsByKelurahan.length === 0}
                               >
                                 {filteredRwsByKelurahan.length === 0 ? (
@@ -2262,7 +2262,7 @@ const ManajemenPengguna: React.FC = () => {
                           <select
                             value={formData.petugasResiduId || ""}
                             onChange={(e) => setFormData({ ...formData, petugasResiduId: e.target.value })}
-                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                           >
                             <option value="">-- Belum Ditugaskan --</option>
                             {petugasResiduList.map((p: any) => (
@@ -2283,7 +2283,7 @@ const ManajemenPengguna: React.FC = () => {
                             value={formData.wilayah}
                             onChange={(e) => setFormData({ ...formData, wilayah: e.target.value })}
                             placeholder="TPS 3R / Wilayah Penugasan Operasional"
-                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
+                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
                           />
                         </div>
                       )}
@@ -2292,7 +2292,7 @@ const ManajemenPengguna: React.FC = () => {
                       {["WARGA", "RW", "PETUGAS_RESIDU"].includes(formData.roleName) && (
                         <div>
                           <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Alamat Lengkap</label>
-                          <textarea rows={2} value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="Jl. Dipatiukur No. ..." className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none resize-none" />
+                          <textarea rows={2} value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="Jl. Dipatiukur No. ..." className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none resize-none" />
                         </div>
                       )}
 
@@ -2307,7 +2307,7 @@ const ManajemenPengguna: React.FC = () => {
                             value={formData.jumlahAnggotaKeluarga || ""}
                             onChange={(e) => setFormData({ ...formData, jumlahAnggotaKeluarga: e.target.value })}
                             placeholder="Contoh: 4"
-                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
+                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
                           />
                         </div>
                       )}
@@ -2327,7 +2327,7 @@ const ManajemenPengguna: React.FC = () => {
                                   selectedRws: [],
                                 }));
                               }}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                               disabled={filteredKelurahanList.length === 0}
                             >
                               {(() => {
@@ -2358,7 +2358,7 @@ const ManajemenPengguna: React.FC = () => {
                                 Kel. {getCleanKelName(modalKelurahan) || "-"}
                               </span>
                             </div>
-                            <div className="grid grid-cols-5 gap-1.5 p-3 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 max-h-36 overflow-y-auto">
+                            <div className="grid grid-cols-5 gap-1.5 p-3 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 max-h-36 overflow-y-auto">
                               {filteredRwsByKelurahan.length === 0 ? (
                                 <div className="col-span-5 text-center text-slate-400 dark:text-slate-500 text-xs py-4">
                                   Belum ada data RW untuk kelurahan ini.
@@ -2399,7 +2399,7 @@ const ManajemenPengguna: React.FC = () => {
                       </label>
                       <div className="relative">
                         <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                        <input type={showPassword ? "text" : "password"} required={modalType === "add"} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Minimal 8 karakter" className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                        <input type={showPassword ? "text" : "password"} required={modalType === "add"} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Minimal 8 karakter" className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
                           {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
@@ -2456,7 +2456,7 @@ const ManajemenPengguna: React.FC = () => {
                         </label>
                         <div className="relative">
                           <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                          <input type={showConfirmPassword ? "text" : "password"} required={modalType === "add" || !!formData.password} value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} placeholder="Ulangi kata sandi" className={`w-full h-10 pl-10 pr-10 rounded-xl border dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold transition-all outline-none ${
+                          <input type={showConfirmPassword ? "text" : "password"} required={modalType === "add" || !!formData.password} value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} placeholder="Ulangi kata sandi" className={`w-full h-10 pl-10 pr-10 rounded-xl border dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold transition-all outline-none ${
                             formData.confirmPassword
                               ? (passwordRules?.matches ? "border-emerald-300 dark:border-emerald-700 focus:border-emerald-400 focus:ring-emerald-100 dark:focus:ring-emerald-950" : "border-rose-300 dark:border-rose-700 focus:border-rose-400 focus:ring-rose-100 dark:focus:ring-rose-950")
                               : "border-slate-200 dark:border-slate-700 focus:border-[#009966] focus:ring-[#009966]/10"
@@ -2481,7 +2481,7 @@ const ManajemenPengguna: React.FC = () => {
                         const isSelfAccountInModal = modalType === "edit" && user && selectedUser && (selectedUser.id === user.id || (selectedUser.phone && user.phone && selectedUser.phone === user.phone));
                         return (
                           <>
-                            <div className="grid grid-cols-2 gap-2.5 p-1 bg-slate-100/80 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700">
+                            <div className="grid grid-cols-2 gap-2.5 p-1 bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700">
                               <button
                                 type="button"
                                 onClick={() => setFormData({ ...formData, status: "Aktif" })}
@@ -2537,7 +2537,7 @@ const ManajemenPengguna: React.FC = () => {
               </div>
 
               {/* Modal Footer */}
-              <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-end gap-2">
+              <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800/50 flex items-center justify-end gap-2">
                 <button type="button" onClick={handleCloseModal} className="px-5 py-2.5 rounded-xl font-extrabold text-xs text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
                   Batal
                 </button>

@@ -18,6 +18,7 @@ import {
   GraduationCap,
   Edit3,
   CheckCircle2,
+  RefreshCw,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -338,15 +339,27 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-[#f8fafc] dark:bg-slate-950 p-4 sm:p-6 lg:p-8 space-y-6 text-slate-800 dark:text-slate-100">
+    <div className="min-h-[calc(100vh-64px)] bg-[#f8fafc] dark:bg-slate-950 p-4 sm:p-6 lg:p-8 space-y-6 text-slate-800 dark:text-slate-100 max-w-[1600px] mx-auto">
       {/* Header Halaman */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-          Penilaian Individu Mahasiswa
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Berikan nilai secara objektif berdasarkan kinerja individu mahasiswa KKN
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            Penilaian Individu Mahasiswa
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Berikan nilai secara objektif berdasarkan kinerja individu mahasiswa KKN
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={fetchStudents}
+          disabled={loading}
+          className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all shadow-2xs cursor-pointer self-start sm:self-auto"
+        >
+          <RefreshCw size={13} className={loading ? "animate-spin text-[#009966]" : "text-[#009966]"} />
+          <span>Segarkan Data</span>
+        </button>
       </div>
 
       {/* Main 2-Panel Master-Detail Layout */}
@@ -453,7 +466,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         className={`group cursor-pointer transition ${
                           isSelected
                             ? "bg-emerald-50/40 dark:bg-emerald-950/20"
-                            : "hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
+                            : "hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/40"
                         }`}
                       >
                         {/* No. dengan active indicator border */}
@@ -658,7 +671,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           {selectedStudent ? (
             <>
               {/* Selected Student Banner Card */}
-              <div className="bg-slate-50/80 dark:bg-slate-800/40 rounded-xl p-3.5 border border-slate-100 dark:border-slate-700/60 flex items-center gap-3">
+              <div className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/40 rounded-xl p-3.5 border border-slate-100 dark:border-slate-700/60 flex items-center gap-3">
                 <div className="w-11 h-11 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-[#009966] flex items-center justify-center shrink-0">
                   <User size={22} />
                 </div>
@@ -699,7 +712,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                       const computedSkor = computedScores.scores[idx];
 
                       return (
-                        <tr key={aspek.key} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20">
+                        <tr key={aspek.key} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/20">
                           <td className="py-2 px-2 text-center font-medium text-slate-400">
                             {aspek.no}
                           </td>
@@ -714,7 +727,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                               className={`inline-flex items-center gap-1 border rounded-lg px-2 py-1 transition ${
                                 isEditMode
                                   ? "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-2xs focus-within:ring-2 focus-within:ring-[#009966]/20 focus-within:border-[#009966]"
-                                  : "bg-slate-100/70 dark:bg-slate-800/50 border-slate-200/60 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+                                  : "bg-slate-100/70 dark:bg-slate-800/70 dark:bg-slate-800/50 border-slate-200/60 dark:border-slate-800 text-slate-600 dark:text-slate-400"
                               }`}
                             >
                               <input
@@ -740,7 +753,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                     })}
 
                     {/* Total Bobot Row */}
-                    <tr className="bg-slate-50/50 dark:bg-slate-800/40 font-bold border-t border-slate-200 dark:border-slate-700">
+                    <tr className="bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800/40 font-bold border-t border-slate-200 dark:border-slate-700">
                       <td colSpan={2} className="py-2.5 px-2 text-slate-600 dark:text-slate-300">
                         Total Bobot
                       </td>
@@ -792,7 +805,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   className={`w-full border rounded-xl p-3 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none transition resize-none ${
                     isEditMode
                       ? "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966]"
-                      : "bg-slate-100/60 dark:bg-slate-800/30 border-slate-200/60 dark:border-slate-800 cursor-not-allowed"
+                      : "bg-slate-100/60 dark:bg-slate-800/60 dark:bg-slate-800/30 border-slate-200/60 dark:border-slate-800 cursor-not-allowed"
                   }`}
                 />
               </div>

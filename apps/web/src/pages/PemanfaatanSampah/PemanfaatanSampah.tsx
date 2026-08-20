@@ -566,7 +566,7 @@ export const PemanfaatanSampah: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80">
+                <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80">
                   <th className="py-3.5 px-4 rounded-l-2xl">Program Daur Ulang</th>
                   <th className="py-3.5 px-4">Teknologi / Metode</th>
                   <th className="py-3.5 px-4">Bahan Baku</th>
@@ -584,7 +584,7 @@ export const PemanfaatanSampah: React.FC = () => {
                   const teknoFormatted = rawTekno.replace(/permentasi/gi, "Fermentasi");
 
                   return (
-                    <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-all group">
+                    <tr key={item.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition-all group">
                       {/* Program */}
                       <td className="py-3.5 px-4 align-middle">
                         {getProgramBadge(item.program)}

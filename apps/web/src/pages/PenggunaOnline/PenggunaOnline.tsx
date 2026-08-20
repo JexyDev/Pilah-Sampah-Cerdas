@@ -499,7 +499,7 @@ export const PenggunaOnline: React.FC = () => {
         <div className="w-full overflow-x-auto">
           <table className="w-full text-left border-collapse table-auto">
             <thead>
-              <tr className="bg-slate-50/80 dark:bg-slate-800/80 text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
+              <tr className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                 <th className="py-3.5 px-4 text-center w-12">NO</th>
                 <th className="py-3.5 px-4">NAMA LENGKAP</th>
                 <th className="py-3.5 px-4">NOMOR HP</th>
@@ -546,7 +546,7 @@ export const PenggunaOnline: React.FC = () => {
                   return (
                     <tr
                       key={userItem.id}
-                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors group align-middle"
+                      className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition-colors group align-middle"
                     >
                       <td className="py-3.5 px-4 text-center font-bold text-slate-400 dark:text-slate-500">
                         {(currentPage - 1) * rowsPerPage + idx + 1}
@@ -618,7 +618,7 @@ export const PenggunaOnline: React.FC = () => {
         </div>
 
         {/* Pagination Controls Footer */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-800/50">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800/50">
           <div>
             Menampilkan{" "}
             <span className="text-slate-900 dark:text-slate-100 font-bold">

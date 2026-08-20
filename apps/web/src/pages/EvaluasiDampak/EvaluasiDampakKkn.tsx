@@ -277,8 +277,8 @@ export const EvaluasiDampakKkn: React.FC = () => {
             onClick={() => setActiveTab("BASELINE")}
             className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-bold transition-all ${
               activeTab === "BASELINE"
-                ? "bg-white text-indigo-700 shadow-sm border border-slate-200"
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                ? "bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-400 shadow-sm border border-slate-200 dark:border-slate-700"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
             Data Baseline
@@ -287,8 +287,8 @@ export const EvaluasiDampakKkn: React.FC = () => {
             onClick={() => setActiveTab("ENDLINE")}
             className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-bold transition-all ${
               activeTab === "ENDLINE"
-                ? "bg-white text-indigo-700 shadow-sm border border-slate-200"
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                ? "bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-400 shadow-sm border border-slate-200 dark:border-slate-700"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
             Data Endline
@@ -297,8 +297,8 @@ export const EvaluasiDampakKkn: React.FC = () => {
             onClick={() => setActiveTab("KOMPARASI")}
             className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-bold transition-all ${
               activeTab === "KOMPARASI"
-                ? "bg-white text-indigo-700 shadow-sm border border-slate-200"
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                ? "bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-400 shadow-sm border border-slate-200 dark:border-slate-700"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
             Perubahan dan Dampak
@@ -340,7 +340,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
               </thead>
               <tbody className="text-sm divide-y divide-slate-100 dark:divide-slate-800">
                 {(activeTab === "BASELINE" ? filteredBaseline : filteredEndline).map((item: any) => (
-                  <tr key={item.kelurahanId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition">
+                  <tr key={item.kelurahanId} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50 transition">
                     <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-100">
                       Kel. {item.namaKelurahan}
                       <span className="block text-[10px] text-slate-400 font-medium">Kec. {item.kecamatan || "-"}</span>
@@ -593,7 +593,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden mt-6">
-             <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50">
+             <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
                <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                  Tabel Komparasi Metrik Dampak KKN
                </h3>
@@ -611,7 +611,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                   </thead>
                   <tbody className="text-sm divide-y divide-slate-100 dark:divide-slate-800">
                     {filteredKomparasi.map(item => (
-                      <tr key={item.kelurahanId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition">
+                      <tr key={item.kelurahanId} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50 transition">
                         <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-100">
                           Kel. {item.namaKelurahan}
                         </td>

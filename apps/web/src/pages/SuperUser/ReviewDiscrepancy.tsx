@@ -330,7 +330,7 @@ export const ReviewDiscrepancy: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Table List of Pending & Resolved Reviews */}
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col h-[70vh]">
-          <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50 flex justify-between items-center">
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50 dark:bg-slate-800/50 flex justify-between items-center">
             <h3 className="font-bold text-gray-800 dark:text-slate-100 text-sm">Daftar Laporan Diskrepansi ({filteredLogs.length})</h3>
             {loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-600"></div>}
           </div>
@@ -556,7 +556,7 @@ export const ReviewDiscrepancy: React.FC = () => {
       {isKoreksiModalOpen && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in zoom-in-95 duration-200">
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col border border-gray-100 dark:border-slate-800">
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-800/50">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-800/50 dark:bg-slate-800/50">
               <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100">Koreksi Manual Hasil Tinjauan</h3>
               <button
                 onClick={() => setIsKoreksiModalOpen(false)}

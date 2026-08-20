@@ -848,7 +848,7 @@ export const ProgramKerjaKkn: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
               <thead>
-                <tr className="bg-slate-50/90 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
+                <tr className="bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4 w-32 text-center">Kategori</th>
                   <th className="py-3.5 px-4 w-32 text-center">Sumber</th>
@@ -866,7 +866,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                   const normalizedSt = normalizeStatus(p.status);
 
                   return (
-                    <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                    <tr key={p.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="py-3.5 px-4 text-center font-bold text-slate-400">
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>

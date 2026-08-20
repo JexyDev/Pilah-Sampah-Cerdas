@@ -299,7 +299,7 @@ const IdeDaurUlang: React.FC = () => {
               <>
                 <div className="space-y-4">
                   {ides.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((ide) => (
-                    <div key={ide.id} className="border border-slate-100 dark:border-slate-800 rounded-xl p-4.5 hover:border-slate-200 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition group">
+                    <div key={ide.id} className="border border-slate-100 dark:border-slate-800 rounded-xl p-4.5 hover:border-slate-200 hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50 transition group">
                       <div className="flex justify-between items-start mb-2.5">
                         <div>
                           <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base">{ide.judul}</h3>

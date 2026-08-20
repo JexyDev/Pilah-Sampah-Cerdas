@@ -445,7 +445,7 @@ export const HasilPemanfaatan: React.FC = () => {
       />
 
       {/* Segmented Top Navigation Sub-Tabs */}
-      <div className="bg-slate-100/90 dark:bg-slate-800/80 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1.5">
+      <div className="bg-slate-100/90 dark:bg-slate-800/90 dark:bg-slate-800/80 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1.5">
         <button
           onClick={() => {
             setActiveSectionTab("HASIL");
@@ -558,7 +558,7 @@ export const HasilPemanfaatan: React.FC = () => {
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs whitespace-nowrap">
-                <thead className="bg-slate-50/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-extrabold border-b border-slate-200/80 dark:border-slate-800 uppercase tracking-wider text-[10.5px]">
+                <thead className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-extrabold border-b border-slate-200/80 dark:border-slate-800 uppercase tracking-wider text-[10.5px]">
                   <tr>
                     <th className="px-4 py-3.5 text-center w-12">No</th>
                     <th className="px-4 py-3.5">Nama Program & Fasilitas</th>
@@ -573,7 +573,7 @@ export const HasilPemanfaatan: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {paginatedPrograms.map((p, idx) => (
-                    <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
+                    <tr key={p.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition">
                       <td className="px-4 py-3.5 text-center font-bold text-slate-400">
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>

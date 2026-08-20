@@ -527,7 +527,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   if (!schedule) {
     return {
       label: "Belum Ada Jadwal",
-      color: "bg-slate-100 text-slate-500 border-slate-200",
+      color: "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700",
       tooltip: "Tidak ada jadwal kegiatan terpilih",
     };
   }
@@ -550,7 +550,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   if (now > end) {
     return {
       label: "Selesai",
-      color: "bg-slate-100 text-slate-700 border-slate-300",
+      color: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700",
       tooltip: "Periode pelaksanaan kegiatan sudah berakhir (kedaluwarsa)",
     };
   }
@@ -2144,7 +2144,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         {/* 2-Column Cards: Informasi Waktu Kerja & Target Kegiatan Lapangan */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Left Card: Informasi Waktu Kerja */}
-          <div className="bg-slate-50/70 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4 shadow-2xs">
+          <div className="bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4 shadow-2xs">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100">
                 <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 flex items-center justify-center">
@@ -2192,7 +2192,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           </div>
 
           {/* Right Card: Target Kegiatan Lapangan */}
-          <div className="bg-slate-50/70 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4 shadow-2xs">
+          <div className="bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4 shadow-2xs">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100">
                 <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 flex items-center justify-center">
@@ -2242,7 +2242,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       {/* Peta Interaktif Geofence & Lokasi GPS Mahasiswa (Dapat Ditutup / Dibuka) */}
       {showMap && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs animate-in fade-in duration-200">
-          <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70">
+          <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/70">
             <div className="flex items-center gap-2">
               <MapIcon size={16} className="text-emerald-600" />
               <span className="text-xs font-black text-slate-800 dark:text-slate-100">
@@ -2552,7 +2552,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-2xs">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-50/90 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                  <thead className="bg-slate-50/90 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                     <tr>
                       <th className="py-3.5 px-4 w-12 text-center text-emerald-700"># No</th>
                       <th className="py-3.5 px-4 min-w-[200px]">Mahasiswa & NIM</th>
@@ -2653,7 +2653,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       return (
                         <tr
                           key={rec.id}
-                          className="hover:bg-slate-50/70 dark:hover:bg-slate-800/70 transition-colors"
+                          className="hover:bg-slate-50/70 dark:bg-slate-800/70 dark:hover:bg-slate-800/70 transition-colors"
                         >
                           <td className="py-3.5 px-4 text-center text-slate-500 font-bold">
                             {itemNumber}
@@ -3138,7 +3138,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               </button>
             </div>
 
-            <div className="flex bg-slate-100/80 px-6 pt-3 pb-2 gap-2 border-b border-slate-200/60">
+            <div className="flex bg-slate-100/80 dark:bg-slate-800/80 px-6 pt-3 pb-2 gap-2 border-b border-slate-200/60">
               <button
                 type="button"
                 onClick={() => setModalStep(1)}
@@ -3701,7 +3701,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
             <form onSubmit={handleSaveConfig} className="space-y-4">
               {/* Bagian 1: Hari Kerja Operasional (Pilihan Preset & Checkbox 7 Hari) */}
-              <div className="space-y-2 p-3.5 bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800">
+              <div className="space-y-2 p-3.5 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
                     <Calendar size={14} className="text-emerald-600" />
@@ -3778,7 +3778,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               {/* Bagian 2: Jam Kerja Operasional & Target Minimal Durasi Harian */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Jam Operasional */}
-                <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
+                <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
                   <label className="block text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
                     <Clock size={14} className="text-emerald-600" />
                     Jam Kerja Operasional
@@ -3811,7 +3811,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 </div>
 
                 {/* Minimal Durasi / Hari */}
-                <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
+                <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
                   <label className="block text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
                     <Hourglass size={14} className="text-emerald-600" />
                     Target Minimal Durasi / Hari
@@ -3850,7 +3850,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               </div>
 
               {/* Bagian 3: Periode & Target Minimal Jam Kumulatif */}
-              <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-3">
+              <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-black text-slate-800 dark:text-slate-100 mb-1">

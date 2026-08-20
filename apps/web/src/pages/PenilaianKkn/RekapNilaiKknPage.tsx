@@ -118,23 +118,25 @@ export const RekapNilaiKknPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-100">
-      {/* Clean Flat Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="min-h-[calc(100vh-64px)] bg-[#f8fafc] dark:bg-slate-950 p-4 sm:p-6 lg:p-8 space-y-6 text-slate-800 dark:text-slate-100 max-w-[1600px] mx-auto">
+      {/* Header Halaman */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">Rekap & Nilai Akhir KKN</h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Kompilasi perhitungan nilai akhir kumulatif (40% Individu, 30% Output Proker, 30% Presensi) siap diekspor resmi.
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            Rekap & Nilai Akhir
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Kompilasi perhitungan nilai akhir kumulatif (40% Individu, 30% Output Proker, 30% Presensi) siap diekspor resmi
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
           <button
             onClick={handleExportCsv}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer"
+            className="flex items-center gap-2 bg-[#009966] hover:bg-[#008055] text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-2xs transition-all cursor-pointer"
           >
             <Download size={15} />
-            Ekspor Nilai (CSV)
+            <span>Ekspor Nilai (CSV)</span>
           </button>
         </div>
       </div>
@@ -142,16 +144,16 @@ export const RekapNilaiKknPage: React.FC = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-          <span className="text-xs text-slate-500 font-semibold">Total Mahasiswa Dampingan</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Total Mahasiswa Dampingan</span>
           <p className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">{rekapData.stats.totalStudents}</p>
         </div>
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-          <span className="text-xs text-emerald-600 font-semibold">Rerata Nilai Akhir Angkatan</span>
-          <p className="text-2xl font-black text-emerald-700 mt-1">{rekapData.stats.rerataNilai.toFixed(2)}</p>
+          <span className="text-xs text-[#009966] dark:text-emerald-400 font-semibold">Rerata Nilai Akhir Angkatan</span>
+          <p className="text-2xl font-black text-[#009966] dark:text-emerald-400 mt-1">{rekapData.stats.rerataNilai.toFixed(2)}</p>
         </div>
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-          <span className="text-xs text-indigo-600 font-semibold">Rerata Tingkat Presensi</span>
-          <p className="text-2xl font-black text-indigo-700 mt-1">{rekapData.stats.rerataKehadiran.toFixed(2)}%</p>
+          <span className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold">Rerata Tingkat Presensi</span>
+          <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1">{rekapData.stats.rerataKehadiran.toFixed(2)}%</p>
         </div>
       </div>
 
@@ -206,7 +208,7 @@ export const RekapNilaiKknPage: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
               <thead>
-                <tr className="bg-slate-50/90 text-slate-500 border-b border-slate-200 dark:border-slate-800 text-[10.5px] uppercase tracking-wider font-bold">
+                <tr className="bg-slate-50/90 dark:bg-slate-800/90 text-slate-500 border-b border-slate-200 dark:border-slate-800 text-[10.5px] uppercase tracking-wider font-bold">
                   <th className="py-3.5 px-3 w-10 text-center">No</th>
                   <th className="py-3.5 px-3">NIM</th>
                   <th className="py-3.5 px-3">Nama Mahasiswa</th>
@@ -221,14 +223,14 @@ export const RekapNilaiKknPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 {paginatedStudents.map((st, idx) => {
-                  let letterColor = "text-slate-600 bg-slate-100";
+                  let letterColor = "text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800";
                   if (st.hurufMutu === "A") letterColor = "text-emerald-700 bg-emerald-50 border border-emerald-200 font-black";
                   else if (st.hurufMutu === "B") letterColor = "text-blue-700 bg-blue-50 border border-blue-200 font-black";
                   else if (st.hurufMutu === "C") letterColor = "text-amber-700 bg-amber-50 border border-amber-200 font-bold";
                   else letterColor = "text-rose-700 bg-rose-50 border border-rose-200 font-bold";
 
                   return (
-                    <tr key={st.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors">
+                    <tr key={st.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/80 transition-colors">
                       <td className="py-3 px-3 text-center font-bold text-slate-400">
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>

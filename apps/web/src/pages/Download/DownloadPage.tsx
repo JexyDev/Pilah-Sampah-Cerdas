@@ -141,10 +141,10 @@ const DownloadPage: React.FC = () => {
     <div className="min-h-screen flex flex-col justify-between bg-white text-slate-900 font-sans relative overflow-x-hidden selection:bg-emerald-500 selection:text-white">
 
       {/* Main Content Wrapper - Clean White Section Scoping */}
-      <main className="flex-1 flex flex-col bg-white relative">
+      <main className="flex-1 flex flex-col bg-white dark:bg-slate-950 relative">
 
         {/* Navigation Header - Matches Landing Page Navbar Glassmorphism */}
-        <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-3.5 shadow-xs">
+        <header className="sticky top-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-8 py-3.5 shadow-xs">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <Link to="/" className="flex items-center group shrink-0">
               <img
@@ -238,7 +238,7 @@ const DownloadPage: React.FC = () => {
                 </div>
 
                 {/* Real-time Release Notes Alert Box */}
-                <div className="bg-white border border-emerald-200/90 rounded-2xl p-5 shadow-sm space-y-3 text-left">
+                <div className="bg-white dark:bg-slate-900 border border-emerald-200/90 dark:border-emerald-700/40 rounded-2xl p-5 shadow-sm space-y-3 text-left">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shrink-0">
@@ -273,7 +273,7 @@ const DownloadPage: React.FC = () => {
 
             {/* Right Column: Hero Showcase Card */}
             <div className="lg:col-span-5 relative flex justify-center">
-              <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-3xl p-6 shadow-md relative overflow-hidden group space-y-5">
+              <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-md relative overflow-hidden group space-y-5">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-emerald-500/20 transition-all" />
 
                 <div className="relative z-10 space-y-4 text-left">
@@ -287,7 +287,7 @@ const DownloadPage: React.FC = () => {
                   </div>
 
                   {/* Mobile Roles Illustration Image */}
-                  <div className="w-full bg-slate-50/80 rounded-2xl p-4 border border-slate-200/60 flex items-center justify-center">
+                  <div className="w-full bg-slate-50/80 dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200/60 flex items-center justify-center">
                     <img
                       src={ImageTigaRoleMobile}
                       alt="Ilustrasi Warga, Mahasiswa KKN, dan Petugas Residu"
@@ -319,7 +319,7 @@ const DownloadPage: React.FC = () => {
         </section>
 
         {/* Section 2: Real-Time System Statistics Strip - Pure White */}
-        <section className="py-12 bg-white border-b border-slate-200/80 w-full">
+        <section className="py-12 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 w-full">
           <div className="max-w-7xl mx-auto px-4 sm:px-8 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div className="space-y-1">
               <p className="text-2xl sm:text-3xl font-black text-emerald-600">{stats.wargaCount}</p>
@@ -341,7 +341,7 @@ const DownloadPage: React.FC = () => {
         </section>
 
         {/* Section 3: 3 Mobile Roles Features Showcase - Subtle Slate Tint */}
-        <section id="layanan-mobile" className="py-20 px-4 sm:px-8 bg-slate-50/60 border-b border-slate-200/60 w-full">
+        <section id="layanan-mobile" className="py-20 px-4 sm:px-8 bg-slate-50/60 dark:bg-slate-800/60 border-b border-slate-200/60 w-full">
           <div className="max-w-7xl mx-auto space-y-12 text-center">
 
             <div className="space-y-3 max-w-2xl mx-auto">
@@ -356,7 +356,7 @@ const DownloadPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
 
               {/* Role Card 1: Warga */}
-              <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all duration-300 hover:-translate-y-1 group">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all duration-300 hover:-translate-y-1 group">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 flex items-center justify-center shrink-0">
                   <Users size={24} />
                 </div>
@@ -385,7 +385,7 @@ const DownloadPage: React.FC = () => {
               </div>
 
               {/* Role Card 2: Mahasiswa KKN */}
-              <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs hover:shadow-md hover:border-teal-300 transition-all duration-300 hover:-translate-y-1 group">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs hover:shadow-md hover:border-teal-300 transition-all duration-300 hover:-translate-y-1 group">
                 <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 border border-teal-200/60 flex items-center justify-center shrink-0">
                   <GraduationCap size={24} />
                 </div>
@@ -414,7 +414,7 @@ const DownloadPage: React.FC = () => {
               </div>
 
               {/* Role Card 3: Petugas Residu */}
-              <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs hover:shadow-md hover:border-sky-300 transition-all duration-300 hover:-translate-y-1 group">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs hover:shadow-md hover:border-sky-300 transition-all duration-300 hover:-translate-y-1 group">
                 <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 border border-sky-200/60 flex items-center justify-center shrink-0">
                   <Truck size={24} />
                 </div>
@@ -448,7 +448,7 @@ const DownloadPage: React.FC = () => {
         </section>
 
         {/* Section 4: 4-Step APK Installation Guide Section - Pure White */}
-        <section id="panduan-apk" className="py-20 px-4 sm:px-8 bg-white w-full">
+        <section id="panduan-apk" className="py-20 px-4 sm:px-8 bg-white dark:bg-slate-950 w-full">
           <div className="max-w-7xl mx-auto space-y-12 text-center">
 
             <div className="space-y-3 max-w-xl mx-auto">
@@ -463,7 +463,7 @@ const DownloadPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
 
               {/* Step 1 */}
-              <div className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs relative hover:border-emerald-300 transition-all">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-6 space-y-4 shadow-xs relative hover:border-emerald-300 transition-all">
                 <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black text-xs flex items-center justify-center border border-emerald-200">
                   1
                 </div>
@@ -479,7 +479,7 @@ const DownloadPage: React.FC = () => {
               </div>
 
               {/* Step 2 */}
-              <div className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs relative hover:border-emerald-300 transition-all">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-6 space-y-4 shadow-xs relative hover:border-emerald-300 transition-all">
                 <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black text-xs flex items-center justify-center border border-emerald-200">
                   2
                 </div>
@@ -495,7 +495,7 @@ const DownloadPage: React.FC = () => {
               </div>
 
               {/* Step 3 */}
-              <div className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs relative hover:border-emerald-300 transition-all">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-6 space-y-4 shadow-xs relative hover:border-emerald-300 transition-all">
                 <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black text-xs flex items-center justify-center border border-emerald-200">
                   3
                 </div>
@@ -511,7 +511,7 @@ const DownloadPage: React.FC = () => {
               </div>
 
               {/* Step 4 */}
-              <div className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs relative hover:border-emerald-300 transition-all">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-6 space-y-4 shadow-xs relative hover:border-emerald-300 transition-all">
                 <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black text-xs flex items-center justify-center border border-emerald-200">
                   4
                 </div>
@@ -537,7 +537,7 @@ const DownloadPage: React.FC = () => {
                 </div>
                 <button
                   onClick={handleDownloadApk}
-                  className="px-6 h-12 bg-white hover:bg-slate-100 text-emerald-800 font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shrink-0 transition-all shadow-xs cursor-pointer"
+                  className="px-6 h-12 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-emerald-800 dark:text-emerald-400 font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shrink-0 transition-all shadow-xs cursor-pointer"
                 >
                   <Download size={16} />
                   <span>Unduh APK Sekarang (v{release.version})</span>

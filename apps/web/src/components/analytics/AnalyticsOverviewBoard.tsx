@@ -140,7 +140,7 @@ const TableSection: React.FC<TableSectionProps> = ({
           <input
             type="text"
             placeholder="Cari..."
-            className="w-full bg-slate-50/70 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 pl-10 pr-4 py-2 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] transition-all"
+            className="w-full bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 pl-10 pr-4 py-2 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] transition-all"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -150,7 +150,7 @@ const TableSection: React.FC<TableSectionProps> = ({
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-xs text-left">
-          <thead className="bg-slate-50/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider border-b border-slate-200 dark:border-slate-700">
+          <thead className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider border-b border-slate-200 dark:border-slate-700">
             <tr>
               <th
                 className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors w-20"
@@ -182,7 +182,7 @@ const TableSection: React.FC<TableSectionProps> = ({
               </tr>
             ) : (
               paginatedData.map((item) => (
-                <tr key={item.rank} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                <tr key={item.rank} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition-colors">
                   <td className="py-3.5 px-4 font-black text-slate-700 dark:text-slate-300">
                     <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-[11px] font-black ${
                       item.rank === 1 ? "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40" :
