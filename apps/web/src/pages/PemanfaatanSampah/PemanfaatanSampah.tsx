@@ -1,12 +1,10 @@
-﻿import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   MapContainer,
   Marker,
   Popup,
-  Tooltip,
   Polygon
 } from "react-leaflet";
-import L from "leaflet";
 import {
   Loader2,
   MapPin,
@@ -19,7 +17,6 @@ import {
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
-import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
 import PageHeader from "../../components/common/PageHeader";
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
@@ -50,7 +47,6 @@ interface FacilityItem {
 }
 
 export const PemanfaatanSampah: React.FC = () => {
-  const { user } = useAuthStore();
   const [items, setItems] = useState<FacilityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -65,7 +61,6 @@ export const PemanfaatanSampah: React.FC = () => {
   // Pagination States
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const fetchItems = async () => {
     setLoading(true);
@@ -250,7 +245,7 @@ export const PemanfaatanSampah: React.FC = () => {
               {Object.values(KELURAHAN_GEODATA).map((kg) => (
                 <Polygon
                   key={kg.id}
-                  positions={kg.coordinates as any}
+                  positions={kg.bounds as any}
                   pathOptions={{
                     color: kg.color,
                     weight: 3,
