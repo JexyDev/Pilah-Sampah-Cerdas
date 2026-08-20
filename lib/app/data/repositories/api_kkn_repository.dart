@@ -365,17 +365,25 @@ class ApiKknRepository implements KknRepository {
 
   @override
   Future<bool> submitPemanfaatanSampah(PemanfaatanSampahRequest request) async {
-    // Backend for /pemanfaatan-sampah does not have multer middleware configured.
-    // If we send FormData (multipart/form-data), req.body will be empty on the backend, 
-    // causing it to use default values and ignore the user's input.
-    // Therefore, we MUST send application/json. 
-    // The backend hardcodes fotoDokumentasiUrl to default-pemanfaatan.jpg, 
-    // so we skip sending the photo file for this specific route.
-    final payload = request.toJson();
+    final Map<String, dynamic> data = request.toJson();
+    
+    if (request.fotoPath != null && request.fotoPath!.isNotEmpty) {
+      final fileExt = request.fotoPath!.split('.').last.toLowerCase();
+      String mimeType = 'image/jpeg';
+      if (fileExt == 'png') mimeType = 'image/png';
+      if (fileExt == 'webp') mimeType = 'image/webp';
+
+      data['fotoDokumentasi'] = await MultipartFile.fromFile(
+        request.fotoPath!,
+        contentType: MediaType.parse(mimeType),
+      );
+    }
+
+    final formData = FormData.fromMap(data);
 
     final response = await apiClient.dio.post(
       ApiEndpoints.kknPemanfaatanSampah,
-      data: payload,
+      data: formData,
     );
     return response.statusCode == 200 || response.statusCode == 201;
   }
