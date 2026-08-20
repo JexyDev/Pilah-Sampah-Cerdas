@@ -73,11 +73,16 @@ jobs:
             git reset --hard origin/main
 
             echo "=== 2. Updating Backend (apps/api) ==="
-            cd apps/api
-
-            # Install dependencies cepat & generate Prisma client
-            npm ci --prefer-offline --no-audit --silent 2>/dev/null || npm install --silent --legacy-peer-deps
+            cd "$REPO_DIR"
+            npm install --silent --legacy-peer-deps --prefer-offline 2>/dev/null || true
+            cd "$REPO_DIR/apps/api"
+            rm -rf node_modules/@prisma node_modules/.prisma
             npx prisma generate
+            if [ -d "$REPO_DIR/apps/api/node_modules" ]; then
+              mkdir -p "$REPO_DIR/apps/api/node_modules/@prisma" "$REPO_DIR/apps/api/node_modules/.prisma"
+              cp -r "$REPO_DIR/node_modules/@prisma/"* "$REPO_DIR/apps/api/node_modules/@prisma/" 2>/dev/null || true
+              cp -r "$REPO_DIR/node_modules/.prisma/"* "$REPO_DIR/apps/api/node_modules/.prisma/" 2>/dev/null || true
+            fi
             npx prisma migrate deploy || true
             npm run build
 
