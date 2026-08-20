@@ -5,6 +5,8 @@
  * 
  * Halaman Penilaian Individu Mahasiswa KKN (6 Aspek Akademik DPL)
  * Desain Master-Detail 2-Panel Side-by-Side Berseka Clean
+ * - Paginasi: 10 Rekord per halaman
+ * - Mode Lihat & Edit Nilai (khusus data yang sudah dinilai)
  * 100% Real Database PostgreSQL Integration via Prisma
  */
 
@@ -14,6 +16,8 @@ import {
   User,
   Loader2,
   GraduationCap,
+  Edit3,
+  CheckCircle2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -78,13 +82,14 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   const [saving, setSaving] = useState<boolean>(false);
   const [students, setStudents] = useState<StudentRekapItem[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
 
-  // Filters & Pagination
+  // Filters & Pagination (10 per halaman)
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [filterKelompok, setFilterKelompok] = useState<string>("ALL");
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   // Form State
   const [formScores, setFormScores] = useState<{
@@ -130,8 +135,13 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   }, []);
 
   // Handler Select Student
-  const selectStudent = (student: StudentRekapItem) => {
+  const selectStudent = (student: StudentRekapItem, forceEdit?: boolean) => {
     setSelectedStudentId(student.studentId);
+    setIsEditMode(
+      forceEdit !== undefined
+        ? forceEdit
+        : student.statusDpl !== "SUDAH_DINILAI"
+    );
     setFormScores({
       skorDplPerencanaan: student.skorDplPerencanaan || "",
       skorDplKontribusi: student.skorDplKontribusi || "",
@@ -144,7 +154,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   };
 
   const handleActionClick = (student: StudentRekapItem) => {
-    selectStudent(student);
+    const shouldEdit = student.statusDpl !== "SUDAH_DINILAI";
+    selectStudent(student, shouldEdit);
     if (window.innerWidth < 1024) {
       formRef.current?.scrollIntoView({ behavior: "smooth" });
     }
@@ -187,7 +198,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     });
   }, [students, searchQuery, filterKelompok, filterStatus]);
 
-  // Pagination
+  // Pagination (10 per halaman)
   const totalPages = Math.max(1, Math.ceil(filteredStudents.length / itemsPerPage));
   const paginatedStudents = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -230,6 +241,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     key: keyof typeof formScores,
     val: string
   ) => {
+    if (!isEditMode) return;
     if (val === "") {
       setFormScores((prev) => ({ ...prev, [key]: "" }));
       return;
@@ -244,7 +256,10 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   // Reset / Batal
   const handleBatal = () => {
     if (selectedStudent) {
-      selectStudent(selectedStudent);
+      selectStudent(
+        selectedStudent,
+        selectedStudent.statusDpl !== "SUDAH_DINILAI"
+      );
       toast("Nilai dikembalikan ke data sebelumnya", { icon: "↩️" });
     }
   };
@@ -307,6 +322,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           return s;
         })
       );
+
+      // Set to view mode after saving if fully graded
+      if (newStatusDpl === "SUDAH_DINILAI") {
+        setIsEditMode(false);
+      }
 
       toast.success("Penilaian berhasil disimpan ke database!");
     } catch (err: any) {
@@ -502,7 +522,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                                 e.stopPropagation();
                                 handleActionClick(s);
                               }}
-                              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#009966] hover:bg-[#008055] text-white shadow-2xs transition"
+                              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#009966] hover:bg-[#008055] text-white shadow-2xs transition cursor-pointer"
                             >
                               Lanjutkan
                             </button>
@@ -513,7 +533,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                                 e.stopPropagation();
                                 handleActionClick(s);
                               }}
-                              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-[#009966] text-[#009966] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition"
+                              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-[#009966] text-[#009966] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition cursor-pointer"
                             >
                               Lihat Nilai
                             </button>
@@ -524,7 +544,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                                 e.stopPropagation();
                                 handleActionClick(s);
                               }}
-                              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-[#009966] text-[#009966] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition"
+                              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-[#009966] text-[#009966] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition cursor-pointer"
                             >
                               Beri Nilai
                             </button>
@@ -538,7 +558,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             </table>
           </div>
 
-          {/* Pagination Footer */}
+          {/* Pagination Footer (10 Rekord per halaman) */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
             <div>
               Menampilkan{" "}
@@ -562,13 +582,12 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                 type="button"
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer disabled:cursor-not-allowed"
               >
                 &lt;
               </button>
 
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => {
-                // Show condensed page numbers if total pages > 5
                 if (
                   totalPages > 5 &&
                   pg !== 1 &&
@@ -591,7 +610,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                     key={pg}
                     type="button"
                     onClick={() => setCurrentPage(pg)}
-                    className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition ${
+                    className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition cursor-pointer ${
                       isActive
                         ? "bg-[#009966] text-white"
                         : "border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -606,7 +625,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                 type="button"
                 disabled={currentPage === totalPages || totalPages === 0}
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer disabled:cursor-not-allowed"
               >
                 &gt;
               </button>
@@ -619,9 +638,22 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           ref={formRef}
           className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-5 space-y-4"
         >
-          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-            Form Penilaian Individu
-          </h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
+              Form Penilaian Individu
+            </h2>
+            {selectedStudent && selectedStudent.statusDpl === "SUDAH_DINILAI" && (
+              <span
+                className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${
+                  isEditMode
+                    ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/60"
+                    : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                }`}
+              >
+                {isEditMode ? "Mode Edit" : "Mode Lihat"}
+              </span>
+            )}
+          </div>
 
           {selectedStudent ? (
             <>
@@ -678,17 +710,24 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                             {aspek.bobot}%
                           </td>
                           <td className="py-2 px-2 text-center">
-                            <div className="inline-flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1">
+                            <div
+                              className={`inline-flex items-center gap-1 border rounded-lg px-2 py-1 transition ${
+                                isEditMode
+                                  ? "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-2xs focus-within:ring-2 focus-within:ring-[#009966]/20 focus-within:border-[#009966]"
+                                  : "bg-slate-100/70 dark:bg-slate-800/50 border-slate-200/60 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+                              }`}
+                            >
                               <input
                                 type="number"
                                 min={0}
                                 max={100}
+                                disabled={!isEditMode}
                                 value={val}
                                 onChange={(e) =>
                                   handleScoreChange(aspek.key, e.target.value)
                                 }
                                 placeholder="0"
-                                className="w-10 text-center text-xs font-bold text-slate-900 dark:text-slate-100 bg-transparent focus:outline-none"
+                                className="w-10 text-center text-xs font-bold text-slate-900 dark:text-slate-100 bg-transparent focus:outline-none disabled:cursor-not-allowed"
                               />
                               <span className="text-[10px] text-slate-400">0-100</span>
                             </div>
@@ -741,6 +780,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                 </label>
                 <textarea
                   rows={3}
+                  disabled={!isEditMode}
                   value={formScores.catatanDpl}
                   onChange={(e) =>
                     setFormScores((prev) => ({
@@ -749,34 +789,58 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                     }))
                   }
                   placeholder="Tuliskan catatan atau umpan balik untuk mahasiswa..."
-                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] transition resize-none"
+                  className={`w-full border rounded-xl p-3 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none transition resize-none ${
+                    isEditMode
+                      ? "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966]"
+                      : "bg-slate-100/60 dark:bg-slate-800/30 border-slate-200/60 dark:border-slate-800 cursor-not-allowed"
+                  }`}
                 />
               </div>
 
-              {/* Action Buttons: Batal & Simpan Nilai */}
+              {/* Action Buttons: Edit / Batal / Simpan Nilai */}
               <div className="flex items-center justify-end gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={handleBatal}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={handleSave}
-                  className="px-5 py-2 rounded-xl text-xs font-semibold bg-[#009966] hover:bg-[#008055] text-white shadow-sm transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />
-                      <span>Menyimpan...</span>
-                    </>
-                  ) : (
-                    <span>Simpan Nilai</span>
-                  )}
-                </button>
+                {!isEditMode && selectedStudent.statusDpl === "SUDAH_DINILAI" ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditMode(true)}
+                    className="px-5 py-2 rounded-xl text-xs font-semibold bg-[#009966] hover:bg-[#008055] text-white shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Edit3 size={14} />
+                    <span>Edit Nilai</span>
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleBatal}
+                      className="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={handleSave}
+                      className="px-5 py-2 rounded-xl text-xs font-semibold bg-[#009966] hover:bg-[#008055] text-white shadow-sm transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          <span>Menyimpan...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 size={14} />
+                          <span>
+                            {selectedStudent.statusDpl === "SUDAH_DINILAI"
+                              ? "Simpan Perubahan"
+                              : "Simpan Nilai"}
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  </>
+                )}
               </div>
             </>
           ) : (
