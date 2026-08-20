@@ -291,6 +291,7 @@ export const PemanfaatanSampah: React.FC = () => {
                     <th className="p-4 font-bold">Fasilitas</th>
                     <th className="p-4 font-bold">PIC & RW</th>
                     <th className="p-4 font-bold">Koordinat</th>
+                    <th className="p-4 font-bold">Terdaftar Pada</th>
                     <th className="p-4 font-bold text-center">Status</th>
                   </tr>
                 </thead>
@@ -319,6 +320,10 @@ export const PemanfaatanSampah: React.FC = () => {
                       <td className="p-4 text-sm text-slate-600 font-mono text-xs">
                         {Number(item.latitude).toFixed(5)}, {Number(item.longitude).toFixed(5)}
                       </td>
+                      <td className="p-4 text-sm text-slate-500">
+                        {new Date(item.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        <span className="block text-[10px] mt-0.5 opacity-80">{new Date(item.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB</span>
+                      </td>
                       <td className="p-4 text-center">
                         {getStatusBadge(item.statusApproval)}
                       </td>
@@ -326,7 +331,7 @@ export const PemanfaatanSampah: React.FC = () => {
                   ))}
                   {paginatedItems.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="p-8 text-center text-slate-500">
+                      <td colSpan={5} className="p-8 text-center text-slate-500">
                         Tidak ada fasilitas yang ditemukan.
                       </td>
                     </tr>
