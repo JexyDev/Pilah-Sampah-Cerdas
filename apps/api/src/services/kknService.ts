@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma.js";
+﻿import { prisma } from "../lib/prisma.js";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -1497,7 +1497,7 @@ export class KknService {
     const endDate = new Date(targetDate);
     endDate.setHours(23, 59, 59, 999);
 
-    // Ã°Å¸Å½Â¯ VALIDASI ANTI-TUMPUK (1 Hari/Pertemuan = 1 Status Pengajuan)
+    // ÃƒÂ°Ã…Â¸Ã…Â½Ã‚Â¯ VALIDASI ANTI-TUMPUK (1 Hari/Pertemuan = 1 Status Pengajuan)
     const studentProfile = await prisma.studentKkn.findFirst({
       where: { OR: [{ userId: studentId }, { id: studentId }] },
       include: { kelompok: { include: { dpl: true } }, user: true },
@@ -1887,7 +1887,7 @@ export class KknService {
     const ruleTargetMinutes = (ruleConfigs.attendanceMinDurationHours * 60) + ruleConfigs.attendanceMinDurationMinutes + (ruleConfigs.attendanceMinDurationSeconds / 60);
     const targetDurationMinutes = ruleTargetMinutes > 0 ? ruleTargetMinutes : 2;
 
-    // Hitung batas hari WIB (UTC+7) Ã¢â‚¬â€ jadwal disimpan UTC, harus query dengan window WIB
+    // Hitung batas hari WIB (UTC+7) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â jadwal disimpan UTC, harus query dengan window WIB
     const nowForBoundary = new Date();
     const nowWibBoundary = new Date(nowForBoundary.getTime() + 7 * 60 * 60 * 1000);
     const todayWibStr = nowWibBoundary.toISOString().slice(0, 10);
@@ -1925,7 +1925,7 @@ export class KknService {
     });
     const completedScheduleIds = new Set(completedAttendances.map((a) => a.scheduleId));
 
-    // Ã°Å¸Å½Â¯ Filter jadwal aktif khusus untuk kelompok KKN mahasiswa ybs (isActive: true)
+    // ÃƒÂ°Ã…Â¸Ã…Â½Ã‚Â¯ Filter jadwal aktif khusus untuk kelompok KKN mahasiswa ybs (isActive: true)
     let activeSchedules: any[] = [];
     if (student?.kelompokId) {
       activeSchedules = await prisma.schedule.findMany({
@@ -1979,7 +1979,7 @@ export class KknService {
       // Strip suffix WIB/WITA/WIT dan normalize separator ke "-"
       const normalizedTime = (sch.time || "")
         .replace(/\s*(WIB|WITA|WIT)\s*/gi, "")
-        .replace(/[Ã¢â‚¬â€œÃ¢â‚¬â€~]|s\/d|sd/gi, "-")
+        .replace(/[ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â~]|s\/d|sd/gi, "-")
         .trim();
       if (normalizedTime.includes("-")) {
         const parts = normalizedTime.split("-");
@@ -2355,9 +2355,9 @@ export class KknService {
     };
   }
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
   // 3 Pilar KKN (Perencanaan, Aksi, Panen)
-  // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
   async createProgramKerja(userId: string, payload: any) {
     const student = await prisma.studentKkn.findUnique({
@@ -2394,6 +2394,15 @@ export class KknService {
       },
     });
 
+      if (student.kelompok?.dplId) {
+        await prisma.notification.create({
+          data: {
+            userId: student.kelompok.dplId,
+            title: "Program Kerja Baru",
+            message: `Mahasiswa ${student.user.name} mengajukan ide program kerja: ${judul}. Silakan ditinjau.`
+          },
+        }).catch(() => {});
+      }
     return proker;
   }
 
@@ -2408,7 +2417,7 @@ export class KknService {
     if (user.role?.name === "MAHASISWA_KKN") {
       kelompokId = user.studentProfile?.kelompokId || null;
     } else if (user.role?.name === "DPL") {
-      const kel = await prisma.kelompokKkn.findFirst({ where: { dplUserId: userId } });
+      const kel = await prisma.kelompokKkn.findFirst({ where: { dplId: userId } });
       kelompokId = kel?.id || null;
     }
 
@@ -2425,22 +2434,22 @@ export class KknService {
       orderBy: { createdAt: "desc" },
     });
 
-    return list.map(item => {
-      // Extract judul dari deskripsi: `**Judul**\n\nDeskripsi`
-      let judul = "Program Kerja";
+    return list.map((item) => {
+      let judul = item.deskripsi;
       let catatan = item.catatanDpl;
       const descSplit = item.deskripsi.split("\n\n");
       if (descSplit.length > 1 && item.deskripsi.startsWith("**")) {
         judul = descSplit[0].replace(/\*\*/g, "");
       }
+      const st = String(item.status);
       return {
         id: item.id,
         judul,
         kategori: item.kategori,
         rencanaAnggaran: Number(item.kebutuhanBiaya) || 0,
-        status: (item.status === "DISETUJUI" || item.status === "DITERIMA" || item.status === "SEDANG_BERJALAN" || item.status === "SELESAI") ? "APPROVED" : (item.status === "DITOLAK" ? "REJECTED" : "PENDING"),
+          status: (item.status === "DISETUJUI" || item.status === "DITERIMA" || item.status === "SEDANG_BERJALAN" || item.status === "SELESAI") ? "APPROVED" : (item.status === "DITOLAK" ? "REJECTED" : "PENDING"),
         catatanDpl: catatan,
-        tanggal: item.createdAt.toISOString(), // Fallback ke createdAt karena skema tidak punya targetTanggal
+        tanggal: item.createdAt.toISOString(),
       };
     });
   }
@@ -2458,8 +2467,8 @@ export class KknService {
     // Validasi apakah proker ada dan disetujui (opsional, tapi disarankan)
     if (programKerjaId) {
       const proker = await prisma.programKerjaKkn.findUnique({ where: { id: programKerjaId } });
-      if (proker && (proker.status === "BELUM_DISETUJUI" || proker.status === "DITOLAK")) {
-        throw new Error("Program kerja belum disetujui atau ditolak DPL, tidak bisa menambah logbook pemanfaatan.");
+        if (proker && (proker.status === "BELUM_DISETUJUI" || proker.status === "DITOLAK")) {
+          throw new Error("Program kerja belum disetujui atau ditolak DPL, tidak bisa menambah logbook pemanfaatan.");
       }
     }
 
@@ -2481,12 +2490,14 @@ export class KknService {
       },
     });
 
-    await pointService.awardPoints({
-      userId,
-      amount: 10, // Poin harian logbook
-      description: `Logbook Pemanfaatan: ${teknologi}`,
-      source: "KKN",
-    });
+    await prisma.pointHistory.create({
+      data: {
+        userId,
+        points: 10,
+        description: `Logbook Pemanfaatan: ${teknologi || 'Organik'}`,
+        kategori: "REDUKSI_TONASE",
+      },
+    }).catch(() => {});
 
     return report;
   }
@@ -2521,17 +2532,20 @@ export class KknService {
       },
     });
 
-    await pointService.awardPoints({
-      userId,
-      amount: 25, // Poin besar karena panen
-      description: `Panen Hasil KKN`,
-      source: "KKN",
-    });
+    await prisma.pointHistory.create({
+      data: {
+        userId,
+        points: 25,
+        description: `Panen Hasil KKN`,
+        kategori: "REDUKSI_TONASE",
+      },
+    }).catch(() => {});
 
     return report;
   }
 }
 
 export const kknService = new KknService();
+
 
 

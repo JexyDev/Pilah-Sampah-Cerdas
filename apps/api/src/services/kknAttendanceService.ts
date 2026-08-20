@@ -1187,11 +1187,27 @@ export class KknAttendanceService {
     });
 
     const allStudentUserIds = allStudents.map((s) => s.id);
+    // Determine calendar date boundaries for this schedule in WIB (+07:00)
+    const schedDate = schedule?.date ? new Date(schedule.date) : new Date();
+    const schedWib = new Date(schedDate.getTime() + 7 * 60 * 60 * 1000);
+    const schedWibStr = schedWib.toISOString().slice(0, 10);
+    const startOfDay = new Date(`${schedWibStr}T00:00:00+07:00`);
+    const endOfDay = new Date(`${schedWibStr}T23:59:59.999+07:00`);
+
     // Bug fix: jangan filter studentId di sini — tampilkan SEMUA record absen
-    // untuk schedule ini agar mahasiswa yang mulaiKegiatan tapi belum terdaftar
-    // di kelompok (atau data kelompok belum sinkron) tetap muncul di daftar.
+    // untuk schedule ini, DAN sertakan juga record yang sedang BERLANGSUNG hari ini
+    // agar jika mahasiswa mulaiKegiatan tapi di web sedang dipilih jadwal/kelompok berbeda,
+    // data presensi aktifnya tetap muncul secara realtime.
     const list = await prisma.activityAttendance.findMany({
-      where: { scheduleId },
+      where: {
+        OR: [
+          { scheduleId },
+          {
+            status: "BERLANGSUNG",
+            attendedAt: { gte: startOfDay, lte: endOfDay },
+          },
+        ],
+      },
       include: {
         student: {
           select: {
@@ -1219,14 +1235,6 @@ export class KknAttendanceService {
         attendedAt: "desc",
       },
     });
-
-
-    // Determine calendar date boundaries for this schedule in WIB (+07:00)
-    const schedDate = schedule?.date ? new Date(schedule.date) : new Date();
-    const schedWib = new Date(schedDate.getTime() + 7 * 60 * 60 * 1000);
-    const schedWibStr = schedWib.toISOString().slice(0, 10);
-    const startOfDay = new Date(`${schedWibStr}T00:00:00+07:00`);
-    const endOfDay = new Date(`${schedWibStr}T23:59:59.999+07:00`);
 
     // Query active & historical leave requests for all relevant students during this schedule's timeframe
     const leaveRequests = allStudentUserIds.length > 0
