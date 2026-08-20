@@ -46,6 +46,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      if (!mounted) return;
       ref.read(kknLocationProvider.notifier).forceLocationUpdate(context);
     }
   }
@@ -509,7 +510,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                 if (state.isTracking || state.activeActivity != null) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('Anda masih memiliki kegiatan KKN yang aktif berjalan. Harap selesaikan (berhenti tracking) kegiatan sebelumnya terlebih dahulu!'),
+                      content: Text('Anda masih memiliki kegiatan KKN aktif. Silakan keluar dari kegiatan sebelumnya terlebih dahulu!'),
                       backgroundColor: AppColors.dangerRed,
                     ));
                   }
@@ -517,13 +518,23 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                 }
 
                 final result = await notifier.mulaiKegiatan(id);
-                if (result == null && mounted) {
-                  ref.read(authProvider.notifier).fetchProfile();
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('+10 Poin berhasil didapatkan dari Presensi Masuk!'),
-                    backgroundColor: AppColors.primaryGreen,
+                if (result == null) {
+                  // Sukses
+                  if (mounted) {
+                    ref.read(authProvider.notifier).fetchProfile();
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('+10 Poin berhasil didapatkan dari Presensi Masuk!'),
+                      backgroundColor: AppColors.primaryGreen,
+                    ));
+                    setState(() => _showDetail = true);
+                  }
+                } else if (mounted && result != 'CONFLICT') {
+                  // Bug #3 fix: tampilkan pesan error spesifik ke user
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(result),
+                    backgroundColor: AppColors.dangerRed,
+                    behavior: SnackBarBehavior.floating,
                   ));
-                  setState(() => _showDetail = true);
                 }
               },
             );
@@ -554,9 +565,19 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
     final bool isSuccess = state.isSuccessAttendance;
 
     final act = state.selectedKegiatan ?? state.activeActivity;
-    final String timeLabel =
-        act?['time']?.toString() ??
-        '${act?['jamMulai'] ?? '-'} - ${act?['jamSelesai'] ?? '-'}';
+    // Normalize: hapus suffix WIB/WITA, coba semua field yang ada
+    final String rawTimeLabel =
+        act?['time']?.toString().isNotEmpty == true
+            ? act!['time'].toString()
+            : act?['jamKegiatan']?.toString().isNotEmpty == true
+                ? act!['jamKegiatan'].toString()
+                : (act?['jamMulai'] != null && act?['jamSelesai'] != null
+                    ? '${act!["jamMulai"]} - ${act["jamSelesai"]}'
+                    : '');
+    final String timeLabel = rawTimeLabel
+        .replaceAll(RegExp(r'\s*(WIB|WITA|WIT)\s*', caseSensitive: false), '')
+        .replaceAllMapped(RegExp(r'(\d{2})\.(\d{2})'), (m) => '${m[1]}:${m[2]}')
+        .trim();
 
     Widget content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -601,7 +622,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Anda berada di luar Are! Toleransi sisa: ${300 - state.outOfZoneSeconds} detik sebelum sesi dibatalkan.',
+                    'Anda berada di luar Area! Toleransi sisa: ${300 - state.outOfZoneSeconds} detik sebelum sesi dibatalkan.',
                     style: const TextStyle(
                       color: AppColors.dangerRed,
                       fontSize: 13,
@@ -864,9 +885,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                         timeLabel.isNotEmpty
                             ? timeLabel.toUpperCase()
                             : (act != null
-                                  ? (act['jamKegiatan'] ??
-                                        act['time'] ??
-                                        '08:00 - 16:00')
+                                  ? '08:00 - 16:00'
                                   : '-'),
                       ),
                     ),
@@ -1413,24 +1432,51 @@ class KegiatanKknCard extends StatelessWidget {
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: canStart
-                    ? () => onMulai(kegiatan['id'].toString())
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ElevatedButton(
+                    onPressed: canStart
+                        ? () => onMulai(kegiatan['id'].toString())
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      buttonText,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                ),
-                child: Text(
-                  buttonText,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                  // Bug #13 fix: tampilkan alasan tombol disabled agar user tidak bingung
+                  if (!canStart) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      statusKehadiran == 'HADIR' || statusKehadiran == 'SELESAI'
+                          ? 'Anda sudah tercatat hadir pada kegiatan ini.'
+                          : statusKehadiran == 'ALPA'
+                              ? 'Waktu kegiatan telah berakhir. Status: Alpa.'
+                              : statusKehadiran == 'IZIN' || statusKehadiran == 'SAKIT'
+                                  ? 'Anda memiliki pengajuan $statusKehadiran yang aktif.'
+                                  : statusKehadiran == 'SELESAI_TELAT'
+                                      ? 'Sesi berakhir (durasi kurang dari target).'
+                                      : !isAktif
+                                          ? 'Kegiatan belum dimulai sesuai jadwal.'
+                                          : 'Tombol tidak tersedia saat ini.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ],
@@ -1488,9 +1534,9 @@ class StopTrackingButton extends StatelessWidget {
       width: double.infinity,
       child: TextButton.icon(
         onPressed: onStop,
-        icon: const Icon(Icons.stop_rounded, color: AppColors.dangerRed),
+        icon: const Icon(Icons.exit_to_app_rounded, color: AppColors.dangerRed),
         label: const Text(
-          'Berhenti Tracking',
+          'Keluar dari Kegiatan',
           style: TextStyle(
             color: AppColors.dangerRed,
             fontWeight: FontWeight.bold,

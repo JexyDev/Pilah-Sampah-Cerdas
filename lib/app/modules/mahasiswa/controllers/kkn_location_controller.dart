@@ -169,17 +169,48 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   static const _prefKeyAccumulated = 'kkn_accumulated_seconds';
   static const _prefKeyDate = 'kkn_accumulated_date';
   static const _prefKeyTarget = 'kkn_accumulated_target';
+  static const _prefKeyEntryTime = 'kkn_zone_entry_time';
 
   Future<void> _loadPersistentTimer() async {
-    _accumulatedSeconds = 0;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final todayStr = DateTime.now().toIso8601String().substring(0, 10);
+      final savedDate = prefs.getString(_prefKeyDate);
+      if (savedDate == todayStr) {
+        final savedSeconds = prefs.getInt(_prefKeyAccumulated) ?? 0;
+        if (savedSeconds > _accumulatedSeconds) {
+          _accumulatedSeconds = savedSeconds;
+        }
+        final savedEntry = prefs.getString(_prefKeyEntryTime);
+        if (savedEntry != null && savedEntry.isNotEmpty) {
+          _zoneEntryTime = DateTime.tryParse(savedEntry);
+        }
+      } else {
+        await prefs.remove(_prefKeyAccumulated);
+        await prefs.remove(_prefKeyDate);
+        await prefs.remove(_prefKeyEntryTime);
+        _accumulatedSeconds = 0;
+        _zoneEntryTime = null;
+      }
+    } catch (_) {}
   }
 
   Future<void> _savePersistentTimer() async {
-    // Rely 100% on Backend DB for duration actual seconds
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final todayStr = DateTime.now().toIso8601String().substring(0, 10);
+      await prefs.setString(_prefKeyDate, todayStr);
+      await prefs.setInt(_prefKeyAccumulated, _accumulatedSeconds);
+      if (_zoneEntryTime != null) {
+        await prefs.setString(_prefKeyEntryTime, _zoneEntryTime!.toIso8601String());
+      } else {
+        await prefs.remove(_prefKeyEntryTime);
+      }
+    } catch (_) {}
   }
 
   Future<void> _savePersistentTimerTempValue(int tempSeconds) async {
-    // Rely 100% on Backend DB for duration actual seconds
+    await _savePersistentTimer();
   }
 
   Future<void> checkActiveSchedule() async {
@@ -200,13 +231,21 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         activeZone['namaKegiatan'] ??= activeZone['title'] ?? 'Penugasan KKN';
         activeZone['radius'] ??= 100;
 
+        await _loadPersistentTimer();
+
         if (activeZone['actualInZoneSeconds'] != null) {
-          _accumulatedSeconds = int.tryParse(activeZone['actualInZoneSeconds'].toString()) ?? 0;
-          await _savePersistentTimer();
+          final serverSecs = int.tryParse(activeZone['actualInZoneSeconds'].toString()) ?? 0;
+          if (serverSecs > _accumulatedSeconds) {
+            _accumulatedSeconds = serverSecs;
+            await _savePersistentTimer();
+          }
         } else if (activeZone['actualInZoneMinutes'] != null) {
           final actualMins = num.tryParse(activeZone['actualInZoneMinutes'].toString()) ?? 0;
-          _accumulatedSeconds = (actualMins * 60).toInt();
-          await _savePersistentTimer();
+          final serverSecs = (actualMins * 60).toInt();
+          if (serverSecs > _accumulatedSeconds) {
+            _accumulatedSeconds = serverSecs;
+            await _savePersistentTimer();
+          }
         }
 
         final double? targetLat = (activeZone['latitude'] as num?)?.toDouble();
@@ -743,9 +782,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   /// Force immediate location & target refresh on demand (Pull-to-refresh / Button / App Resume)
   Future<void> forceLocationUpdate([BuildContext? context]) async {
     if (state.isTracking) {
+      // Bug #10 fix: simpan scheduleId aktif agar tidak hilang setelah restart
+      final savedScheduleId = _currentTargetScheduleId;
+
       // Hard refresh: Hentikan semua service layaknya hot refresh
       stopTracking();
-      
+
       // Bersihkan state agar `startTracking` memanggil `getActiveZone` ulang dari API
       state = state.copyWith(
         activeActivity: null,
@@ -753,12 +795,13 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         zoneResetWarning: null,
         clearWarning: true,
       );
-      _currentTargetScheduleId = null;
-      
+      // Restore schedule ID agar tracking bisa dilanjutkan ke jadwal yang sama
+      _currentTargetScheduleId = savedScheduleId;
+
       // Beri sedikit jeda agar background service benar-benar berhenti
       await Future.delayed(const Duration(milliseconds: 300));
     }
-    
+
     // Mulai ulang dari awal
     if (context != null && context.mounted) {
       await startTracking(context);
@@ -839,12 +882,18 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       final bool isAttended = mergedData['isAttended'] == true || status == 'hadir';
 
       if (mergedData['actualInZoneSeconds'] != null) {
-        _accumulatedSeconds = int.tryParse(mergedData['actualInZoneSeconds'].toString()) ?? 0;
-        await _savePersistentTimer();
+        final serverSecs = int.tryParse(mergedData['actualInZoneSeconds'].toString()) ?? 0;
+        if (serverSecs > _accumulatedSeconds) {
+          _accumulatedSeconds = serverSecs;
+          await _savePersistentTimer();
+        }
       } else if (mergedData['actualInZoneMinutes'] != null) {
         final actualMins = num.tryParse(mergedData['actualInZoneMinutes'].toString()) ?? 0;
-        _accumulatedSeconds = (actualMins * 60).toInt();
-        await _savePersistentTimer();
+        final serverSecs = (actualMins * 60).toInt();
+        if (serverSecs > _accumulatedSeconds) {
+          _accumulatedSeconds = serverSecs;
+          await _savePersistentTimer();
+        }
       }
 
       if (isAttended || status == 'hadir') {
@@ -954,10 +1003,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             timeWindowWarning =
                 'Batas waktu absen telah berakhir (Tutup pada ${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')})';
 
-            // RESET TIMER KETIKA WAKTU SELESAI
-            _stopZoneTimer(resetCompletely: true);
+            // Bug #9 fix: Hentikan timer tanpa mereset akumulasi — pertahankan durasi yang sudah tercatat
+            _stopZoneTimer(resetCompletely: false);
             state = state.copyWith(
-              inZoneDurationSeconds: 0,
               isEligibleForAttendance: false,
               zoneResetWarning: timeWindowWarning,
               clearWarning: false,
@@ -969,7 +1017,10 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       }
 
       if (state.isInsideRadius) {
-        _zoneEntryTime ??= now;
+        if (_zoneEntryTime == null) {
+          _zoneEntryTime = now;
+          await _savePersistentTimer();
+        }
         final currentSessionSeconds = now.difference(_zoneEntryTime!).inSeconds;
         final totalElapsed = _accumulatedSeconds + currentSessionSeconds;
 
@@ -978,7 +1029,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             totalElapsed % 5 == 0 &&
             _lastSavedSeconds != totalElapsed) {
           _lastSavedSeconds = totalElapsed;
-          _savePersistentTimerTempValue(totalElapsed);
+          await _savePersistentTimer();
         }
 
         // Syarat Absen MUTLAK: Harus berada di zona sesuai target durasi
@@ -1312,7 +1363,13 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     required String rw,
     required String kelurahan,
   }) async {
-    _currentTargetScheduleId ??= 'SCH-TODAY';
+    // Bug #6 fix: guard null scheduleId — jangan fallback ke ID fiktif 'SCH-TODAY'
+    if (_currentTargetScheduleId == null) {
+      state = state.copyWith(
+        error: 'Sesi kegiatan tidak aktif. Silakan mulai kegiatan terlebih dahulu.',
+      );
+      return false;
+    }
 
     final user = ref.read(authProvider).user;
     final nim =

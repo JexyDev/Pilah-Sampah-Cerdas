@@ -28,6 +28,7 @@ class KknBgPrefKeys {
   static const accumulatedSeconds = 'kkn_accumulated_seconds';
   static const accumulatedDate = 'kkn_accumulated_date';
   static const accumulatedTarget = 'kkn_accumulated_target';
+  static const zoneEntryTime = 'kkn_zone_entry_time';
   
   // Data target lokasi (dikirim dari UI saat start)
   static const targetLat = 'kkn_bg_target_lat';
@@ -120,8 +121,13 @@ class KknBackgroundTaskHandler extends TaskHandler {
     final today = DateTime.now().toLocal().toString().substring(0, 10);
     if (savedDate == today) {
       _accumulatedSeconds = prefs.getInt(KknBgPrefKeys.accumulatedSeconds) ?? 0;
+      final savedEntry = prefs.getString(KknBgPrefKeys.zoneEntryTime);
+      if (savedEntry != null && savedEntry.isNotEmpty) {
+        _zoneEntryTime = DateTime.tryParse(savedEntry);
+      }
     } else {
       _accumulatedSeconds = 0;
+      _zoneEntryTime = null;
     }
     
     // Load target location
@@ -282,12 +288,12 @@ class KknBackgroundTaskHandler extends TaskHandler {
     final now = DateTime.now();
     
     if (nowInside) {
-      _zoneEntryTime ??= now;
+      if (_zoneEntryTime == null) {
+        _zoneEntryTime = now;
+        await _saveDuration(_accumulatedSeconds, entryTime: _zoneEntryTime);
+      }
       final sessionSeconds = now.difference(_zoneEntryTime!).inSeconds;
       final totalSeconds = _accumulatedSeconds + sessionSeconds;
-      
-      // Persist setiap cycle (30 detik)
-      await _saveDuration(totalSeconds);
       
       // Kirim update ke UI
       _sendToUI({
@@ -328,7 +334,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
       if (_zoneEntryTime != null) {
         _accumulatedSeconds += now.difference(_zoneEntryTime!).inSeconds;
         _zoneEntryTime = null;
-        await _saveDuration(_accumulatedSeconds);
+        await _saveDuration(_accumulatedSeconds, entryTime: null);
       }
       
       if (_isInsideRadius) {
@@ -430,16 +436,26 @@ class KknBackgroundTaskHandler extends TaskHandler {
     FlutterForegroundTask.sendDataToMain(data);
   }
 
-  Future<void> _saveDuration(int totalSeconds) async {
+  Future<void> _saveDuration(int accumSeconds, {DateTime? entryTime}) async {
     final prefs = await SharedPreferences.getInstance();
     final today = DateTime.now().toLocal().toString().substring(0, 10);
     final targetKey = (_scheduleId != null && _scheduleId!.isNotEmpty && _scheduleId != 'SCH-TODAY')
         ? '_$_scheduleId'
         : '';
     await prefs.setString(KknBgPrefKeys.accumulatedDate, today);
-    await prefs.setInt(KknBgPrefKeys.accumulatedSeconds, totalSeconds);
+    await prefs.setInt(KknBgPrefKeys.accumulatedSeconds, accumSeconds);
+    if (entryTime != null) {
+      await prefs.setString(KknBgPrefKeys.zoneEntryTime, entryTime.toIso8601String());
+    } else {
+      await prefs.remove(KknBgPrefKeys.zoneEntryTime);
+    }
     await prefs.setString('${KknBgPrefKeys.accumulatedDate}$targetKey', today);
-    await prefs.setInt('${KknBgPrefKeys.accumulatedSeconds}$targetKey', totalSeconds);
+    await prefs.setInt('${KknBgPrefKeys.accumulatedSeconds}$targetKey', accumSeconds);
+    if (entryTime != null) {
+      await prefs.setString('${KknBgPrefKeys.zoneEntryTime}$targetKey', entryTime.toIso8601String());
+    } else {
+      await prefs.remove('${KknBgPrefKeys.zoneEntryTime}$targetKey');
+    }
   }
 
   Future<void> _autoStop(String reason) async {

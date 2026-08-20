@@ -33,6 +33,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref.read(mahasiswaControllerProvider.notifier).fetchAll();
       ref.read(locationPingControllerProvider.notifier).startTracking();
       final kknNotifier = ref.read(kknLocationProvider.notifier);
@@ -49,6 +50,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      if (!mounted) return;
       // Auto-refresh location when app is resumed
       ref.read(kknLocationProvider.notifier).forceLocationUpdate(context);
       ref.read(mahasiswaControllerProvider.notifier).refresh();
