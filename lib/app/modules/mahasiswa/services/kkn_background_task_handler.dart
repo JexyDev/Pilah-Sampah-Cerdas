@@ -173,6 +173,16 @@ class KknBackgroundTaskHandler extends TaskHandler {
   @override
   void onRepeatEvent(DateTime timestamp) async {
     if (_isStopped) return;
+
+    // CHECK 0: Cek apakah user sudah logout atau service deactivated
+    final prefs = await SharedPreferences.getInstance();
+    final isActive = prefs.getBool(KknBgPrefKeys.serviceActive) ?? false;
+    final authToken = prefs.getString(KknBgPrefKeys.authToken);
+    if (!isActive || authToken == null || authToken.isEmpty) {
+      debugPrint('[KKN-BG] Pengguna telah logout. Menghentikan background service.');
+      await _autoStop('Pengguna telah keluar (logout). Tracking dihentikan.');
+      return;
+    }
     
     // ═════════════════════════════════════════════════════════
     // CHECK 1: Batas waktu maksimal service (4 jam)

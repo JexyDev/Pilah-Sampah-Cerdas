@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../data/models/user_entity.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/repositories/notification_repository.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/notification_engine.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
+import '../../mahasiswa/services/kkn_background_task_handler.dart';
 
 /// State autentikasi.
 class AuthState {
@@ -220,6 +222,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (_) {
       // Non-critical — abaikan jika Firebase tidak aktif
     }
+
+    // 1. Hentikan total background foreground GPS service KKN & cancel notifikasi
+    try {
+      await stopKknForegroundService();
+    } catch (_) {}
+
+    // 2. Hapus seluruh KKN timer cache & preference di SharedPreferences
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final kknKeys = prefs.getKeys().where((k) => k.startsWith('kkn_')).toList();
+      for (final key in kknKeys) {
+        await prefs.remove(key);
+      }
+    } catch (_) {}
+
     await NotificationEngine().cancelAll();
     clearNotificationCache();
     await _authRepository.logout();
