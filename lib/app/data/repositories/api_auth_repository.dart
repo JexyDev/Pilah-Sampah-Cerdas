@@ -500,7 +500,7 @@ class ApiAuthRepository implements AuthRepository {
           final data = response.data['data']['user'] as Map<String, dynamic>;
           var mappedUser = _mapUser(data);
           // Tetap perlu memanggil /households/me jika auth/me tidak return householdId
-          return _fetchAndAttachHousehold(mappedUser);
+          return await _fetchAndAttachHousehold(mappedUser);
         }
       } on DioException catch (e) {
         throw AuthException('FETCH_FAILED', e.message);

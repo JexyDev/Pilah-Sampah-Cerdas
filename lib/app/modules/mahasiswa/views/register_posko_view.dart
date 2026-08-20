@@ -320,11 +320,11 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.9),
+                                  color: Colors.white.withValues(alpha: 0.9),
                                   borderRadius: BorderRadius.circular(8),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
+                                      color: Colors.black.withValues(alpha: 0.05),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
                                     )
@@ -383,7 +383,7 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                                       child: Container(
                                         padding: const EdgeInsets.all(6),
                                         decoration: BoxDecoration(
-                                          color: Colors.black.withOpacity(0.6),
+                                          color: Colors.black.withValues(alpha: 0.6),
                                           shape: BoxShape.circle,
                                         ),
                                         child: const Icon(Icons.close, color: Colors.white, size: 18),
@@ -398,7 +398,7 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                                   Container(
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: AppColors.primaryGreen.withOpacity(0.1),
+                                      color: AppColors.primaryGreen.withValues(alpha: 0.1),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(Icons.add_a_photo_rounded, size: 32, color: AppColors.primaryGreen),
