@@ -88,6 +88,15 @@ app.use(cookieParser());
 app.use(readOnlyGuard);
 app.use(auditMiddleware("Global"));
 
+// Disable HTTP Caching on all API routes to prevent mobile client stale data issues
+app.use("/api", (req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+  next();
+});
+
 // Create uploads folder if not exists
 fs.mkdirSync("uploads", { recursive: true });
 // Statically serve uploads folder
@@ -217,6 +226,8 @@ archiveAuditLogsCron.start();
       'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "id_kelompok" TEXT;',
       'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "id_dpl" TEXT;',
       'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "kelurahan" TEXT;',
+      'ALTER TABLE "kehadiran_kegiatan" ADD COLUMN IF NOT EXISTS "durasi_aktual_dalam_zona_menit" INTEGER;',
+      'ALTER TABLE "fasilitas" ADD COLUMN IF NOT EXISTS "id_pendaftar" TEXT;',
       `CREATE TABLE IF NOT EXISTS "kritik_saran_pemanfaatan" (
         "id" TEXT PRIMARY KEY,
         "id_pengguna" TEXT NOT NULL,
