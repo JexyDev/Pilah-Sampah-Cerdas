@@ -1096,13 +1096,14 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
     state = state.copyWith(currentPosition: pos, error: null, clearError: true);
 
-    // Send update to backend
-    try {
-      final repo = ref.read(kknRepositoryProvider);
-      final pingResponse = await repo.sendLocationPing(
-        pos.latitude,
-        pos.longitude,
-      );
+    // Send update to backend only if background service is not handling it
+    if (!_backgroundServiceStarted) {
+      try {
+        final repo = ref.read(kknRepositoryProvider);
+        final pingResponse = await repo.sendLocationPing(
+          pos.latitude,
+          pos.longitude,
+        );
 
       // Jika backend me-trigger auto attendance (karena durasi cukup dll)
       if (pingResponse.containsKey('autoAttendanceTriggered') &&
@@ -1120,8 +1121,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           );
         }
       }
-    } catch (_) {
-      // Fail silently for background GPS updates
+      } catch (_) {
+        // Fail silently for background GPS updates
+      }
     }
 
     // Geofencing checks
