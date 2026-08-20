@@ -2084,8 +2084,11 @@ export class KknService {
       if (endParts.length >= 2) {
         const endHour = parseInt(endParts[0], 10);
         const endMin = parseInt(endParts[1], 10);
-        const endDateObj = new Date(activeSchedule.date || todayStart);
-        endDateObj.setHours(endHour, endMin, 59, 999);
+        const schedDate = activeSchedule.date ? new Date(activeSchedule.date) : new Date();
+        const year = schedDate.getFullYear();
+        const month = schedDate.getMonth();
+        const day = schedDate.getDate();
+        const endDateObj = new Date(year, month, day, endHour, endMin, 59, 999);
         if (new Date() > endDateObj) {
           isExpired = true;
         }
