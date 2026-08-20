@@ -285,4 +285,130 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       );
     });
   });
+
+  describe("Attendance Points Reward (Check-In & Check-Out)", () => {
+    const studentId = "mhs-point-1";
+    const scheduleId = "sch-point-1";
+
+    it("should award +10 points when student checks in within valid zone and operational hours", async () => {
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
+        id: scheduleId,
+        title: "Kegiatan Posko KKN",
+        latitude: -6.8915,
+        longitude: 107.6107,
+        radius: 150,
+        isActive: true,
+      } as any);
+
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: studentId,
+        name: "Mahasiswa KKN",
+        studentProfile: { nim: "130121001", kelompok: { dpl: null } },
+      } as any);
+
+      vi.mocked(prisma.activityAttendance.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.activityAttendance.create).mockResolvedValue({
+        id: "att-rec-1",
+        studentId,
+        scheduleId,
+        status: "HADIR",
+        attendedAt: new Date(),
+        method: "MANUAL",
+      } as any);
+      vi.mocked(prisma.pointHistory.create).mockResolvedValue({ id: "pt-att-1" } as any);
+
+      const result = await service.recordAttendance({
+        studentId,
+        scheduleId,
+        latitude: -6.8915,
+        longitude: 107.6107,
+        method: "MANUAL",
+      });
+
+      expect(prisma.pointHistory.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          userId: studentId,
+          points: 10,
+          kategori: "PARTISIPASI_STREAK",
+        }),
+      });
+      expect(result.status).toBe("HADIR");
+    });
+
+    it("should award +10 points when student checks out (kepulangan)", async () => {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue({
+        id: "att-rec-1",
+        studentId,
+        scheduleId,
+        status: "HADIR",
+        attendedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+        checkOutAt: null,
+      } as any);
+
+      vi.mocked(prisma.activityAttendance.update).mockResolvedValue({
+        id: "att-rec-1",
+        studentId,
+        scheduleId,
+        status: "SELESAI",
+        attendedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        checkOutAt: new Date(),
+        schedule: { id: scheduleId, title: "Kegiatan Posko KKN" },
+        student: { id: studentId, name: "Mahasiswa KKN", studentProfile: { nim: "130121001" } },
+      } as any);
+
+      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.pointHistory.create).mockResolvedValue({ id: "pt-out-1" } as any);
+
+      const result = await service.checkOutAttendance({
+        studentId,
+        scheduleId,
+        latitude: -6.8915,
+        longitude: 107.6107,
+      });
+
+      expect(result.success).toBe(true);
+      expect(prisma.pointHistory.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          userId: studentId,
+          points: 10,
+          description: expect.stringContaining("(Check-Out)"),
+          kategori: "PARTISIPASI_STREAK",
+        }),
+      });
+    });
+
+    it("should NOT duplicate check-out points if already awarded today", async () => {
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue({
+        id: "att-rec-1",
+        studentId,
+        scheduleId,
+        status: "SELESAI",
+        attendedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        checkOutAt: new Date(),
+      } as any);
+
+      vi.mocked(prisma.activityAttendance.update).mockResolvedValue({
+        id: "att-rec-1",
+        studentId,
+        scheduleId,
+        status: "SELESAI",
+        attendedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        checkOutAt: new Date(),
+        schedule: { id: scheduleId, title: "Kegiatan Posko KKN" },
+        student: { id: studentId, name: "Mahasiswa KKN", studentProfile: { nim: "130121001" } },
+      } as any);
+
+      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue({ id: "pt-already-given" } as any);
+
+      await service.checkOutAttendance({
+        studentId,
+        scheduleId,
+      });
+
+      expect(prisma.pointHistory.create).not.toHaveBeenCalled();
+    });
+  });
 });

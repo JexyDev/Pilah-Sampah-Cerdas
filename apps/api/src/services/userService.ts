@@ -678,20 +678,6 @@ export class UserService {
         }
       }
 
-      // ── Welcome Bonus Poin ──────────────────────────────────────────────────
-      // MAHASISWA_KKN mendapat +20 poin saat akun dibuat (BONUS_REGISTRASI)
-      if (roleName === "MAHASISWA_KKN") {
-        await tx.pointHistory.create({
-          data: {
-            userId: u.id,
-            points: 20,
-            description: "Bonus registrasi akun Mahasiswa KKN",
-            kategori: "BONUS_REGISTRASI",
-            redeemable: false,
-          },
-        });
-      }
-
       return u;
     });
 

@@ -4,11 +4,22 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'scratch/**'
+      - '.agent/**'
+      - '.gitignore'
+      - 'mobile/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -18,21 +29,20 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
+          cache-dependency-path: 'apps/web/package-lock.json'
 
-      - name: Build & Package Frontend Web (GitHub Actions)
+      - name: Build & Package Frontend Web
         run: |
           cd apps/web
-          npm ci --prefer-offline --no-audit || npm install --silent --legacy-peer-deps
+          npm ci --prefer-offline --no-audit 2>/dev/null || npm install --silent --legacy-peer-deps
           npm run build
           test -f dist/index.html || { echo "Build failed: dist/index.html missing"; exit 1; }
-          cd dist && tar -czf ../dist.tar.gz *
+          tar -czf dist.tar.gz -C dist .
 
       - name: Install sshpass
-        timeout-minutes: 2
         run: |
           if ! command -v sshpass &> /dev/null; then
-            sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout="15"
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends sshpass
+            sudo apt-get install -y --no-install-recommends sshpass 2>/dev/null || (sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends sshpass)
           fi
 
       - name: Upload Frontend Archive to VPS
@@ -59,57 +69,27 @@ jobs:
             echo "=== 1. Pulling Latest Code from Git ==="
             if [ -d ~/Pilah-Sampah-Cerdas-new ]; then REPO_DIR=~/Pilah-Sampah-Cerdas-new; else REPO_DIR=~/Pilah-Sampah-Cerdas; fi
             cd "$REPO_DIR" || { echo "Directory not found"; exit 1; }
-            git fetch origin main
+            git fetch --depth=1 origin main
             git reset --hard origin/main
 
             echo "=== 2. Updating Backend (apps/api) ==="
-            cd apps/api
-
-            # Optimasi PostgreSQL di Docker Container VPS (Hanya jika belum dikonfigurasi)
-            echo "$VPS_PASS" | sudo -S docker exec psc-postgres sh -c "
-              CONF_FILE='/var/lib/postgresql/data/postgresql.conf'
-              if ! grep -q 'max_connections = 1000' \$CONF_FILE; then
-                echo 'max_connections = 1000' >> \$CONF_FILE
-                echo 'shared_buffers = 512MB' >> \$CONF_FILE
-                echo 'RESTART_REQUIRED'
-              fi
-            " 2>/dev/null | grep -q 'RESTART_REQUIRED' && {
-              echo "==> Restarting PostgreSQL to apply new configurations..."
-              echo "$VPS_PASS" | sudo -S docker restart psc-postgres 2>/dev/null || true
-              sleep 3
-            } || echo "==> PostgreSQL configurations are already up-to-date."
-
-            npm install --silent --legacy-peer-deps || npm install --legacy-peer-deps
+            cd "$REPO_DIR"
+            npm install --silent --legacy-peer-deps --prefer-offline 2>/dev/null || true
+            cd "$REPO_DIR/apps/api"
+            rm -rf node_modules/@prisma node_modules/.prisma
             npx prisma generate
-
-            # Baseline migration lama agar prisma migrate deploy tidak error P3005.
-            # migrate resolve --applied hanya mencatat nama ke tabel _prisma_migrations,
-            # tidak menjalankan SQL apapun. Aman diulang (idempotent).
-            echo "==> Baseline migration lama ke _prisma_migrations..."
-            npx prisma migrate resolve --applied "20260711142358_init_all"              2>/dev/null || true
-            npx prisma migrate resolve --applied "20260711143430_bin_coordinates"       2>/dev/null || true
-            npx prisma migrate resolve --applied "20260721071914_add_violations"        2>/dev/null || true
-            npx prisma migrate resolve --applied "20260721130000_extend_schema_for_8_roles" 2>/dev/null || true
-            npx prisma migrate resolve --applied "20260721140000_refactor_bin_ownerships"   2>/dev/null || true
-            npx prisma migrate resolve --applied "20260721150000_extend_schema_for_batch_2" 2>/dev/null || true
-            npx prisma migrate resolve --applied "20260721160000_add_peternakan_and_maggot_distributions" 2>/dev/null || true
-            npx prisma migrate resolve --applied "20260722045006_rw_portal_fields"      2>/dev/null || true
-            npx prisma migrate resolve --applied "20260723034830_rename_tables_to_indonesian" 2>/dev/null || true
-            npx prisma migrate resolve --applied "20260723040353_sync_db"               2>/dev/null || true
-            npx prisma migrate resolve --applied "20260812083011_add_survei_kkn_tables" 2>/dev/null || true
-            npx prisma migrate resolve --applied "20260812100524_add_evaluasi_dampak_kkn" 2>/dev/null || true
-            # Reset status jika migrasi sempat gagal sebelumnya agar dapat diaplikasikan ulang
-            npx prisma migrate resolve --rolled-back "20260815_add_petugas_tetap_jenis_sampah" 2>/dev/null || true
-            echo "==> Baseline selesai. Menjalankan migrate deploy..."
-
+            if [ -d "$REPO_DIR/apps/api/node_modules" ]; then
+              mkdir -p "$REPO_DIR/apps/api/node_modules/@prisma" "$REPO_DIR/apps/api/node_modules/.prisma"
+              cp -r "$REPO_DIR/node_modules/@prisma/"* "$REPO_DIR/apps/api/node_modules/@prisma/" 2>/dev/null || true
+              cp -r "$REPO_DIR/node_modules/.prisma/"* "$REPO_DIR/apps/api/node_modules/.prisma/" 2>/dev/null || true
+            fi
             npx prisma migrate deploy || true
             npm run build
 
-            echo "=== 3. Restarting PM2 Backend ==="
-            $PM2_BIN delete psc-backend 2>/dev/null || true
-            $PM2_BIN start dist/index.js --name psc-backend --cwd "$REPO_DIR/apps/api"
+            echo "=== 3. Reloading PM2 Backend ==="
+            $PM2_BIN reload psc-backend 2>/dev/null || $PM2_BIN restart psc-backend 2>/dev/null || $PM2_BIN start dist/index.js --name psc-backend --cwd "$REPO_DIR/apps/api"
             $PM2_BIN save || true
-            sleep 2
+            sleep 1
             $PM2_BIN status psc-backend
 
             echo "=== 4. Deploying Frontend Web to Nginx ==="
@@ -119,27 +99,19 @@ jobs:
             if [ -f /tmp/frontend-dist.tar.gz ] && tar -tzf /tmp/frontend-dist.tar.gz &>/dev/null; then
               echo "Extracting frontend archive from GitHub Actions..."
               tar -xzf /tmp/frontend-dist.tar.gz -C "$REPO_DIR/apps/web/dist/"
+              echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/* /var/www/pilah-sampah-cerdas/frontend/dist/*
+              echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/html/
+              echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/pilah-sampah-cerdas/frontend/dist/
               rm -f /tmp/frontend-dist.tar.gz
-            else
-              echo "Frontend archive corrupted or missing, building web frontend directly on VPS..."
-              cd "$REPO_DIR"
-              npm run install:web || (cd apps/web && npm install --legacy-peer-deps)
-              npm run build:web
             fi
 
-            test -f "$REPO_DIR/apps/web/dist/index.html" || { echo "Frontend build missing index.html"; exit 1; }
-
-            echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/* /var/www/pilah-sampah-cerdas/frontend/dist/*
-            echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/html/
-            echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/pilah-sampah-cerdas/frontend/dist/
+            test -f /var/www/html/index.html || { echo "Frontend missing index.html"; exit 1; }
 
             echo "=== 5. Fixing Permissions & Reloading Nginx ==="
-            echo "$VPS_PASS" | sudo -S rm -f /etc/nginx/sites-enabled/pilah-sampah-cerdas 2>/dev/null || true
-            echo "$VPS_PASS" | sudo -S chown -R www-data:www-data /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist 2>/dev/null || echo "$VPS_PASS" | sudo -S chown -R $USER:$USER /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist
-            echo "$VPS_PASS" | sudo -S chmod -R 755 /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist
-            echo "$VPS_PASS" | sudo -S systemctl restart nginx || echo "$VPS_PASS" | sudo -S systemctl reload nginx || true
+            echo "$VPS_PASS" | sudo -S chown -R www-data:www-data /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist 2>/dev/null || true
+            echo "$VPS_PASS" | sudo -S chmod -R 755 /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist 2>/dev/null || true
+            echo "$VPS_PASS" | sudo -S systemctl reload nginx || echo "$VPS_PASS" | sudo -S systemctl restart nginx || true
 
             echo "=== 6. Verification & Status ==="
             test -f /var/www/html/index.html && echo "Deployment verified: /var/www/html/index.html exists"
-            $PM2_BIN status || true
           EOF

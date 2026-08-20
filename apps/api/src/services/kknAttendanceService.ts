@@ -913,6 +913,27 @@ export class KknAttendanceService {
       },
     });
 
+    // Award +10 points to student on Check-Out (Kepulangan) if not already awarded today
+    const existingCheckoutPoint = await prisma.pointHistory.findFirst({
+      where: {
+        userId: studentId,
+        description: { contains: `(Check-Out)` },
+        createdAt: { gte: startOfDay },
+      },
+    });
+
+    if (!existingCheckoutPoint) {
+      await prisma.pointHistory.create({
+        data: {
+          userId: studentId,
+          points: 10,
+          description: `Bonus kepulangan (Check-Out) presensi KKN: ${updated.schedule?.title || updated.scheduleId}`,
+          kategori: "PARTISIPASI_STREAK",
+          redeemable: false,
+        },
+      });
+    }
+
     // Broadcast checkout event via WebSocket
     websocketService.broadcastStudentCheckout({
       attendanceId: updated.id,
@@ -1867,6 +1888,27 @@ export class KknAttendanceService {
         },
       },
     });
+
+    // Award +10 points to student on Check-In (Mulai Kegiatan) if not already awarded today
+    const existingCheckInPoint = await prisma.pointHistory.findFirst({
+      where: {
+        userId: studentUserId,
+        description: { contains: `(Check-In)` },
+        createdAt: { gte: startOfDay },
+      },
+    });
+
+    if (!existingCheckInPoint) {
+      await prisma.pointHistory.create({
+        data: {
+          userId: studentUserId,
+          points: 10,
+          description: `Bonus kehadiran (Check-In) KKN: ${schedule.title || scheduleId}`,
+          kategori: "PARTISIPASI_STREAK",
+          redeemable: false,
+        },
+      });
+    }
 
     const ruleConfigs = await configService.getRuleEngineConfigs();
     const durasiWajibMenit =
