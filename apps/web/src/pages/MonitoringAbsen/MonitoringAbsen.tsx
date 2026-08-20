@@ -379,15 +379,6 @@ const parseTimeString = (timeStr?: string) => {
   return { start: "08:00", end: "12:00" };
 };
 
-const calculateHourDifference = (start: string, end: string) => {
-  if (!start || !end) return 0;
-  const [sH, sM] = start.split(":").map(Number);
-  const [eH, eM] = end.split(":").map(Number);
-  if (isNaN(sH) || isNaN(sM) || isNaN(eH) || isNaN(eM)) return 0;
-  const totalStart = sH * 60 + sM;
-  const totalEnd = eH * 60 + eM;
-  return Math.max(0, totalEnd - totalStart);
-};
 
 const calculateDurationMinutes = (tmStr?: string, tsStr?: string) => {
   if (!tmStr) return 0;
@@ -1631,13 +1622,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     }
     if (!endTime) {
       errors.endTime = "Jam selesai wajib diisi";
-    } else if (startTime && endTime) {
-      const isSameDate = startDate && endDate && startDate === endDate;
-      if (isSameDate) {
-        const diff = calculateHourDifference(startTime, endTime);
-        if (diff <= 0) {
-          errors.endTime = "Jam selesai harus lebih besar dari jam mulai";
-        }
+    } else if (startDate && endDate && startTime && endTime) {
+      const startDateTime = new Date(`${startDate}T${startTime}`).getTime();
+      const endDateTime = new Date(`${endDate}T${endTime}`).getTime();
+      if (!isNaN(startDateTime) && !isNaN(endDateTime) && endDateTime <= startDateTime) {
+        errors.endTime = "Waktu selesai (tanggal & jam) harus lebih besar dari waktu mulai";
       }
     }
     if (!formData.location?.trim()) {
