@@ -448,10 +448,11 @@ Authorization: Bearer <jwt_token_disini>
 ```
 
 #### B. Detail Posko Saya (`GET /kkn/posko/me`)
-* **Response (200 OK):**
+* **Response (200 OK - Jika Posko Sudah Terdaftar):**
 ```json
 {
   "success": true,
+  "message": "Data posko berhasil diambil",
   "data": {
     "posko": {
       "id": "posko_01",
@@ -466,6 +467,19 @@ Authorization: Bearer <jwt_token_disini>
   }
 }
 ```
+* **Response (200 OK - Jika Posko Belum Didaftarkan):**
+```json
+{
+  "success": true,
+  "message": "Data posko belum terdaftar",
+  "data": {
+    "posko": null,
+    "isUserLeader": true,
+    "kelompokId": "klp_01"
+  }
+}
+```
+*(Atau `"data": null` jika mahasiswa belum terdaftar dalam kelompok manapun)*
 
 ---
 

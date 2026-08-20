@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -454,7 +454,19 @@ export class KknController {
     try {
       const kknUserId = req.user!.userId;
       const data = await kknService.getMyPosko(kknUserId);
-      res.status(200).json({ success: true, data });
+      if (!data) {
+        res.status(200).json({
+          success: true,
+          message: "Data posko belum terdaftar",
+          data: null,
+        });
+        return;
+      }
+      res.status(200).json({
+        success: true,
+        message: data.posko ? "Data posko berhasil diambil" : "Data posko belum terdaftar",
+        data,
+      });
     } catch (error: any) {
       console.error("[KknController] getMyPosko error:", error);
       res.status(500).json({ success: false, message: error.message });
