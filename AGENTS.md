@@ -14,7 +14,7 @@
 
 ## 2. 🛑 ATURAN UTAMA: WAJIB MEMBACA & MEMATUHI ATURAN DI `.agent/` (ANTI-HALUSINASI)
 
-Sebelum membuat atau mengubah kode/dokumentasi, AI Agent WAJIB membaca dan mematuhi aturan (*rules*), alur kerja (*workflows*), dan *skills* yang ada pada folder [.agent/](file:///home/dajayape/Documents/work/makerindo/employment/projects/trashcare/code/mobile/.agent) (khususnya [.agent/AGENTS.md](file:///home/dajayape/Documents/work/makerindo/employment/projects/trashcare/code/mobile/.agent/AGENTS.md), `.agent/rules/`, dan `.agent/workflows/`).
+Sebelum membuat atau mengubah kode/dokumentasi, AI Agent WAJIB membaca dan mematuhi aturan (*rules*), alur kerja (*workflows*), dan *skills* yang ada pada folder [.agent/](.agent/) (khususnya [.agent/AGENTS.md](.agent/AGENTS.md), `.agent/rules/`, dan `.agent/workflows/`).
 
 ### 🛡️ PRINSIP ANTI-HALUSINASI (GROUNDED CODE & FACTUAL TRUTH):
 1. **DILARANG MENGARANG (NO HALLUCINATED LOGIC/ENDPOINTS):** Jangan pernah mengarang skema data, endpoint API, path file, atau nama komponen yang tidak terverifikasi langsung di codebase. Selalu lakukan `view_file` atau `grep_search` pada file sumber sebelum menulis kode.
