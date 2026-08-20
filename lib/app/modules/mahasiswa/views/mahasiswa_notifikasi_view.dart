@@ -24,7 +24,7 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
     'Pengajuan Izin',
     'Ping Lokasi Posko',
     'Aktivasi Tempat Sampah Warga',
-    'Laporan Pemanfaatan Sampah'
+    'Laporan Pemanfaatan & Ide Program'
   ];
 
   @override
@@ -116,8 +116,8 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
                     if (_selectedFilter == 'Aktivasi Tempat Sampah Warga') {
                       return typeUpper.contains('AKTIVASI') || typeUpper.contains('BIN') || titleLower.contains('bin') || titleLower.contains('aktivasi') || titleLower.contains('tempat sampah');
                     }
-                    if (_selectedFilter == 'Laporan Pemanfaatan Sampah') {
-                      return typeUpper.contains('LAPORAN') || typeUpper.contains('PEMANFAATAN') || titleLower.contains('laporan') || titleLower.contains('pemanfaatan');
+                    if (_selectedFilter == 'Laporan Pemanfaatan & Ide Program') {
+                      return typeUpper.contains('LAPORAN') || typeUpper.contains('PEMANFAATAN') || titleLower.contains('laporan') || titleLower.contains('pemanfaatan') || titleLower.contains('ide program');
                     }
                     return true;
                   }).toList();

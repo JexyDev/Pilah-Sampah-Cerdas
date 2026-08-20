@@ -48,19 +48,23 @@ class PemanfaatanSampahNotifier extends StateNotifier<PemanfaatanSampahState> {
 
         final user = ref.read(authProvider).user;
         if (user != null) {
+          final isIdeProgram = request.satuan == 'Rp' || ['FISIK', 'NON_FISIK', 'LAINNYA'].contains(request.jenisPemanfaatan);
+          final notifTitle = isIdeProgram ? 'Laporan Ide Program Tersimpan 💡' : 'Laporan Pemanfaatan Sampah Tersimpan ♻️';
+          final notifType = isIdeProgram ? 'LAPORAN_IDE_PROGRAM' : 'LAPORAN_PEMANFAATAN';
+
           await FirebaseNotificationService().saveNotification(
             userId: user.id,
             role: user.role.name,
-            title: 'Laporan Pemanfaatan Sampah Tersimpan ♻️',
+            title: notifTitle,
             desc: 'Laporan ${request.jenisPemanfaatan} di ${request.wilayahDampingan} berhasil dikirim.',
-            type: 'LAPORAN_PEMANFAATAN',
+            type: notifType,
           );
           LocalNotificationCacheService().addNotification(
             userId: user.id,
             role: user.role.name,
-            title: 'Laporan Pemanfaatan Sampah Tersimpan ♻️',
+            title: notifTitle,
             desc: 'Laporan ${request.jenisPemanfaatan} di ${request.wilayahDampingan} berhasil dikirim.',
-            type: 'LAPORAN_PEMANFAATAN',
+            type: notifType,
           );
         }
         
