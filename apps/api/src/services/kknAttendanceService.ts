@@ -174,11 +174,14 @@ export class KknAttendanceService {
     const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 15;
     const autoHadirOutsideZone = (ruleConfigs as any).attendanceAutoHadirOutsideZone !== false;
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
+    const nowForPing = new Date();
+    const nowWibPing = new Date(nowForPing.getTime() + 7 * 60 * 60 * 1000);
+    const todayWibStrPing = nowWibPing.toISOString().slice(0, 10);
+    const todayStart = new Date(`${todayWibStrPing}T00:00:00+07:00`);
+    const todayEnd = new Date(`${todayWibStrPing}T23:59:59.999+07:00`);
+    const yesterdayWibStrPing = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000 + 7 * 60 * 60 * 1000)
+      .toISOString().slice(0, 10);
+    const yesterdayStart = new Date(`${yesterdayWibStrPing}T00:00:00+07:00`);
 
     const activeSchedules = await prisma.schedule.findMany({
       where: {
@@ -372,12 +375,14 @@ export class KknAttendanceService {
     const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 15;
     const autoHadirOutsideZone = (ruleConfigs as any).attendanceAutoHadirOutsideZone !== false;
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
-    // Bug #5 fix: samakan window waktu dengan pingLocation (sertakan kemarin untuk kegiatan overnight)
-    const yesterdayStartBatch = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
+    const nowForPing3 = new Date();
+    const nowWibPing3 = new Date(nowForPing3.getTime() + 7 * 60 * 60 * 1000);
+    const todayWibStrPing3 = nowWibPing3.toISOString().slice(0, 10);
+    const todayStart = new Date(`${todayWibStrPing3}T00:00:00+07:00`);
+    const todayEnd = new Date(`${todayWibStrPing3}T23:59:59.999+07:00`);
+    const yesterdayWibStrBatch = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000 + 7 * 60 * 60 * 1000)
+      .toISOString().slice(0, 10);
+    const yesterdayStartBatch = new Date(`${yesterdayWibStrBatch}T00:00:00+07:00`);
 
     const student = await prisma.studentKkn.findUnique({
       where: { userId: studentId },
@@ -830,8 +835,10 @@ export class KknAttendanceService {
   }) {
     const { studentId, scheduleId, latitude, longitude } = params;
 
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    const nowForCheckout = new Date();
+    const nowWibCheckout = new Date(nowForCheckout.getTime() + 7 * 60 * 60 * 1000);
+    const todayWibStrCheckout = nowWibCheckout.toISOString().slice(0, 10);
+    const startOfDay = new Date(`${todayWibStrCheckout}T00:00:00+07:00`);
 
     // Bug #2 fix: query juga handle attendedAt NULL (record dibuat tanpa attendedAt)
     // Pertama coba yang sudah punya attendedAt hari ini
@@ -1214,12 +1221,12 @@ export class KknAttendanceService {
     });
 
 
-    // Determine calendar date boundaries for this schedule
+    // Determine calendar date boundaries for this schedule in WIB (+07:00)
     const schedDate = schedule?.date ? new Date(schedule.date) : new Date();
-    const startOfDay = new Date(schedDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(schedDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    const schedWib = new Date(schedDate.getTime() + 7 * 60 * 60 * 1000);
+    const schedWibStr = schedWib.toISOString().slice(0, 10);
+    const startOfDay = new Date(`${schedWibStr}T00:00:00+07:00`);
+    const endOfDay = new Date(`${schedWibStr}T23:59:59.999+07:00`);
 
     // Query active & historical leave requests for all relevant students during this schedule's timeframe
     const leaveRequests = allStudentUserIds.length > 0
