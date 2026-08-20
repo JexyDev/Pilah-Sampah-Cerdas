@@ -562,8 +562,8 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           title="Peringkat Warga"
           subtitle="Tabel pemeringkatan warga berdasarkan akumulasi poin pemilahan sampah"
           icon={Users}
-          iconBgColor="bg-emerald-50 border-emerald-200"
-          iconTextColor="text-[#009966]"
+          iconBgColor="bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-700/40"
+          iconTextColor="text-[#009966] dark:text-emerald-400"
           data={topWarga}
           nameHeader="Nama Warga"
           subHeader="Wilayah"
@@ -575,8 +575,8 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           title="Peringkat Petugas Pemilah"
           subtitle="Tabel peringkat petugas berdasarkan kinerja &amp; kecepatan pengangkutan"
           icon={TrendingUp}
-          iconBgColor="bg-[#e5f7ed] border-[#009966]/20"
-          iconTextColor="text-[#009966]"
+          iconBgColor="bg-[#e5f7ed] dark:bg-emerald-950/60 border-[#009966]/20 dark:border-emerald-700/40"
+          iconTextColor="text-[#009966] dark:text-emerald-400"
           data={topPetugas}
           nameHeader="Nama Petugas"
           subHeader="Wilayah Penugasan"
@@ -588,8 +588,8 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           title="Peringkat Rukun Warga"
           subtitle="Tabel akumulasi poin kebersihan &amp; kepatuhan tingkat Rukun Warga"
           icon={MapPin}
-          iconBgColor="bg-amber-50 border-amber-200"
-          iconTextColor="text-amber-600"
+          iconBgColor="bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-700/40"
+          iconTextColor="text-amber-600 dark:text-amber-400"
           data={topRw}
           nameHeader="Rukun Warga"
           subHeader="Kelurahan"
@@ -601,8 +601,8 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           title="Peringkat Kelurahan"
           subtitle="Tabel akumulasi poin kebersihan lingkungan tingkat Kelurahan"
           icon={Building2}
-          iconBgColor="bg-sky-50 border-sky-200"
-          iconTextColor="text-sky-600"
+          iconBgColor="bg-sky-50 dark:bg-sky-950/60 border-sky-200 dark:border-sky-700/40"
+          iconTextColor="text-sky-600 dark:text-sky-400"
           data={topKelurahan}
           nameHeader="Kelurahan"
           subHeader="Kecamatan"
@@ -614,8 +614,8 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           title="Peringkat Mahasiswa KKN"
           subtitle="Tabel skor akhir individual seluruh mahasiswa pendamping KKN"
           icon={GraduationCap}
-          iconBgColor="bg-purple-50 border-purple-200"
-          iconTextColor="text-purple-600"
+          iconBgColor="bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-700/40"
+          iconTextColor="text-purple-600 dark:text-purple-400"
           data={topMahasiswa}
           nameHeader="Nama Mahasiswa"
           subHeader="Kelompok KKN"
@@ -627,8 +627,8 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           title="Peringkat Kelompok KKN"
           subtitle="Tabel rata-rata skor akhir kelompok kerja KKN"
           icon={Award}
-          iconBgColor="bg-indigo-50 border-indigo-200"
-          iconTextColor="text-indigo-600"
+          iconBgColor="bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-700/40"
+          iconTextColor="text-indigo-600 dark:text-indigo-400"
           data={topKelompok}
           nameHeader="Kelompok KKN"
           subHeader="Keterangan"
@@ -640,8 +640,8 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           title="Peringkat Dosen Pendamping Lapangan (DPL)"
           subtitle="Tabel pencapaian &amp; skor rata-rata binaan DPL"
           icon={FileText}
-          iconBgColor="bg-[#009966]/10 border-[#009966]/20"
-          iconTextColor="text-[#009966]"
+          iconBgColor="bg-[#009966]/10 dark:bg-emerald-950/60 border-[#009966]/20 dark:border-emerald-700/40"
+          iconTextColor="text-[#009966] dark:text-emerald-400"
           data={topDpl}
           nameHeader="Nama DPL"
           subHeader="Kelompok Binaan"

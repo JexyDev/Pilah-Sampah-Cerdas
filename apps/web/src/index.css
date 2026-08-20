@@ -339,4 +339,34 @@ input:-webkit-autofill:active {
   fill: #94a3b8 !important;
 }
 
+/* ==========================================================
+   GLOBAL DARK MODE CARD & COMPONENT STYLING
+   ========================================================== */
+.dark .card-polish {
+  background-color: #0f172a;
+  border-color: #1e293b;
+  color: #f8fafc;
+}
+
+.dark table thead th {
+  background-color: #1e293b;
+  color: #94a3b8;
+  border-color: #334155;
+}
+
+.dark table tbody tr {
+  border-color: #1e293b;
+}
+
+.dark table tbody tr:hover {
+  background-color: rgba(30, 41, 59, 0.5);
+}
+
+.dark .dialog-content,
+.dark [role="dialog"] {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+
 
