@@ -1623,6 +1623,7 @@ export class KknAttendanceService {
 
     const startOfDay = new Date(targetDate);
     startOfDay.setHours(0, 0, 0, 0);
+    const yesterdayStart = new Date(startOfDay.getTime() - 24 * 60 * 60 * 1000);
     const endOfDay = new Date(targetDate);
     endOfDay.setHours(23, 59, 59, 999);
 
@@ -1637,9 +1638,9 @@ export class KknAttendanceService {
     });
 
     // 2. Cari jadwal KKN yang berlaku untuk kelompok mahasiswa (atau jadwal global)
-    const schedules = await prisma.schedule.findMany({
+    let schedules = await prisma.schedule.findMany({
       where: {
-        date: { gte: startOfDay, lte: endOfDay },
+        date: { gte: yesterdayStart, lte: endOfDay },
         isActive: true,
         ...(student?.kelompokId ? { OR: [{ kelompokId: student.kelompokId }, { kelompokId: null }] } : {}),
       },
@@ -1652,41 +1653,70 @@ export class KknAttendanceService {
       orderBy: { date: "asc" },
     });
 
+    if (schedules.length === 0) {
+      schedules = await prisma.schedule.findMany({
+        where: {
+          date: { gte: yesterdayStart, lte: endOfDay },
+          isActive: true,
+        },
+        include: {
+          kelompok: true,
+          attendances: {
+            where: { studentId: userId },
+          },
+        },
+        orderBy: { date: "asc" },
+      });
+    }
+
     const now = new Date();
     const currentHour = (now.getUTCHours() + 7) % 24;
     const currentMinute = now.getUTCMinutes();
     const currentMinutesTotal = currentHour * 60 + currentMinute;
-    const isToday = targetDate.toDateString() === now.toDateString();
+    const todayStr = now.toISOString().slice(0, 10);
 
     const result = schedules.map((sch) => {
       let jamMulai = "08:00";
       let jamSelesai = "16:00";
-      if (sch.time && sch.time.includes("-")) {
-        const parts = sch.time.split("-");
+      const normalizedTime = (sch.time || "").replace(/[–—~]|s\/d|sd/gi, "-").trim();
+      if (normalizedTime.includes("-")) {
+        const parts = normalizedTime.split("-");
         jamMulai = parts[0].trim();
         jamSelesai = parts[1].trim();
       }
 
       // Hitung menit mulai dan selesai
-      const [startH, startM] = jamMulai.split(":").map(Number);
-      const [endH, endM] = jamSelesai.split(":").map(Number);
+      const [startH, startM] = jamMulai.replace(".", ":").split(":").map(Number);
+      const [endH, endM] = jamSelesai.replace(".", ":").split(":").map(Number);
       const startMinutesTotal = (startH || 8) * 60 + (startM || 0);
       const endMinutesTotal = (endH || 16) * 60 + (endM || 0);
 
+      const isOvernight = endMinutesTotal <= startMinutesTotal;
+      const schDateStr = sch.date ? new Date(sch.date).toISOString().slice(0, 10) : todayStr;
+      const isSchedDateToday = schDateStr === todayStr;
+
       // Status waktu kegiatan
       let scheduleStatus = "AKTIF";
-      if (isToday) {
-        if (currentMinutesTotal < startMinutesTotal) {
-          scheduleStatus = "BELUM_MULAI";
-        } else if (currentMinutesTotal > endMinutesTotal) {
-          scheduleStatus = "SELESAI";
+      if (isOvernight) {
+        if (isSchedDateToday) {
+          scheduleStatus = currentMinutesTotal >= startMinutesTotal ? "AKTIF" : "BELUM_MULAI";
         } else {
-          scheduleStatus = "AKTIF";
+          scheduleStatus = currentMinutesTotal <= endMinutesTotal ? "AKTIF" : "SELESAI";
         }
-      } else if (targetDate > now) {
-        scheduleStatus = "BELUM_MULAI";
       } else {
-        scheduleStatus = "SELESAI";
+        if (isSchedDateToday) {
+          if (currentMinutesTotal < startMinutesTotal) {
+            scheduleStatus = "BELUM_MULAI";
+          } else if (currentMinutesTotal > endMinutesTotal) {
+            scheduleStatus = "SELESAI";
+          } else {
+            scheduleStatus = "AKTIF";
+          }
+        } else if (sch.date && new Date(sch.date) > now) {
+          scheduleStatus = "BELUM_MULAI";
+        } else {
+          scheduleStatus = "SELESAI";
+        }
       }
 
       // Status Kehadiran mahasiswa
