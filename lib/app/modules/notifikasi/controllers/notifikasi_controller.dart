@@ -169,6 +169,21 @@ final notificationsProvider =
     }
   }
 
+  // FORCE override isRead based on persistent local cache
+  final prefs = await SharedPreferences.getInstance();
+  final readSet = (prefs.getStringList('read_notifs_${userId}_$roleName') ?? []).toSet();
+  final markAllTs = prefs.getInt('mark_all_notifs_${userId}_$roleName') ?? 0;
+  
+  for (int i = 0; i < filteredList.length; i++) {
+    final dt = DateTime.tryParse(filteredList[i].time) ?? DateTime(2000);
+    final isReadLocally = readSet.contains(filteredList[i].id) || 
+        dt.millisecondsSinceEpoch <= markAllTs || 
+        LocalNotificationCacheService().isRead(userId, roleName, filteredList[i].id, dt);
+    if (isReadLocally && !filteredList[i].isRead) {
+      filteredList[i] = filteredList[i].copyWith(isRead: true);
+    }
+  }
+
   return filteredList;
 });
 

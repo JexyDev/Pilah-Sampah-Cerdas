@@ -143,6 +143,21 @@ final petugasPemilahanNotificationsProvider = FutureProvider<List<NotificationEn
     }
   } catch (_) {}
 
+  // FORCE override isRead based on persistent local cache
+  final prefs = await SharedPreferences.getInstance();
+  final readSet = (prefs.getStringList('read_notifs_${userId}_$role') ?? []).toSet();
+  final markAllTs = prefs.getInt('mark_all_notifs_${userId}_$role') ?? 0;
+
+  for (int i = 0; i < result.length; i++) {
+    final dt = DateTime.tryParse(result[i].time) ?? DateTime(2000);
+    final isReadLocally = readSet.contains(result[i].id) || 
+        dt.millisecondsSinceEpoch <= markAllTs || 
+        LocalNotificationCacheService().isRead(userId, role, result[i].id, dt);
+    if (isReadLocally && !result[i].isRead) {
+      result[i] = result[i].copyWith(isRead: true);
+    }
+  }
+
   // Urutkan: terbaru di atas — parse waktu dari string lokal format "YYYY-MM-DD HH:mm"
   result.sort((a, b) {
     final ta = DateTime.tryParse(a.time) ?? DateTime(2000);

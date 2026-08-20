@@ -186,6 +186,17 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     }
   } catch (_) {}
 
+  // FORCE override isRead based on persistent local cache
+  for (int i = 0; i < result.length; i++) {
+    final dt = DateTime.tryParse(result[i].time) ?? DateTime(2000);
+    final isReadLocally = readSet.contains(result[i].id) || 
+        dt.millisecondsSinceEpoch <= markAllTimestamp || 
+        LocalNotificationCacheService().isRead(userId, role, result[i].id, dt);
+    if (isReadLocally && !result[i].isRead) {
+      result[i] = result[i].copyWith(isRead: true);
+    }
+  }
+
   // Urutkan: terbaru di atas — parse waktu dari string lokal format "YYYY-MM-DD HH:mm"
   result.sort((a, b) {
     final ta = DateTime.tryParse(a.time) ?? DateTime(2000);
