@@ -544,10 +544,17 @@ class KelompokKknData extends Equatable {
   }
 
   factory KelompokKknData.fromJson(Map<String, dynamic> json) {
-    final membersList = (json['members'] as List<dynamic>? ?? json['anggota'] as List<dynamic>?)
-            ?.map((e) => KelompokMemberData.fromJson(e as Map<String, dynamic>))
-            .toList() ??
-        [];
+    final rawMembers = (json['members'] as List<dynamic>? ?? 
+                         json['anggota'] as List<dynamic>? ??
+                         json['mahasiswa'] as List<dynamic>? ??
+                         json['users'] as List<dynamic>? ??
+                         json['kknUsers'] as List<dynamic>? ??
+                         json['tim'] as List<dynamic>?) ?? [];
+                         
+    final membersList = rawMembers
+        .where((e) => e is Map<String, dynamic>)
+        .map((e) => KelompokMemberData.fromJson(e as Map<String, dynamic>))
+        .toList();
 
     String dpl = json['dosenPembimbing']?.toString() ??
         json['dplName']?.toString() ??

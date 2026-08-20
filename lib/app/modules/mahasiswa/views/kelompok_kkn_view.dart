@@ -109,6 +109,28 @@ class KelompokKknView extends ConsumerWidget {
                   child: CircularProgressIndicator(color: AppColors.primaryGreen),
                 ),
               ] else ...[
+                if (state.error != null)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      border: Border.all(color: Colors.red.shade200),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.red),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            state.error!,
+                            style: const TextStyle(color: Colors.red, fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 // Header Kelompok & Dosen Pembimbing
                 Card(
                   elevation: 3,

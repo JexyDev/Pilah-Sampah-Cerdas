@@ -347,21 +347,32 @@ class ApiKknRepository implements KknRepository {
     try {
       final response = await apiClient.dio.get(ApiEndpoints.kknKelompokMe);
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'] as Map<String, dynamic>? ?? {};
-        if (data.isEmpty) return null;
-        return KelompokKknData.fromJson(data);
+        dynamic data = response.data['data'] ?? response.data;
+        
+        if (data is List) {
+          // Jika backend langsung mereturn list anggota
+          if (data.isEmpty) return null;
+          return KelompokKknData(
+            groupId: '0',
+            groupName: 'Kelompok KKN',
+            dosenPembimbing: '-',
+            poskoLocation: '-',
+            totalGroupPoints: 0,
+            members: data.map((e) => KelompokMemberData.fromJson(e as Map<String, dynamic>)).toList(),
+          );
+        } else if (data is Map<String, dynamic>) {
+          if (data.isEmpty) return null;
+          return KelompokKknData.fromJson(data);
+        }
       }
       return null;
     } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        // Belum dimasukkan ke kelompok manapun oleh admin
-        return null;
-      }
+      if (e.response?.statusCode == 404) return null;
       debugPrint('Error getKelompokKkn (Dio): ${e.response?.data}');
-      throw Exception('Gagal memuat data kelompok KKN');
+      throw Exception('Gagal memuat kelompok: ${e.response?.statusCode} ${e.message}');
     } catch (e, stack) {
       debugPrint('Error getKelompokKkn (Parsing/Lainnya): $e\n$stack');
-      return null;
+      throw Exception('Gagal parsing data kelompok: $e');
     }
   }
 
