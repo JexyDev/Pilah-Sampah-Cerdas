@@ -1,6 +1,0 @@
-flutter_native_splash:
-  color: "#FFFFFF"
-  image: "assets/logo_berseka.png"
-  android_12:
-    image: "assets/logo_berseka_padded.png"
-    color: "#FFFFFF"

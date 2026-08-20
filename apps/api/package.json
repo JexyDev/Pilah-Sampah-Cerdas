@@ -1,7 +1,7 @@
 {
   "name": "@pilahsampah/api",
   "version": "1.0.0",
-  "description": "Backend service for pilahsampah.id - Intelligent Waste Management System",
+  "description": "Backend service for BERSEKA (Bersih, Sehat, Kampung Asri) — Intelligent Waste Management System",
   "author": "Jeremy Darrell & Muhammad Habil Putrawan",
   "license": "UNLICENSED",
   "type": "module",

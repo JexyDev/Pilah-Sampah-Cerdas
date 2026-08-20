@@ -2,7 +2,7 @@
   "name": "pilah-sampah-cerdas-frontend",
   "private": true,
   "version": "1.0.0",
-  "description": "Frontend web client for Pilah Sampah Cerdas - Intelligent Waste Management System",
+  "description": "Frontend web client for BERSEKA (Bersih, Sehat, Kampung Asri) — Intelligent Waste Management System",
   "author": "Jeremy Darrell & Muhammad Habil Putrawan",
   "license": "UNLICENSED",
   "type": "module",

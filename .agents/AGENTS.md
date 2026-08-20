@@ -117,7 +117,7 @@ Closes #234
 
 ---
 
-# ⚙️ Spesifikasi Fitur & Aturan Pengembangan (Pilah Sampah Cerdas)
+# ⚙️ Spesifikasi Fitur & Aturan Pengembangan (BERSEKA — Bersih, Sehat, Kampung Asri)
 
 Seluruh keputusan arsitektur, batasan fitur, dan logika bisnis berikut bersifat final dan wajib dipatuhi:
 

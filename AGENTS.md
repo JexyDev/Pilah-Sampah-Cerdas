@@ -22,21 +22,19 @@
 ## 2. Struktur Root Repo (WAJIB DIIKUTI)
 
 ```
-trashcare/
+main/
 ├── apps/
-│   ├── backend/          # Node.js/Express — lihat docs/ARCHITECTURE_BACKEND.md
-│   ├── frontend/         # React/Vite — lihat docs/ARCHITECTURE_FRONTEND.md
-│   └── mobile/           # Flutter — lihat docs/ARCHITECTURE_MOBILE.md
-├── packages/             # (opsional) kode shared: types, constants, utils lintas app
-│   └── shared-types/
+│   ├── api/              # Node.js/Express Backend — lihat docs/architecture/
+│   └── web/              # React/Vite Frontend Web — lihat docs/architecture/
 ├── docs/
-│   ├── ARCHITECTURE_BACKEND.md
-│   ├── ARCHITECTURE_FRONTEND.md
-│   ├── ARCHITECTURE_MOBILE.md
-│   └── AGENTS.md          # (file ini, disalin/duplikat di root juga boleh)
+│   ├── architecture/     # Dokumen Arsitektur & Mapping
+│   ├── reports/          # Laporan Audit QC & Testing
+│   └── assets/           # PDF, Excel, & Database Dump
+├── scripts/              # Skrip Utility & Deployment (dev, tools, vps)
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml
+```
 ├── .gitignore
 ├── .editorconfig
 └── README.md
@@ -46,7 +44,7 @@ trashcare/
 - Tidak boleh ada kode aplikasi di luar `apps/*`.
 - Tidak boleh membuat branch baru untuk fitur besar tanpa mengikuti SOP di bagian 6.
 - Tidak boleh commit langsung ke `main` tanpa Pull Request (kecuali typo/dokumentasi kecil).
-- Setiap app (`backend`, `frontend`, `mobile`) **independen** — tidak boleh saling import langsung kecuali lewat `packages/shared-types`.
+- Setiap app (`api`, `web`) **independen** — tidak boleh saling import langsung.
 
 ---
 
@@ -113,7 +111,7 @@ refactor/<scope>-<deskripsi-singkat>
 docs/<deskripsi-singkat>
 ```
 
-**Scope yang valid:** `backend`, `frontend`, `mobile`, `ci`, `docs`, `shared`
+**Scope yang valid:** `api`, `web`, `ci`, `docs`, `shared`
 
 **Alur kerja:**
 1. Branch baru dari `main` yang sudah update: `git pull origin main` lalu `git checkout -b feat/backend-auth`
@@ -146,9 +144,8 @@ docs/<deskripsi-singkat>
 
 ## 8. Referensi Detail per App
 
-- Backend (Clean Architecture, Node.js/Express) → `docs/ARCHITECTURE_BACKEND.md`
-- Frontend Web (React/Vite) → `docs/ARCHITECTURE_FRONTEND.md`
-- Mobile (Flutter) → `docs/ARCHITECTURE_MOBILE.md`
+- Backend (Clean Architecture, Node.js/Express) → `docs/architecture/`
+- Frontend Web (React/Vite) → `docs/architecture/`
 - CI/CD Pipeline → `.github/workflows/deploy.yml`
 
 ---

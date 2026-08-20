@@ -2,23 +2,23 @@
   "name": "pilahsampah-id",
   "version": "1.0.0",
   "private": true,
-  "description": "Monorepo for Pilah Sampah Cerdas (Trashcare) — Intelligent Waste Management System",
+  "workspaces": [
+    "apps/*"
+  ],
+  "description": "Monorepo for BERSEKA (Bersih, Sehat, Kampung Asri) — Intelligent Waste Management System",
   "author": "Jeremy Darrell & Muhammad Habil Putrawan",
   "license": "UNLICENSED",
   "scripts": {
-    "dev:api": "cd apps/api && npm run dev",
-    "dev:web": "cd apps/web && npm run dev",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:web": "npm run dev --workspace=apps/web",
     "dev:all": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
-    "build:api": "cd apps/api && npm run build",
-    "build:web": "cd apps/web && npm run build",
-    "build:all": "npm run build:api && npm run build:web",
-    "install:api": "cd apps/api && npm install",
-    "install:web": "cd apps/web && npm install",
-    "install:all": "npm run install:api && npm run install:web",
-    "prisma:generate": "cd apps/api && npx prisma generate",
-    "prisma:migrate": "cd apps/api && npx prisma migrate dev",
-    "test:api": "cd apps/api && npx vitest run",
-    "bulk-insert-kkn": "npm --prefix apps/api run bulk-insert-kkn --"
+    "build:api": "npm run build --workspace=apps/api",
+    "build:web": "npm run build --workspace=apps/web",
+    "build:all": "npm run build --workspaces --if-present",
+    "prisma:generate": "npm run prisma:generate --workspace=apps/api",
+    "prisma:migrate": "npm run prisma:migrate --workspace=apps/api",
+    "test:api": "npm exec --workspace=apps/api -- vitest run",
+    "bulk-insert-kkn": "npm run bulk-insert-kkn --workspace=apps/api --"
   },
   "devDependencies": {
     "concurrently": "^10.0.4"
