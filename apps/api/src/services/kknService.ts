@@ -805,10 +805,10 @@ export class KknService {
     });
 
     const combined = [
-      ...auditLogs.map((log) => ({
+      ...auditLogs.map((log: any) => ({
         id: log.id,
         title: "Aktivasi Tempat Sampah Warga",
-        subtitle: log.details || "Mengajukan aktivasi",
+        subtitle: (log.newValue as any)?.details || "Mengajukan aktivasi",
         timestamp: log.timestamp,
         type: "aktivasi",
         points: null,
