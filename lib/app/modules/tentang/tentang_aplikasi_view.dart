@@ -44,31 +44,46 @@ class TentangAplikasiView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              const Text(
-                AppConfig.appName,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primaryGreen,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Bersih, Sehat, Kampung Asri',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 32),
-              const Text(
-                'Berseka adalah platform manajemen pemilahan sampah cerdas yang bertujuan untuk meningkatkan kepatuhan dan efisiensi pengelolaan sampah di lingkungan masyarakat.',
+              RichText(
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textPrimary,
-                  height: 1.5,
+                text: const TextSpan(
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                    height: 1.3,
+                  ),
+                  children: [
+                    TextSpan(text: 'Sampah '),
+                    TextSpan(
+                      text: 'Terdata',
+                      style: TextStyle(color: AppColors.primaryBlue),
+                    ),
+                    TextSpan(text: ',\nKampung '),
+                    TextSpan(
+                      text: 'Berseka',
+                      style: TextStyle(color: AppColors.primaryGreen),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              RichText(
+                textAlign: TextAlign.center,
+                text: const TextSpan(
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
+                  children: [
+                    TextSpan(text: 'Sistem tata kelola sampah cerdas terpadu '),
+                    TextSpan(
+                      text: 'BERSEKA (Bersih, Sehat, Kampung Asri) ',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                    ),
+                    TextSpan(text: 'berbasis AI dan partisipasi masyarakat yang menghubungkan warga, pengurus RW, petugas residu, mahasiswa KKN, dosen pembimbing (DPL), pihak kelurahan, kecamatan, dan Dinas Lingkungan Hidup.'),
+                  ],
                 ),
               ),
               const SizedBox(height: 32),

@@ -157,14 +157,28 @@ class _SplashViewState extends ConsumerState<SplashView>
                         position: _taglineSlide,
                         child: FadeTransition(
                           opacity: _taglineFade,
-                          child: Text(
-                            'Bersih, Sehat, Kampung Asri',
-                            style: GoogleFonts.poppins(
-                              color: AppColors.textSecondary,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          child: RichText(
                             textAlign: TextAlign.center,
+                            text: TextSpan(
+                              style: GoogleFonts.poppins(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
+                                height: 1.3,
+                              ),
+                              children: const [
+                                TextSpan(text: 'Sampah '),
+                                TextSpan(
+                                  text: 'Terdata',
+                                  style: TextStyle(color: AppColors.primaryBlue),
+                                ),
+                                TextSpan(text: ',\nKampung '),
+                                TextSpan(
+                                  text: 'Berseka',
+                                  style: TextStyle(color: AppColors.primaryGreen),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

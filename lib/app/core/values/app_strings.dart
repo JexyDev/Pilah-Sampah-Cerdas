@@ -6,7 +6,7 @@ class AppStrings {
 
   // --- App ---
   static const String appName = 'Berseka';
-  static const String appTagline = 'Bersih, Sehat, Kampung Asri';
+  static const String appTagline = 'Sampah Terdata, Kampung Berseka';
 
   // --- Auth ---
   static const String loginTitle = 'Masuk';
