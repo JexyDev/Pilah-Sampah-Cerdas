@@ -224,10 +224,125 @@ archiveAuditLogsCron.start();
       'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "is_ketua" BOOLEAN DEFAULT false;',
       'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "jenjang_pendidikan" TEXT;',
       'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "id_kelompok" TEXT;',
+      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "catatan_penilaian_dpl" TEXT;',
       'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "id_dpl" TEXT;',
       'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "kelurahan" TEXT;',
+      'ALTER TABLE "jadwal" ADD COLUMN IF NOT EXISTS "is_aktif" BOOLEAN NOT NULL DEFAULT true;',
       'ALTER TABLE "kehadiran_kegiatan" ADD COLUMN IF NOT EXISTS "durasi_aktual_dalam_zona_menit" INTEGER;',
       'ALTER TABLE "fasilitas" ADD COLUMN IF NOT EXISTS "id_pendaftar" TEXT;',
+      `DO $$ BEGIN
+        CREATE TYPE "StatusProker" AS ENUM ('BELUM_DISETUJUI', 'DITERIMA', 'DITOLAK', 'SEDANG_BERJALAN', 'SELESAI');
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;`,
+      `DO $$ BEGIN
+        CREATE TYPE "StatusPenilaianKkn" AS ENUM ('DRAFT', 'TERSIMPAN', 'FINAL');
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;`,
+      `DO $$ BEGIN
+        ALTER TYPE "FacilityType" ADD VALUE IF NOT EXISTS 'posko_kkn';
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;`,
+      `DO $$ BEGIN
+        ALTER TYPE "StatusProker" ADD VALUE IF NOT EXISTS 'SEDANG_BERJALAN';
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;`,
+      `DO $$ BEGIN
+        ALTER TYPE "StatusProker" ADD VALUE IF NOT EXISTS 'SELESAI';
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;`,
+      `CREATE TABLE IF NOT EXISTS "program_kerja_kkn" (
+        "id" TEXT PRIMARY KEY,
+        "id_kelompok" TEXT NOT NULL,
+        "nomor" INTEGER,
+        "deskripsi" TEXT NOT NULL,
+        "kategori" TEXT DEFAULT 'LAINNYA',
+        "sumber" TEXT DEFAULT 'MAHASISWA',
+        "waktu_pelaksanaan" TEXT,
+        "link_google_drive" TEXT,
+        "kebutuhan_biaya" DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+        "status" "StatusProker" NOT NULL DEFAULT 'BELUM_DISETUJUI',
+        "catatan_dpl" TEXT,
+        "id_pereview" TEXT,
+        "direview_pada" TIMESTAMP(3),
+        "skor_penilaian" DECIMAL(5,2),
+        "evaluasi_dpl" TEXT,
+        "aspek_penilaian" JSONB,
+        "predikat" TEXT,
+        "status_penilaian" TEXT DEFAULT 'BELUM_DINILAI',
+        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`,
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "nomor" INTEGER;',
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "kategori" TEXT DEFAULT \'LAINNYA\';',
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "sumber" TEXT DEFAULT \'MAHASISWA\';',
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "waktu_pelaksanaan" TEXT;',
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "link_google_drive" TEXT;',
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "kebutuhan_biaya" DECIMAL(12,2) DEFAULT 0.00;',
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "catatan_dpl" TEXT;',
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "id_pereview" TEXT;',
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "direview_pada" TIMESTAMP(3);',
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "skor_penilaian" DECIMAL(5,2);',
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "evaluasi_dpl" TEXT;',
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "aspek_penilaian" JSONB;',
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "predikat" TEXT;',
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "status_penilaian" TEXT DEFAULT \'BELUM_DINILAI\';',
+      `CREATE TABLE IF NOT EXISTS "buku_panduan" (
+        "id" TEXT PRIMARY KEY,
+        "judul" TEXT NOT NULL,
+        "kategori_peran" TEXT NOT NULL,
+        "deskripsi" TEXT,
+        "file_url" TEXT,
+        "link_url" TEXT,
+        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`,
+      `CREATE TABLE IF NOT EXISTS "master_kegiatan_sampah" (
+        "id" TEXT PRIMARY KEY,
+        "nama" TEXT NOT NULL UNIQUE,
+        "kategori" TEXT NOT NULL,
+        "deskripsi" TEXT,
+        "status_aktif" BOOLEAN NOT NULL DEFAULT true,
+        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`,
+      `CREATE TABLE IF NOT EXISTS "penilaian_kkn_mahasiswa" (
+        "id" TEXT PRIMARY KEY,
+        "id_mahasiswa" TEXT NOT NULL UNIQUE,
+        "id_kelompok" TEXT,
+        "id_dpl" TEXT,
+        "id_mitra" TEXT,
+        "nama_mitra_penilai" TEXT,
+        "skor_mitra_kehadiran" INTEGER NOT NULL DEFAULT 0,
+        "skor_mitra_warga_binaan" INTEGER NOT NULL DEFAULT 0,
+        "skor_mitra_proker" INTEGER NOT NULL DEFAULT 0,
+        "skor_mitra_komunikasi" INTEGER NOT NULL DEFAULT 0,
+        "skor_mitra_tanggung_jawab" INTEGER NOT NULL DEFAULT 0,
+        "skor_mitra_bukti_kegiatan" INTEGER NOT NULL DEFAULT 0,
+        "skor_mitra_dampak" INTEGER NOT NULL DEFAULT 0,
+        "skor_mitra_inisiatif" INTEGER NOT NULL DEFAULT 0,
+        "subtotal_mitra" DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+        "skor_dpl_perencanaan" INTEGER NOT NULL DEFAULT 0,
+        "skor_dpl_kontribusi" INTEGER NOT NULL DEFAULT 0,
+        "skor_dpl_logbook" INTEGER NOT NULL DEFAULT 0,
+        "skor_dpl_analisis" INTEGER NOT NULL DEFAULT 0,
+        "skor_dpl_output" INTEGER NOT NULL DEFAULT 0,
+        "skor_dpl_laporan_akhir" INTEGER NOT NULL DEFAULT 0,
+        "subtotal_dpl" DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+        "nilai_akhir" DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+        "kategori_nilai" TEXT,
+        "catatan_dpl" TEXT,
+        "catatan_mitra" TEXT,
+        "status" "StatusPenilaianKkn" NOT NULL DEFAULT 'DRAFT',
+        "is_finalized" BOOLEAN NOT NULL DEFAULT false,
+        "difinalisasi_pada" TIMESTAMP(3),
+        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`,
       `CREATE TABLE IF NOT EXISTS "kritik_saran_pemanfaatan" (
         "id" TEXT PRIMARY KEY,
         "id_pengguna" TEXT NOT NULL,
