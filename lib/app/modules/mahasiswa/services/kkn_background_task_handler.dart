@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
@@ -426,8 +427,13 @@ class KknBackgroundTaskHandler extends TaskHandler {
   Future<void> _saveDuration(int totalSeconds) async {
     final prefs = await SharedPreferences.getInstance();
     final today = DateTime.now().toLocal().toString().substring(0, 10);
+    final targetKey = (_scheduleId != null && _scheduleId!.isNotEmpty && _scheduleId != 'SCH-TODAY')
+        ? '_$_scheduleId'
+        : '';
     await prefs.setString(KknBgPrefKeys.accumulatedDate, today);
     await prefs.setInt(KknBgPrefKeys.accumulatedSeconds, totalSeconds);
+    await prefs.setString('${KknBgPrefKeys.accumulatedDate}$targetKey', today);
+    await prefs.setInt('${KknBgPrefKeys.accumulatedSeconds}$targetKey', totalSeconds);
   }
 
   Future<void> _autoStop(String reason) async {
@@ -489,15 +495,36 @@ class KknBackgroundTaskHandler extends TaskHandler {
     debugPrint('[KKN-BG] Target updated: ($_targetLat, $_targetLng) radius=$_radius');
   }
 
-  /// Ping backend — fire-and-forget
+  /// Ping backend — HTTP POST to update location in database & trigger WebSocket broadcast
   Future<void> _pingBackend(double lat, double lng) async {
-    // Menggunakan HTTP langsung karena Dio tidak bisa diakses di background isolate
-    // (Dio perlu interceptor yang di-setup di main isolate)
-    // Ping ini opsional — jika gagal, tidak masalah
+    if (_apiBaseUrl == null || _authToken == null || _apiBaseUrl!.isEmpty || _authToken!.isEmpty) return;
+
     try {
-      // Untuk saat ini, hanya log. Implementasi HTTP call bisa ditambahkan nanti
-      // jika API base URL dan token tersedia.
-      debugPrint('[KKN-BG] Ping: ($lat, $lng)');
+      final client = HttpClient();
+      client.connectionTimeout = const Duration(seconds: 10);
+      
+      final cleanBaseUrl = _apiBaseUrl!.endsWith('/')
+          ? _apiBaseUrl!.substring(0, _apiBaseUrl!.length - 1)
+          : _apiBaseUrl!;
+      final url = Uri.parse('$cleanBaseUrl/location-ping');
+      final request = await client.postUrl(url);
+      
+      request.headers.set('content-type', 'application/json');
+      request.headers.set('authorization', 'Bearer $_authToken');
+      request.headers.set('bypass-tunnel-reminder', 'true');
+      
+      final payload = jsonEncode({
+        'latitude': lat,
+        'longitude': lng,
+        'scheduleId': _scheduleId,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+      
+      request.write(payload);
+      final response = await request.close();
+      await response.drain();
+      client.close();
+      debugPrint('[KKN-BG] Ping sent successfully to $url ($lat, $lng)');
     } catch (e) {
       debugPrint('[KKN-BG] Ping failed: $e');
     }
