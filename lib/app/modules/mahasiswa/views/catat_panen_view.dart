@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -83,27 +83,7 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.warningYellow.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.warningYellow),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.info_outline, color: AppColors.warningYellow),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '[Belum Terhubung API] Form ini membutuhkan endpoint /kkn/panen-hasil dari Backend.',
-                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
+              
               const Text('Pilih Program (Sumber Hasil)', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               prokerState.when(

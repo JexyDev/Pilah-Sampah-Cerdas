@@ -58,6 +58,10 @@ class ApiEndpoints {
   static const String kknActivateBin = '/kkn/warga/activate-bin';
   static const String kknHistory = '/kkn/history';
   static const String kknKelompokMe = '/kkn/kelompok/me';
+  
+  // 3 Pilar KKN
+  static const String kknProgramKerja = '/kkn/program-kerja';
+  static const String kknPanenHasil = '/kkn/panen-hasil';
   static const String kknPemanfaatanSampah = '/kkn/pemanfaatan-sampah';
   static const String kknPengajuanIzin = '/kkn/pengajuan-izin';
   static const String kknPoskoRegister = '/kkn/posko/register';

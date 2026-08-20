@@ -655,59 +655,104 @@ class ApiKknRepository implements KknRepository {
 
   @override
   Future<bool> submitProgramKerja(Map<String, dynamic> data) async {
-    // TODO: Ganti dengan endpoint asli ketika backend sudah siap
-    // final response = await apiClient.dio.post('/kkn/program-kerja', data: data);
-    // return response.statusCode == 200 || response.statusCode == 201;
-    throw UnimplementedError('[Belum Terhubung API] Endpoint /api/v1/kkn/program-kerja belum tersedia di backend.');
+    try {
+      final response = await apiClient.dio.post(
+        ApiEndpoints.kknProgramKerja,
+        data: data,
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(e.response?.data?['message'] ?? 'Gagal mengajukan program kerja');
+      }
+      rethrow;
+    }
   }
 
   @override
   Future<List<Map<String, dynamic>>> getProgramKerja() async {
-    // TODO: Ganti dengan endpoint asli ketika backend sudah siap
-    // final response = await apiClient.dio.get('/kkn/program-kerja');
-    // return List<Map<String,dynamic>>.from(response.data['data']);
-    
-    // Mock Data sementara untuk UI
-    return [
-      {
-        'id': 'PROKER-001',
-        'judul': 'Sosialisasi Pemilahan Sampah',
-        'kategori': 'Non-Fisik',
-        'rencanaAnggaran': 150000,
-        'status': 'APPROVED',
-        'catatanDpl': 'Bagus, lanjutkan. Fokus pada ibu rumah tangga.',
-        'tanggal': DateTime.now().add(const Duration(days: 2)).toIso8601String(),
-      },
-      {
-        'id': 'PROKER-002',
-        'judul': 'Pembuatan Komposter Biopori',
-        'kategori': 'Fisik',
-        'rencanaAnggaran': 500000,
-        'status': 'PENDING',
-        'catatanDpl': null,
-        'tanggal': DateTime.now().add(const Duration(days: 5)).toIso8601String(),
-      },
-      {
-        'id': 'PROKER-003',
-        'judul': 'Budidaya Maggot BSF di RW 03',
-        'kategori': 'Fisik',
-        'rencanaAnggaran': 750000,
-        'status': 'REJECTED',
-        'catatanDpl': 'Biaya terlalu tinggi, cari alternatif bahan yang lebih murah.',
-        'tanggal': DateTime.now().add(const Duration(days: 7)).toIso8601String(),
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.kknProgramKerja);
+      if (response.statusCode == 200) {
+        final data = response.data['data'];
+        if (data is List) {
+          return List<Map<String, dynamic>>.from(data);
+        }
       }
-    ];
+      return [];
+    } catch (e) {
+      debugPrint('[KKN] getProgramKerja error: $e');
+      return [];
+    }
   }
 
   @override
   Future<bool> submitLogbookPemanfaatan(Map<String, dynamic> data, {String? imagePath}) async {
-    // TODO: Ganti dengan endpoint asli ketika backend sudah siap
-    throw UnimplementedError('[Belum Terhubung API] Endpoint /api/v1/kkn/pemanfaatan-sampah versi baru belum tersedia di backend.');
+    try {
+      FormData formData;
+      if (imagePath != null) {
+        final fileExt = imagePath.split('.').last.toLowerCase();
+        String mimeType = 'image/jpeg';
+        if (fileExt == 'png') mimeType = 'image/png';
+        if (fileExt == 'webp') mimeType = 'image/webp';
+
+        formData = FormData.fromMap({
+          ...data,
+          'fotoDokumentasi': await MultipartFile.fromFile(
+            imagePath,
+            filename: 'logbook_${DateTime.now().millisecondsSinceEpoch}.$fileExt',
+            contentType: MediaType.parse(mimeType),
+          ),
+        });
+      } else {
+        formData = FormData.fromMap(data);
+      }
+
+      final response = await apiClient.dio.post(
+        ApiEndpoints.kknPemanfaatanSampah,
+        data: formData,
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(e.response?.data?['message'] ?? 'Gagal menyimpan logbook pemanfaatan');
+      }
+      rethrow;
+    }
   }
 
   @override
   Future<bool> submitPanenHasil(Map<String, dynamic> data, {String? imagePath}) async {
-    // TODO: Ganti dengan endpoint asli ketika backend sudah siap
-    throw UnimplementedError('[Belum Terhubung API] Endpoint /api/v1/kkn/panen-hasil belum tersedia di backend.');
+    try {
+      FormData formData;
+      if (imagePath != null) {
+        final fileExt = imagePath.split('.').last.toLowerCase();
+        String mimeType = 'image/jpeg';
+        if (fileExt == 'png') mimeType = 'image/png';
+        if (fileExt == 'webp') mimeType = 'image/webp';
+
+        formData = FormData.fromMap({
+          ...data,
+          'fotoDokumentasi': await MultipartFile.fromFile(
+            imagePath,
+            filename: 'panen_${DateTime.now().millisecondsSinceEpoch}.$fileExt',
+            contentType: MediaType.parse(mimeType),
+          ),
+        });
+      } else {
+        formData = FormData.fromMap(data);
+      }
+
+      final response = await apiClient.dio.post(
+        ApiEndpoints.kknPanenHasil,
+        data: formData,
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(e.response?.data?['message'] ?? 'Gagal menyimpan panen hasil');
+      }
+      rethrow;
+    }
   }
 }
