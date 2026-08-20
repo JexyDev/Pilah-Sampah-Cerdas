@@ -1,9 +1,10 @@
-﻿import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   MapContainer,
   Marker,
   Popup,
-  Tooltip
+  Tooltip,
+  Polygon
 } from "react-leaflet";
 import L from "leaflet";
 import {
@@ -22,7 +23,7 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
 import PageHeader from "../../components/common/PageHeader";
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
-import { createFacilityIcon } from "../../constants/coblongGeoData";
+import { createFacilityIcon, KELURAHAN_GEODATA } from "../../constants/coblongGeoData";
 
 interface FacilityItem {
   id: string;
@@ -193,13 +194,68 @@ export const PemanfaatanSampah: React.FC = () => {
           </div>
         ) : viewMode === "MAP" ? (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-2 overflow-hidden h-[600px] relative z-0">
+            {/* Legenda Monitoring Floating Card */}
+            <div className="absolute top-4 right-4 z-[999]">
+              <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-2xl rounded-2xl p-4 border border-slate-200/90 dark:border-slate-800 flex flex-col gap-3 min-w-[250px]">
+                <div className="flex items-center gap-1.5 border-b border-slate-100 pb-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider">
+                    Legenda Monitoring
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                      Fasilitas Pengolahan Sampah
+                    </span>
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-[10.5px]">
+                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-green-600 shrink-0" /><span className="font-bold text-slate-700 truncate">Bata Terawang</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-emerald-600 shrink-0" /><span className="font-bold text-slate-700 truncate">Loseda</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-amber-600 shrink-0" /><span className="font-bold text-slate-700 truncate">Rumah Maggot</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-blue-600 shrink-0" /><span className="font-bold text-slate-700 truncate">Bank Sampah</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-teal-600 shrink-0" /><span className="font-bold text-slate-700 truncate">TPS</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-orange-600 shrink-0" /><span className="font-bold text-slate-700 truncate">Incinerator</span></div>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5 border-t border-slate-100 pt-2">
+                    <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                      Batas Kelurahan Terdata
+                    </span>
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-[10.5px]">
+                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-[#10b981]" /><span className="font-bold text-slate-700">Dago</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-[#f43f5e]" /><span className="font-bold text-slate-700">Lebak Siliwangi</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-[#8b5cf6]" /><span className="font-bold text-slate-700">Lebak Gede</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-[#f59e0b]" /><span className="font-bold text-slate-700">Sekeloa</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-[#ec4899]" /><span className="font-bold text-slate-700">Sadang Serang</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-[#06b6d4]" /><span className="font-bold text-slate-700">Cipaganti</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <MapContainer
               center={[-6.8903, 107.611]}
-              zoom={15}
+              zoom={14}
               style={{ height: '100%', width: '100%', borderRadius: '12px' }}
               className="z-0"
             >
               <ThemeTileLayer />
+              
+              {/* Render Kelurahan Boundaries */}
+              {Object.values(KELURAHAN_GEODATA).map((kg) => (
+                <Polygon
+                  key={kg.id}
+                  positions={kg.coordinates as any}
+                  pathOptions={{
+                    color: kg.color,
+                    weight: 3,
+                    fillColor: kg.color,
+                    fillOpacity: 0.1,
+                  }}
+                />
+              ))}
+
               {filteredItems.map(fac => {
                 if (!fac.latitude || !fac.longitude) return null;
                 const icon = createFacilityIcon(fac.jenis, fac.nama);
