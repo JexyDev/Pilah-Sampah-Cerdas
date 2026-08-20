@@ -690,16 +690,44 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           children: [
             Expanded(
               child: _MenuTileCard(
-                  icon: Icons.recycling_rounded,
+                  icon: Icons.assignment_rounded,
                   iconAsset: 'assets/icons/activity.png',
-                  title: 'Laporan Mahasiswa',
-                  subtitle: 'Ide Program & Pemanfaatan',
+                  title: 'Proker KKN (Pilar 1)',
+                  subtitle: 'Pengajuan & Status Ide',
                 gradientColors: const [
                   AppColors.primaryBlueLight,
                     AppColors.primaryBlue,
                 ],
-                onTap: () =>
-                    Navigator.pushNamed(context, AppRoutes.pemanfaatanSampah),
+                onTap: () {
+                  // Show bottom sheet to choose between Add or History
+                  showModalBottomSheet(
+                    context: context,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                    ),
+                    builder: (context) => Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.add, color: AppColors.primaryGreen),
+                          title: const Text('Ajukan Program Kerja Baru'),
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.pushNamed(context, AppRoutes.pengajuanProgramKerja);
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.history, color: AppColors.primaryBlue),
+                          title: const Text('Riwayat & Status Proker'),
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.pushNamed(context, AppRoutes.riwayatProgramKerja);
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(width: 12),
@@ -715,6 +743,38 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                 ],
                 onTap: () =>
                     Navigator.pushNamed(context, AppRoutes.pengajuanIzin),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _MenuTileCard(
+                icon: Icons.recycling_rounded,
+                  iconAsset: 'assets/icons/recycle-bin.png',
+                  title: 'Aksi Pemanfaatan (Pilar 2)',
+                subtitle: 'Logbook olah sampah',
+                gradientColors: const [
+                  AppColors.primaryBlueLight,
+                    AppColors.primaryBlue,
+                ],
+                onTap: () => Navigator.pushNamed(context, AppRoutes.logbookPemanfaatan),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _MenuTileCard(
+                icon: Icons.eco_rounded,
+                  iconAsset: 'assets/icons/verified-user.png',
+                  title: 'Panen / Hasil (Pilar 3)',
+                subtitle: 'Catat hasil olahan',
+                gradientColors: const [
+                  AppColors.primaryBlueLight,
+                  AppColors.primaryBlue,
+                ],
+                onTap: () => Navigator.pushNamed(context, AppRoutes.catatPanen),
               ),
             ),
           ],

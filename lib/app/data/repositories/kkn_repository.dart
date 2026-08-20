@@ -118,4 +118,24 @@ abstract class KknRepository {
   /// Catat pelanggaran keluar zona (penalti poin)
   /// POST /api/v1/kkn/out-of-zone-violation
   Future<Map<String, dynamic>> recordOutOfZoneViolation({required String scheduleId, required double outOfZoneMinutes});
+
+  // ──────────────────────────────────────────────────────────
+  // 3 Pilar KKN (Perencanaan, Aksi, Panen)
+  // ──────────────────────────────────────────────────────────
+
+  /// Pilar 1: Pengajuan Program Kerja
+  /// POST /api/v1/kkn/program-kerja
+  Future<bool> submitProgramKerja(Map<String, dynamic> data);
+
+  /// Pilar 1: Mendapatkan daftar & status Program Kerja
+  /// GET /api/v1/kkn/program-kerja
+  Future<List<Map<String, dynamic>>> getProgramKerja();
+
+  /// Pilar 2: Logbook Pemanfaatan (Mewarisi/menggantikan submitPemanfaatanSampah lama)
+  /// POST /api/v1/kkn/pemanfaatan-sampah
+  Future<bool> submitLogbookPemanfaatan(Map<String, dynamic> data, {String? imagePath});
+
+  /// Pilar 3: Catat Panen / Hasil
+  /// POST /api/v1/kkn/panen-hasil
+  Future<bool> submitPanenHasil(Map<String, dynamic> data, {String? imagePath});
 }

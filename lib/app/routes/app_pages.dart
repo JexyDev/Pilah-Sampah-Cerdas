@@ -41,6 +41,10 @@ import 'app_routes.dart';
 import '../modules/mahasiswa/views/mahasiswa_notifikasi_view.dart';
 import '../modules/petugas_pemilahan/views/petugas_notification_view.dart';
 import '../modules/petugas_pemilahan/views/pengajuan_warga_view.dart';
+import '../modules/mahasiswa/views/pengajuan_program_kerja_view.dart';
+import '../modules/mahasiswa/views/riwayat_program_kerja_view.dart';
+import '../modules/mahasiswa/views/logbook_pemanfaatan_view.dart';
+import '../modules/mahasiswa/views/catat_panen_view.dart';
 
 /// Peta route terpusat untuk MaterialApp.
 class AppPages {
@@ -62,6 +66,14 @@ class AppPages {
         return _buildRoute(const ForgotPasswordView(), settings);
       case AppRoutes.dashboard:
         return _buildRoute(const DashboardView(), settings);
+      case AppRoutes.pengajuanProgramKerja:
+        return _buildRoute(const PengajuanProgramKerjaView(), settings);
+      case AppRoutes.riwayatProgramKerja:
+        return _buildRoute(const RiwayatProgramKerjaView(), settings);
+      case AppRoutes.logbookPemanfaatan:
+        return _buildRoute(const LogbookPemanfaatanView(), settings);
+      case AppRoutes.catatPanen:
+        return _buildRoute(const CatatPanenView(), settings);
       case AppRoutes.scan:
         return _buildRoute(const ScanFlowView(), settings);
       case AppRoutes.aktivasiBin:

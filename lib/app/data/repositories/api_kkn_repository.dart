@@ -647,4 +647,67 @@ class ApiKknRepository implements KknRepository {
       return {};
     }
   }
+
+  // ──────────────────────────────────────────────────────────
+  // 3 Pilar KKN (Perencanaan, Aksi, Panen)
+  // [Belum Terhubung API] - Akan mengembalikan error / mock data sampai backend siap
+  // ──────────────────────────────────────────────────────────
+
+  @override
+  Future<bool> submitProgramKerja(Map<String, dynamic> data) async {
+    // TODO: Ganti dengan endpoint asli ketika backend sudah siap
+    // final response = await apiClient.dio.post('/kkn/program-kerja', data: data);
+    // return response.statusCode == 200 || response.statusCode == 201;
+    throw UnimplementedError('[Belum Terhubung API] Endpoint /api/v1/kkn/program-kerja belum tersedia di backend.');
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getProgramKerja() async {
+    // TODO: Ganti dengan endpoint asli ketika backend sudah siap
+    // final response = await apiClient.dio.get('/kkn/program-kerja');
+    // return List<Map<String,dynamic>>.from(response.data['data']);
+    
+    // Mock Data sementara untuk UI
+    return [
+      {
+        'id': 'PROKER-001',
+        'judul': 'Sosialisasi Pemilahan Sampah',
+        'kategori': 'Non-Fisik',
+        'rencanaAnggaran': 150000,
+        'status': 'APPROVED',
+        'catatanDpl': 'Bagus, lanjutkan. Fokus pada ibu rumah tangga.',
+        'tanggal': DateTime.now().add(const Duration(days: 2)).toIso8601String(),
+      },
+      {
+        'id': 'PROKER-002',
+        'judul': 'Pembuatan Komposter Biopori',
+        'kategori': 'Fisik',
+        'rencanaAnggaran': 500000,
+        'status': 'PENDING',
+        'catatanDpl': null,
+        'tanggal': DateTime.now().add(const Duration(days: 5)).toIso8601String(),
+      },
+      {
+        'id': 'PROKER-003',
+        'judul': 'Budidaya Maggot BSF di RW 03',
+        'kategori': 'Fisik',
+        'rencanaAnggaran': 750000,
+        'status': 'REJECTED',
+        'catatanDpl': 'Biaya terlalu tinggi, cari alternatif bahan yang lebih murah.',
+        'tanggal': DateTime.now().add(const Duration(days: 7)).toIso8601String(),
+      }
+    ];
+  }
+
+  @override
+  Future<bool> submitLogbookPemanfaatan(Map<String, dynamic> data, {String? imagePath}) async {
+    // TODO: Ganti dengan endpoint asli ketika backend sudah siap
+    throw UnimplementedError('[Belum Terhubung API] Endpoint /api/v1/kkn/pemanfaatan-sampah versi baru belum tersedia di backend.');
+  }
+
+  @override
+  Future<bool> submitPanenHasil(Map<String, dynamic> data, {String? imagePath}) async {
+    // TODO: Ganti dengan endpoint asli ketika backend sudah siap
+    throw UnimplementedError('[Belum Terhubung API] Endpoint /api/v1/kkn/panen-hasil belum tersedia di backend.');
+  }
 }
