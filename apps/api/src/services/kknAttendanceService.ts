@@ -235,12 +235,30 @@ export class KknAttendanceService {
 
         const durasiWajibMenit = await getScheduleTargetDurationMinutes(sch);
 
-        // Update actualInZoneMinutes pada attendance yang sedang BERLANGSUNG
-        if (existingAtt && existingAtt.status === "BERLANGSUNG") {
-          await prisma.activityAttendance.update({
-            where: { id: existingAtt.id },
-            data: { actualInZoneMinutes: durationInZone },
-          });
+        // Always update / upsert actualInZoneMinutes so Web Dashboard and Mobile are 100% in sync
+        if (existingAtt) {
+          if (existingAtt.status !== "SELESAI" && existingAtt.status !== "SELESAI_TELAT") {
+            await prisma.activityAttendance.update({
+              where: { id: existingAtt.id },
+              data: { actualInZoneMinutes: durationInZone },
+            });
+          }
+        } else if (durationInZone > 0) {
+          try {
+            await prisma.activityAttendance.create({
+              data: {
+                studentId: userId,
+                scheduleId: sch.id,
+                status: "BERLANGSUNG",
+                method: "GPS_ACTIVITY",
+                latitude,
+                longitude,
+                actualInZoneMinutes: durationInZone,
+              },
+            });
+          } catch (_createErr) {
+            // Continue if concurrent request created record
+          }
         }
 
         // Kondisi B: Otomatis jika durasi in-zone telah mencapai durasiWajibMenit kegiatan

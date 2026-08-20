@@ -39,7 +39,8 @@ class BERSEKAWebSocketClient {
       try {
         const apiUrl = new URL(envApi);
         const wsProto = apiUrl.protocol === "https:" ? "wss:" : "ws:";
-        return `${wsProto}//${apiUrl.host}`;
+        const path = apiUrl.pathname && apiUrl.pathname !== "/" ? apiUrl.pathname : "/api";
+        return `${wsProto}//${apiUrl.host}${path}`;
       } catch (_e) {
         // Fallback below
       }
@@ -55,8 +56,8 @@ class BERSEKAWebSocketClient {
       return `${protocol}//${hostname}:3000`;
     }
 
-    // Default: use window host
-    return `${protocol}//${window.location.host}`;
+    // Default: use window host + /api path to match Nginx proxy_pass location block
+    return `${protocol}//${window.location.host}/api`;
   }
 
   private startHeartbeat() {
