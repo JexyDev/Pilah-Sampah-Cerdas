@@ -2034,8 +2034,12 @@ export class KknService {
         attendanceStatus = "sakit";
       } else if (attStatUpper.includes("ALPA")) {
         attendanceStatus = "alpa";
-      } else {
+      } else if (attStatUpper === "BERLANGSUNG" || attStatUpper === "DALAM_RADIUS" || attStatUpper === "DI_ZONA") {
+        attendanceStatus = "berlangsung";
+      } else if (attStatUpper === "HADIR" || attStatUpper === "SELESAI" || attendanceForActiveSchedule.checkOutAt !== null) {
         attendanceStatus = "hadir";
+      } else {
+        attendanceStatus = attStatUpper.toLowerCase();
       }
     }
 

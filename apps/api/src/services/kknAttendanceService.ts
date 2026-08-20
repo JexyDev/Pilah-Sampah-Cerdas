@@ -441,33 +441,8 @@ export class KknAttendanceService {
           });
         }
 
-        // Kondisi B: Otomatis jika durasi in-zone telah mencapai durasiWajibMenit kegiatan
-        // Bisa trigger meskipun saat ini di luar zona (jika autoHadirOutsideZone = true)
-        if (durasiWajibMenit > 0 && durationInZone >= durasiWajibMenit) {
-          const canTrigger = isInsideZone || autoHadirOutsideZone;
-          if (canTrigger) {
-            if (existingAtt && existingAtt.status === "BERLANGSUNG") {
-              // Transisi BERLANGSUNG → HADIR
-              await prisma.activityAttendance.update({
-                where: { id: existingAtt.id },
-                data: {
-                  status: "HADIR",
-                  method: "OTOMATIS",
-                  actualInZoneMinutes: durationInZone,
-                },
-              });
-            } else if (!existingAtt) {
-              await this.recordAttendance({
-                studentId,
-                scheduleId: sch.id,
-                latitude: latestLoc.latitude,
-                longitude: latestLoc.longitude,
-                method: "OTOMATIS",
-              });
-            }
-            autoAttendanceTriggered.push(sch.id);
-          }
-        }
+        // Catatan: Status tetap BERLANGSUNG sampai mahasiswa menekan tombol "Absen Sekarang" (manual check-in)
+        // Lokasi GPS ping hanya memperbarui actualInZoneMinutes tanpa mengubah status ke HADIR secara otomatis
       }
     }
 
@@ -1253,10 +1228,10 @@ export class KknAttendanceService {
           isInside = dist <= scheduleLoc.radius + attendanceListBufferMeters;
         }
         currentStatus = isInside ? "MASIH_DI_LOKASI" : "SUDAH_MENINGGALKAN_RADIUS";
-        status = isInside ? "HADIR" : "LEPAS_RADIUS";
+        status = att.status === "BERLANGSUNG" ? "BERLANGSUNG" : (isInside ? "HADIR" : "LEPAS_RADIUS");
       } else {
         currentStatus = "MASIH_DI_LOKASI";
-        status = "HADIR";
+        status = att.status === "BERLANGSUNG" ? "BERLANGSUNG" : "HADIR";
       }
 
       const isLeave = att.method === "IZIN_DPL" || String(att.status).toUpperCase().includes("IZIN") || String(att.status).toUpperCase().includes("SAKIT");
