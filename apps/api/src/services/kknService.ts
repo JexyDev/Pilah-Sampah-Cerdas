@@ -2076,6 +2076,58 @@ export class KknService {
     }
     const finalTargetDurationMinutes = targetDurationMinutes;
 
+    // Calculate precise total seconds in zone from studentLocation logs today
+    let actualInZoneSeconds = 0;
+    if (activeSchedule) {
+      try {
+        const logs = await prisma.studentLocation.findMany({
+          where: {
+            studentId: { in: studentUserIds },
+            recordedAt: { gte: todayStart, lte: todayEnd },
+          },
+          orderBy: { recordedAt: "asc" },
+        });
+        if (logs.length >= 2) {
+          const bufferMeters = (ruleConfigs as any).geofenceBufferMeters || 15.0;
+          const geofence = {
+            latitude: activeSchedule.latitude ? Number(activeSchedule.latitude) : -6.8915,
+            longitude: activeSchedule.longitude ? Number(activeSchedule.longitude) : 107.6107,
+            radius: activeSchedule.radius ? Number(activeSchedule.radius) : 150,
+            polygon: activeSchedule.polygon,
+          };
+          const inZonePoints = logs.filter((l) => {
+            const lat = Number(l.latitude);
+            const lng = Number(l.longitude);
+            if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
+              const polyPoints = (geofence.polygon as any[]).map((p) => ({
+                lat: Number(p[0]),
+                lng: Number(p[1]),
+              }));
+              return isPointInPolygonWithBuffer({ lat, lng }, polyPoints, bufferMeters);
+            } else {
+              const dist = calculateDistance(lat, lng, geofence.latitude, geofence.longitude);
+              return dist <= (geofence.radius + bufferMeters);
+            }
+          });
+          let totalMs = 0;
+          for (let i = 0; i < inZonePoints.length - 1; i++) {
+            const t1 = new Date(inZonePoints[i].recordedAt).getTime();
+            const t2 = new Date(inZonePoints[i + 1].recordedAt).getTime();
+            const diff = t2 - t1;
+            if (diff > 0 && diff <= 5 * 60 * 1000) {
+              totalMs += diff;
+            }
+          }
+          actualInZoneSeconds = Math.floor(totalMs / 1000);
+        }
+      } catch (_) {
+        // Fallback jika query bermasalah
+      }
+    }
+    if (actualInZoneSeconds === 0 && attendanceForActiveSchedule?.actualInZoneMinutes) {
+      actualInZoneSeconds = attendanceForActiveSchedule.actualInZoneMinutes * 60;
+    }
+
     // Jika ada jadwal kegiatan spesifik untuk kelompoknya, gunakan data & koordinat jadwal tersebut!
     if (activeSchedule) {
       const schedLat = activeSchedule.latitude ? Number(activeSchedule.latitude) : (activeArea?.latitude ? Number(activeArea.latitude) : null);
@@ -2102,7 +2154,8 @@ export class KknService {
         radiusMeter: activeSchedule.radius || 100,
         radius: activeSchedule.radius || 100,
         targetDurationMinutes: finalTargetDurationMinutes,
-        actualInZoneMinutes: attendanceForActiveSchedule?.actualInZoneMinutes ?? 0,
+        actualInZoneMinutes: attendanceForActiveSchedule?.actualInZoneMinutes ?? Math.floor(actualInZoneSeconds / 60),
+        actualInZoneSeconds,
         attendanceStatus,
         status: attendanceStatus,
         kehadiran: attendanceStatus,
@@ -2133,7 +2186,8 @@ export class KknService {
       radiusMeter: 100,
       radius: 100,
       targetDurationMinutes,
-      actualInZoneMinutes: attendanceForActiveSchedule?.actualInZoneMinutes ?? 0,
+      actualInZoneMinutes: attendanceForActiveSchedule?.actualInZoneMinutes ?? Math.floor(actualInZoneSeconds / 60),
+      actualInZoneSeconds,
       attendanceStatus,
       status: attendanceStatus,
       kehadiran: attendanceStatus,
