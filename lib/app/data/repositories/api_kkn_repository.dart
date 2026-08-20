@@ -357,8 +357,10 @@ class ApiKknRepository implements KknRepository {
         // Belum dimasukkan ke kelompok manapun oleh admin
         return null;
       }
+      debugPrint('Error getKelompokKkn (Dio): ${e.response?.data}');
       throw Exception('Gagal memuat data kelompok KKN');
-    } catch (_) {
+    } catch (e, stack) {
+      debugPrint('Error getKelompokKkn (Parsing/Lainnya): $e\n$stack');
       return null;
     }
   }

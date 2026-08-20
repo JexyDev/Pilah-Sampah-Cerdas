@@ -472,14 +472,27 @@ class KelompokMemberData extends Equatable {
   final bool isLeader;
 
   factory KelompokMemberData.fromJson(Map<String, dynamic> json) {
+    bool parseIsLeader(dynamic value, dynamic role) {
+      if (value is bool) return value;
+      if (value?.toString().toLowerCase() == 'true') return true;
+      if (role?.toString().toUpperCase() == 'KETUA') return true;
+      return false;
+    }
+
+    int parsePoints(dynamic val) {
+      if (val is num) return val.toInt();
+      if (val is String) return int.tryParse(val) ?? 0;
+      return 0;
+    }
+
     return KelompokMemberData(
-      userId: json['userId']?.toString() ?? json['id']?.toString() ?? '',
+      userId: json['userId']?.toString() ?? json['id']?.toString() ?? json['_id']?.toString() ?? '',
       nim: json['nim']?.toString() ?? '',
       name: json['name']?.toString() ?? json['nama']?.toString() ?? 'Mahasiswa',
       jurusan: json['jurusan']?.toString() ?? json['prodi']?.toString() ?? '',
       fakultas: json['fakultas']?.toString() ?? '',
-      individualPoints: (json['individualPoints'] as num?)?.toInt() ?? (json['points'] as num?)?.toInt() ?? 0,
-      isLeader: json['isLeader'] as bool? ?? (json['role']?.toString().toUpperCase() == 'KETUA'),
+      individualPoints: parsePoints(json['individualPoints']) > 0 ? parsePoints(json['individualPoints']) : parsePoints(json['points']),
+      isLeader: parseIsLeader(json['isLeader'], json['role']),
     );
   }
 
@@ -551,12 +564,18 @@ class KelompokKknData extends Equatable {
 
     if (dpl.isEmpty) dpl = '-';
 
+    int parsePoints(dynamic val) {
+      if (val is num) return val.toInt();
+      if (val is String) return int.tryParse(val) ?? 0;
+      return 0;
+    }
+
     return KelompokKknData(
       groupId: json['groupId']?.toString() ?? json['id']?.toString() ?? '',
       groupName: json['groupName']?.toString() ?? json['namaKelompok']?.toString() ?? json['nama']?.toString() ?? '-',
       dosenPembimbing: dpl,
       poskoLocation: json['poskoLocation']?.toString() ?? json['lokasiPosko']?.toString() ?? json['kelurahan']?.toString() ?? '-',
-      totalGroupPoints: (json['totalGroupPoints'] as num?)?.toInt() ?? (json['totalPoints'] as num?)?.toInt() ?? 0,
+      totalGroupPoints: parsePoints(json['totalGroupPoints']) > 0 ? parsePoints(json['totalGroupPoints']) : parsePoints(json['totalPoints']),
       members: membersList,
     );
   }
