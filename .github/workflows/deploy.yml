@@ -1,0 +1,52 @@
+name: BERSEKA Mobile — CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - mobile
+      - fix-analyze-and-dummy-v2
+  pull_request:
+    branches:
+      - mobile
+
+jobs:
+  validate-and-build:
+    name: Validate Code & Build Release APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Run Code Analysis (Strict Linter)
+        run: flutter analyze --no-fatal-warnings
+
+      - name: Run Unit Tests
+        run: flutter test
+
+      - name: Build Release APK
+        run: flutter build apk --release --dart-define=API_BASE_URL=https://berseka.id
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: berseka-mobile-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 14
