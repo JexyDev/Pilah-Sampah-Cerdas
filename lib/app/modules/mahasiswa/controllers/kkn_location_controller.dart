@@ -239,6 +239,19 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           await _savePersistentTimer();
         }
 
+        final double? targetLat = (activeZone['latitude'] as num?)?.toDouble();
+        final double? targetLng = (activeZone['longitude'] as num?)?.toDouble();
+        final double radius = (activeZone['radius'] as num?)?.toDouble() ?? 100.0;
+        final double buffer = (activeZone['geofenceBufferMeters'] as num?)?.toDouble() ?? 15.0;
+
+        double distance = 999999.0;
+        bool isInside = false;
+
+        if (pos != null && targetLat != null && targetLng != null) {
+          distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, targetLat, targetLng);
+          isInside = distance <= (radius + buffer);
+        }
+
         final status = (activeZone['attendanceStatus'] ?? activeZone['status'] ?? activeZone['kehadiran'] ?? '')
             .toString()
             .toLowerCase();
@@ -247,6 +260,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
         state = state.copyWith(
           activeActivity: activeZone,
+          currentPosition: pos,
+          isInsideRadius: isInside,
+          distanceToTarget: distance,
           inZoneDurationSeconds: _accumulatedSeconds,
           isSuccessAttendance: isAttended,
           zoneResetWarning: isAlpa
