@@ -206,8 +206,8 @@ export class KknAttendanceService {
           },
         });
 
-        // Skip jika sudah selesai / hadir / sudah checkout
-        if (existingAtt && (existingAtt.status === "HADIR" || existingAtt.status === "SELESAI" || existingAtt.status === "SELESAI_TELAT" || existingAtt.checkOutAt !== null)) {
+        // Skip HANYA jika kegiatan sudah checkout / selesai sepenuhnya
+        if (existingAtt && (existingAtt.status === "SELESAI" || existingAtt.status === "SELESAI_TELAT" || existingAtt.checkOutAt !== null)) {
           continue;
         }
 
@@ -262,8 +262,8 @@ export class KknAttendanceService {
         }
 
         // Kondisi B: Otomatis jika durasi in-zone telah mencapai durasiWajibMenit kegiatan
-        // Bisa trigger meskipun saat ini di luar zona (jika autoHadirOutsideZone = true)
-        if (durasiWajibMenit > 0 && durationInZone >= durasiWajibMenit) {
+        // Memerlukan durasiWajibMenit > 0 DAN durationInZone > 0 (tidak boleh instan pada 0 menit)
+        if (durasiWajibMenit > 0 && durationInZone > 0 && durationInZone >= durasiWajibMenit) {
           const canTrigger = isInsideZone || autoHadirOutsideZone;
           if (canTrigger) {
             if (existingAtt && existingAtt.status === "BERLANGSUNG") {
