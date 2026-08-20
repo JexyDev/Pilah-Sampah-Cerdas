@@ -1673,7 +1673,7 @@ export class KknAttendanceService {
     const currentHour = (now.getUTCHours() + 7) % 24;
     const currentMinute = now.getUTCMinutes();
     const currentMinutesTotal = currentHour * 60 + currentMinute;
-    const todayStr = now.toISOString().slice(0, 10);
+    const todayStr = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
     const result = schedules.map((sch) => {
       let jamMulai = "08:00";
@@ -1692,7 +1692,7 @@ export class KknAttendanceService {
       const endMinutesTotal = (endH || 16) * 60 + (endM || 0);
 
       const isOvernight = endMinutesTotal <= startMinutesTotal;
-      const schDateStr = sch.date ? new Date(sch.date).toISOString().slice(0, 10) : todayStr;
+      const schDateStr = sch.date ? new Date(new Date(sch.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10) : todayStr;
       const isSchedDateToday = schDateStr === todayStr;
 
       // Status waktu kegiatan
