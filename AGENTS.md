@@ -62,9 +62,15 @@ main/
 
 ---
 
-## 4. Aturan Khusus untuk AI Agent (Claude Code, Copilot, dll)
+## 4. Aturan Khusus untuk AI Agent (Claude Code, Copilot, Antigravity, dll)
 
-Jika Anda adalah AI agent yang membaca file ini untuk membantu development:
+> 🛑 **ATURAN UTAMA: WAJIB MEMBACA & MEMATUHI ATURAN DI `.agent/` (ANTI-HALUSINASI)**
+> Sebelum membuat atau mengubah kode/dokumentasi, AI Agent WAJIB membaca dan mematuhi aturan (*rules*), alur kerja (*workflows*), dan *skills* yang ada pada folder [.agent/](file:///home/dajayape/Documents/work/makerindo/employment/projects/trashcare/code/main/.agent) (khususnya [.agent/AGENTS.md](file:///home/dajayape/Documents/work/makerindo/employment/projects/trashcare/code/main/.agent/AGENTS.md), `.agent/rules/`, dan `.agent/workflows/`).
+> 
+> **PRINSIP ANTI-HALUSINASI (GROUNDED CODE & FACTUAL TRUTH):**
+> 1. **DILARANG MENGARANG (NO HALLUCINATED LOGIC/ENDPOINTS):** Jangan pernah mengarang skema data, endpoint API, path file, atau fungsi utility yang tidak terverifikasi langsung di codebase. Selalu view/grep file sumber sebelum menulis kode.
+> 2. **DILARANG DATA DUMMY TANPA LABEL:** Jangan memasukkan data dummy/hardcode yang menyamar sebagai data asli. Seluruh data yang ditampilkan harus bersumber dari query database / API yang nyata.
+> 3. **OBEY OFFICIAL DIRECTIVES:** Ikuti persis aturan penamaan nama proyek **BERSEKA (Bersih, Sehat, Kampung Asri)** dan larangan penggunaan kata 'tong' (gunakan 'Tempat Sampah').
 
 1. **Baca dulu, jangan asumsi.** Sebelum menulis/mengubah kode, baca file terkait di `apps/*` yang relevan untuk memahami pola yang sudah ada.
 2. **Ikuti struktur folder yang sudah ditentukan** di `docs/ARCHITECTURE_BACKEND.md`, `ARCHITECTURE_FRONTEND.md`, `ARCHITECTURE_MOBILE.md` — jangan membuat struktur folder baru sendiri.
