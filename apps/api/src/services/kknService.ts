@@ -2062,6 +2062,7 @@ export class KknService {
     }
 
     let scheduleDurationMinutes = 0;
+    let isOvernight = false;
     if (activeSchedule?.time && activeSchedule.time.includes("-")) {
       const parts = activeSchedule.time.split("-");
       const startParts = parts[0].trim().replace(".", ":").split(":");
@@ -2071,6 +2072,9 @@ export class KknService {
         const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
         if (endMins > startMins) {
           scheduleDurationMinutes = endMins - startMins;
+        } else {
+          scheduleDurationMinutes = (24 * 60 - startMins) + endMins;
+          isOvernight = true;
         }
       }
     }
@@ -2089,6 +2093,9 @@ export class KknService {
         const month = schedDate.getMonth();
         const day = schedDate.getDate();
         const endDateObj = new Date(year, month, day, endHour, endMin, 59, 999);
+        if (isOvernight) {
+          endDateObj.setDate(endDateObj.getDate() + 1);
+        }
         if (new Date() > endDateObj) {
           isExpired = true;
         }
@@ -2105,14 +2112,31 @@ export class KknService {
       }
     }
 
-    // Calculate precise total seconds in zone from studentLocation logs today
+    // Calculate precise total seconds in zone from studentLocation logs for this schedule window
     let actualInZoneSeconds = 0;
     if (activeSchedule) {
       try {
+        const schedDate = activeSchedule.date ? new Date(activeSchedule.date) : new Date();
+        const year = schedDate.getFullYear();
+        const month = schedDate.getMonth();
+        const day = schedDate.getDate();
+
+        let startHour = 0;
+        let startMin = 0;
+        if (activeSchedule?.time && activeSchedule.time.includes("-")) {
+          const startParts = activeSchedule.time.split("-")[0].trim().replace(".", ":").split(":");
+          if (startParts.length >= 2) {
+            startHour = parseInt(startParts[0], 10);
+            startMin = parseInt(startParts[1], 10);
+          }
+        }
+        const scheduleStartDateTime = new Date(year, month, day, startHour, startMin, 0, 0);
+        const queryStartLogs = new Date(scheduleStartDateTime.getTime() - 30 * 60 * 1000);
+
         const logs = await prisma.studentLocation.findMany({
           where: {
             studentId: { in: studentUserIds },
-            recordedAt: { gte: todayStart, lte: todayEnd },
+            recordedAt: { gte: queryStartLogs },
           },
           orderBy: { recordedAt: "asc" },
         });
