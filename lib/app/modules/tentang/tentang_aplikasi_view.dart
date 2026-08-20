@@ -52,6 +52,15 @@ class TentangAplikasiView extends StatelessWidget {
                   color: AppColors.primaryGreen,
                 ),
               ),
+              const SizedBox(height: 8),
+              const Text(
+                'Bersih, Sehat, Kampung Asri',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
               const SizedBox(height: 32),
               const Text(
                 'Berseka adalah platform manajemen pemilahan sampah cerdas yang bertujuan untuk meningkatkan kepatuhan dan efisiensi pengelolaan sampah di lingkungan masyarakat.',
