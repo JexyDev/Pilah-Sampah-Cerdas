@@ -15,6 +15,8 @@ class KknHistoryLog {
   final KknHistoryType type;
   final int? points; // For aktivasi
   final bool? isGpsActive; // For gps
+  final String? statusKehadiran;
+  final String? durationFormatted;
 
   KknHistoryLog({
     required this.title,
@@ -23,6 +25,8 @@ class KknHistoryLog {
     required this.type,
     this.points,
     this.isGpsActive,
+    this.statusKehadiran,
+    this.durationFormatted,
   });
 }
 
@@ -173,8 +177,16 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
       bgColor = AppColors.success.withValues(alpha: 0.1);
     } else if (log.type == KknHistoryType.gps) {
       iconData = Icons.location_on_rounded;
-      iconColor = (log.isGpsActive == true) ? AppColors.primaryGreen : AppColors.dangerRed;
-      bgColor = (log.isGpsActive == true) ? AppColors.primaryGreen.withValues(alpha: 0.1) : AppColors.dangerRed.withValues(alpha: 0.1);
+      if (log.statusKehadiran == 'SELESAI_TELAT') {
+        iconColor = Colors.deepOrange;
+        bgColor = Colors.deepOrange.withValues(alpha: 0.1);
+      } else if (log.statusKehadiran == 'LEPAS_RADIUS' || log.statusKehadiran == 'ALPA' || log.isGpsActive == false) {
+        iconColor = AppColors.dangerRed;
+        bgColor = AppColors.dangerRed.withValues(alpha: 0.1);
+      } else {
+        iconColor = AppColors.primaryGreen;
+        bgColor = AppColors.primaryGreen.withValues(alpha: 0.1);
+      }
     } else {
       iconData = Icons.assignment_rounded;
       if (log.isGpsActive == true) { // approved
@@ -234,6 +246,20 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
                     color: AppColors.textSecondary,
                   ),
                 ),
+                if (log.statusKehadiran == 'SELESAI_TELAT') ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.deepOrange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'Selesai (Durasi Kurang)${log.durationFormatted != null ? ' - ${log.durationFormatted}' : ''}',
+                      style: const TextStyle(color: Colors.deepOrange, fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 Text(
                   DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(log.timestamp),

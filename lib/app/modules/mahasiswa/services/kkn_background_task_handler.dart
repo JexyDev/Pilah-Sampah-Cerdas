@@ -35,6 +35,8 @@ class KknBgPrefKeys {
   static const targetDuration = 'kkn_bg_target_duration';
   static const targetPolygon = 'kkn_bg_target_polygon';
   static const targetEndTime = 'kkn_bg_target_end_time';
+  static const geofenceBufferMeters = 'kkn_bg_geofence_buffer';
+  static const invalidationHours = 'kkn_bg_invalidation_hours';
   static const scheduleId = 'kkn_bg_schedule_id';
   static const serviceActive = 'kkn_bg_service_active';
   static const serviceStartTime = 'kkn_bg_service_start_time';
@@ -78,6 +80,8 @@ class KknBackgroundTaskHandler extends TaskHandler {
   double _targetLat = 0.0;
   double _targetLng = 0.0;
   double _radius = 150.0;
+  double _geofenceBufferMeters = 15.0;
+  double _invalidationHours = 2.0;
   int _targetDurationMinutes = 2;
   List<List<double>>? _polygon;
   DateTime? _targetEndTime;
@@ -123,6 +127,8 @@ class KknBackgroundTaskHandler extends TaskHandler {
     _targetLat = prefs.getDouble(KknBgPrefKeys.targetLat) ?? 0.0;
     _targetLng = prefs.getDouble(KknBgPrefKeys.targetLng) ?? 0.0;
     _radius = prefs.getDouble(KknBgPrefKeys.targetRadius) ?? 150.0;
+    _geofenceBufferMeters = prefs.getDouble(KknBgPrefKeys.geofenceBufferMeters) ?? 15.0;
+    _invalidationHours = prefs.getDouble(KknBgPrefKeys.invalidationHours) ?? 2.0;
     _targetDurationMinutes = prefs.getInt(KknBgPrefKeys.targetDuration) ?? 2;
     _scheduleId = prefs.getString(KknBgPrefKeys.scheduleId);
     
@@ -251,12 +257,12 @@ class KknBackgroundTaskHandler extends TaskHandler {
         distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, centLat, centLng);
       } catch (_) {
         distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, _targetLat, _targetLng);
-        nowInside = distance <= _radius;
+        nowInside = distance <= (_radius + _geofenceBufferMeters);
       }
     } else {
       // Radius check
       distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, _targetLat, _targetLng);
-      nowInside = distance <= _radius;
+      nowInside = distance <= (_radius + _geofenceBufferMeters);
     }
     
     // ═════════════════════════════════════════════════════════
@@ -325,13 +331,21 @@ class KknBackgroundTaskHandler extends TaskHandler {
       
       // Out-of-zone violation tracking (per 30 detik cycle)
       _outOfZoneSeconds += 30;
-      if (_outOfZoneSeconds >= 300 && !_outOfZoneViolationSent) {
+      final outMinutes = _outOfZoneSeconds / 60;
+      final maxOutMinutes = _invalidationHours * 60;
+      
+      if (outMinutes >= (maxOutMinutes * 0.8) && !_outOfZoneViolationSent) {
         _outOfZoneViolationSent = true;
         _sendToUI({
           'type': KknBgMessageType.outOfZoneViolation,
           'outOfZoneSeconds': _outOfZoneSeconds,
-          'message': 'Keluar zona melebihi 5 menit. Poin akan dikurangi.',
+          'message': 'Anda di luar area kegiatan selama ${outMinutes.round()} menit. Kembali ke zona sebelum kehadiran digagalkan.',
         });
+        
+        FlutterForegroundTask.updateService(
+          notificationTitle: 'Peringatan Zona Kegiatan ⚠️',
+          notificationText: 'Anda di luar area selama ${outMinutes.round()} menit. Segera kembali ke zona.',
+        );
       }
       
       _sendToUI({
@@ -556,6 +570,10 @@ Future<ServiceRequestResult> startKknForegroundService({
     double.tryParse(targetData['longitude']?.toString() ?? targetData['lng']?.toString() ?? '0') ?? 0.0);
   await prefs.setDouble(KknBgPrefKeys.targetRadius, 
     double.tryParse(targetData['radius']?.toString() ?? '150') ?? 150.0);
+  await prefs.setDouble(KknBgPrefKeys.geofenceBufferMeters, 
+    double.tryParse(targetData['geofenceBufferMeters']?.toString() ?? '15') ?? 15.0);
+  await prefs.setDouble(KknBgPrefKeys.invalidationHours, 
+    double.tryParse(targetData['invalidationHours']?.toString() ?? '2') ?? 2.0);
   final double rawDurationMins = double.tryParse(targetData['targetDurationMinutes']?.toString() ?? '') ?? 2.0;
   int durationMins = rawDurationMins.ceil();
   if (rawDurationMins > 0 && rawDurationMins < 1.0) {
