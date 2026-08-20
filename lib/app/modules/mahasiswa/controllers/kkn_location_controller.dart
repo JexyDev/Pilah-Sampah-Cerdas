@@ -714,11 +714,6 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         _backgroundServiceStarted = false;
         FlutterForegroundTask.removeTaskDataCallback(_onBackgroundData);
         
-        // Jika durasi tidak cukup, kirim auto alpa
-        if (!state.isSuccessAttendance && totalSeconds < (state.targetDurationMinutes * 60)) {
-          _sendAutoAlpa();
-        }
-        
         state = state.copyWith(
           zoneResetWarning: reason,
           clearWarning: false,
@@ -977,14 +972,6 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
               zoneResetWarning: timeWindowWarning,
               clearWarning: false,
             );
-
-            // AUTO ALPA KETIKA WAKTU HABIS
-            if (!state.isSuccessAttendance &&
-                status != 'izin' &&
-                status != 'sakit' &&
-                status != 'hadir') {
-              _sendAutoAlpa();
-            }
 
             return; // Stop processing further
           }
