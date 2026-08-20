@@ -1026,7 +1026,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     final user = ref.read(authProvider).user;
     if (user == null || _currentTargetScheduleId == null) return;
 
-    final int durationMinutes = (_accumulatedSeconds / 60).ceil();
+    final int durationMinutes = (_accumulatedSeconds / 60).floor();
 
     try {
       final repo = ref.read(kknRepositoryProvider);
@@ -1311,7 +1311,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     final namaMahasiswa = user?.name ?? '-';
 
     // Gunakan durasi aktual yang tercatat jika ada, minimal 0
-    final int durationMinutes = (_accumulatedSeconds / 60).ceil();
+    final int durationMinutes = (_accumulatedSeconds / 60).floor();
 
     try {
       const LocationSettings locationSettings = LocationSettings(
