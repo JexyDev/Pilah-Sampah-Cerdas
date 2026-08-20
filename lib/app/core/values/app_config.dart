@@ -18,7 +18,7 @@ class AppConfig {
 
   static String get apiBaseUrl => '$baseUrl/api/v1';
 
-  static const String appName = 'TrashCare';
+  static const String appName = 'BERSEKA';
 
   /// Format URL gambar dari API agar selalu valid
   static String getImageUrl(String? path) {

@@ -115,4 +115,8 @@ abstract class KknRepository {
   /// Catat pelanggaran keluar zona (penalti poin)
   /// POST /api/v1/kkn/out-of-zone-violation
   Future<Map<String, dynamic>> recordOutOfZoneViolation({required String scheduleId, required double outOfZoneMinutes});
+
+  /// Mengambil master data jenis fasilitas (Rumah Maggot, Loseda, dll)
+  /// GET /api/v1/kkn/fasilitas/jenis
+  Future<List<JenisFasilitasModel>> getJenisFasilitas();
 }
