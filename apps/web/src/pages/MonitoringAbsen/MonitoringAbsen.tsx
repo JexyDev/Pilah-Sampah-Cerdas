@@ -973,6 +973,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     if (visibleSchedules.length > 0) {
       setSelectedScheduleId((prev) => {
         if (prev && visibleSchedules.some((s) => s.id === prev)) return prev;
+        
+        // Utamakan jadwal hari ini (WIB)
+        const todayStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().split("T")[0];
+        const todaySched = visibleSchedules.find((s) => {
+          if (!s.date) return false;
+          const dStr = new Date(new Date(s.date).toISOString()).toISOString().split("T")[0];
+          return dStr === todayStr;
+        });
+        if (todaySched) return todaySched.id;
+
         return visibleSchedules[0].id;
       });
     } else {

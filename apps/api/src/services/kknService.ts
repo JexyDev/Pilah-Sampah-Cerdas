@@ -11,8 +11,7 @@ import { notificationIntegrationService } from "./notificationIntegrationService
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
 import { calculateDistance } from "./kknAttendanceService.js";
-import { pointService } from "./pointService.js";
-import { notificationService } from "./notificationService.js";
+
 
 export class KknService {
   async getDashboardStats(userId: string) {
@@ -2383,14 +2382,14 @@ export class KknService {
       },
     });
 
-    // Notify DPL
-    if (student.kelompok.dplUserId) {
-      await notificationService.createNotification(
-        student.kelompok.dplUserId,
-        "Program Kerja Baru",
-        `Mahasiswa ${student.user.name} mengajukan ide program kerja: ${judul}. Silakan ditinjau.`,
-        "PROGRAM_KERJA"
-      );
+    if (student.kelompok?.dplId) {
+      await prisma.notification.create({
+        data: {
+          userId: student.kelompok.dplId,
+          title: "Program Kerja Baru",
+          message: `Mahasiswa ${student.user.name} mengajukan ide program kerja: ${judul}. Silakan ditinjau.`,
+        },
+      }).catch(() => {});
     }
 
     return proker;
@@ -2407,7 +2406,7 @@ export class KknService {
     if (user.role?.name === "MAHASISWA_KKN") {
       kelompokId = user.studentProfile?.kelompokId || null;
     } else if (user.role?.name === "DPL") {
-      const kel = await prisma.kelompokKkn.findFirst({ where: { dplUserId: userId } });
+      const kel = await prisma.kelompokKkn.findFirst({ where: { dplId: userId } });
       kelompokId = kel?.id || null;
     }
 
@@ -2424,22 +2423,22 @@ export class KknService {
       orderBy: { createdAt: "desc" },
     });
 
-    return list.map(item => {
-      // Extract judul dari deskripsi: `**Judul**\n\nDeskripsi`
-      let judul = "Program Kerja";
+    return list.map((item) => {
+      let judul = item.deskripsi;
       let catatan = item.catatanDpl;
       const descSplit = item.deskripsi.split("\n\n");
       if (descSplit.length > 1 && item.deskripsi.startsWith("**")) {
         judul = descSplit[0].replace(/\*\*/g, "");
       }
+      const st = String(item.status);
       return {
         id: item.id,
         judul,
         kategori: item.kategori,
         rencanaAnggaran: Number(item.kebutuhanBiaya) || 0,
-        status: item.status === "DISETUJUI" ? "APPROVED" : (item.status === "DITOLAK" ? "REJECTED" : "PENDING"),
+        status: st === "DISETUJUI" ? "APPROVED" : (st === "DITOLAK" ? "REJECTED" : "PENDING"),
         catatanDpl: catatan,
-        tanggal: item.createdAt.toISOString(), // Fallback ke createdAt karena skema tidak punya targetTanggal
+        tanggal: item.createdAt.toISOString(),
       };
     });
   }
@@ -2457,7 +2456,7 @@ export class KknService {
     // Validasi apakah proker ada dan disetujui (opsional, tapi disarankan)
     if (programKerjaId) {
       const proker = await prisma.programKerjaKkn.findUnique({ where: { id: programKerjaId } });
-      if (proker && proker.status !== "DISETUJUI") {
+      if (proker && String(proker.status) !== "DISETUJUI") {
         throw new Error("Program kerja belum disetujui DPL, tidak bisa menambah logbook pemanfaatan.");
       }
     }
@@ -2480,12 +2479,14 @@ export class KknService {
       },
     });
 
-    await pointService.awardPoints({
-      userId,
-      amount: 10, // Poin harian logbook
-      description: `Logbook Pemanfaatan: ${teknologi}`,
-      source: "KKN",
-    });
+    await prisma.pointHistory.create({
+      data: {
+        userId,
+        points: 10,
+        description: `Logbook Pemanfaatan: ${teknologi || 'Organik'}`,
+        kategori: "REDUKSI_TONASE",
+      },
+    }).catch(() => {});
 
     return report;
   }
@@ -2520,12 +2521,14 @@ export class KknService {
       },
     });
 
-    await pointService.awardPoints({
-      userId,
-      amount: 25, // Poin besar karena panen
-      description: `Panen Hasil KKN`,
-      source: "KKN",
-    });
+    await prisma.pointHistory.create({
+      data: {
+        userId,
+        points: 25,
+        description: `Panen Hasil KKN`,
+        kategori: "REDUKSI_TONASE",
+      },
+    }).catch(() => {});
 
     return report;
   }
