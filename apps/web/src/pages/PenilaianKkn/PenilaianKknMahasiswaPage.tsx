@@ -21,8 +21,6 @@ import {
   Award,
   Users,
   Eye,
-  Check,
-  AlertCircle,
   FileText,
 } from "lucide-react";
 import toast from "react-hot-toast";
