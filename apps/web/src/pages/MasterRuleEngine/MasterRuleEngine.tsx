@@ -586,14 +586,38 @@ const MasterRuleEngine: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="p-3 bg-blue-50/80 rounded-xl border border-blue-200 text-center space-y-1">
-                  <div className="text-xs font-black text-blue-900">
-                    Target Minimal Harian: {String(config.attendanceMinDurationHours).padStart(2, "0")} Jam : {String(config.attendanceMinDurationMinutes).padStart(2, "0")} Menit : {String(config.attendanceMinDurationSeconds).padStart(2, "0")} Detik
-                  </div>
-                  <div className="text-[11px] font-bold text-blue-700">
-                    Akumulasi Total: {(config.kknTotalDays || 50)} Hari × {(config.attendanceMinDurationHours || 4)} Jam/Hari = <span className="underline font-black">{(config.kknTotalDays || 50) * (config.attendanceMinDurationHours || 4)} Jam Target KKN</span>
-                  </div>
-                </div>
+                {(() => {
+                  const dailySeconds = (config.attendanceMinDurationHours || 0) * 3600 + (config.attendanceMinDurationMinutes || 0) * 60 + (config.attendanceMinDurationSeconds || 0);
+                  const totalDays = config.kknTotalDays || 50;
+                  const totalSeconds = totalDays * dailySeconds;
+                  const totalHours = totalSeconds / 3600;
+                  const kumulatifJam = Math.floor(totalSeconds / 3600);
+                  const kumulatifMenit = Math.floor((totalSeconds % 3600) / 60);
+                  const kumulatifDetik = totalSeconds % 60;
+                  
+                  const dailyParts = [];
+                  if (config.attendanceMinDurationHours) dailyParts.push(`${config.attendanceMinDurationHours} Jam`);
+                  if (config.attendanceMinDurationMinutes) dailyParts.push(`${config.attendanceMinDurationMinutes} Menit`);
+                  if (config.attendanceMinDurationSeconds) dailyParts.push(`${config.attendanceMinDurationSeconds} Detik`);
+                  const dailyStr = dailyParts.length > 0 ? dailyParts.join(" ") : "0 Menit";
+
+                  const totalParts = [];
+                  if (kumulatifJam > 0) totalParts.push(`${kumulatifJam} Jam`);
+                  if (kumulatifMenit > 0) totalParts.push(`${kumulatifMenit} Menit`);
+                  if (kumulatifDetik > 0) totalParts.push(`${kumulatifDetik} Detik`);
+                  const totalStr = totalParts.length > 0 ? totalParts.join(" ") : "0 Menit";
+
+                  return (
+                    <div className="p-3 bg-blue-50/80 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-800 text-center space-y-1">
+                      <div className="text-xs font-black text-blue-900 dark:text-blue-200">
+                        Target Minimal Harian: {dailyStr} ({String(config.attendanceMinDurationHours).padStart(2, "0")}J : {String(config.attendanceMinDurationMinutes).padStart(2, "0")}M : {String(config.attendanceMinDurationSeconds).padStart(2, "0")}D)
+                      </div>
+                      <div className="text-[11px] font-bold text-blue-700 dark:text-blue-300">
+                        Akumulasi Total: {totalDays} Hari × {dailyStr} = <span className="underline font-black">{totalStr} ({Number.isInteger(totalHours) ? totalHours : totalHours.toFixed(2)} Jam Target KKN)</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Right Side: Input Toleransi & Penalti Keluar Zona */}

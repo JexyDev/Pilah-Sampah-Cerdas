@@ -23,7 +23,6 @@ class RegisterFasilitasView extends ConsumerStatefulWidget {
 class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
   final _formKey = GlobalKey<FormState>();
   final _namaController = TextEditingController();
-  final _rwIdController = TextEditingController();
   final MapController _mapController = MapController();
 
   String? _selectedUserId;
@@ -33,20 +32,9 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
   LatLng? _selectedLocation;
   bool _isGettingLocation = false;
 
-  final Map<String, String> _jenisFasilitasMap = {
-    'rumah_maggot': 'Rumah Maggot',
-    'loseda': 'Loseda',
-    'bata_terawang': 'Bata Terawang',
-    'bank_sampah': 'Bank Sampah',
-    'buruan_sae': 'Buruan Sae',
-    'poc': 'Pupuk Organik Cair (POC)',
-    'tps': 'TPS',
-  };
-
   @override
   void dispose() {
     _namaController.dispose();
-    _rwIdController.dispose();
     _mapController.dispose();
     super.dispose();
   }
@@ -122,30 +110,33 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
       );
       return;
     }
-
-    final rwId = int.tryParse(_rwIdController.text) ?? 0;
-    if (rwId == 0) {
+    if (_photoPath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap isi ID RW dengan angka valid.'), backgroundColor: AppColors.warningYellow),
+        const SnackBar(content: Text('Foto fasilitas wajib diunggah.'), backgroundColor: AppColors.warningYellow),
       );
       return;
     }
 
     final success = await ref.read(fasilitasKknProvider.notifier).registerFasilitas(
       userId: _selectedUserId!,
-      rwId: rwId,
       nama: _namaController.text,
       jenis: _selectedJenis,
       latitude: _selectedLocation!.latitude,
       longitude: _selectedLocation!.longitude,
-      imagePath: _photoPath,
+      imagePath: _photoPath!,
+      alamat: _selectedWarga?.address,
     );
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Berhasil mendaftarkan fasilitas warga!'), backgroundColor: AppColors.primaryGreen),
+        const SnackBar(content: Text('Berhasil mendaftarkan fasilitas warga! (+5 Poin)'), backgroundColor: AppColors.primaryGreen),
       );
       Navigator.pop(context);
+    } else if (mounted) {
+      final errorMsg = ref.read(fasilitasKknProvider).error ?? 'Gagal mendaftarkan fasilitas warga';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMsg), backgroundColor: AppColors.dangerRed),
+      );
     }
   }
 
@@ -292,11 +283,9 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                             final isSelected = _selectedUserId == w.wargaId;
                             return InkWell(
                               onTap: () {
-                                final cleanRw = w.rw.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
                                 setState(() {
                                   _selectedUserId = w.wargaId;
                                   _selectedWarga = w;
-                                  if (cleanRw.isNotEmpty) _rwIdController.text = cleanRw;
                                 });
                                 Navigator.pop(ctx);
                               },
@@ -360,7 +349,7 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
   }
 
   // ── Bottom Sheet: Pilih Jenis ─────────────────────────────────────────────
-  void _showJenisBottomSheet() {
+  void _showJenisBottomSheet(List<JenisFasilitasModel> jenisList) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -411,11 +400,11 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                     child: ListView(
                       controller: scrollController,
                       padding: const EdgeInsets.only(bottom: 32),
-                      children: _jenisFasilitasMap.entries.map((entry) {
-                        final isSelected = _selectedJenis == entry.key;
+                      children: jenisList.map((item) {
+                        final isSelected = _selectedJenis == item.key;
                         return InkWell(
                           onTap: () {
-                            setState(() => _selectedJenis = entry.key);
+                            setState(() => _selectedJenis = item.key);
                             Navigator.pop(ctx);
                           },
                           child: Padding(
@@ -423,22 +412,34 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                             child: Row(
                               children: [
                                 Container(
-                                  width: 36, height: 36,
+                                  width: 40, height: 40,
                                   decoration: BoxDecoration(
                                     color: isSelected ? const Color(0xFFE8F5E9) : const Color(0xFFF5F7FA),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: Icon(Icons.eco_rounded, size: 20, color: isSelected ? AppColors.primaryGreen : AppColors.textHint),
+                                  child: Icon(Icons.eco_rounded, size: 22, color: isSelected ? AppColors.primaryGreen : AppColors.textHint),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
-                                  child: Text(
-                                    entry.value,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                      color: isSelected ? AppColors.primaryGreen : AppColors.textPrimary,
-                                    ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.nama,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                          color: isSelected ? AppColors.primaryGreen : AppColors.textPrimary,
+                                        ),
+                                      ),
+                                      if (item.deskripsi != null && item.deskripsi!.isNotEmpty) ...[
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          item.deskripsi!,
+                                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 ),
                                 if (isSelected)
@@ -501,6 +502,24 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
     } else {
       wargaList = mahasiswaState.wargaList.where((w) => w.role == 'WARGA').toList();
     }
+
+    final jenisList = state.jenisList.isNotEmpty
+        ? state.jenisList
+        : const [
+            JenisFasilitasModel(id: 1, key: 'rumah_maggot', nama: 'Rumah Maggot', deskripsi: 'Fasilitas pengolahan sampah organik menggunakan larva BSF'),
+            JenisFasilitasModel(id: 2, key: 'loseda', nama: 'Loseda', deskripsi: 'Lubang sedalam 1 meter untuk pengomposan langsung'),
+            JenisFasilitasModel(id: 3, key: 'bata_terawang', nama: 'Bata Terawang', deskripsi: 'Komposter aerobik menggunakan susunan bata berongga'),
+            JenisFasilitasModel(id: 4, key: 'bank_sampah', nama: 'Bank Sampah', deskripsi: 'Tempat pengumpulan sampah anorganik bernilai ekonomi'),
+            JenisFasilitasModel(id: 5, key: 'buruan_sae', nama: 'Buruan Sae', deskripsi: 'Program pengelolaan pekarangan untuk ketahanan pangan'),
+            JenisFasilitasModel(id: 6, key: 'poc', nama: 'Pupuk Organik Cair (POC)', deskripsi: 'Fasilitas pembuatan pupuk cair dari sampah organik'),
+            JenisFasilitasModel(id: 7, key: 'tps', nama: 'TPS', deskripsi: 'Tempat Pembuangan Sampah sementara'),
+            JenisFasilitasModel(id: 8, key: 'posko_kkn', nama: 'Posko KKN', deskripsi: 'Posko / kantor kelurahan'),
+          ];
+
+    final currentSelectedJenis = jenisList.firstWhere(
+      (j) => j.key == _selectedJenis,
+      orElse: () => jenisList.first,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -590,8 +609,8 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                     const SizedBox(height: 8),
                     _JenisPickerField(
                       selectedKey: _selectedJenis,
-                      label: _jenisFasilitasMap[_selectedJenis] ?? 'Rumah Maggot',
-                      onTap: () => _showJenisBottomSheet(),
+                      label: currentSelectedJenis.nama,
+                      onTap: () => _showJenisBottomSheet(jenisList),
                     ),
                     const SizedBox(height: AppDimensions.md),
 
@@ -602,17 +621,6 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                       controller: _namaController,
                       hintText: 'Contoh: Rumah Maggot Berkah RT 03',
                       validator: (val) => (val == null || val.isEmpty) ? 'Nama fasilitas wajib diisi' : null,
-                    ),
-                    const SizedBox(height: AppDimensions.md),
-
-                    // ── ID RW ────────────────────────────────────────────────
-                    const _SectionLabel(icon: Icons.people_rounded, label: 'ID RW Lokasi Fasilitas'),
-                    const SizedBox(height: 8),
-                    _StyledTextField(
-                      controller: _rwIdController,
-                      hintText: 'Contoh: 3 (untuk RW 03)',
-                      keyboardType: TextInputType.number,
-                      validator: (val) => (val == null || val.isEmpty) ? 'ID RW wajib diisi' : null,
                     ),
                     const SizedBox(height: AppDimensions.md),
 
@@ -802,7 +810,7 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                     const SizedBox(height: AppDimensions.md),
 
                     // ── Foto Fasilitas ───────────────────────────────────────
-                    const _SectionLabel(icon: Icons.camera_alt_rounded, label: 'Foto Fasilitas (Opsional)'),
+                    const _SectionLabel(icon: Icons.camera_alt_rounded, label: 'Foto Fasilitas (Wajib) *'),
                     const SizedBox(height: 8),
                     GestureDetector(
                       onTap: _pickImage,

@@ -346,6 +346,16 @@ export const rwService = {
     const areaIds = await getRwAreaIds(rwId, userRole);
     return prisma.facility.findMany({
       where: { rwId: { in: areaIds }, statusApproval: "PENDING" },
+      include: {
+        registeredBy: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            studentProfile: true,
+          },
+        },
+      },
     });
   },
 
@@ -392,7 +402,17 @@ export const rwService = {
     const areaIds = await getRwAreaIds(rwId, userRole);
     return prisma.facility.findMany({
       where: { rwId: { in: areaIds }, statusApproval: "APPROVED" },
-      include: { productionLogs: true },
+      include: {
+        productionLogs: true,
+        registeredBy: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            studentProfile: true,
+          },
+        },
+      },
     });
   },
 

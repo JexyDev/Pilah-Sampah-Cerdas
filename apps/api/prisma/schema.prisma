@@ -201,6 +201,7 @@ model User {
   reviewedProkers       ProgramKerjaKkn[]    @relation("DplReviewedProker")
   penilaianKkn          PenilaianKknMahasiswa? @relation("StudentPenilaianKkn")
   penilaianKknDiberikan PenilaianKknMahasiswa[] @relation("DplPenilaianKkn")
+  facilitiesRegistered  Facility[]           @relation("FacilityRegisteredBy")
 
   @@index([roleId])
   @@index([rwId])
@@ -552,12 +553,29 @@ model Facility {
   rwId           Int?                    @map("id_rw")
   kelompokId     String?                 @map("id_kelompok")
   alamat         String?                 @map("alamat")
-  statusApproval String                  @default("PENDING") @map("status_persetujuan")
-  productionLogs FacilityProductionLog[]
-  rw             Rw?                     @relation(fields: [rwId], references: [id])
-  kelompok       KelompokKkn?            @relation(fields: [kelompokId], references: [id], onDelete: SetNull)
+  statusApproval     String                  @default("PENDING") @map("status_persetujuan")
+  productionLogs     FacilityProductionLog[]
+  rw                 Rw?                     @relation(fields: [rwId], references: [id])
+  kelompok           KelompokKkn?            @relation(fields: [kelompokId], references: [id], onDelete: SetNull)
+  registeredByUserId String?                 @map("id_pendaftar")
+  registeredBy       User?                   @relation("FacilityRegisteredBy", fields: [registeredByUserId], references: [id], onDelete: SetNull)
 
+  @@index([rwId])
+  @@index([registeredByUserId])
   @@map("fasilitas")
+}
+
+model JenisFasilitas {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  nama      String
+  iconUrl   String?  @map("icon_url")
+  deskripsi String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("dibuat_pada")
+  updatedAt DateTime @updatedAt @map("diperbarui_pada")
+
+  @@map("jenis_fasilitas")
 }
 
 model FacilityProductionLog {

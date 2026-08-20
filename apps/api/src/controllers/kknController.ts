@@ -8,6 +8,7 @@ import { prisma } from "../lib/prisma.js";
 
 import { Request, Response } from "express";
 import { kknService } from "../services/kknService.js";
+import { facilityService } from "../services/facilityService.js";
 
 
 export class KknController {
@@ -270,6 +271,16 @@ export class KknController {
       res.status(201).json({ success: true, data });
     } catch (error: any) {
       console.error("[KknController] inputFacility error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async getJenisFasilitas(req: Request, res: Response) {
+    try {
+      const data = await facilityService.getJenisFasilitas();
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[KknController] getJenisFasilitas error:", error);
       res.status(400).json({ success: false, message: error.message });
     }
   }

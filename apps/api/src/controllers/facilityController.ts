@@ -151,6 +151,20 @@ export class FacilityController {
         .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
     }
   }
+
+  /**
+   * Get master data jenis fasilitas
+   */
+  async getJenisFasilitas(req: Request, res: Response): Promise<void> {
+    try {
+      const data = await facilityService.getJenisFasilitas();
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+    }
+  }
 }
 
 export const facilityController = new FacilityController();

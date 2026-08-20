@@ -157,14 +157,24 @@ const formatDurationUnits = (totalMinutes: number): string => {
   const parts: string[] = [];
   if (hours > 0) parts.push(`${hours} Jam`);
   if (mins > 0) parts.push(`${mins} Menit`);
-  if (secs > 0) parts.push(`${secs} Detik`);
+  if (secs > 0 && hours === 0 && mins === 0) parts.push(`${secs} Detik`);
   return parts.length > 0 ? parts.join(" ") : "0 Menit";
 };
 
 const formatHoursToUnits = (hoursDecimal: number): string => {
   if (!hoursDecimal || hoursDecimal <= 0) return "0 Menit";
-  const totalMinutes = Math.round(hoursDecimal * 3600) / 60;
-  return formatDurationUnits(totalMinutes);
+  const totalMinutes = Math.round(hoursDecimal * 60);
+  if (totalMinutes > 0) {
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    const parts: string[] = [];
+    if (hours > 0) parts.push(`${hours} Jam`);
+    if (mins > 0) parts.push(`${mins} Menit`);
+    return parts.length > 0 ? parts.join(" ") : "0 Menit";
+  }
+  const totalSeconds = Math.round(hoursDecimal * 3600);
+  if (totalSeconds > 0) return `${totalSeconds} Detik`;
+  return "0 Menit";
 };
 
 const formatTargetDuration = (config: ConfigTargets): string => {
@@ -629,6 +639,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const [formTotalJam, setFormTotalJam] = useState<number>(200);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
 
+  const calculatePreciseTargetJam = (totalHari: number, jam: number, menit: number): number => {
+    const totalMins = totalHari * (jam * 60 + menit);
+    const totalHours = totalMins / 60;
+    return Number.isInteger(totalHours) ? totalHours : Math.round(totalHours * 100) / 100;
+  };
+
   const openConfigModal = () => {
     const parsedDays = parseDaysFromString(configTargets.hariKerja);
     const parsedTimes = parseTimeRange(configTargets.jamKerja);
@@ -644,7 +660,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     const pekan = configTargets.targetPekan || 10;
     const daysCount = parsedDays.length || 5;
     const totalHari = configTargets.targetTotalHari || (pekan * daysCount);
-    const totalJam = configTargets.targetTotalJam || Math.round(totalHari * (durJam + durMenit / 60));
+    const calcAutoJam = calculatePreciseTargetJam(totalHari, durJam, durMenit);
+    const totalJam = (configTargets.targetTotalJam !== undefined && configTargets.targetTotalJam > 0)
+      ? configTargets.targetTotalJam
+      : calcAutoJam;
 
     setFormDays(parsedDays);
     setFormStartTime(parsedTimes.start);
@@ -665,8 +684,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
     setFormDays(nextDays);
     const newTotalHari = formTargetPekan * nextDays.length;
-    const durasiTotalJam = formDurasiJam + formDurasiMenit / 60;
-    const newTotalJam = Math.round(newTotalHari * durasiTotalJam);
+    const newTotalJam = calculatePreciseTargetJam(newTotalHari, formDurasiJam, formDurasiMenit);
     setFormTotalHari(newTotalHari);
     setFormTotalJam(newTotalJam);
   };
@@ -684,8 +702,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     }
     setFormDays(nextDays);
     const newTotalHari = formTargetPekan * nextDays.length;
-    const durasiTotalJam = formDurasiJam + formDurasiMenit / 60;
-    const newTotalJam = Math.round(newTotalHari * durasiTotalJam);
+    const newTotalJam = calculatePreciseTargetJam(newTotalHari, formDurasiJam, formDurasiMenit);
     setFormTotalHari(newTotalHari);
     setFormTotalJam(newTotalJam);
   };
@@ -694,8 +711,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     setFormTargetPekan(pekan);
     const daysCount = formDays.length || 1;
     const newTotalHari = pekan * daysCount;
-    const durasiTotalJam = formDurasiJam + formDurasiMenit / 60;
-    const newTotalJam = Math.round(newTotalHari * durasiTotalJam);
+    const newTotalJam = calculatePreciseTargetJam(newTotalHari, formDurasiJam, formDurasiMenit);
     setFormTotalHari(newTotalHari);
     setFormTotalJam(newTotalJam);
   };
@@ -703,15 +719,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const handleDurasiChange = (jam: number, menit: number) => {
     setFormDurasiJam(jam);
     setFormDurasiMenit(menit);
-    const durasiTotalJam = jam + menit / 60;
-    const newTotalJam = Math.round(formTotalHari * durasiTotalJam);
+    const newTotalJam = calculatePreciseTargetJam(formTotalHari, jam, menit);
     setFormTotalJam(newTotalJam);
   };
 
   const handleTotalHariChange = (hari: number) => {
     setFormTotalHari(hari);
-    const durasiTotalJam = formDurasiJam + formDurasiMenit / 60;
-    const newTotalJam = Math.round(hari * durasiTotalJam);
+    const newTotalJam = calculatePreciseTargetJam(hari, formDurasiJam, formDurasiMenit);
     setFormTotalJam(newTotalJam);
   };
 
@@ -3851,6 +3865,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       onChange={(e) => handlePekanChange(Math.max(1, Number(e.target.value) || 1))}
                       className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-bold focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
+                    <span className="block text-[10px] text-slate-400 font-medium mt-1">
+                      {formDays.length} hari kerja per pekan
+                    </span>
                   </div>
 
                   <div>
@@ -3865,6 +3882,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       onChange={(e) => handleTotalHariChange(Math.max(1, Number(e.target.value) || 1))}
                       className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-bold focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
+                    <span className="block text-[10px] text-slate-400 font-medium mt-1">
+                      = {formTargetPekan} pekan × {formDays.length} hari
+                    </span>
                   </div>
                 </div>
 
@@ -3875,26 +3895,66 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     </label>
                     <span className="text-[10px] text-slate-400 font-medium">Bisa disesuaikan manual</span>
                   </div>
-                  <input
-                    type="number"
-                    min={1}
-                    required
-                    value={formTotalJam}
-                    onChange={(e) => setFormTotalJam(Math.max(1, Number(e.target.value) || 1))}
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-black text-emerald-800 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500 outline-none"
-                  />
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0.01}
+                      step="any"
+                      required
+                      value={formTotalJam}
+                      onChange={(e) => setFormTotalJam(Math.max(0.01, Number(e.target.value) || 0))}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-black text-emerald-800 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500 outline-none"
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+                      Jam ({formatHoursToUnits(formTotalJam)})
+                    </div>
+                  </div>
                 </div>
 
-                {/* Live Formula Preview */}
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 text-xs">
-                  <span className="font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
-                    <Target size={14} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
-                    Kalkulasi Minimal Target:
-                  </span>
-                  <span className="font-black text-emerald-800 dark:text-emerald-300">
-                    {formTotalHari} Hari × {formDurasiJam}{formDurasiMenit > 0 ? `.${Math.round((formDurasiMenit / 60) * 10)}` : ''} Jam = {formTotalJam} Jam
-                  </span>
-                </div>
+                {/* Live Formula & Calculation Breakdown Preview */}
+                {(() => {
+                  const dailyMins = formDurasiJam * 60 + formDurasiMenit;
+                  const totalMins = formTotalHari * dailyMins;
+                  const autoHours = calculatePreciseTargetJam(formTotalHari, formDurasiJam, formDurasiMenit);
+                  const kumulatifJam = Math.floor(totalMins / 60);
+                  const kumulatifMenit = totalMins % 60;
+                  const dailyFormatted = formDurasiJam > 0
+                    ? `${formDurasiJam} Jam${formDurasiMenit > 0 ? ` ${formDurasiMenit} Menit` : ''}`
+                    : `${formDurasiMenit} Menit`;
+                  const kumulatifFormatted = kumulatifJam > 0
+                    ? `${kumulatifJam} Jam${kumulatifMenit > 0 ? ` ${kumulatifMenit} Menit` : ''}`
+                    : `${kumulatifMenit} Menit`;
+
+                  return (
+                    <div className="p-3 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/80 space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between font-black text-emerald-950 dark:text-emerald-200">
+                        <span className="flex items-center gap-1.5">
+                          <Target size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          Rincian & Relasi Kalkulasi Target
+                        </span>
+                        <span className="text-emerald-700 dark:text-emerald-300 font-extrabold">
+                          {kumulatifFormatted} ({autoHours} Jam)
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-emerald-800/90 dark:text-emerald-300/90 font-semibold space-y-1 pt-0.5">
+                        <div className="flex items-center justify-between">
+                          <span>Durasi Harian:</span>
+                          <span className="font-bold">{dailyFormatted} ({dailyMins} Menit / {(dailyMins / 60).toFixed(2)} Jam)</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>Total Hari:</span>
+                          <span className="font-bold">{formTargetPekan} Pekan × {formDays.length} Hari Kerja = {formTotalHari} Hari</span>
+                        </div>
+                        <div className="flex items-center justify-between pt-0.5 border-t border-emerald-200/50 dark:border-emerald-800/50">
+                          <span>Kalkulasi Kumulatif:</span>
+                          <span className="font-black text-emerald-900 dark:text-emerald-200">
+                            {formTotalHari} Hari × {dailyFormatted} = {totalMins.toLocaleString('id-ID')} Menit ({kumulatifFormatted})
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">

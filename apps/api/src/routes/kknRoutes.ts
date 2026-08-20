@@ -293,6 +293,12 @@ router.get(
  *       400:
  *         description: Data input tidak valid
  */
+router.get(
+  "/fasilitas/jenis",
+  authMiddleware,
+  kknController.getJenisFasilitas
+);
+
 router.post(
   "/fasilitas/bantu-input",
   authMiddleware,

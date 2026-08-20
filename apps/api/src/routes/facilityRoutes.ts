@@ -19,6 +19,7 @@ router.post(
   facilityController.createFacility
 );
 
+router.get("/jenis", authMiddleware, facilityController.getJenisFasilitas);
 router.get("/", authMiddleware, facilityController.getFacilities);
 
 router.post(

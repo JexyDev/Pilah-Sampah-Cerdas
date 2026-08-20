@@ -489,6 +489,36 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
+  Future<List<JenisFasilitasModel>> getJenisFasilitas() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.kknFasilitasJenis);
+      if (response.statusCode == 200 && response.data != null) {
+        final rawData = response.data['data'];
+        if (rawData is List) {
+          return rawData.map((e) => JenisFasilitasModel.fromJson(e as Map<String, dynamic>)).toList();
+        }
+      }
+      return _fallbackJenisFasilitas();
+    } catch (e) {
+      debugPrint('Error getJenisFasilitas: $e');
+      return _fallbackJenisFasilitas();
+    }
+  }
+
+  List<JenisFasilitasModel> _fallbackJenisFasilitas() {
+    return const [
+      JenisFasilitasModel(id: 1, key: 'rumah_maggot', nama: 'Rumah Maggot', deskripsi: 'Fasilitas pengolahan sampah organik menggunakan larva BSF'),
+      JenisFasilitasModel(id: 2, key: 'loseda', nama: 'Loseda', deskripsi: 'Lubang sedalam 1 meter untuk pengomposan langsung'),
+      JenisFasilitasModel(id: 3, key: 'bata_terawang', nama: 'Bata Terawang', deskripsi: 'Komposter aerobik menggunakan susunan bata berongga'),
+      JenisFasilitasModel(id: 4, key: 'bank_sampah', nama: 'Bank Sampah', deskripsi: 'Tempat pengumpulan sampah anorganik bernilai ekonomi'),
+      JenisFasilitasModel(id: 5, key: 'buruan_sae', nama: 'Buruan Sae', deskripsi: 'Program pengelolaan pekarangan untuk ketahanan pangan'),
+      JenisFasilitasModel(id: 6, key: 'poc', nama: 'Pupuk Organik Cair (POC)', deskripsi: 'Fasilitas pembuatan pupuk cair dari sampah organik'),
+      JenisFasilitasModel(id: 7, key: 'tps', nama: 'TPS', deskripsi: 'Tempat Pembuangan Sampah sementara'),
+      JenisFasilitasModel(id: 8, key: 'posko_kkn', nama: 'Posko KKN', deskripsi: 'Posko / kantor kelurahan'),
+    ];
+  }
+
+  @override
   Future<Map<String, dynamic>> registerFasilitas(Map<String, dynamic> data, {String? imagePath}) async {
     try {
       if (imagePath != null) {
