@@ -11,7 +11,8 @@ import { notificationIntegrationService } from "./notificationIntegrationService
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
 import { calculateDistance } from "./kknAttendanceService.js";
-
+import { pointService } from "./pointService.js";
+import { notificationService } from "./notificationService.js";
 
 export class KknService {
   async getDashboardStats(userId: string) {
