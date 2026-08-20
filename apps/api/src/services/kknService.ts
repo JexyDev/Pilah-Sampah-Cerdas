@@ -2202,6 +2202,8 @@ export class KknService {
               return dist <= (geofence.radius + bufferMeters);
             }
           });
+          const tFirst = new Date(inZonePoints[0].recordedAt).getTime();
+          const tLast = new Date(inZonePoints[inZonePoints.length - 1].recordedAt).getTime();
           let totalMs = 0;
           for (let i = 0; i < inZonePoints.length - 1; i++) {
             const t1 = new Date(inZonePoints[i].recordedAt).getTime();
@@ -2211,6 +2213,8 @@ export class KknService {
               totalMs += diff;
             }
           }
+          const overallSpan = Math.max(0, tLast - tFirst);
+          totalMs = Math.max(totalMs, overallSpan);
           actualInZoneSeconds = Math.floor(totalMs / 1000);
         }
       } catch (_) {

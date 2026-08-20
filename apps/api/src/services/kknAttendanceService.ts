@@ -37,7 +37,7 @@ export function calculateInZoneDurationMinutes(
   geofence: { latitude: number; longitude: number; radius: number; polygon?: any },
   bufferMeters: number = 15
 ): number {
-  if (!locations || locations.length < 2) return 0;
+  if (!locations || locations.length < 1) return 0;
 
   // Filter locations strictly inside the activity geofence (using configurable buffer)
   const inZonePoints = locations.filter((loc) => {
@@ -57,22 +57,31 @@ export function calculateInZoneDurationMinutes(
     }
   });
 
-  if (inZonePoints.length < 2) return 0;
+  if (inZonePoints.length < 1) return 0;
 
   // Sort ascending by time
   const sorted = [...inZonePoints].sort(
     (a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime()
   );
 
+  const tFirst = new Date(sorted[0].recordedAt).getTime();
+  const tLast = new Date(sorted[sorted.length - 1].recordedAt).getTime();
+
   let totalMs = 0;
   for (let i = 0; i < sorted.length - 1; i++) {
     const t1 = new Date(sorted[i].recordedAt).getTime();
     const t2 = new Date(sorted[i + 1].recordedAt).getTime();
     const diff = t2 - t1;
-    // If consecutive in-zone pings are within 5 minutes, count the real elapsed time
     if (diff > 0 && diff <= 5 * 60 * 1000) {
       totalMs += diff;
     }
+  }
+
+  const overallSpan = Math.max(0, tLast - tFirst);
+  totalMs = Math.max(totalMs, overallSpan);
+
+  if (totalMs < 60000 && overallSpan >= 15000) {
+    return 1;
   }
 
   return Math.floor(totalMs / (60 * 1000));
