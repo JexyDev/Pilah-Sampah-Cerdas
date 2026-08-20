@@ -437,7 +437,19 @@ export class KknController {
   async registerPosko(req: Request, res: Response): Promise<void> {
     try {
       const kknUserId = req.user!.userId;
-      const data = await kknService.registerPoskoKkn(kknUserId, req.body);
+      let fotoUrl = req.body.foto;
+      if (req.file) {
+        fotoUrl = `/uploads/${req.file.filename}`;
+      }
+      const payload = {
+        ...req.body,
+        foto: fotoUrl,
+        latitude: req.body.latitude != null ? Number(req.body.latitude) : undefined,
+        longitude: req.body.longitude != null ? Number(req.body.longitude) : undefined,
+        rwId: req.body.rwId != null ? Number(req.body.rwId) : undefined,
+      };
+
+      const data = await kknService.registerPoskoKkn(kknUserId, payload);
       res.status(201).json({
         success: true,
         message: "Pendaftaran Posko KKN berhasil dikirim dan menunggu verifikasi RW.",

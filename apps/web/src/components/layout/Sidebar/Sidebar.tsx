@@ -408,6 +408,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "PEMIMPIN",
               ] as UserRole[],
             },
+            {
+              to: "/rw/fasilitas",
+              label: "Fasilitas & Posko KKN",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "DPL",
+                "RW",
+                "PEMIMPIN",
+              ] as UserRole[],
+            },
           ],
         },
         {

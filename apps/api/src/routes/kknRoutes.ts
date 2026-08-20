@@ -415,6 +415,7 @@ router.post(
   "/posko/register",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
   kknController.registerPosko
 );
 
