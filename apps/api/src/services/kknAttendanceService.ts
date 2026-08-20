@@ -762,7 +762,7 @@ export class KknAttendanceService {
           method: isAutoAlpa ? "ALPA_AUTO" : method,
           latitude,
           longitude,
-          status: isAutoAlpa ? "ALPA" : "BERLANGSUNG",
+          status: isAutoAlpa ? "ALPA" : "HADIR",
           checkOutAt: null,
         },
       });
@@ -1280,7 +1280,7 @@ export class KknAttendanceService {
       const latestLoc = locMap.get(att.studentId);
       const leave = leaveMap.get(att.studentId);
 
-      const isFinished = att.checkOutAt !== null || att.status === "SELESAI";
+      const isFinished = att.checkOutAt !== null || att.status === "SELESAI" || att.status === "SELESAI_TELAT";
 
       let currentStatus = "TERCATAT_ABSEN";
       let status = att.status;
@@ -1291,39 +1291,14 @@ export class KknAttendanceService {
       } else if (att.method === "OVERRIDE_DPL" || String(att.status).toUpperCase().includes("OVERRIDE")) {
         currentStatus = "OVERRIDDEN_HADIR";
         status = "HADIR";
-      } else if (isFinished) {
-        currentStatus = "SELESAI";
-        status = "SELESAI";
-      } else if (latestLoc) {
-        let isInside = false;
-        if (
-          scheduleLoc.polygon &&
-          Array.isArray(scheduleLoc.polygon) &&
-          scheduleLoc.polygon.length >= 3
-        ) {
-          const polyPoints = (scheduleLoc.polygon as any[]).map((p) => ({
-            lat: Number(p[0]),
-            lng: Number(p[1]),
-          }));
-          isInside = isPointInPolygonWithBuffer(
-            { lat: Number(latestLoc.latitude), lng: Number(latestLoc.longitude) },
-            polyPoints,
-            attendanceListBufferMeters
-          );
-        } else {
-          const dist = calculateDistance(
-            Number(latestLoc.latitude),
-            Number(latestLoc.longitude),
-            scheduleLoc.latitude,
-            scheduleLoc.longitude
-          );
-          isInside = dist <= scheduleLoc.radius + attendanceListBufferMeters;
-        }
-        currentStatus = isInside ? "MASIH_DI_LOKASI" : "SUDAH_MENINGGALKAN_RADIUS";
-        status = att.status === "BERLANGSUNG" ? "BERLANGSUNG" : (isInside ? "HADIR" : "LEPAS_RADIUS");
-      } else {
+      } else if (isFinished || att.status === "HADIR" || att.status === "SELESAI") {
+        currentStatus = "TERCATAT_ABSEN";
+        status = "HADIR";
+      } else if (att.status === "BERLANGSUNG") {
+        status = "BERLANGSUNG";
         currentStatus = "MASIH_DI_LOKASI";
-        status = att.status === "BERLANGSUNG" ? "BERLANGSUNG" : "HADIR";
+      } else {
+        status = att.status;
       }
 
       const isLeave = att.method === "IZIN_DPL" || String(att.status).toUpperCase().includes("IZIN") || String(att.status).toUpperCase().includes("SAKIT");
