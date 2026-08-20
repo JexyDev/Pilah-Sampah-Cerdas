@@ -2621,7 +2621,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       const recAny = rec as any;
                       const durationMins = isLeaveOrPending 
                         ? 0 
-                        : (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined)
+                        : (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined && Number(recAny.actualInZoneMinutes) > 0)
                         ? Number(recAny.actualInZoneMinutes)
                         : calculateDurationMinutes(rec.attendedAt, rec.completedAt);
                       const isHadir = (statusUpper === "HADIR" || statusUpper === "SELESAI" || rec.completedAt !== null) && isAttended && !isOverrideDpl && !isBerlangsung;
