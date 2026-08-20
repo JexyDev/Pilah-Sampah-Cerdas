@@ -5,14 +5,15 @@
  * 
  * Halaman Rekapitulasi & Nilai Akhir KKN Mahasiswa
  * Dilengkapi:
- * - Interactive Visual Horizontal Slidebar & Quick Slide Buttons (< Geser Kiri / Geser Kanan >)
- * - Custom High-Contrast Table Scrollbar (Tebal & Nyata)
- * - Smart Windowing Pagination (1 2 3 ... 57)
+ * - Fluid Responsive Layout (Mobile, Tablet, Desktop)
+ * - Custom High-Contrast Table Scrollbar
+ * - Smart Windowing Pagination
  * - Toolbar Pencarian, Filter Kelompok & Status Lengkap
  * - KPI Ringkasan Metrik Nilai
+ * - Ekspor Rekap Nilai ke Excel
  */
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Info,
   ChevronLeft,
@@ -24,7 +25,6 @@ import {
   Clock,
   CheckCircle2,
   RotateCcw,
-  ArrowLeftRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
@@ -178,12 +178,6 @@ export const RekapNilaiKknPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
 
-  // Table horizontal scroll & slidebar state
-  const tableContainerRef = useRef<HTMLDivElement>(null);
-  const [scrollProgress, setScrollProgress] = useState<number>(0);
-  const [canScrollLeft, setCanScrollLeft] = useState<boolean>(false);
-  const [canScrollRight, setCanScrollRight] = useState<boolean>(true);
-
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -261,7 +255,7 @@ export const RekapNilaiKknPage: React.FC = () => {
         setStudents(formatted);
       }
     } catch {
-      // Fallback
+      // Fallback to default demo data
     } finally {
       setLoading(false);
     }
@@ -270,49 +264,6 @@ export const RekapNilaiKknPage: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  // Sync scrollbar progress
-  const updateScrollState = useCallback(() => {
-    if (!tableContainerRef.current) return;
-    const el = tableContainerRef.current;
-    const maxScroll = el.scrollWidth - el.clientWidth;
-    if (maxScroll <= 0) {
-      setScrollProgress(0);
-      setCanScrollLeft(false);
-      setCanScrollRight(false);
-      return;
-    }
-    const currentProgress = Math.round((el.scrollLeft / maxScroll) * 100);
-    setScrollProgress(currentProgress);
-    setCanScrollLeft(el.scrollLeft > 5);
-    setCanScrollRight(el.scrollLeft < maxScroll - 5);
-  }, []);
-
-  useEffect(() => {
-    const el = tableContainerRef.current;
-    if (!el) return;
-    updateScrollState();
-    el.addEventListener("scroll", updateScrollState, { passive: true });
-    window.addEventListener("resize", updateScrollState);
-    return () => {
-      el.removeEventListener("scroll", updateScrollState);
-      window.removeEventListener("resize", updateScrollState);
-    };
-  }, [updateScrollState, students, currentPage]);
-
-  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Number(e.target.value);
-    setScrollProgress(val);
-    if (!tableContainerRef.current) return;
-    const el = tableContainerRef.current;
-    const maxScroll = el.scrollWidth - el.clientWidth;
-    el.scrollLeft = (val / 100) * maxScroll;
-  };
-
-  const handleScrollBy = (amount: number) => {
-    if (!tableContainerRef.current) return;
-    tableContainerRef.current.scrollBy({ left: amount, behavior: "smooth" });
-  };
 
   // Unique list of groups for filter dropdown
   const kelompokOptions = useMemo(() => {
@@ -329,8 +280,9 @@ export const RekapNilaiKknPage: React.FC = () => {
       .filter((s) => {
         // Search by NIM or Name
         if (searchTerm.trim() !== "") {
-          const matchNim = s.nim.toLowerCase().includes(searchTerm.toLowerCase().trim());
-          const matchName = s.name.toLowerCase().includes(searchTerm.toLowerCase().trim());
+          const q = searchTerm.toLowerCase().trim();
+          const matchNim = s.nim.toLowerCase().includes(q);
+          const matchName = s.name.toLowerCase().includes(q);
           if (!matchNim && !matchName) return false;
         }
 
@@ -511,46 +463,43 @@ export const RekapNilaiKknPage: React.FC = () => {
     searchTerm !== "" || filterKelompok !== "ALL" || filterStatus !== "ALL" || sortBy !== "NIM_ASC";
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-3 sm:p-6 lg:p-8 space-y-6 text-slate-800 dark:text-slate-100 max-w-[1720px] mx-auto overflow-x-hidden">
+    <div className="w-full max-w-full min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-3 sm:p-5 lg:p-6 space-y-5 text-slate-800 dark:text-slate-100 overflow-x-hidden min-w-0">
       {/* Custom CSS untuk High-Contrast Scrollbar */}
       <style>{`
         .table-slidebar-container::-webkit-scrollbar {
-          height: 14px;
+          height: 10px;
         }
         .table-slidebar-container::-webkit-scrollbar-track {
           background: #e2e8f0;
-          border-radius: 8px;
-          margin: 0 4px;
+          border-radius: 6px;
         }
         .table-slidebar-container::-webkit-scrollbar-thumb {
-          background: #008055;
-          border-radius: 8px;
-          border: 3px solid #e2e8f0;
+          background: #009966;
+          border-radius: 6px;
         }
         .table-slidebar-container::-webkit-scrollbar-thumb:hover {
-          background: #006644;
+          background: #008055;
         }
         .dark .table-slidebar-container::-webkit-scrollbar-track {
           background: #1e293b;
         }
         .dark .table-slidebar-container::-webkit-scrollbar-thumb {
           background: #10b981;
-          border: 3px solid #1e293b;
         }
       `}</style>
 
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 w-full min-w-0">
         <div>
-          <h1 className="text-xl sm:text-2xl lg:text-[26px] font-extrabold text-[#0f172a] dark:text-slate-100 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-[#0f172a] dark:text-slate-100 tracking-tight">
             Rekap & Nilai Akhir
           </h1>
-          <p className="text-xs sm:text-[13px] text-slate-600 dark:text-slate-400 mt-1 font-medium">
+          <p className="text-xs sm:text-[13px] text-slate-600 dark:text-slate-400 mt-0.5 font-medium">
             Rekapitulasi nilai berdasarkan data otomatis serta penilaian DPL dan MPL
           </p>
         </div>
 
-        <div className="flex items-center gap-3 self-stretch md:self-auto justify-end">
+        <div className="flex items-center gap-3 self-stretch sm:self-auto justify-end">
           {/* Button Ekspor Excel */}
           <button
             onClick={handleExportExcel}
@@ -564,56 +513,56 @@ export const RekapNilaiKknPage: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+      {/* KPI Stats Cards - Fully Fluid Responsive */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full min-w-0">
+        <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-[#1d4ed8] flex items-center justify-center shrink-0">
             <Users size={20} />
           </div>
-          <div>
-            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Total Mahasiswa</p>
-            <p className="text-lg font-black text-slate-900 dark:text-slate-100">{kpiStats.total}</p>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">Total Mahasiswa</p>
+            <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100">{kpiStats.total}</p>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-[#008055] flex items-center justify-center shrink-0">
+        <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-[#009966] flex items-center justify-center shrink-0">
             <CheckCircle2 size={20} />
           </div>
-          <div>
-            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Nilai Lengkap</p>
-            <p className="text-lg font-black text-[#008055] dark:text-emerald-400">{kpiStats.lengkap}</p>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">Nilai Lengkap</p>
+            <p className="text-lg sm:text-xl font-black text-[#009966] dark:text-emerald-400">{kpiStats.lengkap}</p>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+        <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-[#b45309] flex items-center justify-center shrink-0">
             <Clock size={20} />
           </div>
-          <div>
-            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Menunggu Penilaian</p>
-            <p className="text-lg font-black text-[#b45309] dark:text-amber-400">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">Menunggu Penilaian</p>
+            <p className="text-lg sm:text-xl font-black text-[#b45309] dark:text-amber-400">
               {kpiStats.menungguMpl + kpiStats.menungguDpl}
             </p>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+        <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 flex items-center justify-center shrink-0">
             <Award size={20} />
           </div>
-          <div>
-            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Rata-rata Nilai Akhir</p>
-            <p className="text-lg font-black text-indigo-600 dark:text-indigo-400">{kpiStats.avgScore}</p>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">Rata-rata Nilai</p>
+            <p className="text-lg sm:text-xl font-black text-indigo-600 dark:text-indigo-400">{kpiStats.avgScore}</p>
           </div>
         </div>
       </div>
 
-      {/* Filter & Search Toolbar */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-2xs space-y-3">
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+      {/* Filter & Search Toolbar - Fluid Wrap */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-3.5 sm:p-4 shadow-2xs space-y-3 w-full min-w-0">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 w-full min-w-0">
           {/* Search Box */}
-          <div className="relative flex-1 min-w-[240px]">
+          <div className="relative flex-1 min-w-0">
             <Search
               size={16}
               className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
@@ -626,21 +575,21 @@ export const RekapNilaiKknPage: React.FC = () => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#008055]/30 focus:border-[#008055] transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#009966]/30 focus:border-[#009966] transition-all"
             />
           </div>
 
           {/* Filters Bar */}
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Filter Kelompok */}
-            <div className="flex-1 sm:flex-initial min-w-[150px]">
+            <div className="flex-1 sm:flex-initial min-w-[130px]">
               <select
                 value={filterKelompok}
                 onChange={(e) => {
                   setFilterKelompok(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-hidden focus:ring-2 focus:ring-[#008055]/30 cursor-pointer"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-hidden focus:ring-2 focus:ring-[#009966]/30 cursor-pointer"
               >
                 <option value="ALL">Semua Kelompok ({kelompokOptions.length})</option>
                 {kelompokOptions.map((g) => (
@@ -652,14 +601,14 @@ export const RekapNilaiKknPage: React.FC = () => {
             </div>
 
             {/* Filter Status */}
-            <div className="flex-1 sm:flex-initial min-w-[130px]">
+            <div className="flex-1 sm:flex-initial min-w-[110px]">
               <select
                 value={filterStatus}
                 onChange={(e) => {
                   setFilterStatus(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-hidden focus:ring-2 focus:ring-[#008055]/30 cursor-pointer"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-hidden focus:ring-2 focus:ring-[#009966]/30 cursor-pointer"
               >
                 <option value="ALL">Semua Status</option>
                 <option value="Lengkap">Lengkap</option>
@@ -669,14 +618,14 @@ export const RekapNilaiKknPage: React.FC = () => {
             </div>
 
             {/* Sort Dropdown */}
-            <div className="flex-1 sm:flex-initial min-w-[140px]">
+            <div className="flex-1 sm:flex-initial min-w-[120px]">
               <select
                 value={sortBy}
                 onChange={(e) => {
                   setSortBy(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-hidden focus:ring-2 focus:ring-[#008055]/30 cursor-pointer"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-hidden focus:ring-2 focus:ring-[#009966]/30 cursor-pointer"
               >
                 <option value="NIM_ASC">NIM (Terkecil)</option>
                 <option value="NIM_DESC">NIM (Terbesar)</option>
@@ -688,19 +637,19 @@ export const RekapNilaiKknPage: React.FC = () => {
             </div>
 
             {/* Per Page */}
-            <div className="w-24">
+            <div className="w-20">
               <select
                 value={itemsPerPage}
                 onChange={(e) => {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-hidden focus:ring-2 focus:ring-[#008055]/30 cursor-pointer"
+                className="w-full px-2.5 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-hidden focus:ring-2 focus:ring-[#009966]/30 cursor-pointer"
               >
-                <option value={10}>10 / hal</option>
-                <option value={25}>25 / hal</option>
-                <option value={50}>50 / hal</option>
-                <option value={100}>100 / hal</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
               </select>
             </div>
 
@@ -719,92 +668,40 @@ export const RekapNilaiKknPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Legend & Info Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
-        <div className="flex flex-wrap items-center gap-2.5">
+      {/* Legend & Info Bar - Responsive Wrap */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 text-xs w-full min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Badge 1: Otomatis dari Sistem */}
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900/60 px-3.5 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs w-full sm:w-auto">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#1d4ed8] shrink-0" />
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900/60 px-3 py-1.5 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-[#1d4ed8] shrink-0" />
             <span>
               <strong className="text-[#1d4ed8] font-bold">Otomatis dari Sistem:</strong> Kehadiran 25% • Poin Dampingan 15%
             </span>
           </div>
 
           {/* Badge 2: Penilaian DPL & MPL */}
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/60 px-3.5 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs w-full sm:w-auto">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#008055] shrink-0" />
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/60 px-3 py-1.5 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-[#009966] shrink-0" />
             <span>
-              <strong className="text-[#008055] font-bold">Penilaian DPL & MPL:</strong> Nilai Individu 20% • Program Kerja 20% • Nilai Kelompok 20%
+              <strong className="text-[#009966] font-bold">Penilaian DPL & MPL:</strong> Nilai Individu 20% • Program Kerja 20% • Nilai Kelompok 20%
             </span>
           </div>
         </div>
 
         {/* Badge 3: Info Komposisi */}
-        <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-400 font-medium shadow-2xs w-full lg:w-auto">
-          <Info size={14} className="text-slate-500 shrink-0" />
+        <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 font-medium shadow-2xs">
+          <Info size={13} className="text-slate-500 shrink-0" />
           <span>
-            Komposisi Penilai: DPL 30% • MPL 60% • Dinormalisasi terhadap total 90%
+            Komposisi: DPL 30% • MPL 60% (Normalisasi total 90%)
           </span>
         </div>
       </div>
 
-      {/* Main Table Card with Visual Slidebar Controls */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden flex flex-col">
-        {/* Visual Table Slidebar & Quick Action Controller */}
-        <div className="px-4 py-3 bg-emerald-50/50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200 font-bold">
-            <ArrowLeftRight size={16} className="text-[#008055] dark:text-emerald-400 shrink-0" />
-            <span>Slidebar Tabel Data</span>
-            <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400">
-              (Geser slider atau gunakan tombol untuk menjelajah kolom)
-            </span>
-          </div>
-
-          {/* Interactive Slider & Buttons */}
-          <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-            {/* Button Geser Kiri */}
-            <button
-              onClick={() => handleScrollBy(-300)}
-              disabled={!canScrollLeft}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs transition-all cursor-pointer"
-              title="Geser ke kiri"
-            >
-              <ChevronLeft size={14} />
-              <span className="hidden sm:inline">Geser Kiri</span>
-            </button>
-
-            {/* Interactive Range Slidebar */}
-            <div className="flex items-center gap-2 flex-1 sm:flex-initial min-w-[160px] sm:min-w-[220px]">
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={scrollProgress}
-                onChange={handleSliderChange}
-                className="w-full accent-[#008055] cursor-pointer h-2 bg-slate-200 dark:bg-slate-700 rounded-lg"
-                title={`Posisi slidebar: ${scrollProgress}%`}
-              />
-              <span className="text-[11px] font-mono font-bold text-slate-600 dark:text-slate-400 w-10 text-right">
-                {scrollProgress}%
-              </span>
-            </div>
-
-            {/* Button Geser Kanan */}
-            <button
-              onClick={() => handleScrollBy(300)}
-              disabled={!canScrollRight}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[#008055] bg-[#008055] text-white text-xs font-bold hover:bg-[#006644] disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs transition-all cursor-pointer"
-              title="Geser ke kanan"
-            >
-              <span className="hidden sm:inline">Geser Kanan</span>
-              <ChevronRight size={14} />
-            </button>
-          </div>
-        </div>
-
+      {/* Main Table Card */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden flex flex-col w-full min-w-0">
         {loading ? (
           <div className="p-16 flex flex-col items-center justify-center gap-3 text-slate-400">
-            <Loader2 className="animate-spin text-emerald-600" size={36} />
+            <Loader2 className="animate-spin text-[#009966]" size={36} />
             <span className="text-xs font-semibold">Memuat rekapitulasi nilai...</span>
           </div>
         ) : paginatedStudents.length === 0 ? (
@@ -815,43 +712,42 @@ export const RekapNilaiKknPage: React.FC = () => {
             </p>
             <button
               onClick={handleResetFilters}
-              className="text-xs text-[#008055] dark:text-emerald-400 font-bold hover:underline cursor-pointer"
+              className="text-xs text-[#009966] dark:text-emerald-400 font-bold hover:underline cursor-pointer"
             >
               Reset filter pencarian
             </button>
           </div>
         ) : (
-          /* Smooth Horizontal Scroll Slidebar Container */
+          /* Smooth Horizontal Scroll Table Container */
           <div
-            ref={tableContainerRef}
             className="overflow-x-auto w-full table-slidebar-container select-text"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
-            <table className="w-full min-w-[1350px] text-center text-[11.5px] border-collapse">
+            <table className="w-full min-w-[1200px] text-center text-[11.5px] border-collapse">
               {/* Table Head Multi-Tier */}
-              <thead className="sticky top-0 z-20 bg-white dark:bg-slate-900 shadow-2xs">
-                <tr className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-800">
+              <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900/90 shadow-2xs border-b border-slate-200 dark:border-slate-800">
+                <tr className="bg-slate-50/80 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-800">
                   <th
                     rowSpan={2}
-                    className="py-3.5 px-3 w-12 border-r border-slate-200 dark:border-slate-800 sticky left-0 bg-slate-50 dark:bg-slate-900 z-30 shadow-xs"
+                    className="py-3 px-3 w-12 border-r border-slate-200 dark:border-slate-800"
                   >
                     No.
                   </th>
                   <th
                     rowSpan={2}
-                    className="py-3.5 px-3 w-28 border-r border-slate-200 dark:border-slate-800 text-left sticky left-12 bg-slate-50 dark:bg-slate-900 z-30 shadow-xs"
+                    className="py-3 px-3 w-28 border-r border-slate-200 dark:border-slate-800 text-left"
                   >
                     NIM
                   </th>
                   <th
                     rowSpan={2}
-                    className="py-3.5 px-4 min-w-[190px] border-r-2 border-slate-300 dark:border-slate-700 text-left sticky left-40 bg-slate-50 dark:bg-slate-900 z-30 shadow-sm"
+                    className="py-3 px-4 min-w-[180px] border-r border-slate-200 dark:border-slate-800 text-left"
                   >
                     Nama Mahasiswa
                   </th>
                   <th
                     rowSpan={2}
-                    className="py-3.5 px-4 min-w-[170px] border-r border-slate-200 dark:border-slate-800 text-left"
+                    className="py-3 px-4 min-w-[160px] border-r border-slate-200 dark:border-slate-800 text-left"
                   >
                     Kelompok
                   </th>
@@ -859,7 +755,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                   {/* Colspan 2: Otomatis dari Sistem */}
                   <th
                     colSpan={2}
-                    className="py-2.5 px-3 bg-[#f0f7ff] dark:bg-blue-950/50 text-[#1e40af] dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[12px]"
+                    className="py-2 px-3 bg-[#f0f7ff] dark:bg-blue-950/50 text-[#1e40af] dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px]"
                   >
                     Otomatis dari Sistem
                   </th>
@@ -867,7 +763,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                   {/* Colspan 3: Nilai Individu */}
                   <th
                     colSpan={3}
-                    className="py-2.5 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[12px]"
+                    className="py-2 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px]"
                   >
                     Nilai Individu (20%)
                   </th>
@@ -875,7 +771,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                   {/* Colspan 3: Program Kerja */}
                   <th
                     colSpan={3}
-                    className="py-2.5 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[12px]"
+                    className="py-2 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px]"
                   >
                     Program Kerja (20%)
                   </th>
@@ -883,68 +779,68 @@ export const RekapNilaiKknPage: React.FC = () => {
                   {/* Colspan 3: Nilai Kelompok */}
                   <th
                     colSpan={3}
-                    className="py-2.5 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[12px]"
+                    className="py-2 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px]"
                   >
                     Nilai Kelompok (20%)
                   </th>
 
                   <th
                     rowSpan={2}
-                    className="py-3.5 px-3 w-16 border-r border-slate-200 dark:border-slate-800 font-extrabold text-[#0f172a] dark:text-slate-100"
+                    className="py-3 px-3 w-16 border-r border-slate-200 dark:border-slate-800 font-extrabold text-[#0f172a] dark:text-slate-100"
                   >
                     Nilai<br />Akhir
                   </th>
                   <th
                     rowSpan={2}
-                    className="py-3.5 px-3 w-14 border-r border-slate-200 dark:border-slate-800 font-bold"
+                    className="py-3 px-3 w-14 border-r border-slate-200 dark:border-slate-800 font-bold"
                   >
                     Predikat
                   </th>
-                  <th rowSpan={2} className="py-3.5 px-4 w-28 font-bold">
+                  <th rowSpan={2} className="py-3 px-4 w-28 font-bold">
                     Status
                   </th>
                 </tr>
 
                 {/* Sub-header row */}
-                <tr className="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 text-[10.5px]">
+                <tr className="bg-slate-50/80 dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 text-[10.5px]">
                   {/* Otomatis */}
-                  <th className="py-2 px-2.5 bg-[#f0f7ff]/70 dark:bg-blue-950/20 text-[#1e40af] dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 font-medium">
+                  <th className="py-2 px-2 bg-[#f0f7ff]/70 dark:bg-blue-950/20 text-[#1e40af] dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 font-medium">
                     Kehadiran<br />(25%)
                   </th>
-                  <th className="py-2 px-2.5 bg-[#f0f7ff]/70 dark:bg-blue-950/20 text-[#1e40af] dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 font-medium">
+                  <th className="py-2 px-2 bg-[#f0f7ff]/70 dark:bg-blue-950/20 text-[#1e40af] dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 font-medium">
                     Poin Dampingan<br />(15%)
                   </th>
 
                   {/* Individu */}
-                  <th className="py-2 px-2.5 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-medium">
+                  <th className="py-2 px-2 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-medium">
                     DPL
                   </th>
-                  <th className="py-2 px-2.5 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-medium">
+                  <th className="py-2 px-2 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-medium">
                     MPL
                   </th>
-                  <th className="py-2 px-2.5 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold">
+                  <th className="py-2 px-2 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold">
                     Gabungan
                   </th>
 
                   {/* Proker */}
-                  <th className="py-2 px-2.5 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-medium">
+                  <th className="py-2 px-2 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-medium">
                     DPL
                   </th>
-                  <th className="py-2 px-2.5 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-medium">
+                  <th className="py-2 px-2 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-medium">
                     MPL
                   </th>
-                  <th className="py-2 px-2.5 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold">
+                  <th className="py-2 px-2 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold">
                     Gabungan
                   </th>
 
                   {/* Kelompok */}
-                  <th className="py-2 px-2.5 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-medium">
+                  <th className="py-2 px-2 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-medium">
                     DPL
                   </th>
-                  <th className="py-2 px-2.5 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-medium">
+                  <th className="py-2 px-2 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-medium">
                     MPL
                   </th>
-                  <th className="py-2 px-2.5 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold">
+                  <th className="py-2 px-2 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold">
                     Gabungan
                   </th>
                 </tr>
@@ -961,18 +857,18 @@ export const RekapNilaiKknPage: React.FC = () => {
                       key={st.id || idx}
                       className="hover:bg-slate-50/90 dark:hover:bg-slate-800/60 transition-colors"
                     >
-                      {/* No - Sticky */}
-                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 text-slate-500 font-medium sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-xs">
+                      {/* No */}
+                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 text-slate-500 font-medium">
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
 
-                      {/* NIM - Sticky */}
-                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 font-medium text-slate-800 dark:text-slate-200 text-left sticky left-12 bg-white dark:bg-slate-900 z-10 shadow-xs font-mono">
+                      {/* NIM */}
+                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 font-medium text-slate-800 dark:text-slate-200 text-left font-mono">
                         {st.nim}
                       </td>
 
-                      {/* Nama Mahasiswa - Sticky */}
-                      <td className="py-3 px-4 border-r-2 border-slate-300 dark:border-slate-700 font-bold text-slate-900 dark:text-slate-100 text-left sticky left-40 bg-white dark:bg-slate-900 z-10 shadow-sm">
+                      {/* Nama Mahasiswa */}
+                      <td className="py-3 px-4 border-r border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-slate-100 text-left">
                         {st.name}
                       </td>
 
@@ -1050,7 +946,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                       </td>
 
                       {/* Predikat */}
-                      <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 font-bold text-[#008055] dark:text-emerald-400">
+                      <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 font-bold text-[#009966] dark:text-emerald-400">
                         {st.predikat ?? "—"}
                       </td>
 
@@ -1078,29 +974,59 @@ export const RekapNilaiKknPage: React.FC = () => {
           </div>
         )}
 
-        {/* Bottom Slidebar Indicator Bar */}
-        <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#008055]" />
-            <span className="font-semibold text-slate-700 dark:text-slate-300">
-              Kolom Terkunci: No., NIM, Nama Mahasiswa
-            </span>
+        {/* Smart Pagination Controls Section */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="text-center sm:text-left">
+            Menampilkan {(currentPage - 1) * itemsPerPage + 1}–
+            {Math.min(currentPage * itemsPerPage, totalFilteredCount)} dari {totalFilteredCount} mahasiswa
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center gap-1.5 flex-wrap justify-center">
+            {/* Tombol Previous */}
             <button
-              onClick={() => handleScrollBy(-200)}
-              disabled={!canScrollLeft}
-              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
-              title="Geser Kiri"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+              title="Halaman sebelumnya"
             >
               <ChevronLeft size={16} />
             </button>
-            <span className="font-mono font-bold text-[#008055]">{scrollProgress}%</span>
+
+            {/* Smart Pagination Page Buttons */}
+            {paginationPages.map((pageNum, idx) => {
+              if (pageNum === "...") {
+                return (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="w-8 h-8 flex items-center justify-center text-slate-400 font-bold"
+                  >
+                    ...
+                  </span>
+                );
+              }
+
+              const pageNumber = Number(pageNum);
+              return (
+                <button
+                  key={`page-${pageNumber}`}
+                  onClick={() => setCurrentPage(pageNumber)}
+                  className={`w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition-all cursor-pointer ${
+                    currentPage === pageNumber
+                      ? "bg-[#009966] text-white shadow-2xs"
+                      : "border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  {pageNumber}
+                </button>
+              );
+            })}
+
+            {/* Tombol Next */}
             <button
-              onClick={() => handleScrollBy(200)}
-              disabled={!canScrollRight}
-              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
-              title="Geser Kanan"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+              title="Halaman berikutnya"
             >
               <ChevronRight size={16} />
             </button>
@@ -1108,67 +1034,8 @@ export const RekapNilaiKknPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Smart Pagination Controls Section */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium px-1 py-1">
-        <div className="text-center sm:text-left">
-          Menampilkan {(currentPage - 1) * itemsPerPage + 1}–
-          {Math.min(currentPage * itemsPerPage, totalFilteredCount)} dari {totalFilteredCount} mahasiswa
-        </div>
-
-        <div className="flex items-center gap-1.5 flex-wrap justify-center">
-          {/* Tombol Previous */}
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
-            title="Halaman sebelumnya"
-          >
-            <ChevronLeft size={16} />
-          </button>
-
-          {/* Smart Pagination Page Buttons */}
-          {paginationPages.map((pageNum, idx) => {
-            if (pageNum === "...") {
-              return (
-                <span
-                  key={`ellipsis-${idx}`}
-                  className="w-8 h-8 flex items-center justify-center text-slate-400 font-bold"
-                >
-                  ...
-                </span>
-              );
-            }
-
-            const pageNumber = Number(pageNum);
-            return (
-              <button
-                key={`page-${pageNumber}`}
-                onClick={() => setCurrentPage(pageNumber)}
-                className={`w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition-all cursor-pointer ${
-                  currentPage === pageNumber
-                    ? "bg-[#008055] text-white shadow-2xs"
-                    : "border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                }`}
-              >
-                {pageNumber}
-              </button>
-            );
-          })}
-
-          {/* Tombol Next */}
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
-            title="Halaman berikutnya"
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      </div>
-
       {/* Dasar Perhitungan Nilai Card */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-6 shadow-2xs space-y-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-6 shadow-2xs space-y-4 w-full min-w-0">
         <h2 className="text-base sm:text-[17px] font-extrabold text-[#0f172a] dark:text-slate-100 tracking-tight">
           Dasar Perhitungan Nilai
         </h2>
