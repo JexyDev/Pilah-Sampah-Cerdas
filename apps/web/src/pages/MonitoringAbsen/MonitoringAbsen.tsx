@@ -1288,30 +1288,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     }
   };
 
-  const handleFallbackAbsen = async (rec: AttendanceRecord) => {
-    try {
-      const scheduleId = rec.scheduleId || selectedScheduleId;
-      if (!scheduleId) {
-        toast.error("Pilih jadwal kegiatan terlebih dahulu");
-        return;
-      }
-      
-      const res = await api.post(`/kegiatan/${scheduleId}/absen`, {
-        latitude: rec.latitude ? Number(rec.latitude) : 0,
-        longitude: rec.longitude ? Number(rec.longitude) : 0,
-        method: "MANUAL_DPL",
-        studentId: rec.studentId || rec.student?.id,
-      });
-
-      if (res.data) {
-        toast.success(`Berhasil mengonfirmasi presensi (${rec.student?.name || 'Mahasiswa'}) menjadi Hadir!`);
-        fetchAttendanceAndLocations(selectedScheduleId, selectedKelompokId);
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal mengonfirmasi presensi");
-    }
-  };
-
   // Filtered Attendance List
   const filteredAttendance = useMemo(() => {
     return attendance.filter((rec) => {
@@ -2845,17 +2821,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                 <MapPin size={13} className="text-emerald-600" />
                                 <span>Lihat Peta</span>
                               </button>
-                              {!isHadir && !isLeaveOrPending && !isBelumAdaJadwal && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleFallbackAbsen(rec)}
-                                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] rounded-xl transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs active:scale-95 mt-0.5"
-                                  title="Konfirmasi Presensi Mahasiswa Menjadi Hadir (Fallback DPL)"
-                                >
-                                  <CheckCircle2 size={12} />
-                                  <span>Absen Sekarang</span>
-                                </button>
-                              )}
                               {(() => {
                                 const liveLoc = studentLocations.find(
                                   (l) => l.studentId === rec.student.id || l.student?.id === rec.student.id
