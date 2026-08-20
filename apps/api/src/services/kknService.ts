@@ -1935,11 +1935,22 @@ export class KknService {
       });
     }
 
-    // Fallback: Jika tidak ada jadwal spesifik kelompok, cari jadwal umum tanpa kelompokId
+    // Fallback 1: Jika tidak ada jadwal spesifik kelompok, cari jadwal umum tanpa kelompokId
     if (activeSchedules.length === 0) {
       activeSchedules = await prisma.schedule.findMany({
         where: {
           kelompokId: null,
+          date: { gte: yesterdayStart, lte: todayEnd },
+          isActive: true,
+        },
+        orderBy: { date: "asc" },
+      });
+    }
+
+    // Fallback 2: Jika masih belum ada, cari seluruh jadwal aktif dalam rentang tanggal ini
+    if (activeSchedules.length === 0) {
+      activeSchedules = await prisma.schedule.findMany({
+        where: {
           date: { gte: yesterdayStart, lte: todayEnd },
           isActive: true,
         },
