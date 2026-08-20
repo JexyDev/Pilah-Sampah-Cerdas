@@ -243,11 +243,16 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             .toString()
             .toLowerCase();
         final bool isAttended = activeZone['isAttended'] == true || status == 'hadir';
+        final bool isAlpa = status == 'alpa' || status == 'tanpa_keterangan';
 
         state = state.copyWith(
           activeActivity: activeZone,
           inZoneDurationSeconds: _accumulatedSeconds,
           isSuccessAttendance: isAttended,
+          zoneResetWarning: isAlpa
+              ? 'Waktu jadwal KKN telah berakhir. Status Anda: TANPA KETERANGAN (ALPA).'
+              : null,
+          clearWarning: !isAlpa,
           error: null,
           clearError: true,
         );
