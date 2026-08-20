@@ -230,8 +230,30 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         activeZone['namaKegiatan'] ??= activeZone['title'] ?? 'Penugasan KKN';
         activeZone['radius'] ??= 100;
 
+        if (activeZone['actualInZoneSeconds'] != null) {
+          final serverSecs = int.tryParse(activeZone['actualInZoneSeconds'].toString()) ?? 0;
+          if (serverSecs > 0) {
+            _accumulatedSeconds = serverSecs;
+            await _savePersistentTimer();
+          }
+        } else if (activeZone['actualInZoneMinutes'] != null) {
+          final actualMins = num.tryParse(activeZone['actualInZoneMinutes'].toString()) ?? 0;
+          final serverSecs = (actualMins * 60).toInt();
+          if (_accumulatedSeconds == 0 && serverSecs > 0) {
+            _accumulatedSeconds = serverSecs;
+            await _savePersistentTimer();
+          }
+        }
+
+        final status = (activeZone['attendanceStatus'] ?? activeZone['status'] ?? activeZone['kehadiran'] ?? '')
+            .toString()
+            .toLowerCase();
+        final bool isAttended = activeZone['isAttended'] == true || status == 'hadir';
+
         state = state.copyWith(
           activeActivity: activeZone,
+          inZoneDurationSeconds: _accumulatedSeconds,
+          isSuccessAttendance: isAttended,
           error: null,
           clearError: true,
         );
