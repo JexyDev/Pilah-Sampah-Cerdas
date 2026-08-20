@@ -19,6 +19,7 @@ class FasilitasKknState {
     bool? isLoading,
     bool? isLoadingJenis,
     String? error,
+    List<JenisFasilitasModel>? jenisList,
     bool clearError = false,
     List<JenisFasilitasModel>? jenisList,
   }) {
