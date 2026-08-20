@@ -68,7 +68,7 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: _getStatusColor(status).withOpacity(0.1),
+                                color: _getStatusColor(status).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(color: _getStatusColor(status)),
                               ),
@@ -80,8 +80,8 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text('Kategori: ', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                        Text('Target: ', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                        Text('Kategori: ${item['kategori']}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                        Text('Target: ${item['tanggal']?.toString().split('T').first}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                         const SizedBox(height: 8),
                         if (item['catatanDpl'] != null)
                           Container(
@@ -97,7 +97,7 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    'Catatan DPL:\n',
+                                    'Catatan DPL:\n${item['catatanDpl']}',
                                     style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
                                   ),
                                 ),

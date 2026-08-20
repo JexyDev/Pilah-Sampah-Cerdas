@@ -81,7 +81,7 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.warningYellow.withOpacity(0.1),
+                  color: AppColors.warningYellow.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: AppColors.warningYellow),
                 ),
@@ -110,7 +110,7 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
               const Text('Kategori', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _kategori,
+                initialValue: _kategori,
                 decoration: const InputDecoration(border: OutlineInputBorder()),
                 items: const [
                   DropdownMenuItem(value: 'Fisik', child: Text('Fisik (Infrastruktur/Alat)')),

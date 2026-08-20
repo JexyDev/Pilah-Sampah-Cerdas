@@ -88,7 +88,7 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.warningYellow.withOpacity(0.1),
+                  color: AppColors.warningYellow.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: AppColors.warningYellow),
                 ),
@@ -117,7 +117,7 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
                     return const Text('Belum ada Program Kerja yang disetujui DPL.', style: TextStyle(color: AppColors.dangerRed));
                   }
                   return DropdownButtonFormField<String>(
-                    value: _selectedProkerId,
+                    initialValue: _selectedProkerId,
                     decoration: const InputDecoration(border: OutlineInputBorder()),
                     hint: const Text('Pilih Proker...'),
                     items: approvedProker.map((p) => DropdownMenuItem(
