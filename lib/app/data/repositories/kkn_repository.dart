@@ -89,8 +89,8 @@ abstract class KknRepository {
   /// Mendapatkan detail posko me
   Future<PoskoKknResponse?> getPoskoMe();
 
-  /// Mendapatkan master data jenis fasilitas
-  Future<List<JenisFasilitasModel>> getJenisFasilitas();
+  /// Mendapatkan master data jenis fasilitas (GET /kkn/fasilitas/jenis)
+  Future<List<JenisFasilitas>> getJenisFasilitas();
 
   /// Mendaftarkan fasilitas daur ulang (Rumah Maggot dll)
   Future<Map<String, dynamic>> registerFasilitas(Map<String, dynamic> data, {String? imagePath});
@@ -118,8 +118,4 @@ abstract class KknRepository {
   /// Catat pelanggaran keluar zona (penalti poin)
   /// POST /api/v1/kkn/out-of-zone-violation
   Future<Map<String, dynamic>> recordOutOfZoneViolation({required String scheduleId, required double outOfZoneMinutes});
-
-  /// Mengambil master data jenis fasilitas (Rumah Maggot, Loseda, dll)
-  /// GET /api/v1/kkn/fasilitas/jenis
-  Future<List<JenisFasilitasModel>> getJenisFasilitas();
 }

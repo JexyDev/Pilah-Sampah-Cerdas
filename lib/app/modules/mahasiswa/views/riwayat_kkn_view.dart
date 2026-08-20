@@ -66,10 +66,7 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Riwayat Aktivitas KKN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
-        backgroundColor: AppColors.primaryGreen,
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
+        title: const Text('Riwayat Aktivitas KKN'),
       ),
       body: Column(
         children: [

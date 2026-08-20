@@ -347,32 +347,19 @@ class ApiKknRepository implements KknRepository {
     try {
       final response = await apiClient.dio.get(ApiEndpoints.kknKelompokMe);
       if (response.statusCode == 200 && response.data != null) {
-        dynamic data = response.data['data'] ?? response.data;
-        
-        if (data is List) {
-          // Jika backend langsung mereturn list anggota
-          if (data.isEmpty) return null;
-          return KelompokKknData(
-            groupId: '0',
-            groupName: 'Kelompok KKN',
-            dosenPembimbing: '-',
-            poskoLocation: '-',
-            totalGroupPoints: 0,
-            members: data.map((e) => KelompokMemberData.fromJson(e as Map<String, dynamic>)).toList(),
-          );
-        } else if (data is Map<String, dynamic>) {
-          if (data.isEmpty) return null;
-          return KelompokKknData.fromJson(data);
-        }
+        final data = response.data['data'] as Map<String, dynamic>? ?? {};
+        if (data.isEmpty) return null;
+        return KelompokKknData.fromJson(data);
       }
       return null;
     } on DioException catch (e) {
-      if (e.response?.statusCode == 404) return null;
-      debugPrint('Error getKelompokKkn (Dio): ${e.response?.data}');
-      throw Exception('Gagal memuat kelompok: ${e.response?.statusCode} ${e.message}');
-    } catch (e, stack) {
-      debugPrint('Error getKelompokKkn (Parsing/Lainnya): $e\n$stack');
-      throw Exception('Gagal parsing data kelompok: $e');
+      if (e.response?.statusCode == 404) {
+        // Belum dimasukkan ke kelompok manapun oleh admin
+        return null;
+      }
+      throw Exception('Gagal memuat data kelompok KKN');
+    } catch (_) {
+      return null;
     }
   }
 
@@ -496,45 +483,33 @@ class ApiKknRepository implements KknRepository {
       }
       return null;
     } on DioException catch (e) {
-      // 404 = belum daftar posko (normal), silent return null
-      if (e.response?.statusCode == 404) return null;
-      debugPrint('Error getPoskoMe (${e.response?.statusCode}): $e');
-      return null;
+      if (e.response?.statusCode == 404) {
+        return null;
+      }
+      debugPrint('Error getPoskoMe: $e');
+      throw Exception('Gagal mengambil data posko');
     } catch (e) {
       debugPrint('Error getPoskoMe: $e');
-      // Return null agar UI tampil "Belum Didaftarkan" bukan error snackbar
-      return null;
+      throw Exception('Gagal mengambil data posko');
     }
   }
 
   @override
-  Future<List<JenisFasilitasModel>> getJenisFasilitas() async {
+  Future<List<JenisFasilitas>> getJenisFasilitas() async {
     try {
       final response = await apiClient.dio.get(ApiEndpoints.kknFasilitasJenis);
-      if (response.statusCode == 200 && response.data != null) {
-        final rawData = response.data['data'];
-        if (rawData is List) {
-          return rawData.map((e) => JenisFasilitasModel.fromJson(e as Map<String, dynamic>)).toList();
-        }
+      if (response.statusCode == 200) {
+        final list = response.data['data'] as List<dynamic>? ?? [];
+        return list
+            .map((e) => JenisFasilitas.fromJson(e as Map<String, dynamic>))
+            .where((j) => j.isActive)
+            .toList();
       }
-      return _fallbackJenisFasilitas();
+      return [];
     } catch (e) {
-      debugPrint('Error getJenisFasilitas: $e');
-      return _fallbackJenisFasilitas();
+      debugPrint('[KKN] getJenisFasilitas error: $e');
+      return [];
     }
-  }
-
-  List<JenisFasilitasModel> _fallbackJenisFasilitas() {
-    return const [
-      JenisFasilitasModel(id: 1, key: 'rumah_maggot', nama: 'Rumah Maggot', deskripsi: 'Fasilitas pengolahan sampah organik menggunakan larva BSF'),
-      JenisFasilitasModel(id: 2, key: 'loseda', nama: 'Loseda', deskripsi: 'Lubang sedalam 1 meter untuk pengomposan langsung'),
-      JenisFasilitasModel(id: 3, key: 'bata_terawang', nama: 'Bata Terawang', deskripsi: 'Komposter aerobik menggunakan susunan bata berongga'),
-      JenisFasilitasModel(id: 4, key: 'bank_sampah', nama: 'Bank Sampah', deskripsi: 'Tempat pengumpulan sampah anorganik bernilai ekonomi'),
-      JenisFasilitasModel(id: 5, key: 'buruan_sae', nama: 'Buruan Sae', deskripsi: 'Program pengelolaan pekarangan untuk ketahanan pangan'),
-      JenisFasilitasModel(id: 6, key: 'poc', nama: 'Pupuk Organik Cair (POC)', deskripsi: 'Fasilitas pembuatan pupuk cair dari sampah organik'),
-      JenisFasilitasModel(id: 7, key: 'tps', nama: 'TPS', deskripsi: 'Tempat Pembuangan Sampah sementara'),
-      JenisFasilitasModel(id: 8, key: 'posko_kkn', nama: 'Posko KKN', deskripsi: 'Posko / kantor kelurahan'),
-    ];
   }
 
   @override
@@ -551,6 +526,12 @@ class ApiKknRepository implements KknRepository {
         final response = await apiClient.dio.post(ApiEndpoints.kknFasilitasBantuInput, data: data);
         return response.data as Map<String, dynamic>;
       }
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message']?.toString() ?? e.response?.data?['error']?.toString();
+      if (msg != null && msg.isNotEmpty) {
+        throw Exception(msg);
+      }
+      throw Exception('Gagal mendata fasilitas: $e');
     } catch (e) {
       throw Exception('Gagal mendata fasilitas: $e');
     }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
@@ -107,12 +108,12 @@ class MahasiswaPoinView extends ConsumerWidget {
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
-              const Text(
+              Text(
                 'Poin KKN Mahasiswa',
-                style: TextStyle(
+                style: GoogleFonts.poppins(
                   color: AppColors.textPrimary,
                   fontSize: 18,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],

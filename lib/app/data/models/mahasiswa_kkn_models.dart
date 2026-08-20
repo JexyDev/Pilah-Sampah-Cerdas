@@ -472,27 +472,14 @@ class KelompokMemberData extends Equatable {
   final bool isLeader;
 
   factory KelompokMemberData.fromJson(Map<String, dynamic> json) {
-    bool parseIsLeader(dynamic value, dynamic role) {
-      if (value is bool) return value;
-      if (value?.toString().toLowerCase() == 'true') return true;
-      if (role?.toString().toUpperCase() == 'KETUA') return true;
-      return false;
-    }
-
-    int parsePoints(dynamic val) {
-      if (val is num) return val.toInt();
-      if (val is String) return int.tryParse(val) ?? 0;
-      return 0;
-    }
-
     return KelompokMemberData(
-      userId: json['userId']?.toString() ?? json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      userId: json['userId']?.toString() ?? json['id']?.toString() ?? '',
       nim: json['nim']?.toString() ?? '',
       name: json['name']?.toString() ?? json['nama']?.toString() ?? 'Mahasiswa',
       jurusan: json['jurusan']?.toString() ?? json['prodi']?.toString() ?? '',
       fakultas: json['fakultas']?.toString() ?? '',
-      individualPoints: parsePoints(json['individualPoints']) > 0 ? parsePoints(json['individualPoints']) : parsePoints(json['points']),
-      isLeader: parseIsLeader(json['isLeader'], json['role']),
+      individualPoints: (json['individualPoints'] as num?)?.toInt() ?? (json['points'] as num?)?.toInt() ?? 0,
+      isLeader: json['isLeader'] as bool? ?? (json['role']?.toString().toUpperCase() == 'KETUA'),
     );
   }
 
@@ -544,17 +531,10 @@ class KelompokKknData extends Equatable {
   }
 
   factory KelompokKknData.fromJson(Map<String, dynamic> json) {
-    final rawMembers = (json['members'] as List<dynamic>? ?? 
-                         json['anggota'] as List<dynamic>? ??
-                         json['mahasiswa'] as List<dynamic>? ??
-                         json['users'] as List<dynamic>? ??
-                         json['kknUsers'] as List<dynamic>? ??
-                         json['tim'] as List<dynamic>?) ?? [];
-                         
-    final membersList = rawMembers
-        .where((e) => e is Map<String, dynamic>)
-        .map((e) => KelompokMemberData.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final membersList = (json['members'] as List<dynamic>? ?? json['anggota'] as List<dynamic>?)
+            ?.map((e) => KelompokMemberData.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        [];
 
     String dpl = json['dosenPembimbing']?.toString() ??
         json['dplName']?.toString() ??
@@ -571,18 +551,12 @@ class KelompokKknData extends Equatable {
 
     if (dpl.isEmpty) dpl = '-';
 
-    int parsePoints(dynamic val) {
-      if (val is num) return val.toInt();
-      if (val is String) return int.tryParse(val) ?? 0;
-      return 0;
-    }
-
     return KelompokKknData(
       groupId: json['groupId']?.toString() ?? json['id']?.toString() ?? '',
       groupName: json['groupName']?.toString() ?? json['namaKelompok']?.toString() ?? json['nama']?.toString() ?? '-',
       dosenPembimbing: dpl,
       poskoLocation: json['poskoLocation']?.toString() ?? json['lokasiPosko']?.toString() ?? json['kelurahan']?.toString() ?? '-',
-      totalGroupPoints: parsePoints(json['totalGroupPoints']) > 0 ? parsePoints(json['totalGroupPoints']) : parsePoints(json['totalPoints']),
+      totalGroupPoints: (json['totalGroupPoints'] as num?)?.toInt() ?? (json['totalPoints'] as num?)?.toInt() ?? 0,
       members: membersList,
     );
   }
@@ -728,48 +702,36 @@ class PoskoKknResponse extends Equatable {
 }
 
 /// ─────────────────────────────────────────────────────────────────────────────
-/// Model untuk master data jenis fasilitas KKN
-/// GET /api/v1/kkn/fasilitas/jenis
+/// Model untuk response GET /api/v1/kkn/fasilitas/jenis
 /// ─────────────────────────────────────────────────────────────────────────────
-class JenisFasilitasModel extends Equatable {
+class JenisFasilitas extends Equatable {
   final int id;
   final String key;
   final String nama;
-  final String? iconUrl;
   final String? deskripsi;
+  final String? iconUrl;
   final bool isActive;
 
-  const JenisFasilitasModel({
+  const JenisFasilitas({
     required this.id,
     required this.key,
     required this.nama,
-    this.iconUrl,
     this.deskripsi,
+    this.iconUrl,
     this.isActive = true,
   });
 
-  factory JenisFasilitasModel.fromJson(Map<String, dynamic> json) {
-    return JenisFasilitasModel(
-      id: json['id'] is int ? json['id'] as int : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+  factory JenisFasilitas.fromJson(Map<String, dynamic> json) {
+    return JenisFasilitas(
+      id: (json['id'] as num?)?.toInt() ?? 0,
       key: json['key']?.toString() ?? '',
       nama: json['nama']?.toString() ?? '',
-      iconUrl: json['iconUrl']?.toString() ?? json['icon_url']?.toString(),
       deskripsi: json['deskripsi']?.toString(),
-      isActive: json['isActive'] == true || json['is_active'] == true || json['isActive'] == null,
+      iconUrl: json['iconUrl']?.toString(),
+      isActive: json['isActive'] == true,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'key': key,
-      'nama': nama,
-      'iconUrl': iconUrl,
-      'deskripsi': deskripsi,
-      'isActive': isActive,
-    };
-  }
-
   @override
-  List<Object?> get props => [id, key, nama, iconUrl, deskripsi, isActive];
+  List<Object?> get props => [id, key, nama, iconUrl, isActive];
 }

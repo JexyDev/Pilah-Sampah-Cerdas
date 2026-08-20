@@ -29,11 +29,15 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.primaryGreen,
-        elevation: 2,
-        shadowColor: Colors.black12,
-        title: const Text('Poin & Performa', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryGreen)),
+        title: const Text('Poin & Performa'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline_rounded),
+            onPressed: () {
+              // _showInfoDialog(context);
+            },
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(petugasPemilahanControllerProvider.notifier).refreshAll(),

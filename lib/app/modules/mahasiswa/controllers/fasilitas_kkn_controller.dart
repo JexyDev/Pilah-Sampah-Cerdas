@@ -4,63 +4,65 @@ import '../../../data/providers/repository_providers.dart';
 
 class FasilitasKknState {
   final bool isLoading;
-  final bool isLoadingJenis;
   final String? error;
-  final List<JenisFasilitasModel> jenisList;
+  final List<JenisFasilitas> jenisFasilitasList;
+  final bool isLoadingJenis;
 
   FasilitasKknState({
     this.isLoading = false,
-    this.isLoadingJenis = false,
     this.error,
-    this.jenisList = const [],
+    this.jenisFasilitasList = const [],
+    this.isLoadingJenis = false,
   });
 
   FasilitasKknState copyWith({
     bool? isLoading,
-    bool? isLoadingJenis,
     String? error,
-    List<JenisFasilitasModel>? jenisList,
     bool clearError = false,
-    List<JenisFasilitasModel>? jenisList,
+    List<JenisFasilitas>? jenisFasilitasList,
+    bool? isLoadingJenis,
   }) {
     return FasilitasKknState(
       isLoading: isLoading ?? this.isLoading,
-      isLoadingJenis: isLoadingJenis ?? this.isLoadingJenis,
       error: clearError ? null : (error ?? this.error),
-      jenisList: jenisList ?? this.jenisList,
+      jenisFasilitasList: jenisFasilitasList ?? this.jenisFasilitasList,
+      isLoadingJenis: isLoadingJenis ?? this.isLoadingJenis,
     );
   }
 }
 
 class FasilitasKknController extends StateNotifier<FasilitasKknState> {
-  FasilitasKknController(this.ref) : super(FasilitasKknState()) {
-    loadJenisFasilitas();
-  }
+  FasilitasKknController(this.ref) : super(FasilitasKknState());
 
   final Ref ref;
 
-  /// Muat master data jenis fasilitas dari API (dengan fallback statis jika gagal)
-  Future<void> loadJenisFasilitas() async {
-    state = state.copyWith(isLoadingJenis: true, clearError: true);
+  /// Mengambil master data jenis fasilitas dari backend.
+  /// Dipanggil saat halaman register fasilitas pertama kali dibuka.
+  Future<void> fetchJenisFasilitas() async {
+    if (state.jenisFasilitasList.isNotEmpty) return; // Sudah pernah di-load
+    state = state.copyWith(isLoadingJenis: true);
     try {
       final repository = ref.read(kknRepositoryProvider);
       final list = await repository.getJenisFasilitas();
-      state = state.copyWith(isLoadingJenis: false, jenisList: list);
+      state = state.copyWith(
+        jenisFasilitasList: list,
+        isLoadingJenis: false,
+      );
     } catch (e) {
       state = state.copyWith(isLoadingJenis: false, error: e.toString());
     }
   }
 
+  /// Mendaftarkan fasilitas warga.
+  /// - `rwId` tidak dikirim — backend resolve dari data mahasiswa (JWT).
+  /// - `imagePath` wajib — foto fasilitas harus ada.
   Future<bool> registerFasilitas({
     required String userId,
-    int? rwId,
     required String nama,
     required String jenis,
     required double latitude,
     required double longitude,
     required String imagePath,
-    double? kapasitas,
-    String? alamat,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
@@ -71,18 +73,14 @@ class FasilitasKknController extends StateNotifier<FasilitasKknState> {
         'jenis': jenis,
         'latitude': latitude,
         'longitude': longitude,
-        if (rwId != null) 'rwId': rwId,
-        if (kapasitas != null) 'kapasitas': kapasitas,
-        if (alamat != null) 'alamat': alamat,
       };
 
       await repository.registerFasilitas(payload, imagePath: imagePath);
-
+      
       state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
-      final cleanMsg = e.toString().replaceAll('Exception: ', '');
-      state = state.copyWith(isLoading: false, error: cleanMsg);
+      state = state.copyWith(isLoading: false, error: e.toString());
       return false;
     }
   }

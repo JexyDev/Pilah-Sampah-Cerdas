@@ -112,8 +112,14 @@ class ApiClient {
             );
 
             if (refreshRes.statusCode == 200) {
-              final newAccessToken =
-                  refreshRes.data['data']['accessToken'] as String;
+              // Dukung format `{ "data": { "accessToken": "..." } }` atau `{ "accessToken": "..." }`
+              final responseData = refreshRes.data['data'] ?? refreshRes.data;
+              
+              if (responseData == null || responseData['accessToken'] == null) {
+                throw Exception('Token tidak ditemukan dalam response: ${refreshRes.data}');
+              }
+
+              final newAccessToken = responseData['accessToken'] as String;
 
               // Simpan token baru (access + refresh jika backend mengembalikan)
               await secureStorage.write(
@@ -121,8 +127,8 @@ class ApiClient {
                 value: newAccessToken,
               );
               _cachedToken = newAccessToken; // UPDATE CACHE
-              final newRefreshToken =
-                  refreshRes.data['data']['refreshToken']?.toString();
+              
+              final newRefreshToken = responseData['refreshToken']?.toString();
               if (newRefreshToken != null && newRefreshToken.isNotEmpty) {
                 await secureStorage.write(
                   key: AppConfig.refreshTokenKey,
@@ -144,8 +150,11 @@ class ApiClient {
 
             // Refresh berhasil tapi statusCode bukan 200 → force logout
             throw Exception('Refresh failed with status ${refreshRes.statusCode}');
-          } catch (_) {
+          } catch (refreshErr, stackTrace) {
             // ── Refresh GAGAL → force logout ───────────────────────────
+            debugPrint('[ApiClient] Refresh token failed: $refreshErr');
+            debugPrint('[ApiClient] Stacktrace: $stackTrace');
+            
             _isRefreshing = false;
             _rejectPendingRequests();
             await _forceLogout();

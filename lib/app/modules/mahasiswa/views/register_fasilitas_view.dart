@@ -27,10 +27,19 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
 
   String? _selectedUserId;
   WargaDampingan? _selectedWarga;
-  String _selectedJenis = 'rumah_maggot';
+  String? _selectedJenis;
   String? _photoPath;
   LatLng? _selectedLocation;
   bool _isGettingLocation = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch master data jenis fasilitas dari backend
+    Future.microtask(() {
+      ref.read(fasilitasKknProvider.notifier).fetchJenisFasilitas();
+    });
+  }
 
   @override
   void dispose() {
@@ -41,8 +50,35 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
+    
+    // Tampilkan pilihan Camera atau Gallery
+    final ImageSource? source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primaryGreen),
+              title: const Text('Ambil dari Kamera'),
+              onTap: () => Navigator.of(context).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded, color: AppColors.primaryGreen),
+              title: const Text('Pilih dari Galeri'),
+              onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
     final file = await picker.pickImage(
-      source: ImageSource.gallery,
+      source: source,
       imageQuality: 80,
       maxWidth: 1080,
       maxHeight: 1080,
@@ -104,6 +140,12 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
       );
       return;
     }
+    if (_selectedJenis == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Harap pilih jenis fasilitas.'), backgroundColor: AppColors.warningYellow),
+      );
+      return;
+    }
     if (_selectedLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Harap ambil koordinat lokasi fasilitas.'), backgroundColor: AppColors.warningYellow),
@@ -112,7 +154,7 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
     }
     if (_photoPath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Foto fasilitas wajib diunggah.'), backgroundColor: AppColors.warningYellow),
+        const SnackBar(content: Text('Harap unggah foto fasilitas.'), backgroundColor: AppColors.warningYellow),
       );
       return;
     }
@@ -120,23 +162,17 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
     final success = await ref.read(fasilitasKknProvider.notifier).registerFasilitas(
       userId: _selectedUserId!,
       nama: _namaController.text,
-      jenis: _selectedJenis,
+      jenis: _selectedJenis!,
       latitude: _selectedLocation!.latitude,
       longitude: _selectedLocation!.longitude,
       imagePath: _photoPath!,
-      alamat: _selectedWarga?.address,
     );
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Berhasil mendaftarkan fasilitas warga! (+5 Poin)'), backgroundColor: AppColors.primaryGreen),
+        const SnackBar(content: Text('Berhasil mendaftarkan fasilitas warga!'), backgroundColor: AppColors.primaryGreen),
       );
       Navigator.pop(context);
-    } else if (mounted) {
-      final errorMsg = ref.read(fasilitasKknProvider).error ?? 'Gagal mendaftarkan fasilitas warga';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMsg), backgroundColor: AppColors.dangerRed),
-      );
     }
   }
 
@@ -349,7 +385,10 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
   }
 
   // ── Bottom Sheet: Pilih Jenis ─────────────────────────────────────────────
-  void _showJenisBottomSheet(List<JenisFasilitasModel> jenisList) {
+  void _showJenisBottomSheet(List<JenisFasilitas> jenisList) {
+    // Filter: jangan tampilkan posko_kkn di pilihan jenis fasilitas
+    final filteredList = jenisList.where((j) => j.key != 'posko_kkn').toList();
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -395,16 +434,16 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                   ),
                   const SizedBox(height: 8),
                   const Divider(height: 1),
-                  // Scrollable list
+                  // Scrollable list (dari API)
                   Expanded(
                     child: ListView(
                       controller: scrollController,
                       padding: const EdgeInsets.only(bottom: 32),
-                      children: jenisList.map((item) {
-                        final isSelected = _selectedJenis == item.key;
+                      children: filteredList.map((jenis) {
+                        final isSelected = _selectedJenis == jenis.key;
                         return InkWell(
                           onTap: () {
-                            setState(() => _selectedJenis = item.key);
+                            setState(() => _selectedJenis = jenis.key);
                             Navigator.pop(ctx);
                           },
                           child: Padding(
@@ -412,12 +451,22 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                             child: Row(
                               children: [
                                 Container(
-                                  width: 40, height: 40,
+                                  width: 36, height: 36,
                                   decoration: BoxDecoration(
                                     color: isSelected ? const Color(0xFFE8F5E9) : const Color(0xFFF5F7FA),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: Icon(Icons.eco_rounded, size: 22, color: isSelected ? AppColors.primaryGreen : AppColors.textHint),
+                                  child: jenis.iconUrl != null && jenis.iconUrl!.isNotEmpty
+                                      ? ClipRRect(
+                                          borderRadius: BorderRadius.circular(10),
+                                          child: Image.network(
+                                            jenis.iconUrl!,
+                                            width: 36, height: 36,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => Icon(Icons.eco_rounded, size: 20, color: isSelected ? AppColors.primaryGreen : AppColors.textHint),
+                                          ),
+                                        )
+                                      : Icon(Icons.eco_rounded, size: 20, color: isSelected ? AppColors.primaryGreen : AppColors.textHint),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
@@ -425,20 +474,20 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        item.nama,
+                                        jenis.nama,
                                         style: TextStyle(
                                           fontSize: 14,
-                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                                           color: isSelected ? AppColors.primaryGreen : AppColors.textPrimary,
                                         ),
                                       ),
-                                      if (item.deskripsi != null && item.deskripsi!.isNotEmpty) ...[
-                                        const SizedBox(height: 2),
+                                      if (jenis.deskripsi != null && jenis.deskripsi!.isNotEmpty)
                                         Text(
-                                          item.deskripsi!,
+                                          jenis.deskripsi!,
                                           style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                      ],
                                     ],
                                   ),
                                 ),
@@ -475,6 +524,17 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
     final mahasiswaState = ref.watch(mahasiswaControllerProvider);
     final currentUser = ref.watch(authProvider).user;
 
+    ref.listen<FasilitasKknState>(fasilitasKknProvider, (previous, next) {
+      if (next.error != null && (previous?.error != next.error)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: AppColors.dangerRed,
+          ),
+        );
+      }
+    });
+
     // Filter warga sesuai wilayah mahasiswa yang sedang login:
     // Prioritas 1: cocokkan mahasiswaId (warga yang langsung didampingi mahasiswa ini)
     // Prioritas 2 (fallback): cocokkan kelurahan yang sama
@@ -502,24 +562,6 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
     } else {
       wargaList = mahasiswaState.wargaList.where((w) => w.role == 'WARGA').toList();
     }
-
-    final jenisList = state.jenisList.isNotEmpty
-        ? state.jenisList
-        : const [
-            JenisFasilitasModel(id: 1, key: 'rumah_maggot', nama: 'Rumah Maggot', deskripsi: 'Fasilitas pengolahan sampah organik menggunakan larva BSF'),
-            JenisFasilitasModel(id: 2, key: 'loseda', nama: 'Loseda', deskripsi: 'Lubang sedalam 1 meter untuk pengomposan langsung'),
-            JenisFasilitasModel(id: 3, key: 'bata_terawang', nama: 'Bata Terawang', deskripsi: 'Komposter aerobik menggunakan susunan bata berongga'),
-            JenisFasilitasModel(id: 4, key: 'bank_sampah', nama: 'Bank Sampah', deskripsi: 'Tempat pengumpulan sampah anorganik bernilai ekonomi'),
-            JenisFasilitasModel(id: 5, key: 'buruan_sae', nama: 'Buruan Sae', deskripsi: 'Program pengelolaan pekarangan untuk ketahanan pangan'),
-            JenisFasilitasModel(id: 6, key: 'poc', nama: 'Pupuk Organik Cair (POC)', deskripsi: 'Fasilitas pembuatan pupuk cair dari sampah organik'),
-            JenisFasilitasModel(id: 7, key: 'tps', nama: 'TPS', deskripsi: 'Tempat Pembuangan Sampah sementara'),
-            JenisFasilitasModel(id: 8, key: 'posko_kkn', nama: 'Posko KKN', deskripsi: 'Posko / kantor kelurahan'),
-          ];
-
-    final currentSelectedJenis = jenisList.firstWhere(
-      (j) => j.key == _selectedJenis,
-      orElse: () => jenisList.first,
-    );
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -565,18 +607,6 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                       ],
                     ),
                   ),
-                  // Decorative illustration
-                  Container(
-                    width: 90,
-                    height: 90,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.house_rounded, size: 52, color: AppColors.primaryGreen),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -607,11 +637,18 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                     // ── Jenis Fasilitas ─────────────────────────────────────
                     const _SectionLabel(icon: Icons.local_offer_rounded, label: 'Jenis Fasilitas'),
                     const SizedBox(height: 8),
-                    _JenisPickerField(
-                      selectedKey: _selectedJenis,
-                      label: currentSelectedJenis.nama,
-                      onTap: () => _showJenisBottomSheet(jenisList),
-                    ),
+                    Builder(builder: (_) {
+                      final jenisList = state.jenisFasilitasList;
+                      final selectedJenisObj = _selectedJenis != null
+                          ? jenisList.where((j) => j.key == _selectedJenis).firstOrNull
+                          : null;
+                      return _JenisPickerField(
+                        selectedKey: _selectedJenis,
+                        label: selectedJenisObj?.nama ?? 'Pilih jenis fasilitas',
+                        isLoading: state.isLoadingJenis,
+                        onTap: () => _showJenisBottomSheet(jenisList),
+                      );
+                    }),
                     const SizedBox(height: AppDimensions.md),
 
                     // ── Nama Fasilitas ───────────────────────────────────────
@@ -747,70 +784,72 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // ── Legenda Peta ─────────────────────────────────────────
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.map_rounded, size: 18, color: AppColors.primaryGreen),
-                              SizedBox(width: 8),
-                              Text('Legenda Peta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
-                            ],
-                          ),
-                          SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.location_on, size: 24, color: AppColors.primaryGreen),
-                                    SizedBox(width: 8),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text('Lokasi Fasilitas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                          Text('Posisi fasilitas yang Anda tandai', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-                                        ],
+                    // ── Legenda Peta (Dinamis dari API) ─────────────────────
+                    Builder(builder: (_) {
+                      final jenisList = state.jenisFasilitasList;
+                      if (jenisList.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.map_rounded, size: 18, color: AppColors.primaryGreen),
+                                SizedBox(width: 8),
+                                Text('Legenda Peta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 12,
+                              runSpacing: 10,
+                              children: jenisList.map((jenis) {
+                                return SizedBox(
+                                  width: (MediaQuery.of(context).size.width - 40 - 32 - 12) / 2, // 2 kolom
+                                  child: Row(
+                                    children: [
+                                      if (jenis.iconUrl != null && jenis.iconUrl!.isNotEmpty)
+                                        Image.network(
+                                          jenis.iconUrl!,
+                                          width: 22, height: 22,
+                                          errorBuilder: (_, __, ___) => const Icon(Icons.location_on, size: 22, color: AppColors.primaryGreen),
+                                        )
+                                      else
+                                        Icon(
+                                          jenis.key == 'posko_kkn' ? Icons.home_work_rounded : Icons.location_on,
+                                          size: 22,
+                                          color: jenis.key == 'posko_kkn' ? Colors.deepPurple : AppColors.primaryGreen,
+                                        ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          jenis.nama,
+                                          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Expanded(
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.home_work_rounded, size: 24, color: Colors.deepPurple),
-                                    SizedBox(width: 8),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text('Lokasi Posko', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                          Text('Posko/Kantor Kelurahan', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
                     const SizedBox(height: AppDimensions.md),
 
                     // ── Foto Fasilitas ───────────────────────────────────────
-                    const _SectionLabel(icon: Icons.camera_alt_rounded, label: 'Foto Fasilitas (Wajib) *'),
+                    const _SectionLabel(icon: Icons.camera_alt_rounded, label: 'Foto Fasilitas'),
                     const SizedBox(height: 8),
                     GestureDetector(
                       onTap: _pickImage,
@@ -871,7 +910,7 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                                   ),
                                   const SizedBox(height: 4),
                                   const Text(
-                                    'Ketuk untuk memilih foto dari galeri',
+                                    'Ketuk untuk mengambil/memilih foto',
                                     style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                                   ),
                                   const Text(
@@ -969,16 +1008,19 @@ class _StyledTextField extends StatelessWidget {
   const _StyledTextField({
     required this.controller,
     required this.hintText,
+    this.keyboardType,
     this.validator,
   });
   final TextEditingController controller;
   final String hintText;
+  final TextInputType? keyboardType;
   final String? Function(String?)? validator;
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
+      keyboardType: keyboardType,
       validator: validator,
       decoration: InputDecoration(
         hintText: hintText,
@@ -1074,15 +1116,17 @@ class _JenisPickerField extends StatelessWidget {
     required this.selectedKey,
     required this.label,
     required this.onTap,
+    this.isLoading = false,
   });
-  final String selectedKey;
+  final String? selectedKey;
   final String label;
   final VoidCallback onTap;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: isLoading ? null : onTap,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -1105,10 +1149,20 @@ class _JenisPickerField extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                style: TextStyle(
+                  fontSize: 14, 
+                  fontWeight: FontWeight.w500, 
+                  color: selectedKey == null ? AppColors.textHint : AppColors.textPrimary,
+                ),
               ),
             ),
-            const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
+            if (isLoading)
+              const SizedBox(
+                width: 16, height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryGreen),
+              )
+            else
+              const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
           ],
         ),
       ),

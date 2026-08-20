@@ -74,8 +74,8 @@ class AppTheme {
         centerTitle: false,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
         titleTextStyle: GoogleFonts.poppins(
-          fontSize: 17,
-          fontWeight: FontWeight.w700,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
           color: AppColors.textPrimary,
         ),
         systemOverlayStyle: const SystemUiOverlayStyle(

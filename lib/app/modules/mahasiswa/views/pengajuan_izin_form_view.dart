@@ -261,11 +261,11 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: AppColors.warningYellow),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.info_outline_rounded, color: AppColors.warningYellow, size: 22),
-                  SizedBox(width: 10),
-                  Expanded(
+                  Image.asset('assets/icons/paper.png', width: 42, height: 42),
+                  const SizedBox(width: 10),
+                  const Expanded(
                     child: Text(
                       'Pengajuan izin sebaiknya dikirimkan H-1 sebelum kegiatan KKN berlangsung. Foto bukti wajib dilampirkan.',
                       style: TextStyle(fontSize: 12, color: Colors.black87, fontWeight: FontWeight.w500),
@@ -299,11 +299,18 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                       ),
                       child: Column(
                         children: [
-                          Icon(
-                            k == KategoriIzin.sakit ? Icons.local_hospital_rounded : Icons.assignment_rounded,
-                            color: isSelected ? Colors.white : AppColors.textSecondary,
-                            size: 22,
-                          ),
+                          k == KategoriIzin.sakit
+                              ? Image.asset(
+                                  'assets/icons/medical-report.png',
+                                  width: 22,
+                                  height: 22,
+                                  color: isSelected ? Colors.white : AppColors.textSecondary,
+                                )
+                              : Icon(
+                                  Icons.assignment_rounded,
+                                  color: isSelected ? Colors.white : AppColors.textSecondary,
+                                  size: 22,
+                                ),
                           const SizedBox(height: 4),
                           Text(
                             k.displayName,
@@ -360,7 +367,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                       DateFormat('EEEE, dd MMMM yyyy', 'id').format(_tanggalKegiatan),
                       style: const TextStyle(fontSize: 13),
                     ),
-                    const Icon(Icons.calendar_today_rounded, size: 18, color: AppColors.primaryGreen),
+                    Image.asset('assets/icons/calendar.png', width: 18, height: 18, color: AppColors.primaryGreen),
                   ],
                 ),
               ),
