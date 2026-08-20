@@ -235,7 +235,8 @@ export class KknAttendanceService {
 
         const durasiWajibMenit = await getScheduleTargetDurationMinutes(sch);
 
-        // Always update / upsert actualInZoneMinutes so Web Dashboard and Mobile are 100% in sync
+        // Update / upsert actualInZoneMinutes so Web Dashboard and Mobile are 100% in sync
+        // Catatan: Status tetap BERLANGSUNG sampai mahasiswa menekan tombol "Absen Sekarang"
         if (existingAtt) {
           if (existingAtt.status !== "SELESAI" && existingAtt.status !== "SELESAI_TELAT") {
             await prisma.activityAttendance.update({
@@ -258,34 +259,6 @@ export class KknAttendanceService {
             });
           } catch (_createErr) {
             // Continue if concurrent request created record
-          }
-        }
-
-        // Kondisi B: Otomatis jika durasi in-zone telah mencapai durasiWajibMenit kegiatan
-        // Memerlukan durasiWajibMenit > 0 DAN durationInZone > 0 (tidak boleh instan pada 0 menit)
-        if (durasiWajibMenit > 0 && durationInZone > 0 && durationInZone >= durasiWajibMenit) {
-          const canTrigger = isInsideZone || autoHadirOutsideZone;
-          if (canTrigger) {
-            if (existingAtt && existingAtt.status === "BERLANGSUNG") {
-              // Transisi BERLANGSUNG → HADIR
-              await prisma.activityAttendance.update({
-                where: { id: existingAtt.id },
-                data: {
-                  status: "HADIR",
-                  method: "OTOMATIS",
-                  actualInZoneMinutes: durationInZone,
-                },
-              });
-            } else if (!existingAtt) {
-              await this.recordAttendance({
-                studentId: userId,
-                scheduleId: sch.id,
-                latitude,
-                longitude,
-                method: "OTOMATIS",
-              });
-            }
-            autoAttendanceTriggered = true;
           }
         }
       }
