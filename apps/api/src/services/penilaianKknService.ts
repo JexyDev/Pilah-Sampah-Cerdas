@@ -847,13 +847,50 @@ export const penilaianKknService = {
     const perluRevisiCount = kelompokList.filter((k) => k.statusTelaah === "PERLU_REVISI").length;
     const menungguTelaahCount = totalKelompok - disetujuiCount - perluRevisiCount;
 
+    const studentsFlat: any[] = [];
+    kelompokList.forEach((k: any) => {
+      if (Array.isArray(k.students)) {
+        k.students.forEach((st: any) => {
+          studentsFlat.push({
+            studentId: st.studentId,
+            nim: st.nim,
+            nama: st.nama,
+            jurusan: st.jurusan,
+            fakultas: st.fakultas,
+            kelompok: k.namaKelompok,
+            kelompokId: k.kelompokId || k.id,
+            dplNama: k.dplNama,
+            dplNip: k.dplNip,
+            judulLaporan: k.judulLaporan,
+            fileUrl: k.fileUrl,
+            fileName: k.fileName,
+            status: k.status,
+            statusTelaah: k.statusTelaah,
+            nilai: k.nilaiAkhir,
+            predikat: k.predikat,
+            rubrikScores: k.rubrikScores,
+            catatan: k.catatanUmum,
+            submittedAt: k.submittedAt,
+            updatedAt: k.updatedAt,
+          });
+        });
+      }
+    });
+
+    const sudahDinilaiCount = studentsFlat.filter((s) => s.status === "Sudah Dinilai").length;
+    const belumDinilaiCount = studentsFlat.length - sudahDinilaiCount;
+
     return {
       stats: {
         totalKelompok,
         disetujuiCount,
         perluRevisiCount,
         menungguTelaahCount,
+        totalMahasiswa: studentsFlat.length,
+        sudahDinilaiCount,
+        belumDinilaiCount,
       },
+      students: studentsFlat,
       kelompokList,
     };
   },

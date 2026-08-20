@@ -145,13 +145,47 @@ export interface StudentPenilaianResponse {
   assessment: AssessmentData;
 }
 
+export interface LaporanAkhirItem {
+  studentId: string;
+  nim: string;
+  nama: string;
+  jurusan: string;
+  fakultas?: string;
+  kelompok: string;
+  kelompokId?: string;
+  dplNama?: string;
+  dplNip?: string;
+  judulLaporan: string;
+  fileUrl: string | null;
+  fileName?: string | null;
+  status: "Sudah Dinilai" | "Belum Dinilai";
+  statusTelaah?: "DISETUJUI" | "PERLU_REVISI" | "MENUNGGU_TELAAH" | "BELUM_UNGGAH";
+  nilai: number | null;
+  predikat?: string;
+  rubrikScores?: {
+    sistematika: number;
+    analisis: number;
+    dampak?: number;
+    output?: number;
+    rekomendasi?: number;
+    refleksi?: number;
+  };
+  catatan?: string;
+  submittedAt?: string;
+  updatedAt?: string;
+}
+
 export interface LaporanAkhirResponse {
   stats: {
-    totalKelompok: number;
-    disetujuiCount: number;
-    perluRevisiCount: number;
-    menungguTelaahCount: number;
+    totalKelompok?: number;
+    disetujuiCount?: number;
+    perluRevisiCount?: number;
+    menungguTelaahCount?: number;
+    totalMahasiswa?: number;
+    sudahDinilaiCount?: number;
+    belumDinilaiCount?: number;
   };
+  students: LaporanAkhirItem[];
   kelompokList: LaporanAkhirKelompokItem[];
 }
 
