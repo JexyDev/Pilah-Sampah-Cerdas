@@ -2076,6 +2076,32 @@ export class KknService {
     }
     const finalTargetDurationMinutes = targetDurationMinutes;
 
+    // Check if schedule time has expired to auto-ALPA
+    let isExpired = false;
+    if (activeSchedule?.time && activeSchedule.time.includes("-")) {
+      const parts = activeSchedule.time.split("-");
+      const endParts = parts[1].trim().replace(".", ":").split(":");
+      if (endParts.length >= 2) {
+        const endHour = parseInt(endParts[0], 10);
+        const endMin = parseInt(endParts[1], 10);
+        const endDateObj = new Date(activeSchedule.date || todayStart);
+        endDateObj.setHours(endHour, endMin, 59, 999);
+        if (new Date() > endDateObj) {
+          isExpired = true;
+        }
+      }
+    }
+
+    if (isExpired && (attendanceStatus === "belum_absen" || attendanceStatus === "berlangsung")) {
+      attendanceStatus = "alpa";
+      if (attendanceForActiveSchedule && attendanceForActiveSchedule.status === "BERLANGSUNG") {
+        await prisma.activityAttendance.update({
+          where: { id: attendanceForActiveSchedule.id },
+          data: { status: "ALPA" },
+        }).catch(() => {});
+      }
+    }
+
     // Calculate precise total seconds in zone from studentLocation logs today
     let actualInZoneSeconds = 0;
     if (activeSchedule) {
