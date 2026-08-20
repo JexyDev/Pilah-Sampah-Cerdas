@@ -1723,7 +1723,11 @@ export class KknAttendanceService {
     const result = schedules.map((sch) => {
       let jamMulai = "08:00";
       let jamSelesai = "16:00";
-      const normalizedTime = (sch.time || "").replace(/[\u2013\u2014~]|s\/d|sd/gi, "-").trim();
+      // Strip suffix WIB/WITA/WIT dan normalize separator ke "-"
+      const normalizedTime = (sch.time || "")
+        .replace(/\s*(WIB|WITA|WIT)\s*/gi, "")
+        .replace(/[\u2013\u2014~]|s\/d|sd/gi, "-")
+        .trim();
       if (normalizedTime.includes("-")) {
         const parts = normalizedTime.split("-");
         jamMulai = parts[0].trim();

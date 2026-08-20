@@ -273,24 +273,15 @@ const JadwalKegiatan: React.FC = () => {
       }
     }
 
-    let formattedIsoDate: string;
-    try {
-      const timePart = formData.time && formData.time.includes(":") ? formData.time : "00:00";
-      const dateObj = new Date(`${formData.date}T${timePart}:00`);
-      if (isNaN(dateObj.getTime())) {
-        const fallbackDate = new Date(formData.date);
-        if (isNaN(fallbackDate.getTime())) {
-          toast.error("Format tanggal tidak valid");
-          return;
-        }
-        formattedIsoDate = fallbackDate.toISOString();
-      } else {
-        formattedIsoDate = dateObj.toISOString();
-      }
-    } catch {
+    // Simpan tanggal sebagai midnight WIB (UTC+7) agar konsisten dengan
+    // query window API berbasis WIB. new Date("YYYY-MM-DD") adalah UTC midnight
+    // yang bisa jadi beda hari di WIB (jam 07:00 pagi WIB).
+    const formattedIsoDate = new Date(`${formData.date}T00:00:00+07:00`).toISOString();
+    if (!formattedIsoDate) {
       toast.error("Format tanggal tidak valid");
       return;
     }
+
 
     try {
       const isCircle = geofenceMode === "CIRCLE";

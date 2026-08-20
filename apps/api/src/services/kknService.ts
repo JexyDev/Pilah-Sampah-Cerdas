@@ -1976,7 +1976,11 @@ export class KknService {
     for (const sch of targetScheduleList) {
       let startMins = 0;
       let endMins = 24 * 60;
-      const normalizedTime = (sch.time || "").replace(/[–—~]|s\/d|sd/gi, "-").trim();
+      // Strip suffix WIB/WITA/WIT dan normalize separator ke "-"
+      const normalizedTime = (sch.time || "")
+        .replace(/\s*(WIB|WITA|WIT)\s*/gi, "")
+        .replace(/[–—~]|s\/d|sd/gi, "-")
+        .trim();
       if (normalizedTime.includes("-")) {
         const parts = normalizedTime.split("-");
         const startParts = parts[0].trim().replace(".", ":").split(":");

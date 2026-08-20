@@ -1823,7 +1823,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
     setFormErrors({});
 
-    const timeFormatted = `${startTime} - ${endTime} WIB`;
+    // Format: "HH:MM - HH:MM" tanpa suffix WIB agar API parser tidak gagal
+    // (parser split ':' → "00 WIB" → NaN → fallback jam 16)
+    const timeFormatted = `${startTime} - ${endTime}`;
     const finalCategory = isCustomCategory
       ? customCategoryText.trim()
       : formData.category || "Sosialisasi";
@@ -1852,7 +1854,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     const payload = {
       title: (formData.title || "").trim(),
       category: finalCategory,
-      date: new Date(startDate).toISOString(),
+      // Simpan tanggal sebagai midnight WIB (UTC+7) agar konsisten dengan
+      // query window API yang juga berbasis WIB
+      date: new Date(`${startDate}T00:00:00+07:00`).toISOString(),
       time: timeFormatted,
       location: (formData.location || "").trim(),
       kelompokId: targetKelompokId,
