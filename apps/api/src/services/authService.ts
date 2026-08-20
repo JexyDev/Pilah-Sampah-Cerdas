@@ -240,20 +240,7 @@ export class AuthService {
           where: { studentId: userId },
         });
 
-        // Auto check-out any unclosed attendance session today
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
-        await prisma.activityAttendance.updateMany({
-          where: {
-            studentId: userId,
-            attendedAt: { gte: startOfDay },
-            checkOutAt: null,
-          },
-          data: {
-            checkOutAt: new Date(),
-            status: "SELESAI",
-          },
-        }).catch(() => {});
+        // Clear student location logs on logout (presensi tetap BERLANGSUNG/ter-freeze tanpa 10 poin)
 
         // Broadcast removal via WebSocket
         websocketService.broadcastStudentLogout(userId);

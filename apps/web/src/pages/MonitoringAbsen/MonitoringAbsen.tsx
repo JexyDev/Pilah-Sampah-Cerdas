@@ -2618,7 +2618,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       const isLeaveOrPending = isSakit || isIzin || isSakitPending || isIzinPending || isCancelRequested;
                       const isBerlangsung = statusUpper === "BERLANGSUNG" || statusUpper === "DALAM_RADIUS" || statusUpper === "DI_ZONA";
                       const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
-                      const durationMins = isLeaveOrPending ? 0 : calculateDurationMinutes(rec.attendedAt, rec.completedAt);
+                      const recAny = rec as any;
+                      const durationMins = isLeaveOrPending 
+                        ? 0 
+                        : (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined)
+                        ? Number(recAny.actualInZoneMinutes)
+                        : calculateDurationMinutes(rec.attendedAt, rec.completedAt);
                       const isHadir = (statusUpper === "HADIR" || statusUpper === "SELESAI" || rec.completedAt !== null) && isAttended && !isOverrideDpl;
 
                       const formattedHours = isLeaveOrPending
