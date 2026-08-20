@@ -74,6 +74,9 @@ export class ConfigService {
       "kkn_holidays",
       "alpha_penalty_points",
       "alpha_penalty_score_percent",
+      "attendance_geofence_buffer_meters",
+      "attendance_geofence_invalidation_hours",
+      "attendance_auto_hadir_outside_zone",
     ];
 
     const records = await prisma.systemConfig.findMany({
@@ -123,6 +126,11 @@ export class ConfigService {
       // Rule 5: Penalti Alpha (Tanpa Keterangan)
       alphaPenaltyPoints: parseInt(map["alpha_penalty_points"] || "10", 10),
       alphaPenaltyScorePercent: parseFloat(map["alpha_penalty_score_percent"] || "5.0"),
+
+      // Rule 6: Geofence Buffer & Auto-Attendance
+      attendanceGeofenceBufferMeters: parseInt(map["attendance_geofence_buffer_meters"] || "15", 10),
+      attendanceGeofenceInvalidationHours: parseInt(map["attendance_geofence_invalidation_hours"] || "2", 10),
+      attendanceAutoHadirOutsideZone: map["attendance_auto_hadir_outside_zone"] !== "false",
     };
   }
 
@@ -186,6 +194,9 @@ export class ConfigService {
         key: "kkn_holidays",
         value: typeof data.kknHolidays === "string" ? data.kknHolidays : JSON.stringify(data.kknHolidays ?? []),
       },
+      { key: "attendance_geofence_buffer_meters", value: String(data.attendanceGeofenceBufferMeters ?? 15) },
+      { key: "attendance_geofence_invalidation_hours", value: String(data.attendanceGeofenceInvalidationHours ?? 2) },
+      { key: "attendance_auto_hadir_outside_zone", value: String(data.attendanceAutoHadirOutsideZone ?? true) },
     ];
 
     for (const item of pairs) {

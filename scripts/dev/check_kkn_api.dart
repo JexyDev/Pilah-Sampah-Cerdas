@@ -14,7 +14,24 @@ Future<void> main() async {
       } else {
         response = await http.post(Uri.parse(url), headers: headers, body: jsonEncode(body ?? {}));
       }
-      
+  ￼
+All accounts
+￼
+hourglass_top
+Expiring first
+￼
+block
+Turn off Empty
+￼
+check_circle
+Turn on Available
+￼
+toggle_on
+Auto-refresh
+(34s)
+￼
+refresh
+    
       print('Status: ${response.statusCode}');
       String bodyString = response.body;
       if (bodyString.length > 500) {

@@ -482,7 +482,12 @@ export class CronService {
   public async checkMahasiswaGeofence() {
     try {
       console.log("[CronService] Running KKN geofence check...");
-      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+      // Load invalidation hours from Rule Engine config (replaces hardcoded 2 hours)
+      const { configService } = await import("./configService.js");
+      const ruleConfigs = await configService.getRuleEngineConfigs();
+      const invalidationHours = (ruleConfigs as any).attendanceGeofenceInvalidationHours ?? 2;
+      const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 15;
+      const cutoffTime = new Date(Date.now() - invalidationHours * 60 * 60 * 1000);
 
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
@@ -510,7 +515,7 @@ export class CronService {
         const logs = await prisma.studentLocation.findMany({
           where: {
             studentId: att.studentId,
-            recordedAt: { gte: twoHoursAgo },
+            recordedAt: { gte: cutoffTime },
           },
         });
 
@@ -524,18 +529,32 @@ export class CronService {
             centerLat,
             centerLng
           );
-          if (dist <= radius) {
+          if (dist <= (radius + bufferMeters)) {
             anyInside = true;
             break;
           }
         }
 
         if (!anyInside) {
+          // Send warning notification to student before invalidating
+          try {
+            await prisma.notification.create({
+              data: {
+                userId: att.studentId,
+                title: "⚠️ Peringatan Kehadiran KKN",
+                message: `Anda tidak terdeteksi di area kegiatan '${att.schedule?.title || "KKN"}' selama ${invalidationHours} jam terakhir. Kehadiran Anda telah digagalkan. Silakan hubungi DPL jika ini adalah kesalahan.`,
+                isRead: false,
+              },
+            });
+          } catch (_notifErr) {
+            console.error(`[CronService] Failed to send geofence warning notification for ${att.studentId}`);
+          }
+
           await prisma.activityAttendance.update({
             where: { id: att.id },
             data: { status: "LEPAS_RADIUS" },
           });
-          console.log(`[CronService] Attendance ${att.id} batal due to geofence rule.`);
+          console.log(`[CronService] Attendance ${att.id} invalidated due to geofence rule (${invalidationHours}h without GPS in zone).`);
         }
       }
     } catch (error) {

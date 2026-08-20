@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js";
+import { configService } from "./configService.js";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -81,6 +82,17 @@ export const scheduleService = {
     kelompokId?: string;
     isActive?: boolean;
   }) => {
+    // Pull default geofence buffer from Rule Engine if radius not provided
+    if (data.radius === undefined || data.radius === null) {
+      try {
+        const ruleConfigs = await configService.getRuleEngineConfigs();
+        data.radius = (ruleConfigs as any).attendanceGeofenceBufferMeters
+          ? 100 + (ruleConfigs as any).attendanceGeofenceBufferMeters
+          : 100;
+      } catch (_err) {
+        data.radius = 100;
+      }
+    }
     return prisma.schedule.create({
       data,
       include: {

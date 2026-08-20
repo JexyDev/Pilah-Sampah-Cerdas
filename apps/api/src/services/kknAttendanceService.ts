@@ -34,11 +34,12 @@ export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2
  */
 export function calculateInZoneDurationMinutes(
   locations: { recordedAt: Date | string; latitude: any; longitude: any }[],
-  geofence: { latitude: number; longitude: number; radius: number; polygon?: any }
+  geofence: { latitude: number; longitude: number; radius: number; polygon?: any },
+  bufferMeters: number = 15
 ): number {
   if (!locations || locations.length < 2) return 0;
 
-  // Filter locations strictly inside the activity geofence
+  // Filter locations strictly inside the activity geofence (using configurable buffer)
   const inZonePoints = locations.filter((loc) => {
     const lat = Number(loc.latitude);
     const lng = Number(loc.longitude);
@@ -49,10 +50,10 @@ export function calculateInZoneDurationMinutes(
         lat: Number(p[0]),
         lng: Number(p[1]),
       }));
-      return isPointInPolygonWithBuffer({ lat, lng }, polyPoints, 15);
+      return isPointInPolygonWithBuffer({ lat, lng }, polyPoints, bufferMeters);
     } else {
       const dist = calculateDistance(lat, lng, geofence.latitude, geofence.longitude);
-      return dist <= (geofence.radius + 15);
+      return dist <= (geofence.radius + bufferMeters);
     }
   });
 
@@ -168,6 +169,11 @@ export class KknAttendanceService {
     let inZoneMinutes = 0;
     let isInsideZone = false;
 
+    // Load geofence buffer from Rule Engine config (replaces hardcoded 15m)
+    const ruleConfigs = await configService.getRuleEngineConfigs();
+    const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 15;
+    const autoHadirOutsideZone = (ruleConfigs as any).attendanceAutoHadirOutsideZone !== false;
+
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
@@ -200,8 +206,8 @@ export class KknAttendanceService {
           },
         });
 
-        // Skip jika sudah selesai / hadir
-        if (existingAtt && (existingAtt.status === "HADIR" || existingAtt.status === "SELESAI" || existingAtt.checkOutAt !== null)) {
+        // Skip jika sudah selesai / hadir / sudah checkout
+        if (existingAtt && (existingAtt.status === "HADIR" || existingAtt.status === "SELESAI" || existingAtt.status === "SELESAI_TELAT" || existingAtt.checkOutAt !== null)) {
           continue;
         }
 
@@ -212,33 +218,57 @@ export class KknAttendanceService {
           polygon: sch.polygon,
         };
 
-        const durationInZone = calculateInZoneDurationMinutes(todayLogs, geofence);
+        const durationInZone = calculateInZoneDurationMinutes(todayLogs, geofence, bufferMeters);
         inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
 
-        // Cek posisi saat ini
+        // Cek posisi saat ini menggunakan buffer dinamis
         if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
           const polyPoints = (geofence.polygon as any[]).map((p) => ({
             lat: Number(p[0]),
             lng: Number(p[1]),
           }));
-          isInsideZone = isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, 15);
+          isInsideZone = isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, bufferMeters);
         } else {
           const dist = calculateDistance(latitude, longitude, geofence.latitude, geofence.longitude);
-          isInsideZone = dist <= (geofence.radius + 15);
+          isInsideZone = dist <= (geofence.radius + bufferMeters);
         }
 
         const durasiWajibMenit = await getScheduleTargetDurationMinutes(sch);
 
-        // Kondisi B: Otomatis jika durasi telah secara nyata mencapai atau melebihi durasiWajibMenit kegiatan
-        if (durasiWajibMenit > 0 && durationInZone >= durasiWajibMenit) {
-          await this.recordAttendance({
-            studentId: userId,
-            scheduleId: sch.id,
-            latitude,
-            longitude,
-            method: "OTOMATIS",
+        // Update actualInZoneMinutes pada attendance yang sedang BERLANGSUNG
+        if (existingAtt && existingAtt.status === "BERLANGSUNG") {
+          await prisma.activityAttendance.update({
+            where: { id: existingAtt.id },
+            data: { actualInZoneMinutes: durationInZone },
           });
-          autoAttendanceTriggered = true;
+        }
+
+        // Kondisi B: Otomatis jika durasi in-zone telah mencapai durasiWajibMenit kegiatan
+        // Bisa trigger meskipun saat ini di luar zona (jika autoHadirOutsideZone = true)
+        if (durasiWajibMenit > 0 && durationInZone >= durasiWajibMenit) {
+          const canTrigger = isInsideZone || autoHadirOutsideZone;
+          if (canTrigger) {
+            if (existingAtt && existingAtt.status === "BERLANGSUNG") {
+              // Transisi BERLANGSUNG → HADIR
+              await prisma.activityAttendance.update({
+                where: { id: existingAtt.id },
+                data: {
+                  status: "HADIR",
+                  method: "OTOMATIS",
+                  actualInZoneMinutes: durationInZone,
+                },
+              });
+            } else if (!existingAtt) {
+              await this.recordAttendance({
+                studentId: userId,
+                scheduleId: sch.id,
+                latitude,
+                longitude,
+                method: "OTOMATIS",
+              });
+            }
+            autoAttendanceTriggered = true;
+          }
         }
       }
     }
@@ -342,6 +372,11 @@ export class KknAttendanceService {
     let inZoneMinutes = 0;
     let isInsideZone = false;
 
+    // Load geofence buffer from Rule Engine config (replaces hardcoded 15m)
+    const ruleConfigs = await configService.getRuleEngineConfigs();
+    const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 15;
+    const autoHadirOutsideZone = (ruleConfigs as any).attendanceAutoHadirOutsideZone !== false;
+
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
@@ -378,8 +413,8 @@ export class KknAttendanceService {
           },
         });
 
-        // Skip jika sudah selesai / hadir
-        if (existingAtt && (existingAtt.status === "HADIR" || existingAtt.status === "SELESAI" || existingAtt.checkOutAt !== null)) {
+        // Skip jika sudah selesai / hadir / sudah checkout
+        if (existingAtt && (existingAtt.status === "HADIR" || existingAtt.status === "SELESAI" || existingAtt.status === "SELESAI_TELAT" || existingAtt.checkOutAt !== null)) {
           continue;
         }
 
@@ -390,33 +425,57 @@ export class KknAttendanceService {
           polygon: sch.polygon,
         };
 
-        const durationInZone = calculateInZoneDurationMinutes(todayLogs, geofence);
+        const durationInZone = calculateInZoneDurationMinutes(todayLogs, geofence, bufferMeters);
         inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
 
-        // Cek posisi saat ini
+        // Cek posisi saat ini menggunakan buffer dinamis
         if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
           const polyPoints = (geofence.polygon as any[]).map((p) => ({
             lat: Number(p[0]),
             lng: Number(p[1]),
           }));
-          isInsideZone = isPointInPolygonWithBuffer({ lat: latestLoc!.latitude, lng: latestLoc!.longitude }, polyPoints, 15);
+          isInsideZone = isPointInPolygonWithBuffer({ lat: latestLoc!.latitude, lng: latestLoc!.longitude }, polyPoints, bufferMeters);
         } else {
           const dist = calculateDistance(latestLoc!.latitude, latestLoc!.longitude, geofence.latitude, geofence.longitude);
-          isInsideZone = dist <= (geofence.radius + 15);
+          isInsideZone = dist <= (geofence.radius + bufferMeters);
         }
 
         const durasiWajibMenit = await getScheduleTargetDurationMinutes(sch);
 
-        // Kondisi B: Otomatis jika durasi telah secara nyata mencapai atau melebihi durasiWajibMenit kegiatan
-        if (durasiWajibMenit > 0 && durationInZone >= durasiWajibMenit) {
-          await this.recordAttendance({
-            studentId,
-            scheduleId: sch.id,
-            latitude: latestLoc.latitude,
-            longitude: latestLoc.longitude,
-            method: "OTOMATIS",
+        // Update actualInZoneMinutes pada attendance yang sedang BERLANGSUNG
+        if (existingAtt && existingAtt.status === "BERLANGSUNG") {
+          await prisma.activityAttendance.update({
+            where: { id: existingAtt.id },
+            data: { actualInZoneMinutes: durationInZone },
           });
-          autoAttendanceTriggered.push(sch.id);
+        }
+
+        // Kondisi B: Otomatis jika durasi in-zone telah mencapai durasiWajibMenit kegiatan
+        // Bisa trigger meskipun saat ini di luar zona (jika autoHadirOutsideZone = true)
+        if (durasiWajibMenit > 0 && durationInZone >= durasiWajibMenit) {
+          const canTrigger = isInsideZone || autoHadirOutsideZone;
+          if (canTrigger) {
+            if (existingAtt && existingAtt.status === "BERLANGSUNG") {
+              // Transisi BERLANGSUNG → HADIR
+              await prisma.activityAttendance.update({
+                where: { id: existingAtt.id },
+                data: {
+                  status: "HADIR",
+                  method: "OTOMATIS",
+                  actualInZoneMinutes: durationInZone,
+                },
+              });
+            } else if (!existingAtt) {
+              await this.recordAttendance({
+                studentId,
+                scheduleId: sch.id,
+                latitude: latestLoc.latitude,
+                longitude: latestLoc.longitude,
+                method: "OTOMATIS",
+              });
+            }
+            autoAttendanceTriggered.push(sch.id);
+          }
         }
       }
     }
@@ -670,7 +729,7 @@ export class KknAttendanceService {
           method: isAutoAlpa ? "ALPA_AUTO" : method,
           latitude,
           longitude,
-          status: isAutoAlpa ? "ALPA" : "HADIR",
+          status: isAutoAlpa ? "ALPA" : "BERLANGSUNG",
           checkOutAt: null,
         },
       });
@@ -784,13 +843,55 @@ export class KknAttendanceService {
 
     const checkOutTime = new Date();
     const attendedTime = new Date(attendance.attendedAt);
-    const durationMinutes = Math.max(0, Math.floor((checkOutTime.getTime() - attendedTime.getTime()) / (1000 * 60)));
+    const rawDurationMinutes = Math.max(0, Math.floor((checkOutTime.getTime() - attendedTime.getTime()) / (1000 * 60)));
+
+    // Calculate actual in-zone duration from GPS logs (not simple time diff)
+    const dayStart = new Date(attendance.attendedAt);
+    dayStart.setHours(0, 0, 0, 0);
+    const todayLogsForCheckout = await prisma.studentLocation.findMany({
+      where: {
+        studentId,
+        recordedAt: { gte: dayStart },
+      },
+      orderBy: { recordedAt: "asc" },
+    });
+
+    const schedule = await prisma.schedule.findUnique({
+      where: { id: attendance.scheduleId },
+    });
+
+    const checkoutRuleConfigs = await configService.getRuleEngineConfigs();
+    const checkoutBufferMeters = (checkoutRuleConfigs as any).attendanceGeofenceBufferMeters ?? 15;
+
+    let actualInZoneMins = rawDurationMinutes; // Fallback to raw if no schedule/logs
+    let checkoutFinalStatus = "SELESAI";
+
+    if (schedule && todayLogsForCheckout.length >= 2) {
+      const checkoutGeofence = {
+        latitude: schedule.latitude ? Number(schedule.latitude) : -6.8915,
+        longitude: schedule.longitude ? Number(schedule.longitude) : 107.6107,
+        radius: schedule.radius ? Number(schedule.radius) : 150,
+        polygon: schedule.polygon,
+      };
+      actualInZoneMins = calculateInZoneDurationMinutes(todayLogsForCheckout, checkoutGeofence, checkoutBufferMeters);
+    }
+
+    // Determine final status: SELESAI or SELESAI_TELAT
+    if (schedule) {
+      const durasiWajibMenit = await getScheduleTargetDurationMinutes(schedule);
+      if (durasiWajibMenit > 0 && actualInZoneMins < durasiWajibMenit) {
+        checkoutFinalStatus = "SELESAI_TELAT";
+      }
+    }
+
+    const durationMinutes = actualInZoneMins;
 
     const updated = await prisma.activityAttendance.update({
       where: { id: attendance.id },
       data: {
         checkOutAt: checkOutTime,
-        status: "SELESAI",
+        status: checkoutFinalStatus,
+        actualInZoneMinutes: actualInZoneMins,
         ...(latitude !== undefined && !isNaN(Number(latitude)) ? { latitude: Number(latitude) } : {}),
         ...(longitude !== undefined && !isNaN(Number(longitude)) ? { longitude: Number(longitude) } : {}),
       },
@@ -1088,6 +1189,10 @@ export class KknAttendanceService {
       }
     }
 
+    // Load geofence buffer from Rule Engine config
+    const attendanceListRuleConfigs = await configService.getRuleEngineConfigs();
+    const attendanceListBufferMeters = (attendanceListRuleConfigs as any).attendanceGeofenceBufferMeters ?? 15;
+
     const locations = await this.getActiveStudentsLocations(dplUserId);
     const locMap = new Map(locations.map((l) => [l.studentId, l]));
     const scheduleLoc = await this.getActivityLocation(scheduleId);
@@ -1127,7 +1232,7 @@ export class KknAttendanceService {
           isInside = isPointInPolygonWithBuffer(
             { lat: Number(latestLoc.latitude), lng: Number(latestLoc.longitude) },
             polyPoints,
-            15
+            attendanceListBufferMeters
           );
         } else {
           const dist = calculateDistance(
@@ -1136,7 +1241,7 @@ export class KknAttendanceService {
             scheduleLoc.latitude,
             scheduleLoc.longitude
           );
-          isInside = dist <= scheduleLoc.radius + 15;
+          isInside = dist <= scheduleLoc.radius + attendanceListBufferMeters;
         }
         currentStatus = isInside ? "MASIH_DI_LOKASI" : "SUDAH_MENINGGALKAN_RADIUS";
         status = isInside ? "HADIR" : "LEPAS_RADIUS";
@@ -1310,7 +1415,7 @@ export class KknAttendanceService {
             isInside = isPointInPolygonWithBuffer(
               { lat: Number(latestLoc.latitude), lng: Number(latestLoc.longitude) },
               polyPoints,
-              15
+              attendanceListBufferMeters
             );
           } else {
             const dist = calculateDistance(
@@ -1319,7 +1424,7 @@ export class KknAttendanceService {
               scheduleLoc.latitude,
               scheduleLoc.longitude
             );
-            isInside = dist <= scheduleLoc.radius + 15;
+            isInside = dist <= scheduleLoc.radius + attendanceListBufferMeters;
           }
           currentStatus = isInside ? "MASIH_DI_LOKASI" : "BELUM_ABSEN";
           status = isInside ? "LAPANGAN" : "BELUM_ABSEN";
@@ -1418,7 +1523,10 @@ export class KknAttendanceService {
 
       const sessionDetails = s.user.attendances.map((att) => {
         let durationMins = 0;
-        if (att.checkOutAt) {
+        if ((att as any).actualInZoneMinutes !== null && (att as any).actualInZoneMinutes !== undefined) {
+          // Prefer stored in-zone duration over simple time diff
+          durationMins = Math.min(480, Math.max(0, (att as any).actualInZoneMinutes));
+        } else if (att.checkOutAt) {
           const diffMs = att.checkOutAt.getTime() - att.attendedAt.getTime();
           // Cap max 8 hours (480 mins) per session
           durationMins = Math.min(480, Math.max(0, Math.floor(diffMs / (1000 * 60))));
@@ -1788,6 +1896,8 @@ export class KknAttendanceService {
         radiusMeter: schedule.radius || 150,
         polygon: schedule.polygon || null,
       },
+      geofenceBufferMeters: (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 15,
+      invalidationHours: (ruleConfigs as any).attendanceGeofenceInvalidationHours ?? 2,
       serverTimestamp: new Date().toISOString(),
       attendanceId: attendance.id,
     };

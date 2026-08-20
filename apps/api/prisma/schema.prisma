@@ -472,6 +472,7 @@ model ActivityAttendance {
   longitude  Decimal   @map("longitude") @db.Decimal(11, 8)
   checkOutAt DateTime? @map("waktu_checkout")
   status     String    @default("DALAM_RADIUS") @map("status")
+  actualInZoneMinutes Int?      @map("durasi_aktual_dalam_zona_menit")
   schedule   Schedule  @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
   student    User      @relation("StudentAttendance", fields: [studentId], references: [id], onDelete: Cascade)
 
