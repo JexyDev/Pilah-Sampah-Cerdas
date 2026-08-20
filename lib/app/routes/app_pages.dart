@@ -20,7 +20,7 @@ import '../modules/profil/kelola_bin_view.dart';
 import '../modules/auth/views/reset_bin_view.dart';
 import '../modules/notifikasi/views/notifikasi_view.dart';
 import '../modules/petugas_pemilahan/timbangan_pemilahan_view.dart';
-// import '../modules/tentang/tentang_aplikasi_view.dart';
+import '../modules/tentang/tentang_aplikasi_view.dart';
 import '../modules/mahasiswa/views/kkn_attendance_view.dart';
 import '../modules/mahasiswa/views/monitoring_warga_view.dart';
 import '../modules/mahasiswa/views/mahasiswa_view.dart';
@@ -82,8 +82,8 @@ class AppPages {
         return _buildRoute(const PetugasNotificationView(), settings);
       case AppRoutes.timbanganPemilahan:
         return _buildRoute(const TimbanganPemilahanView(), settings);
-//      case AppRoutes.tentang:
-//        return _buildRoute(const TentangAplikasiView(), settings);
+      case AppRoutes.tentang:
+        return _buildRoute(const TentangAplikasiView(), settings);
       case AppRoutes.kknAttendance:
         return _buildRoute(const KknAttendanceView(), settings);
       case AppRoutes.monitoringWarga:

@@ -690,10 +690,10 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           children: [
             Expanded(
               child: _MenuTileCard(
-                icon: Icons.recycling_rounded,
-                iconAsset: 'assets/icons/activity.png',
-                title: 'Kegiatan Mahasiswa',
-                subtitle: 'Individu & Pemanfaatan',
+                  icon: Icons.recycling_rounded,
+                  iconAsset: 'assets/icons/activity.png',
+                  title: 'Laporan Mahasiswa',
+                  subtitle: 'Ide Program & Pemanfaatan',
                 gradientColors: const [
                   AppColors.primaryBlueLight,
                     AppColors.primaryBlue,

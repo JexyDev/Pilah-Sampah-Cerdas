@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../controllers/petugas_pemilahan_controller.dart';
+import '../../auth/controllers/auth_controller.dart';
 
 /// Halaman dedicated Pengajuan Pengosongan Tempat Sampah dari Warga.
 class PengajuanWargaView extends ConsumerWidget {
@@ -179,25 +180,26 @@ class PengajuanWargaView extends ConsumerWidget {
                 // Tombol Terima
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      final ok = await ref
-                          .read(petugasPemilahanControllerProvider.notifier)
-                          .claimPengajuanReset(pengajuanId);
-                      if (context.mounted) {
-                        final errorMsg = ref.read(petugasPemilahanControllerProvider).errorMessage;
-                        ScaffoldMessenger.of(context).clearSnackBars();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(ok
-                                ? 'Pengajuan berhasil diterima & siap diproses!'
-                                : (errorMsg ?? 'Gagal memproses pengajuan.')),
-                            backgroundColor: ok ? AppColors.primaryGreen : AppColors.maroonRed,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      }
-                    },
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        final ok = await ref
+                            .read(petugasPemilahanControllerProvider.notifier)
+                            .claimPengajuanReset(pengajuanId);
+                        if (context.mounted) {
+                          if (ok) ref.read(authProvider.notifier).fetchProfile();
+                          final errorMsg = ref.read(petugasPemilahanControllerProvider).errorMessage;
+                          ScaffoldMessenger.of(context).clearSnackBars();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(ok
+                                  ? 'Pengajuan berhasil diterima! +15 Poin didapatkan.'
+                                  : (errorMsg ?? 'Gagal memproses pengajuan.')),
+                              backgroundColor: ok ? AppColors.primaryGreen : AppColors.maroonRed,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      },
                     icon: const Icon(Icons.check_circle_rounded, size: 18),
                     label: const Text(
                       'Terima & Proses Sekarang',

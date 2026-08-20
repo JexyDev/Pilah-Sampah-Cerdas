@@ -357,9 +357,9 @@ class ApiKknRepository implements KknRepository {
         // Belum dimasukkan ke kelompok manapun oleh admin
         return null;
       }
-      throw Exception('Gagal memuat data kelompok KKN');
-    } catch (_) {
-      return null;
+      rethrow;
+    } catch (e) {
+      rethrow;
     }
   }
 

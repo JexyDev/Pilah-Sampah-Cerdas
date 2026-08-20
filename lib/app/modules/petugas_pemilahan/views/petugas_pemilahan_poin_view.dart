@@ -30,14 +30,6 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('Poin & Performa', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.primaryGreen)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline_rounded),
-            onPressed: () {
-              // _showInfoDialog(context);
-            },
-          ),
-        ],
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(petugasPemilahanControllerProvider.notifier).refreshAll(),

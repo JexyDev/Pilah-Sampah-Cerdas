@@ -141,7 +141,14 @@ class ApiWasteLogRepository implements WasteLogRepository {
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
   WasteLogEntity _mapWasteLog(Map<String, dynamic> json, String userId) {
-    final String rawKategori = (json['wasteType'] ?? json['kategori'] ?? json['type'] ?? '').toString().trim().toUpperCase();
+    final String rawKategori = (
+      json['wasteType'] ?? 
+      json['kategori'] ?? 
+      json['type'] ?? 
+      json['hasilKlasifikasiAi'] ?? 
+      json['hasil_klasifikasi_ai'] ?? 
+      ''
+    ).toString().trim().toUpperCase();
     
     WasteType wasteType;
     if (rawKategori.contains('NON') || rawKategori.contains('ANORG')) {

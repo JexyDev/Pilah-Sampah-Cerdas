@@ -497,6 +497,13 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
               kegiatan: kegiatan,
               onMulai: (id) async {
                 final result = await notifier.mulaiKegiatan(id);
+                if (result == null && mounted) {
+                  ref.read(authProvider.notifier).fetchProfile();
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('+10 Poin berhasil didapatkan dari Presensi Masuk!'),
+                    backgroundColor: AppColors.primaryGreen,
+                  ));
+                }
                 if (result == 'CONFLICT' && mounted) {
                   final confirm = await showDialog<bool>(
                     context: context,
@@ -518,7 +525,14 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                     ),
                   );
                   if (confirm == true) {
-                    await notifier.switchKegiatan(id);
+                    final switchResult = await notifier.switchKegiatan(id);
+                    if (switchResult == null && mounted) {
+                      ref.read(authProvider.notifier).fetchProfile();
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text('+10 Poin berhasil didapatkan dari Presensi Masuk!'),
+                        backgroundColor: AppColors.primaryGreen,
+                      ));
+                    }
                   }
                 }
               },
@@ -1220,10 +1234,19 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
               style: const TextStyle(fontSize: 11, color: AppColors.dangerRed),
             ),
           const SizedBox(height: 16),
-          if (!isSuccess && !isAlpa && state.isTracking)
-            StopTrackingButton(
-              onStop: () => notifier.selesaiKegiatan(alasan: 'MANUAL_STOP'),
-            ),
+            if (!isSuccess && !isAlpa && state.isTracking)
+              StopTrackingButton(
+                onStop: () async {
+                  await notifier.selesaiKegiatan(alasan: 'MANUAL_STOP');
+                  if (mounted) {
+                    ref.read(authProvider.notifier).fetchProfile();
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('+10 Poin berhasil didapatkan dari Presensi Pulang!'),
+                      backgroundColor: AppColors.primaryGreen,
+                    ));
+                  }
+                },
+              ),
         ],
         SizedBox(height: MediaQuery.of(context).padding.bottom + 40),
       ],
