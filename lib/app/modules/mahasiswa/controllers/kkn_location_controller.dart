@@ -311,7 +311,13 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
       final durasiWajib = int.tryParse(response['durasiWajibMenit']?.toString() ?? '120') ?? 120;
       
-      if (response['actualInZoneMinutes'] != null) {
+      if (response['actualInZoneSeconds'] != null) {
+        final serverSecs = int.tryParse(response['actualInZoneSeconds'].toString()) ?? 0;
+        if (serverSecs > 0) {
+          _accumulatedSeconds = serverSecs;
+          await _savePersistentTimer();
+        }
+      } else if (response['actualInZoneMinutes'] != null) {
         final actualMins = num.tryParse(response['actualInZoneMinutes'].toString()) ?? 0;
         final serverSecs = (actualMins * 60).toInt();
         if (_accumulatedSeconds == 0 && serverSecs > 0) {
@@ -819,7 +825,13 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           .toLowerCase();
       final bool isAttended = mergedData['isAttended'] == true || status == 'hadir';
 
-      if (mergedData['actualInZoneMinutes'] != null) {
+      if (mergedData['actualInZoneSeconds'] != null) {
+        final serverSecs = int.tryParse(mergedData['actualInZoneSeconds'].toString()) ?? 0;
+        if (serverSecs > 0) {
+          _accumulatedSeconds = serverSecs;
+          await _savePersistentTimer();
+        }
+      } else if (mergedData['actualInZoneMinutes'] != null) {
         final actualMins = num.tryParse(mergedData['actualInZoneMinutes'].toString()) ?? 0;
         final serverSecs = (actualMins * 60).toInt();
         // Inisialisasi dari server HANYA jika timer lokal bernilai 0 (pertama kali dibuka / re-install)
