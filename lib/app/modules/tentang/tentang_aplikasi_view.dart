@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/values/app_colors.dart';
 import '../../core/values/app_assets.dart';
-import '../../core/values/app_config.dart';
 
 class TentangAplikasiView extends StatelessWidget {
   const TentangAplikasiView({super.key});

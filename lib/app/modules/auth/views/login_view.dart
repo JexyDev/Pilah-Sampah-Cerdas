@@ -7,6 +7,7 @@ import '../../../core/values/app_assets.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Layar login — nomor telepon + password.
 class LoginView extends ConsumerStatefulWidget {
@@ -168,6 +169,30 @@ class _LoginViewState extends ConsumerState<LoginView> {
                             AppAssets.logo,
                             height: 100,
                             fit: BoxFit.contain,
+                          ),
+                          const SizedBox(height: 16),
+                          RichText(
+                            textAlign: TextAlign.center,
+                            text: TextSpan(
+                              style: GoogleFonts.poppins(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
+                                height: 1.3,
+                              ),
+                              children: const [
+                                TextSpan(text: 'Sampah '),
+                                TextSpan(
+                                  text: 'Terdata',
+                                  style: TextStyle(color: AppColors.primaryBlue),
+                                ),
+                                TextSpan(text: ',\nKampung '),
+                                TextSpan(
+                                  text: 'Berseka',
+                                  style: TextStyle(color: AppColors.primaryGreen),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
