@@ -171,7 +171,7 @@ const DownloadPage: React.FC = () => {
 
         {/* Hero Section - Clean Light Slate & Emerald Ambient Gradient */}
         <section className="relative bg-gradient-to-b from-slate-50 via-white to-emerald-50/20 pt-12 pb-20 px-4 sm:px-8 border-b border-slate-200/60 w-full overflow-hidden">
-          
+
           {/* Ambient Decorative Blurs */}
           <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-emerald-400/10 blur-[100px] pointer-events-none" />
           <div className="absolute top-[40%] right-[-10%] w-[450px] h-[450px] rounded-full bg-teal-400/10 blur-[100px] pointer-events-none" />
@@ -180,7 +180,7 @@ const DownloadPage: React.FC = () => {
 
             {/* Left Column: Hero Copy & Real-Time Actions */}
             <div className="lg:col-span-7 space-y-6 text-left">
-              
+
               {/* Real-time Status Badge */}
               <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#f3fbf5] border border-[#c8e6b2] text-[#055c46] text-xs font-extrabold shadow-xs">
                 <span className="relative flex h-2.5 w-2.5">
@@ -570,7 +570,7 @@ const DownloadPage: React.FC = () => {
       {/* ----------------- FOOTER (100% Identical to Landing Page) ----------------- */}
       <footer className="w-full bg-slate-900 text-slate-400 py-16 text-sm border-t border-slate-800 text-left relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10">
-          
+
           <div className="space-y-4 lg:col-span-1 col-span-full">
             <div className="flex items-center gap-2.5 text-white font-black text-xl">
               <BersekaLogoIcon className="h-10 sm:h-12 w-auto shrink-0" />
@@ -605,7 +605,7 @@ const DownloadPage: React.FC = () => {
             <ul className="space-y-2.5 text-xs font-semibold">
               <li><Link to="/login" className="hover:text-white transition">Portal Pimpinan</Link></li>
               <li><Link to="/login" className="hover:text-white transition">Portal Dinas Lingkungan Hidup</Link></li>
-              <li><Link to="/login" className="hover:text-white transition">Portal Camat & Lurah</Link></li>
+              <li><Link to="/login" className="hover:text-white transition">Portal Camat dan Lurah</Link></li>
               <li><Link to="/login" className="hover:text-white transition">Pemantauan Data Sampah</Link></li>
             </ul>
           </div>
