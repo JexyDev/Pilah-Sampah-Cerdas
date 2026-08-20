@@ -2639,7 +2639,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       const formattedHours = isLeaveOrPending
                         ? "-"
                         : isAttended
-                        ? (durationMins > 0 ? formatDurationUnits(durationMins) : "< 1 Menit")
+                        ? formatDurationUnits(durationMins)
                         : "-";
 
                       const targetKumulatif = configTargets.targetTotalJam || 200;
@@ -2674,7 +2674,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                   )}
                                 </div>
                               )
-                            : `${isAttended ? (durationMins > 0 ? formatDurationUnits(durationMins) : "< 1 Menit") : "0 Menit"} / ${formatHoursToUnits(scheduleTargetHours)}`);
+                            : `${isAttended ? formatDurationUnits(durationMins) : "0 Menit"} / ${formatHoursToUnits(scheduleTargetHours)}`);
 
                       const poinDampingan = (isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal || isBerlangsung) ? 0 : (isHadir ? 10 : 0);
 
@@ -2993,7 +2993,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             {rec.totalHours !== undefined
                               ? formatHoursToUnits(rec.totalHours)
                               : isAttended
-                              ? (durationMins > 0 ? formatDurationUnits(durationMins) : "< 1 Menit")
+                               ? formatDurationUnits(durationMins)
                               : "0 Menit"}
                           </span>
                         </div>
