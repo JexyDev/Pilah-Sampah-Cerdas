@@ -26,6 +26,8 @@ class KelompokKknView extends ConsumerWidget {
       poskoLocation: kel != '-' ? 'Posko KKN RW $rw, $kelDisplay' : '-',
       dosenPembimbing: '-',
       totalGroupPoints: 0,
+      // Fallback hanya menampilkan user sendiri, tanpa menjadikannya Ketua
+      // isLeader=false agar tidak misleading ketika data backend belum dimuat
       members: user != null ? [
         KelompokMemberData(
           userId: user.id,
@@ -33,34 +35,36 @@ class KelompokKknView extends ConsumerWidget {
           name: user.name.isNotEmpty ? user.name : '-',
           jurusan: user.prodi.isNotEmpty ? user.prodi : (user.jurusan.isNotEmpty ? user.jurusan : '-'),
           individualPoints: 0,
-          isLeader: true,
+          isLeader: false,
         ),
       ] : [],
     );
 
-    // Deduplicate members by name
+    // Deduplicate members by userId (bukan name) agar anggota dengan nama mirip tidak di-merge
     final uniqueMembers = <String, KelompokMemberData>{};
     for (final m in kelompokData.members) {
-      final key = m.name.toLowerCase().trim();
+      // Gunakan userId sebagai key utama, fallback ke name jika userId kosong
+      final key = m.userId.isNotEmpty ? m.userId : m.name.toLowerCase().trim();
       if (!uniqueMembers.containsKey(key) || m.isLeader) {
         uniqueMembers[key] = m;
       }
     }
-    // Ensure ONLY ONE leader exists to fix the double KETUA badge bug (First found wins)
+    // Pastikan hanya ada satu Ketua (fix double KETUA badge bug)
     bool hasFoundLeader = false;
     final membersToDisplay = <KelompokMemberData>[];
-    
+
     for (final m in uniqueMembers.values) {
       if (m.isLeader && !hasFoundLeader) {
         membersToDisplay.add(m);
         hasFoundLeader = true;
       } else if (m.isLeader && hasFoundLeader) {
-        // Strip the leader status from the secondary member
+        // Strip leader status dari anggota kedua yang isLeader=true
         membersToDisplay.add(m.copyWith(isLeader: false));
       } else {
         membersToDisplay.add(m);
       }
     }
+    // Urutkan: Ketua di atas, sisanya berdasarkan urutan asli
     membersToDisplay.sort((a, b) {
       if (a.isLeader && !b.isLeader) return -1;
       if (!a.isLeader && b.isLeader) return 1;

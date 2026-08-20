@@ -482,9 +482,15 @@ class ApiKknRepository implements KknRepository {
         }
       }
       return null;
+    } on DioException catch (e) {
+      // 404 = belum daftar posko (normal), silent return null
+      if (e.response?.statusCode == 404) return null;
+      debugPrint('Error getPoskoMe (${e.response?.statusCode}): $e');
+      return null;
     } catch (e) {
       debugPrint('Error getPoskoMe: $e');
-      throw Exception('Gagal mengambil data posko');
+      // Return null agar UI tampil "Belum Didaftarkan" bukan error snackbar
+      return null;
     }
   }
 
