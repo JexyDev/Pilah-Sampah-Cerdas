@@ -36,7 +36,7 @@ const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex bg-surface min-h-screen relative overflow-x-hidden">
+    <div className="flex bg-surface min-h-screen relative overflow-x-hidden w-full max-w-full min-w-0">
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
@@ -45,21 +45,20 @@ const MainLayout: React.FC = () => {
       <main
         className={`ml-0 ${
           isCollapsed ? "lg:ml-[84px]" : "lg:ml-[280px]"
-        } min-h-screen flex flex-col justify-between flex-1 w-full transition-all duration-300`}
+        } min-h-screen flex flex-col justify-between flex-1 w-full min-w-0 max-w-full transition-all duration-300 overflow-x-hidden`}
       >
-        <div>
+        <div className="w-full min-w-0 max-w-full">
           <Header onToggleSidebar={handleToggleSidebar} isCollapsed={isCollapsed} />
           <ErrorBoundary FallbackComponent={ErrorBoundaryFallback}>
-            <div className="p-container-margin">
+            <div className="p-container-margin w-full min-w-0 max-w-full">
               <Outlet />
             </div>
           </ErrorBoundary>
         </div>
-        <div className="px-6 pb-4 pt-0">
+        <div className="px-6 pb-4 pt-0 w-full min-w-0 max-w-full">
           <Footer />
         </div>
       </main>
-
     </div>
   );
 };
