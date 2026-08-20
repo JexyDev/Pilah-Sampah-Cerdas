@@ -57,16 +57,36 @@ class _TentangAplikasiViewState extends State<TentangAplikasiView> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Image.asset(
                   'assets/app-logo.png',
-                  height: 80, // Disesuaikan agar proporsional untuk logo horizontal
+                  height: 150, // Diperbesar sesuai permintaan
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) => const Icon(
                     Icons.eco_rounded,
-                    size: 80,
+                    size: 100,
                     color: AppColors.primaryGreen,
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
+              const Text(
+                'BERSEKA',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.primaryGreen,
+                  letterSpacing: 2.0,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Bersih, Sehat, Kampung Asri',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const SizedBox(height: 28),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
