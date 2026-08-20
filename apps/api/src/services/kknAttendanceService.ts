@@ -176,12 +176,13 @@ export class KknAttendanceService {
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
+    const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
     const activeSchedules = await prisma.schedule.findMany({
       where: {
-        date: { gte: todayStart, lte: todayEnd },
+        date: { gte: yesterdayStart, lte: todayEnd },
         isActive: true,
         ...(student?.kelompokId ? { OR: [{ kelompokId: student.kelompokId }, { kelompokId: null }] } : {}),
       },

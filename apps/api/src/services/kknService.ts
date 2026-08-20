@@ -1920,13 +1920,15 @@ export class KknService {
     });
     const completedScheduleIds = new Set(completedAttendances.map((a) => a.scheduleId));
 
+    const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
+
     // 🎯 Filter jadwal aktif khusus untuk kelompok KKN mahasiswa ybs (isActive: true)
     let activeSchedules: any[] = [];
     if (student?.kelompokId) {
       activeSchedules = await prisma.schedule.findMany({
         where: {
           kelompokId: student.kelompokId,
-          date: { gte: todayStart, lte: todayEnd },
+          date: { gte: yesterdayStart, lte: todayEnd },
           isActive: true,
         },
         orderBy: { date: "asc" },
@@ -1938,7 +1940,7 @@ export class KknService {
       activeSchedules = await prisma.schedule.findMany({
         where: {
           kelompokId: null,
-          date: { gte: todayStart, lte: todayEnd },
+          date: { gte: yesterdayStart, lte: todayEnd },
           isActive: true,
         },
         orderBy: { date: "asc" },
@@ -1952,6 +1954,7 @@ export class KknService {
     let activeSchedule: any = null;
     const now = new Date();
     const currentWibMinutes = ((now.getUTCHours() + 7) % 24) * 60 + now.getUTCMinutes();
+    const todayStr = now.toISOString().substring(0, 10);
 
     // 1. Time Window Matching: Pick schedule matching current time e.g. "08:00 - 10:00" vs "13:00 - 15:00"
     for (const sch of targetScheduleList) {
@@ -1965,7 +1968,23 @@ export class KknService {
         if (endParts.length >= 2) endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
       }
 
-      if (currentWibMinutes >= startMins && currentWibMinutes <= endMins) {
+      const schDateStr = sch.date ? new Date(sch.date).toISOString().substring(0, 10) : todayStr;
+      const isSchedDateToday = schDateStr === todayStr;
+
+      let isTimeMatch = false;
+      if (endMins >= startMins) {
+        // Normal daytime schedule
+        isTimeMatch = isSchedDateToday && (currentWibMinutes >= startMins && currentWibMinutes <= endMins);
+      } else {
+        // Overnight schedule (e.g. 11:00 - 08:02)
+        if (isSchedDateToday) {
+          isTimeMatch = currentWibMinutes >= startMins; // Day 1
+        } else {
+          isTimeMatch = currentWibMinutes <= endMins; // Day 2
+        }
+      }
+
+      if (isTimeMatch) {
         activeSchedule = sch;
         break;
       }
