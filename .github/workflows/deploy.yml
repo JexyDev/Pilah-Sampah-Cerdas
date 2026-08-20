@@ -1,4 +1,4 @@
-name: Deploy to VPS
+name: BERSEKA CI/CD — Production Deployment
 
 on:
   push:
@@ -65,10 +65,19 @@ jobs:
             echo "=== 2. Updating Backend (apps/api) ==="
             cd apps/api
 
-            # Optimasi PostgreSQL max_connections di Docker Container VPS (1000 koneksi)
-            echo "$VPS_PASS" | sudo -S docker exec psc-postgres sh -c "echo 'max_connections = 1000' >> /var/lib/postgresql/data/postgresql.conf && echo 'shared_buffers = 512MB' >> /var/lib/postgresql/data/postgresql.conf" 2>/dev/null || true
-            echo "$VPS_PASS" | sudo -S docker restart psc-postgres 2>/dev/null || true
-            sleep 3
+            # Optimasi PostgreSQL di Docker Container VPS (Hanya jika belum dikonfigurasi)
+            echo "$VPS_PASS" | sudo -S docker exec psc-postgres sh -c "
+              CONF_FILE='/var/lib/postgresql/data/postgresql.conf'
+              if ! grep -q 'max_connections = 1000' \$CONF_FILE; then
+                echo 'max_connections = 1000' >> \$CONF_FILE
+                echo 'shared_buffers = 512MB' >> \$CONF_FILE
+                echo 'RESTART_REQUIRED'
+              fi
+            " 2>/dev/null | grep -q 'RESTART_REQUIRED' && {
+              echo "==> Restarting PostgreSQL to apply new configurations..."
+              echo "$VPS_PASS" | sudo -S docker restart psc-postgres 2>/dev/null || true
+              sleep 3
+            } || echo "==> PostgreSQL configurations are already up-to-date."
 
             npm install --silent --legacy-peer-deps || npm install --legacy-peer-deps
             npx prisma generate
