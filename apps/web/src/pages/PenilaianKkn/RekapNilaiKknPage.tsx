@@ -11,7 +11,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  FileText,
   Info,
   ChevronLeft,
   ChevronRight,
@@ -21,8 +20,9 @@ import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
 import { dplService, type RekapNilaiStudent, type RekapNilaiResponse } from "../../services/dplService";
 
-// Mock reference data strictly matching the official specification when backend is fresh
+// Dataset 24 Mahasiswa lengkap mencakup 5 halaman pagination sesuai spesifikasi dan tampilan resmi
 const DEFAULT_STUDENTS: RekapNilaiStudent[] = [
+  // Page 1
   {
     id: "st-1",
     userId: "u-1",
@@ -153,6 +153,508 @@ const DEFAULT_STUDENTS: RekapNilaiStudent[] = [
     predikat: "A",
     status: "Lengkap",
   },
+
+  // Page 2
+  {
+    id: "st-6",
+    userId: "u-6",
+    nim: "10124112",
+    name: "Nabila Putri Salsabila",
+    jurusan: "Teknik Informatika",
+    fakultas: "Fakultas Teknik dan Ilmu Komputer",
+    kelompokId: "kel-1",
+    kelompokName: "KKN Sadang Serang 1",
+    kelurahan: "Sadang Serang",
+    isKetua: false,
+    kehadiran: 94,
+    poinDampingan: 88,
+    individuDpl: 90,
+    individuMpl: 92,
+    individuGabungan: 91.3,
+    prokerDpl: 88,
+    prokerMpl: 91,
+    prokerGabungan: 90.0,
+    kelompokDpl: 92,
+    kelompokMpl: 90,
+    kelompokGabungan: 90.7,
+    nilaiAkhir: 91.2,
+    predikat: "A",
+    status: "Lengkap",
+  },
+  {
+    id: "st-7",
+    userId: "u-7",
+    nim: "10124189",
+    name: "Raden Mochamad Fajar",
+    jurusan: "Ilmu Komunikasi",
+    fakultas: "Fakultas Ilmu Sosial dan Ilmu Politik",
+    kelompokId: "kel-1",
+    kelompokName: "KKN Sadang Serang 1",
+    kelurahan: "Sadang Serang",
+    isKetua: false,
+    kehadiran: 89,
+    poinDampingan: 84,
+    individuDpl: 86,
+    individuMpl: 88,
+    individuGabungan: 87.3,
+    prokerDpl: 85,
+    prokerMpl: 89,
+    prokerGabungan: 87.7,
+    kelompokDpl: 88,
+    kelompokMpl: 86,
+    kelompokGabungan: 86.7,
+    nilaiAkhir: 87.1,
+    predikat: "A",
+    status: "Lengkap",
+  },
+  {
+    id: "st-8",
+    userId: "u-8",
+    nim: "10124201",
+    name: "Rizky Ramadhan",
+    jurusan: "Sistem Informasi",
+    fakultas: "Fakultas Teknik dan Ilmu Komputer",
+    kelompokId: "kel-2",
+    kelompokName: "KKN Sadang Serang 2",
+    kelurahan: "Sadang Serang",
+    isKetua: false,
+    kehadiran: 85,
+    poinDampingan: 82,
+    individuDpl: 83,
+    individuMpl: null,
+    individuGabungan: null,
+    prokerDpl: 86,
+    prokerMpl: null,
+    prokerGabungan: null,
+    kelompokDpl: 84,
+    kelompokMpl: null,
+    kelompokGabungan: null,
+    nilaiAkhir: null,
+    predikat: null,
+    status: "Menunggu MPL",
+  },
+  {
+    id: "st-9",
+    userId: "u-9",
+    nim: "10124233",
+    name: "Siti Nurhaliza",
+    jurusan: "Akuntansi",
+    fakultas: "Fakultas Ekonomi dan Bisnis",
+    kelompokId: "kel-2",
+    kelompokName: "KKN Sadang Serang 2",
+    kelurahan: "Sadang Serang",
+    isKetua: false,
+    kehadiran: 92,
+    poinDampingan: 86,
+    individuDpl: 89,
+    individuMpl: 91,
+    individuGabungan: 90.3,
+    prokerDpl: 90,
+    prokerMpl: 92,
+    prokerGabungan: 91.3,
+    kelompokDpl: 89,
+    kelompokMpl: 90,
+    kelompokGabungan: 89.7,
+    nilaiAkhir: 90.0,
+    predikat: "A",
+    status: "Lengkap",
+  },
+  {
+    id: "st-10",
+    userId: "u-10",
+    nim: "10124256",
+    name: "Tegar Dwi Saputra",
+    jurusan: "Teknik Komputer",
+    fakultas: "Fakultas Teknik dan Ilmu Komputer",
+    kelompokId: "kel-2",
+    kelompokName: "KKN Sadang Serang 2",
+    kelurahan: "Sadang Serang",
+    isKetua: false,
+    kehadiran: 91,
+    poinDampingan: 85,
+    individuDpl: 87,
+    individuMpl: 89,
+    individuGabungan: 88.3,
+    prokerDpl: 88,
+    prokerMpl: 90,
+    prokerGabungan: 89.3,
+    kelompokDpl: 87,
+    kelompokMpl: 89,
+    kelompokGabungan: 88.3,
+    nilaiAkhir: 88.6,
+    predikat: "A",
+    status: "Lengkap",
+  },
+
+  // Page 3
+  {
+    id: "st-11",
+    userId: "u-11",
+    nim: "10124278",
+    name: "Vania Aurelia",
+    jurusan: "Desain Komunikasi Visual",
+    fakultas: "Fakultas Desain",
+    kelompokId: "kel-2",
+    kelompokName: "KKN Sadang Serang 2",
+    kelurahan: "Sadang Serang",
+    isKetua: true,
+    kehadiran: 96,
+    poinDampingan: 92,
+    individuDpl: 94,
+    individuMpl: 95,
+    individuGabungan: 94.7,
+    prokerDpl: 92,
+    prokerMpl: 94,
+    prokerGabungan: 93.3,
+    kelompokDpl: 93,
+    kelompokMpl: 94,
+    kelompokGabungan: 93.7,
+    nilaiAkhir: 94.2,
+    predikat: "A",
+    status: "Lengkap",
+  },
+  {
+    id: "st-12",
+    userId: "u-12",
+    nim: "10124290",
+    name: "Wahyu Hidayat",
+    jurusan: "Teknik Elektro",
+    fakultas: "Fakultas Teknik dan Ilmu Komputer",
+    kelompokId: "kel-2",
+    kelompokName: "KKN Sadang Serang 2",
+    kelurahan: "Sadang Serang",
+    isKetua: false,
+    kehadiran: 88,
+    poinDampingan: 80,
+    individuDpl: 85,
+    individuMpl: 86,
+    individuGabungan: 85.7,
+    prokerDpl: 86,
+    prokerMpl: 88,
+    prokerGabungan: 87.3,
+    kelompokDpl: 85,
+    kelompokMpl: 86,
+    kelompokGabungan: 85.7,
+    nilaiAkhir: 86.0,
+    predikat: "A",
+    status: "Lengkap",
+  },
+  {
+    id: "st-13",
+    userId: "u-13",
+    nim: "10124312",
+    name: "Zahra Annisa",
+    jurusan: "Ilmu Komunikasi",
+    fakultas: "Fakultas Ilmu Sosial dan Ilmu Politik",
+    kelompokId: "kel-3",
+    kelompokName: "KKN Dago 1",
+    kelurahan: "Dago",
+    isKetua: false,
+    kehadiran: 93,
+    poinDampingan: 89,
+    individuDpl: 91,
+    individuMpl: 93,
+    individuGabungan: 92.3,
+    prokerDpl: 89,
+    prokerMpl: 92,
+    prokerGabungan: 91.0,
+    kelompokDpl: 90,
+    kelompokMpl: 91,
+    kelompokGabungan: 90.7,
+    nilaiAkhir: 91.5,
+    predikat: "A",
+    status: "Lengkap",
+  },
+  {
+    id: "st-14",
+    userId: "u-14",
+    nim: "10124335",
+    name: "Aditya Nugraha",
+    jurusan: "Teknik Sipil",
+    fakultas: "Fakultas Teknik dan Ilmu Komputer",
+    kelompokId: "kel-3",
+    kelompokName: "KKN Dago 1",
+    kelurahan: "Dago",
+    isKetua: false,
+    kehadiran: 87,
+    poinDampingan: 81,
+    individuDpl: 84,
+    individuMpl: null,
+    individuGabungan: null,
+    prokerDpl: 85,
+    prokerMpl: null,
+    prokerGabungan: null,
+    kelompokDpl: 86,
+    kelompokMpl: null,
+    kelompokGabungan: null,
+    nilaiAkhir: null,
+    predikat: null,
+    status: "Menunggu MPL",
+  },
+  {
+    id: "st-15",
+    userId: "u-15",
+    nim: "10124348",
+    name: "Bella Safitri",
+    jurusan: "Manajemen",
+    fakultas: "Fakultas Ekonomi dan Bisnis",
+    kelompokId: "kel-3",
+    kelompokName: "KKN Dago 1",
+    kelurahan: "Dago",
+    isKetua: false,
+    kehadiran: 90,
+    poinDampingan: 86,
+    individuDpl: 88,
+    individuMpl: 90,
+    individuGabungan: 89.3,
+    prokerDpl: 87,
+    prokerMpl: 91,
+    prokerGabungan: 89.7,
+    kelompokDpl: 89,
+    kelompokMpl: 89,
+    kelompokGabungan: 89.0,
+    nilaiAkhir: 89.0,
+    predikat: "A",
+    status: "Lengkap",
+  },
+
+  // Page 4
+  {
+    id: "st-16",
+    userId: "u-16",
+    nim: "10124360",
+    name: "Dimas Arya Pratama",
+    jurusan: "Teknik Informatika",
+    fakultas: "Fakultas Teknik dan Ilmu Komputer",
+    kelompokId: "kel-3",
+    kelompokName: "KKN Dago 1",
+    kelurahan: "Dago",
+    isKetua: false,
+    kehadiran: 89,
+    poinDampingan: 84,
+    individuDpl: 86,
+    individuMpl: 88,
+    individuGabungan: 87.3,
+    prokerDpl: 88,
+    prokerMpl: 89,
+    prokerGabungan: 88.7,
+    kelompokDpl: 87,
+    kelompokMpl: 88,
+    kelompokGabungan: 87.7,
+    nilaiAkhir: 87.7,
+    predikat: "A",
+    status: "Lengkap",
+  },
+  {
+    id: "st-17",
+    userId: "u-17",
+    nim: "10124372",
+    name: "Farhan Maulana",
+    jurusan: "Sistem Informasi",
+    fakultas: "Fakultas Teknik dan Ilmu Komputer",
+    kelompokId: "kel-3",
+    kelompokName: "KKN Dago 1",
+    kelurahan: "Dago",
+    isKetua: true,
+    kehadiran: 91,
+    poinDampingan: 87,
+    individuDpl: 89,
+    individuMpl: 90,
+    individuGabungan: 89.7,
+    prokerDpl: 90,
+    prokerMpl: 91,
+    prokerGabungan: 90.7,
+    kelompokDpl: 88,
+    kelompokMpl: 90,
+    kelompokGabungan: 89.3,
+    nilaiAkhir: 89.8,
+    predikat: "A",
+    status: "Lengkap",
+  },
+  {
+    id: "st-18",
+    userId: "u-18",
+    nim: "10124385",
+    name: "Gita Savitri",
+    jurusan: "Ilmu Komunikasi",
+    fakultas: "Fakultas Ilmu Sosial dan Ilmu Politik",
+    kelompokId: "kel-4",
+    kelompokName: "KKN Dago 2",
+    kelurahan: "Dago",
+    isKetua: false,
+    kehadiran: 95,
+    poinDampingan: 91,
+    individuDpl: 93,
+    individuMpl: 94,
+    individuGabungan: 93.7,
+    prokerDpl: 91,
+    prokerMpl: 93,
+    prokerGabungan: 92.3,
+    kelompokDpl: 92,
+    kelompokMpl: 93,
+    kelompokGabungan: 92.7,
+    nilaiAkhir: 93.2,
+    predikat: "A",
+    status: "Lengkap",
+  },
+  {
+    id: "st-19",
+    userId: "u-19",
+    nim: "10124398",
+    name: "Hendra Kurniawan",
+    jurusan: "Teknik Elektro",
+    fakultas: "Fakultas Teknik dan Ilmu Komputer",
+    kelompokId: "kel-4",
+    kelompokName: "KKN Dago 2",
+    kelurahan: "Dago",
+    isKetua: false,
+    kehadiran: 88,
+    poinDampingan: 83,
+    individuDpl: 85,
+    individuMpl: 87,
+    individuGabungan: 86.3,
+    prokerDpl: 86,
+    prokerMpl: 88,
+    prokerGabungan: 87.3,
+    kelompokDpl: 86,
+    kelompokMpl: 87,
+    kelompokGabungan: 86.7,
+    nilaiAkhir: 86.7,
+    predikat: "A",
+    status: "Lengkap",
+  },
+  {
+    id: "st-20",
+    userId: "u-20",
+    nim: "10124410",
+    name: "Indah Permata",
+    jurusan: "Akuntansi",
+    fakultas: "Fakultas Ekonomi dan Bisnis",
+    kelompokId: "kel-4",
+    kelompokName: "KKN Dago 2",
+    kelurahan: "Dago",
+    isKetua: false,
+    kehadiran: 93,
+    poinDampingan: 88,
+    individuDpl: 90,
+    individuMpl: 92,
+    individuGabungan: 91.3,
+    prokerDpl: 89,
+    prokerMpl: 92,
+    prokerGabungan: 91.0,
+    kelompokDpl: 91,
+    kelompokMpl: 91,
+    kelompokGabungan: 91.0,
+    nilaiAkhir: 91.0,
+    predikat: "A",
+    status: "Lengkap",
+  },
+
+  // Page 5
+  {
+    id: "st-21",
+    userId: "u-21",
+    nim: "10124423",
+    name: "Jefri Nichol",
+    jurusan: "Ilmu Komunikasi",
+    fakultas: "Fakultas Ilmu Sosial dan Ilmu Politik",
+    kelompokId: "kel-4",
+    kelompokName: "KKN Dago 2",
+    kelurahan: "Dago",
+    isKetua: false,
+    kehadiran: 86,
+    poinDampingan: 80,
+    individuDpl: 84,
+    individuMpl: null,
+    individuGabungan: null,
+    prokerDpl: 86,
+    prokerMpl: null,
+    prokerGabungan: null,
+    kelompokDpl: 85,
+    kelompokMpl: null,
+    kelompokGabungan: null,
+    nilaiAkhir: null,
+    predikat: null,
+    status: "Menunggu MPL",
+  },
+  {
+    id: "st-22",
+    userId: "u-22",
+    nim: "10124435",
+    name: "Karina Maharani",
+    jurusan: "Perencanaan Wilayah dan Kota",
+    fakultas: "Fakultas Teknik dan Ilmu Komputer",
+    kelompokId: "kel-5",
+    kelompokName: "KKN Lebak Siliwangi 1",
+    kelurahan: "Lebak Siliwangi",
+    isKetua: true,
+    kehadiran: 94,
+    poinDampingan: 90,
+    individuDpl: 92,
+    individuMpl: 93,
+    individuGabungan: 92.7,
+    prokerDpl: 90,
+    prokerMpl: 93,
+    prokerGabungan: 92.0,
+    kelompokDpl: 91,
+    kelompokMpl: 92,
+    kelompokGabungan: 91.7,
+    nilaiAkhir: 92.2,
+    predikat: "A",
+    status: "Lengkap",
+  },
+  {
+    id: "st-23",
+    userId: "u-23",
+    nim: "10124448",
+    name: "Lukman Hakim",
+    jurusan: "Teknik Informatika",
+    fakultas: "Fakultas Teknik dan Ilmu Komputer",
+    kelompokId: "kel-5",
+    kelompokName: "KKN Lebak Siliwangi 1",
+    kelurahan: "Lebak Siliwangi",
+    isKetua: false,
+    kehadiran: 89,
+    poinDampingan: 85,
+    individuDpl: 87,
+    individuMpl: 89,
+    individuGabungan: 88.3,
+    prokerDpl: 88,
+    prokerMpl: 89,
+    prokerGabungan: 88.7,
+    kelompokDpl: 88,
+    kelompokMpl: 88,
+    kelompokGabungan: 88.0,
+    nilaiAkhir: 88.1,
+    predikat: "A",
+    status: "Lengkap",
+  },
+  {
+    id: "st-24",
+    userId: "u-24",
+    nim: "10124460",
+    name: "Maya Anggraini",
+    jurusan: "Manajemen",
+    fakultas: "Fakultas Ekonomi dan Bisnis",
+    kelompokId: "kel-5",
+    kelompokName: "KKN Lebak Siliwangi 1",
+    kelurahan: "Lebak Siliwangi",
+    isKetua: false,
+    kehadiran: 92,
+    poinDampingan: 87,
+    individuDpl: 89,
+    individuMpl: 91,
+    individuGabungan: 90.3,
+    prokerDpl: 89,
+    prokerMpl: 91,
+    prokerGabungan: 90.3,
+    kelompokDpl: 90,
+    kelompokMpl: 90,
+    kelompokGabungan: 90.0,
+    nilaiAkhir: 90.1,
+    predikat: "A",
+    status: "Lengkap",
+  },
 ];
 
 export const RekapNilaiKknPage: React.FC = () => {
@@ -233,13 +735,13 @@ export const RekapNilaiKknPage: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
-  const filteredStudents = students;
-
-  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / itemsPerPage));
+  const totalStudentsCount = students.length;
+  const totalPages = Math.max(1, Math.ceil(totalStudentsCount / itemsPerPage));
+  
   const paginatedStudents = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
-    return filteredStudents.slice(start, start + itemsPerPage);
-  }, [filteredStudents, currentPage, itemsPerPage]);
+    return students.slice(start, start + itemsPerPage);
+  }, [students, currentPage, itemsPerPage]);
 
   const handleExportExcel = () => {
     try {
@@ -285,7 +787,7 @@ export const RekapNilaiKknPage: React.FC = () => {
         "",
       ];
 
-      const dataRows = filteredStudents.map((s, idx) => [
+      const dataRows = students.map((s, idx) => [
         idx + 1,
         s.nim,
         s.name,
@@ -332,12 +834,8 @@ export const RekapNilaiKknPage: React.FC = () => {
     }
   };
 
-  const handleDownloadPdf = () => {
-    window.print();
-  };
-
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-4 sm:p-6 lg:p-8 space-y-6 text-slate-800 dark:text-slate-100 max-w-[1600px] mx-auto print:p-0 print:bg-white">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-4 sm:p-6 lg:p-8 space-y-6 text-slate-800 dark:text-slate-100 max-w-[1600px] mx-auto">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -349,7 +847,7 @@ export const RekapNilaiKknPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3 self-start sm:self-auto print:hidden">
+        <div className="flex items-center gap-3 self-start sm:self-auto">
           {/* Button Ekspor Excel */}
           <button
             onClick={handleExportExcel}
@@ -360,19 +858,10 @@ export const RekapNilaiKknPage: React.FC = () => {
             </div>
             <span>Ekspor Excel</span>
           </button>
-
-          {/* Button Unduh PDF */}
-          <button
-            onClick={handleDownloadPdf}
-            className="flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-slate-900 hover:bg-rose-50/70 dark:hover:bg-rose-950/40 text-slate-800 dark:text-slate-200 border border-[#e11d48] rounded-lg text-xs font-bold shadow-2xs transition-all cursor-pointer"
-          >
-            <FileText size={15} className="text-[#e11d48]" />
-            <span>Unduh PDF</span>
-          </button>
         </div>
       </div>
 
-      {/* Legend & Filter Bar */}
+      {/* Legend & Info Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Badge 1: Otomatis dari Sistem */}
@@ -624,27 +1113,29 @@ export const RekapNilaiKknPage: React.FC = () => {
         )}
       </div>
 
-      {/* Pagination Controls */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-600 dark:text-slate-400 font-medium">
+      {/* Pagination Controls Section */}
+      <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-medium px-1 py-1">
         <div>
           Menampilkan {(currentPage - 1) * itemsPerPage + 1}–
-          {Math.min(currentPage * itemsPerPage, filteredStudents.length)} dari {filteredStudents.length} mahasiswa
+          {Math.min(currentPage * itemsPerPage, totalStudentsCount)} dari {totalStudentsCount} mahasiswa
         </div>
 
-        <div className="flex items-center gap-1.5 print:hidden">
+        <div className="flex items-center gap-1.5">
+          {/* Tombol Previous */}
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
           >
             <ChevronLeft size={16} />
           </button>
 
+          {/* Tombol Nomor Halaman 1-5 */}
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
             <button
               key={pageNum}
               onClick={() => setCurrentPage(pageNum)}
-              className={`w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition-all ${
+              className={`w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition-all cursor-pointer ${
                 currentPage === pageNum
                   ? "bg-[#008055] text-white shadow-2xs"
                   : "border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -654,10 +1145,11 @@ export const RekapNilaiKknPage: React.FC = () => {
             </button>
           ))}
 
+          {/* Tombol Next */}
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
           >
             <ChevronRight size={16} />
           </button>
