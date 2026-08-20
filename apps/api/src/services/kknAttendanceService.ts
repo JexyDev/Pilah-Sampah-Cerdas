@@ -439,6 +439,16 @@ export class KknAttendanceService {
             where: { id: existingAtt.id },
             data: { actualInZoneMinutes: durationInZone },
           });
+
+          // Broadcast real-time WebSocket attendance update for Web Dashboard
+          websocketService.broadcastStudentAttendance({
+            id: existingAtt.id,
+            studentId: existingAtt.studentId,
+            scheduleId: existingAtt.scheduleId,
+            status: "BERLANGSUNG",
+            attendedAt: existingAtt.attendedAt.toISOString(),
+            actualInZoneMinutes: durationInZone,
+          });
         }
 
         // Catatan: Status tetap BERLANGSUNG sampai mahasiswa menekan tombol "Absen Sekarang" (manual check-in)

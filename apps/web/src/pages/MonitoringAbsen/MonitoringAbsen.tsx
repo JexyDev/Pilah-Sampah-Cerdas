@@ -1072,10 +1072,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       setAttendance((prev) => {
         return prev.map((a) => {
           if (a.studentId === locData.studentId || a.student?.id === locData.studentId) {
+            const actualMins = locData.actualInZoneMinutes ?? locData.inZoneMinutes;
             return {
               ...a,
               latitude: String(lat),
               longitude: String(lng),
+              actualInZoneMinutes: actualMins !== undefined ? actualMins : (a as any).actualInZoneMinutes,
             };
           }
           return a;
@@ -1111,17 +1113,19 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         const index = prev.findIndex((a) => a.studentId === attData.studentId);
         if (index >= 0) {
           const next = [...prev];
+          const recAny = next[index] as any;
           next[index] = {
-            ...next[index],
-            id: attData.id || next[index].id,
-            attendedAt: attData.attendedAt || next[index].attendedAt,
-            completedAt: attData.completedAt !== undefined ? attData.completedAt : next[index].completedAt,
-            status: attData.status || next[index].status,
-            currentStatus: attData.status || next[index].currentStatus,
-            method: attData.method || next[index].method,
-            latitude: attData.latitude !== undefined ? attData.latitude : next[index].latitude,
-            longitude: attData.longitude !== undefined ? attData.longitude : next[index].longitude,
-            totalMinutes: attData.totalMinutes !== undefined ? attData.totalMinutes : next[index].totalMinutes,
+            ...recAny,
+            id: attData.id || recAny.id,
+            attendedAt: attData.attendedAt || recAny.attendedAt,
+            completedAt: attData.completedAt !== undefined ? attData.completedAt : recAny.completedAt,
+            status: attData.status || recAny.status,
+            currentStatus: attData.status || recAny.currentStatus,
+            method: attData.method || recAny.method,
+            latitude: attData.latitude !== undefined ? attData.latitude : recAny.latitude,
+            longitude: attData.longitude !== undefined ? attData.longitude : recAny.longitude,
+            totalMinutes: attData.totalMinutes !== undefined ? attData.totalMinutes : recAny.totalMinutes,
+            actualInZoneMinutes: attData.actualInZoneMinutes !== undefined ? attData.actualInZoneMinutes : recAny.actualInZoneMinutes,
           };
           return next;
         } else if (attData.student) {
