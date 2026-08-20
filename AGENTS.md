@@ -65,7 +65,7 @@ main/
 ## 4. Aturan Khusus untuk AI Agent (Claude Code, Copilot, Antigravity, dll)
 
 > 🛑 **ATURAN UTAMA: WAJIB MEMBACA & MEMATUHI ATURAN DI `.agent/` (ANTI-HALUSINASI)**
-> Sebelum membuat atau mengubah kode/dokumentasi, AI Agent WAJIB membaca dan mematuhi aturan (*rules*), alur kerja (*workflows*), dan *skills* yang ada pada folder [.agent/](file:///home/dajayape/Documents/work/makerindo/employment/projects/trashcare/code/main/.agent) (khususnya [.agent/AGENTS.md](file:///home/dajayape/Documents/work/makerindo/employment/projects/trashcare/code/main/.agent/AGENTS.md), `.agent/rules/`, dan `.agent/workflows/`).
+> Sebelum membuat atau mengubah kode/dokumentasi, AI Agent WAJIB membaca dan mematuhi aturan (*rules*), alur kerja (*workflows*), dan *skills* yang ada pada folder [.agent/](.agent/) (khususnya [.agent/AGENTS.md](.agent/AGENTS.md), `.agent/rules/`, dan `.agent/workflows/`).
 > 
 > **PRINSIP ANTI-HALUSINASI (GROUNDED CODE & FACTUAL TRUTH):**
 > 1. **DILARANG MENGARANG (NO HALLUCINATED LOGIC/ENDPOINTS):** Jangan pernah mengarang skema data, endpoint API, path file, atau fungsi utility yang tidak terverifikasi langsung di codebase. Selalu view/grep file sumber sebelum menulis kode.

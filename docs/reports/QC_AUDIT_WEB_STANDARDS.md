@@ -41,7 +41,7 @@
 - ❌ **Issue**: LandingPage has no `<h1>` tag; starts with `<h2>` or generic divs
 - **Standard**: WCAG 2.1 Level A (1.3.1 Info & Relationships)
 - **Impact**: Screen readers confused, SEO penalty
-- **Location**: [LandingPage.tsx](file:///home/dajayape/Documents/work/makerindo/employment/projects/trashcare/code/main/apps/web/src/pages/LandingPage/LandingPage.tsx) line ~600-700 (hero section)
+- **Location**: [LandingPage.tsx](../../apps/web/src/pages/LandingPage/LandingPage.tsx) line ~600-700 (hero section)
 - **Fix**: Wrap hero title in `<h1>` instead of generic text:
   ```tsx
   <h1 className="text-5xl font-black">Kelola Sampah, Ubah Hidup</h1>
@@ -67,7 +67,7 @@
 ### 4. **Form Accessibility Issues (Login/Register)**
 - ❌ **Issue**: Form labels not properly linked to inputs
 - **Standard**: WCAG 2.1 Level A (1.3.1, 3.3.2 Labels or Instructions)
-- **Location**: [Login.tsx](file:///home/dajayape/Documents/work/makerindo/employment/projects/trashcare/code/main/apps/web/src/pages/Login/Login.tsx) line ~750-780
+- **Location**: [Login.tsx](../../apps/web/src/pages/Login/Login.tsx) line ~750-780
 - **Current Code**:
   ```tsx
   <input type="text" placeholder="Nomor HP" />  // ❌ No <label>
@@ -123,7 +123,7 @@
 ### 8. **Password Requirements Not Visually Displayed**
 - ⚠️ **Issue**: Password validation rules (8 char, uppercase, lowercase, digit) shown only as toast errors
 - **Standard**: ISO 9241-11 (Usability), WCAG 2.1 (3.3.2 Labels or Instructions)
-- **Location**: [Register.tsx](file:///home/dajayape/Documents/work/makerindo/employment/projects/trashcare/code/main/apps/web/src/pages/Registration/Register.tsx) line ~95
+- **Location**: [Register.tsx](../../apps/web/src/pages/Registration/Register.tsx) line ~95
 - **Fix**: Add inline checklist below password field:
   ```tsx
   <div className="mt-2 space-y-1 text-xs text-gray-600">
