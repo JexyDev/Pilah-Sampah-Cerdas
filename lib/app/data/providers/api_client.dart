@@ -156,7 +156,7 @@ class ApiClient {
           }
 
           // ── Lakukan Retry Di Luar Blok Catch Refresh ────────────────
-          if (refreshSuccess && newAccessToken != null) {
+          if (refreshSuccess) {
             _isRefreshing = false;
 
             // ── Retry semua request yang mengantri ──────────────────
