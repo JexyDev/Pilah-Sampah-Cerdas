@@ -502,7 +502,29 @@ router.post(
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
   uploadPemanfaatanImage,
-  kknController.createPemanfaatanSampah
+  kknController.createLogbookPemanfaatan
+);
+
+router.post(
+  "/program-kerja",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.createProgramKerja
+);
+
+router.get(
+  "/program-kerja",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "DPL", "SUPER_USER"]),
+  kknController.getProgramKerja
+);
+
+router.post(
+  "/panen-hasil",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  uploadPemanfaatanImage,
+  kknController.createPanenHasil
 );
 
 /**

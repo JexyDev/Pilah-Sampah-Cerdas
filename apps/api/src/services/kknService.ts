@@ -2354,6 +2354,180 @@ export class KknService {
       totalActiveBins,
     };
   }
+
+  // ──────────────────────────────────────────────────────────
+  // 3 Pilar KKN (Perencanaan, Aksi, Panen)
+  // ──────────────────────────────────────────────────────────
+
+  async createProgramKerja(userId: string, payload: any) {
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId },
+      include: { kelompok: true, user: true },
+    });
+    if (!student || !student.kelompok) {
+      throw new Error("User belum terdaftar di kelompok KKN");
+    }
+
+    const { judul, kategori, rencanaAnggaran, targetTanggal, deskripsi } = payload;
+    const combinedDeskripsi = `**${judul}**\n\n${deskripsi}`;
+
+    const proker = await prisma.programKerjaKkn.create({
+      data: {
+        kelompokId: student.kelompok.id,
+        kategori: kategori?.toUpperCase() || "LAINNYA",
+        deskripsi: combinedDeskripsi,
+        kebutuhanBiaya: Number(rencanaAnggaran) || 0,
+        status: "BELUM_DISETUJUI",
+        sumber: "MAHASISWA",
+      },
+    });
+
+    // Notify DPL
+    if (student.kelompok.dplUserId) {
+      await notificationService.createNotification(
+        student.kelompok.dplUserId,
+        "Program Kerja Baru",
+        `Mahasiswa ${student.user.name} mengajukan ide program kerja: ${judul}. Silakan ditinjau.`,
+        "PROGRAM_KERJA"
+      );
+    }
+
+    return proker;
+  }
+
+  async getProgramKerja(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true, studentProfile: { include: { kelompok: true } } },
+    });
+    if (!user) throw new Error("User not found");
+
+    let kelompokId: string | null = null;
+    if (user.role?.name === "MAHASISWA_KKN") {
+      kelompokId = user.studentProfile?.kelompokId || null;
+    } else if (user.role?.name === "DPL") {
+      const kel = await prisma.kelompokKkn.findFirst({ where: { dplUserId: userId } });
+      kelompokId = kel?.id || null;
+    }
+
+    if (!kelompokId) {
+      // Jika bukan DPL atau Mahasiswa terkait, kembalikan semua atau kosong.
+      if (user.role?.name === "SUPER_USER") {
+        return prisma.programKerjaKkn.findMany({ orderBy: { createdAt: "desc" } });
+      }
+      return [];
+    }
+
+    const list = await prisma.programKerjaKkn.findMany({
+      where: { kelompokId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return list.map(item => {
+      // Extract judul dari deskripsi: `**Judul**\n\nDeskripsi`
+      let judul = "Program Kerja";
+      let catatan = item.catatanDpl;
+      const descSplit = item.deskripsi.split("\n\n");
+      if (descSplit.length > 1 && item.deskripsi.startsWith("**")) {
+        judul = descSplit[0].replace(/\*\*/g, "");
+      }
+      return {
+        id: item.id,
+        judul,
+        kategori: item.kategori,
+        rencanaAnggaran: Number(item.kebutuhanBiaya) || 0,
+        status: item.status === "DISETUJUI" ? "APPROVED" : (item.status === "DITOLAK" ? "REJECTED" : "PENDING"),
+        catatanDpl: catatan,
+        tanggal: item.createdAt.toISOString(), // Fallback ke createdAt karena skema tidak punya targetTanggal
+      };
+    });
+  }
+
+  async createLogbookPemanfaatan(userId: string, payload: any) {
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId },
+      include: { assignedRw: true, kelompok: true },
+    });
+    if (!student) throw new Error("Mahasiswa tidak ditemukan");
+    const targetRwId = student.assignedRwId || 1;
+
+    const { programKerjaId, teknologi, bahanBaku, beratInputKg, fotoDokumentasiUrl } = payload;
+    
+    // Validasi apakah proker ada dan disetujui (opsional, tapi disarankan)
+    if (programKerjaId) {
+      const proker = await prisma.programKerjaKkn.findUnique({ where: { id: programKerjaId } });
+      if (proker && proker.status !== "DISETUJUI") {
+        throw new Error("Program kerja belum disetujui DPL, tidak bisa menambah logbook pemanfaatan.");
+      }
+    }
+
+    const uniqueNo = `PEM-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    const report = await prisma.pemanfaatan.create({
+      data: {
+        rwId: targetRwId,
+        nomorCaraPemanfaatan: uniqueNo,
+        program: programKerjaId || "LOGBOOK_HARIAN", // Menyimpan ID proker di kolom program
+        teknologi: teknologi || "Tidak Spesifik",
+        bahanBaku: bahanBaku || "Sampah Organik",
+        volumeBahanBaku: Number(beratInputKg) || 0,
+        unitBahanBaku: "Kg",
+        hasil: 0, // Pilar 2: Hasil panen 0 karena baru pemrosesan awal
+        unitHasil: "Kg",
+        fotoDokumentasiUrl: fotoDokumentasiUrl || "/uploads/default-pemanfaatan.jpg",
+        tanggalPencatatan: new Date(),
+      },
+    });
+
+    await pointService.awardPoints({
+      userId,
+      amount: 10, // Poin harian logbook
+      description: `Logbook Pemanfaatan: ${teknologi}`,
+      source: "KKN",
+    });
+
+    return report;
+  }
+
+  async createPanenHasil(userId: string, payload: any) {
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId },
+      include: { assignedRw: true },
+    });
+    if (!student) throw new Error("Mahasiswa tidak ditemukan");
+    const targetRwId = student.assignedRwId || 1;
+
+    const { programKerjaId, beratOutputKg, nilaiEkonomiRp, fotoDokumentasiUrl } = payload;
+    
+    const uniqueNo = `PANEN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    const report = await prisma.pemanfaatan.create({
+      data: {
+        rwId: targetRwId,
+        nomorCaraPemanfaatan: uniqueNo,
+        program: programKerjaId || "PANEN_HASIL", // Menyimpan ID proker di kolom program
+        teknologi: "PANEN", // Penanda bahwa ini adalah pilar 3
+        bahanBaku: "PANEN_HASIL",
+        volumeBahanBaku: 0, // Tidak ada input, hanya output
+        unitBahanBaku: "Kg",
+        hasil: Number(beratOutputKg) || 0,
+        unitHasil: "Kg",
+        // Simpan nilai ekonomi Rp ke kolom luasLahanM2 yang tidak terpakai sementara (sesuai arahan jangan ubah skema db)
+        luasLahanM2: Number(nilaiEkonomiRp) || 0,
+        fotoDokumentasiUrl: fotoDokumentasiUrl || "/uploads/default-pemanfaatan.jpg",
+        tanggalPencatatan: new Date(),
+      },
+    });
+
+    await pointService.awardPoints({
+      userId,
+      amount: 25, // Poin besar karena panen
+      description: `Panen Hasil KKN`,
+      source: "KKN",
+    });
+
+    return report;
+  }
 }
 
 export const kknService = new KknService();

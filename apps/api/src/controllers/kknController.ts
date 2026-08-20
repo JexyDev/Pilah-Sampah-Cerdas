@@ -484,6 +484,54 @@ export class KknController {
       res.status(500).json({ success: false, message: error.message });
     }
   }
+
+  // ──────────────────────────────────────────────────────────
+  // 3 Pilar KKN (Perencanaan, Aksi, Panen)
+  // ──────────────────────────────────────────────────────────
+
+  async createProgramKerja(req: Request, res: Response) {
+    try {
+      const data = await kknService.createProgramKerja(req.user!.userId, req.body);
+      res.status(201).json({ success: true, message: "Program Kerja berhasil diajukan.", data });
+    } catch (error: any) {
+      console.error("[KknController] createProgramKerja error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async getProgramKerja(req: Request, res: Response) {
+    try {
+      const data = await kknService.getProgramKerja(req.user!.userId);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[KknController] getProgramKerja error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async createLogbookPemanfaatan(req: Request, res: Response) {
+    try {
+      const fotoDokumentasiUrl = req.file ? `/uploads/${req.file.filename}` : null;
+      const payload = { ...req.body, fotoDokumentasiUrl };
+      const data = await kknService.createLogbookPemanfaatan(req.user!.userId, payload);
+      res.status(201).json({ success: true, message: "Aksi Pemanfaatan berhasil dicatat.", data });
+    } catch (error: any) {
+      console.error("[KknController] createLogbookPemanfaatan error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async createPanenHasil(req: Request, res: Response) {
+    try {
+      const fotoDokumentasiUrl = req.file ? `/uploads/${req.file.filename}` : null;
+      const payload = { ...req.body, fotoDokumentasiUrl };
+      const data = await kknService.createPanenHasil(req.user!.userId, payload);
+      res.status(201).json({ success: true, message: "Hasil Panen berhasil dicatat.", data });
+    } catch (error: any) {
+      console.error("[KknController] createPanenHasil error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
 }
 
 export const kknController = new KknController();
