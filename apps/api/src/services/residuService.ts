@@ -821,6 +821,7 @@ export class ResiduService {
     return prisma.$transaction(async (tx) => {
       const request = await tx.binResetRequest.findUnique({
         where: { id },
+        include: { bin: true },
       });
 
       if (!request) {
@@ -836,6 +837,17 @@ export class ResiduService {
         data: {
           status: "IN_PROGRESS",
           reviewedById: petugasUserId,
+        },
+      });
+
+      // Reward poin untuk Petugas saat memvalidasi / menyetujui pengajuan pengosongan
+      await tx.pointHistory.create({
+        data: {
+          userId: petugasUserId,
+          points: 15,
+          description: `Reward validasi pengosongan tempat sampah (${request.bin?.qrCode || id})`,
+          kategori: "VALIDASI_PENGOSONGAN",
+          redeemable: false,
         },
       });
 

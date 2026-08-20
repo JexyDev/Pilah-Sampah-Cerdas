@@ -130,6 +130,34 @@ export class AuthService {
       console.error("[AuthService] Gagal menyimpan refresh token ke DB:", err);
     }
 
+    // ── Welcome Bonus Poin saat Login Pertama Mahasiswa KKN ───────────────────
+    // Hanya berlaku untuk MAHASISWA_KKN pada login pertama kali akun tersebut
+    if (userRoleName === "MAHASISWA_KKN") {
+      const alreadyAwarded = await prisma.pointHistory.findFirst({
+        where: {
+          userId: user.id,
+          OR: [
+            { kategori: "BONUS_LOGIN_PERTAMA" },
+            { kategori: "BONUS_REGISTRASI" },
+            { description: { contains: "Bonus login pertama" } },
+            { description: { contains: "Bonus registrasi" } },
+          ],
+        },
+      });
+
+      if (!alreadyAwarded) {
+        await prisma.pointHistory.create({
+          data: {
+            userId: user.id,
+            points: 20,
+            description: "Bonus login pertama Mahasiswa KKN",
+            kategori: "BONUS_LOGIN_PERTAMA",
+            redeemable: false,
+          },
+        });
+      }
+    }
+
     // Aggregate user points
     const userPointsSum = await prisma.pointHistory.aggregate({
       where: { userId: user.id },

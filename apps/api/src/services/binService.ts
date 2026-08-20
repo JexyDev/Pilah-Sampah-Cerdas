@@ -1384,6 +1384,27 @@ export class BinService {
       // Reset Bin volume
       await binRepository.updateVolume(request.binId, 0.0);
 
+      if (reviewedById) {
+        const existingReward = await prisma.pointHistory.findFirst({
+          where: {
+            userId: reviewedById,
+            description: { contains: request.bin?.qrCode || id },
+            kategori: "VALIDASI_PENGOSONGAN",
+          },
+        });
+        if (!existingReward) {
+          await prisma.pointHistory.create({
+            data: {
+              userId: reviewedById,
+              points: 15,
+              description: `Reward validasi pengosongan tempat sampah (${request.bin?.qrCode || id})`,
+              kategori: "VALIDASI_PENGOSONGAN",
+              redeemable: false,
+            },
+          }).catch(() => {});
+        }
+      }
+
       // Notify Warga
       await binRepository
         .createNotification(
