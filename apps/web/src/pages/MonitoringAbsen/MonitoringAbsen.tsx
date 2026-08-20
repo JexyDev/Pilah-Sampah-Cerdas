@@ -1632,9 +1632,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     if (!endTime) {
       errors.endTime = "Jam selesai wajib diisi";
     } else if (startTime && endTime) {
-      const diff = calculateHourDifference(startTime, endTime);
-      if (diff <= 0) {
-        errors.endTime = "Jam selesai harus lebih besar dari jam mulai";
+      const isSameDate = startDate && endDate && startDate === endDate;
+      if (isSameDate) {
+        const diff = calculateHourDifference(startTime, endTime);
+        if (diff <= 0) {
+          errors.endTime = "Jam selesai harus lebih besar dari jam mulai";
+        }
       }
     }
     if (!formData.location?.trim()) {
