@@ -30,8 +30,8 @@ interface FacilityItem {
   kontak: string;
   alamat?: string;
   kapasitas?: number;
-  latitude: number;
-  longitude: number;
+  latitude: number | string;
+  longitude: number | string;
   foto?: string;
   statusApproval: string;
   createdAt: string;
@@ -257,9 +257,12 @@ export const PemanfaatanSampah: React.FC = () => {
 
               {filteredItems.map(fac => {
                 if (!fac.latitude || !fac.longitude) return null;
+                const latNum = Number(fac.latitude);
+                const lngNum = Number(fac.longitude);
+                if (isNaN(latNum) || isNaN(lngNum)) return null;
                 const icon = createFacilityIcon(fac.jenis, fac.nama);
                 return (
-                  <Marker key={fac.id} position={[fac.latitude, fac.longitude]} icon={icon}>
+                  <Marker key={fac.id} position={[latNum, lngNum]} icon={icon}>
                     <Popup className="custom-popup">
                       <div className="p-1 min-w-[200px]">
                         <h3 className="font-bold text-slate-800 text-sm mb-1">{fac.nama}</h3>
@@ -314,7 +317,7 @@ export const PemanfaatanSampah: React.FC = () => {
                         <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5"><MapPin size={12}/> {item.rw?.name || "-"}</p>
                       </td>
                       <td className="p-4 text-sm text-slate-600 font-mono text-xs">
-                        {item.latitude.toFixed(5)}, {item.longitude.toFixed(5)}
+                        {Number(item.latitude).toFixed(5)}, {Number(item.longitude).toFixed(5)}
                       </td>
                       <td className="p-4 text-center">
                         {getStatusBadge(item.statusApproval)}
