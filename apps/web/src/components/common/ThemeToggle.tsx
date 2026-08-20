@@ -9,6 +9,7 @@
 import React from "react";
 import { Sun, Moon } from "lucide-react";
 import { useThemeStore } from "../../store/useThemeStore";
+import { useAuthStore } from "../../store/useAuthStore";
 
 interface ThemeToggleProps {
   className?: string;
@@ -17,6 +18,15 @@ interface ThemeToggleProps {
 
 export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = "", showLabel = false }) => {
   const { theme, toggleTheme } = useThemeStore();
+  const user = useAuthStore((s) => s.user);
+
+  const role = (user?.peran || user?.role || "").toUpperCase();
+  const isDeveloper = role === "DEVELOPER" || role === "SUPER_USER";
+
+  // Sembunyikan tombol Theme Toggle sepenuhnya jika bukan role Developer / Super User
+  if (!isDeveloper) {
+    return null;
+  }
   const isDark = theme === "dark";
 
   return (

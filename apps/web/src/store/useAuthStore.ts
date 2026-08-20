@@ -256,6 +256,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       setStoredItem("psc_user", JSON.stringify(user), rememberMe);
       set({ user, isAuthenticated: true, isLoading: false, error: null });
+      useThemeStore.getState().initTheme();
       return true;
     } catch (err: any) {
       const code = err?.response?.data?.code || (err?.response ? "UNKNOWN_ERROR" : "NETWORK_ERROR");
@@ -325,6 +326,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       localStorage.setItem("psc_user", JSON.stringify(user));
       set({ user, isAuthenticated: true, isLoading: false, error: null });
+      useThemeStore.getState().initTheme();
       return true;
     } catch (err: any) {
       const code = err?.response?.data?.code || (err?.response ? "UNKNOWN_ERROR" : "NETWORK_ERROR");
