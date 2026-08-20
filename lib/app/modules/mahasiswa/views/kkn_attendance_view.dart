@@ -20,6 +20,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
   final TextEditingController _rtRwCtrl = TextEditingController();
   final TextEditingController _kodeZonaCtrl = TextEditingController(text: '');
   String _selectedKelurahan = '';
+  bool _showDetail = false;
 
   @override
   void initState() {
@@ -447,7 +448,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
       );
     }
 
-    if (!state.isTracking && state.selectedKegiatan == null) {
+    if (!_showDetail) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -496,6 +497,24 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             return KegiatanKknCard(
               kegiatan: kegiatan,
               onMulai: (id) async {
+                final isTrackingThis = state.activeActivity != null &&
+                    (state.activeActivity!['id']?.toString() == id || state.activeActivity!['scheduleId']?.toString() == id);
+                
+                if (isTrackingThis) {
+                  setState(() => _showDetail = true);
+                  return;
+                }
+
+                if (state.isTracking || state.activeActivity != null) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Anda masih memiliki kegiatan KKN yang aktif berjalan. Harap selesaikan (berhenti tracking) kegiatan sebelumnya terlebih dahulu!'),
+                      backgroundColor: AppColors.dangerRed,
+                    ));
+                  }
+                  return;
+                }
+
                 final result = await notifier.mulaiKegiatan(id);
                 if (result == null && mounted) {
                   ref.read(authProvider.notifier).fetchProfile();
@@ -503,37 +522,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                     content: Text('+10 Poin berhasil didapatkan dari Presensi Masuk!'),
                     backgroundColor: AppColors.primaryGreen,
                   ));
-                }
-                if (result == 'CONFLICT' && mounted) {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Pindah Kegiatan?'),
-                      content: const Text(
-                          'Anda masih aktif di kegiatan sebelumnya. Apakah Anda ingin mengakhiri sesi sebelumnya dan pindah ke kegiatan ini?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('Batal'),
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen),
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('Ya, Pindah', style: TextStyle(color: Colors.white)),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirm == true) {
-                    final switchResult = await notifier.switchKegiatan(id);
-                    if (switchResult == null && mounted) {
-                      ref.read(authProvider.notifier).fetchProfile();
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text('+10 Poin berhasil didapatkan dari Presensi Masuk!'),
-                        backgroundColor: AppColors.primaryGreen,
-                      ));
-                    }
-                  }
+                  setState(() => _showDetail = true);
                 }
               },
             );
@@ -571,6 +560,26 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
     Widget content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+              onPressed: () => setState(() => _showDetail = false),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'Detail Kegiatan',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
         if (state.outOfZoneSeconds > 0)
           Container(
             padding: const EdgeInsets.all(12),
@@ -1239,6 +1248,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                 onStop: () async {
                   await notifier.selesaiKegiatan(alasan: 'MANUAL_STOP');
                   if (mounted) {
+                    setState(() => _showDetail = false);
                     ref.read(authProvider.notifier).fetchProfile();
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                       content: Text('+10 Poin berhasil didapatkan dari Presensi Pulang!'),
@@ -1322,10 +1332,25 @@ class KegiatanKknCard extends StatelessWidget {
       textColor = AppColors.primaryGreen;
       buttonText = 'Sudah Presensi (HADIR)';
     } else if (statusKehadiran == 'BERLANGSUNG') {
-      statusText = '🟠 BERLANGSUNG';
+      statusText = '⏱️ BERLANGSUNG';
       badgeColor = Colors.orange.withValues(alpha: 0.1);
       textColor = Colors.orange;
       buttonText = 'Lanjutkan Sesi';
+    } else if (statusKehadiran == 'SELESAI') {
+      statusText = '🏁 SELESAI';
+      badgeColor = Colors.blue.withValues(alpha: 0.1);
+      textColor = Colors.blue;
+      buttonText = 'Sesi Berakhir (Hadir)';
+    } else if (statusKehadiran == 'SELESAI_TELAT') {
+      statusText = '⚠️ SELESAI (DURASI KURANG)';
+      badgeColor = Colors.deepOrange.withValues(alpha: 0.1);
+      textColor = Colors.deepOrange;
+      buttonText = 'Sesi Berakhir';
+    } else if (statusKehadiran == 'LEPAS_RADIUS') {
+      statusText = '❌ LEPAS RADIUS';
+      badgeColor = AppColors.dangerRed.withValues(alpha: 0.1);
+      textColor = AppColors.dangerRed;
+      buttonText = 'Kehadiran Digagalkan';
     } else if (statusKehadiran == 'IZIN' || statusKehadiran == 'SAKIT') {
       statusText = '📝 $statusKehadiran';
       badgeColor = Colors.amber.withValues(alpha: 0.1);
@@ -1333,8 +1358,8 @@ class KegiatanKknCard extends StatelessWidget {
       buttonText = 'Izin / Sakit';
     } else if (statusKehadiran == 'ALPA') {
       statusText = '⚠️ ALPA';
-      badgeColor = AppColors.dangerRed.withValues(alpha: 0.1);
-      textColor = AppColors.dangerRed;
+      badgeColor = Colors.grey.withValues(alpha: 0.2);
+      textColor = Colors.grey.shade700;
       buttonText = 'Alpa (Tidak Hadir)';
     } else {
       statusText = isAktif ? '🟢 AKTIF' : '🔵 BELUM MULAI';

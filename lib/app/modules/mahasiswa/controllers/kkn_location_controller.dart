@@ -304,10 +304,20 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           'address': lokasi['alamat'] ?? 'Zona Kegiatan',
           'polygon': lokasi['polygon'],
         },
+        'geofenceBufferMeters': response['geofenceBufferMeters'] ?? 15.0,
+        'invalidationHours': response['invalidationHours'] ?? 2.0,
         'namaKegiatan': response['namaKegiatan'] ?? 'Kegiatan KKN',
       };
 
       final durasiWajib = int.tryParse(response['durasiWajibMenit']?.toString() ?? '120') ?? 120;
+      
+      if (response['actualInZoneMinutes'] != null) {
+        final actualMins = num.tryParse(response['actualInZoneMinutes'].toString()) ?? 0;
+        if (actualMins > 0) {
+          _accumulatedSeconds = actualMins.toInt() * 60;
+          await _savePersistentTimer();
+        }
+      }
 
       state = state.copyWith(
         selectedKegiatan: response,
@@ -486,7 +496,6 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           if (targetMins <= 0) targetMins = 1;
 
           if (isAttended || attendanceStatus == 'hadir') {
-            _accumulatedSeconds = targetMins * 60;
             state = state.copyWith(
               isSuccessAttendance: true,
               inZoneDurationSeconds: _accumulatedSeconds,
@@ -792,6 +801,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           mergedData['location'] ?? mergedData['kelurahan'] ?? 'Zona Dampingan';
       mergedData['namaKegiatan'] ??= mergedData['title'] ?? 'Penugasan KKN';
       mergedData['radius'] ??= 100;
+      mergedData['geofenceBufferMeters'] ??= 15.0;
+      mergedData['invalidationHours'] ??= 2.0;
 
       int duration = 2;
       if (mergedData['targetDurationMinutes'] != null) {
@@ -806,8 +817,15 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           .toLowerCase();
       final bool isAttended = mergedData['isAttended'] == true || status == 'hadir';
 
+      if (mergedData['actualInZoneMinutes'] != null) {
+        final actualMins = num.tryParse(mergedData['actualInZoneMinutes'].toString()) ?? 0;
+        if (actualMins > 0 && !isAttended) {
+          _accumulatedSeconds = actualMins.toInt() * 60;
+          await _savePersistentTimer();
+        }
+      }
+
       if (isAttended || status == 'hadir') {
-        _accumulatedSeconds = duration * 60;
         state = state.copyWith(
           activeActivity: mergedData,
           targetDurationMinutes: duration,
@@ -890,11 +908,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             status == 'hadir' ||
             state.isSuccessAttendance) {
           final bool isHadir = status == 'hadir' || state.isSuccessAttendance;
-          final int targetSecs = (state.targetDurationMinutes > 0 ? state.targetDurationMinutes : 2) * 60;
           _stopZoneTimer(resetCompletely: !isHadir);
-          if (isHadir) _accumulatedSeconds = targetSecs;
           state = state.copyWith(
-            inZoneDurationSeconds: isHadir ? targetSecs : 0,
+            inZoneDurationSeconds: isHadir ? _accumulatedSeconds : 0,
             isEligibleForAttendance: false,
             isSuccessAttendance: isHadir,
             zoneResetWarning: isHadir

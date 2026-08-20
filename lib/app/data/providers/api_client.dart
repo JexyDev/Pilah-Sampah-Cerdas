@@ -97,6 +97,9 @@ class ApiClient {
             return handler.next(e);
           }
 
+          bool refreshSuccess = false;
+          String? newAccessToken;
+
           try {
             // Gunakan instance Dio TERPISAH agar tidak terjebak interceptor
             final refreshDio = Dio(BaseOptions(
@@ -119,7 +122,7 @@ class ApiClient {
                 throw Exception('Token tidak ditemukan dalam response: ${refreshRes.data}');
               }
 
-              final newAccessToken = responseData['accessToken'] as String;
+              newAccessToken = responseData['accessToken'] as String;
 
               // Simpan token baru (access + refresh jika backend mengembalikan)
               await secureStorage.write(
@@ -136,20 +139,11 @@ class ApiClient {
                 );
               }
 
-              _isRefreshing = false;
-
-              // ── Retry semua request yang mengantri ──────────────────
-              _resolvePendingRequests(newAccessToken);
-
-              // ── Retry request asal ────────────────────────────────
-              final opts = e.requestOptions;
-              opts.headers['Authorization'] = 'Bearer $newAccessToken';
-              final retryRes = await dio.fetch(opts);
-              return handler.resolve(retryRes);
+              refreshSuccess = true;
+            } else {
+              // Refresh berhasil tapi statusCode bukan 200 → force logout
+              throw Exception('Refresh failed with status ${refreshRes.statusCode}');
             }
-
-            // Refresh berhasil tapi statusCode bukan 200 → force logout
-            throw Exception('Refresh failed with status ${refreshRes.statusCode}');
           } catch (refreshErr, stackTrace) {
             // ── Refresh GAGAL → force logout ───────────────────────────
             debugPrint('[ApiClient] Refresh token failed: $refreshErr');
@@ -159,6 +153,30 @@ class ApiClient {
             _rejectPendingRequests();
             await _forceLogout();
             return handler.next(e);
+          }
+
+          // ── Lakukan Retry Di Luar Blok Catch Refresh ────────────────
+          if (refreshSuccess && newAccessToken != null) {
+            _isRefreshing = false;
+
+            // ── Retry semua request yang mengantri ──────────────────
+            _resolvePendingRequests(newAccessToken);
+
+            try {
+              // ── Retry request asal ────────────────────────────────
+              final opts = e.requestOptions;
+              opts.headers['Authorization'] = 'Bearer $newAccessToken';
+              final retryRes = await dio.fetch(opts);
+              return handler.resolve(retryRes);
+            } catch (retryError) {
+              // Jika retry gagal karena error dari server/network (bukan token refresh yang gagal), 
+              // lempar error tersebut ke caller, tanpa me-logout pengguna
+              if (retryError is DioException) {
+                return handler.next(retryError);
+              } else {
+                return handler.next(e);
+              }
+            }
           }
         },
       ),

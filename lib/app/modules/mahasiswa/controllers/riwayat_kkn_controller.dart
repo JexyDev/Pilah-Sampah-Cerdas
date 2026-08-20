@@ -95,6 +95,8 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
             type: type,
             points: null,
             isGpsActive: data['isGpsActive'] as bool?,
+            statusKehadiran: data['statusKehadiran']?.toString() ?? data['status']?.toString(),
+            durationFormatted: data['durationFormatted']?.toString() ?? data['durasiFormatted']?.toString(),
           ));
         }
       } catch (_) {}
