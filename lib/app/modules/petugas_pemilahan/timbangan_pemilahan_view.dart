@@ -446,12 +446,7 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
       backgroundColor: AppColors.backgroundCanvas,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: const Text('Input Timbangan', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: AppColors.primaryGreen)),
-        centerTitle: true,
-        elevation: 2,
-        shadowColor: Colors.black12,
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.primaryGreen,
+        title: const Text('Input Timbangan'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppDimensions.md),

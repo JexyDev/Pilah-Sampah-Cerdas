@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../controllers/posko_kkn_controller.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class RegisterPoskoView extends ConsumerStatefulWidget {
   const RegisterPoskoView({super.key});
@@ -21,8 +24,9 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
   final _alamatController = TextEditingController();
   
   String? _photoPath;
-  Position? _currentPosition;
+  LatLng? _selectedLocation;
   bool _isGettingLocation = false;
+  final MapController _mapController = MapController();
 
   @override
   void dispose() {
@@ -31,10 +35,51 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
+  void _showImagePickerSource() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  'Pilih Sumber Foto',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primaryGreen),
+                title: const Text('Kamera'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_rounded, color: AppColors.primaryBlue),
+                title: const Text('Galeri'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     final file = await picker.pickImage(
-      source: ImageSource.gallery,
+      source: source,
       imageQuality: 80,
       maxWidth: 1080,
       maxHeight: 1080,
@@ -70,7 +115,8 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
       );
       
       setState(() {
-        _currentPosition = position;
+        _selectedLocation = LatLng(position.latitude, position.longitude);
+        _mapController.move(_selectedLocation!, 15.0);
       });
     } catch (e) {
       if (mounted) {
@@ -96,19 +142,27 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_currentPosition == null) {
+    
+    if (_selectedLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap ambil koordinat lokasi posko.'), backgroundColor: AppColors.dangerRed),
+        const SnackBar(content: Text('Harap tentukan lokasi posko di peta.'), backgroundColor: AppColors.dangerRed),
+      );
+      return;
+    }
+    
+    if (_photoPath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Harap lampirkan foto posko.'), backgroundColor: AppColors.dangerRed),
       );
       return;
     }
 
     final success = await ref.read(poskoKknProvider.notifier).registerPosko(
-      latitude: _currentPosition!.latitude,
-      longitude: _currentPosition!.longitude,
+      latitude: _selectedLocation!.latitude,
+      longitude: _selectedLocation!.longitude,
       nama: _namaController.text,
       alamat: _alamatController.text,
-      imagePath: _photoPath,
+      imagePath: _photoPath!,
     );
 
     if (success && mounted) {
@@ -134,152 +188,322 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Daftar Posko KKN', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.textPrimary)),
+        title: const Text('Daftar Posko KKN', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: Colors.grey.shade200, height: 1),
+        ),
       ),
       backgroundColor: AppColors.backgroundCanvas,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppDimensions.lg),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Nama Posko', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _namaController,
-                decoration: InputDecoration(
-                  hintText: 'Cth: Posko KKN Kelompok 12 Dago',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                ),
-              ),
-              const SizedBox(height: AppDimensions.md),
-
-              const Text('Alamat Lengkap', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _alamatController,
-                maxLines: 2,
-                decoration: InputDecoration(
-                  hintText: 'Cth: Jl. Dago Asri No. 12, RT 03 / RW 08',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                ),
-              ),
-              const SizedBox(height: AppDimensions.md),
-              
-              const Text('Koordinat GPS Posko', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _currentPosition == null ? AppColors.warningYellow : AppColors.primaryGreen),
-                ),
+      body: state.isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(AppDimensions.lg),
+              child: Form(
+                key: _formKey,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (_currentPosition != null) ...[
-                      const Icon(Icons.location_on_rounded, color: AppColors.primaryGreen, size: 32),
-                      const SizedBox(height: 8),
-                      Text('Lat: ${_currentPosition!.latitude}', style: const TextStyle(fontWeight: FontWeight.w600)),
-                      Text('Lng: ${_currentPosition!.longitude}', style: const TextStyle(fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 12),
-                    ] else ...[
-                      const Icon(Icons.location_off_rounded, color: AppColors.textHint, size: 32),
-                      const SizedBox(height: 8),
-                      const Text('Koordinat belum diatur', style: TextStyle(color: AppColors.textSecondary)),
-                      const SizedBox(height: 12),
-                    ],
-                    SizedBox(
+                    const _SectionLabel(icon: Icons.business_rounded, label: 'Nama Posko'),
+                    const SizedBox(height: 8),
+                    _StyledTextField(
+                      controller: _namaController,
+                      hintText: 'Cth: Posko KKN Kelompok 12 Dago',
+                      validator: (val) => (val == null || val.isEmpty) ? 'Nama posko wajib diisi' : null,
+                    ),
+                    const SizedBox(height: AppDimensions.md),
+
+                    const _SectionLabel(icon: Icons.map_rounded, label: 'Alamat Lengkap'),
+                    const SizedBox(height: 8),
+                    _StyledTextField(
+                      controller: _alamatController,
+                      maxLines: 2,
+                      hintText: 'Cth: Jl. Dago Asri No. 12, RT 03 / RW 08',
+                      validator: (val) => (val == null || val.isEmpty) ? 'Alamat lengkap wajib diisi' : null,
+                    ),
+                    const SizedBox(height: AppDimensions.md),
+                    
+                    const _SectionLabel(icon: Icons.location_on_rounded, label: 'Koordinat GPS Posko'),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Tentukan lokasi posko pada peta dengan menempatkan pin di posisi yang tepat.',
+                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      height: 250,
                       width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _isGettingLocation ? null : _getLocation,
-                        icon: _isGettingLocation ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.my_location_rounded),
-                        label: Text(_currentPosition == null ? 'Dapatkan Lokasi Saat Ini' : 'Perbarui Lokasi'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryBlue,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Stack(
+                        children: [
+                          FlutterMap(
+                            mapController: _mapController,
+                            options: MapOptions(
+                              initialCenter: _selectedLocation ?? const LatLng(-6.914744, 107.609810),
+                              initialZoom: 15.0,
+                              onTap: (tapPosition, point) {
+                                setState(() {
+                                  _selectedLocation = point;
+                                });
+                              },
+                            ),
+                            children: [
+                              TileLayer(
+                                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                userAgentPackageName: 'com.makerindo.pilahsampah',
+                              ),
+                              if (_selectedLocation != null)
+                                MarkerLayer(
+                                  markers: [
+                                    Marker(
+                                      point: _selectedLocation!,
+                                      width: 36,
+                                      height: 36,
+                                      child: const Icon(
+                                        Icons.home_work_rounded,
+                                        size: 28,
+                                        color: AppColors.primaryGreen,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
+                          // Floating "Lokasi Saya" button
+                          Positioned(
+                            top: 12,
+                            right: 12,
+                            child: Material(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              elevation: 2,
+                              child: InkWell(
+                                onTap: _isGettingLocation ? null : _getLocation,
+                                borderRadius: BorderRadius.circular(8),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _isGettingLocation
+                                          ? const SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryGreen),
+                                            )
+                                          : const Icon(Icons.my_location_rounded, size: 18, color: AppColors.primaryGreen),
+                                      const SizedBox(width: 6),
+                                      const Text(
+                                        'Lokasi Saya',
+                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Label coordinate overlay
+                          if (_selectedLocation != null)
+                            Positioned(
+                              bottom: 12,
+                              left: 12,
+                              right: 12,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.9),
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    )
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.pin_drop_rounded, size: 16, color: AppColors.primaryGreen),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        '${_selectedLocation!.latitude.toStringAsFixed(5)}, ${_selectedLocation!.longitude.toStringAsFixed(5)}',
+                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
+                    const SizedBox(height: AppDimensions.md),
+
+                    const _SectionLabel(icon: Icons.camera_alt_rounded, label: 'Foto Posko'),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Ambil foto langsung dari kamera atau unggah dari galeri.',
+                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: _showImagePickerSource,
+                      child: Container(
+                        height: 200,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: _photoPath != null ? AppColors.primaryGreen : AppColors.border,
+                            width: _photoPath != null ? 2 : 1,
+                          ),
+                        ),
+                        child: _photoPath != null
+                            ? Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: Image.file(File(_photoPath!), fit: BoxFit.cover, width: double.infinity, height: double.infinity),
+                                  ),
+                                  Positioned(
+                                    top: 12, right: 12,
+                                    child: GestureDetector(
+                                      onTap: () => setState(() => _photoPath = null),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.6),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.close, color: Colors.white, size: 18),
+                                      ),
+                                    ),
+                                  )
+                                ],
+                              )
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryGreen.withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.add_a_photo_rounded, size: 32, color: AppColors.primaryGreen),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const Text('Ketuk untuk menambah foto', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
+                                  const SizedBox(height: 4),
+                                  const Text('Format JPG/PNG', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                                ],
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: state.isLoading ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        child: state.isLoading 
+                            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                            : const Text('Kirim Pendaftaran Posko', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
-              const SizedBox(height: AppDimensions.md),
+            ),
+    );
+  }
+}
 
-              const Text('Foto Posko (Opsional)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  height: 150,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[300]!, style: BorderStyle.solid),
-                  ),
-                  child: _photoPath != null
-                      ? Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.file(File(_photoPath!), fit: BoxFit.cover, width: double.infinity, height: double.infinity),
-                            ),
-                            Positioned(
-                              top: 8, right: 8,
-                              child: GestureDetector(
-                                onTap: () => setState(() => _photoPath = null),
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(color: AppColors.dangerRed, shape: BoxShape.circle),
-                                  child: const Icon(Icons.close, color: Colors.white, size: 16),
-                                ),
-                              ),
-                            )
-                          ],
-                        )
-                      : const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.add_a_photo_outlined, size: 40, color: AppColors.textHint),
-                            SizedBox(height: 8),
-                            Text('Ketuk untuk unggah foto posko', style: TextStyle(color: AppColors.textHint)),
-                          ],
-                        ),
-                ),
-              ),
-              const SizedBox(height: AppDimensions.xxl),
+class _SectionLabel extends StatelessWidget {
+  final IconData icon;
+  final String label;
 
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: state.isLoading ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: state.isLoading
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text('Daftarkan Posko', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ),
-              ),
-              SizedBox(height: MediaQuery.of(context).padding.bottom + 40),
-            ],
-          ),
+  const _SectionLabel({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: AppColors.primaryGreen),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+        ),
+      ],
+    );
+  }
+}
+
+class _StyledTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hintText;
+  final String? Function(String?)? validator;
+  final int maxLines;
+
+  const _StyledTextField({
+    required this.controller,
+    required this.hintText,
+    this.validator,
+    this.maxLines = 1,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      validator: validator,
+      style: const TextStyle(fontSize: 14),
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.dangerRed),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.dangerRed, width: 2),
         ),
       ),
     );

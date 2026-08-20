@@ -482,9 +482,33 @@ class ApiKknRepository implements KknRepository {
         }
       }
       return null;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        return null;
+      }
+      debugPrint('Error getPoskoMe: $e');
+      throw Exception('Gagal mengambil data posko');
     } catch (e) {
       debugPrint('Error getPoskoMe: $e');
       throw Exception('Gagal mengambil data posko');
+    }
+  }
+
+  @override
+  Future<List<JenisFasilitas>> getJenisFasilitas() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.kknFasilitasJenis);
+      if (response.statusCode == 200) {
+        final list = response.data['data'] as List<dynamic>? ?? [];
+        return list
+            .map((e) => JenisFasilitas.fromJson(e as Map<String, dynamic>))
+            .where((j) => j.isActive)
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('[KKN] getJenisFasilitas error: $e');
+      return [];
     }
   }
 
@@ -502,6 +526,12 @@ class ApiKknRepository implements KknRepository {
         final response = await apiClient.dio.post(ApiEndpoints.kknFasilitasBantuInput, data: data);
         return response.data as Map<String, dynamic>;
       }
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message']?.toString() ?? e.response?.data?['error']?.toString();
+      if (msg != null && msg.isNotEmpty) {
+        throw Exception(msg);
+      }
+      throw Exception('Gagal mendata fasilitas: $e');
     } catch (e) {
       throw Exception('Gagal mendata fasilitas: $e');
     }

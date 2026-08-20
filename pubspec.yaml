@@ -89,6 +89,9 @@ flutter:
     # Logo aplikasi
     - assets/logo_berseka.webp
     - assets/icons/
+    - assets/icons/calendar.png
+    - assets/icons/medical-report.png
+    - assets/icons/paper.png
     - assets/icons/recycle-bin.png
     - assets/icons/waste.png
     - assets/icons/notification.png

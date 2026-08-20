@@ -443,14 +443,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           ),
         ),
       ),
-      title: const Text(
-        'Dashboard KKN',
-        style: TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: 18,
-          color: AppColors.textPrimary,
-        ),
-      ),
+      title: const Text('Dashboard KKN'),
     );
   }
 

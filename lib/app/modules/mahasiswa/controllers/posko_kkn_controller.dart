@@ -48,10 +48,9 @@ class PoskoKknController extends StateNotifier<PoskoKknState> {
   Future<bool> registerPosko({
     required double latitude,
     required double longitude,
-    String? nama,
-    String? alamat,
-    int? rwId,
-    String? imagePath,
+    required String nama,
+    required String alamat,
+    required String imagePath,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
@@ -61,9 +60,8 @@ class PoskoKknController extends StateNotifier<PoskoKknState> {
         'longitude': longitude,
       };
       
-      if (nama != null && nama.isNotEmpty) payload['nama'] = nama;
-      if (alamat != null && alamat.isNotEmpty) payload['alamat'] = alamat;
-      if (rwId != null) payload['rwId'] = rwId;
+      if (nama.isNotEmpty) payload['nama'] = nama;
+      if (alamat.isNotEmpty) payload['alamat'] = alamat;
 
       await repository.registerPosko(payload, imagePath: imagePath);
       

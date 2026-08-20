@@ -89,6 +89,9 @@ abstract class KknRepository {
   /// Mendapatkan detail posko me
   Future<PoskoKknResponse?> getPoskoMe();
 
+  /// Mendapatkan master data jenis fasilitas (GET /kkn/fasilitas/jenis)
+  Future<List<JenisFasilitas>> getJenisFasilitas();
+
   /// Mendaftarkan fasilitas daur ulang (Rumah Maggot dll)
   Future<Map<String, dynamic>> registerFasilitas(Map<String, dynamic> data, {String? imagePath});
 

@@ -153,12 +153,8 @@ class _RiwayatPetugasPemilahanViewState extends ConsumerState<RiwayatPetugasPemi
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        automaticallyImplyLeading: Navigator.of(context).canPop(),
-        title: const Text('Riwayat Tugas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryGreen)),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.primaryGreen,
-        elevation: 2,
-        shadowColor: Colors.black12,
+        automaticallyImplyLeading: false,
+        title: const Text('Riwayat Tugas'),
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(petugasPemilahanControllerProvider.notifier).refreshAll(),

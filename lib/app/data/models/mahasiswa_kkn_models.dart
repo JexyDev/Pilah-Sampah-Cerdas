@@ -701,3 +701,37 @@ class PoskoKknResponse extends Equatable {
   List<Object?> get props => [posko, isUserLeader, kelompokId];
 }
 
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Model untuk response GET /api/v1/kkn/fasilitas/jenis
+/// ─────────────────────────────────────────────────────────────────────────────
+class JenisFasilitas extends Equatable {
+  final int id;
+  final String key;
+  final String nama;
+  final String? deskripsi;
+  final String? iconUrl;
+  final bool isActive;
+
+  const JenisFasilitas({
+    required this.id,
+    required this.key,
+    required this.nama,
+    this.deskripsi,
+    this.iconUrl,
+    this.isActive = true,
+  });
+
+  factory JenisFasilitas.fromJson(Map<String, dynamic> json) {
+    return JenisFasilitas(
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      key: json['key']?.toString() ?? '',
+      nama: json['nama']?.toString() ?? '',
+      deskripsi: json['deskripsi']?.toString(),
+      iconUrl: json['iconUrl']?.toString(),
+      isActive: json['isActive'] == true,
+    );
+  }
+
+  @override
+  List<Object?> get props => [id, key, nama, iconUrl, isActive];
+}
