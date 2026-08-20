@@ -152,7 +152,6 @@ type TabType = "OVERVIEW" | "KELOMPOK" | "MAHASISWA" | "APPROVAL" | "INOVASI" | 
 export const DplDashboardPage: React.FC = () => {
   const { user } = useAuthStore();
   const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
-  const isDeveloper = userRole === "DEVELOPER";
 
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
@@ -687,42 +686,40 @@ export const DplDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modern Segmented Navigation Tabs (Hanya untuk Developer) */}
-      {isDeveloper && (
-        <div className="bg-slate-100/90 dark:bg-slate-800/90 dark:bg-slate-800/90 p-1.5 rounded-xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1 overflow-x-auto scrollbar-none">
-          {(
-            [
-              { key: "OVERVIEW" as TabType, label: "Ringkasan Eksekutif", icon: LayoutDashboard },
-              { key: "APPROVAL" as TabType, label: "Ajuan Ketidakhadiran", icon: FileCheck, badge: alerts?.pendingApprovalsCount },
-              { key: "KELOMPOK" as TabType, label: "Kelompok (Dev)", icon: Users },
-              { key: "MAHASISWA" as TabType, label: "Mahasiswa & Nilai (Dev)", icon: GraduationCap },
-              { key: "MAP" as TabType, label: "Peta Wilayah (Dev)", icon: MapPin },
-            ] as { key: TabType; label: string; icon: any; badge?: number }[]
-          ).map((t) => {
-            const Icon = t.icon;
-            const isActive = activeTab === t.key;
-            return (
-              <button
-                key={t.key}
-                onClick={() => setActiveTab(t.key)}
-                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer whitespace-nowrap ${
-                  isActive
-                    ? "bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60"
-                }`}
-              >
-                <Icon size={14} className={isActive ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"} />
-                <span>{t.label}</span>
-                {t.badge && t.badge > 0 ? (
-                  <span className="bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
-                    {t.badge}
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {/* Modern Segmented Navigation Tabs (Terbuka untuk Semua Pengawas KKN) */}
+      <div className="bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1 overflow-x-auto scrollbar-none">
+        {(
+          [
+            { key: "OVERVIEW" as TabType, label: "Ringkasan Eksekutif", icon: LayoutDashboard },
+            { key: "APPROVAL" as TabType, label: "Verifikasi Izin & Sakit", icon: FileCheck, badge: alerts?.pendingApprovalsCount },
+            { key: "KELOMPOK" as TabType, label: "Daftar Kelompok Dampingan", icon: Users },
+            { key: "MAHASISWA" as TabType, label: "Portofolio Mahasiswa", icon: GraduationCap },
+            { key: "MAP" as TabType, label: "Peta Sebaran Wilayah", icon: MapPin },
+          ] as { key: TabType; label: string; icon: any; badge?: number }[]
+        ).map((t) => {
+          const Icon = t.icon;
+          const isActive = activeTab === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+                isActive
+                  ? "bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60"
+              }`}
+            >
+              <Icon size={14} className={isActive ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"} />
+              <span>{t.label}</span>
+              {t.badge && t.badge > 0 ? (
+                <span className="bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
+                  {t.badge}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
 
       {/* VIEW 1: OVERVIEW */}
       {activeTab === "OVERVIEW" && (
@@ -1847,8 +1844,8 @@ export const DplDashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* VIEW 5: PETA SEBARAN (KHUSUS DEVELOPER) */}
-      {activeTab === "MAP" && isDeveloper && (
+      {/* VIEW 5: PETA SEBARAN */}
+      {activeTab === "MAP" && (
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
             <div>
