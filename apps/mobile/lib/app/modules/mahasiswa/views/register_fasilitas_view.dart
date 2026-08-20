@@ -969,19 +969,16 @@ class _StyledTextField extends StatelessWidget {
   const _StyledTextField({
     required this.controller,
     required this.hintText,
-    this.keyboardType,
     this.validator,
   });
   final TextEditingController controller;
   final String hintText;
-  final TextInputType? keyboardType;
   final String? Function(String?)? validator;
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
-      keyboardType: keyboardType,
       validator: validator,
       decoration: InputDecoration(
         hintText: hintText,
