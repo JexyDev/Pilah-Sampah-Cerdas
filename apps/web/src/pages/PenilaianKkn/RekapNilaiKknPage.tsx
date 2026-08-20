@@ -4,9 +4,12 @@
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
  * Halaman Rekapitulasi & Nilai Akhir KKN Mahasiswa
- * Presisi 100% sesuai desain resmi BERSEKA:
- * - Komposisi Penilai: DPL 30% & MPL 60% (dinormalisasi skala 100)
- * - Formula Nilai Akhir: 25% Kehadiran + 15% Poin Dampingan + 20% Individu + 20% Proker + 20% Kelompok
+ * Dilengkapi:
+ * - Smart Windowing Pagination (tidak akan pernah meluap/overflow)
+ * - Filter & Pencarian Lengkap (NIM/Nama, Kelompok, Status, Urutan, Jumlah per Halaman)
+ * - KPI Ringkasan Statistik Nilai & Rata-rata
+ * - Horizontal Slidebar Responsif untuk semua resolusi laptop & zoom browser
+ * - Komposisi Penilai: DPL 30% & MPL 60% (dinormalisasi 100%)
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
@@ -15,14 +18,20 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Search,
+  Users,
+  Award,
+  Clock,
+  CheckCircle2,
+  RotateCcw,
+  SlidersHorizontal,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
 import { dplService, type RekapNilaiStudent, type RekapNilaiResponse } from "../../services/dplService";
 
-// Dataset 24 Mahasiswa lengkap mencakup 5 halaman pagination sesuai spesifikasi dan tampilan resmi
+// Fallback demo data jika offline
 const DEFAULT_STUDENTS: RekapNilaiStudent[] = [
-  // Page 1
   {
     id: "st-1",
     userId: "u-1",
@@ -31,7 +40,7 @@ const DEFAULT_STUDENTS: RekapNilaiStudent[] = [
     jurusan: "Teknik Informatika",
     fakultas: "Fakultas Teknik dan Ilmu Komputer",
     kelompokId: "kel-1",
-    kelompokName: "KKN Sadang Serang 1",
+    kelompokName: "Kelompok 1 Sadang Serang",
     kelurahan: "Sadang Serang",
     isKetua: true,
     kehadiran: 92,
@@ -57,7 +66,7 @@ const DEFAULT_STUDENTS: RekapNilaiStudent[] = [
     jurusan: "Sistem Informasi",
     fakultas: "Fakultas Teknik dan Ilmu Komputer",
     kelompokId: "kel-1",
-    kelompokName: "KKN Sadang Serang 1",
+    kelompokName: "Kelompok 1 Sadang Serang",
     kelurahan: "Sadang Serang",
     isKetua: false,
     kehadiran: 88,
@@ -83,7 +92,7 @@ const DEFAULT_STUDENTS: RekapNilaiStudent[] = [
     jurusan: "Ilmu Komunikasi",
     fakultas: "Fakultas Ilmu Sosial dan Ilmu Politik",
     kelompokId: "kel-1",
-    kelompokName: "KKN Sadang Serang 1",
+    kelompokName: "Kelompok 1 Sadang Serang",
     kelurahan: "Sadang Serang",
     isKetua: false,
     kehadiran: 95,
@@ -109,7 +118,7 @@ const DEFAULT_STUDENTS: RekapNilaiStudent[] = [
     jurusan: "Perencanaan Wilayah dan Kota",
     fakultas: "Fakultas Teknik dan Ilmu Komputer",
     kelompokId: "kel-1",
-    kelompokName: "KKN Sadang Serang 1",
+    kelompokName: "Kelompok 1 Sadang Serang",
     kelurahan: "Sadang Serang",
     isKetua: false,
     kehadiran: 86,
@@ -135,7 +144,7 @@ const DEFAULT_STUDENTS: RekapNilaiStudent[] = [
     jurusan: "Manajemen",
     fakultas: "Fakultas Ekonomi dan Bisnis",
     kelompokId: "kel-1",
-    kelompokName: "KKN Sadang Serang 1",
+    kelompokName: "Kelompok 1 Sadang Serang",
     kelurahan: "Sadang Serang",
     isKetua: false,
     kehadiran: 90,
@@ -153,555 +162,76 @@ const DEFAULT_STUDENTS: RekapNilaiStudent[] = [
     predikat: "A",
     status: "Lengkap",
   },
-
-  // Page 2
-  {
-    id: "st-6",
-    userId: "u-6",
-    nim: "10124112",
-    name: "Nabila Putri Salsabila",
-    jurusan: "Teknik Informatika",
-    fakultas: "Fakultas Teknik dan Ilmu Komputer",
-    kelompokId: "kel-1",
-    kelompokName: "KKN Sadang Serang 1",
-    kelurahan: "Sadang Serang",
-    isKetua: false,
-    kehadiran: 94,
-    poinDampingan: 88,
-    individuDpl: 90,
-    individuMpl: 92,
-    individuGabungan: 91.3,
-    prokerDpl: 88,
-    prokerMpl: 91,
-    prokerGabungan: 90.0,
-    kelompokDpl: 92,
-    kelompokMpl: 90,
-    kelompokGabungan: 90.7,
-    nilaiAkhir: 91.2,
-    predikat: "A",
-    status: "Lengkap",
-  },
-  {
-    id: "st-7",
-    userId: "u-7",
-    nim: "10124189",
-    name: "Raden Mochamad Fajar",
-    jurusan: "Ilmu Komunikasi",
-    fakultas: "Fakultas Ilmu Sosial dan Ilmu Politik",
-    kelompokId: "kel-1",
-    kelompokName: "KKN Sadang Serang 1",
-    kelurahan: "Sadang Serang",
-    isKetua: false,
-    kehadiran: 89,
-    poinDampingan: 84,
-    individuDpl: 86,
-    individuMpl: 88,
-    individuGabungan: 87.3,
-    prokerDpl: 85,
-    prokerMpl: 89,
-    prokerGabungan: 87.7,
-    kelompokDpl: 88,
-    kelompokMpl: 86,
-    kelompokGabungan: 86.7,
-    nilaiAkhir: 87.1,
-    predikat: "A",
-    status: "Lengkap",
-  },
-  {
-    id: "st-8",
-    userId: "u-8",
-    nim: "10124201",
-    name: "Rizky Ramadhan",
-    jurusan: "Sistem Informasi",
-    fakultas: "Fakultas Teknik dan Ilmu Komputer",
-    kelompokId: "kel-2",
-    kelompokName: "KKN Sadang Serang 2",
-    kelurahan: "Sadang Serang",
-    isKetua: false,
-    kehadiran: 85,
-    poinDampingan: 82,
-    individuDpl: 83,
-    individuMpl: null,
-    individuGabungan: null,
-    prokerDpl: 86,
-    prokerMpl: null,
-    prokerGabungan: null,
-    kelompokDpl: 84,
-    kelompokMpl: null,
-    kelompokGabungan: null,
-    nilaiAkhir: null,
-    predikat: null,
-    status: "Menunggu MPL",
-  },
-  {
-    id: "st-9",
-    userId: "u-9",
-    nim: "10124233",
-    name: "Siti Nurhaliza",
-    jurusan: "Akuntansi",
-    fakultas: "Fakultas Ekonomi dan Bisnis",
-    kelompokId: "kel-2",
-    kelompokName: "KKN Sadang Serang 2",
-    kelurahan: "Sadang Serang",
-    isKetua: false,
-    kehadiran: 92,
-    poinDampingan: 86,
-    individuDpl: 89,
-    individuMpl: 91,
-    individuGabungan: 90.3,
-    prokerDpl: 90,
-    prokerMpl: 92,
-    prokerGabungan: 91.3,
-    kelompokDpl: 89,
-    kelompokMpl: 90,
-    kelompokGabungan: 89.7,
-    nilaiAkhir: 90.0,
-    predikat: "A",
-    status: "Lengkap",
-  },
-  {
-    id: "st-10",
-    userId: "u-10",
-    nim: "10124256",
-    name: "Tegar Dwi Saputra",
-    jurusan: "Teknik Komputer",
-    fakultas: "Fakultas Teknik dan Ilmu Komputer",
-    kelompokId: "kel-2",
-    kelompokName: "KKN Sadang Serang 2",
-    kelurahan: "Sadang Serang",
-    isKetua: false,
-    kehadiran: 91,
-    poinDampingan: 85,
-    individuDpl: 87,
-    individuMpl: 89,
-    individuGabungan: 88.3,
-    prokerDpl: 88,
-    prokerMpl: 90,
-    prokerGabungan: 89.3,
-    kelompokDpl: 87,
-    kelompokMpl: 89,
-    kelompokGabungan: 88.3,
-    nilaiAkhir: 88.6,
-    predikat: "A",
-    status: "Lengkap",
-  },
-
-  // Page 3
-  {
-    id: "st-11",
-    userId: "u-11",
-    nim: "10124278",
-    name: "Vania Aurelia",
-    jurusan: "Desain Komunikasi Visual",
-    fakultas: "Fakultas Desain",
-    kelompokId: "kel-2",
-    kelompokName: "KKN Sadang Serang 2",
-    kelurahan: "Sadang Serang",
-    isKetua: true,
-    kehadiran: 96,
-    poinDampingan: 92,
-    individuDpl: 94,
-    individuMpl: 95,
-    individuGabungan: 94.7,
-    prokerDpl: 92,
-    prokerMpl: 94,
-    prokerGabungan: 93.3,
-    kelompokDpl: 93,
-    kelompokMpl: 94,
-    kelompokGabungan: 93.7,
-    nilaiAkhir: 94.2,
-    predikat: "A",
-    status: "Lengkap",
-  },
-  {
-    id: "st-12",
-    userId: "u-12",
-    nim: "10124290",
-    name: "Wahyu Hidayat",
-    jurusan: "Teknik Elektro",
-    fakultas: "Fakultas Teknik dan Ilmu Komputer",
-    kelompokId: "kel-2",
-    kelompokName: "KKN Sadang Serang 2",
-    kelurahan: "Sadang Serang",
-    isKetua: false,
-    kehadiran: 88,
-    poinDampingan: 80,
-    individuDpl: 85,
-    individuMpl: 86,
-    individuGabungan: 85.7,
-    prokerDpl: 86,
-    prokerMpl: 88,
-    prokerGabungan: 87.3,
-    kelompokDpl: 85,
-    kelompokMpl: 86,
-    kelompokGabungan: 85.7,
-    nilaiAkhir: 86.0,
-    predikat: "A",
-    status: "Lengkap",
-  },
-  {
-    id: "st-13",
-    userId: "u-13",
-    nim: "10124312",
-    name: "Zahra Annisa",
-    jurusan: "Ilmu Komunikasi",
-    fakultas: "Fakultas Ilmu Sosial dan Ilmu Politik",
-    kelompokId: "kel-3",
-    kelompokName: "KKN Dago 1",
-    kelurahan: "Dago",
-    isKetua: false,
-    kehadiran: 93,
-    poinDampingan: 89,
-    individuDpl: 91,
-    individuMpl: 93,
-    individuGabungan: 92.3,
-    prokerDpl: 89,
-    prokerMpl: 92,
-    prokerGabungan: 91.0,
-    kelompokDpl: 90,
-    kelompokMpl: 91,
-    kelompokGabungan: 90.7,
-    nilaiAkhir: 91.5,
-    predikat: "A",
-    status: "Lengkap",
-  },
-  {
-    id: "st-14",
-    userId: "u-14",
-    nim: "10124335",
-    name: "Aditya Nugraha",
-    jurusan: "Teknik Sipil",
-    fakultas: "Fakultas Teknik dan Ilmu Komputer",
-    kelompokId: "kel-3",
-    kelompokName: "KKN Dago 1",
-    kelurahan: "Dago",
-    isKetua: false,
-    kehadiran: 87,
-    poinDampingan: 81,
-    individuDpl: 84,
-    individuMpl: null,
-    individuGabungan: null,
-    prokerDpl: 85,
-    prokerMpl: null,
-    prokerGabungan: null,
-    kelompokDpl: 86,
-    kelompokMpl: null,
-    kelompokGabungan: null,
-    nilaiAkhir: null,
-    predikat: null,
-    status: "Menunggu MPL",
-  },
-  {
-    id: "st-15",
-    userId: "u-15",
-    nim: "10124348",
-    name: "Bella Safitri",
-    jurusan: "Manajemen",
-    fakultas: "Fakultas Ekonomi dan Bisnis",
-    kelompokId: "kel-3",
-    kelompokName: "KKN Dago 1",
-    kelurahan: "Dago",
-    isKetua: false,
-    kehadiran: 90,
-    poinDampingan: 86,
-    individuDpl: 88,
-    individuMpl: 90,
-    individuGabungan: 89.3,
-    prokerDpl: 87,
-    prokerMpl: 91,
-    prokerGabungan: 89.7,
-    kelompokDpl: 89,
-    kelompokMpl: 89,
-    kelompokGabungan: 89.0,
-    nilaiAkhir: 89.0,
-    predikat: "A",
-    status: "Lengkap",
-  },
-
-  // Page 4
-  {
-    id: "st-16",
-    userId: "u-16",
-    nim: "10124360",
-    name: "Dimas Arya Pratama",
-    jurusan: "Teknik Informatika",
-    fakultas: "Fakultas Teknik dan Ilmu Komputer",
-    kelompokId: "kel-3",
-    kelompokName: "KKN Dago 1",
-    kelurahan: "Dago",
-    isKetua: false,
-    kehadiran: 89,
-    poinDampingan: 84,
-    individuDpl: 86,
-    individuMpl: 88,
-    individuGabungan: 87.3,
-    prokerDpl: 88,
-    prokerMpl: 89,
-    prokerGabungan: 88.7,
-    kelompokDpl: 87,
-    kelompokMpl: 88,
-    kelompokGabungan: 87.7,
-    nilaiAkhir: 87.7,
-    predikat: "A",
-    status: "Lengkap",
-  },
-  {
-    id: "st-17",
-    userId: "u-17",
-    nim: "10124372",
-    name: "Farhan Maulana",
-    jurusan: "Sistem Informasi",
-    fakultas: "Fakultas Teknik dan Ilmu Komputer",
-    kelompokId: "kel-3",
-    kelompokName: "KKN Dago 1",
-    kelurahan: "Dago",
-    isKetua: true,
-    kehadiran: 91,
-    poinDampingan: 87,
-    individuDpl: 89,
-    individuMpl: 90,
-    individuGabungan: 89.7,
-    prokerDpl: 90,
-    prokerMpl: 91,
-    prokerGabungan: 90.7,
-    kelompokDpl: 88,
-    kelompokMpl: 90,
-    kelompokGabungan: 89.3,
-    nilaiAkhir: 89.8,
-    predikat: "A",
-    status: "Lengkap",
-  },
-  {
-    id: "st-18",
-    userId: "u-18",
-    nim: "10124385",
-    name: "Gita Savitri",
-    jurusan: "Ilmu Komunikasi",
-    fakultas: "Fakultas Ilmu Sosial dan Ilmu Politik",
-    kelompokId: "kel-4",
-    kelompokName: "KKN Dago 2",
-    kelurahan: "Dago",
-    isKetua: false,
-    kehadiran: 95,
-    poinDampingan: 91,
-    individuDpl: 93,
-    individuMpl: 94,
-    individuGabungan: 93.7,
-    prokerDpl: 91,
-    prokerMpl: 93,
-    prokerGabungan: 92.3,
-    kelompokDpl: 92,
-    kelompokMpl: 93,
-    kelompokGabungan: 92.7,
-    nilaiAkhir: 93.2,
-    predikat: "A",
-    status: "Lengkap",
-  },
-  {
-    id: "st-19",
-    userId: "u-19",
-    nim: "10124398",
-    name: "Hendra Kurniawan",
-    jurusan: "Teknik Elektro",
-    fakultas: "Fakultas Teknik dan Ilmu Komputer",
-    kelompokId: "kel-4",
-    kelompokName: "KKN Dago 2",
-    kelurahan: "Dago",
-    isKetua: false,
-    kehadiran: 88,
-    poinDampingan: 83,
-    individuDpl: 85,
-    individuMpl: 87,
-    individuGabungan: 86.3,
-    prokerDpl: 86,
-    prokerMpl: 88,
-    prokerGabungan: 87.3,
-    kelompokDpl: 86,
-    kelompokMpl: 87,
-    kelompokGabungan: 86.7,
-    nilaiAkhir: 86.7,
-    predikat: "A",
-    status: "Lengkap",
-  },
-  {
-    id: "st-20",
-    userId: "u-20",
-    nim: "10124410",
-    name: "Indah Permata",
-    jurusan: "Akuntansi",
-    fakultas: "Fakultas Ekonomi dan Bisnis",
-    kelompokId: "kel-4",
-    kelompokName: "KKN Dago 2",
-    kelurahan: "Dago",
-    isKetua: false,
-    kehadiran: 93,
-    poinDampingan: 88,
-    individuDpl: 90,
-    individuMpl: 92,
-    individuGabungan: 91.3,
-    prokerDpl: 89,
-    prokerMpl: 92,
-    prokerGabungan: 91.0,
-    kelompokDpl: 91,
-    kelompokMpl: 91,
-    kelompokGabungan: 91.0,
-    nilaiAkhir: 91.0,
-    predikat: "A",
-    status: "Lengkap",
-  },
-
-  // Page 5
-  {
-    id: "st-21",
-    userId: "u-21",
-    nim: "10124423",
-    name: "Jefri Nichol",
-    jurusan: "Ilmu Komunikasi",
-    fakultas: "Fakultas Ilmu Sosial dan Ilmu Politik",
-    kelompokId: "kel-4",
-    kelompokName: "KKN Dago 2",
-    kelurahan: "Dago",
-    isKetua: false,
-    kehadiran: 86,
-    poinDampingan: 80,
-    individuDpl: 84,
-    individuMpl: null,
-    individuGabungan: null,
-    prokerDpl: 86,
-    prokerMpl: null,
-    prokerGabungan: null,
-    kelompokDpl: 85,
-    kelompokMpl: null,
-    kelompokGabungan: null,
-    nilaiAkhir: null,
-    predikat: null,
-    status: "Menunggu MPL",
-  },
-  {
-    id: "st-22",
-    userId: "u-22",
-    nim: "10124435",
-    name: "Karina Maharani",
-    jurusan: "Perencanaan Wilayah dan Kota",
-    fakultas: "Fakultas Teknik dan Ilmu Komputer",
-    kelompokId: "kel-5",
-    kelompokName: "KKN Lebak Siliwangi 1",
-    kelurahan: "Lebak Siliwangi",
-    isKetua: true,
-    kehadiran: 94,
-    poinDampingan: 90,
-    individuDpl: 92,
-    individuMpl: 93,
-    individuGabungan: 92.7,
-    prokerDpl: 90,
-    prokerMpl: 93,
-    prokerGabungan: 92.0,
-    kelompokDpl: 91,
-    kelompokMpl: 92,
-    kelompokGabungan: 91.7,
-    nilaiAkhir: 92.2,
-    predikat: "A",
-    status: "Lengkap",
-  },
-  {
-    id: "st-23",
-    userId: "u-23",
-    nim: "10124448",
-    name: "Lukman Hakim",
-    jurusan: "Teknik Informatika",
-    fakultas: "Fakultas Teknik dan Ilmu Komputer",
-    kelompokId: "kel-5",
-    kelompokName: "KKN Lebak Siliwangi 1",
-    kelurahan: "Lebak Siliwangi",
-    isKetua: false,
-    kehadiran: 89,
-    poinDampingan: 85,
-    individuDpl: 87,
-    individuMpl: 89,
-    individuGabungan: 88.3,
-    prokerDpl: 88,
-    prokerMpl: 89,
-    prokerGabungan: 88.7,
-    kelompokDpl: 88,
-    kelompokMpl: 88,
-    kelompokGabungan: 88.0,
-    nilaiAkhir: 88.1,
-    predikat: "A",
-    status: "Lengkap",
-  },
-  {
-    id: "st-24",
-    userId: "u-24",
-    nim: "10124460",
-    name: "Maya Anggraini",
-    jurusan: "Manajemen",
-    fakultas: "Fakultas Ekonomi dan Bisnis",
-    kelompokId: "kel-5",
-    kelompokName: "KKN Lebak Siliwangi 1",
-    kelurahan: "Lebak Siliwangi",
-    isKetua: false,
-    kehadiran: 92,
-    poinDampingan: 87,
-    individuDpl: 89,
-    individuMpl: 91,
-    individuGabungan: 90.3,
-    prokerDpl: 89,
-    prokerMpl: 91,
-    prokerGabungan: 90.3,
-    kelompokDpl: 90,
-    kelompokMpl: 90,
-    kelompokGabungan: 90.0,
-    nilaiAkhir: 90.1,
-    predikat: "A",
-    status: "Lengkap",
-  },
 ];
 
 export const RekapNilaiKknPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [students, setStudents] = useState<RekapNilaiStudent[]>(DEFAULT_STUDENTS);
 
-  // Pagination states - 10 mahasiswa per halaman
+  // Filter & Search states
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [filterKelompok, setFilterKelompok] = useState<string>("ALL");
+  const [filterStatus, setFilterStatus] = useState<string>("ALL");
+  const [sortBy, setSortBy] = useState<string>("NIM_ASC");
+
+  // Pagination states
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch rekapitulasi data from live API
       const res: RekapNilaiResponse = await dplService.getRekapNilaiAkhir();
 
       if (res && res.students && res.students.length > 0) {
-        // Map backend students and ensure complete calculation fields
         const formatted = res.students.map((s) => {
-          const dplIndiv = s.individuDpl ?? s.skorIndividu ?? 85;
+          const dplIndiv = s.individuDpl ?? s.skorIndividu ?? null;
           const mplIndiv = s.individuMpl ?? (s.status === "Lengkap" ? 88 : null);
-          const indivGab = mplIndiv !== null ? Math.round(((30 * dplIndiv + 60 * mplIndiv) / 90) * 10) / 10 : null;
+          const indivGab =
+            dplIndiv !== null && mplIndiv !== null
+              ? Math.round(((30 * dplIndiv + 60 * mplIndiv) / 90) * 10) / 10
+              : null;
 
-          const dplProk = s.prokerDpl ?? s.skorProkerKelompok ?? 86;
+          const dplProk = s.prokerDpl ?? s.skorProkerKelompok ?? null;
           const mplProk = s.prokerMpl ?? (s.status === "Lengkap" ? 90 : null);
-          const prokGab = mplProk !== null ? Math.round(((30 * dplProk + 60 * mplProk) / 90) * 10) / 10 : null;
+          const prokGab =
+            dplProk !== null && mplProk !== null
+              ? Math.round(((30 * dplProk + 60 * mplProk) / 90) * 10) / 10
+              : null;
 
-          const dplKel = s.kelompokDpl ?? 88;
+          const dplKel = s.kelompokDpl ?? null;
           const mplKel = s.kelompokMpl ?? (s.status === "Lengkap" ? 89 : null);
-          const kelGab = mplKel !== null ? Math.round(((30 * dplKel + 60 * mplKel) / 90) * 10) / 10 : null;
+          const kelGab =
+            dplKel !== null && mplKel !== null
+              ? Math.round(((30 * dplKel + 60 * mplKel) / 90) * 10) / 10
+              : null;
 
           const keh = s.kehadiran ?? s.tingkatKehadiran ?? 90;
-          const poin = s.poinDampingan ?? 85;
+          const poin = s.poinDampingan ?? 80;
 
           let nAkhir: number | null = s.nilaiAkhir ?? null;
           let pred: string | null = s.predikat ?? s.hurufMutu ?? null;
           let stat = s.status || "Menunggu MPL";
 
           if (indivGab !== null && prokGab !== null && kelGab !== null) {
-            const rawScore = 0.25 * keh + 0.15 * poin + 0.20 * indivGab + 0.20 * prokGab + 0.20 * kelGab;
+            const rawScore =
+              0.25 * keh + 0.15 * poin + 0.2 * indivGab + 0.2 * prokGab + 0.2 * kelGab;
             nAkhir = Math.round(rawScore * 10) / 10;
-            pred = nAkhir >= 85 ? "A" : nAkhir >= 75 ? "B" : nAkhir >= 65 ? "C" : nAkhir >= 55 ? "D" : "E";
+            pred =
+              nAkhir >= 85
+                ? "A"
+                : nAkhir >= 75
+                ? "B"
+                : nAkhir >= 65
+                ? "C"
+                : nAkhir >= 55
+                ? "D"
+                : "E";
             stat = "Lengkap";
           } else {
             nAkhir = null;
             pred = null;
-            stat = "Menunggu MPL";
+            stat = dplIndiv === null ? "Menunggu DPL" : "Menunggu MPL";
           }
 
           return {
@@ -725,7 +255,7 @@ export const RekapNilaiKknPage: React.FC = () => {
         setStudents(formatted);
       }
     } catch {
-      // Gracefully maintain demo state if network/mock environment
+      // Fallback to default students
     } finally {
       setLoading(false);
     }
@@ -735,13 +265,103 @@ export const RekapNilaiKknPage: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
-  const totalStudentsCount = students.length;
-  const totalPages = Math.max(1, Math.ceil(totalStudentsCount / itemsPerPage));
-  
+  // Unique list of groups for filter dropdown
+  const kelompokOptions = useMemo(() => {
+    const setGroups = new Set<string>();
+    students.forEach((s) => {
+      if (s.kelompokName) setGroups.add(s.kelompokName);
+    });
+    return Array.from(setGroups).sort();
+  }, [students]);
+
+  // Filtered & Sorted Students
+  const filteredStudents = useMemo(() => {
+    return students
+      .filter((s) => {
+        // Search by NIM or Name
+        if (searchTerm.trim() !== "") {
+          const matchNim = s.nim.toLowerCase().includes(searchTerm.toLowerCase().trim());
+          const matchName = s.name.toLowerCase().includes(searchTerm.toLowerCase().trim());
+          if (!matchNim && !matchName) return false;
+        }
+
+        // Filter by Kelompok
+        if (filterKelompok !== "ALL" && s.kelompokName !== filterKelompok) {
+          return false;
+        }
+
+        // Filter by Status
+        if (filterStatus !== "ALL" && s.status !== filterStatus) {
+          return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === "NIM_ASC") return a.nim.localeCompare(b.nim, undefined, { numeric: true });
+        if (sortBy === "NIM_DESC") return b.nim.localeCompare(a.nim, undefined, { numeric: true });
+        if (sortBy === "NAME_ASC") return a.name.localeCompare(b.name);
+        if (sortBy === "NAME_DESC") return b.name.localeCompare(a.name);
+        if (sortBy === "SCORE_DESC") return (b.nilaiAkhir ?? -1) - (a.nilaiAkhir ?? -1);
+        if (sortBy === "SCORE_ASC") return (a.nilaiAkhir ?? 999) - (b.nilaiAkhir ?? 999);
+        return 0;
+      });
+  }, [students, searchTerm, filterKelompok, filterStatus, sortBy]);
+
+  // Reset current page to 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterKelompok, filterStatus, itemsPerPage]);
+
+  // KPI calculations
+  const kpiStats = useMemo(() => {
+    const total = filteredStudents.length;
+    const lengkap = filteredStudents.filter((s) => s.status === "Lengkap").length;
+    const menungguMpl = filteredStudents.filter((s) => s.status === "Menunggu MPL").length;
+    const menungguDpl = filteredStudents.filter((s) => s.status === "Menunggu DPL").length;
+
+    const completedScores = filteredStudents
+      .map((s) => s.nilaiAkhir)
+      .filter((v): v is number => typeof v === "number");
+
+    const avgScore =
+      completedScores.length > 0
+        ? (completedScores.reduce((acc, c) => acc + c, 0) / completedScores.length).toFixed(1)
+        : "—";
+
+    return { total, lengkap, menungguMpl, menungguDpl, avgScore };
+  }, [filteredStudents]);
+
+  // Smart Pagination bounds & windowing
+  const totalFilteredCount = filteredStudents.length;
+  const totalPages = Math.max(1, Math.ceil(totalFilteredCount / itemsPerPage));
+
   const paginatedStudents = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
-    return students.slice(start, start + itemsPerPage);
-  }, [students, currentPage, itemsPerPage]);
+    return filteredStudents.slice(start, start + itemsPerPage);
+  }, [filteredStudents, currentPage, itemsPerPage]);
+
+  // Smart Pagination Items (e.g. 1 2 3 ... 57)
+  const paginationPages = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    if (currentPage <= 4) {
+      return [1, 2, 3, 4, 5, "...", totalPages];
+    }
+    if (currentPage >= totalPages - 3) {
+      return [1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    return [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
+  }, [currentPage, totalPages]);
+
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setFilterKelompok("ALL");
+    setFilterStatus("ALL");
+    setSortBy("NIM_ASC");
+    setCurrentPage(1);
+  };
 
   const handleExportExcel = () => {
     try {
@@ -787,7 +407,7 @@ export const RekapNilaiKknPage: React.FC = () => {
         "",
       ];
 
-      const dataRows = students.map((s, idx) => [
+      const dataRows = filteredStudents.map((s, idx) => [
         idx + 1,
         s.nim,
         s.name,
@@ -796,13 +416,19 @@ export const RekapNilaiKknPage: React.FC = () => {
         s.poinDampingan ?? "—",
         s.individuDpl ?? "—",
         s.individuMpl ?? "—",
-        s.individuGabungan !== null && s.individuGabungan !== undefined ? s.individuGabungan.toFixed(1) : "—",
+        s.individuGabungan !== null && s.individuGabungan !== undefined
+          ? s.individuGabungan.toFixed(1)
+          : "—",
         s.prokerDpl ?? "—",
         s.prokerMpl ?? "—",
-        s.prokerGabungan !== null && s.prokerGabungan !== undefined ? s.prokerGabungan.toFixed(1) : "—",
+        s.prokerGabungan !== null && s.prokerGabungan !== undefined
+          ? s.prokerGabungan.toFixed(1)
+          : "—",
         s.kelompokDpl ?? "—",
         s.kelompokMpl ?? "—",
-        s.kelompokGabungan !== null && s.kelompokGabungan !== undefined ? s.kelompokGabungan.toFixed(1) : "—",
+        s.kelompokGabungan !== null && s.kelompokGabungan !== undefined
+          ? s.kelompokGabungan.toFixed(1)
+          : "—",
         s.nilaiAkhir !== null && s.nilaiAkhir !== undefined ? s.nilaiAkhir.toFixed(1) : "—",
         s.predikat ?? "—",
         s.status ?? "—",
@@ -827,17 +453,23 @@ export const RekapNilaiKknPage: React.FC = () => {
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Rekap & Nilai Akhir");
-      XLSX.writeFile(wb, `Rekap_Nilai_Akhir_BERSEKA_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      XLSX.writeFile(
+        wb,
+        `Rekap_Nilai_Akhir_BERSEKA_${new Date().toISOString().slice(0, 10)}.xlsx`
+      );
       toast.success("Berhasil mengekspor Rekap & Nilai Akhir ke Excel!");
     } catch {
       toast.error("Gagal mengekspor data ke Excel");
     }
   };
 
+  const isFiltered =
+    searchTerm !== "" || filterKelompok !== "ALL" || filterStatus !== "ALL" || sortBy !== "NIM_ASC";
+
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-3 sm:p-6 lg:p-8 space-y-5 sm:space-y-6 text-slate-800 dark:text-slate-100 max-w-[1600px] mx-auto overflow-x-hidden">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-3 sm:p-6 lg:p-8 space-y-6 text-slate-800 dark:text-slate-100 max-w-[1680px] mx-auto overflow-x-hidden">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl lg:text-[26px] font-extrabold text-[#0f172a] dark:text-slate-100 tracking-tight">
             Rekap & Nilai Akhir
@@ -847,17 +479,157 @@ export const RekapNilaiKknPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3 self-stretch sm:self-auto justify-end">
+        <div className="flex items-center gap-3 self-stretch md:self-auto justify-end">
           {/* Button Ekspor Excel */}
           <button
             onClick={handleExportExcel}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/40 text-slate-800 dark:text-slate-200 border border-[#009966] rounded-lg text-xs font-bold shadow-2xs transition-all cursor-pointer w-full sm:w-auto"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 hover:bg-emerald-50/80 dark:hover:bg-emerald-950/40 text-slate-800 dark:text-slate-200 border border-[#009966] rounded-xl text-xs font-bold shadow-2xs transition-all cursor-pointer w-full sm:w-auto hover:shadow-sm"
           >
             <div className="w-4 h-4 rounded border border-[#009966] flex items-center justify-center text-[10px] text-[#009966] font-black">
               X
             </div>
-            <span>Ekspor Excel</span>
+            <span>Ekspor Excel ({filteredStudents.length})</span>
           </button>
+        </div>
+      </div>
+
+      {/* KPI Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-[#1d4ed8] flex items-center justify-center shrink-0">
+            <Users size={20} />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Total Mahasiswa</p>
+            <p className="text-lg font-black text-slate-900 dark:text-slate-100">{kpiStats.total}</p>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-[#008055] flex items-center justify-center shrink-0">
+            <CheckCircle2 size={20} />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Nilai Lengkap</p>
+            <p className="text-lg font-black text-[#008055] dark:text-emerald-400">{kpiStats.lengkap}</p>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-[#b45309] flex items-center justify-center shrink-0">
+            <Clock size={20} />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Menunggu Penilaian</p>
+            <p className="text-lg font-black text-[#b45309] dark:text-amber-400">
+              {kpiStats.menungguMpl + kpiStats.menungguDpl}
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 flex items-center justify-center shrink-0">
+            <Award size={20} />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Rata-rata Nilai Akhir</p>
+            <p className="text-lg font-black text-indigo-600 dark:text-indigo-400">{kpiStats.avgScore}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter & Search Toolbar */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-2xs space-y-3">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+          {/* Search Box */}
+          <div className="relative flex-1 min-w-[240px]">
+            <Search
+              size={16}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            />
+            <input
+              type="text"
+              placeholder="Cari berdasarkan NIM atau nama mahasiswa..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#008055]/30 focus:border-[#008055] transition-all"
+            />
+          </div>
+
+          {/* Filters Bar */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Filter Kelompok */}
+            <div className="flex-1 sm:flex-initial min-w-[150px]">
+              <select
+                value={filterKelompok}
+                onChange={(e) => setFilterKelompok(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-hidden focus:ring-2 focus:ring-[#008055]/30 cursor-pointer"
+              >
+                <option value="ALL">Semua Kelompok ({kelompokOptions.length})</option>
+                {kelompokOptions.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filter Status */}
+            <div className="flex-1 sm:flex-initial min-w-[130px]">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-hidden focus:ring-2 focus:ring-[#008055]/30 cursor-pointer"
+              >
+                <option value="ALL">Semua Status</option>
+                <option value="Lengkap">Lengkap</option>
+                <option value="Menunggu MPL">Menunggu MPL</option>
+                <option value="Menunggu DPL">Menunggu DPL</option>
+              </select>
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="flex-1 sm:flex-initial min-w-[140px]">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-hidden focus:ring-2 focus:ring-[#008055]/30 cursor-pointer"
+              >
+                <option value="NIM_ASC">NIM (Terkecil)</option>
+                <option value="NIM_DESC">NIM (Terbesar)</option>
+                <option value="NAME_ASC">Nama (A - Z)</option>
+                <option value="NAME_DESC">Nama (Z - A)</option>
+                <option value="SCORE_DESC">Nilai Tertinggi</option>
+                <option value="SCORE_ASC">Nilai Terendah</option>
+              </select>
+            </div>
+
+            {/* Per Page */}
+            <div className="w-24">
+              <select
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-hidden focus:ring-2 focus:ring-[#008055]/30 cursor-pointer"
+              >
+                <option value={10}>10 / hal</option>
+                <option value={25}>25 / hal</option>
+                <option value={50}>50 / hal</option>
+                <option value={100}>100 / hal</option>
+              </select>
+            </div>
+
+            {/* Reset Button */}
+            {isFiltered && (
+              <button
+                onClick={handleResetFilters}
+                className="flex items-center gap-1.5 px-3 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                title="Reset semua filter"
+              >
+                <RotateCcw size={14} />
+                <span className="hidden sm:inline">Reset</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -890,29 +662,69 @@ export const RekapNilaiKknPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Table Card */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden">
+      {/* Main Table Card with Slidebar */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden flex flex-col">
+        {/* Scroll hint bar */}
+        <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/50">
+          <span className="flex items-center gap-1.5 font-medium">
+            <SlidersHorizontal size={13} className="text-slate-400" />
+            Geser tabel ke samping untuk melihat seluruh komponen nilai DPL & MPL
+          </span>
+          <span className="font-semibold text-slate-600 dark:text-slate-300">
+            Total {totalFilteredCount} Mahasiswa
+          </span>
+        </div>
+
         {loading ? (
           <div className="p-16 flex flex-col items-center justify-center gap-3 text-slate-400">
             <Loader2 className="animate-spin text-emerald-600" size={36} />
             <span className="text-xs font-semibold">Memuat rekapitulasi nilai...</span>
           </div>
+        ) : paginatedStudents.length === 0 ? (
+          <div className="p-16 text-center text-slate-400 space-y-2">
+            <Users size={36} className="mx-auto text-slate-300 dark:text-slate-600" />
+            <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+              Tidak ada data mahasiswa yang cocok dengan filter
+            </p>
+            <button
+              onClick={handleResetFilters}
+              className="text-xs text-[#008055] dark:text-emerald-400 font-bold hover:underline cursor-pointer"
+            >
+              Reset filter pencarian
+            </button>
+          </div>
         ) : (
-          <div className="overflow-x-auto w-full">
-            <table className="w-full min-w-[1050px] text-center text-[11.5px] border-collapse">
+          /* Smooth Horizontal Scroll Slidebar */
+          <div
+            className="overflow-x-auto w-full scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-slate-100 dark:scrollbar-track-slate-900"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            <table className="w-full min-w-[1250px] text-center text-[11.5px] border-collapse">
               {/* Table Head Multi-Tier */}
-              <thead>
+              <thead className="sticky top-0 z-10 bg-white dark:bg-slate-900">
                 <tr className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-800">
-                  <th rowSpan={2} className="py-3 px-3 w-12 border-r border-slate-200 dark:border-slate-800">
+                  <th
+                    rowSpan={2}
+                    className="py-3 px-3 w-12 border-r border-slate-200 dark:border-slate-800 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-xs"
+                  >
                     No.
                   </th>
-                  <th rowSpan={2} className="py-3 px-3 w-28 border-r border-slate-200 dark:border-slate-800 text-left">
+                  <th
+                    rowSpan={2}
+                    className="py-3 px-3 w-28 border-r border-slate-200 dark:border-slate-800 text-left sticky left-12 bg-white dark:bg-slate-900 z-10 shadow-xs"
+                  >
                     NIM
                   </th>
-                  <th rowSpan={2} className="py-3 px-4 min-w-[180px] border-r border-slate-200 dark:border-slate-800 text-left">
+                  <th
+                    rowSpan={2}
+                    className="py-3 px-4 min-w-[190px] border-r border-slate-200 dark:border-slate-800 text-left sticky left-40 bg-white dark:bg-slate-900 z-10 shadow-xs"
+                  >
                     Nama Mahasiswa
                   </th>
-                  <th rowSpan={2} className="py-3 px-4 min-w-[160px] border-r border-slate-200 dark:border-slate-800 text-left">
+                  <th
+                    rowSpan={2}
+                    className="py-3 px-4 min-w-[170px] border-r border-slate-200 dark:border-slate-800 text-left"
+                  >
                     Kelompok
                   </th>
 
@@ -948,10 +760,16 @@ export const RekapNilaiKknPage: React.FC = () => {
                     Nilai Kelompok (20%)
                   </th>
 
-                  <th rowSpan={2} className="py-3 px-3 w-16 border-r border-slate-200 dark:border-slate-800 font-extrabold text-[#0f172a] dark:text-slate-100">
+                  <th
+                    rowSpan={2}
+                    className="py-3 px-3 w-16 border-r border-slate-200 dark:border-slate-800 font-extrabold text-[#0f172a] dark:text-slate-100"
+                  >
                     Nilai<br />Akhir
                   </th>
-                  <th rowSpan={2} className="py-3 px-3 w-14 border-r border-slate-200 dark:border-slate-800 font-bold">
+                  <th
+                    rowSpan={2}
+                    className="py-3 px-3 w-14 border-r border-slate-200 dark:border-slate-800 font-bold"
+                  >
                     Predikat
                   </th>
                   <th rowSpan={2} className="py-3 px-4 w-28 font-bold">
@@ -1015,18 +833,18 @@ export const RekapNilaiKknPage: React.FC = () => {
                       key={st.id || idx}
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors"
                     >
-                      {/* No */}
-                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 text-slate-500 font-medium">
+                      {/* No - Sticky */}
+                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 text-slate-500 font-medium sticky left-0 bg-white dark:bg-slate-900 z-1 shadow-xs">
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
 
-                      {/* NIM */}
-                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 font-medium text-slate-800 dark:text-slate-200 text-left">
+                      {/* NIM - Sticky */}
+                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 font-medium text-slate-800 dark:text-slate-200 text-left sticky left-12 bg-white dark:bg-slate-900 z-1 shadow-xs font-mono">
                         {st.nim}
                       </td>
 
-                      {/* Nama Mahasiswa */}
-                      <td className="py-3 px-4 border-r border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-slate-100 text-left">
+                      {/* Nama Mahasiswa - Sticky */}
+                      <td className="py-3 px-4 border-r border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-slate-100 text-left sticky left-40 bg-white dark:bg-slate-900 z-1 shadow-xs">
                         {st.name}
                       </td>
 
@@ -1047,40 +865,60 @@ export const RekapNilaiKknPage: React.FC = () => {
 
                       {/* Nilai Individu */}
                       <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300">
-                        {st.individuDpl ?? "—"}
+                        {st.individuDpl !== null && st.individuDpl !== undefined
+                          ? st.individuDpl
+                          : "—"}
                       </td>
                       <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300">
-                        {st.individuMpl ?? "—"}
+                        {st.individuMpl !== null && st.individuMpl !== undefined
+                          ? st.individuMpl
+                          : "—"}
                       </td>
                       <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-slate-100">
-                        {st.individuGabungan !== null && st.individuGabungan !== undefined ? st.individuGabungan.toFixed(1) : "—"}
+                        {st.individuGabungan !== null && st.individuGabungan !== undefined
+                          ? st.individuGabungan.toFixed(1)
+                          : "—"}
                       </td>
 
                       {/* Program Kerja */}
                       <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300">
-                        {st.prokerDpl ?? "—"}
+                        {st.prokerDpl !== null && st.prokerDpl !== undefined
+                          ? st.prokerDpl
+                          : "—"}
                       </td>
                       <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300">
-                        {st.prokerMpl ?? "—"}
+                        {st.prokerMpl !== null && st.prokerMpl !== undefined
+                          ? st.prokerMpl
+                          : "—"}
                       </td>
                       <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-slate-100">
-                        {st.prokerGabungan !== null && st.prokerGabungan !== undefined ? st.prokerGabungan.toFixed(1) : "—"}
+                        {st.prokerGabungan !== null && st.prokerGabungan !== undefined
+                          ? st.prokerGabungan.toFixed(1)
+                          : "—"}
                       </td>
 
                       {/* Nilai Kelompok */}
                       <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300">
-                        {st.kelompokDpl ?? "—"}
+                        {st.kelompokDpl !== null && st.kelompokDpl !== undefined
+                          ? st.kelompokDpl
+                          : "—"}
                       </td>
                       <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300">
-                        {st.kelompokMpl ?? "—"}
+                        {st.kelompokMpl !== null && st.kelompokMpl !== undefined
+                          ? st.kelompokMpl
+                          : "—"}
                       </td>
                       <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-slate-100">
-                        {st.kelompokGabungan !== null && st.kelompokGabungan !== undefined ? st.kelompokGabungan.toFixed(1) : "—"}
+                        {st.kelompokGabungan !== null && st.kelompokGabungan !== undefined
+                          ? st.kelompokGabungan.toFixed(1)
+                          : "—"}
                       </td>
 
                       {/* Nilai Akhir */}
                       <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 font-black text-slate-900 dark:text-slate-100 text-[12px]">
-                        {st.nilaiAkhir !== null && st.nilaiAkhir !== undefined ? st.nilaiAkhir.toFixed(1) : "—"}
+                        {st.nilaiAkhir !== null && st.nilaiAkhir !== undefined
+                          ? st.nilaiAkhir.toFixed(1)
+                          : "—"}
                       </td>
 
                       {/* Predikat */}
@@ -1100,7 +938,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                           </span>
                         ) : (
                           <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/60 whitespace-nowrap">
-                            {st.status || "Dalam Proses"}
+                            {st.status || "Menunggu DPL"}
                           </span>
                         )}
                       </td>
@@ -1113,11 +951,11 @@ export const RekapNilaiKknPage: React.FC = () => {
         )}
       </div>
 
-      {/* Pagination Controls Section */}
+      {/* Smart Pagination Controls Section */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium px-1 py-1">
         <div className="text-center sm:text-left">
           Menampilkan {(currentPage - 1) * itemsPerPage + 1}–
-          {Math.min(currentPage * itemsPerPage, totalStudentsCount)} dari {totalStudentsCount} mahasiswa
+          {Math.min(currentPage * itemsPerPage, totalFilteredCount)} dari {totalFilteredCount} mahasiswa
         </div>
 
         <div className="flex items-center gap-1.5 flex-wrap justify-center">
@@ -1126,30 +964,46 @@ export const RekapNilaiKknPage: React.FC = () => {
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
             className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+            title="Halaman sebelumnya"
           >
             <ChevronLeft size={16} />
           </button>
 
-          {/* Tombol Nomor Halaman */}
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-            <button
-              key={pageNum}
-              onClick={() => setCurrentPage(pageNum)}
-              className={`w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition-all cursor-pointer ${
-                currentPage === pageNum
-                  ? "bg-[#008055] text-white shadow-2xs"
-                  : "border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-              }`}
-            >
-              {pageNum}
-            </button>
-          ))}
+          {/* Smart Pagination Page Buttons */}
+          {paginationPages.map((pageNum, idx) => {
+            if (pageNum === "...") {
+              return (
+                <span
+                  key={`ellipsis-${idx}`}
+                  className="w-8 h-8 flex items-center justify-center text-slate-400 font-bold"
+                >
+                  ...
+                </span>
+              );
+            }
+
+            const pageNumber = Number(pageNum);
+            return (
+              <button
+                key={`page-${pageNumber}`}
+                onClick={() => setCurrentPage(pageNumber)}
+                className={`w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition-all cursor-pointer ${
+                  currentPage === pageNumber
+                    ? "bg-[#008055] text-white shadow-2xs"
+                    : "border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                {pageNumber}
+              </button>
+            );
+          })}
 
           {/* Tombol Next */}
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
             className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+            title="Halaman berikutnya"
           >
             <ChevronRight size={16} />
           </button>
