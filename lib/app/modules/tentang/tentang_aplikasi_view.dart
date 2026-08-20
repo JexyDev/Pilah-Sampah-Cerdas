@@ -54,51 +54,19 @@ class _TentangAplikasiViewState extends State<TentangAplikasiView> {
             children: [
               const Spacer(),
               Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 20,
-                      spreadRadius: 5,
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(100),
-                  child: Image.asset(
-                    'assets/app-icon.png',
-                    width: 140,
-                    height: 140,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.eco_rounded,
-                      size: 80,
-                      color: AppColors.primaryGreen,
-                    ),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Image.asset(
+                  'assets/app-logo.png',
+                  height: 80, // Disesuaikan agar proporsional untuk logo horizontal
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.eco_rounded,
+                    size: 80,
+                    color: AppColors.primaryGreen,
                   ),
                 ),
               ),
               const SizedBox(height: 32),
-              const Text(
-                'BERSEKA',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primaryGreen,
-                  letterSpacing: 1.5,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Bersih, Sehat, Kampung Asri',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 24),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
