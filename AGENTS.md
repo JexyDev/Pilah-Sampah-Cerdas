@@ -16,6 +16,10 @@
 
 Sebelum membuat atau mengubah kode/dokumentasi, AI Agent WAJIB membaca dan mematuhi aturan (*rules*), alur kerja (*workflows*), dan *skills* yang ada pada folder [.agent/](.agent/) (khususnya [.agent/AGENTS.md](.agent/AGENTS.md), `.agent/rules/`, dan `.agent/workflows/`).
 
+### 🔄 ALUR WAJIB SINKRONISASI API BACKEND (`main` BRANCH):
+1. **PULL TERBARU DARI MAIN:** Setiap kali AI Agent atau developer menerima prompt / mengerjakan fitur di folder `mobile`, Agent WAJIB menyarankan/memastikan untuk melakukan `git pull origin main` pada folder `main` terlebih dahulu agar acuan skema API dan backend selalu dalam kondisi paling terbaru.
+2. **ACUAN TUNGGAL API BACKEND (`main`):** AI Agent di mobile **WAJIB membaca spesifikasi API, controller Express, dan Prisma schema dari folder `main`** (`apps/api/src/` atau `main/docs/`) sebagai sumber kebenaran tunggal untuk endpoint API, parameter request, dan format response JSON. Dilarang keras mengasumsikan format API tanpa memverifikasi langsung dari kode backend `main`.
+
 ### 🛡️ PRINSIP ANTI-HALUSINASI & ISOLASI REPOSITORI:
 1. 🚫 **ISOLASI REPOSITORI (STRICT ISOLATION):** Repositori `mobile` ini khusus dikembangkan untuk Aplikasi Client Mobile Flutter. AI Agent yang bekerja di folder/branch `mobile` **DILARANG KERAS** menyentuh, membuat, atau mengubah file/folder Monorepo `main` (`apps/api`, `apps/web`, `prisma/`, `main/`, dll). Perubahan backend/web dikelola secara terpisah pada repositori `main` (branch `main`).
 2. **DILARANG MENGARANG (NO HALLUCINATED LOGIC/ENDPOINTS):** Jangan pernah mengarang skema data, endpoint API, path file, atau nama komponen yang tidak terverifikasi langsung di codebase. Selalu lakukan `view_file` atau `grep_search` pada file sumber sebelum menulis kode.
