@@ -1155,6 +1155,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       );
     }, 30000);
 
+    // Fallback automatic refresh every 15 seconds if WebSocket is not CONNECTED
+    const fallbackPollingInterval = setInterval(() => {
+      if (wsStatus !== "CONNECTED") {
+        fetchAttendanceAndLocations(selectedScheduleId, selectedKelompokId);
+      }
+    }, 15000);
+
     return () => {
       unsubStatus();
       unsubLoc();
@@ -1162,6 +1169,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       unsubCheckout();
       unsubAttendance();
       clearInterval(decayInterval);
+      clearInterval(fallbackPollingInterval);
     };
   }, [selectedScheduleId]);
 

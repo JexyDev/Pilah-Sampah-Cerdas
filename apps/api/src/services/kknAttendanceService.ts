@@ -206,8 +206,8 @@ export class KknAttendanceService {
           },
         });
 
-        // Skip jika sudah selesai / hadir / sudah checkout
-        if (existingAtt && (existingAtt.status === "HADIR" || existingAtt.status === "SELESAI" || existingAtt.status === "SELESAI_TELAT" || existingAtt.checkOutAt !== null)) {
+        // Skip HANYA jika kegiatan sudah checkout / selesai sepenuhnya
+        if (existingAtt && (existingAtt.status === "SELESAI" || existingAtt.status === "SELESAI_TELAT" || existingAtt.checkOutAt !== null)) {
           continue;
         }
 
@@ -235,39 +235,30 @@ export class KknAttendanceService {
 
         const durasiWajibMenit = await getScheduleTargetDurationMinutes(sch);
 
-        // Update actualInZoneMinutes pada attendance yang sedang BERLANGSUNG
-        if (existingAtt && existingAtt.status === "BERLANGSUNG") {
-          await prisma.activityAttendance.update({
-            where: { id: existingAtt.id },
-            data: { actualInZoneMinutes: durationInZone },
-          });
-        }
-
-        // Kondisi B: Otomatis jika durasi in-zone telah mencapai durasiWajibMenit kegiatan
-        // Bisa trigger meskipun saat ini di luar zona (jika autoHadirOutsideZone = true)
-        if (durasiWajibMenit > 0 && durationInZone >= durasiWajibMenit) {
-          const canTrigger = isInsideZone || autoHadirOutsideZone;
-          if (canTrigger) {
-            if (existingAtt && existingAtt.status === "BERLANGSUNG") {
-              // Transisi BERLANGSUNG → HADIR
-              await prisma.activityAttendance.update({
-                where: { id: existingAtt.id },
-                data: {
-                  status: "HADIR",
-                  method: "OTOMATIS",
-                  actualInZoneMinutes: durationInZone,
-                },
-              });
-            } else if (!existingAtt) {
-              await this.recordAttendance({
+        // Update / upsert actualInZoneMinutes so Web Dashboard and Mobile are 100% in sync
+        // Catatan: Status tetap BERLANGSUNG sampai mahasiswa menekan tombol "Absen Sekarang"
+        if (existingAtt) {
+          if (existingAtt.status !== "SELESAI" && existingAtt.status !== "SELESAI_TELAT") {
+            await prisma.activityAttendance.update({
+              where: { id: existingAtt.id },
+              data: { actualInZoneMinutes: durationInZone },
+            });
+          }
+        } else if (durationInZone > 0) {
+          try {
+            await prisma.activityAttendance.create({
+              data: {
                 studentId: userId,
                 scheduleId: sch.id,
+                status: "BERLANGSUNG",
+                method: "GPS_ACTIVITY",
                 latitude,
                 longitude,
-                method: "OTOMATIS",
-              });
-            }
-            autoAttendanceTriggered = true;
+                actualInZoneMinutes: durationInZone,
+              },
+            });
+          } catch (_createErr) {
+            // Continue if concurrent request created record
           }
         }
       }
