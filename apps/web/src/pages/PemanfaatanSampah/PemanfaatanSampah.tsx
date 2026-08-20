@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+﻿import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   MapContainer,
   Marker,
@@ -137,13 +137,17 @@ export const PemanfaatanSampah: React.FC = () => {
         <div className="flex bg-slate-100 p-1 rounded-xl w-fit border border-slate-200 shadow-inner">
           <button
             onClick={() => setViewMode("TABLE")}
-            className={lex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition }
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition ${
+              viewMode === "TABLE" ? "bg-white text-[#009966] shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
           >
             <ListIcon size={16} /> Tabel Data
           </button>
           <button
             onClick={() => setViewMode("MAP")}
-            className={lex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition }
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition ${
+              viewMode === "MAP" ? "bg-white text-[#009966] shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
           >
             <MapIcon size={16} /> Peta GIS
           </button>
