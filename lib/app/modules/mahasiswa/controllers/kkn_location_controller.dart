@@ -630,6 +630,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         
         // Update accumulated seconds dari background
         _accumulatedSeconds = totalSeconds;
+        _zoneEntryTime = DateTime.now();
         
         state = state.copyWith(
           inZoneDurationSeconds: totalSeconds,
