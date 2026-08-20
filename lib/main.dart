@@ -112,6 +112,9 @@ void main() async {
     final isIgnoredError = errorString.contains('networkimage') || 
                            errorString.contains('timeout') ||
                            errorString.contains('connection closed') ||
+                           errorString.contains('cannot use "ref"') ||
+                           errorString.contains('bad state') ||
+                           errorString.contains('disposed') ||
                            errorString.contains('host lookup');
 
     if (!isIgnoredError) {
