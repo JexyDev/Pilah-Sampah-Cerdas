@@ -786,7 +786,7 @@ export class KknService {
   }
 
   async getActivityLog(kknUserId: string) {
-    return prisma.auditTrail.findMany({
+    const auditLogs = await prisma.auditTrail.findMany({
       where: {
         userId: kknUserId,
         action: "REQUEST_ACTIVATE_BIN",
@@ -794,6 +794,37 @@ export class KknService {
       orderBy: { timestamp: "desc" },
       take: 10,
     });
+
+    const pointLogs = await prisma.pointHistory.findMany({
+      where: {
+        userId: kknUserId,
+        description: { contains: "Laporan" },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+
+    const combined = [
+      ...auditLogs.map((log) => ({
+        id: log.id,
+        title: "Aktivasi Tempat Sampah Warga",
+        subtitle: log.details || "Mengajukan aktivasi",
+        timestamp: log.timestamp,
+        type: "aktivasi",
+        points: null,
+      })),
+      ...pointLogs.map((log) => ({
+        id: log.id,
+        title: log.description,
+        subtitle: `Mendapatkan +${log.points} poin`,
+        timestamp: log.createdAt,
+        type: "laporan",
+        points: log.points,
+      })),
+    ];
+
+    combined.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    return combined.slice(0, 20);
   }
 
   async handover(fromKknUserId: string, toKknUserId: string, rwId: number, notes?: string) {
@@ -1722,13 +1753,17 @@ export class KknService {
       },
     });
 
+    const isIdeProgram = satuan === 'Rp' || ['FISIK', 'NON_FISIK', 'LAINNYA'].includes(jenisPemanfaatan);
+    const laporanLabel = isIdeProgram ? 'Laporan Ide Program' : 'Laporan Pemanfaatan Sampah';
+    const laporanDesc = isIdeProgram ? `${jenisPemanfaatan} dengan RAB ${jumlah} ${satuan}` : `${jenisPemanfaatan} (${jumlah} ${satuan})`;
+
     // Award +25 points to student for waste utilization report
     const earnedPoints = 25;
     await prisma.pointHistory.create({
       data: {
         userId,
         points: earnedPoints,
-        description: `Laporan Pemanfaatan Sampah: ${jenisPemanfaatan} (${jumlah} ${satuan})`,
+        description: `${laporanLabel}: ${laporanDesc}`,
         kategori: "SETORAN_BEBAS_PENUH",
         redeemable: false,
       },
@@ -1749,8 +1784,8 @@ export class KknService {
       await prisma.notification.create({
         data: {
           userId: rwUser.id,
-          title: `Laporan Pemanfaatan Sampah (${rwName})`,
-          message: `Mahasiswa KKN ${studentName} menginput laporan pemanfaatan ${jenisPemanfaatan} seberat ${jumlah} ${satuan}.`,
+          title: `${laporanLabel} (${rwName})`,
+          message: `Mahasiswa KKN ${studentName} menginput ${laporanLabel.toLowerCase()} ${laporanDesc}.`,
           isRead: false,
         },
       });
@@ -1772,8 +1807,8 @@ export class KknService {
       await prisma.notification.create({
         data: {
           userId: dplUser.id,
-          title: `Tembusan Laporan Pemanfaatan Sampah`,
-          message: `Mahasiswa bimbingan Anda (${studentName}) menginput laporan pemanfaatan sampah ${jenisPemanfaatan} (${jumlah} ${satuan}) untuk ${rwName}.`,
+          title: `Tembusan ${laporanLabel}`,
+          message: `Mahasiswa bimbingan Anda (${studentName}) menginput ${laporanLabel.toLowerCase()} ${laporanDesc} untuk ${rwName}.`,
           isRead: false,
         },
       });
