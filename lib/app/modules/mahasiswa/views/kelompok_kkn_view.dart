@@ -37,30 +37,6 @@ class KelompokKknView extends ConsumerWidget {
           individualPoints: 0,
           isLeader: false,
         ),
-        const KelompokMemberData(
-          userId: 'dummy_1',
-          nim: '1208001',
-          name: 'Sarah Amalia',
-          jurusan: 'Sistem Informasi',
-          individualPoints: 120,
-          isLeader: true, // Dummy yang menjadi ketua agar realistis
-        ),
-        const KelompokMemberData(
-          userId: 'dummy_2',
-          nim: '1208002',
-          name: 'Budi Santoso',
-          jurusan: 'Teknik Informatika',
-          individualPoints: 85,
-          isLeader: false,
-        ),
-        const KelompokMemberData(
-          userId: 'dummy_3',
-          nim: '1208003',
-          name: 'Rina Agustina',
-          jurusan: 'Desain Komunikasi Visual',
-          individualPoints: 50,
-          isLeader: false,
-        ),
       ] : [],
     );
 
