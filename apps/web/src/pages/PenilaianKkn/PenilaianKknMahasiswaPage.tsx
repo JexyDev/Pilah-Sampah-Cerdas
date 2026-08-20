@@ -12,12 +12,10 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Search,
   User,
-  ChevronDown,
   Loader2,
   GraduationCap,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { useAuthStore } from "../../store/useAuthStore";
 import {
   penilaianKknApiService,
   type StudentRekapItem,
@@ -74,7 +72,6 @@ const getPredikat = (score: number): string => {
 };
 
 export const PenilaianKknMahasiswaPage: React.FC = () => {
-  const currentUser = useAuthStore((s) => s.user);
   const formRef = useRef<HTMLDivElement>(null);
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -323,26 +320,13 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   return (
     <div className="min-h-[calc(100vh-64px)] bg-[#f8fafc] dark:bg-slate-950 p-4 sm:p-6 lg:p-8 space-y-6 text-slate-800 dark:text-slate-100">
       {/* Header Halaman */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-            Penilaian Individu Mahasiswa
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Berikan nilai secara objektif berdasarkan kinerja individu mahasiswa KKN
-          </p>
-        </div>
-
-        {/* User Evaluator Profile Badge */}
-        <div className="flex items-center gap-2.5 bg-white dark:bg-slate-900 px-3.5 py-2 rounded-full border border-slate-200 dark:border-slate-800 shadow-2xs self-start sm:self-auto">
-          <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-[#009966] flex items-center justify-center font-bold text-sm">
-            <User size={16} />
-          </div>
-          <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200">
-            {currentUser?.name || "Dr. Agus Mulyana, M.T."}
-          </span>
-          <ChevronDown size={14} className="text-slate-400" />
-        </div>
+      <div>
+        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+          Penilaian Individu Mahasiswa
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+          Berikan nilai secara objektif berdasarkan kinerja individu mahasiswa KKN
+        </p>
       </div>
 
       {/* Main 2-Panel Master-Detail Layout */}
