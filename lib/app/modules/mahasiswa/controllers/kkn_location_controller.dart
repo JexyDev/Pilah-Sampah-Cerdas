@@ -245,6 +245,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       } else {
         state = state.copyWith(activeActivity: null);
       }
+
+      if (activeZone.isNotEmpty && (activeZone['hasActiveZone'] == true || activeZone['id'] != null)) {
+        if (state.kegiatanList.isEmpty) {
+          state = state.copyWith(kegiatanList: [activeZone]);
+        }
+      }
     } catch (e) {
       state = state.copyWith(error: NetworkExceptionHelper.getErrorMessage(e));
     }
@@ -259,7 +265,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     state = state.copyWith(isLoadingKegiatan: true, clearError: true);
     try {
       final repo = ref.read(kknRepositoryProvider);
-      final list = await repo.getKegiatanAktif();
+      var list = await repo.getKegiatanAktif();
+      
+      if (list.isEmpty && state.activeActivity != null && state.activeActivity!['id'] != null) {
+        list = [state.activeActivity!];
+      }
+
       state = state.copyWith(
         kegiatanList: list,
         isLoadingKegiatan: false,
