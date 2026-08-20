@@ -1,4 +1,4 @@
-﻿import { prisma } from "../lib/prisma.js";
+import { prisma } from "../lib/prisma.js";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -2376,15 +2376,15 @@ export class KknService {
     const combinedDeskripsi = `**${judul}**\n\n${deskripsi}`;
 
     // Notify DPL
-    if (student.kelompok.dplUserId) {
+    if (student.kelompok?.dplId) {
       await prisma.notification.create({
         data: {
-          userId: student.kelompok.dplUserId,
+          userId: student.kelompok.dplId,
           title: "Program Kerja Baru",
           message: `Mahasiswa ${student.user.name} mengajukan ide program kerja: ${judul}. Silakan ditinjau.`,
-          isRead: false
-        }
-      });
+          isRead: false,
+        },
+      }).catch(() => {});
     }
 
     const proker = await prisma.programKerjaKkn.create({
@@ -2398,15 +2398,6 @@ export class KknService {
       },
     });
 
-      if (student.kelompok?.dplId) {
-        await prisma.notification.create({
-          data: {
-            userId: student.kelompok.dplId,
-            title: "Program Kerja Baru",
-            message: `Mahasiswa ${student.user.name} mengajukan ide program kerja: ${judul}. Silakan ditinjau.`
-          },
-        }).catch(() => {});
-      }
     return proker;
   }
 
@@ -2451,7 +2442,7 @@ export class KknService {
         judul,
         kategori: item.kategori,
         rencanaAnggaran: Number(item.kebutuhanBiaya) || 0,
-          status: (item.status === "DISETUJUI" || item.status === "DITERIMA" || item.status === "SEDANG_BERJALAN" || item.status === "SELESAI") ? "APPROVED" : (item.status === "DITOLAK" ? "REJECTED" : "PENDING"),
+        status: (st === "DITERIMA" || st === "SEDANG_BERJALAN" || st === "SELESAI" || st === "APPROVED" || st === "DISETUJUI") ? "APPROVED" : (st === "DITOLAK" ? "REJECTED" : "PENDING"),
         catatanDpl: catatan,
         tanggal: item.createdAt.toISOString(),
       };
