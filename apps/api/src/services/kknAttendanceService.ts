@@ -1154,14 +1154,11 @@ export class KknAttendanceService {
     });
 
     const allStudentUserIds = allStudents.map((s) => s.id);
-
-    const attendanceWhere: any = { scheduleId };
-    if (allStudentUserIds.length > 0) {
-      attendanceWhere.studentId = { in: allStudentUserIds };
-    }
-
+    // Bug fix: jangan filter studentId di sini — tampilkan SEMUA record absen
+    // untuk schedule ini agar mahasiswa yang mulaiKegiatan tapi belum terdaftar
+    // di kelompok (atau data kelompok belum sinkron) tetap muncul di daftar.
     const list = await prisma.activityAttendance.findMany({
-      where: attendanceWhere,
+      where: { scheduleId },
       include: {
         student: {
           select: {
@@ -1189,6 +1186,7 @@ export class KknAttendanceService {
         attendedAt: "desc",
       },
     });
+
 
     // Determine calendar date boundaries for this schedule
     const schedDate = schedule?.date ? new Date(schedule.date) : new Date();
@@ -1878,9 +1876,9 @@ export class KknAttendanceService {
       throw new Error("FORBIDDEN: Anda tidak terdaftar pada kelompok kegiatan ini.");
     }
 
-    // Concurrency check: Pastikan tidak ada kegiatan lain yang sedang BERLANGSUNG hari ini
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    // Concurrency check: Pastikan tidak ada kegiatan lain yang sedang BERLANGSUNG hari ini (WIB)
+    const nowWibCc = new Date(Date.now() + 7 * 60 * 60 * 1000);
+    const startOfDay = new Date(`${nowWibCc.toISOString().slice(0, 10)}T00:00:00+07:00`);
     const activeOtherSession = await prisma.activityAttendance.findFirst({
       where: {
         studentId: studentUserId,
