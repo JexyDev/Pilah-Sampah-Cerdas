@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http_parser/http_parser.dart';
 
@@ -8,6 +8,17 @@ import '../models/mahasiswa_kkn_models.dart';
 import '../providers/api_client.dart';
 import '../../core/values/api_constants.dart';
 import 'kkn_repository.dart';
+
+String? _extractError(dynamic data, String? fallback) {
+  if (data is Map<String, dynamic>) {
+    final msg = data['message']?.toString() ?? data['error']?.toString();
+    if (msg != null && msg.isNotEmpty) return msg;
+  } else if (data is String && data.isNotEmpty) {
+    if (data.length > 200) return fallback; // Jangan tampilkan HTML 502 panjang
+    return data;
+  }
+  return fallback;
+}
 
 /// Implementasi [KknRepository] menggunakan Dio HTTP client.
 class ApiKknRepository implements KknRepository {
@@ -237,7 +248,7 @@ class ApiKknRepository implements KknRepository {
           return {'success': true};
         }
       } on DioException catch (e1) {
-        final msg1 = e1.response?.data?['message']?.toString() ?? e1.response?.data?['error']?.toString();
+        final msg1 = _extractError(e1.response?.data, '');
         // Jika 400 atau 409 atau 403 (bukan 404), kemungkinan besar ini error bisnis (misal: di luar operasional / di luar radius)
         if (e1.response?.statusCode != 404 && msg1 != null && msg1.isNotEmpty) {
           throw Exception(msg1);
@@ -252,7 +263,7 @@ class ApiKknRepository implements KknRepository {
             return {'success': true};
           }
         } on DioException catch (e2) {
-          final msg2 = e2.response?.data?['message']?.toString() ?? e2.response?.data?['error']?.toString();
+          final msg2 = _extractError(e2.response?.data, '');
           if (msg2 != null && msg2.isNotEmpty) {
             throw Exception(msg2);
           }
@@ -535,7 +546,7 @@ class ApiKknRepository implements KknRepository {
         return response.data as Map<String, dynamic>;
       }
     } on DioException catch (e) {
-      final msg = e.response?.data?['message']?.toString() ?? e.response?.data?['error']?.toString();
+      final msg = _extractError(e.response?.data, '');
       if (msg != null && msg.isNotEmpty) {
         throw Exception(msg);
       }
@@ -558,9 +569,9 @@ class ApiKknRepository implements KknRepository {
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // GPS Presensi Berbasis Kegiatan
-  // ═══════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   @override
   Future<List<Map<String, dynamic>>> getKegiatanAktif() async {
@@ -596,7 +607,7 @@ class ApiKknRepository implements KknRepository {
       throw Exception('Gagal memulai kegiatan');
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
-      final msg = e.response?.data?['message']?.toString() ?? e.response?.data?['error']?.toString();
+      final msg = _extractError(e.response?.data, '');
       if (statusCode == 409) {
         throw Exception('CONFLICT:${msg ?? 'Anda masih memiliki kegiatan aktif lain'}');
       }
@@ -621,7 +632,7 @@ class ApiKknRepository implements KknRepository {
       throw Exception('Gagal mengakhiri kegiatan');
     } catch (e) {
       if (e is DioException) {
-        final msg = e.response?.data?['message']?.toString();
+        final msg = _extractError(e.response?.data, '');
         throw Exception(msg ?? 'Gagal mengakhiri kegiatan');
       }
       rethrow;
@@ -648,10 +659,10 @@ class ApiKknRepository implements KknRepository {
     }
   }
 
-  // ──────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // 3 Pilar KKN (Perencanaan, Aksi, Panen)
   // [Belum Terhubung API] - Akan mengembalikan error / mock data sampai backend siap
-  // ──────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   @override
   Future<bool> submitProgramKerja(Map<String, dynamic> data) async {
@@ -663,7 +674,7 @@ class ApiKknRepository implements KknRepository {
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(e.response?.data?['message'] ?? 'Gagal mengajukan program kerja');
+        throw Exception(_extractError(e.response?.data, 'Gagal mengajukan program kerja'));
       }
       rethrow;
     }
@@ -715,7 +726,7 @@ class ApiKknRepository implements KknRepository {
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(e.response?.data?['message'] ?? 'Gagal menyimpan logbook pemanfaatan');
+        throw Exception(_extractError(e.response?.data, 'Gagal menyimpan logbook pemanfaatan'));
       }
       rethrow;
     }
@@ -750,9 +761,11 @@ class ApiKknRepository implements KknRepository {
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(e.response?.data?['message'] ?? 'Gagal menyimpan panen hasil');
+        throw Exception(_extractError(e.response?.data, 'Gagal menyimpan panen hasil'));
       }
       rethrow;
     }
   }
 }
+
+
