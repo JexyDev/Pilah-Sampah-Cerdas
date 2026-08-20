@@ -5,14 +5,14 @@
  * 
  * Halaman Rekapitulasi & Nilai Akhir KKN Mahasiswa
  * Dilengkapi:
- * - Smart Windowing Pagination (tidak akan pernah meluap/overflow)
- * - Filter & Pencarian Lengkap (NIM/Nama, Kelompok, Status, Urutan, Jumlah per Halaman)
- * - KPI Ringkasan Statistik Nilai & Rata-rata
- * - Horizontal Slidebar Responsif untuk semua resolusi laptop & zoom browser
- * - Komposisi Penilai: DPL 30% & MPL 60% (dinormalisasi 100%)
+ * - Interactive Visual Horizontal Slidebar & Quick Slide Buttons (< Geser Kiri / Geser Kanan >)
+ * - Custom High-Contrast Table Scrollbar (Tebal & Nyata)
+ * - Smart Windowing Pagination (1 2 3 ... 57)
+ * - Toolbar Pencarian, Filter Kelompok & Status Lengkap
+ * - KPI Ringkasan Metrik Nilai
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   Info,
   ChevronLeft,
@@ -24,7 +24,7 @@ import {
   Clock,
   CheckCircle2,
   RotateCcw,
-  SlidersHorizontal,
+  ArrowLeftRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
@@ -178,6 +178,12 @@ export const RekapNilaiKknPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
 
+  // Table horizontal scroll & slidebar state
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollProgress, setScrollProgress] = useState<number>(0);
+  const [canScrollLeft, setCanScrollLeft] = useState<boolean>(false);
+  const [canScrollRight, setCanScrollRight] = useState<boolean>(true);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -255,7 +261,7 @@ export const RekapNilaiKknPage: React.FC = () => {
         setStudents(formatted);
       }
     } catch {
-      // Fallback to default students
+      // Fallback
     } finally {
       setLoading(false);
     }
@@ -264,6 +270,49 @@ export const RekapNilaiKknPage: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Sync scrollbar progress
+  const updateScrollState = useCallback(() => {
+    if (!tableContainerRef.current) return;
+    const el = tableContainerRef.current;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    if (maxScroll <= 0) {
+      setScrollProgress(0);
+      setCanScrollLeft(false);
+      setCanScrollRight(false);
+      return;
+    }
+    const currentProgress = Math.round((el.scrollLeft / maxScroll) * 100);
+    setScrollProgress(currentProgress);
+    setCanScrollLeft(el.scrollLeft > 5);
+    setCanScrollRight(el.scrollLeft < maxScroll - 5);
+  }, []);
+
+  useEffect(() => {
+    const el = tableContainerRef.current;
+    if (!el) return;
+    updateScrollState();
+    el.addEventListener("scroll", updateScrollState, { passive: true });
+    window.addEventListener("resize", updateScrollState);
+    return () => {
+      el.removeEventListener("scroll", updateScrollState);
+      window.removeEventListener("resize", updateScrollState);
+    };
+  }, [updateScrollState, students, currentPage]);
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Number(e.target.value);
+    setScrollProgress(val);
+    if (!tableContainerRef.current) return;
+    const el = tableContainerRef.current;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    el.scrollLeft = (val / 100) * maxScroll;
+  };
+
+  const handleScrollBy = (amount: number) => {
+    if (!tableContainerRef.current) return;
+    tableContainerRef.current.scrollBy({ left: amount, behavior: "smooth" });
+  };
 
   // Unique list of groups for filter dropdown
   const kelompokOptions = useMemo(() => {
@@ -307,11 +356,6 @@ export const RekapNilaiKknPage: React.FC = () => {
         return 0;
       });
   }, [students, searchTerm, filterKelompok, filterStatus, sortBy]);
-
-  // Reset current page to 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, filterKelompok, filterStatus, itemsPerPage]);
 
   // KPI calculations
   const kpiStats = useMemo(() => {
@@ -467,7 +511,34 @@ export const RekapNilaiKknPage: React.FC = () => {
     searchTerm !== "" || filterKelompok !== "ALL" || filterStatus !== "ALL" || sortBy !== "NIM_ASC";
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-3 sm:p-6 lg:p-8 space-y-6 text-slate-800 dark:text-slate-100 max-w-[1680px] mx-auto overflow-x-hidden">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-3 sm:p-6 lg:p-8 space-y-6 text-slate-800 dark:text-slate-100 max-w-[1720px] mx-auto overflow-x-hidden">
+      {/* Custom CSS untuk High-Contrast Scrollbar */}
+      <style>{`
+        .table-slidebar-container::-webkit-scrollbar {
+          height: 14px;
+        }
+        .table-slidebar-container::-webkit-scrollbar-track {
+          background: #e2e8f0;
+          border-radius: 8px;
+          margin: 0 4px;
+        }
+        .table-slidebar-container::-webkit-scrollbar-thumb {
+          background: #008055;
+          border-radius: 8px;
+          border: 3px solid #e2e8f0;
+        }
+        .table-slidebar-container::-webkit-scrollbar-thumb:hover {
+          background: #006644;
+        }
+        .dark .table-slidebar-container::-webkit-scrollbar-track {
+          background: #1e293b;
+        }
+        .dark .table-slidebar-container::-webkit-scrollbar-thumb {
+          background: #10b981;
+          border: 3px solid #1e293b;
+        }
+      `}</style>
+
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -551,7 +622,10 @@ export const RekapNilaiKknPage: React.FC = () => {
               type="text"
               placeholder="Cari berdasarkan NIM atau nama mahasiswa..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#008055]/30 focus:border-[#008055] transition-all"
             />
           </div>
@@ -562,7 +636,10 @@ export const RekapNilaiKknPage: React.FC = () => {
             <div className="flex-1 sm:flex-initial min-w-[150px]">
               <select
                 value={filterKelompok}
-                onChange={(e) => setFilterKelompok(e.target.value)}
+                onChange={(e) => {
+                  setFilterKelompok(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-hidden focus:ring-2 focus:ring-[#008055]/30 cursor-pointer"
               >
                 <option value="ALL">Semua Kelompok ({kelompokOptions.length})</option>
@@ -578,7 +655,10 @@ export const RekapNilaiKknPage: React.FC = () => {
             <div className="flex-1 sm:flex-initial min-w-[130px]">
               <select
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
+                onChange={(e) => {
+                  setFilterStatus(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-hidden focus:ring-2 focus:ring-[#008055]/30 cursor-pointer"
               >
                 <option value="ALL">Semua Status</option>
@@ -592,7 +672,10 @@ export const RekapNilaiKknPage: React.FC = () => {
             <div className="flex-1 sm:flex-initial min-w-[140px]">
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
+                onChange={(e) => {
+                  setSortBy(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-hidden focus:ring-2 focus:ring-[#008055]/30 cursor-pointer"
               >
                 <option value="NIM_ASC">NIM (Terkecil)</option>
@@ -608,7 +691,10 @@ export const RekapNilaiKknPage: React.FC = () => {
             <div className="w-24">
               <select
                 value={itemsPerPage}
-                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-hidden focus:ring-2 focus:ring-[#008055]/30 cursor-pointer"
               >
                 <option value={10}>10 / hal</option>
@@ -662,17 +748,58 @@ export const RekapNilaiKknPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Table Card with Slidebar */}
+      {/* Main Table Card with Visual Slidebar Controls */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden flex flex-col">
-        {/* Scroll hint bar */}
-        <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/50">
-          <span className="flex items-center gap-1.5 font-medium">
-            <SlidersHorizontal size={13} className="text-slate-400" />
-            Geser tabel ke samping untuk melihat seluruh komponen nilai DPL & MPL
-          </span>
-          <span className="font-semibold text-slate-600 dark:text-slate-300">
-            Total {totalFilteredCount} Mahasiswa
-          </span>
+        {/* Visual Table Slidebar & Quick Action Controller */}
+        <div className="px-4 py-3 bg-emerald-50/50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200 font-bold">
+            <ArrowLeftRight size={16} className="text-[#008055] dark:text-emerald-400 shrink-0" />
+            <span>Slidebar Tabel Data</span>
+            <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400">
+              (Geser slider atau gunakan tombol untuk menjelajah kolom)
+            </span>
+          </div>
+
+          {/* Interactive Slider & Buttons */}
+          <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+            {/* Button Geser Kiri */}
+            <button
+              onClick={() => handleScrollBy(-300)}
+              disabled={!canScrollLeft}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs transition-all cursor-pointer"
+              title="Geser ke kiri"
+            >
+              <ChevronLeft size={14} />
+              <span className="hidden sm:inline">Geser Kiri</span>
+            </button>
+
+            {/* Interactive Range Slidebar */}
+            <div className="flex items-center gap-2 flex-1 sm:flex-initial min-w-[160px] sm:min-w-[220px]">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={scrollProgress}
+                onChange={handleSliderChange}
+                className="w-full accent-[#008055] cursor-pointer h-2 bg-slate-200 dark:bg-slate-700 rounded-lg"
+                title={`Posisi slidebar: ${scrollProgress}%`}
+              />
+              <span className="text-[11px] font-mono font-bold text-slate-600 dark:text-slate-400 w-10 text-right">
+                {scrollProgress}%
+              </span>
+            </div>
+
+            {/* Button Geser Kanan */}
+            <button
+              onClick={() => handleScrollBy(300)}
+              disabled={!canScrollRight}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[#008055] bg-[#008055] text-white text-xs font-bold hover:bg-[#006644] disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs transition-all cursor-pointer"
+              title="Geser ke kanan"
+            >
+              <span className="hidden sm:inline">Geser Kanan</span>
+              <ChevronRight size={14} />
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -694,36 +821,37 @@ export const RekapNilaiKknPage: React.FC = () => {
             </button>
           </div>
         ) : (
-          /* Smooth Horizontal Scroll Slidebar */
+          /* Smooth Horizontal Scroll Slidebar Container */
           <div
-            className="overflow-x-auto w-full scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-slate-100 dark:scrollbar-track-slate-900"
+            ref={tableContainerRef}
+            className="overflow-x-auto w-full table-slidebar-container select-text"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
-            <table className="w-full min-w-[1250px] text-center text-[11.5px] border-collapse">
+            <table className="w-full min-w-[1350px] text-center text-[11.5px] border-collapse">
               {/* Table Head Multi-Tier */}
-              <thead className="sticky top-0 z-10 bg-white dark:bg-slate-900">
+              <thead className="sticky top-0 z-20 bg-white dark:bg-slate-900 shadow-2xs">
                 <tr className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-800">
                   <th
                     rowSpan={2}
-                    className="py-3 px-3 w-12 border-r border-slate-200 dark:border-slate-800 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-xs"
+                    className="py-3.5 px-3 w-12 border-r border-slate-200 dark:border-slate-800 sticky left-0 bg-slate-50 dark:bg-slate-900 z-30 shadow-xs"
                   >
                     No.
                   </th>
                   <th
                     rowSpan={2}
-                    className="py-3 px-3 w-28 border-r border-slate-200 dark:border-slate-800 text-left sticky left-12 bg-white dark:bg-slate-900 z-10 shadow-xs"
+                    className="py-3.5 px-3 w-28 border-r border-slate-200 dark:border-slate-800 text-left sticky left-12 bg-slate-50 dark:bg-slate-900 z-30 shadow-xs"
                   >
                     NIM
                   </th>
                   <th
                     rowSpan={2}
-                    className="py-3 px-4 min-w-[190px] border-r border-slate-200 dark:border-slate-800 text-left sticky left-40 bg-white dark:bg-slate-900 z-10 shadow-xs"
+                    className="py-3.5 px-4 min-w-[190px] border-r-2 border-slate-300 dark:border-slate-700 text-left sticky left-40 bg-slate-50 dark:bg-slate-900 z-30 shadow-sm"
                   >
                     Nama Mahasiswa
                   </th>
                   <th
                     rowSpan={2}
-                    className="py-3 px-4 min-w-[170px] border-r border-slate-200 dark:border-slate-800 text-left"
+                    className="py-3.5 px-4 min-w-[170px] border-r border-slate-200 dark:border-slate-800 text-left"
                   >
                     Kelompok
                   </th>
@@ -731,7 +859,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                   {/* Colspan 2: Otomatis dari Sistem */}
                   <th
                     colSpan={2}
-                    className="py-2.5 px-3 bg-[#f0f7ff] dark:bg-blue-950/40 text-[#1e40af] dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[12px]"
+                    className="py-2.5 px-3 bg-[#f0f7ff] dark:bg-blue-950/50 text-[#1e40af] dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[12px]"
                   >
                     Otomatis dari Sistem
                   </th>
@@ -739,7 +867,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                   {/* Colspan 3: Nilai Individu */}
                   <th
                     colSpan={3}
-                    className="py-2.5 px-3 bg-[#f0fdf4] dark:bg-emerald-950/40 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[12px]"
+                    className="py-2.5 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[12px]"
                   >
                     Nilai Individu (20%)
                   </th>
@@ -747,7 +875,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                   {/* Colspan 3: Program Kerja */}
                   <th
                     colSpan={3}
-                    className="py-2.5 px-3 bg-[#f0fdf4] dark:bg-emerald-950/40 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[12px]"
+                    className="py-2.5 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[12px]"
                   >
                     Program Kerja (20%)
                   </th>
@@ -755,24 +883,24 @@ export const RekapNilaiKknPage: React.FC = () => {
                   {/* Colspan 3: Nilai Kelompok */}
                   <th
                     colSpan={3}
-                    className="py-2.5 px-3 bg-[#f0fdf4] dark:bg-emerald-950/40 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[12px]"
+                    className="py-2.5 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[12px]"
                   >
                     Nilai Kelompok (20%)
                   </th>
 
                   <th
                     rowSpan={2}
-                    className="py-3 px-3 w-16 border-r border-slate-200 dark:border-slate-800 font-extrabold text-[#0f172a] dark:text-slate-100"
+                    className="py-3.5 px-3 w-16 border-r border-slate-200 dark:border-slate-800 font-extrabold text-[#0f172a] dark:text-slate-100"
                   >
                     Nilai<br />Akhir
                   </th>
                   <th
                     rowSpan={2}
-                    className="py-3 px-3 w-14 border-r border-slate-200 dark:border-slate-800 font-bold"
+                    className="py-3.5 px-3 w-14 border-r border-slate-200 dark:border-slate-800 font-bold"
                   >
                     Predikat
                   </th>
-                  <th rowSpan={2} className="py-3 px-4 w-28 font-bold">
+                  <th rowSpan={2} className="py-3.5 px-4 w-28 font-bold">
                     Status
                   </th>
                 </tr>
@@ -831,20 +959,20 @@ export const RekapNilaiKknPage: React.FC = () => {
                   return (
                     <tr
                       key={st.id || idx}
-                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors"
+                      className="hover:bg-slate-50/90 dark:hover:bg-slate-800/60 transition-colors"
                     >
                       {/* No - Sticky */}
-                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 text-slate-500 font-medium sticky left-0 bg-white dark:bg-slate-900 z-1 shadow-xs">
+                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 text-slate-500 font-medium sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-xs">
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
 
                       {/* NIM - Sticky */}
-                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 font-medium text-slate-800 dark:text-slate-200 text-left sticky left-12 bg-white dark:bg-slate-900 z-1 shadow-xs font-mono">
+                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 font-medium text-slate-800 dark:text-slate-200 text-left sticky left-12 bg-white dark:bg-slate-900 z-10 shadow-xs font-mono">
                         {st.nim}
                       </td>
 
                       {/* Nama Mahasiswa - Sticky */}
-                      <td className="py-3 px-4 border-r border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-slate-100 text-left sticky left-40 bg-white dark:bg-slate-900 z-1 shadow-xs">
+                      <td className="py-3 px-4 border-r-2 border-slate-300 dark:border-slate-700 font-bold text-slate-900 dark:text-slate-100 text-left sticky left-40 bg-white dark:bg-slate-900 z-10 shadow-sm">
                         {st.name}
                       </td>
 
@@ -949,6 +1077,35 @@ export const RekapNilaiKknPage: React.FC = () => {
             </table>
           </div>
         )}
+
+        {/* Bottom Slidebar Indicator Bar */}
+        <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#008055]" />
+            <span className="font-semibold text-slate-700 dark:text-slate-300">
+              Kolom Terkunci: No., NIM, Nama Mahasiswa
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleScrollBy(-200)}
+              disabled={!canScrollLeft}
+              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
+              title="Geser Kiri"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="font-mono font-bold text-[#008055]">{scrollProgress}%</span>
+            <button
+              onClick={() => handleScrollBy(200)}
+              disabled={!canScrollRight}
+              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
+              title="Geser Kanan"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Smart Pagination Controls Section */}
