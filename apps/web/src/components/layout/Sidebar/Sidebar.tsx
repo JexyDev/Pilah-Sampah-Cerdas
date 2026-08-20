@@ -904,17 +904,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               <Recycle size={16} className="absolute bottom-3 left-4 text-[#009966]/40 dark:text-emerald-500/30 animate-spin [animation-duration:12s] transition-transform group-hover:scale-110" />
               <Trash2 size={16} className="absolute bottom-3 right-4 text-[#0284c7]/40 dark:text-sky-500/30 animate-pulse [animation-duration:2.8s] transition-transform group-hover:scale-110" />
 
-              <Link to="/dasbor" className="flex flex-col items-center group cursor-pointer relative z-10 mb-3">
+              <Link to="/dasbor" className="flex flex-col items-center group cursor-pointer relative z-10 mb-3 px-2">
                 <img
-                  src="/image/berseka-icon.png"
-                  alt="BERSEKA Icon"
-                  className="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105 mb-1"
+                  src="/image/berseka-logo.png"
+                  alt="BERSEKA - Bersih, Sehat, Kampung Asri"
+                  className="h-11 w-auto max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
                 />
-                <span className="text-lg font-black tracking-tight leading-none">
-                  <span className="text-[#175C3B] dark:text-emerald-400">BER</span>
-                  <span className="text-[#009966] dark:text-emerald-300">SE</span>
-                  <span className="text-[#0073E6] dark:text-sky-400">KA</span>
-                </span>
               </Link>
 
               {/* Real-time System Clock Card (Placed at top) */}

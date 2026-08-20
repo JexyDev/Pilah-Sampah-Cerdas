@@ -243,14 +243,13 @@ export const LandingPage: React.FC = () => {
           <Link
             to="/"
             onClick={handleLogoClick}
-            className="flex items-center gap-2.5 group shrink-0"
+            className="flex items-center group shrink-0"
           >
-            <BersekaLogoIcon className="w-10 h-10 sm:w-11 sm:h-11 transition-transform group-hover:scale-105 shrink-0" />
-            <span className="text-2xl sm:text-[1.75rem] font-black tracking-tight leading-normal text-left relative -top-[2px]">
-              <span className="text-[#175C3B]">BER</span>
-              <span className="text-[#009966]">SE</span>
-              <span className="text-[#0073E6]">KA</span>
-            </span>
+            <img
+              src="/image/berseka-logo.png"
+              alt="BERSEKA - Bersih, Sehat, Kampung Asri"
+              className="h-10 sm:h-12 w-auto object-contain transition-transform group-hover:scale-105 shrink-0"
+            />
           </Link>
 
           {/* Navigation Links */}

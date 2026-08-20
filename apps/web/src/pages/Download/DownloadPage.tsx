@@ -146,13 +146,12 @@ const DownloadPage: React.FC = () => {
         {/* Navigation Header - Matches Landing Page Navbar Glassmorphism */}
         <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-3.5 shadow-xs">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2.5 group shrink-0">
-              <BersekaLogoIcon className="w-10 h-10 sm:w-11 sm:h-11 transition-transform group-hover:scale-105 shrink-0" />
-              <span className="text-2xl font-black tracking-tight leading-none text-left relative -top-[1px]">
-                <span className="text-[#175C3B]">BER</span>
-                <span className="text-[#009966]">SE</span>
-                <span className="text-[#0073E6]">KA</span>
-              </span>
+            <Link to="/" className="flex items-center group shrink-0">
+              <img
+                src="/image/berseka-logo.png"
+                alt="BERSEKA - Bersih, Sehat, Kampung Asri"
+                className="h-10 sm:h-11 w-auto object-contain transition-transform group-hover:scale-105 shrink-0"
+              />
             </Link>
 
             <div className="flex items-center gap-3">

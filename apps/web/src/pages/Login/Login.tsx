@@ -27,15 +27,6 @@ import { useThemeStore } from "../../store/useThemeStore";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 
-// Official High-Resolution BERSEKA Icon Mark Asset
-const BersekaLogoIcon: React.FC<{ className?: string }> = ({ className = "w-12 h-12" }) => (
-  <img
-    src="/image/berseka-icon.png"
-    alt="BERSEKA Icon"
-    className={`${className} object-contain shrink-0`}
-  />
-);
-
 // Hanya menerima format nomor telepon Indonesia: 08xxx, 628xxx, +628xxx, 8xxx
 // Minimal 9 digit, maksimal 14 digit.
 const PHONE_REGEX = /^\+628[0-9]\d{6,11}$/;
@@ -731,13 +722,12 @@ const Login: React.FC = () => {
 
             {/* Header Brand Block */}
             <div className="flex items-center justify-between flex-wrap gap-3">
-              <Link to="/" className="flex items-center gap-2.5 group">
-                <BersekaLogoIcon className="w-10 h-10 transition-transform group-hover:scale-105 shrink-0" />
-                <span className="text-xl font-black tracking-tight leading-normal text-left relative -top-[2px]">
-                  <span className="text-[#175C3B]">BER</span>
-                  <span className="text-[#009966]">SE</span>
-                  <span className="text-[#0073E6]">KA</span>
-                </span>
+              <Link to="/" className="flex items-center group">
+                <img
+                  src="/image/berseka-logo.png"
+                  alt="BERSEKA - Bersih, Sehat, Kampung Asri"
+                  className="h-10 sm:h-11 w-auto object-contain transition-transform group-hover:scale-105 shrink-0"
+                />
               </Link>
 
               <Link to="/" className="text-xs font-extrabold text-emerald-600 hover:text-emerald-700 transition">

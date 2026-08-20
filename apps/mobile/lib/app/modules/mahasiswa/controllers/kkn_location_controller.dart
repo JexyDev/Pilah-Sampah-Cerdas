@@ -342,19 +342,16 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   Future<void> selesaiKegiatan({String alasan = 'SELESAI'}) async {
     final scheduleId = _currentTargetScheduleId;
     final sessionId = state.sessionId;
-    if (scheduleId == null) return;
 
     try {
-      if (sessionId != null) {
-        final repo = ref.read(kknRepositoryProvider);
-        final totalMenit = (_accumulatedSeconds / 60).ceil();
-        await repo.selesaiKegiatan(
-          scheduleId,
-          sessionId: sessionId,
-          totalDurasiDalamZonaMenit: totalMenit,
-          alasan: alasan,
-        );
-      }
+      final repo = ref.read(kknRepositoryProvider);
+      final totalMenit = (_accumulatedSeconds / 60).ceil();
+      await repo.selesaiKegiatan(
+        scheduleId ?? 'TODAY',
+        sessionId: sessionId ?? 'SESSION_DEFAULT',
+        totalDurasiDalamZonaMenit: totalMenit,
+        alasan: alasan,
+      );
     } catch (e) {
       debugPrint('[KKN] selesaiKegiatan error: $e');
     } finally {
@@ -364,6 +361,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         clearSession: true,
         isAutoStarted: false,
         outOfZoneSeconds: 0,
+        checkOutTime: DateTime.now(),
       );
     }
   }
@@ -1336,6 +1334,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           attendanceId: response['id']?.toString(),
           isInsideRadius: true,
           inZoneDurationSeconds: 0,
+          checkInTime: DateTime.now(),
+          checkOutTime: null,
         );
 
         if (user != null) {
