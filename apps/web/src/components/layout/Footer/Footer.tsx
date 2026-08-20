@@ -1,6 +1,6 @@
 /**
  * Component: Footer (Footstep Layout Component)
- * Clean, modern, user-friendly footer for TrashCare Web App
+ * Clean, modern, user-friendly footer for BERSEKA Web App
  * Copyright: UNIKOM
  */
 

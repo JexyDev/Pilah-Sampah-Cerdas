@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -124,13 +124,13 @@ export const userController = {
         res.status(409).json({
           success: false,
           error: "CONFLICT",
-          message: "NIM (Nomor Induk Mahasiswa) sudah terdaftar di sistem TrashCare",
+          message: "NIM (Nomor Induk Mahasiswa) sudah terdaftar di sistem BERSEKA",
         });
       } else if (error.message === "PHONE_CONFLICT" || (error.code === "P2002" && (String(error.meta?.target || "").includes("phone") || String(error.meta?.target || "").includes("no_telepon")))) {
         res.status(409).json({
           success: false,
           error: "CONFLICT",
-          message: "Nomor telepon (+62) sudah terdaftar di sistem TrashCare",
+          message: "Nomor telepon (+62) sudah terdaftar di sistem BERSEKA",
         });
       } else if (error.message === "PHONE_REQUIRED") {
         res.status(400).json({

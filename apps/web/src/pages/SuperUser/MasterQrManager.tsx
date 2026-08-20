@@ -247,7 +247,7 @@ export const MasterQrManager: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `Master_QR_Trashcare_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute("download", `Master_QR_BERSEKA_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -371,7 +371,7 @@ export const MasterQrManager: React.FC = () => {
       {activeTab === "qrs" && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
           {/* Filters & Search */}
-          <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex flex-wrap gap-3 justify-between items-center">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800/50 flex flex-wrap gap-3 justify-between items-center">
             <div className="relative flex-1 min-w-[240px]">
               <Search className="absolute left-3 top-2.5 text-slate-400 dark:text-slate-500" size={16} />
               <input
@@ -430,7 +430,7 @@ export const MasterQrManager: React.FC = () => {
                     const isInactive = q.status === "INACTIVE";
 
                     return (
-                      <tr key={q.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition-colors">
+                      <tr key={q.id} className="hover:bg-slate-50/60 dark:bg-slate-800/60 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex flex-col items-center gap-1 bg-slate-50 dark:bg-slate-800 p-2 rounded-xl border border-slate-200/80 dark:border-slate-700 w-fit shadow-2xs">
                             <img
@@ -539,7 +539,7 @@ export const MasterQrManager: React.FC = () => {
       {/* Petugas Verification Tab */}
       {activeTab === "pending_petugas" && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+          <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800/50">
             <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Verifikasi Akun Petugas Residu (Global)</h3>
           </div>
           <div className="p-4 overflow-x-auto">
@@ -559,7 +559,7 @@ export const MasterQrManager: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                   {pendingPetugas.map((petugas) => (
-                    <tr key={petugas.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition">
+                    <tr key={petugas.id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50 transition">
                       <td className="px-6 py-4">
                         <p className="font-semibold text-sm text-slate-900 dark:text-slate-100">{petugas.nama}</p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">{petugas.noWa}</p>

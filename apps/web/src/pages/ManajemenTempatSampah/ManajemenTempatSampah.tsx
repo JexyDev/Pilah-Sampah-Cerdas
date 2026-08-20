@@ -1,7 +1,7 @@
 import { Loader2, Check, X, Trash2, Map, Plus, Search, AlertTriangle, Pencil, Tags, QrCode, CheckCircle, XCircle, ChevronDown, ChevronUp, Phone, ShieldCheck, Download, Maximize2, Minimize2, Layers, User, Box } from "lucide-react";
 
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -733,7 +733,7 @@ const ManajemenTempatSampah: React.FC = () => {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
                 activeTab === "kodefikasi"
                   ? "bg-[#009966] text-white shadow-xs"
-                  : "bg-slate-100/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700"
+                  : "bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700"
               }`}
             >
               <QrCode size={15} />
@@ -745,7 +745,7 @@ const ManajemenTempatSampah: React.FC = () => {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
                 activeTab === "monitoring"
                   ? "bg-[#009966] text-white shadow-xs"
-                  : "bg-slate-100/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700"
+                  : "bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700"
               }`}
             >
               <Map size={15} />
@@ -757,7 +757,7 @@ const ManajemenTempatSampah: React.FC = () => {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
                 activeTab === "kategori"
                   ? "bg-[#009966] text-white shadow-xs"
-                  : "bg-slate-100/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700"
+                  : "bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700"
               }`}
             >
               <Tags size={15} />
@@ -1540,7 +1540,7 @@ const ManajemenTempatSampah: React.FC = () => {
         <div className="overflow-x-auto w-full">
           <table className="w-full text-left border-collapse min-w-[1100px]">
             <thead>
-              <tr className="bg-slate-50/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">
+              <tr className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">
                 <th className="py-3 px-4 text-center whitespace-nowrap">QR CODE</th>
                 <th className="py-3 px-4 whitespace-nowrap">KODE TEMPAT SAMPAH</th>
                 <th className="py-3 px-4 whitespace-nowrap">KATEGORI</th>
@@ -1598,7 +1598,7 @@ const ManajemenTempatSampah: React.FC = () => {
                 return (
                   <tr
                     key={bin.kode}
-                    className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors text-xs text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap"
+                    className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition-colors text-xs text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap"
                   >
                     {/* 1. QR CODE */}
                     <td className="py-3 px-4 text-center whitespace-nowrap">
@@ -1665,7 +1665,7 @@ const ManajemenTempatSampah: React.FC = () => {
                             {bin.kapasitas}%
                           </span>
                         </div>
-                        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-200/60 dark:border-slate-700">
+                        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700">
                           <div
                             className={`h-full rounded-full transition-all duration-500 ${
                               bin.kapasitas > 90 ? "bg-rose-500" : bin.kapasitas >= 70 ? "bg-amber-500" : "bg-emerald-500"
@@ -1788,7 +1788,7 @@ const ManajemenTempatSampah: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
           <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-xl flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/80">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80">
               <h3 className="text-base font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <ShieldCheck className="text-[#009966] dark:text-emerald-400" size={20} />
                 Identitas Kepemilikan Tempat Sampah
@@ -1906,7 +1906,7 @@ const ManajemenTempatSampah: React.FC = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex justify-end bg-slate-50/80 dark:bg-slate-800/80">
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex justify-end bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80">
               <button
                 className="px-5 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-bold transition-all cursor-pointer"
                 onClick={closeLogModal}
@@ -2016,7 +2016,7 @@ const ManajemenTempatSampah: React.FC = () => {
                   type="text"
                   readOnly
                   value={formData.qrCode || selectedBin || ""}
-                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800 font-mono font-bold text-slate-700 dark:text-slate-300 text-xs outline-none"
+                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 font-mono font-bold text-slate-700 dark:text-slate-300 text-xs outline-none"
                 />
               </div>
 
@@ -2028,7 +2028,7 @@ const ManajemenTempatSampah: React.FC = () => {
                   required
                   value={formData.categoryId}
                   onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all cursor-pointer"
+                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all cursor-pointer"
                 >
                   {categories.length > 0 ? (
                     categories.map((c) => (
@@ -2054,7 +2054,7 @@ const ManajemenTempatSampah: React.FC = () => {
                   required
                   value={formData.maxCapacityLiter}
                   onChange={(e) => setFormData({ ...formData, maxCapacityLiter: parseFloat(e.target.value) })}
-                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all"
+                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all"
                 />
               </div>
 
@@ -2064,7 +2064,7 @@ const ManajemenTempatSampah: React.FC = () => {
                 </label>
 
                 {/* Status Card 1 */}
-                <div className="p-4 bg-slate-50/60 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 rounded-2xl flex items-center justify-between gap-3">
+                <div className="p-4 bg-slate-50/60 dark:bg-slate-800/60 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 rounded-2xl flex items-center justify-between gap-3">
                   <div>
                     <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200 block mb-0.5">
                       Status Otomatis Lapangan

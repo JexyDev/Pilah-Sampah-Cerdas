@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare - Sistem Pemilahan Sampah Cerdas KKN Coblong
+ * Project: BERSEKA - Sistem Pemilahan Sampah Cerdas KKN Coblong
  * Page: Penilaian Program Kerja KKN (DPL / Tim Penilai)
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
@@ -205,7 +205,7 @@ export const PenilaianProkerPage: React.FC = () => {
       const val = inputNilai[item.no];
       const numericVal = typeof val === "number" && !isNaN(val) ? Math.min(100, Math.max(0, val)) : 0;
       if (typeof val === "number" && !isNaN(val)) filledCount++;
-      const score = Number(((numericVal * item.bobot) / 100).toFixed(1));
+      const score = Number(((numericVal * item.bobot) / 100).toFixed(2));
       totalScore += score;
       return {
         ...item,
@@ -215,7 +215,7 @@ export const PenilaianProkerPage: React.FC = () => {
       };
     });
 
-    const finalScore = Number(totalScore.toFixed(1));
+    const finalScore = Number(totalScore.toFixed(2));
 
     // Menentukan Predikat
     let predikat = "Kurang";
@@ -414,11 +414,11 @@ export const PenilaianProkerPage: React.FC = () => {
   const endIndex = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-5 text-slate-800 dark:text-slate-100">
-      {/* Header Utama Sesuai Mockup */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+    <div className="min-h-[calc(100vh-64px)] bg-[#f8fafc] dark:bg-slate-950 p-4 sm:p-6 lg:p-8 space-y-6 text-slate-800 dark:text-slate-100 max-w-[1600px] mx-auto">
+      {/* Header Halaman */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
             Penilaian Program Kerja
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -429,9 +429,9 @@ export const PenilaianProkerPage: React.FC = () => {
         <button
           onClick={fetchData}
           disabled={loading}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all shadow-2xs cursor-pointer self-start sm:self-auto"
         >
-          <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
+          <RefreshCw size={13} className={loading ? "animate-spin text-[#009966]" : "text-[#009966]"} />
           <span>Segarkan Data</span>
         </button>
       </div>
@@ -548,7 +548,7 @@ export const PenilaianProkerPage: React.FC = () => {
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-50/90 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-bold">
+                    <tr className="bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-bold">
                       <th className="py-3 px-3 w-10 text-center">No.</th>
                       <th className="py-3 px-3.5 min-w-[130px]">Nama Kelompok</th>
                       <th className="py-3 px-3 min-w-[100px]">Kategori Program Kerja</th>
@@ -572,7 +572,7 @@ export const PenilaianProkerPage: React.FC = () => {
                           className={`transition-colors cursor-pointer select-none ${
                             isSelected
                               ? "bg-emerald-50/50 dark:bg-emerald-950/20"
-                              : "hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
+                              : "hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/40"
                           }`}
                         >
                           {/* No with Green Left Stripe Indicator on Active */}
@@ -713,7 +713,7 @@ export const PenilaianProkerPage: React.FC = () => {
           ) : (
             <div className="space-y-4">
               {/* Header Info Kelompok & Proker Card */}
-              <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/40 rounded-xl border border-slate-200/70 dark:border-slate-800 flex items-start justify-between gap-3">
+              <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/40 rounded-xl border border-slate-200/70 dark:border-slate-800 flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-emerald-700 flex items-center justify-center text-white shrink-0 shadow-xs">
                     <Users size={20} />
@@ -752,7 +752,7 @@ export const PenilaianProkerPage: React.FC = () => {
                 <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden text-xs">
                   <table className="w-full border-collapse">
                     <thead>
-                      <tr className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-[11px] font-bold border-b border-slate-200 dark:border-slate-800">
+                      <tr className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-[11px] font-bold border-b border-slate-200 dark:border-slate-800">
                         <th className="py-2.5 px-2 text-center w-8">No.</th>
                         <th className="py-2.5 px-2.5">Aspek Penilaian</th>
                         <th className="py-2.5 px-2 text-center w-14">Bobot</th>
@@ -762,7 +762,7 @@ export const PenilaianProkerPage: React.FC = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {calculatedRubrik.rubrik.map((r) => (
-                        <tr key={r.no} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                        <tr key={r.no} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/30">
                           <td className="py-2 px-2 text-center font-bold text-slate-400">
                             {r.no}
                           </td>
@@ -786,20 +786,20 @@ export const PenilaianProkerPage: React.FC = () => {
                             </div>
                           </td>
                           <td className="py-2 px-2.5 text-right font-bold text-slate-800 dark:text-slate-200">
-                            {r.skor.toFixed(1)}
+                            {r.skor.toFixed(2)}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
-                      <tr className="bg-slate-50/90 dark:bg-slate-800/70 border-t border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-800 dark:text-slate-200">
+                      <tr className="bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/70 border-t border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-800 dark:text-slate-200">
                         <td colSpan={2} className="py-2 px-3 text-left">
                           Total Bobot
                         </td>
                         <td className="py-2 px-2 text-center">100%</td>
                         <td></td>
                         <td className="py-2 px-2.5 text-right text-emerald-700 dark:text-emerald-400">
-                          {calculatedRubrik.totalScore.toFixed(1)}
+                          {calculatedRubrik.totalScore.toFixed(2)}
                         </td>
                       </tr>
                     </tfoot>
@@ -818,7 +818,7 @@ export const PenilaianProkerPage: React.FC = () => {
                       Nilai Akhir
                     </span>
                     <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-                      {calculatedRubrik.totalScore.toFixed(1)}
+                      {calculatedRubrik.totalScore.toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -949,7 +949,7 @@ export const PenilaianProkerPage: React.FC = () => {
                     <span className="text-xs font-medium">Memuat dokumentasi foto kegiatan...</span>
                   </div>
                 ) : !buktiData?.attendances || buktiData.attendances.length === 0 ? (
-                  <div className="p-8 text-center text-slate-400 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/60 dark:border-slate-800">
+                  <div className="p-8 text-center text-slate-400 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-800">
                     <AlertCircle size={24} className="mx-auto mb-1.5 text-slate-300" />
                     <p className="text-xs">Belum ada foto dokumentasi aktivitas dari kelompok ini.</p>
                   </div>

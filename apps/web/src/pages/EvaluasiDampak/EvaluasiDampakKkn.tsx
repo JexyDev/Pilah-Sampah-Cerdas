@@ -277,8 +277,8 @@ export const EvaluasiDampakKkn: React.FC = () => {
             onClick={() => setActiveTab("BASELINE")}
             className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-bold transition-all ${
               activeTab === "BASELINE"
-                ? "bg-white text-indigo-700 shadow-sm border border-slate-200"
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                ? "bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-400 shadow-sm border border-slate-200 dark:border-slate-700"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
             Data Baseline
@@ -287,8 +287,8 @@ export const EvaluasiDampakKkn: React.FC = () => {
             onClick={() => setActiveTab("ENDLINE")}
             className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-bold transition-all ${
               activeTab === "ENDLINE"
-                ? "bg-white text-indigo-700 shadow-sm border border-slate-200"
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                ? "bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-400 shadow-sm border border-slate-200 dark:border-slate-700"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
             Data Endline
@@ -297,8 +297,8 @@ export const EvaluasiDampakKkn: React.FC = () => {
             onClick={() => setActiveTab("KOMPARASI")}
             className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-bold transition-all ${
               activeTab === "KOMPARASI"
-                ? "bg-white text-indigo-700 shadow-sm border border-slate-200"
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                ? "bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-400 shadow-sm border border-slate-200 dark:border-slate-700"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
             Perubahan dan Dampak
@@ -340,7 +340,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
               </thead>
               <tbody className="text-sm divide-y divide-slate-100 dark:divide-slate-800">
                 {(activeTab === "BASELINE" ? filteredBaseline : filteredEndline).map((item: any) => (
-                  <tr key={item.kelurahanId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition">
+                  <tr key={item.kelurahanId} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50 transition">
                     <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-100">
                       Kel. {item.namaKelurahan}
                       <span className="block text-[10px] text-slate-400 font-medium">Kec. {item.kecamatan || "-"}</span>
@@ -351,11 +351,11 @@ export const EvaluasiDampakKkn: React.FC = () => {
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                       {item.pemilahanSampah?.persentasePemilahan !== null && item.pemilahanSampah?.persentasePemilahan !== undefined
-                        ? `${(item.pemilahanSampah.persentasePemilahan * 100).toFixed(1)}%` 
+                        ? `${(item.pemilahanSampah.persentasePemilahan * 100).toFixed(2)}%` 
                         : "-"}
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
-                      {item.volumeSampah?.totalVolumeKgPerHari ? `${item.volumeSampah.totalVolumeKgPerHari} Kg` : "-"}
+                      {item.volumeSampah?.totalVolumeKgPerHari ? `${Number(item.volumeSampah.totalVolumeKgPerHari).toFixed(2)} Kg` : "-"}
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                       {item.bankSampahPengolahan?.bankSampahAktif !== null && item.bankSampahPengolahan?.bankSampahAktif !== undefined
@@ -460,7 +460,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                     <div className="flex items-baseline gap-2">
                       <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100">
                         {avgDeltaPemilahan > 0 ? "+" : ""}
-                        {(avgDeltaPemilahan * 100).toFixed(1)}%
+                        {(avgDeltaPemilahan * 100).toFixed(2)}%
                       </h3>
                       <span
                         className={`text-xs font-bold flex items-center gap-0.5 ${
@@ -491,7 +491,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                     <div className="flex items-baseline gap-2">
                       <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100">
                         {avgDeltaVolume > 0 ? "+" : ""}
-                        {avgDeltaVolume.toFixed(1)} Kg
+                        {avgDeltaVolume.toFixed(2)} Kg
                       </h3>
                       <span
                         className={`text-xs font-bold flex items-center gap-0.5 ${
@@ -522,7 +522,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                     <div className="flex items-baseline gap-2">
                       <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100">
                         {avgDeltaKegiatan > 0 ? "+" : ""}
-                        {avgDeltaKegiatan.toFixed(1)} Kegiatan
+                        {avgDeltaKegiatan.toFixed(2)} Kegiatan
                       </h3>
                       <span
                         className={`text-xs font-bold flex items-center gap-0.5 ${
@@ -555,7 +555,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                     <XAxis dataKey="namaKelurahan" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `${val * 100}%`} />
                     <RechartsTooltip 
-                      formatter={(val: any) => [`${(Number(val) * 100).toFixed(1)}%`, '']}
+                      formatter={(val: any) => [`${(Number(val) * 100).toFixed(2)}%`, '']}
                       cursor={{fill: '#f1f5f9'}} 
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', fontWeight: 600 }}
                     />
@@ -593,7 +593,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden mt-6">
-             <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50">
+             <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
                <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                  Tabel Komparasi Metrik Dampak KKN
                </h3>
@@ -611,7 +611,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                   </thead>
                   <tbody className="text-sm divide-y divide-slate-100 dark:divide-slate-800">
                     {filteredKomparasi.map(item => (
-                      <tr key={item.kelurahanId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition">
+                      <tr key={item.kelurahanId} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50 transition">
                         <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-100">
                           Kel. {item.namaKelurahan}
                         </td>
@@ -626,7 +626,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                           {item.pemilahan.delta !== null ? (
                             <span className={item.pemilahan.delta > 0 ? "text-emerald-600 flex items-center gap-1" : item.pemilahan.delta < 0 ? "text-rose-600 flex items-center gap-1" : "text-slate-500 flex items-center gap-1"}>
                                {item.pemilahan.delta > 0 ? <TrendingUp size={14}/> : item.pemilahan.delta < 0 ? <TrendingDown size={14}/> : <Minus size={14}/>}
-                               {item.pemilahan.delta > 0 ? '+' : ''}{(item.pemilahan.delta * 100).toFixed(1)}%
+                               {item.pemilahan.delta > 0 ? '+' : ''}{(item.pemilahan.delta * 100).toFixed(2)}%
                             </span>
                           ) : "-"}
                         </td>
@@ -634,7 +634,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                           {item.volumeSampah.delta !== null ? (
                             <span className={item.volumeSampah.delta < 0 ? "text-emerald-600 flex items-center gap-1" : item.volumeSampah.delta > 0 ? "text-rose-600 flex items-center gap-1" : "text-slate-500 flex items-center gap-1"}>
                                {item.volumeSampah.delta > 0 ? <TrendingUp size={14}/> : item.volumeSampah.delta < 0 ? <TrendingDown size={14}/> : <Minus size={14}/>}
-                               {item.volumeSampah.delta > 0 ? '+' : ''}{item.volumeSampah.delta} Kg
+                               {item.volumeSampah.delta > 0 ? '+' : ''}{Number(item.volumeSampah.delta).toFixed(2)} Kg
                             </span>
                           ) : "-"}
                         </td>

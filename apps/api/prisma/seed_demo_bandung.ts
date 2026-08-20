@@ -125,7 +125,7 @@ async function main() {
   const rw06TargetId = rw06DagoArea?.id || (rtRwObjects.find(r => r.name.includes("RW 06"))?.id ?? null);
 
   const adminSeeds = [
-    { phone: "+628111111111", name: "SUPER USER TrashCare", role: "SUPER_USER", rtRwId: null },
+    { phone: "+628111111111", name: "SUPER USER BERSEKA", role: "SUPER_USER", rtRwId: null },
     { phone: "+628111111112", name: "Admin DLH Bandung", role: "ADMIN_DLH", rtRwId: null },
     { phone: "+628111111113", name: "Camat Coblong", role: "CAMAT", rtRwId: null },
     { phone: "+628111111114", name: "Lurah Dago", role: "LURAH", rtRwId: null },

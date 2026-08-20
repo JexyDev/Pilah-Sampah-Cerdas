@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare Analytics & Leaderboard Overview Board
+ * Project: BERSEKA Analytics & Leaderboard Overview Board
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
@@ -140,7 +140,7 @@ const TableSection: React.FC<TableSectionProps> = ({
           <input
             type="text"
             placeholder="Cari..."
-            className="w-full bg-slate-50/70 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 pl-10 pr-4 py-2 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] transition-all"
+            className="w-full bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 pl-10 pr-4 py-2 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] transition-all"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -150,7 +150,7 @@ const TableSection: React.FC<TableSectionProps> = ({
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-xs text-left">
-          <thead className="bg-slate-50/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider border-b border-slate-200 dark:border-slate-700">
+          <thead className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider border-b border-slate-200 dark:border-slate-700">
             <tr>
               <th
                 className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors w-20"
@@ -182,7 +182,7 @@ const TableSection: React.FC<TableSectionProps> = ({
               </tr>
             ) : (
               paginatedData.map((item) => (
-                <tr key={item.rank} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                <tr key={item.rank} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition-colors">
                   <td className="py-3.5 px-4 font-black text-slate-700 dark:text-slate-300">
                     <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-[11px] font-black ${
                       item.rank === 1 ? "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40" :
@@ -314,7 +314,7 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           setVolumeData(
             d.regions.map((k: any) => ({
               name: `Kel. ${k.kelurahanName}`,
-              val: parseFloat((Number(k.totalPoints || 0)).toFixed(1)),
+              val: parseFloat((Number(k.totalPoints || 0)).toFixed(2)),
             }))
           );
 
@@ -401,8 +401,8 @@ export const AnalyticsOverviewBoard: React.FC = () => {
   const totalVolumeKg = volumeData.reduce((acc, d) => acc + d.val, 0);
   const totalVolumeDisplay =
     totalVolumeKg >= 1000
-      ? `${(totalVolumeKg / 1000).toFixed(1)} ton`
-      : `${totalVolumeKg.toFixed(1)} kg`;
+      ? `${(totalVolumeKg / 1000).toFixed(2)} ton`
+      : `${totalVolumeKg.toFixed(2)} kg`;
 
   const CustomComplianceTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -562,8 +562,8 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           title="Peringkat Warga"
           subtitle="Tabel pemeringkatan warga berdasarkan akumulasi poin pemilahan sampah"
           icon={Users}
-          iconBgColor="bg-emerald-50 border-emerald-200"
-          iconTextColor="text-[#009966]"
+          iconBgColor="bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-700/40"
+          iconTextColor="text-[#009966] dark:text-emerald-400"
           data={topWarga}
           nameHeader="Nama Warga"
           subHeader="Wilayah"
@@ -575,8 +575,8 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           title="Peringkat Petugas Pemilah"
           subtitle="Tabel peringkat petugas berdasarkan kinerja &amp; kecepatan pengangkutan"
           icon={TrendingUp}
-          iconBgColor="bg-[#e5f7ed] border-[#009966]/20"
-          iconTextColor="text-[#009966]"
+          iconBgColor="bg-[#e5f7ed] dark:bg-emerald-950/60 border-[#009966]/20 dark:border-emerald-700/40"
+          iconTextColor="text-[#009966] dark:text-emerald-400"
           data={topPetugas}
           nameHeader="Nama Petugas"
           subHeader="Wilayah Penugasan"
@@ -588,8 +588,8 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           title="Peringkat Rukun Warga"
           subtitle="Tabel akumulasi poin kebersihan &amp; kepatuhan tingkat Rukun Warga"
           icon={MapPin}
-          iconBgColor="bg-amber-50 border-amber-200"
-          iconTextColor="text-amber-600"
+          iconBgColor="bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-700/40"
+          iconTextColor="text-amber-600 dark:text-amber-400"
           data={topRw}
           nameHeader="Rukun Warga"
           subHeader="Kelurahan"
@@ -601,8 +601,8 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           title="Peringkat Kelurahan"
           subtitle="Tabel akumulasi poin kebersihan lingkungan tingkat Kelurahan"
           icon={Building2}
-          iconBgColor="bg-sky-50 border-sky-200"
-          iconTextColor="text-sky-600"
+          iconBgColor="bg-sky-50 dark:bg-sky-950/60 border-sky-200 dark:border-sky-700/40"
+          iconTextColor="text-sky-600 dark:text-sky-400"
           data={topKelurahan}
           nameHeader="Kelurahan"
           subHeader="Kecamatan"
@@ -614,8 +614,8 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           title="Peringkat Mahasiswa KKN"
           subtitle="Tabel skor akhir individual seluruh mahasiswa pendamping KKN"
           icon={GraduationCap}
-          iconBgColor="bg-purple-50 border-purple-200"
-          iconTextColor="text-purple-600"
+          iconBgColor="bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-700/40"
+          iconTextColor="text-purple-600 dark:text-purple-400"
           data={topMahasiswa}
           nameHeader="Nama Mahasiswa"
           subHeader="Kelompok KKN"
@@ -627,8 +627,8 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           title="Peringkat Kelompok KKN"
           subtitle="Tabel rata-rata skor akhir kelompok kerja KKN"
           icon={Award}
-          iconBgColor="bg-indigo-50 border-indigo-200"
-          iconTextColor="text-indigo-600"
+          iconBgColor="bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-700/40"
+          iconTextColor="text-indigo-600 dark:text-indigo-400"
           data={topKelompok}
           nameHeader="Kelompok KKN"
           subHeader="Keterangan"
@@ -640,8 +640,8 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           title="Peringkat Dosen Pendamping Lapangan (DPL)"
           subtitle="Tabel pencapaian &amp; skor rata-rata binaan DPL"
           icon={FileText}
-          iconBgColor="bg-[#009966]/10 border-[#009966]/20"
-          iconTextColor="text-[#009966]"
+          iconBgColor="bg-[#009966]/10 dark:bg-emerald-950/60 border-[#009966]/20 dark:border-emerald-700/40"
+          iconTextColor="text-[#009966] dark:text-emerald-400"
           data={topDpl}
           nameHeader="Nama DPL"
           subHeader="Kelompok Binaan"

@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -405,7 +405,7 @@ export class UserService {
         rw: rwName,
         address: formattedAddress,
         wilayah: userWilayah,
-        setoran: parseFloat(totalSetoranKg.toFixed(1)),
+        setoran: parseFloat(totalSetoranKg.toFixed(2)),
         totalPoin,
         petugasResidu: assignedPetugasObj
           ? {

@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo.
@@ -410,7 +410,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
       {/* 4. READ-ONLY DATASET CLASSIFICATION TABLE */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden space-y-4">
         {/* Table Control Header */}
-        <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
+        <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-[#009966] flex items-center justify-center font-bold shrink-0">
               <Smartphone size={20} />
@@ -515,7 +515,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                 />
               ) : (
                 paginatedDataset.map((item, index) => (
-                  <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60 transition-colors">
+                  <tr key={item.id} className="hover:bg-slate-50/60 dark:bg-slate-800/60 dark:hover:bg-slate-800/60 transition-colors">
                     {/* Number (No. Kolom Paling Kiri) */}
                     <td className="py-4 px-4 text-center font-black text-slate-500 text-xs">
                       {(currentPage - 1) * itemsPerPage + index + 1}
@@ -670,7 +670,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
           </table>
         </div>
 
-        {/* Standardized TrashCare Pagination Footer */}
+        {/* Standardized BERSEKA Pagination Footer */}
         {filteredDataset.length > 0 && (
           <Pagination
             currentPage={currentPage}
@@ -772,7 +772,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
 
                 <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
                   <span className="text-[10px] font-black uppercase text-slate-400">Metadata VPS Host</span>
-                  <p className="font-extrabold text-slate-800 dark:text-slate-100">{vpsData?.os.hostname || "TrashCare VPS"}</p>
+                  <p className="font-extrabold text-slate-800 dark:text-slate-100">{vpsData?.os.hostname || "BERSEKA VPS"}</p>
                   <p className="text-emerald-700 font-bold">PostgreSQL DB: {vpsData?.database.queryLatencyMs || 62} ms</p>
                 </div>
 

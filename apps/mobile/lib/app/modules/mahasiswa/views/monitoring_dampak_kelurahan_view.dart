@@ -202,7 +202,7 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              '${(calcPercentage > 0 ? calcPercentage : dampak.activeHouseholdsPercentage).toStringAsFixed(1)}%',
+                              '${(calcPercentage > 0 ? calcPercentage : dampak.activeHouseholdsPercentage).toStringAsFixed(2)}%',
                               style: const TextStyle(
                                 fontSize: 36,
                                 fontWeight: FontWeight.w800,
@@ -283,7 +283,7 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              dampak.totalWasteVolumeKg.toStringAsFixed(1),
+                              dampak.totalWasteVolumeKg.toStringAsFixed(2),
                               style: const TextStyle(
                                 fontSize: 36,
                                 fontWeight: FontWeight.w800,
@@ -334,7 +334,7 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
-                                      '${dampak.organicVolumeKg.toStringAsFixed(1)} kg',
+                                      '${dampak.organicVolumeKg.toStringAsFixed(2)} kg',
                                       style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
@@ -372,7 +372,7 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
-                                      '${dampak.nonOrganicVolumeKg.toStringAsFixed(1)} kg',
+                                      '${dampak.nonOrganicVolumeKg.toStringAsFixed(2)} kg',
                                       style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,

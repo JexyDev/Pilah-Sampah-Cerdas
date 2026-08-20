@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -143,7 +143,7 @@ const SheetDetailModal: React.FC<{
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                   {paginatedData.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="px-3 py-2 text-gray-400 font-mono text-xs">{(currentPage - 1) * rowsPerPage + idx + 1}</td>
                       {columns.map((col) => (
                         <td key={col} className="px-3 py-2 text-gray-700 dark:text-slate-300 whitespace-nowrap max-w-[200px] truncate">
@@ -166,7 +166,7 @@ const SheetDetailModal: React.FC<{
 
         {/* Modal Footer with Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 rounded-b-2xl">
+          <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50 rounded-b-2xl">
             <p className="text-sm text-gray-500">
               Halaman {currentPage} dari {totalPages}
             </p>
@@ -174,14 +174,14 @@ const SheetDetailModal: React.FC<{
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800/60 disabled:opacity-40 disabled:cursor-not-allowed transition"
               >
                 Sebelumnya
               </button>
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800/60 disabled:opacity-40 disabled:cursor-not-allowed transition"
               >
                 Selanjutnya
               </button>
@@ -395,7 +395,7 @@ const ImportSurveiKkn: React.FC = () => {
   // ─── Format Helpers ─────────────────────────
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
@@ -438,7 +438,7 @@ const ImportSurveiKkn: React.FC = () => {
       </div>
 
       {/* Tab Switcher: Tab 1 Baseline vs Tab 2 Endline */}
-      <div className="flex bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 w-fit gap-1 shadow-xs">
+      <div className="flex bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 w-fit gap-1 shadow-xs">
         <button
           type="button"
           onClick={() => {
@@ -447,7 +447,7 @@ const ImportSurveiKkn: React.FC = () => {
           }}
           className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 cursor-pointer ${
             activeSurveyType === "BASELINE"
-              ? "bg-white text-blue-700 shadow-sm border border-slate-200"
+              ? "bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400 shadow-sm border border-slate-200 dark:border-slate-700"
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
@@ -462,7 +462,7 @@ const ImportSurveiKkn: React.FC = () => {
           }}
           className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 cursor-pointer ${
             activeSurveyType === "ENDLINE"
-              ? "bg-white text-emerald-700 shadow-sm border border-slate-200"
+              ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-sm border border-slate-200 dark:border-slate-700"
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
@@ -493,11 +493,11 @@ const ImportSurveiKkn: React.FC = () => {
                 transition-all duration-200 ease-out group
                 ${isDragging
                   ? "border-primary bg-primary/5 scale-[1.01] shadow-lg shadow-primary/10"
-                  : "border-gray-200 bg-gray-50/50 hover:border-primary/40 hover:bg-primary/[0.02]"
+                  : "border-gray-200 bg-gray-50/50 dark:bg-slate-800/50 hover:border-primary/40 hover:bg-primary/[0.02]"
                 }
               `}
             >
-              <div className={`p-4 rounded-2xl mb-4 transition-colors ${isDragging ? "bg-primary/10" : "bg-gray-100 group-hover:bg-primary/10"}`}>
+              <div className={`p-4 rounded-2xl mb-4 transition-colors ${isDragging ? "bg-primary/10" : "bg-gray-100 dark:bg-slate-800 group-hover:bg-primary/10"}`}>
                 <Upload size={32} className={`transition-colors ${isDragging ? "text-primary" : "text-gray-400 group-hover:text-primary"}`} />
               </div>
               <p className="text-sm font-semibold text-gray-700 dark:text-slate-300">
@@ -560,7 +560,7 @@ const ImportSurveiKkn: React.FC = () => {
             className={`
               btn-polish w-full flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-bold text-sm transition-all
               ${!file || uploadStatus === "uploading" || parseError
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                ? "bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-500 cursor-not-allowed"
                 : "bg-primary text-white shadow-md hover:shadow-lg"
               }
             `}
@@ -621,7 +621,7 @@ const ImportSurveiKkn: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                     {sheetSummaries.map((sheet) => (
-                      <tr key={sheet.name} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                      <tr key={sheet.name} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="px-4 py-3 font-medium text-gray-900 dark:text-slate-100">
                           {SHEET_DISPLAY_NAMES[sheet.name] || sheet.name}
                         </td>
@@ -651,7 +651,7 @@ const ImportSurveiKkn: React.FC = () => {
                     ))}
                   </tbody>
                   <tfoot>
-                    <tr className="bg-gray-50/70 font-semibold">
+                    <tr className="bg-gray-50/70 dark:bg-slate-800/70 font-semibold">
                       <td className="px-4 py-3 text-gray-700 dark:text-slate-300">Total</td>
                       <td className="px-4 py-3 text-center text-gray-900 dark:text-slate-100 font-mono">
                         {sheetSummaries.reduce((sum, s) => sum + s.rowCount, 0)}
@@ -766,7 +766,7 @@ const ImportSurveiKkn: React.FC = () => {
               {history.map((item) => (
                 <div
                   key={item.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-gray-50/30 hover:bg-gray-50/60 dark:hover:bg-slate-800/60 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-gray-50/30 dark:bg-slate-800/30 hover:bg-gray-50 dark:hover:bg-slate-800/60 dark:bg-slate-800/60 dark:hover:bg-slate-800/60 transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="p-2 rounded-lg bg-gray-100 dark:bg-slate-800 flex-shrink-0">

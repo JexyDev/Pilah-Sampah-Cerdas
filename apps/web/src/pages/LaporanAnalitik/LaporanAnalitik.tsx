@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -168,7 +168,7 @@ const LaporanAnalitik: React.FC = () => {
             </div>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 text-green-700 text-[11px] font-bold uppercase tracking-wider">
               <TrendingUp size={16} />{" "}
-              {data.aiAccuracy.toFixed(1)}%
+              {data.aiAccuracy.toFixed(2)}%
             </span>
           </div>
           <div className="flex-1 h-[200px] bg-surface-container-low rounded-lg flex items-center justify-end border-2 border-dashed border-outline-variant/50 relative overflow-hidden px-4 gap-2">
@@ -186,13 +186,13 @@ const LaporanAnalitik: React.FC = () => {
               <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
                 Puncak Akurasi
               </p>
-              <p className="text-[18px] font-bold text-green-600">{data.aiAccuracy ? (data.aiAccuracy + 2).toFixed(1) : "—"}%</p>
+              <p className="text-[18px] font-bold text-green-600">{data.aiAccuracy ? (data.aiAccuracy + 2).toFixed(2) : "—"}%</p>
             </div>
             <div className="text-center border-l border-outline-variant/30">
               <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
                 Tingkat Kepercayaan
               </p>
-              <p className="text-[18px] font-bold text-blue-600">{data.aiAccuracy.toFixed(1)}%</p>
+              <p className="text-[18px] font-bold text-blue-600">{data.aiAccuracy.toFixed(2)}%</p>
             </div>
           </div>
         </div>
@@ -331,7 +331,7 @@ const LaporanAnalitik: React.FC = () => {
               <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
                 Penggunaan Puncak
               </p>
-              <p className="text-[18px] font-bold text-blue-600">{data.cpuUsage ? (data.cpuUsage + 5).toFixed(1) : "—"}%</p>
+              <p className="text-[18px] font-bold text-blue-600">{data.cpuUsage ? (data.cpuUsage + 5).toFixed(2) : "—"}%</p>
             </div>
             <div className="text-center border-l border-outline-variant/30">
               <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
@@ -397,7 +397,7 @@ const LaporanAnalitik: React.FC = () => {
           <div className="flex-1 flex flex-col justify-center items-center py-4">
             <p className="text-4xl font-bold text-green-600 tracking-tight">
               {data.networkIncoming && data.networkOutgoing
-                ? (parseFloat(data.networkIncoming) + parseFloat(data.networkOutgoing)).toFixed(1)
+                ? (parseFloat(data.networkIncoming) + parseFloat(data.networkOutgoing)).toFixed(2)
                 : "—"} Mbps
             </p>
             <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mt-2">

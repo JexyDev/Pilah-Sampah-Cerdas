@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare Modern Confirmation Modal Component
+ * Project: BERSEKA Modern Confirmation Modal Component
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */

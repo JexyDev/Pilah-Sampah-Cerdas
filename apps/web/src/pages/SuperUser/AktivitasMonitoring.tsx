@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
@@ -279,7 +279,7 @@ export const AktivitasMonitoring: React.FC = () => {
           <div>
             <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Sampah Organik</p>
             <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">
-              {totalOrganik >= 1000 ? (totalOrganik / 1000).toFixed(1) : totalOrganik.toLocaleString("id-ID")}{" "}
+              {totalOrganik >= 1000 ? (totalOrganik / 1000).toFixed(2) : totalOrganik.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
               <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalOrganik >= 1000 ? "Ton" : "Kg"}</span>
             </p>
           </div>
@@ -293,7 +293,7 @@ export const AktivitasMonitoring: React.FC = () => {
           <div>
             <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Sampah Anorganik</p>
             <p className="text-lg font-black text-amber-700 dark:text-amber-400 mt-0.5">
-              {totalAnorganik >= 1000 ? (totalAnorganik / 1000).toFixed(1) : totalAnorganik.toLocaleString("id-ID")}{" "}
+              {totalAnorganik >= 1000 ? (totalAnorganik / 1000).toFixed(2) : totalAnorganik.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
               <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalAnorganik >= 1000 ? "Ton" : "Kg"}</span>
             </p>
           </div>
@@ -307,7 +307,7 @@ export const AktivitasMonitoring: React.FC = () => {
           <div>
             <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Residu Non-Terpilah</p>
             <p className="text-lg font-black text-rose-600 dark:text-rose-400 mt-0.5">
-              {totalResidu >= 1000 ? (totalResidu / 1000).toFixed(1) : totalResidu.toLocaleString("id-ID")}{" "}
+              {totalResidu >= 1000 ? (totalResidu / 1000).toFixed(2) : totalResidu.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
               <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalResidu >= 1000 ? "Ton" : "Kg"}</span>
             </p>
           </div>
@@ -555,7 +555,7 @@ export const AktivitasMonitoring: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80">
+                <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80">
                   <th className="py-3.5 px-4 rounded-l-2xl">Nama Warga / Sumber</th>
                   <th className="py-3.5 px-4">Tipe Pemilahan</th>
                   <th className="py-3.5 px-4 text-center">Insentif Poin</th>
@@ -569,9 +569,9 @@ export const AktivitasMonitoring: React.FC = () => {
                   const isAnorganik = t.tipe?.toLowerCase().includes("anorganik");
 
                   return (
-                    <tr key={t.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-all">
+                    <tr key={t.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition-all">
                       <td className="py-3.5 px-4 font-black text-slate-900 dark:text-slate-100 align-middle">
-                        {t.nama || "Warga TrashCare"}
+                        {t.nama || "Warga BERSEKA"}
                       </td>
                       <td className="py-3.5 px-4 align-middle">
                         <span
@@ -613,7 +613,7 @@ export const AktivitasMonitoring: React.FC = () => {
           </div>
         )}
 
-        {/* Standard TrashCare Pagination */}
+        {/* Standard BERSEKA Pagination */}
         {filteredTransactions.length > 0 && (
           <Pagination
             currentPage={currentPage}

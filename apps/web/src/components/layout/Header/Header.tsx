@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -312,7 +312,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
               className={`text-xs px-3.5 py-1.5 rounded-full border transition-all truncate max-w-[140px] sm:max-w-[200px] ${
                 idx === breadcrumbItems.length - 1
                   ? "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-200/90 dark:border-slate-700 font-black shadow-2xs"
-                  : "bg-slate-50/90 dark:bg-slate-850 text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-slate-800 font-extrabold"
+                  : "bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-850 text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-slate-800 font-extrabold"
               }`}
             >
               {item}
@@ -345,7 +345,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
           {showNotifications && (
             <div className="absolute top-12 right-0 w-80 sm:w-96 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
               {/* Popover Header */}
-              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-850">
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-850">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-xl bg-emerald-100/70 dark:bg-emerald-950/70 text-[#009966] dark:text-emerald-400 flex items-center justify-center">
                     <Bell size={15} />
@@ -378,7 +378,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
                       <div
                         key={n.id}
                         onClick={() => handleMarkNotificationRead(n.id)}
-                        className={`p-4 flex gap-3 transition-all hover:bg-slate-50/80 dark:hover:bg-slate-800/80 cursor-pointer ${
+                        className={`p-4 flex gap-3 transition-all hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/80 cursor-pointer ${
                           !n.isRead ? "bg-emerald-50/30 dark:bg-emerald-950/20" : ""
                         }`}
                       >

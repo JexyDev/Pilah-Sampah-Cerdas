@@ -20,6 +20,25 @@ export const websocketService = {
       });
     });
 
+    // Server-side heartbeat to keep connections alive and purge zombie sockets
+    const heartbeatInterval = setInterval(() => {
+      allSockets.forEach((ws) => {
+        if (ws.readyState === WebSocket.OPEN) {
+          try {
+            ws.ping();
+          } catch (_e) {
+            allSockets.delete(ws);
+          }
+        } else if (ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+          allSockets.delete(ws);
+        }
+      });
+    }, 25000);
+
+    wss.on("close", () => {
+      clearInterval(heartbeatInterval);
+    });
+
     wss.on("connection", (ws: WebSocket) => {
       allSockets.add(ws);
       let clientUserId: string | null = null;
@@ -27,6 +46,14 @@ export const websocketService = {
       ws.on("message", async (messageStr: string) => {
         try {
           const msg = JSON.parse(messageStr);
+
+          // 0. Heartbeat PING from client
+          if (msg.type === "PING") {
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ type: "PONG", timestamp: Date.now() }));
+            }
+            return;
+          }
 
           // 1. Authentication
           if (msg.type === "AUTH") {
@@ -40,34 +67,63 @@ export const websocketService = {
                 JSON.stringify({ type: "AUTH_SUCCESS", message: "Authenticated successfully" })
               );
             }
+            return;
           }
 
           // 2. Live Location Updates from Petugas & Mahasiswa KKN
           if (msg.type === "LOCATION_UPDATE") {
+            if (!clientUserId && msg.token) {
+              const decoded = verifyAccessToken(msg.token);
+              if (decoded) {
+                clientUserId = decoded.userId;
+                clients.set(clientUserId, ws);
+              }
+            }
+
             if (!clientUserId) return;
             const { latitude, longitude } = msg;
             if (latitude !== undefined && longitude !== undefined) {
               const latNum = Number(latitude);
               const lngNum = Number(longitude);
+              if (isNaN(latNum) || isNaN(lngNum) || latNum === 0 || lngNum === 0) return;
 
               const user = await prisma.user.findUnique({
                 where: { id: clientUserId },
-                include: { role: true },
+                include: {
+                  role: true,
+                  studentProfile: true,
+                },
               });
 
               if (user?.role?.name === "MAHASISWA_KKN") {
-                await prisma.studentLocation.create({
+                const newLoc = await prisma.studentLocation.create({
                   data: {
                     studentId: clientUserId,
                     latitude: latNum,
                     longitude: lngNum,
                   },
                 });
-                websocketService.broadcastStudentLocation({
+
+                await websocketService.broadcastStudentLocation({
+                  id: newLoc.id,
                   studentId: clientUserId,
                   latitude: latNum,
                   longitude: lngNum,
-                  recordedAt: new Date().toISOString(),
+                  recordedAt: newLoc.recordedAt.toISOString(),
+                  namaMahasiswa: user.name,
+                  nim: user.studentProfile?.nim || "-",
+                  jurusan: user.studentProfile?.jurusan || "-",
+                  kelompokId: user.studentProfile?.kelompokId || null,
+                  student: {
+                    id: user.id,
+                    name: user.name,
+                    phone: user.phone,
+                    studentProfile: {
+                      nim: user.studentProfile?.nim || "-",
+                      jurusan: user.studentProfile?.jurusan || "-",
+                      kelompokId: user.studentProfile?.kelompokId || null,
+                    },
+                  },
                 });
               } else if (
                 user?.role?.name === "PETUGAS_RESIDU" ||
@@ -90,20 +146,21 @@ export const websocketService = {
 
       ws.on("close", () => {
         allSockets.delete(ws);
-        if (clientUserId) {
+        if (clientUserId && clients.get(clientUserId) === ws) {
           clients.delete(clientUserId);
         }
       });
 
-      ws.on("error", () => {
+      ws.on("error", (err) => {
+        console.error("[WebSocketService] connection error:", err);
         allSockets.delete(ws);
-        if (clientUserId) {
+        if (clientUserId && clients.get(clientUserId) === ws) {
           clients.delete(clientUserId);
         }
       });
     });
 
-    console.log("WebSocket Server initialized and attached to HTTP Server.");
+    console.log("WebSocket Server initialized and attached to HTTP Server with ping-pong heartbeat.");
   },
 
   /**
@@ -190,8 +247,8 @@ export const websocketService = {
    * Broadcast student location update to connected monitoring clients
    */
   broadcastStudentLocation: async (locationData: any) => {
-    let payload = locationData;
-    if (locationData.studentId && !locationData.student) {
+    let payload = { ...locationData };
+    if (locationData.studentId && (!locationData.student || !locationData.namaMahasiswa)) {
       try {
         const studentUser = await prisma.user.findUnique({
           where: { id: locationData.studentId },
@@ -211,7 +268,20 @@ export const websocketService = {
         if (studentUser) {
           payload = {
             ...locationData,
-            student: studentUser,
+            namaMahasiswa: studentUser.name,
+            nim: studentUser.studentProfile?.nim || "-",
+            jurusan: studentUser.studentProfile?.jurusan || "-",
+            kelompokId: studentUser.studentProfile?.kelompokId || null,
+            student: {
+              id: studentUser.id,
+              name: studentUser.name,
+              phone: studentUser.phone,
+              studentProfile: {
+                nim: studentUser.studentProfile?.nim || "-",
+                jurusan: studentUser.studentProfile?.jurusan || "-",
+                kelompokId: studentUser.studentProfile?.kelompokId || null,
+              },
+            },
           };
         }
       } catch (_e) {

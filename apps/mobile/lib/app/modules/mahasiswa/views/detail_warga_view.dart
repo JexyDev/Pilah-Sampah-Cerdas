@@ -250,7 +250,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Warga ini membutuhkan edukasi ulang. Tingkat kesalahan: ${warga.errorPercentage.toStringAsFixed(1)}%',
+                            'Warga ini membutuhkan edukasi ulang. Tingkat kesalahan: ${warga.errorPercentage.toStringAsFixed(2)}%',
                             style: const TextStyle(fontSize: 12, color: AppColors.warningOrange, fontWeight: FontWeight.w500),
                           ),
                         ),
@@ -307,7 +307,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
               Expanded(
                 child: _StatItem(
                   label: 'Total Berat',
-                  value: '${state.totalWeightKg.toStringAsFixed(1)} kg',
+                  value: '${state.totalWeightKg.toStringAsFixed(2)} kg',
                   color: AppColors.primaryBlueDark,
                   icon: Icons.scale_outlined,
                 ),
@@ -457,7 +457,7 @@ class _HorizontalBar extends StatelessWidget {
               style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
             Text(
-              '${percentage.toStringAsFixed(1)}%',
+              '${percentage.toStringAsFixed(2)}%',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,

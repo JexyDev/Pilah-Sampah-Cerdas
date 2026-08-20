@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -157,13 +157,45 @@ const formatDurationUnits = (totalMinutes: number): string => {
   const parts: string[] = [];
   if (hours > 0) parts.push(`${hours} Jam`);
   if (mins > 0) parts.push(`${mins} Menit`);
-  if (secs > 0) parts.push(`${secs} Detik`);
+  if (secs > 0 && hours === 0 && mins === 0) parts.push(`${secs} Detik`);
   return parts.length > 0 ? parts.join(" ") : "0 Menit";
 };
 
 const formatHoursToUnits = (hoursDecimal: number): string => {
   if (!hoursDecimal || hoursDecimal <= 0) return "0 Menit";
-  return formatDurationUnits(hoursDecimal * 60);
+  const totalMinutes = Math.round(hoursDecimal * 60);
+  if (totalMinutes > 0) {
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    const parts: string[] = [];
+    if (hours > 0) parts.push(`${hours} Jam`);
+    if (mins > 0) parts.push(`${mins} Menit`);
+    return parts.length > 0 ? parts.join(" ") : "0 Menit";
+  }
+  const totalSeconds = Math.round(hoursDecimal * 3600);
+  if (totalSeconds > 0) return `${totalSeconds} Detik`;
+  return "0 Menit";
+};
+
+const formatTargetDuration = (config: ConfigTargets): string => {
+  if (
+    config.attendanceMinDurationHours !== undefined ||
+    config.attendanceMinDurationMinutes !== undefined ||
+    config.attendanceMinDurationSeconds !== undefined
+  ) {
+    const h = Number(config.attendanceMinDurationHours || 0);
+    const m = Number(config.attendanceMinDurationMinutes || 0);
+    const s = Number(config.attendanceMinDurationSeconds || 0);
+    const parts: string[] = [];
+    if (h > 0) parts.push(`${h} Jam`);
+    if (m > 0) parts.push(`${m} Menit`);
+    if (s > 0) parts.push(`${s} Detik`);
+    if (parts.length > 0) return parts.join(" ");
+  }
+  if (config.targetHarianJam) {
+    return formatHoursToUnits(config.targetHarianJam);
+  }
+  return "0 Menit";
 };
 
 interface StudentLoc {
@@ -450,6 +482,15 @@ const MonitoringAbsen: React.FC = () => {
   const [wsStatus, setWsStatus] = useState<"CONNECTED" | "CONNECTING" | "DISCONNECTED">("DISCONNECTED");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
+  const [, setLiveTicker] = useState<number>(0);
+
+  // Live timer interval to keep active elapsed durations ticking smoothly
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLiveTicker((prev) => prev + 1);
+    }, 15000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Export Modal State with Period Picker
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -486,7 +527,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   if (!schedule) {
     return {
       label: "Belum Ada Jadwal",
-      color: "bg-slate-100 text-slate-500 border-slate-200",
+      color: "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700",
       tooltip: "Tidak ada jadwal kegiatan terpilih",
     };
   }
@@ -509,7 +550,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   if (now > end) {
     return {
       label: "Selesai",
-      color: "bg-slate-100 text-slate-700 border-slate-300",
+      color: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700",
       tooltip: "Periode pelaksanaan kegiatan sudah berakhir (kedaluwarsa)",
     };
   }
@@ -598,19 +639,31 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const [formTotalJam, setFormTotalJam] = useState<number>(200);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
 
+  const calculatePreciseTargetJam = (totalHari: number, jam: number, menit: number): number => {
+    const totalMins = totalHari * (jam * 60 + menit);
+    const totalHours = totalMins / 60;
+    return Number.isInteger(totalHours) ? totalHours : Math.round(totalHours * 100) / 100;
+  };
+
   const openConfigModal = () => {
     const parsedDays = parseDaysFromString(configTargets.hariKerja);
     const parsedTimes = parseTimeRange(configTargets.jamKerja);
-    const durJam = configTargets.attendanceMinDurationHours !== undefined && configTargets.attendanceMinDurationHours > 0
-      ? configTargets.attendanceMinDurationHours
+    const hasExplicitMinDuration =
+      configTargets.attendanceMinDurationHours !== undefined ||
+      configTargets.attendanceMinDurationMinutes !== undefined;
+    const durJam = hasExplicitMinDuration
+      ? Number(configTargets.attendanceMinDurationHours || 0)
       : (configTargets.targetHarianJam ? Math.floor(configTargets.targetHarianJam) : 4);
-    const durMenit = configTargets.attendanceMinDurationMinutes !== undefined
-      ? configTargets.attendanceMinDurationMinutes
-      : (configTargets.targetHarianJam ? Math.round((configTargets.targetHarianJam % 1) * 60) : 0);
+    const durMenit = hasExplicitMinDuration
+      ? Number(configTargets.attendanceMinDurationMinutes || 0)
+      : (configTargets.targetHarianJam ? Math.round(((configTargets.targetHarianJam * 60) % 60)) : 0);
     const pekan = configTargets.targetPekan || 10;
     const daysCount = parsedDays.length || 5;
     const totalHari = configTargets.targetTotalHari || (pekan * daysCount);
-    const totalJam = configTargets.targetTotalJam || Math.round(totalHari * (durJam + durMenit / 60));
+    const calcAutoJam = calculatePreciseTargetJam(totalHari, durJam, durMenit);
+    const totalJam = (configTargets.targetTotalJam !== undefined && configTargets.targetTotalJam > 0)
+      ? configTargets.targetTotalJam
+      : calcAutoJam;
 
     setFormDays(parsedDays);
     setFormStartTime(parsedTimes.start);
@@ -631,8 +684,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
     setFormDays(nextDays);
     const newTotalHari = formTargetPekan * nextDays.length;
-    const durasiTotalJam = formDurasiJam + formDurasiMenit / 60;
-    const newTotalJam = Math.round(newTotalHari * durasiTotalJam);
+    const newTotalJam = calculatePreciseTargetJam(newTotalHari, formDurasiJam, formDurasiMenit);
     setFormTotalHari(newTotalHari);
     setFormTotalJam(newTotalJam);
   };
@@ -650,8 +702,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     }
     setFormDays(nextDays);
     const newTotalHari = formTargetPekan * nextDays.length;
-    const durasiTotalJam = formDurasiJam + formDurasiMenit / 60;
-    const newTotalJam = Math.round(newTotalHari * durasiTotalJam);
+    const newTotalJam = calculatePreciseTargetJam(newTotalHari, formDurasiJam, formDurasiMenit);
     setFormTotalHari(newTotalHari);
     setFormTotalJam(newTotalJam);
   };
@@ -660,8 +711,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     setFormTargetPekan(pekan);
     const daysCount = formDays.length || 1;
     const newTotalHari = pekan * daysCount;
-    const durasiTotalJam = formDurasiJam + formDurasiMenit / 60;
-    const newTotalJam = Math.round(newTotalHari * durasiTotalJam);
+    const newTotalJam = calculatePreciseTargetJam(newTotalHari, formDurasiJam, formDurasiMenit);
     setFormTotalHari(newTotalHari);
     setFormTotalJam(newTotalJam);
   };
@@ -669,15 +719,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const handleDurasiChange = (jam: number, menit: number) => {
     setFormDurasiJam(jam);
     setFormDurasiMenit(menit);
-    const durasiTotalJam = jam + menit / 60;
-    const newTotalJam = Math.round(formTotalHari * durasiTotalJam);
+    const newTotalJam = calculatePreciseTargetJam(formTotalHari, jam, menit);
     setFormTotalJam(newTotalJam);
   };
 
   const handleTotalHariChange = (hari: number) => {
     setFormTotalHari(hari);
-    const durasiTotalJam = formDurasiJam + formDurasiMenit / 60;
-    const newTotalJam = Math.round(hari * durasiTotalJam);
+    const newTotalJam = calculatePreciseTargetJam(hari, formDurasiJam, formDurasiMenit);
     setFormTotalJam(newTotalJam);
   };
 
@@ -706,11 +754,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       toast.error("Isi jam mulai dan jam selesai operasional.");
       return;
     }
-    const durasiTotalHarian = Number((formDurasiJam + formDurasiMenit / 60).toFixed(2));
-    if (durasiTotalHarian <= 0) {
+    const totalMenitHarian = formDurasiJam * 60 + formDurasiMenit;
+    if (totalMenitHarian <= 0) {
       toast.error("Target minimal durasi harian harus lebih dari 0.");
       return;
     }
+    const durasiTotalHarian = totalMenitHarian / 60;
 
     setIsSavingConfig(true);
     try {
@@ -755,9 +804,25 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   }, [visibleSchedules, selectedScheduleId]);
 
   const scheduleTargetHours = useMemo(() => {
+    if (
+      configTargets.attendanceMinDurationHours !== undefined ||
+      configTargets.attendanceMinDurationMinutes !== undefined ||
+      configTargets.attendanceMinDurationSeconds !== undefined
+    ) {
+      const h = Number(configTargets.attendanceMinDurationHours || 0);
+      const m = Number(configTargets.attendanceMinDurationMinutes || 0);
+      const s = Number(configTargets.attendanceMinDurationSeconds || 0);
+      const totalH = (h * 3600 + m * 60 + s) / 3600;
+      if (totalH > 0) return totalH;
+    }
     const harian = Number(configTargets.targetHarianJam);
     return !isNaN(harian) && harian > 0 ? harian : 2;
-  }, [configTargets.targetHarianJam]);
+  }, [
+    configTargets.attendanceMinDurationHours,
+    configTargets.attendanceMinDurationMinutes,
+    configTargets.attendanceMinDurationSeconds,
+    configTargets.targetHarianJam,
+  ]);
 
   // Attendance metrics counts
   const attendanceStats = useMemo(() => {
@@ -960,6 +1025,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       const lng = Number(locData.longitude);
       if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
 
+      const recordedAt = locData.recordedAt || new Date().toISOString();
+
       setStudentLocations((prev) => {
         const index = prev.findIndex((s) => s.studentId === locData.studentId);
         const studentInfo = locData.student || {
@@ -970,6 +1037,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           studentProfile: {
             nim: locData.nim || "-",
             jurusan: locData.jurusan || "-",
+            kelompokId: locData.kelompokId || null,
           },
         };
 
@@ -978,7 +1046,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           studentId: locData.studentId,
           latitude: String(lat),
           longitude: String(lng),
-          recordedAt: locData.recordedAt || new Date().toISOString(),
+          recordedAt: recordedAt,
           student: studentInfo,
         };
 
@@ -988,7 +1056,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             ...next[index],
             latitude: String(lat),
             longitude: String(lng),
-            recordedAt: updatedItem.recordedAt,
+            recordedAt: recordedAt,
             student: {
               ...next[index].student,
               ...studentInfo,
@@ -998,6 +1066,20 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         } else {
           return [updatedItem, ...prev];
         }
+      });
+
+      // Synchronize attendance list coordinates in real time
+      setAttendance((prev) => {
+        return prev.map((a) => {
+          if (a.studentId === locData.studentId || a.student?.id === locData.studentId) {
+            return {
+              ...a,
+              latitude: String(lat),
+              longitude: String(lng),
+            };
+          }
+          return a;
+        });
       });
     });
 
@@ -1570,7 +1652,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     setGeofenceMode("CIRCLE");
     setStartDate(today);
     setEndDate(today);
-    const targetHours = Number(configTargets.targetHarianJam) || 2;
+    const targetHours = scheduleTargetHours;
     const totalMinutes = Math.round(targetHours * 60);
     const endTotalMinutes = (8 * 60) + totalMinutes;
     const endHourNum = Math.floor(endTotalMinutes / 60);
@@ -1900,7 +1982,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
               showMap
                 ? "bg-emerald-50 text-emerald-800 border-emerald-300 shadow-2xs"
-                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
             }`}
             title="Tampilkan / Sembunyikan Peta Geofence"
           >
@@ -2079,7 +2161,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         {/* 2-Column Cards: Informasi Waktu Kerja & Target Kegiatan Lapangan */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Left Card: Informasi Waktu Kerja */}
-          <div className="bg-slate-50/70 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4 shadow-2xs">
+          <div className="bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4 shadow-2xs">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100">
                 <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 flex items-center justify-center">
@@ -2121,13 +2203,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   <Hourglass size={14} className="text-emerald-600 dark:text-emerald-400" />
                   Minimal Durasi / Hari
                 </span>
-                <span className="font-extrabold text-slate-900 dark:text-slate-100">{formatHoursToUnits(configTargets.targetHarianJam || 4)}</span>
+                <span className="font-extrabold text-slate-900 dark:text-slate-100">{formatTargetDuration(configTargets)}</span>
               </div>
             </div>
           </div>
 
           {/* Right Card: Target Kegiatan Lapangan */}
-          <div className="bg-slate-50/70 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4 shadow-2xs">
+          <div className="bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4 shadow-2xs">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100">
                 <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 flex items-center justify-center">
@@ -2177,7 +2259,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       {/* Peta Interaktif Geofence & Lokasi GPS Mahasiswa (Dapat Ditutup / Dibuka) */}
       {showMap && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs animate-in fade-in duration-200">
-          <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70">
+          <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/70">
             <div className="flex items-center gap-2">
               <MapIcon size={16} className="text-emerald-600" />
               <span className="text-xs font-black text-slate-800 dark:text-slate-100">
@@ -2389,13 +2471,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           {/* Filter Status Chips & Mode Switcher (Disembunyikan untuk role DPL) */}
           {!isDpl && (
             <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
-              <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/60 text-[11px] font-bold text-slate-600 dark:text-slate-400">
+              <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-[11px] font-bold text-slate-600 dark:text-slate-400">
                 <button
                   type="button"
                   onClick={() => setAttendanceFilterTab("ALL")}
                   className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
                     attendanceFilterTab === "ALL"
-                      ? "bg-white text-slate-900 shadow-xs font-black"
+                      ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs font-black"
                       : "hover:text-slate-900"
                   }`}
                 >
@@ -2406,7 +2488,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   onClick={() => setAttendanceFilterTab("ACTIVE")}
                   className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
                     attendanceFilterTab === "ACTIVE"
-                      ? "bg-white text-emerald-800 shadow-xs font-black"
+                      ? "bg-white dark:bg-slate-800 text-emerald-800 dark:text-emerald-400 shadow-xs font-black"
                       : "hover:text-slate-900"
                   }`}
                 >
@@ -2417,7 +2499,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   onClick={() => setAttendanceFilterTab("COMPLETED")}
                   className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
                     attendanceFilterTab === "COMPLETED"
-                      ? "bg-white text-teal-800 shadow-xs font-black"
+                      ? "bg-white dark:bg-slate-800 text-teal-800 dark:text-teal-400 shadow-xs font-black"
                       : "hover:text-slate-900"
                   }`}
                 >
@@ -2428,7 +2510,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   onClick={() => setAttendanceFilterTab("IZIN_SAKIT")}
                   className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
                     attendanceFilterTab === "IZIN_SAKIT"
-                      ? "bg-white text-blue-800 shadow-xs font-black"
+                      ? "bg-white dark:bg-slate-800 text-blue-800 dark:text-blue-400 shadow-xs font-black"
                       : "hover:text-slate-900"
                   }`}
                 >
@@ -2439,7 +2521,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   onClick={() => setAttendanceFilterTab("NOT_ATTENDED")}
                   className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
                     attendanceFilterTab === "NOT_ATTENDED"
-                      ? "bg-white text-slate-900 shadow-xs font-black"
+                      ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs font-black"
                       : "hover:text-slate-900"
                   }`}
                 >
@@ -2487,7 +2569,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-2xs">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-50/90 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                  <thead className="bg-slate-50/90 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                     <tr>
                       <th className="py-3.5 px-4 w-12 text-center text-emerald-700"># No</th>
                       <th className="py-3.5 px-4 min-w-[200px]">Mahasiswa & NIM</th>
@@ -2525,10 +2607,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       const durationMins = isLeaveOrPending ? 0 : calculateDurationMinutes(rec.attendedAt, rec.completedAt);
                       const isHadir = isAttended && !isOverrideDpl;
 
-                      const formattedHours = isLeaveOrPending ? "-" : (durationMins > 0 ? formatDurationUnits(durationMins) : "-");
+                      const formattedHours = isLeaveOrPending
+                        ? "-"
+                        : isAttended
+                        ? (durationMins > 0 ? formatDurationUnits(durationMins) : "< 1 Menit")
+                        : "-";
 
                       const targetKumulatif = configTargets.targetTotalJam || 200;
-                      const percentCapaian = rec.totalHours !== undefined ? Math.round(((rec.totalHours || 0) / (targetKumulatif || 1)) * 100) : 0;
+                      const percentCapaian = rec.totalHours !== undefined ? Number((((rec.totalHours || 0) / (targetKumulatif || 1)) * 100).toFixed(2)) : 0;
                       const isExceeded = percentCapaian > 100;
 
                       const formattedActualTarget = isLeaveOrPending
@@ -2559,16 +2645,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                   )}
                                 </div>
                               )
-                            : `${durationMins > 0 ? formatDurationUnits(durationMins) : "0 Menit"} / ${formatHoursToUnits(scheduleTargetHours)}`);
+                            : `${isAttended ? (durationMins > 0 ? formatDurationUnits(durationMins) : "< 1 Menit") : "0 Menit"} / ${formatHoursToUnits(scheduleTargetHours)}`);
 
-                      let poinDampingan = 0;
-                      if (isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal) {
-                        poinDampingan = 0;
-                      } else if (durationMins >= scheduleTargetHours * 60) {
-                        poinDampingan = 10;
-                      } else if (durationMins > 0) {
-                        poinDampingan = 8;
-                      }
+                      const poinDampingan = (isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal) ? 0 : (isAttended ? 10 : 0);
 
                       // Pastel avatar backgrounds
                       const avatarColors = [
@@ -2584,7 +2663,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       return (
                         <tr
                           key={rec.id}
-                          className="hover:bg-slate-50/70 dark:hover:bg-slate-800/70 transition-colors"
+                          className="hover:bg-slate-50/70 dark:bg-slate-800/70 dark:hover:bg-slate-800/70 transition-colors"
                         >
                           <td className="py-3.5 px-4 text-center text-slate-500 font-bold">
                             {itemNumber}
@@ -2712,15 +2791,32 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             {poinDampingan}
                           </td>
                           <td className="py-3.5 px-4 text-center">
-                            <button
-                              type="button"
-                              onClick={() => handleFocusMahasiswaMap(rec)}
-                              className="px-3 py-1.5 bg-white dark:bg-slate-900 hover:bg-emerald-50 text-emerald-700 font-bold text-xs rounded-xl border border-emerald-300 transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
-                              title="Lihat posisi GPS pada peta"
-                            >
-                              <MapPin size={13} className="text-emerald-600" />
-                              <span>Lihat Peta</span>
-                            </button>
+                            <div className="flex flex-col items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleFocusMahasiswaMap(rec)}
+                                className="px-3 py-1.5 bg-white dark:bg-slate-900 hover:bg-emerald-50 text-emerald-700 font-bold text-xs rounded-xl border border-emerald-300 transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
+                                title="Lihat posisi GPS pada peta"
+                              >
+                                <MapPin size={13} className="text-emerald-600" />
+                                <span>Lihat Peta</span>
+                              </button>
+                              {(() => {
+                                const liveLoc = studentLocations.find(
+                                  (l) => l.studentId === rec.student.id || l.student?.id === rec.student.id
+                                );
+                                if (!liveLoc) return null;
+                                const recTime = new Date(liveLoc.recordedAt).getTime();
+                                const isRecent = !isNaN(recTime) && Date.now() - recTime < 5 * 60 * 1000;
+                                if (!isRecent) return null;
+                                return (
+                                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700 animate-pulse">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    <span>Live GPS</span>
+                                  </span>
+                                );
+                              })()}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -2863,7 +2959,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             {rec.totalHours !== undefined
                               ? formatHoursToUnits(rec.totalHours)
                               : isAttended
-                              ? formatDurationUnits(durationMins)
+                              ? (durationMins > 0 ? formatDurationUnits(durationMins) : "< 1 Menit")
                               : "0 Menit"}
                           </span>
                         </div>
@@ -2890,7 +2986,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       {rec.totalHours !== undefined ? (
                         (() => {
                           const targetKumulatif = configTargets.targetTotalJam || 200;
-                          const percentCapaian = Math.round(((rec.totalHours || 0) / (targetKumulatif || 1)) * 100);
+                          const percentCapaian = Number((((rec.totalHours || 0) / (targetKumulatif || 1)) * 100).toFixed(2));
                           const isExceeded = percentCapaian > 100;
                           return isExceeded ? (
                             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
@@ -2918,14 +3014,31 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         </span>
                       )}
 
-                      <button
-                        type="button"
-                        onClick={() => handleFocusMahasiswaMap(rec)}
-                        className="text-emerald-700 hover:text-emerald-800 font-black flex items-center gap-1 text-[11px] cursor-pointer"
-                      >
-                        <Navigation size={11} />
-                        <span>Peta GPS</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const liveLoc = studentLocations.find(
+                            (l) => l.studentId === rec.student.id || l.student?.id === rec.student.id
+                          );
+                          if (!liveLoc) return null;
+                          const recTime = new Date(liveLoc.recordedAt).getTime();
+                          const isRecent = !isNaN(recTime) && Date.now() - recTime < 5 * 60 * 1000;
+                          if (!isRecent) return null;
+                          return (
+                            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700 animate-pulse">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                              <span>Live</span>
+                            </span>
+                          );
+                        })()}
+                        <button
+                          type="button"
+                          onClick={() => handleFocusMahasiswaMap(rec)}
+                          className="text-emerald-700 hover:text-emerald-800 font-black flex items-center gap-1 text-[11px] cursor-pointer"
+                        >
+                          <Navigation size={11} />
+                          <span>Peta GPS</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -3063,19 +3176,19 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-200/60 transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors cursor-pointer"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <div className="flex bg-slate-100/80 px-6 pt-3 pb-2 gap-2 border-b border-slate-200/60">
+            <div className="flex bg-slate-100/80 dark:bg-slate-800/80 px-6 pt-3 pb-2 gap-2 border-b border-slate-200/60">
               <button
                 type="button"
                 onClick={() => setModalStep(1)}
                 className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   modalStep === 1
-                    ? "bg-white text-emerald-800 shadow-2xs border border-slate-200"
+                    ? "bg-white dark:bg-slate-800 text-emerald-800 dark:text-emerald-400 shadow-2xs border border-slate-200 dark:border-slate-700"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
@@ -3099,7 +3212,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 }}
                 className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   modalStep === 2
-                    ? "bg-white text-emerald-800 shadow-2xs border border-slate-200"
+                    ? "bg-white dark:bg-slate-800 text-emerald-800 dark:text-emerald-400 shadow-2xs border border-slate-200 dark:border-slate-700"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
@@ -3322,7 +3435,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         <span>Durasi Minimal Presensi:</span>
                       </span>
                       <span className="font-extrabold text-emerald-950 bg-emerald-100/90 px-2.5 py-1 rounded-lg border border-emerald-300 text-[11px]">
-                        {(configTargets.attendanceMinDurationHours !== undefined) ? `${configTargets.attendanceMinDurationHours} Jam ${configTargets.attendanceMinDurationMinutes} Menit` : `${configTargets.targetHarianJam || 2} Jam`} (Terpusat Rule Engine)
+                        {formatTargetDuration(configTargets)} (Terpusat Rule Engine)
                       </span>
                     </div>
                   </div>
@@ -3542,7 +3655,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       className={`py-2 px-3 rounded-xl text-xs font-bold transition border text-left flex items-center justify-between cursor-pointer ${
                         exportPeriod === p.id
                           ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                          : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
                       }`}
                     >
                       <span>{p.label}</span>
@@ -3632,7 +3745,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
             <form onSubmit={handleSaveConfig} className="space-y-4">
               {/* Bagian 1: Hari Kerja Operasional (Pilihan Preset & Checkbox 7 Hari) */}
-              <div className="space-y-2 p-3.5 bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800">
+              <div className="space-y-2 p-3.5 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
                     <Calendar size={14} className="text-emerald-600" />
@@ -3709,7 +3822,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               {/* Bagian 2: Jam Kerja Operasional & Target Minimal Durasi Harian */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Jam Operasional */}
-                <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
+                <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
                   <label className="block text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
                     <Clock size={14} className="text-emerald-600" />
                     Jam Kerja Operasional
@@ -3742,7 +3855,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 </div>
 
                 {/* Minimal Durasi / Hari */}
-                <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
+                <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
                   <label className="block text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
                     <Hourglass size={14} className="text-emerald-600" />
                     Target Minimal Durasi / Hari
@@ -3781,7 +3894,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               </div>
 
               {/* Bagian 3: Periode & Target Minimal Jam Kumulatif */}
-              <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-3">
+              <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-black text-slate-800 dark:text-slate-100 mb-1">
@@ -3796,6 +3909,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       onChange={(e) => handlePekanChange(Math.max(1, Number(e.target.value) || 1))}
                       className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-bold focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
+                    <span className="block text-[10px] text-slate-400 font-medium mt-1">
+                      {formDays.length} hari kerja per pekan
+                    </span>
                   </div>
 
                   <div>
@@ -3810,6 +3926,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       onChange={(e) => handleTotalHariChange(Math.max(1, Number(e.target.value) || 1))}
                       className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-bold focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
+                    <span className="block text-[10px] text-slate-400 font-medium mt-1">
+                      = {formTargetPekan} pekan × {formDays.length} hari
+                    </span>
                   </div>
                 </div>
 
@@ -3820,26 +3939,66 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     </label>
                     <span className="text-[10px] text-slate-400 font-medium">Bisa disesuaikan manual</span>
                   </div>
-                  <input
-                    type="number"
-                    min={1}
-                    required
-                    value={formTotalJam}
-                    onChange={(e) => setFormTotalJam(Math.max(1, Number(e.target.value) || 1))}
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-black text-emerald-800 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500 outline-none"
-                  />
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0.01}
+                      step="any"
+                      required
+                      value={formTotalJam}
+                      onChange={(e) => setFormTotalJam(Math.max(0.01, Number(e.target.value) || 0))}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-black text-emerald-800 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500 outline-none"
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+                      Jam ({formatHoursToUnits(formTotalJam)})
+                    </div>
+                  </div>
                 </div>
 
-                {/* Live Formula Preview */}
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 text-xs">
-                  <span className="font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
-                    <Target size={14} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
-                    Kalkulasi Minimal Target:
-                  </span>
-                  <span className="font-black text-emerald-800 dark:text-emerald-300">
-                    {formTotalHari} Hari × {formDurasiJam}{formDurasiMenit > 0 ? `.${Math.round((formDurasiMenit / 60) * 10)}` : ''} Jam = {formTotalJam} Jam
-                  </span>
-                </div>
+                {/* Live Formula & Calculation Breakdown Preview */}
+                {(() => {
+                  const dailyMins = formDurasiJam * 60 + formDurasiMenit;
+                  const totalMins = formTotalHari * dailyMins;
+                  const autoHours = calculatePreciseTargetJam(formTotalHari, formDurasiJam, formDurasiMenit);
+                  const kumulatifJam = Math.floor(totalMins / 60);
+                  const kumulatifMenit = totalMins % 60;
+                  const dailyFormatted = formDurasiJam > 0
+                    ? `${formDurasiJam} Jam${formDurasiMenit > 0 ? ` ${formDurasiMenit} Menit` : ''}`
+                    : `${formDurasiMenit} Menit`;
+                  const kumulatifFormatted = kumulatifJam > 0
+                    ? `${kumulatifJam} Jam${kumulatifMenit > 0 ? ` ${kumulatifMenit} Menit` : ''}`
+                    : `${kumulatifMenit} Menit`;
+
+                  return (
+                    <div className="p-3 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/80 space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between font-black text-emerald-950 dark:text-emerald-200">
+                        <span className="flex items-center gap-1.5">
+                          <Target size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          Rincian & Relasi Kalkulasi Target
+                        </span>
+                        <span className="text-emerald-700 dark:text-emerald-300 font-extrabold">
+                          {kumulatifFormatted} ({autoHours} Jam)
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-emerald-800/90 dark:text-emerald-300/90 font-semibold space-y-1 pt-0.5">
+                        <div className="flex items-center justify-between">
+                          <span>Durasi Harian:</span>
+                          <span className="font-bold">{dailyFormatted} ({dailyMins} Menit / {(dailyMins / 60).toFixed(2)} Jam)</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>Total Hari:</span>
+                          <span className="font-bold">{formTargetPekan} Pekan × {formDays.length} Hari Kerja = {formTotalHari} Hari</span>
+                        </div>
+                        <div className="flex items-center justify-between pt-0.5 border-t border-emerald-200/50 dark:border-emerald-800/50">
+                          <span>Kalkulasi Kumulatif:</span>
+                          <span className="font-black text-emerald-900 dark:text-emerald-200">
+                            {formTotalHari} Hari × {dailyFormatted} = {totalMins.toLocaleString('id-ID')} Menit ({kumulatifFormatted})
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">

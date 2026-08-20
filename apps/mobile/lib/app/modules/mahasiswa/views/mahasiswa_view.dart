@@ -1281,7 +1281,7 @@ class _WargaCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              '${lastLog.category} ${lastLog.weightKg.toStringAsFixed(1)}kg',
+                              '${lastLog.category} ${lastLog.weightKg.toStringAsFixed(2)}kg',
                               style: const TextStyle(
                                 fontSize: 11,
                                 color: AppColors.textSecondary,

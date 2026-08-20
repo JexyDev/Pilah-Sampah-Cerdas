@@ -127,7 +127,7 @@ class _PemilahanMonitoringDashboardViewState
                                           ),
                                         ),
                                       ),
-                                      DataCell(Text('${item.weightKg.toStringAsFixed(1)} Kg', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
+                                      DataCell(Text('${item.weightKg.toStringAsFixed(2)} Kg', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
                                       DataCell(
                                         IconButton(
                                           icon: const Icon(Icons.image_outlined, size: 20, color: AppColors.primaryGreen),

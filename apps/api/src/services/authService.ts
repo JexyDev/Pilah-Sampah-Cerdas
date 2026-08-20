@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -919,7 +919,7 @@ export class AuthService {
     try {
       const body = new URLSearchParams({
         target,
-        message: `Kode OTP TrashCare Anda adalah: ${code}. Kode ini berlaku selama 5 menit. Jangan bagikan kode ini kepada siapapun.`,
+        message: `Kode OTP BERSEKA Anda adalah: ${code}. Kode ini berlaku selama 5 menit. Jangan bagikan kode ini kepada siapapun.`,
       });
       const response = await fetch("https://api.fonnte.com/send", {
         method: "POST",

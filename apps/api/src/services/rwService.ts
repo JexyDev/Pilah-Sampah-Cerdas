@@ -346,6 +346,16 @@ export const rwService = {
     const areaIds = await getRwAreaIds(rwId, userRole);
     return prisma.facility.findMany({
       where: { rwId: { in: areaIds }, statusApproval: "PENDING" },
+      include: {
+        registeredBy: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            studentProfile: true,
+          },
+        },
+      },
     });
   },
 
@@ -392,7 +402,17 @@ export const rwService = {
     const areaIds = await getRwAreaIds(rwId, userRole);
     return prisma.facility.findMany({
       where: { rwId: { in: areaIds }, statusApproval: "APPROVED" },
-      include: { productionLogs: true },
+      include: {
+        productionLogs: true,
+        registeredBy: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            studentProfile: true,
+          },
+        },
+      },
     });
   },
 
@@ -466,8 +486,8 @@ export const rwService = {
           }
         : null,
       stats: {
-        totalResiduKg: Number(totalResiduKg.toFixed(1)),
-        todayResiduKg: Number(todayResiduKg.toFixed(1)),
+        totalResiduKg: Number(totalResiduKg.toFixed(2)),
+        todayResiduKg: Number(todayResiduKg.toFixed(2)),
         totalPengangkutan: logs.length,
       },
       logs: logs.map((l) => ({

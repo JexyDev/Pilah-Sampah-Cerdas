@@ -470,7 +470,7 @@ export const LeaderboardWidget: React.FC = () => {
             <div className="px-3 py-1 rounded-full bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-700/30 text-sky-800 dark:text-sky-300 text-xs font-black flex items-center gap-1">
               <span className="text-[10px] text-sky-600 dark:text-sky-400 font-bold uppercase">Total</span>
               <span className="text-sky-700 dark:text-sky-300">
-                {activeChartData.reduce((acc, k) => acc + (k.points || 0), 0).toFixed(1)} Kg
+                {activeChartData.reduce((acc, k) => acc + (k.points || 0), 0).toFixed(2)} Kg
               </span>
             </div>
           </div>
@@ -495,7 +495,7 @@ export const LeaderboardWidget: React.FC = () => {
                 return (
                   <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
                     <span className="text-[10px] font-black text-slate-800 dark:text-slate-200 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition truncate w-full text-center">
-                      {(d.points || 0).toFixed(1)} Kg
+                      {(d.points || 0).toFixed(2)} Kg
                     </span>
                     <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg overflow-hidden h-[80%] flex items-end">
                       <div

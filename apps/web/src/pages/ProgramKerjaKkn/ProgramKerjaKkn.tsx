@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
@@ -16,12 +16,10 @@ import {
   Loader2,
   X,
   XCircle,
-  PlayCircle,
   Coins,
   Clock,
   Check,
   AlertCircle,
-  FolderCheck,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
@@ -326,23 +324,6 @@ export const ProgramKerjaKkn: React.FC = () => {
     }
   };
 
-  // Quick Action: Advance to SEDANG_BERJALAN / SELESAI
-  const handleUpdateStatusQuick = async (
-    proker: ProgramKerjaItem,
-    nextStatus: "SEDANG_BERJALAN" | "SELESAI"
-  ) => {
-    try {
-      await dplService.decideProgramKerja(proker.id, nextStatus);
-      const label =
-        nextStatus === "SEDANG_BERJALAN" ? "Sedang Dilaksanakan" : "Selesai";
-      toast.success(`Status program kerja #${proker.nomor} diubah ke: ${label}`);
-      fetchData();
-    } catch (err: any) {
-      console.error("Gagal memperbarui status program kerja:", err);
-      toast.error(err.response?.data?.message || "Gagal memperbarui status");
-    }
-  };
-
   // Quick Action: Reject Modal Submit
   const handleRejectSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -388,13 +369,11 @@ export const ProgramKerjaKkn: React.FC = () => {
     }
   };
 
-  // Standardized Status Normalizer
-  const normalizeStatus = (status?: string): "BELUM_DISETUJUI" | "DITERIMA" | "SEDANG_BERJALAN" | "SELESAI" | "DITOLAK" => {
+  // Standardized Status Normalizer (3 Statuses: Menunggu Persetujuan, Disetujui, Ditolak)
+  const normalizeStatus = (status?: string): "BELUM_DISETUJUI" | "DITERIMA" | "DITOLAK" => {
     const s = String(status || "").toUpperCase();
-    if (s === "DITERIMA" || s === "DISETUJUI") return "DITERIMA";
+    if (s === "DITERIMA" || s === "DISETUJUI" || s === "SEDANG_BERJALAN" || s === "SEDANG_DILAKSANAKAN" || s === "SELESAI") return "DITERIMA";
     if (s === "DITOLAK" || s === "TIDAK_DISETUJUI") return "DITOLAK";
-    if (s === "SELESAI" || s === "SELESAI_DILAKSANAKAN") return "SELESAI";
-    if (s === "SEDANG_BERJALAN" || s === "SEDANG_DILAKSANAKAN") return "SEDANG_BERJALAN";
     return "BELUM_DISETUJUI";
   };
 
@@ -434,22 +413,16 @@ export const ProgramKerjaKkn: React.FC = () => {
     return filteredProkers.slice(start, start + itemsPerPage);
   }, [filteredProkers, currentPage, itemsPerPage]);
 
-  // Metric KPI Computations (Indonesian Standardized Statuses)
+  // Metric KPI Computations (3 Standardized Statuses)
   const totalCount = prokerList.length;
   const pendingCount = prokerList.filter((p) => normalizeStatus(p.status) === "BELUM_DISETUJUI").length;
-  const pendingPct = totalCount > 0 ? ((pendingCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
+  const pendingPct = totalCount > 0 ? ((pendingCount / totalCount) * 100).toFixed(2).replace(".", ",") : "0,00";
 
   const disetujuiCount = prokerList.filter((p) => normalizeStatus(p.status) === "DITERIMA").length;
-  const disetujuiPct = totalCount > 0 ? ((disetujuiCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
-
-  const sedangBerjalanCount = prokerList.filter((p) => normalizeStatus(p.status) === "SEDANG_BERJALAN").length;
-  const sedangBerjalanPct = totalCount > 0 ? ((sedangBerjalanCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
-
-  const selesaiCount = prokerList.filter((p) => normalizeStatus(p.status) === "SELESAI").length;
-  const selesaiPct = totalCount > 0 ? ((selesaiCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
+  const disetujuiPct = totalCount > 0 ? ((disetujuiCount / totalCount) * 100).toFixed(2).replace(".", ",") : "0,00";
 
   const ditolakCount = prokerList.filter((p) => normalizeStatus(p.status) === "DITOLAK").length;
-  const ditolakPct = totalCount > 0 ? ((ditolakCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
+  const ditolakPct = totalCount > 0 ? ((ditolakCount / totalCount) * 100).toFixed(2).replace(".", ",") : "0,00";
 
   const totalBiaya = prokerList.reduce((acc, p) => acc + (Number(p.kebutuhanBiaya) || 0), 0);
 
@@ -560,43 +533,27 @@ export const ProgramKerjaKkn: React.FC = () => {
     switch (st) {
       case "BELUM_DISETUJUI":
         return (
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 rounded-full font-bold text-[11px]">
-              <Clock size={11} className="shrink-0" />
-              Belum disetujui
-            </span>
-          </div>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 rounded-full font-bold text-[11px] shadow-2xs">
+            <Clock size={12} className="shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>Menunggu Persetujuan</span>
+          </span>
         );
       case "DITERIMA":
         return (
-          <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 rounded-full font-bold text-[11px]">
-            <CheckCircle2 size={11} className="shrink-0" />
-            Disetujui
-          </span>
-        );
-      case "SEDANG_BERJALAN":
-        return (
-          <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 rounded-full font-bold text-[11px]">
-            <PlayCircle size={11} className="shrink-0" />
-            Sedang dilaksanakan
-          </span>
-        );
-      case "SELESAI":
-        return (
-          <span className="inline-flex items-center gap-1 px-3 py-1 bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800/60 rounded-full font-bold text-[11px]">
-            <FolderCheck size={11} className="shrink-0" />
-            Sudah selesai
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 rounded-full font-bold text-[11px] shadow-2xs">
+            <CheckCircle2 size={12} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <span>Disetujui</span>
           </span>
         );
       case "DITOLAK":
         return (
-          <div className="flex flex-col items-center gap-0.5" title={catatanDpl || "Tidak disetujui DPL"}>
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 rounded-full font-bold text-[11px]">
-              <XCircle size={11} className="shrink-0" />
-              Tidak disetujui
+          <div className="flex flex-col items-center gap-1" title={catatanDpl || "Ditolak DPL"}>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 rounded-full font-bold text-[11px] shadow-2xs">
+              <XCircle size={12} className="shrink-0 text-rose-600 dark:text-rose-400" />
+              <span>Ditolak</span>
             </span>
             {catatanDpl && (
-              <span className="text-[10px] text-rose-600 dark:text-rose-400 font-medium max-w-[140px] truncate">
+              <span className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold max-w-[150px] truncate" title={catatanDpl}>
                 Catatan: {catatanDpl}
               </span>
             )}
@@ -614,7 +571,7 @@ export const ProgramKerjaKkn: React.FC = () => {
             Program Kerja KKN
           </h1>
           <p className="text-slate-500 text-xs mt-1">
-            Menampilkan rencana dan pelaksanaan program kerja mahasiswa KKN yang divalidasi oleh Dosen Pendamping Lapangan.
+            Menampilkan usulan dan status verifikasi program kerja mahasiswa KKN yang divalidasi oleh Dosen Pendamping Lapangan.
           </p>
         </div>
 
@@ -642,89 +599,61 @@ export const ProgramKerjaKkn: React.FC = () => {
         </div>
       </div>
 
-      {/* 6 Stat Cards Metrik Utama Program Kerja */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      {/* 4 Stat Cards Metrik Utama Program Kerja */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         {/* Card 1: Total Program Kerja */}
-        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[10.5px] text-slate-500 dark:text-slate-400 font-bold">Total Proker</span>
-            <div className="w-7 h-7 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0">
-              <FileSpreadsheet size={15} />
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">Total Program Kerja</span>
+            <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0">
+              <FileSpreadsheet size={17} />
             </div>
           </div>
-          <div className="mt-2">
-            <h3 className="text-xl font-black text-slate-900 dark:text-slate-100">{totalCount}</h3>
-            <span className="text-[9.5px] text-slate-400 font-medium">Semua rencana</span>
+          <div className="mt-3">
+            <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100">{totalCount}</h3>
+            <span className="text-[11px] text-slate-400 font-medium">Semua usulan kegiatan KKN</span>
           </div>
         </div>
 
         {/* Card 2: Menunggu Persetujuan */}
-        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-amber-100 dark:border-amber-900/30 shadow-xs flex flex-col justify-between">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-amber-200/80 dark:border-amber-900/40 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[10.5px] text-amber-700 dark:text-amber-400 font-bold">Menunggu</span>
-            <div className="w-7 h-7 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-100 dark:border-amber-800/40">
-              <Clock size={15} />
+            <span className="text-xs text-amber-700 dark:text-amber-400 font-bold">Menunggu Persetujuan</span>
+            <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-200/60 dark:border-amber-800/40">
+              <Clock size={17} />
             </div>
           </div>
-          <div className="mt-2">
-            <h3 className="text-xl font-black text-amber-600 dark:text-amber-400">{pendingCount}</h3>
-            <span className="text-[9.5px] text-amber-600/80 dark:text-amber-400/80 font-medium">{pendingPct}% total</span>
+          <div className="mt-3">
+            <h3 className="text-2xl font-black text-amber-600 dark:text-amber-400">{pendingCount}</h3>
+            <span className="text-[11px] text-amber-700/80 dark:text-amber-400/80 font-medium">{pendingPct}% dari total</span>
           </div>
         </div>
 
         {/* Card 3: Disetujui */}
-        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-emerald-100 dark:border-emerald-900/30 shadow-xs flex flex-col justify-between">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-emerald-200/80 dark:border-emerald-900/40 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[10.5px] text-emerald-700 dark:text-emerald-400 font-bold">Disetujui</span>
-            <div className="w-7 h-7 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-800/40">
-              <CheckCircle2 size={15} />
+            <span className="text-xs text-emerald-700 dark:text-emerald-400 font-bold">Disetujui</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-200/60 dark:border-emerald-800/40">
+              <CheckCircle2 size={17} />
             </div>
           </div>
-          <div className="mt-2">
-            <h3 className="text-xl font-black text-emerald-600 dark:text-emerald-400">{disetujuiCount}</h3>
-            <span className="text-[9.5px] text-emerald-600/80 dark:text-emerald-400/80 font-medium">{disetujuiPct}% total</span>
+          <div className="mt-3">
+            <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{disetujuiCount}</h3>
+            <span className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80 font-medium">{disetujuiPct}% dari total</span>
           </div>
         </div>
 
-        {/* Card 4: Sedang Dilaksanakan */}
-        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-blue-100 dark:border-blue-900/30 shadow-xs flex flex-col justify-between">
+        {/* Card 4: Ditolak */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-rose-200/80 dark:border-rose-900/40 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[10.5px] text-blue-700 dark:text-blue-400 font-bold">Dilaksanakan</span>
-            <div className="w-7 h-7 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-800/40">
-              <PlayCircle size={15} />
+            <span className="text-xs text-rose-700 dark:text-rose-400 font-bold">Ditolak</span>
+            <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-200/60 dark:border-rose-800/40">
+              <XCircle size={17} />
             </div>
           </div>
-          <div className="mt-2">
-            <h3 className="text-xl font-black text-blue-600 dark:text-blue-400">{sedangBerjalanCount}</h3>
-            <span className="text-[9.5px] text-blue-600/80 dark:text-blue-400/80 font-medium">{sedangBerjalanPct}% total</span>
-          </div>
-        </div>
-
-        {/* Card 5: Selesai */}
-        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-teal-100 dark:border-teal-900/30 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[10.5px] text-teal-700 dark:text-teal-400 font-bold">Selesai</span>
-            <div className="w-7 h-7 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0 border border-teal-100 dark:border-teal-800/40">
-              <FolderCheck size={15} />
-            </div>
-          </div>
-          <div className="mt-2">
-            <h3 className="text-xl font-black text-teal-600 dark:text-teal-400">{selesaiCount}</h3>
-            <span className="text-[9.5px] text-teal-600/80 dark:text-teal-400/80 font-medium">{selesaiPct}% total</span>
-          </div>
-        </div>
-
-        {/* Card 6: Ditolak */}
-        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-rose-100 dark:border-rose-900/30 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[10.5px] text-rose-700 dark:text-rose-400 font-bold">Ditolak</span>
-            <div className="w-7 h-7 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-100 dark:border-rose-800/40">
-              <XCircle size={15} />
-            </div>
-          </div>
-          <div className="mt-2">
-            <h3 className="text-xl font-black text-rose-600 dark:text-rose-400">{ditolakCount}</h3>
-            <span className="text-[9.5px] text-rose-600/80 dark:text-rose-400/80 font-medium">{ditolakPct}% total</span>
+          <div className="mt-3">
+            <h3 className="text-2xl font-black text-rose-600 dark:text-rose-400">{ditolakCount}</h3>
+            <span className="text-[11px] text-rose-700/80 dark:text-rose-400/80 font-medium">{ditolakPct}% dari total</span>
           </div>
         </div>
       </div>
@@ -792,18 +721,16 @@ export const ProgramKerjaKkn: React.FC = () => {
 
           {/* Filter 4: Status */}
           <div>
-            <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Status</span>
+            <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Status Persetujuan</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
             >
               <option value="ALL">Semua Status</option>
-              <option value="BELUM_DISETUJUI">Belum disetujui</option>
+              <option value="BELUM_DISETUJUI">Menunggu Persetujuan</option>
               <option value="DITERIMA">Disetujui</option>
-              <option value="SEDANG_BERJALAN">Sedang dilaksanakan</option>
-              <option value="SELESAI">Sudah selesai</option>
-              <option value="DITOLAK">Tidak disetujui</option>
+              <option value="DITOLAK">Ditolak</option>
             </select>
           </div>
         </div>
@@ -848,16 +775,16 @@ export const ProgramKerjaKkn: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
               <thead>
-                <tr className="bg-slate-50/90 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
-                  <th className="py-3.5 px-4 w-12 text-center">No</th>
-                  <th className="py-3.5 px-4 w-32 text-center">Kategori</th>
-                  <th className="py-3.5 px-4 w-32 text-center">Sumber</th>
-                  <th className="py-3.5 px-4 min-w-[280px]">Deskripsi</th>
-                  <th className="py-3.5 px-4 w-40">Waktu Pelaksanaan</th>
-                  <th className="py-3.5 px-4 w-32 font-bold">Biaya</th>
-                  <th className="py-3.5 px-4 w-44 text-center">Status Pelaksanaan</th>
-                  <th className="py-3.5 px-4 w-32 text-center">Bukti</th>
-                  {canModifyProker && <th className="py-3.5 px-4 w-40 text-center">Aksi DPL</th>}
+                <tr className="bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
+                  <th className="py-3.5 px-3 w-12 text-center">No</th>
+                  <th className="py-3.5 px-3 w-28 text-center">Kategori</th>
+                  <th className="py-3.5 px-3 w-24 text-center">Sumber</th>
+                  <th className="py-3.5 px-4 min-w-[280px]">Deskripsi Kegiatan</th>
+                  <th className="py-3.5 px-3 w-36">Waktu Pelaksanaan</th>
+                  <th className="py-3.5 px-3 w-32 font-bold">Biaya</th>
+                  <th className="py-3.5 px-3 w-44 text-center">Status Persetujuan</th>
+                  <th className="py-3.5 px-3 w-28 text-center">Bukti</th>
+                  {canModifyProker && <th className="py-3.5 px-4 w-48 text-center">Aksi DPL</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
@@ -866,14 +793,14 @@ export const ProgramKerjaKkn: React.FC = () => {
                   const normalizedSt = normalizeStatus(p.status);
 
                   return (
-                    <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
+                    <tr key={p.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="py-3.5 px-3 text-center font-bold text-slate-400">
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
-                      <td className="py-3.5 px-4 text-center">
+                      <td className="py-3.5 px-3 text-center">
                         {renderKategoriBadge(p.kategori)}
                       </td>
-                      <td className="py-3.5 px-4 text-center">
+                      <td className="py-3.5 px-3 text-center">
                         {renderSumberBadge(p.sumber)}
                       </td>
                       <td className="py-3.5 px-4">
@@ -881,16 +808,16 @@ export const ProgramKerjaKkn: React.FC = () => {
                           {p.deskripsi}
                         </p>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 font-medium">
+                      <td className="py-3.5 px-3 text-slate-600 dark:text-slate-400 font-medium">
                         {p.waktuPelaksanaan || "-"}
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">
+                      <td className="py-3.5 px-3 font-bold text-slate-900 dark:text-slate-100">
                         Rp {Number(p.kebutuhanBiaya || 0).toLocaleString("id-ID")}
                       </td>
-                      <td className="py-3.5 px-4 text-center">
+                      <td className="py-3.5 px-3 text-center">
                         {renderStatusPelaksanaanBadge(p.status, p.catatanDpl)}
                       </td>
-                      <td className="py-3.5 px-4 text-center">
+                      <td className="py-3.5 px-3 text-center">
                         <a
                           href={driveUrl}
                           target="_blank"
@@ -904,17 +831,17 @@ export const ProgramKerjaKkn: React.FC = () => {
                       </td>
                       {canModifyProker && (
                         <td className="py-3.5 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                            {/* DPL Validation Actions for Pending */}
+                          <div className="flex items-center justify-center gap-2 flex-wrap">
+                            {/* Decision Actions when Menunggu Persetujuan */}
                             {normalizedSt === "BELUM_DISETUJUI" && (
-                              <>
+                              <div className="flex items-center gap-1.5">
                                 <button
                                   onClick={() => handleApproveProker(p)}
                                   title="Setujui (ACC) Program Kerja"
-                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-2xs transition-all cursor-pointer active:scale-95"
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-2xs hover:shadow-xs transition-all cursor-pointer active:scale-95"
                                 >
-                                  <Check size={12} strokeWidth={3} />
-                                  <span>ACC</span>
+                                  <Check size={13} strokeWidth={3} />
+                                  <span>Setujui</span>
                                 </button>
                                 <button
                                   onClick={() =>
@@ -926,59 +853,70 @@ export const ProgramKerjaKkn: React.FC = () => {
                                       isSubmitting: false,
                                     })
                                   }
-                                  title="Tolak Program Kerja"
-                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 font-bold text-[11px] transition-all cursor-pointer active:scale-95"
+                                  title="Tolak Program Kerja dengan Catatan"
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 font-bold text-xs transition-all cursor-pointer active:scale-95"
                                 >
-                                  <X size={12} strokeWidth={3} />
+                                  <X size={13} strokeWidth={3} />
                                   <span>Tolak</span>
                                 </button>
-                              </>
+                              </div>
                             )}
 
-                            {/* DPL Quick Progression Actions for Approved / In Progress */}
-                            {normalizedSt === "DITERIMA" && (
+                            {/* Decision Action when Ditolak -> quick re-approve */}
+                            {normalizedSt === "DITOLAK" && (
                               <button
-                                onClick={() => handleUpdateStatusQuick(p, "SEDANG_BERJALAN")}
-                                title="Mulai Pelaksanaan Program Kerja"
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-bold text-[11px] transition-all cursor-pointer active:scale-95"
+                                onClick={() => handleApproveProker(p)}
+                                title="Ubah Keputusan jadi Disetujui (ACC)"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-bold text-xs transition-all cursor-pointer active:scale-95"
                               >
-                                <PlayCircle size={12} />
-                                <span>Mulai</span>
+                                <Check size={13} strokeWidth={3} />
+                                <span>Setujui</span>
                               </button>
                             )}
 
-                            {normalizedSt === "SEDANG_BERJALAN" && (
+                            {/* Decision Action when Disetujui -> option to reject if revision needed */}
+                            {normalizedSt === "DITERIMA" && (
                               <button
-                                onClick={() => handleUpdateStatusQuick(p, "SELESAI")}
-                                title="Tandai Program Kerja Selesai"
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-teal-50 dark:bg-teal-950/50 hover:bg-teal-100 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 font-bold text-[11px] transition-all cursor-pointer active:scale-95"
+                                onClick={() =>
+                                  setRejectModal({
+                                    isOpen: true,
+                                    id: p.id,
+                                    deskripsi: p.deskripsi,
+                                    catatanDpl: p.catatanDpl || "",
+                                    isSubmitting: false,
+                                  })
+                                }
+                                title="Tolak / Minta Revisi"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-600 dark:text-slate-400 hover:text-rose-600 border border-slate-200 dark:border-slate-700 font-bold text-xs transition-all cursor-pointer active:scale-95"
                               >
-                                <FolderCheck size={12} />
-                                <span>Selesai</span>
+                                <X size={13} />
+                                <span>Tolak</span>
                               </button>
                             )}
 
                             {/* Standard Edit & Delete */}
-                            <button
-                              onClick={() => handleOpenEditModal(p)}
-                              title="Edit Detail Program Kerja"
-                              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                            >
-                              <Pencil size={13} />
-                            </button>
-                            <button
-                              onClick={() =>
-                                setDeleteModal({
-                                  isOpen: true,
-                                  id: p.id,
-                                  deskripsi: p.deskripsi,
-                                })
-                              }
-                              title="Hapus Program Kerja"
-                              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
-                            >
-                              <Trash2 size={13} />
-                            </button>
+                            <div className="flex items-center gap-1 ml-1 pl-1 border-l border-slate-200 dark:border-slate-800">
+                              <button
+                                onClick={() => handleOpenEditModal(p)}
+                                title="Edit Detail Program Kerja"
+                                className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                              >
+                                <Pencil size={13} />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  setDeleteModal({
+                                    isOpen: true,
+                                    id: p.id,
+                                    deskripsi: p.deskripsi,
+                                  })
+                                }
+                                title="Hapus Program Kerja"
+                                className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
                           </div>
                         </td>
                       )}
@@ -1160,7 +1098,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                 <>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Status Pelaksanaan
+                      Status Persetujuan
                     </label>
                     <select
                       value={normalizeStatus(formData.status)}
@@ -1169,8 +1107,6 @@ export const ProgramKerjaKkn: React.FC = () => {
                     >
                       <option value="BELUM_DISETUJUI">Menunggu Persetujuan</option>
                       <option value="DITERIMA">Disetujui</option>
-                      <option value="SEDANG_BERJALAN">Sedang Dilaksanakan</option>
-                      <option value="SELESAI">Selesai</option>
                       <option value="DITOLAK">Ditolak</option>
                     </select>
                   </div>

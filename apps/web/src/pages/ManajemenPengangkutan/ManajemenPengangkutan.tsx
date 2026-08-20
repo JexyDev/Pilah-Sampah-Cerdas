@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
@@ -7,7 +7,7 @@
  * - Scope Wilayah: Rukun Warga (Terstandarisasi dengan Master Data & Hasil Klasifikasi)
  * - 100% End-to-End API Integration dengan Backend Express PostgreSQL (`/api/v1/pengangkutan`, `/api/v1/bins/reset-requests`)
  * - Mobile REST API Compatible (Standard Payload Contracts)
- * - Design Standar Industri: Executive Hero Banner, Squircle KPI Metrics, High-Contrast Filter Controls, Interactive Tables, & TrashCare Standardized Pagination.
+ * - Design Standar Industri: Executive Hero Banner, Squircle KPI Metrics, High-Contrast Filter Controls, Interactive Tables, & BERSEKA Standardized Pagination.
  */
 
 import React, { useEffect, useState, useMemo } from "react";
@@ -628,7 +628,7 @@ export const ManajemenPengangkutan: React.FC = () => {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80">
+                    <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80">
                       <th className="py-3.5 px-4 rounded-l-2xl">ID Tugas</th>
                       <th className="py-3.5 px-4">Tempat Sampah</th>
                       <th className="py-3.5 px-4">Rukun Warga</th>
@@ -640,7 +640,7 @@ export const ManajemenPengangkutan: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                     {paginatedTasks.map((task) => (
-                      <tr key={task.id} className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition-colors">
+                      <tr key={task.id} className="hover:bg-slate-50/90 dark:bg-slate-800/90 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="py-3.5 px-4 font-mono font-black text-slate-900 dark:text-slate-100 tracking-tight">
                           {task.id.slice(0, 10).toUpperCase()}
                         </td>
@@ -718,7 +718,7 @@ export const ManajemenPengangkutan: React.FC = () => {
               </div>
             )}
 
-            {/* TrashCare Standardized Pagination Controls */}
+            {/* BERSEKA Standardized Pagination Controls */}
             {!loading && filteredTasks.length > 0 && (
               <Pagination
                 currentPage={currentPage}
@@ -785,7 +785,7 @@ export const ManajemenPengangkutan: React.FC = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80">
+                  <tr className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80">
                     <th className="py-3.5 px-4 rounded-l-2xl">Nama Warga</th>
                     <th className="py-3.5 px-4">Rukun Warga</th>
                     <th className="py-3.5 px-4">Tanggal Pengajuan</th>
@@ -796,7 +796,7 @@ export const ManajemenPengangkutan: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                   {paginatedRequests.map((req) => (
-                    <tr key={req.id} className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition-colors">
+                    <tr key={req.id} className="hover:bg-slate-50/90 dark:bg-slate-800/90 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">
                         {req.user.name}
                         <span className="block text-[10px] text-slate-400 font-semibold">{req.user.email}</span>
@@ -1021,7 +1021,7 @@ export const ManajemenPengangkutan: React.FC = () => {
               )}
             </div>
 
-            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 flex justify-end">
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 flex justify-end">
               <button
                 onClick={() => setSelectedRequestForReview(null)}
                 className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black transition cursor-pointer"

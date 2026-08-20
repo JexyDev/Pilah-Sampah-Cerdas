@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -103,7 +103,7 @@ export class HouseholdService {
     const binsWithFlag = userBins.map((bin) => {
       const current = Number(bin.currentVolumeLiter || 0);
       const max = Number(bin.maxCapacityLiter || 1);
-      const percentage = max > 0 ? parseFloat(((current / max) * 100).toFixed(1)) : 0;
+      const percentage = max > 0 ? parseFloat(((current / max) * 100).toFixed(2)) : 0;
       const isCritical = percentage >= 80;
 
       return {

@@ -1,13 +1,12 @@
 import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
 import { FacilityType } from "@prisma/client";
-
 
 export const facilityService = {
   /**
@@ -53,6 +52,93 @@ export const facilityService = {
   },
 
   /**
+   * Master Data Jenis Fasilitas
+   */
+  getJenisFasilitas: async () => {
+    const DEFAULT_JENIS = [
+      {
+        key: "rumah_maggot",
+        nama: "Rumah Maggot",
+        iconUrl: "/uploads/icons/rumah_maggot.png",
+        deskripsi: "Fasilitas pengolahan sampah organik menggunakan larva BSF",
+        isActive: true,
+      },
+      {
+        key: "loseda",
+        nama: "Loseda",
+        iconUrl: "/uploads/icons/loseda.png",
+        deskripsi: "Lubang sedalam 1 meter untuk pengomposan langsung",
+        isActive: true,
+      },
+      {
+        key: "bata_terawang",
+        nama: "Bata Terawang",
+        iconUrl: "/uploads/icons/bata_terawang.png",
+        deskripsi: "Komposter aerobik menggunakan susunan bata berongga",
+        isActive: true,
+      },
+      {
+        key: "bank_sampah",
+        nama: "Bank Sampah",
+        iconUrl: "/uploads/icons/bank_sampah.png",
+        deskripsi: "Tempat pengumpulan sampah anorganik bernilai ekonomi",
+        isActive: true,
+      },
+      {
+        key: "buruan_sae",
+        nama: "Buruan Sae",
+        iconUrl: "/uploads/icons/buruan_sae.png",
+        deskripsi: "Program pengelolaan pekarangan untuk ketahanan pangan",
+        isActive: true,
+      },
+      {
+        key: "poc",
+        nama: "Pupuk Organik Cair (POC)",
+        iconUrl: "/uploads/icons/poc.png",
+        deskripsi: "Fasilitas pembuatan pupuk cair dari sampah organik",
+        isActive: true,
+      },
+      {
+        key: "tps",
+        nama: "TPS",
+        iconUrl: "/uploads/icons/tps.png",
+        deskripsi: "Tempat Pembuangan Sampah sementara",
+        isActive: true,
+      },
+      {
+        key: "posko_kkn",
+        nama: "Posko KKN",
+        iconUrl: "/uploads/icons/posko.png",
+        deskripsi: "Posko / kantor kelurahan",
+        isActive: true,
+      },
+    ];
+
+    try {
+      let list = await prisma.jenisFasilitas.findMany({
+        where: { isActive: true },
+        orderBy: { id: "asc" },
+      });
+      if (list.length === 0) {
+        for (const item of DEFAULT_JENIS) {
+          await prisma.jenisFasilitas.upsert({
+            where: { key: item.key },
+            update: item,
+            create: item,
+          });
+        }
+        list = await prisma.jenisFasilitas.findMany({
+          where: { isActive: true },
+          orderBy: { id: "asc" },
+        });
+      }
+      return list;
+    } catch (e) {
+      return DEFAULT_JENIS.map((d, index) => ({ id: index + 1, ...d }));
+    }
+  },
+
+  /**
    * Get all facilities with optional type filtering
    */
   getFacilities: async (jenis?: string) => {
@@ -72,10 +158,30 @@ export const facilityService = {
       }
       return prisma.facility.findMany({
         where: { jenis: jenis as FacilityType },
+        include: {
+          rw: true,
+          registeredBy: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+            },
+          },
+        },
         orderBy: { nama: "asc" },
       });
     }
     return prisma.facility.findMany({
+      include: {
+        rw: true,
+        registeredBy: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+      },
       orderBy: { nama: "asc" },
     });
   },

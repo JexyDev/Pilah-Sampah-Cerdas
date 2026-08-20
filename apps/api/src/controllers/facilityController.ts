@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -145,6 +145,20 @@ export class FacilityController {
       res
         .status(201)
         .json({ success: true, message: "Distribusi produk maggot berhasil dicatat", data: log });
+    } catch (error: any) {
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+    }
+  }
+
+  /**
+   * Get master data jenis fasilitas
+   */
+  async getJenisFasilitas(req: Request, res: Response): Promise<void> {
+    try {
+      const data = await facilityService.getJenisFasilitas();
+      res.status(200).json({ success: true, data });
     } catch (error: any) {
       res
         .status(400)

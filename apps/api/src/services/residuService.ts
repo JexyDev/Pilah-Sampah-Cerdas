@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -339,15 +339,15 @@ export class ResiduService {
       totalJadwal,
       sudahDiambil: todayEntries,
       pelanggaranCount: totalViolationsToday,
-      totalWeightKg: Number(todayWeightKg.toFixed(1)),
+      totalWeightKg: Number(todayWeightKg.toFixed(2)),
       ketepatanWaktuScore: Number(petugas.kpiScore) || 95,
       akurasiScore: 90,
 
       // Additional & legacy metadata for compatibility
       rw: rtRwStr,
       kelurahan: kelurahanStr,
-      todayWeightKg: Number(todayWeightKg.toFixed(1)),
-      monthlyWeightKg: Number(monthlyWeightKg.toFixed(1)),
+      todayWeightKg: Number(todayWeightKg.toFixed(2)),
+      monthlyWeightKg: Number(monthlyWeightKg.toFixed(2)),
       todayEntries,
       totalPoints: pointsSum._sum.points || 0,
       pointRatePerKg,
@@ -786,7 +786,7 @@ export class ResiduService {
       userId: petugasUserId,
       petugasUserId: petugasUserId,
       berat: weightKg,
-      weightKg: Number(weightKg.toFixed(1)),
+      weightKg: Number(weightKg.toFixed(2)),
       classification: data.classification || "Residu",
       kategori: data.classification || "Residu",
       lokasiGps: lokasiGps,
@@ -794,7 +794,7 @@ export class ResiduService {
       longitude: longNum,
       pointsEarned,
       points: pointsEarned,
-      globalBinTotalKg: Number(globalBinTotalKg.toFixed(1)),
+      globalBinTotalKg: Number(globalBinTotalKg.toFixed(2)),
       kpiScore: (user.petugasProfile?.kpiScore
         ? Number(user.petugasProfile.kpiScore)
         : 100

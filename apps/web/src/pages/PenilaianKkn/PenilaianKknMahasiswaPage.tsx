@@ -1,197 +1,131 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
- * Modul Penilaian KKN Mahasiswa (Komposisi Mitra/MPL 70% + DPL 30%)
- * Sesuai Acuan UI Resmi PT Makerindo & Standar Penilaian Coblong
- * - Tampilan Tabel Penuh dengan Kolom Terpisah & Visual Yang Menarik
- * - Modal Dialog Penilaian Interaktif Lengkap: DPL 30% + Mitra 70% + Ringkasan Portofolio
- * - Fitur Klik-Klik Cepat (Master Fill 1-Klik, Rating Button 0-4 Berwarna, Template Catatan)
- * - Perhitungan Matematis Real-time, Konfirmasi Simpan, dan Cetak PDF Resmi
+ * Halaman Penilaian Individu Mahasiswa KKN (6 Aspek Akademik DPL)
+ * Desain Master-Detail 2-Panel Side-by-Side Berseka Clean
+ * - Paginasi: 10 Rekord per halaman
+ * - Mode Lihat & Edit Nilai (khusus data yang sudah dinilai)
+ * 100% Real Database PostgreSQL Integration via Prisma
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
-  Printer,
-  Save,
-  Users,
-  GraduationCap,
-  ClipboardList,
-  Award,
   Search,
-  Filter,
+  User,
   Loader2,
-  X,
-  AlertCircle,
-  BookOpen,
-  MapPin,
-  Sparkles,
-  MessageSquare,
+  GraduationCap,
   Edit3,
+  CheckCircle2,
+  RefreshCw,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { useAuthStore } from "../../store/useAuthStore";
 import {
   penilaianKknApiService,
-  type StudentInfo,
+  type StudentRekapItem,
 } from "../../services/penilaianKknApiService";
-import { Pagination } from "../../components/common/Pagination";
 
-interface StudentRekapItem {
-  studentId: string;
-  nama: string;
-  nim: string;
-  jenjangPendidikan?: string;
-  jurusan?: string;
-  fakultas?: string;
-  kelompok: string;
-  kelurahan?: string;
-  rw?: string;
-  dplNama?: string;
-  subtotalMitra: number;
-  subtotalDpl: number;
-  nilaiAkhir: number;
-  kategori: string;
-}
-
-// 6 Aspek DPL (Bobot masing-masing 5% -> total 30%)
+// 6 Aspek Akademik DPL (Total Bobot 100%)
 const ASPEK_DPL_CONFIG = [
-  { key: "skorDplPerencanaan" as const, no: 1, title: "Perencanaan & Pemahaman Program", bobot: 5, desc: "Kejelasan rancangan program kerja & pemahaman konteks wilayah." },
-  { key: "skorDplKontribusi" as const, no: 2, title: "Kontribusi Individu", bobot: 5, desc: "Tingkat keaktifan, dedikasi, dan peran mahasiswa dalam kelompok." },
-  { key: "skorDplLogbook" as const, no: 3, title: "Logbook & Dokumentasi Akademik", bobot: 5, desc: "Ketepatan waktu dan kualitas bukti kegiatan dalam logbook." },
-  { key: "skorDplAnalisis" as const, no: 4, title: "Analisis Masalah & Solusi", bobot: 5, desc: "Ketajaman identifikasi masalah persampahan dan solusi aplikatif." },
-  { key: "skorDplOutput" as const, no: 5, title: "Output, Outcome, & Dampak", bobot: 5, desc: "Hasil konkret dan kebermanfaatan bagi masyarakat sekitar." },
-  { key: "skorDplLaporanAkhir" as const, no: 6, title: "Laporan Akhir, Evaluasi & Refleksi", bobot: 5, desc: "Sistematika, substansi, dan refleksi pembelajaran dalam laporan." },
+  {
+    key: "skorDplPerencanaan" as const,
+    no: 1,
+    title: "Perencanaan & Pemahaman Program",
+    bobot: 20,
+  },
+  {
+    key: "skorDplKontribusi" as const,
+    no: 2,
+    title: "Kontribusi Individu",
+    bobot: 20,
+  },
+  {
+    key: "skorDplLogbook" as const,
+    no: 3,
+    title: "Logbook & Dokumentasi Akademik",
+    bobot: 20,
+  },
+  {
+    key: "skorDplAnalisis" as const,
+    no: 4,
+    title: "Analisis Masalah & Solusi",
+    bobot: 15,
+  },
+  {
+    key: "skorDplOutput" as const,
+    no: 5,
+    title: "Output, Outcome, & Dampak",
+    bobot: 15,
+  },
+  {
+    key: "skorDplLaporanAkhir" as const,
+    no: 6,
+    title: "Laporan Akhir, Esai Lap. & Refleksi",
+    bobot: 10,
+  },
 ];
 
-// 8 Aspek Mitra / MPL (Bobot total 70%)
-const ASPEK_MITRA_CONFIG = [
-  { key: "skorMitraKehadiran" as const, no: 1, title: "Kehadiran dan Kedisiplinan", bobot: 10, desc: "Presensi harian dan kepatuhan jam operasional di wilayah." },
-  { key: "skorMitraWargaBinaan" as const, no: 2, title: "Dukungan Warga Binaan", bobot: 10, desc: "Pendampingan edukasi pemilahan sampah ke rumah warga." },
-  { key: "skorMitraProker" as const, no: 3, title: "Keterlibatan Program Kerja", bobot: 10, desc: "Partisipasi aktif dalam eksekusi program di lapangan." },
-  { key: "skorMitraKomunikasi" as const, no: 4, title: "Komunikasi & Etika", bobot: 8, desc: "Sopan santun dan keramahan berinteraksi dengan warga & aparat." },
-  { key: "skorMitraTanggungJawab" as const, no: 5, title: "Tanggung Jawab & Kerja Sama", bobot: 8, desc: "Solidaritas tim dan penyelesaian tugas yang diamanahkan." },
-  { key: "skorMitraBuktiKegiatan" as const, no: 6, title: "Validitas Bukti Kegiatan", bobot: 7, desc: "Kelengkapan foto dokumentasi & verifikasi absensi." },
-  { key: "skorMitraDampak" as const, no: 7, title: "Dampak kepada Masyarakat", bobot: 10, desc: "Perubahan nyata perilaku warga dalam memilah sampah." },
-  { key: "skorMitraInisiatif" as const, no: 8, title: "Inisiatif & Problem Solving", bobot: 7, desc: "Responsivitas dan ide solutif saat menghadapi kendala." },
-];
-
-// Skor 0-4 labels
-const SCORE_SCALE = [
-  { val: 0, label: "0", desc: "Sangat Kurang (0%)", badge: "0" },
-  { val: 1, label: "1", desc: "Kurang (25%)", badge: "25%" },
-  { val: 2, label: "2", desc: "Cukup (50%)", badge: "50%" },
-  { val: 3, label: "3", desc: "Baik (75%)", badge: "75%" },
-  { val: 4, label: "4", desc: "Sangat Baik (100%)", badge: "100%" },
-];
-
-const DPL_FEEDBACK_TEMPLATES = [
-  "Kinerja sangat aktif, berinisiatif tinggi, dan kepemimpinan solid di lapangan.",
-  "Logbook dan dokumentasi kegiatan tersusun sangat rapi dan konsisten.",
-  "Analisis masalah lapangan tajam dengan eksekusi solusi pemilahan sampah yang berdampak.",
-  "Partisipasi aktif dalam kelompok, perlu sedikit peningkatan ketepatan waktu unggah bukti.",
-];
-
-const MITRA_FEEDBACK_TEMPLATES = [
-  "Mahasiswa sangat rajin mendampingi warga binaan dan santun berbaur dengan masyarakat.",
-  "Kehadiran selalu tepat waktu dan bertanggung jawab penuh dalam setiap kegiatan RW.",
-  "Sangat membantu petugas dalam pemilahan sampah di TPS & fasilitas pengolahan.",
-  "Kerja sama tim sangat baik dan aktif memberikan sosialisasi kepada warga.",
-];
+// Helper Predikat Nilai
+const getPredikat = (score: number): string => {
+  if (score >= 85) return "Sangat Baik";
+  if (score >= 75) return "Baik";
+  if (score >= 65) return "Cukup";
+  if (score >= 55) return "Kurang";
+  if (score > 0) return "Sangat Kurang";
+  return "Belum Dinilai";
+};
 
 export const PenilaianKknMahasiswaPage: React.FC = () => {
-  const user = useAuthStore((s) => s.user);
-  const userRole = String(user?.role || user?.peran || "").toUpperCase();
-
-  const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
-  const isMitra = ["ADMIN_DLH", "DLH", "LURAH", "KELURAHAN", "RW", "MITRA", "MPL", "MITRA_LAPANGAN"].includes(userRole);
-  const isSuper = ["SUPER_USER", "DEVELOPER", "PANITIA_TASKFORCE", "CAMAT", "PEMIMPIN"].includes(userRole);
-
-  const canEditMitra = isMitra || isSuper;
-  const canEditDpl = isDpl || isSuper;
+  const formRef = useRef<HTMLDivElement>(null);
 
   const [loading, setLoading] = useState<boolean>(true);
-  const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
-  const [studentsRekap, setStudentsRekap] = useState<StudentRekapItem[]>([]);
+  const [students, setStudents] = useState<StudentRekapItem[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+
+  // Filters & Pagination (10 per halaman)
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [filterKelompok, setFilterKelompok] = useState<string>("ALL");
+  const [filterStatus, setFilterStatus] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10;
 
-  // Modal Dialog states
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<"DPL" | "MPL" | "RINGKASAN">("DPL");
-
-  const [studentInfo, setStudentInfo] = useState<StudentInfo | null>(null);
-
-  // Pure State for Scores
-  const [scores, setScores] = useState<{
-    skorMitraKehadiran: number;
-    skorMitraWargaBinaan: number;
-    skorMitraProker: number;
-    skorMitraKomunikasi: number;
-    skorMitraTanggungJawab: number;
-    skorMitraBuktiKegiatan: number;
-    skorMitraDampak: number;
-    skorMitraInisiatif: number;
-    skorDplPerencanaan: number;
-    skorDplKontribusi: number;
-    skorDplLogbook: number;
-    skorDplAnalisis: number;
-    skorDplOutput: number;
-    skorDplLaporanAkhir: number;
-    namaMitraPenilai: string;
+  // Form State
+  const [formScores, setFormScores] = useState<{
+    skorDplPerencanaan: number | string;
+    skorDplKontribusi: number | string;
+    skorDplLogbook: number | string;
+    skorDplAnalisis: number | string;
+    skorDplOutput: number | string;
+    skorDplLaporanAkhir: number | string;
     catatanDpl: string;
-    catatanMitra: string;
   }>({
-    skorMitraKehadiran: 0,
-    skorMitraWargaBinaan: 0,
-    skorMitraProker: 0,
-    skorMitraKomunikasi: 0,
-    skorMitraTanggungJawab: 0,
-    skorMitraBuktiKegiatan: 0,
-    skorMitraDampak: 0,
-    skorMitraInisiatif: 0,
-    skorDplPerencanaan: 0,
-    skorDplKontribusi: 0,
-    skorDplLogbook: 0,
-    skorDplAnalisis: 0,
-    skorDplOutput: 0,
-    skorDplLaporanAkhir: 0,
-    namaMitraPenilai: "",
+    skorDplPerencanaan: "",
+    skorDplKontribusi: "",
+    skorDplLogbook: "",
+    skorDplAnalisis: "",
+    skorDplOutput: "",
+    skorDplLaporanAkhir: "",
     catatanDpl: "",
-    catatanMitra: "",
   });
 
-  // Load Rekap Mahasiswa
+  // Fetch Student List from Database
   const fetchStudents = async () => {
     setLoading(true);
     try {
-      const list = await penilaianKknApiService.getRekapPenilaian();
-      const formatted: StudentRekapItem[] = (Array.isArray(list) ? list : []).map((s: any) => ({
-        studentId: s.studentId || s.id,
-        nama: s.nama || s.name,
-        nim: s.nim || "-",
-        jenjangPendidikan: s.jenjangPendidikan || "S1",
-        jurusan: s.jurusan || s.programStudi || "-",
-        fakultas: s.fakultas || "-",
-        kelompok: s.kelompok || "Kelompok KKN",
-        kelurahan: s.kelurahan || "-",
-        rw: s.rw || "-",
-        dplNama: s.dplNama || "-",
-        subtotalMitra: Number(s.subtotalMitra) || 0,
-        subtotalDpl: Number(s.subtotalDpl) || 0,
-        nilaiAkhir: Number(s.nilaiAkhir) || 0,
-        kategori: s.kategori || "Belum Dinilai",
-      }));
-      setStudentsRekap(formatted);
-    } catch (err) {
-      console.error("Gagal memuat daftar mahasiswa:", err);
-      toast.error("Gagal memuat rekapitulasi nilai mahasiswa");
+      const data = await penilaianKknApiService.getRekapPenilaian();
+      const list: StudentRekapItem[] = Array.isArray(data) ? data : [];
+      setStudents(list);
+
+      // Default select first student if available and none selected
+      if (list.length > 0 && !selectedStudentId) {
+        selectStudent(list[0]);
+      }
+    } catch (err: any) {
+      console.error("Error fetching students:", err);
+      toast.error("Gagal memuat data mahasiswa dari server");
     } finally {
       setLoading(false);
     }
@@ -201,1185 +135,737 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     fetchStudents();
   }, []);
 
-  // Fetch Detail Mahasiswa Terpilih
-  const loadAssessment = useCallback(async (studentId: string) => {
-    if (!studentId) return;
-    setLoadingDetail(true);
-    try {
-      const data = await penilaianKknApiService.getStudentPenilaian(studentId);
-      setStudentInfo(data.student);
-      const a = data.assessment;
-      setScores({
-        skorMitraKehadiran: Number(a.skorMitraKehadiran) || 0,
-        skorMitraWargaBinaan: Number(a.skorMitraWargaBinaan) || 0,
-        skorMitraProker: Number(a.skorMitraProker) || 0,
-        skorMitraKomunikasi: Number(a.skorMitraKomunikasi) || 0,
-        skorMitraTanggungJawab: Number(a.skorMitraTanggungJawab) || 0,
-        skorMitraBuktiKegiatan: Number(a.skorMitraBuktiKegiatan) || 0,
-        skorMitraDampak: Number(a.skorMitraDampak) || 0,
-        skorMitraInisiatif: Number(a.skorMitraInisiatif) || 0,
-        skorDplPerencanaan: Number(a.skorDplPerencanaan) || 0,
-        skorDplKontribusi: Number(a.skorDplKontribusi) || 0,
-        skorDplLogbook: Number(a.skorDplLogbook) || 0,
-        skorDplAnalisis: Number(a.skorDplAnalisis) || 0,
-        skorDplOutput: Number(a.skorDplOutput) || 0,
-        skorDplLaporanAkhir: Number(a.skorDplLaporanAkhir) || 0,
-        namaMitraPenilai: a.namaMitraPenilai || data.student.namaMitraPenilai || "",
-        catatanDpl: a.catatanDpl || "",
-        catatanMitra: a.catatanMitra || "",
-      });
-    } catch (err: any) {
-      console.error("Gagal memuat detail nilai mahasiswa:", err);
-      toast.error("Gagal memuat data detail penilaian");
-    } finally {
-      setLoadingDetail(false);
-    }
-  }, []);
-
-  // Open assessment modal with auto-focused tab according to role
-  const handleOpenAssessmentModal = (studentId: string) => {
-    setSelectedStudentId(studentId);
-    if (isMitra && !isSuper) {
-      setActiveTab("MPL");
-    } else {
-      setActiveTab("DPL");
-    }
-    loadAssessment(studentId);
-    setIsModalOpen(true);
+  // Handler Select Student
+  const selectStudent = (student: StudentRekapItem, forceEdit?: boolean) => {
+    setSelectedStudentId(student.studentId);
+    setIsEditMode(
+      forceEdit !== undefined
+        ? forceEdit
+        : student.statusDpl !== "SUDAH_DINILAI"
+    );
+    setFormScores({
+      skorDplPerencanaan: student.skorDplPerencanaan || "",
+      skorDplKontribusi: student.skorDplKontribusi || "",
+      skorDplLogbook: student.skorDplLogbook || "",
+      skorDplAnalisis: student.skorDplAnalisis || "",
+      skorDplOutput: student.skorDplOutput || "",
+      skorDplLaporanAkhir: student.skorDplLaporanAkhir || "",
+      catatanDpl: student.catatanDpl || "",
+    });
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setIsConfirmOpen(false);
-  };
-
-  // Kalkulasi Aspek: (Skor / 4) * Bobot
-  const calcAspect = (skor: number, bobot: number) => {
-    const safe = Math.max(0, Math.min(4, Number(skor) || 0));
-    return Number(((safe / 4) * bobot).toFixed(2));
-  };
-
-  // Subtotal Mitra (Max 70)
-  const nilaiAspekMitra = useMemo(() => ({
-    kehadiran: calcAspect(scores.skorMitraKehadiran, 10),
-    wargaBinaan: calcAspect(scores.skorMitraWargaBinaan, 10),
-    proker: calcAspect(scores.skorMitraProker, 10),
-    komunikasi: calcAspect(scores.skorMitraKomunikasi, 8),
-    tanggungJawab: calcAspect(scores.skorMitraTanggungJawab, 8),
-    buktiKegiatan: calcAspect(scores.skorMitraBuktiKegiatan, 7),
-    dampak: calcAspect(scores.skorMitraDampak, 10),
-    inisiatif: calcAspect(scores.skorMitraInisiatif, 7),
-  }), [scores]);
-
-  const subtotalMitra = Number(
-    Object.values(nilaiAspekMitra)
-      .reduce((a, b) => a + b, 0)
-      .toFixed(2)
-  );
-
-  // Subtotal DPL (Max 30)
-  const nilaiAspekDpl = useMemo(() => ({
-    perencanaan: calcAspect(scores.skorDplPerencanaan, 5),
-    kontribusi: calcAspect(scores.skorDplKontribusi, 5),
-    logbook: calcAspect(scores.skorDplLogbook, 5),
-    analisis: calcAspect(scores.skorDplAnalisis, 5),
-    output: calcAspect(scores.skorDplOutput, 5),
-    laporanAkhir: calcAspect(scores.skorDplLaporanAkhir, 5),
-  }), [scores]);
-
-  const subtotalDpl = Number(
-    Object.values(nilaiAspekDpl)
-      .reduce((a, b) => a + b, 0)
-      .toFixed(2)
-  );
-
-  // Nilai Akhir Kumulatif (Max 100)
-  const nilaiAkhir = Number((subtotalMitra + subtotalDpl).toFixed(2));
-
-  // Kategori Skala Standar
-  const getCategory = (score: number) => {
-    if (score >= 85) return { label: "Sangat Baik", letter: "A", color: "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800" };
-    if (score >= 75) return { label: "Baik", letter: "B", color: "bg-teal-100 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border-teal-300 dark:border-teal-800" };
-    if (score >= 65) return { label: "Cukup", letter: "C", color: "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800" };
-    if (score >= 55) return { label: "Kurang", letter: "D", color: "bg-orange-100 dark:bg-orange-950/60 text-orange-800 dark:text-orange-300 border-orange-300 dark:border-orange-800" };
-    if (score > 0) return { label: "Sangat Kurang", letter: "E", color: "bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-800" };
-    return { label: "Belum Dinilai", letter: "-", color: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700" };
-  };
-
-  const currentCategory = getCategory(nilaiAkhir);
-
-  const handleScoreChange = (field: keyof typeof scores, value: number) => {
-    setScores((prev) => ({ ...prev, [field]: value }));
-  };
-
-  // Quick 1-Click Master Fill for DPL Tab
-  const handleDplMasterFill = (scoreVal: number) => {
-    setScores((prev) => ({
-      ...prev,
-      skorDplPerencanaan: scoreVal,
-      skorDplKontribusi: scoreVal,
-      skorDplLogbook: scoreVal,
-      skorDplAnalisis: scoreVal,
-      skorDplOutput: scoreVal,
-      skorDplLaporanAkhir: scoreVal,
-    }));
-    toast.success(`Seluruh 6 aspek DPL diisi skor ${scoreVal}`);
-  };
-
-  // Quick 1-Click Master Fill for Mitra Tab
-  const handleMitraMasterFill = (scoreVal: number) => {
-    setScores((prev) => ({
-      ...prev,
-      skorMitraKehadiran: scoreVal,
-      skorMitraWargaBinaan: scoreVal,
-      skorMitraProker: scoreVal,
-      skorMitraKomunikasi: scoreVal,
-      skorMitraTanggungJawab: scoreVal,
-      skorMitraBuktiKegiatan: scoreVal,
-      skorMitraDampak: scoreVal,
-      skorMitraInisiatif: scoreVal,
-    }));
-    toast.success(`Seluruh 8 aspek Mitra diisi skor ${scoreVal}`);
-  };
-
-  // Simpan Penilaian yang Dikonfirmasi
-  const handleConfirmSaveScore = async () => {
-    if (!selectedStudentId) return;
-    setSaving(true);
-    try {
-      await penilaianKknApiService.savePenilaian({
-        studentId: selectedStudentId,
-        ...scores,
-      });
-      toast.success("Penilaian mahasiswa berhasil disimpan ke database!");
-      setIsConfirmOpen(false);
-      setIsModalOpen(false);
-      // Refresh rekap data
-      await fetchStudents();
-    } catch (err: any) {
-      toast.error(err.message || "Gagal menyimpan penilaian");
-    } finally {
-      setSaving(false);
+  const handleActionClick = (student: StudentRekapItem) => {
+    const shouldEdit = student.statusDpl !== "SUDAH_DINILAI";
+    selectStudent(student, shouldEdit);
+    if (window.innerWidth < 1024) {
+      formRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   };
 
-  // Filter kelompok options
+  // Selected Student Object
+  const selectedStudent = useMemo(() => {
+    return students.find((s) => s.studentId === selectedStudentId) || null;
+  }, [students, selectedStudentId]);
+
+  // Unique Kelompok options
   const uniqueKelompokList = useMemo(() => {
-    const list = studentsRekap.map((s) => s.kelompok).filter(Boolean);
-    return Array.from(new Set(list));
-  }, [studentsRekap]);
+    const setK = new Set<string>();
+    students.forEach((s) => {
+      if (s.kelompok && s.kelompok !== "-") setK.add(s.kelompok);
+    });
+    return Array.from(setK);
+  }, [students]);
 
+  // Filtered Students
   const filteredStudents = useMemo(() => {
-    return studentsRekap.filter((s) => {
-      const q = searchQuery.toLowerCase();
-      const matchSearch =
+    return students.filter((s) => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch =
+        !q ||
         s.nama.toLowerCase().includes(q) ||
         s.nim.toLowerCase().includes(q) ||
-        (s.jurusan || "").toLowerCase().includes(q) ||
-        s.kelompok.toLowerCase().includes(q);
+        (s.jurusan && s.jurusan.toLowerCase().includes(q)) ||
+        (s.programStudi && s.programStudi.toLowerCase().includes(q));
 
-      const matchKelompok = filterKelompok === "ALL" || s.kelompok === filterKelompok;
-      return matchSearch && matchKelompok;
+      const matchesKelompok =
+        filterKelompok === "ALL" || s.kelompok === filterKelompok;
+
+      let matchesStatus = true;
+      if (filterStatus !== "ALL") {
+        matchesStatus = s.statusDpl === filterStatus;
+      }
+
+      return matchesSearch && matchesKelompok && matchesStatus;
     });
-  }, [studentsRekap, searchQuery, filterKelompok]);
+  }, [students, searchQuery, filterKelompok, filterStatus]);
 
-  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage) || 1;
+  // Pagination (10 per halaman)
+  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / itemsPerPage));
   const paginatedStudents = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredStudents.slice(start, start + itemsPerPage);
   }, [filteredStudents, currentPage, itemsPerPage]);
 
-  const isGradeComplete = subtotalDpl > 0 && subtotalMitra > 0;
+  // Calculate live score in right form
+  const computedScores = useMemo(() => {
+    const parseNum = (v: number | string) => {
+      const n = Number(v);
+      return isNaN(n) ? 0 : Math.max(0, Math.min(100, n));
+    };
 
-  // Cetak Dokumen PDF Resmi
-  const handlePrintPdf = () => {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) {
-      toast.error("Gagal membuka jendela cetak. Periksa izin pop-up peramban Anda.");
+    const s1 = parseNum(formScores.skorDplPerencanaan);
+    const s2 = parseNum(formScores.skorDplKontribusi);
+    const s3 = parseNum(formScores.skorDplLogbook);
+    const s4 = parseNum(formScores.skorDplAnalisis);
+    const s5 = parseNum(formScores.skorDplOutput);
+    const s6 = parseNum(formScores.skorDplLaporanAkhir);
+
+    const score1 = Number(((s1 * 20) / 100).toFixed(2));
+    const score2 = Number(((s2 * 20) / 100).toFixed(2));
+    const score3 = Number(((s3 * 20) / 100).toFixed(2));
+    const score4 = Number(((s4 * 15) / 100).toFixed(2));
+    const score5 = Number(((s5 * 15) / 100).toFixed(2));
+    const score6 = Number(((s6 * 10) / 100).toFixed(2));
+
+    const total = Number((score1 + score2 + score3 + score4 + score5 + score6).toFixed(2));
+    const predikat = total > 0 ? getPredikat(total) : "Belum Dinilai";
+
+    return {
+      scores: [score1, score2, score3, score4, score5, score6],
+      total,
+      predikat,
+    };
+  }, [formScores]);
+
+  // Handle Input Change for Scores
+  const handleScoreChange = (
+    key: keyof typeof formScores,
+    val: string
+  ) => {
+    if (!isEditMode) return;
+    if (val === "") {
+      setFormScores((prev) => ({ ...prev, [key]: "" }));
+      return;
+    }
+    const num = parseInt(val, 10);
+    if (!isNaN(num)) {
+      const clamped = Math.max(0, Math.min(100, num));
+      setFormScores((prev) => ({ ...prev, [key]: clamped }));
+    }
+  };
+
+  // Reset / Batal
+  const handleBatal = () => {
+    if (selectedStudent) {
+      selectStudent(
+        selectedStudent,
+        selectedStudent.statusDpl !== "SUDAH_DINILAI"
+      );
+      toast("Nilai dikembalikan ke data sebelumnya", { icon: "↩️" });
+    }
+  };
+
+  // Save Penilaian to Database
+  const handleSave = async () => {
+    if (!selectedStudent) {
+      toast.error("Pilih mahasiswa terlebih dahulu");
       return;
     }
 
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Lembar Penilaian KKN - ${studentInfo?.nama || "Mahasiswa"}</title>
-        <style>
-          @page { size: A4 portrait; margin: 15mm; }
-          body { font-family: 'Arial', sans-serif; color: #0f172a; line-height: 1.3; font-size: 8.5pt; margin: 0; padding: 0; }
-          .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 12px; }
-          .header h2 { margin: 0; font-size: 13pt; text-transform: uppercase; color: #047857; letter-spacing: 0.5px; }
-          .header p { margin: 2px 0 0 0; font-size: 8.5pt; color: #475569; }
-          .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 12px; }
-          .meta-item { display: flex; }
-          .meta-label { width: 140px; font-weight: bold; color: #475569; }
-          .meta-value { font-weight: bold; color: #0f172a; flex: 1; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 8pt; }
-          th, td { border: 1px solid #cbd5e1; padding: 4px 6px; text-align: left; }
-          th { background-color: #f1f5f9; font-weight: bold; text-transform: uppercase; font-size: 7.5pt; color: #334155; }
-          .text-center { text-align: center; }
-          .text-right { text-align: right; }
-          .subtotal-row { font-weight: bold; background: #f8fafc; }
-          .final-box { background: #ecfdf5; border: 1.5px solid #059669; border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-          .final-score { font-size: 16pt; font-weight: 900; color: #047857; }
-          .sig-section { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 25px; page-break-inside: avoid; }
-          .sig-box { text-align: center; }
-          .sig-space { height: 50px; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h2>LEMBAR PENILAIAN AKHIR KKN MAHASISWA</h2>
-          <p>Program KKN Tematik - Penilaian Akademik & Portofolio Lapangan Mahasiswa</p>
-        </div>
+    setSaving(true);
+    try {
+      const parseNum = (v: number | string) => (v === "" ? 0 : Number(v));
 
-        <div class="meta-grid">
-          <div class="meta-item"><span class="meta-label">Nama Mahasiswa:</span><span class="meta-value">${studentInfo?.nama || "-"}</span></div>
-          <div class="meta-item"><span class="meta-label">NIM:</span><span class="meta-value">${studentInfo?.nim || "-"}</span></div>
-          <div class="meta-item"><span class="meta-label">Program Studi:</span><span class="meta-value">${studentInfo?.programStudi || "-"}</span></div>
-          <div class="meta-item"><span class="meta-label">Kelompok:</span><span class="meta-value">${studentInfo?.kelompok || "-"}</span></div>
-          <div class="meta-item"><span class="meta-label">Wilayah Tugas:</span><span class="meta-value">${studentInfo?.rw || "-"}, Kel. ${studentInfo?.kelurahan || "-"}</span></div>
-          <div class="meta-item"><span class="meta-label">Dosen Pendamping (DPL):</span><span class="meta-value">${studentInfo?.dplNama || "-"}</span></div>
-          <div class="meta-item"><span class="meta-label">Mitra Pendamping (MPL):</span><span class="meta-value">${studentInfo?.namaMitraPenilai || scores.namaMitraPenilai || "Mitra Pendamping Lapangan"}</span></div>
-        </div>
+      const payload = {
+        studentId: selectedStudent.studentId,
+        skorDplPerencanaan: parseNum(formScores.skorDplPerencanaan),
+        skorDplKontribusi: parseNum(formScores.skorDplKontribusi),
+        skorDplLogbook: parseNum(formScores.skorDplLogbook),
+        skorDplAnalisis: parseNum(formScores.skorDplAnalisis),
+        skorDplOutput: parseNum(formScores.skorDplOutput),
+        skorDplLaporanAkhir: parseNum(formScores.skorDplLaporanAkhir),
+        catatanDpl: formScores.catatanDpl,
+      };
 
-        <!-- Tabel DPL (30%) -->
-        <h4 style="margin: 6px 0 3px 0; font-size: 9pt; color: #0f172a; text-transform: uppercase;">A. Penilaian Dosen Pendamping Lapangan (Bobot 30%)</h4>
-        <table>
-          <thead>
-            <tr>
-              <th width="5%" class="text-center">No</th>
-              <th width="55%">Aspek Penilaian</th>
-              <th width="15%" class="text-center">Bobot</th>
-              <th width="10%" class="text-center">Skor (0-4)</th>
-              <th width="15%" class="text-right">Nilai</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td class="text-center">1</td><td>Perencanaan & Pemahaman Program</td><td class="text-center">5%</td><td class="text-center">${scores.skorDplPerencanaan}</td><td class="text-right">${nilaiAspekDpl.perencanaan.toFixed(2)}</td></tr>
-            <tr><td class="text-center">2</td><td>Kontribusi Individu</td><td class="text-center">5%</td><td class="text-center">${scores.skorDplKontribusi}</td><td class="text-right">${nilaiAspekDpl.kontribusi.toFixed(2)}</td></tr>
-            <tr><td class="text-center">3</td><td>Logbook & Dokumentasi Akademik</td><td class="text-center">5%</td><td class="text-center">${scores.skorDplLogbook}</td><td class="text-right">${nilaiAspekDpl.logbook.toFixed(2)}</td></tr>
-            <tr><td class="text-center">4</td><td>Analisis Masalah & Solusi</td><td class="text-center">5%</td><td class="text-center">${scores.skorDplAnalisis}</td><td class="text-right">${nilaiAspekDpl.analisis.toFixed(2)}</td></tr>
-            <tr><td class="text-center">5</td><td>Output, Outcome, & Dampak</td><td class="text-center">5%</td><td class="text-center">${scores.skorDplOutput}</td><td class="text-right">${nilaiAspekDpl.output.toFixed(2)}</td></tr>
-            <tr><td class="text-center">6</td><td>Laporan Akhir, Evaluasi, & Refleksi</td><td class="text-center">5%</td><td class="text-center">${scores.skorDplLaporanAkhir}</td><td class="text-right">${nilaiAspekDpl.laporanAkhir.toFixed(2)}</td></tr>
-            <tr class="subtotal-row"><td colspan="4" style="text-align: right;">SUBTOTAL DPL (30%):</td><td class="text-right">${subtotalDpl.toFixed(2)}</td></tr>
-          </tbody>
-        </table>
+      await penilaianKknApiService.savePenilaian(payload);
 
-        <!-- Tabel MPL (70%) -->
-        <h4 style="margin: 6px 0 3px 0; font-size: 9pt; color: #0f172a; text-transform: uppercase;">B. Penilaian Mitra Pendamping Lapangan (Bobot 70%)</h4>
-        <table>
-          <thead>
-            <tr>
-              <th width="5%" class="text-center">No</th>
-              <th width="40%">Aspek Penilaian</th>
-              <th width="15%" class="text-center">Bobot</th>
-              <th width="15%" class="text-center">Skor (0-4)</th>
-              <th width="25%" class="text-right">Nilai</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td class="text-center">1</td><td>Kehadiran dan Kedisiplinan</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraKehadiran}</td><td class="text-right">${nilaiAspekMitra.kehadiran.toFixed(2)}</td></tr>
-            <tr><td class="text-center">2</td><td>Warga Binaan</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraWargaBinaan}</td><td class="text-right">${nilaiAspekMitra.wargaBinaan.toFixed(2)}</td></tr>
-            <tr><td class="text-center">3</td><td>Keterlibatan Program Kerja</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraProker}</td><td class="text-right">${nilaiAspekMitra.proker.toFixed(2)}</td></tr>
-            <tr><td class="text-center">4</td><td>Komunikasi & Etika</td><td class="text-center">8%</td><td class="text-center">${scores.skorMitraKomunikasi}</td><td class="text-right">${nilaiAspekMitra.komunikasi.toFixed(2)}</td></tr>
-            <tr><td class="text-center">5</td><td>Tanggung Jawab & Kerja Sama</td><td class="text-center">8%</td><td class="text-center">${scores.skorMitraTanggungJawab}</td><td class="text-right">${nilaiAspekMitra.tanggungJawab.toFixed(2)}</td></tr>
-            <tr><td class="text-center">6</td><td>Bukti Kegiatan</td><td class="text-center">7%</td><td class="text-center">${scores.skorMitraBuktiKegiatan}</td><td class="text-right">${nilaiAspekMitra.buktiKegiatan.toFixed(2)}</td></tr>
-            <tr><td class="text-center">7</td><td>Dampak kepada Masyarakat</td><td class="text-center">10%</td><td class="text-center">${scores.skorMitraDampak}</td><td class="text-right">${nilaiAspekMitra.dampak.toFixed(2)}</td></tr>
-            <tr><td class="text-center">8</td><td>Inisiatif & Problem Solving</td><td class="text-center">7%</td><td class="text-center">${scores.skorMitraInisiatif}</td><td class="text-right">${nilaiAspekMitra.inisiatif.toFixed(2)}</td></tr>
-            <tr class="subtotal-row"><td colspan="4" style="text-align: right;">SUBTOTAL MPL (70%):</td><td class="text-right">${subtotalMitra.toFixed(2)}</td></tr>
-          </tbody>
-        </table>
+      // Determine updated status
+      const hasAny = Object.values(payload).some(
+        (v, i) => i < 6 && typeof v === "number" && v > 0
+      );
+      const hasAll =
+        payload.skorDplPerencanaan > 0 &&
+        payload.skorDplKontribusi > 0 &&
+        payload.skorDplLogbook > 0 &&
+        payload.skorDplAnalisis > 0 &&
+        payload.skorDplOutput > 0 &&
+        payload.skorDplLaporanAkhir > 0;
 
-        <!-- Rekap Nilai Akhir -->
-        <div class="final-box">
-          <div>
-            <div style="font-size: 8pt; font-weight: 700; text-transform: uppercase; color: #047857;">NILAI AKHIR KUMULATIF</div>
-            <div style="font-size: 8pt; color: #334155;">Subtotal DPL (${subtotalDpl.toFixed(2)}) + Subtotal MPL (${subtotalMitra.toFixed(2)})</div>
-          </div>
-          <div style="text-align: right;">
-            <span class="final-score">${nilaiAkhir.toFixed(2)}</span>
-            <span style="font-weight: 800; font-size: 9pt; background: #059669; color: white; padding: 2px 8px; border-radius: 4px; margin-left: 6px;">${currentCategory.label} (${currentCategory.letter})</span>
-          </div>
-        </div>
+      const newStatusDpl = hasAll
+        ? ("SUDAH_DINILAI" as const)
+        : hasAny
+        ? ("SEDANG_DINILAI" as const)
+        : ("BELUM_DINILAI" as const);
 
-        <div class="sig-section">
-          <div class="sig-box">
-            <p>Dosen Pendamping Lapangan (DPL),</p>
-            <div class="sig-space"></div>
-            <p style="text-decoration: underline; font-weight: bold; margin: 0;">${studentInfo?.dplNama || "Dosen Pendamping Lapangan"}</p>
-            <p style="font-size: 7.5pt; color: #64748b; margin: 0;">NIP. ${studentInfo?.dplNip || "-"}</p>
-          </div>
-          <div class="sig-box">
-            <p>Mitra Pendamping Lapangan (MPL),</p>
-            <div class="sig-space"></div>
-            <p style="text-decoration: underline; font-weight: bold; margin: 0;">${studentInfo?.namaMitraPenilai || scores.namaMitraPenilai || "Mitra Pendamping Lapangan"}</p>
-            <p style="font-size: 7.5pt; color: #64748b; margin: 0;">Mitra Pendamping Lapangan</p>
-          </div>
-        </div>
+      // Update state locally
+      setStudents((prev) =>
+        prev.map((s) => {
+          if (s.studentId === selectedStudent.studentId) {
+            return {
+              ...s,
+              ...payload,
+              subtotalDpl: computedScores.total,
+              nilaiAkhir: computedScores.total,
+              kategori: computedScores.predikat,
+              statusDpl: newStatusDpl,
+            };
+          }
+          return s;
+        })
+      );
 
-        <script>
-          window.onload = function() { window.print(); };
-        </script>
-      </body>
-      </html>
-    `;
+      // Set to view mode after saving if fully graded
+      if (newStatusDpl === "SUDAH_DINILAI") {
+        setIsEditMode(false);
+      }
 
-    printWindow.document.open();
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
+      toast.success("Penilaian berhasil disimpan ke database!");
+    } catch (err: any) {
+      console.error("Save error:", err);
+      toast.error(err.response?.data?.message || err.message || "Gagal menyimpan penilaian");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-slate-50 dark:bg-slate-950 p-4 md:p-6 space-y-6 text-slate-800 dark:text-slate-100">
-      {/* Header Utama */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+    <div className="min-h-[calc(100vh-64px)] bg-[#f8fafc] dark:bg-slate-950 p-4 sm:p-6 lg:p-8 space-y-6 text-slate-800 dark:text-slate-100 max-w-[1600px] mx-auto">
+      {/* Header Halaman */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/50 text-[#009966] dark:text-emerald-400 rounded-2xl">
-              <Award size={24} />
-            </div>
-            <div>
-              <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-                Penilaian Mahasiswa (Individu)
-              </h1>
-              <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
-                Evaluasi performa lapangan (Mitra 70%) dan capaian akademik (DPL 30%) mahasiswa dengan kalkulasi otomatis.
-              </p>
-            </div>
-          </div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            Penilaian Individu Mahasiswa
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Berikan nilai secara objektif berdasarkan kinerja individu mahasiswa KKN
+          </p>
         </div>
+
+        <button
+          type="button"
+          onClick={fetchStudents}
+          disabled={loading}
+          className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all shadow-2xs cursor-pointer self-start sm:self-auto"
+        >
+          <RefreshCw size={13} className={loading ? "animate-spin text-[#009966]" : "text-[#009966]"} />
+          <span>Segarkan Data</span>
+        </button>
       </div>
 
-      {/* KPI Cards Ringkasan Nilai Angkatan */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-400 flex items-center justify-center font-black shrink-0">
-            <Users size={18} />
-          </div>
-          <div>
-            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Total Mahasiswa</span>
-            <span className="text-xl font-black text-slate-900 dark:text-slate-100">{studentsRekap.length} Orang</span>
-          </div>
-        </div>
+      {/* Main 2-Panel Master-Detail Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* PANEL KIRI: Tabel Daftar Mahasiswa (lg:col-span-7) */}
+        <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-5 space-y-4">
+          {/* Search & Filters */}
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+            {/* Search Input */}
+            <div className="sm:col-span-6 relative">
+              <Search
+                size={16}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Cari NIM atau nama mahasiswa..."
+                className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] transition"
+              />
+            </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 flex items-center justify-center font-black shrink-0">
-            <GraduationCap size={18} />
-          </div>
-          <div>
-            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Rerata Nilai DPL</span>
-            <span className="text-xl font-black text-amber-700 dark:text-amber-400">
-              {studentsRekap.length > 0
-                ? (studentsRekap.reduce((acc, s) => acc + (s.subtotalDpl || 0), 0) / studentsRekap.length).toFixed(1)
-                : "0"}
-            </span>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-black shrink-0">
-            <ClipboardList size={18} />
-          </div>
-          <div>
-            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Rerata Nilai Mitra</span>
-            <span className="text-xl font-black text-emerald-700 dark:text-emerald-400">
-              {studentsRekap.length > 0
-                ? (studentsRekap.reduce((acc, s) => acc + (s.subtotalMitra || 0), 0) / studentsRekap.length).toFixed(1)
-                : "0"}
-            </span>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 flex items-center justify-center font-black shrink-0">
-            <Award size={18} />
-          </div>
-          <div>
-            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Rerata Nilai Akumulasi</span>
-            <span className="text-xl font-black text-blue-700 dark:text-blue-400">
-              {studentsRekap.length > 0
-                ? (studentsRekap.reduce((acc, s) => acc + (s.nilaiAkhir || 0), 0) / studentsRekap.length).toFixed(1)
-                : "0"}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* TABEL REKAPITULASI MAHASISWA DENGAN KOLOM MANDIRI */}
-      <div id="tabel-mahasiswa-section" className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-2xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-          <div>
-            <h2 className="text-base font-black text-slate-900 dark:text-slate-100">
-              Daftar Mahasiswa KKN
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Pilih mahasiswa untuk membuka formulir penilaian aspek dan portofolio KKN.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2.5 flex-wrap">
             {/* Filter Kelompok */}
-            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
-              <Filter size={14} className="text-slate-400" />
+            <div className="sm:col-span-3">
               <select
                 value={filterKelompok}
                 onChange={(e) => {
                   setFilterKelompok(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="bg-transparent font-semibold text-slate-700 dark:text-slate-300 outline-none cursor-pointer"
+                className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] transition cursor-pointer"
               >
                 <option value="ALL">Semua Kelompok</option>
                 {uniqueKelompokList.map((k) => (
-                  <option key={k} value={k}>{k}</option>
+                  <option key={k} value={k}>
+                    {k}
+                  </option>
                 ))}
               </select>
             </div>
 
-            {/* Search Input */}
-            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/60 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs w-64">
-              <Search size={14} className="text-slate-400 shrink-0" />
-              <input
-                type="text"
-                placeholder="Cari NIM, Nama, Prodi..."
-                value={searchQuery}
+            {/* Filter Status */}
+            <div className="sm:col-span-3">
+              <select
+                value={filterStatus}
                 onChange={(e) => {
-                  setSearchQuery(e.target.value);
+                  setFilterStatus(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="bg-transparent outline-none w-full text-slate-800 dark:text-slate-100 placeholder-slate-400"
-              />
+                className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] transition cursor-pointer"
+              >
+                <option value="ALL">Semua Status</option>
+                <option value="BELUM_DINILAI">Belum Dinilai</option>
+                <option value="SEDANG_DINILAI">Sedang Dinilai</option>
+                <option value="SUDAH_DINILAI">Sudah Dinilai</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Table Container */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase tracking-wider font-semibold">
+                  <th className="py-3 px-3 w-10 text-center">No.</th>
+                  <th className="py-3 px-3">NIM</th>
+                  <th className="py-3 px-3">Nama Mahasiswa</th>
+                  <th className="py-3 px-3">Prodi</th>
+                  <th className="py-3 px-3">Kelompok</th>
+                  <th className="py-3 px-3 text-center">Nilai</th>
+                  <th className="py-3 px-3 text-center">Status</th>
+                  <th className="py-3 px-3 text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center text-slate-400">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Loader2 className="w-6 h-6 animate-spin text-[#009966]" />
+                        <span>Memuat data mahasiswa...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center text-slate-400">
+                      Tidak ada data mahasiswa yang cocok dengan filter.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedStudents.map((s, idx) => {
+                    const rowNumber = (currentPage - 1) * itemsPerPage + idx + 1;
+                    const isSelected = s.studentId === selectedStudentId;
+
+                    return (
+                      <tr
+                        key={s.studentId}
+                        onClick={() => selectStudent(s)}
+                        className={`group cursor-pointer transition ${
+                          isSelected
+                            ? "bg-emerald-50/40 dark:bg-emerald-950/20"
+                            : "hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/40"
+                        }`}
+                      >
+                        {/* No. dengan active indicator border */}
+                        <td
+                          className={`py-3.5 px-3 text-center font-medium text-slate-500 relative ${
+                            isSelected ? "font-bold text-[#009966]" : ""
+                          }`}
+                        >
+                          {isSelected && (
+                            <span className="absolute left-0 top-0 bottom-0 w-1 bg-[#009966] rounded-r-sm" />
+                          )}
+                          {rowNumber}
+                        </td>
+
+                        {/* NIM */}
+                        <td className="py-3.5 px-3 font-normal text-slate-700 dark:text-slate-300">
+                          {s.nim || "-"}
+                        </td>
+
+                        {/* Nama Mahasiswa */}
+                        <td className="py-3.5 px-3 font-semibold text-slate-900 dark:text-slate-100">
+                          {s.nama}
+                        </td>
+
+                        {/* Prodi */}
+                        <td className="py-3.5 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                          {s.jurusan || s.programStudi || "S1 Teknik"}
+                        </td>
+
+                        {/* Kelompok */}
+                        <td className="py-3.5 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                          {s.kelompok || "Kelompok 1"}
+                        </td>
+
+                        {/* Nilai */}
+                        <td className="py-3.5 px-3 text-center font-bold text-slate-800 dark:text-slate-200">
+                          {s.subtotalDpl > 0 ? Number(s.subtotalDpl).toFixed(2) : "—"}
+                        </td>
+
+                        {/* Status Badge */}
+                        <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                          {s.statusDpl === "SUDAH_DINILAI" ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              Sudah Dinilai
+                            </span>
+                          ) : s.statusDpl === "SEDANG_DINILAI" ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/60">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                              Sedang Dinilai
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                              Belum Dinilai
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Aksi Button */}
+                        <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                          {s.statusDpl === "SEDANG_DINILAI" ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleActionClick(s);
+                              }}
+                              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#009966] hover:bg-[#008055] text-white shadow-2xs transition cursor-pointer"
+                            >
+                              Lanjutkan
+                            </button>
+                          ) : s.statusDpl === "SUDAH_DINILAI" ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleActionClick(s);
+                              }}
+                              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-[#009966] text-[#009966] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition cursor-pointer"
+                            >
+                              Lihat Nilai
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleActionClick(s);
+                              }}
+                              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-[#009966] text-[#009966] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition cursor-pointer"
+                            >
+                              Beri Nilai
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Footer (10 Rekord per halaman) */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
+            <div>
+              Menampilkan{" "}
+              <span className="font-semibold text-slate-700 dark:text-slate-300">
+                {filteredStudents.length === 0
+                  ? 0
+                  : (currentPage - 1) * itemsPerPage + 1}
+                -
+                {Math.min(currentPage * itemsPerPage, filteredStudents.length)}
+              </span>{" "}
+              dari{" "}
+              <span className="font-semibold text-slate-700 dark:text-slate-300">
+                {filteredStudents.length}
+              </span>{" "}
+              mahasiswa
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer disabled:cursor-not-allowed"
+              >
+                &lt;
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => {
+                if (
+                  totalPages > 5 &&
+                  pg !== 1 &&
+                  pg !== totalPages &&
+                  Math.abs(pg - currentPage) > 1
+                ) {
+                  if (pg === 2 || pg === totalPages - 1) {
+                    return (
+                      <span key={pg} className="px-1 text-slate-400">
+                        ...
+                      </span>
+                    );
+                  }
+                  return null;
+                }
+
+                const isActive = pg === currentPage;
+                return (
+                  <button
+                    key={pg}
+                    type="button"
+                    onClick={() => setCurrentPage(pg)}
+                    className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition cursor-pointer ${
+                      isActive
+                        ? "bg-[#009966] text-white"
+                        : "border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    {pg}
+                  </button>
+                );
+              })}
+
+              <button
+                type="button"
+                disabled={currentPage === totalPages || totalPages === 0}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer disabled:cursor-not-allowed"
+              >
+                &gt;
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Tabel Mahasiswa dengan Kolom Terpisah */}
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 size={32} className="animate-spin text-[#009966]" />
+        {/* PANEL KANAN: Form Penilaian Individu (lg:col-span-5) */}
+        <div
+          ref={formRef}
+          className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-5 space-y-4"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
+              Form Penilaian Individu
+            </h2>
+            {selectedStudent && selectedStudent.statusDpl === "SUDAH_DINILAI" && (
+              <span
+                className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${
+                  isEditMode
+                    ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/60"
+                    : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                }`}
+              >
+                {isEditMode ? "Mode Edit" : "Mode Lihat"}
+              </span>
+            )}
           </div>
-        ) : filteredStudents.length === 0 ? (
-          <div className="text-center py-12 text-slate-400 text-xs border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-800/60">
-            Tidak ditemukan data mahasiswa yang sesuai dengan pencarian atau filter.
-          </div>
-        ) : (
-          <div className="overflow-x-auto rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-extrabold uppercase text-[10.5px] tracking-wider border-b border-slate-200 dark:border-slate-800">
-                  <th className="py-3.5 px-4 text-center w-12">No</th>
-                  <th className="py-3.5 px-4 w-32">NIM</th>
-                  <th className="py-3.5 px-4 min-w-[200px]">Nama Mahasiswa</th>
-                  <th className="py-3.5 px-4 w-44">Program Studi</th>
-                  <th className="py-3.5 px-4 w-40">Kelompok</th>
-                  <th className="py-3.5 px-4 text-center w-28">Nilai Akhir</th>
-                  <th className="py-3.5 px-4 text-center w-36">Status</th>
-                  <th className="py-3.5 px-4 text-center w-36">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
-                {paginatedStudents.map((st, idx) => {
-                  const hasDpl = st.subtotalDpl > 0;
-                  const hasMitra = st.subtotalMitra > 0;
-                  const isFull = hasDpl && hasMitra;
-                  const hasScore = st.nilaiAkhir > 0 || hasDpl || hasMitra;
-                  const cat = getCategory(st.nilaiAkhir);
 
-                  return (
-                    <tr
-                      key={st.studentId}
-                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
-                    >
-                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
-                        {(currentPage - 1) * itemsPerPage + idx + 1}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-800 dark:text-slate-200">
-                        {st.nim}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-black text-xs flex items-center justify-center border border-emerald-200 dark:border-emerald-800 shrink-0">
-                            {st.nama.charAt(0).toUpperCase()}
-                          </div>
-                          <span className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">
-                            {st.nama}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">
-                        {st.jurusan || "-"}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 font-semibold">
-                        {st.kelompok}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        {st.nilaiAkhir > 0 ? (
-                          <div className="inline-flex items-center gap-1.5">
-                            <span className="font-mono font-black text-sm text-slate-900 dark:text-slate-100">
-                              {st.nilaiAkhir.toFixed(1)}
-                            </span>
-                            <span className={`text-[10px] px-1.5 py-0.2 rounded font-extrabold border ${cat.color}`}>
-                              {cat.letter}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 font-normal">—</span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        {isFull ? (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-[#ecfdf5] text-[#047857] border border-[#a7f3d0] dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#047857]"></span>
-                            <span>Lengkap</span>
-                          </span>
-                        ) : hasDpl || hasMitra ? (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-[#fffbeb] text-[#d97706] border border-[#fef3c7] dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/60">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#d97706]"></span>
-                            <span>Sedang Dinilai</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-[#f8fafc] text-[#64748b] border border-[#e2e8f0] dark:bg-slate-800/80 dark:text-slate-400 dark:border-slate-700">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#94a3b8]"></span>
-                            <span>Belum Dinilai</span>
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenAssessmentModal(st.studentId)}
-                          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer shadow-2xs ${
-                            isFull
-                              ? "bg-white hover:bg-emerald-50 dark:bg-slate-900 dark:hover:bg-emerald-950/30 text-[#009966] border border-[#009966]"
-                              : hasScore
-                              ? "bg-[#009966] hover:bg-[#008055] text-white"
-                              : "bg-[#009966] hover:bg-[#008055] text-white"
-                          }`}
-                        >
-                          <Edit3 size={13} />
-                          <span>{isFull ? "Lihat / Edit" : hasScore ? "Lanjutkan" : "Beri Nilai"}</span>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Pagination */}
-        <div className="pt-2">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={(p) => setCurrentPage(p)}
-          />
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* POP-UP MODAL PENILAIAN MODERN & INTERAKTIF */}
-      {/* ========================================================================= */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div
-            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden text-slate-800 dark:text-slate-100 animate-in zoom-in-95 duration-150"
-            role="dialog"
-            aria-modal="true"
-          >
-            {/* Header Modal: Identitas Mahasiswa */}
-            <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-start sm:items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-black text-lg shadow-md shrink-0">
-                  {studentInfo?.nama ? studentInfo.nama.charAt(0).toUpperCase() : "M"}
+          {selectedStudent ? (
+            <>
+              {/* Selected Student Banner Card */}
+              <div className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/40 rounded-xl p-3.5 border border-slate-100 dark:border-slate-700/60 flex items-center gap-3">
+                <div className="w-11 h-11 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-[#009966] flex items-center justify-center shrink-0">
+                  <User size={22} />
                 </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-black bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300">
-                      {studentInfo?.kelompok || "Kelompok KKN"}
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                      <MapPin size={11} />
-                      {studentInfo?.rw ? `${studentInfo.rw}, ` : ""}{studentInfo?.kelurahan ? `Kel. ${studentInfo.kelurahan}` : "Wilayah Coblong"}
-                    </span>
-                  </div>
-                  <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100 mt-1 flex items-center gap-2">
-                    <span>{studentInfo?.nama || "Memuat Mahasiswa..."}</span>
-                    <span className="font-mono text-sm text-slate-500 font-normal">({studentInfo?.nim || "-"})</span>
-                  </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    {studentInfo?.programStudi || "-"} ({studentInfo?.fakultas || "-"}) &bull; DPL: <strong>{studentInfo?.dplNama || "-"}</strong>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                    {selectedStudent.nama}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                    NIM {selectedStudent.nim || "-"} •{" "}
+                    {selectedStudent.jurusan || selectedStudent.programStudi || "S1"} •{" "}
+                    {selectedStudent.kelompok || "Kelompok KKN"}
                   </p>
                 </div>
               </div>
 
-              {/* Close Button & Role Badge */}
-              <div className="flex items-center gap-2 self-end md:self-auto">
-                {isDpl && !isSuper && (
-                  <span className="px-3 py-1 rounded-xl text-xs font-black bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-1.5">
-                    <GraduationCap size={14} className="text-amber-600" />
-                    <span>Mode DPL</span>
-                  </span>
-                )}
-                {isMitra && !isSuper && (
-                  <span className="px-3 py-1 rounded-xl text-xs font-black bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5">
-                    <ClipboardList size={14} className="text-emerald-600" />
-                    <span>Mode Mitra (MPL)</span>
-                  </span>
-                )}
-                {isSuper && (
-                  <span className="px-3 py-1 rounded-xl text-xs font-black bg-blue-50 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center gap-1.5">
-                    <Award size={14} className="text-blue-600" />
-                    <span>Mode Super User</span>
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-                  title="Tutup Formulir"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
-
-            {/* Sticky Real-time Calculation Ribbon */}
-            <div className="bg-slate-100/90 dark:bg-slate-800/80 px-5 sm:px-6 py-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
-              <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Subtotal DPL (30%)</span>
-                  <span className="text-base sm:text-lg font-black text-amber-700 dark:text-amber-400">
-                    {subtotalDpl.toFixed(2)}
-                  </span>
-                </div>
-                <span className="text-slate-300 text-lg font-light">+</span>
-                <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Subtotal Mitra (70%)</span>
-                  <span className="text-base sm:text-lg font-black text-emerald-700 dark:text-emerald-400">
-                    {subtotalMitra.toFixed(2)}
-                  </span>
-                </div>
-                <span className="text-slate-300 text-lg font-light">=</span>
-                <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Nilai Kumulatif</span>
-                  <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100">
-                    {nilaiAkhir.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className={`px-3 py-1.5 rounded-xl text-xs font-black border ${currentCategory.color}`}>
-                  Predikat: {currentCategory.label} ({currentCategory.letter})
-                </span>
-                <span className={`px-3 py-1.5 rounded-xl text-xs font-black border ${isGradeComplete ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300" : "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300"}`}>
-                  Status: {isGradeComplete ? "Penilaian Lengkap" : "Menunggu Lengkap"}
-                </span>
-              </div>
-            </div>
-
-            {/* Tab Navigation */}
-            <div className="flex items-center border-b border-slate-200 dark:border-slate-800 px-5 sm:px-6 bg-white dark:bg-slate-900 gap-2 shrink-0">
-              {(canEditDpl || isSuper) && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("DPL")}
-                  className={`py-3 px-4 text-xs font-extrabold flex items-center gap-2 border-b-2 transition cursor-pointer ${
-                    activeTab === "DPL"
-                      ? "border-amber-500 text-amber-700 dark:text-amber-400 bg-amber-50/40 dark:bg-amber-950/20"
-                      : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                  }`}
-                >
-                  <GraduationCap size={16} />
-                  <span>Akademik DPL (30%)</span>
-                  <span className="px-1.5 py-0.2 rounded-md bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 text-[10px] font-black">
-                    {subtotalDpl.toFixed(1)} / 30
-                  </span>
-                </button>
-              )}
-
-              {(canEditMitra || isSuper) && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("MPL")}
-                  className={`py-3 px-4 text-xs font-extrabold flex items-center gap-2 border-b-2 transition cursor-pointer ${
-                    activeTab === "MPL"
-                      ? "border-emerald-600 text-emerald-700 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20"
-                      : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                  }`}
-                >
-                  <ClipboardList size={16} />
-                  <span>Lapangan Mitra / MPL (70%)</span>
-                  <span className="px-1.5 py-0.2 rounded-md bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-black">
-                    {subtotalMitra.toFixed(1)} / 70
-                  </span>
-                </button>
-              )}
-
-              {isSuper && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("RINGKASAN")}
-                  className={`py-3 px-4 text-xs font-extrabold flex items-center gap-2 border-b-2 transition cursor-pointer ${
-                    activeTab === "RINGKASAN"
-                      ? "border-blue-600 text-blue-700 dark:text-blue-400 bg-blue-50/40 dark:bg-blue-950/20"
-                      : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                  }`}
-                >
-                  <BookOpen size={16} />
-                  <span>Ringkasan Komprehensif</span>
-                </button>
-              )}
-            </div>
-
-            {/* Modal Body (Scrollable) */}
-            <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-6">
-              {loadingDetail ? (
-                <div className="flex flex-col items-center justify-center py-16 text-slate-400 gap-3">
-                  <Loader2 size={32} className="animate-spin text-[#009966]" />
-                  <span className="text-xs font-medium">Memuat data aspek penilaian mahasiswa...</span>
-                </div>
-              ) : (
-                <>
-                  {/* TAB 1: ASPEK DPL */}
-                  {activeTab === "DPL" && (
-                    <div className="space-y-5">
-                      {/* Master Fill 1-Klik DPL */}
-                      <div className="bg-amber-50/70 dark:bg-amber-950/20 p-4 rounded-2xl border border-amber-200/80 dark:border-amber-900/40 space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div>
-                            <h3 className="text-sm font-black text-amber-950 dark:text-amber-200 flex items-center gap-1.5">
-                              <Sparkles size={16} className="text-amber-600" />
-                              Isi Cepat Seluruh Aspek DPL (1-Klik):
-                            </h3>
-                            <p className="text-xs text-amber-800/80 dark:text-amber-300/80 mt-0.5">
-                              Pilih skor cepat untuk mengisi ke-6 aspek sekaligus, lalu sesuaikan aspek tertentu jika perlu.
-                            </p>
-                          </div>
-                          {canEditDpl && (
-                            <div className="flex items-center gap-1.5 flex-wrap shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => handleDplMasterFill(4)}
-                                className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 text-amber-800 dark:text-amber-300 rounded-lg text-xs font-bold transition cursor-pointer shadow-2xs"
-                              >
-                                ⭐ Semua 4 (100%)
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDplMasterFill(3)}
-                                className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 text-amber-800 dark:text-amber-300 rounded-lg text-xs font-bold transition cursor-pointer shadow-2xs"
-                              >
-                                👍 Semua 3 (75%)
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDplMasterFill(2)}
-                                className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 text-amber-800 dark:text-amber-300 rounded-lg text-xs font-bold transition cursor-pointer shadow-2xs"
-                              >
-                                👌 Semua 2 (50%)
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Tabel Aspek DPL */}
-                      <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-                        <table className="w-full text-left text-xs border-collapse">
-                          <thead>
-                            <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 font-extrabold uppercase text-[10.5px] border-b border-slate-200 dark:border-slate-800">
-                              <th className="py-3 px-3 text-center w-8">No</th>
-                              <th className="py-3 px-3 min-w-[220px]">Aspek Akademik DPL</th>
-                              <th className="py-3 px-2 text-center w-14">Bobot</th>
-                              <th className="py-3 px-3 text-center w-60">Pilih Skor (0 – 4)</th>
-                              <th className="py-3 px-3 text-right w-20">Nilai</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
-                            {ASPEK_DPL_CONFIG.map((item) => {
-                              const currentScore = scores[item.key];
-                              const aspectVal = calcAspect(currentScore, item.bobot);
-
-                              return (
-                                <tr key={item.key} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
-                                  <td className="py-3.5 px-3 text-center font-bold text-slate-400">{item.no}</td>
-                                  <td className="py-3.5 px-3">
-                                    <div className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
-                                      {item.title}
-                                    </div>
-                                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                                      {item.desc}
-                                    </div>
-                                  </td>
-                                  <td className="py-3.5 px-2 text-center font-bold text-slate-700 dark:text-slate-300">
-                                    {item.bobot}%
-                                  </td>
-                                  <td className="py-3.5 px-3 text-center">
-                                    <div className="flex items-center justify-center gap-1.5">
-                                      {SCORE_SCALE.map((scale) => {
-                                        const isSelected = currentScore === scale.val;
-                                        return (
-                                          <button
-                                            key={scale.val}
-                                            type="button"
-                                            disabled={!canEditDpl}
-                                            onClick={() => handleScoreChange(item.key, scale.val)}
-                                            className={`w-9 h-8 rounded-xl text-xs font-black transition flex flex-col items-center justify-center cursor-pointer ${
-                                              isSelected
-                                                ? "bg-amber-500 text-white shadow-sm ring-2 ring-amber-400/50 scale-105"
-                                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-                                            } ${canEditDpl ? "" : "cursor-not-allowed opacity-75"}`}
-                                            title={scale.desc}
-                                          >
-                                            <span>{scale.label}</span>
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  </td>
-                                  <td className="py-3.5 px-3 text-right font-black text-slate-900 dark:text-slate-100 text-sm">
-                                    {aspectVal.toFixed(2)}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {/* Catatan DPL & Template */}
-                      <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2.5">
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                            <MessageSquare size={13} className="text-amber-600" />
-                            Catatan Evaluasi Akademik Dosen Pendamping Lapangan (DPL):
-                          </label>
-                        </div>
-
-                        {canEditDpl && (
-                          <div className="flex flex-wrap gap-1.5">
-                            {DPL_FEEDBACK_TEMPLATES.map((tpl, i) => (
-                              <button
-                                key={i}
-                                type="button"
-                                onClick={() => setScores((prev) => ({ ...prev, catatanDpl: tpl }))}
-                                className="px-2.5 py-1 bg-white dark:bg-slate-900 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-slate-200 dark:border-slate-700 hover:border-amber-300 text-[10.5px] text-slate-600 dark:text-slate-300 rounded-lg text-left transition cursor-pointer"
-                              >
-                                + {tpl.length > 40 ? `${tpl.substring(0, 40)}...` : tpl}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-
-                        <textarea
-                          rows={3}
-                          value={scores.catatanDpl}
-                          onChange={(e) => setScores((prev) => ({ ...prev, catatanDpl: e.target.value }))}
-                          placeholder="Tuliskan catatan evaluasi akademik, bimbingan, atau saran perbaikan untuk mahasiswa..."
-                          disabled={!canEditDpl}
-                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-amber-500 disabled:bg-slate-100 dark:disabled:bg-slate-800"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* TAB 2: ASPEK MITRA / MPL */}
-                  {activeTab === "MPL" && (
-                    <div className="space-y-5">
-                      {/* Master Fill 1-Klik Mitra */}
-                      <div className="bg-emerald-50/70 dark:bg-emerald-950/20 p-4 rounded-2xl border border-emerald-200/80 dark:border-emerald-900/40 space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div>
-                            <h3 className="text-sm font-black text-emerald-950 dark:text-emerald-200 flex items-center gap-1.5">
-                              <Sparkles size={16} className="text-[#009966]" />
-                              Isi Cepat Seluruh Aspek Lapangan Mitra (1-Klik):
-                            </h3>
-                            <p className="text-xs text-emerald-800/80 dark:text-emerald-300/80 mt-0.5">
-                              Pilih skor cepat untuk mengisi ke-8 aspek kedisiplinan dan kontribusi lapangan.
-                            </p>
-                          </div>
-                          {canEditMitra && (
-                            <div className="flex items-center gap-1.5 flex-wrap shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => handleMitraMasterFill(4)}
-                                className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 rounded-lg text-xs font-bold transition cursor-pointer shadow-2xs"
-                              >
-                                ⭐ Semua 4 (100%)
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleMitraMasterFill(3)}
-                                className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 rounded-lg text-xs font-bold transition cursor-pointer shadow-2xs"
-                              >
-                                👍 Semua 3 (75%)
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleMitraMasterFill(2)}
-                                className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 rounded-lg text-xs font-bold transition cursor-pointer shadow-2xs"
-                              >
-                                👌 Semua 2 (50%)
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Tabel Aspek Mitra */}
-                      <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-                        <table className="w-full text-left text-xs border-collapse">
-                          <thead>
-                            <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 font-extrabold uppercase text-[10.5px] border-b border-slate-200 dark:border-slate-800">
-                              <th className="py-3 px-3 text-center w-8">No</th>
-                              <th className="py-3 px-3 min-w-[220px]">Aspek Penilaian Lapangan Mitra</th>
-                              <th className="py-3 px-2 text-center w-14">Bobot</th>
-                              <th className="py-3 px-3 text-center w-60">Pilih Skor (0 – 4)</th>
-                              <th className="py-3 px-3 text-right w-20">Nilai</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
-                            {ASPEK_MITRA_CONFIG.map((item) => {
-                              const currentScore = scores[item.key];
-                              const aspectVal = calcAspect(currentScore, item.bobot);
-
-                              return (
-                                <tr key={item.key} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
-                                  <td className="py-3.5 px-3 text-center font-bold text-slate-400">{item.no}</td>
-                                  <td className="py-3.5 px-3">
-                                    <div className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
-                                      {item.title}
-                                    </div>
-                                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                                      {item.desc}
-                                    </div>
-                                  </td>
-                                  <td className="py-3.5 px-2 text-center font-bold text-slate-700 dark:text-slate-300">
-                                    {item.bobot}%
-                                  </td>
-                                  <td className="py-3.5 px-3 text-center">
-                                    <div className="flex items-center justify-center gap-1.5">
-                                      {SCORE_SCALE.map((scale) => {
-                                        const isSelected = currentScore === scale.val;
-                                        return (
-                                          <button
-                                            key={scale.val}
-                                            type="button"
-                                            disabled={!canEditMitra}
-                                            onClick={() => handleScoreChange(item.key, scale.val)}
-                                            className={`w-9 h-8 rounded-xl text-xs font-black transition flex flex-col items-center justify-center cursor-pointer ${
-                                              isSelected
-                                                ? "bg-[#009966] text-white shadow-sm ring-2 ring-emerald-400/50 scale-105"
-                                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-                                            } ${canEditMitra ? "" : "cursor-not-allowed opacity-75"}`}
-                                            title={scale.desc}
-                                          >
-                                            <span>{scale.label}</span>
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  </td>
-                                  <td className="py-3.5 px-3 text-right font-black text-slate-900 dark:text-slate-100 text-sm">
-                                    {aspectVal.toFixed(2)}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {/* Catatan Mitra */}
-                      <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2.5">
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                            <MessageSquare size={13} className="text-[#009966]" />
-                            Catatan & Rekomendasi Mitra Lapangan (MPL / RW / Kelurahan):
-                          </label>
-                        </div>
-
-                        {canEditMitra && (
-                          <div className="flex flex-wrap gap-1.5">
-                            {MITRA_FEEDBACK_TEMPLATES.map((tpl, i) => (
-                              <button
-                                key={i}
-                                type="button"
-                                onClick={() => setScores((prev) => ({ ...prev, catatanMitra: tpl }))}
-                                className="px-2.5 py-1 bg-white dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-700 hover:border-emerald-300 text-[10.5px] text-slate-600 dark:text-slate-300 rounded-lg text-left transition cursor-pointer"
-                              >
-                                + {tpl.length > 40 ? `${tpl.substring(0, 40)}...` : tpl}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-
-                        <textarea
-                          rows={3}
-                          value={scores.catatanMitra}
-                          onChange={(e) => setScores((prev) => ({ ...prev, catatanMitra: e.target.value }))}
-                          placeholder="Tuliskan catatan apresiasi, keaktifan di RW, atau rekomendasi untuk mahasiswa..."
-                          disabled={!canEditMitra}
-                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-[#009966] disabled:bg-slate-100 dark:disabled:bg-slate-800"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* TAB 3: RINGKASAN KOMPREHENSIF */}
-                  {activeTab === "RINGKASAN" && (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-4 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 space-y-2">
-                          <h4 className="text-xs font-black text-amber-900 dark:text-amber-200 uppercase">Rekapitulasi DPL (30%)</h4>
-                          <ul className="text-xs space-y-1.5 divide-y divide-amber-100 dark:divide-amber-900/30">
-                            {ASPEK_DPL_CONFIG.map((a) => (
-                              <li key={a.key} className="pt-1.5 flex justify-between">
-                                <span>{a.title}:</span>
-                                <span className="font-bold">{calcAspect(scores[a.key], a.bobot).toFixed(2)}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div className="p-4 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40 space-y-2">
-                          <h4 className="text-xs font-black text-emerald-900 dark:text-emerald-200 uppercase">Rekapitulasi Mitra (70%)</h4>
-                          <ul className="text-xs space-y-1.5 divide-y divide-emerald-100 dark:divide-emerald-900/30">
-                            {ASPEK_MITRA_CONFIG.map((a) => (
-                              <li key={a.key} className="pt-1.5 flex justify-between">
-                                <span>{a.title}:</span>
-                                <span className="font-bold">{calcAspect(scores[a.key], a.bobot).toFixed(2)}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* Modal Footer Actions */}
-            <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 flex items-center justify-between gap-3 shrink-0">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
-                >
-                  Tutup
-                </button>
-                <button
-                  type="button"
-                  onClick={handlePrintPdf}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition border ${
-                    isGradeComplete
-                      ? "bg-white dark:bg-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 shadow-2xs cursor-pointer"
-                      : "bg-slate-100 dark:bg-slate-800/40 text-slate-400 border-slate-200 dark:border-slate-800 cursor-not-allowed"
-                  }`}
-                  title={isGradeComplete ? "Cetak Dokumen Resmi PDF" : "Cetak PDF baru aktif setelah nilai lengkap dari kedua pihak"}
-                >
-                  <Printer size={14} className={isGradeComplete ? "text-slate-600 dark:text-slate-300" : "text-slate-400"} />
-                  <span>Cetak PDF</span>
-                  {!isGradeComplete && (
-                    <span className="text-[9.5px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded font-bold ml-1">
-                      Belum Lengkap
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              {(canEditDpl || canEditMitra || isSuper) && (
-                <button
-                  type="button"
-                  onClick={() => setIsConfirmOpen(true)}
-                  disabled={saving || !selectedStudentId || loadingDetail}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-[#009966] hover:bg-[#008055] active:scale-98 text-white rounded-xl text-xs font-black transition shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-                  <span>Simpan Penilaian</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL KONFIRMASI INTERAKTIF */}
-      {isConfirmOpen && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-150">
-          <div
-            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 text-slate-800 dark:text-slate-100 space-y-4 animate-in zoom-in-95 duration-150"
-            role="alertdialog"
-            aria-modal="true"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0">
-                <AlertCircle size={22} />
-              </div>
+              {/* Subheading Aspek */}
               <div>
-                <h3 className="text-base font-black text-slate-900 dark:text-slate-100">
-                  Konfirmasi Simpan Penilaian
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Pastikan seluruh skor aspek yang Anda masukkan sudah sesuai.
-                </p>
+                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                  Aspek Akademik DPL
+                </h4>
               </div>
-            </div>
 
-            {/* Rekap Nilai yang Akan Disimpan */}
-            <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2.5 text-xs">
-              <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700">
-                <span className="text-slate-500 font-bold">Mahasiswa:</span>
-                <span className="font-black text-slate-900 dark:text-slate-100">{studentInfo?.nama} ({studentInfo?.nim})</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500">Subtotal DPL (30%):</span>
-                <span className="font-bold text-amber-700 dark:text-amber-400">{subtotalDpl.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500">Subtotal MPL (70%):</span>
-                <span className="font-bold text-emerald-700 dark:text-emerald-400">{subtotalMitra.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-700">
-                <span className="font-black text-slate-800 dark:text-slate-200">Nilai Akhir Kumulatif:</span>
-                <span className="font-black text-base text-slate-900 dark:text-slate-100">
-                  {nilaiAkhir.toFixed(2)} <span className="text-xs text-emerald-600 font-bold">({currentCategory.letter})</span>
-                </span>
-              </div>
-            </div>
+              {/* Rubric Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase tracking-wider font-semibold">
+                      <th className="py-2.5 px-2 w-8 text-center">No.</th>
+                      <th className="py-2.5 px-2">Aspek Penilaian</th>
+                      <th className="py-2.5 px-2 text-center w-14">Bobot</th>
+                      <th className="py-2.5 px-2 text-center w-28">Nilai</th>
+                      <th className="py-2.5 px-2 text-right w-14">Skor</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                    {ASPEK_DPL_CONFIG.map((aspek, idx) => {
+                      const val = formScores[aspek.key];
+                      const computedSkor = computedScores.scores[idx];
 
-            <p className="text-[11.5px] text-slate-500 leading-relaxed">
-              Data penilaian akan langsung disimpan ke database dan memperbarui rekapitulasi nilai KKN mahasiswa.
-            </p>
+                      return (
+                        <tr key={aspek.key} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/20">
+                          <td className="py-2 px-2 text-center font-medium text-slate-400">
+                            {aspek.no}
+                          </td>
+                          <td className="py-2 px-2 font-medium text-slate-700 dark:text-slate-300">
+                            {aspek.title}
+                          </td>
+                          <td className="py-2 px-2 text-center text-slate-500 font-semibold">
+                            {aspek.bobot}%
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            <div
+                              className={`inline-flex items-center gap-1 border rounded-lg px-2 py-1 transition ${
+                                isEditMode
+                                  ? "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-2xs focus-within:ring-2 focus-within:ring-[#009966]/20 focus-within:border-[#009966]"
+                                  : "bg-slate-100/70 dark:bg-slate-800/70 dark:bg-slate-800/50 border-slate-200/60 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+                              }`}
+                            >
+                              <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                disabled={!isEditMode}
+                                value={val}
+                                onChange={(e) =>
+                                  handleScoreChange(aspek.key, e.target.value)
+                                }
+                                placeholder="0"
+                                className="w-10 text-center text-xs font-bold text-slate-900 dark:text-slate-100 bg-transparent focus:outline-none disabled:cursor-not-allowed"
+                              />
+                              <span className="text-[10px] text-slate-400">0-100</span>
+                            </div>
+                          </td>
+                          <td className="py-2 px-2 text-right font-bold text-slate-800 dark:text-slate-200">
+                            {computedSkor.toFixed(2)}
+                          </td>
+                        </tr>
+                      );
+                    })}
 
-            {/* Action Buttons Konfirmasi */}
-            <div className="flex items-center justify-end gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsConfirmOpen(false)}
-                disabled={saving}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-              >
-                Periksa Kembali
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmSaveScore}
-                disabled={saving}
-                className="flex items-center gap-2 px-5 py-2.5 bg-[#009966] hover:bg-[#008055] text-white rounded-xl text-xs font-black transition shadow-sm cursor-pointer disabled:opacity-50"
-              >
-                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                <span>Ya, Simpan Penilaian</span>
-              </button>
+                    {/* Total Bobot Row */}
+                    <tr className="bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800/40 font-bold border-t border-slate-200 dark:border-slate-700">
+                      <td colSpan={2} className="py-2.5 px-2 text-slate-600 dark:text-slate-300">
+                        Total Bobot
+                      </td>
+                      <td className="py-2.5 px-2 text-center text-slate-800 dark:text-slate-100">
+                        100%
+                      </td>
+                      <td colSpan={2}></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Summary Cards: Nilai Akhir & Predikat */}
+              <div className="grid grid-cols-2 gap-3 bg-emerald-50/30 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 rounded-xl p-3">
+                <div className="text-center">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                    Nilai Akhir
+                  </span>
+                  <span className="text-2xl font-black text-[#009966] dark:text-emerald-400 mt-0.5 block">
+                    {computedScores.total.toFixed(2)}
+                  </span>
+                </div>
+                <div className="text-center">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                    Predikat
+                  </span>
+                  <span className="text-base sm:text-lg font-black text-[#009966] dark:text-emerald-400 mt-1 block">
+                    {computedScores.predikat}
+                  </span>
+                </div>
+              </div>
+
+              {/* Catatan DPL */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Catatan DPL
+                </label>
+                <textarea
+                  rows={3}
+                  disabled={!isEditMode}
+                  value={formScores.catatanDpl}
+                  onChange={(e) =>
+                    setFormScores((prev) => ({
+                      ...prev,
+                      catatanDpl: e.target.value,
+                    }))
+                  }
+                  placeholder="Tuliskan catatan atau umpan balik untuk mahasiswa..."
+                  className={`w-full border rounded-xl p-3 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none transition resize-none ${
+                    isEditMode
+                      ? "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966]"
+                      : "bg-slate-100/60 dark:bg-slate-800/60 dark:bg-slate-800/30 border-slate-200/60 dark:border-slate-800 cursor-not-allowed"
+                  }`}
+                />
+              </div>
+
+              {/* Action Buttons: Edit / Batal / Simpan Nilai */}
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                {!isEditMode && selectedStudent.statusDpl === "SUDAH_DINILAI" ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditMode(true)}
+                    className="px-5 py-2 rounded-xl text-xs font-semibold bg-[#009966] hover:bg-[#008055] text-white shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Edit3 size={14} />
+                    <span>Edit Nilai</span>
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleBatal}
+                      className="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={handleSave}
+                      className="px-5 py-2 rounded-xl text-xs font-semibold bg-[#009966] hover:bg-[#008055] text-white shadow-sm transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          <span>Menyimpan...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 size={14} />
+                          <span>
+                            {selectedStudent.statusDpl === "SUDAH_DINILAI"
+                              ? "Simpan Perubahan"
+                              : "Simpan Nilai"}
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  </>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="py-16 text-center text-slate-400 space-y-2">
+              <GraduationCap size={36} className="mx-auto text-slate-300" />
+              <p className="text-xs">
+                Pilih salah satu mahasiswa di daftar sebelah kiri untuk memulai penilaian.
+              </p>
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

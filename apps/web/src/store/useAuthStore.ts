@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -256,6 +256,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       setStoredItem("psc_user", JSON.stringify(user), rememberMe);
       set({ user, isAuthenticated: true, isLoading: false, error: null });
+      useThemeStore.getState().initTheme();
       return true;
     } catch (err: any) {
       const code = err?.response?.data?.code || (err?.response ? "UNKNOWN_ERROR" : "NETWORK_ERROR");
@@ -325,6 +326,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       localStorage.setItem("psc_user", JSON.stringify(user));
       set({ user, isAuthenticated: true, isLoading: false, error: null });
+      useThemeStore.getState().initTheme();
       return true;
     } catch (err: any) {
       const code = err?.response?.data?.code || (err?.response ? "UNKNOWN_ERROR" : "NETWORK_ERROR");

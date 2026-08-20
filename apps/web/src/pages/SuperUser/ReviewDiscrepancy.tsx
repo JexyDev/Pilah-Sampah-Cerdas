@@ -1,6 +1,6 @@
 import { ShieldCheck, Image as ImageIcon, X, Filter, Check, Search, Trash2 } from "lucide-react";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -330,7 +330,7 @@ export const ReviewDiscrepancy: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Table List of Pending & Resolved Reviews */}
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col h-[70vh]">
-          <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50 flex justify-between items-center">
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50 dark:bg-slate-800/50 flex justify-between items-center">
             <h3 className="font-bold text-gray-800 dark:text-slate-100 text-sm">Daftar Laporan Diskrepansi ({filteredLogs.length})</h3>
             {loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-600"></div>}
           </div>
@@ -358,7 +358,7 @@ export const ReviewDiscrepancy: React.FC = () => {
                     <tr
                       key={log.id}
                       onClick={() => setSelectedLog(log)}
-                      className={`hover:bg-gray-50 dark:hover:bg-slate-800/50 transition cursor-pointer ${
+                      className={`hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800/50 transition cursor-pointer ${
                         selectedLog?.id === log.id ? "bg-emerald-50/60 dark:bg-emerald-950/40 border-l-4 border-l-emerald-600 dark:border-l-emerald-500" : "border-l-4 border-l-transparent"
                       }`}
                     >
@@ -468,13 +468,13 @@ export const ReviewDiscrepancy: React.FC = () => {
                 <div className="space-y-1">
                   <span className="text-[9px] uppercase font-bold text-gray-400 dark:text-slate-400">Model AI</span>
                   <div className="text-sm font-bold text-indigo-700 dark:text-indigo-400 font-mono">{selectedLog.aiClassification}</div>
-                  <span className="text-[10px] text-gray-500 dark:text-slate-400 block">Conf: {Number(selectedLog.aiConfidence).toFixed(1)}%</span>
-                  <span className="text-[10px] text-gray-500 dark:text-slate-400 block">Berat: {selectedLog.weightKg} Kg</span>
+                  <span className="text-[10px] text-gray-500 dark:text-slate-400 block">Conf: {Number(selectedLog.aiConfidence).toFixed(2)}%</span>
+                  <span className="text-[10px] text-gray-500 dark:text-slate-400 block">Berat: {Number(selectedLog.weightKg || 0).toFixed(2)} Kg</span>
                 </div>
                 <div className="space-y-1 border-l border-gray-200 dark:border-slate-700 pl-4">
                   <span className="text-[9px] uppercase font-bold text-gray-400 dark:text-slate-400">Fisik Petugas</span>
                   <div className="text-sm font-bold text-orange-700 dark:text-orange-400 font-mono">{selectedLog.petugasClassification}</div>
-                  <span className="text-[10px] text-gray-500 dark:text-slate-400 block">Actual: {selectedLog.actualWeightPetugas || selectedLog.weightKg} Kg</span>
+                  <span className="text-[10px] text-gray-500 dark:text-slate-400 block">Actual: {Number(selectedLog.actualWeightPetugas || selectedLog.weightKg || 0).toFixed(2)} Kg</span>
                   <span className="text-[10px] text-gray-500 dark:text-slate-400 block truncate" title={selectedLog.geolocation}>Lokasi: {selectedLog.geolocation || "-"}</span>
                 </div>
               </div>
@@ -506,7 +506,7 @@ export const ReviewDiscrepancy: React.FC = () => {
                       <button
                         disabled={isSubmitting}
                         onClick={openKoreksiModal}
-                        className="w-full py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg text-[11px] font-bold shadow-sm transition disabled:opacity-50 cursor-pointer"
+                        className="w-full py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:bg-slate-700 rounded-lg text-[11px] font-bold shadow-sm transition disabled:opacity-50 cursor-pointer"
                       >
                         Koreksi Manual / Reject
                       </button>
@@ -556,7 +556,7 @@ export const ReviewDiscrepancy: React.FC = () => {
       {isKoreksiModalOpen && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in zoom-in-95 duration-200">
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col border border-gray-100 dark:border-slate-800">
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-800/50">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-800/50 dark:bg-slate-800/50">
               <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100">Koreksi Manual Hasil Tinjauan</h3>
               <button
                 onClick={() => setIsKoreksiModalOpen(false)}

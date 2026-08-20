@@ -131,7 +131,7 @@ export default function DataSurveiKkn({ type: propType }: DataSurveiKknProps) {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 dark:border-slate-800">
+                <tr className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800">
                   <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">No</th>
                   <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Kelurahan</th>
                   <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Kecamatan</th>
@@ -159,7 +159,7 @@ export default function DataSurveiKkn({ type: propType }: DataSurveiKknProps) {
                   />
                 ) : (
                   surveys.map((survey, index) => (
-                    <tr key={survey.kelurahanId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
+                    <tr key={survey.kelurahanId} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50 transition-colors group">
                       <td className="px-6 py-4 text-sm font-medium text-slate-500">
                         {(currentPage - 1) * limit + index + 1}
                       </td>

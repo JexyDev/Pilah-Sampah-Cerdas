@@ -248,9 +248,9 @@ export const HasilPemanfaatan: React.FC = () => {
   const inProgressCount = items.filter((i) => i.status === "DALAM_PROSES").length;
   const resolvedCount = items.filter((i) => i.status === "SELESAI").length;
   const avgRating = useMemo(() => {
-    if (items.length === 0) return "5.0";
+    if (items.length === 0) return "5.00";
     const sum = items.reduce((acc, curr) => acc + (curr.rating || 5), 0);
-    return (sum / items.length).toFixed(1);
+    return (sum / items.length).toFixed(2);
   }, [items]);
 
   // Metrics summary - Products
@@ -445,7 +445,7 @@ export const HasilPemanfaatan: React.FC = () => {
       />
 
       {/* Segmented Top Navigation Sub-Tabs */}
-      <div className="bg-slate-100/90 dark:bg-slate-800/80 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1.5">
+      <div className="bg-slate-100/90 dark:bg-slate-800/90 dark:bg-slate-800/80 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1.5">
         <button
           onClick={() => {
             setActiveSectionTab("HASIL");
@@ -454,7 +454,7 @@ export const HasilPemanfaatan: React.FC = () => {
           }}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
             activeSectionTab === "HASIL"
-              ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-slate-700"
+              ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
               : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/50 dark:hover:bg-slate-700/50"
           }`}
         >
@@ -469,7 +469,7 @@ export const HasilPemanfaatan: React.FC = () => {
           }}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
             activeSectionTab === "FEEDBACK"
-              ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-slate-700"
+              ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
               : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/50 dark:hover:bg-slate-700/50"
           }`}
         >
@@ -558,7 +558,7 @@ export const HasilPemanfaatan: React.FC = () => {
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs whitespace-nowrap">
-                <thead className="bg-slate-50/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-extrabold border-b border-slate-200/80 dark:border-slate-800 uppercase tracking-wider text-[10.5px]">
+                <thead className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-extrabold border-b border-slate-200/80 dark:border-slate-800 uppercase tracking-wider text-[10.5px]">
                   <tr>
                     <th className="px-4 py-3.5 text-center w-12">No</th>
                     <th className="px-4 py-3.5">Nama Program & Fasilitas</th>
@@ -573,7 +573,7 @@ export const HasilPemanfaatan: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {paginatedPrograms.map((p, idx) => (
-                    <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
+                    <tr key={p.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition">
                       <td className="px-4 py-3.5 text-center font-bold text-slate-400">
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
@@ -594,10 +594,10 @@ export const HasilPemanfaatan: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-center font-bold text-slate-700 dark:text-slate-300">
-                        {p.jumlahBahanMasukKg} Kg
+                        {Number(p.jumlahBahanMasukKg || 0).toFixed(2)} Kg
                       </td>
                       <td className="px-4 py-3.5 text-center font-extrabold text-emerald-700 dark:text-emerald-400">
-                        {p.jumlahHasilKg} {p.unitHasil || "Kg"}
+                        {Number(p.jumlahHasilKg || 0).toFixed(2)} {p.unitHasil || "Kg"}
                       </td>
                       <td className="px-4 py-3.5 text-center font-extrabold text-amber-600 dark:text-amber-400">
                         {p.nilaiEkonomiRp ? `Rp ${p.nilaiEkonomiRp.toLocaleString("id-ID")}` : "-"}

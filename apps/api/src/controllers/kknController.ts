@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -8,6 +8,7 @@ import { prisma } from "../lib/prisma.js";
 
 import { Request, Response } from "express";
 import { kknService } from "../services/kknService.js";
+import { facilityService } from "../services/facilityService.js";
 
 
 export class KknController {
@@ -274,6 +275,16 @@ export class KknController {
     }
   }
 
+  async getJenisFasilitas(req: Request, res: Response) {
+    try {
+      const data = await facilityService.getJenisFasilitas();
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[KknController] getJenisFasilitas error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
   async claimQr(req: Request, res: Response) {
     try {
       const kknUserId = req.user!.userId;
@@ -443,7 +454,19 @@ export class KknController {
     try {
       const kknUserId = req.user!.userId;
       const data = await kknService.getMyPosko(kknUserId);
-      res.status(200).json({ success: true, data });
+      if (!data) {
+        res.status(200).json({
+          success: true,
+          message: "Data posko belum terdaftar",
+          data: null,
+        });
+        return;
+      }
+      res.status(200).json({
+        success: true,
+        message: data.posko ? "Data posko berhasil diambil" : "Data posko belum terdaftar",
+        data,
+      });
     } catch (error: any) {
       console.error("[KknController] getMyPosko error:", error);
       res.status(500).json({ success: false, message: error.message });

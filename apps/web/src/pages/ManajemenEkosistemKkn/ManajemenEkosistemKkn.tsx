@@ -446,7 +446,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">Kelompok Dampingan KKN</h1>
-          <p className="text-slate-500 text-sm mt-1">
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
             Pengelolaan kelompok mahasiswa KKN, alokasi wilayah dampingan, dan struktur dosen pendamping lapangan.
           </p>
         </div>
@@ -497,7 +497,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     placeholder="Cari kelompok, DPL, ketua, kelurahan..."
                     value={searchKelompok}
                     onChange={(e) => setSearchKelompok(e.target.value)}
-                    className="pl-10 pr-4 py-2.5 w-full border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-slate-50/50 hover:bg-white"
+                    className="pl-10 pr-4 py-2.5 w-full border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-slate-50/50 dark:bg-slate-800/50 hover:bg-white"
                   />
                   {searchKelompok && (
                     <button
@@ -567,7 +567,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 <p className="text-slate-500 font-medium">Memuat data kelompok KKN...</p>
               </div>
             ) : filteredKelompokList.length === 0 ? (
-              <div className="text-center py-16 text-slate-500 font-medium border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50">
+              <div className="text-center py-16 text-slate-500 font-medium border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-800/50">
                 <Users size={40} className="mx-auto text-slate-300 mb-2" />
                 Tidak ada data kelompok KKN yang sesuai dengan filter pencarian.
               </div>
@@ -592,7 +592,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                         const ketuaMhs = k.students?.find((s: any) => s.isKetua);
                         const cakupanRw = Array.isArray(k.cakupanRw) ? k.cakupanRw.join(", ") : k.cakupanRw;
                         return (
-                          <tr key={k.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/70 transition-colors">
+                          <tr key={k.id} className="hover:bg-slate-50/70 dark:bg-slate-800/70 dark:hover:bg-slate-800/70 transition-colors">
                             <td className="p-4">
                               <button
                                 onClick={() => handleOpenDetailKelompok(k)}
@@ -707,7 +707,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 </div>
 
                 {/* Pagination Controls */}
-                <div className="p-4 border border-slate-100 dark:border-slate-800 bg-slate-50/70 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="p-4 border border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/70 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
                   <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
                     Menampilkan{" "}
                     <span className="font-bold text-slate-900 dark:text-slate-100">
@@ -753,7 +753,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                               className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                                 currentPage === btn
                                   ? "bg-emerald-600 text-white shadow-xs"
-                                  : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                                  : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
                               }`}
                             >
                               {btn}
@@ -802,7 +802,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     setSearchDpl(e.target.value);
                     setDplPage(1);
                   }}
-                  className="pl-10 pr-4 py-2.5 w-full border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-slate-50/50 hover:bg-white"
+                  className="pl-10 pr-4 py-2.5 w-full border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-slate-50/50 dark:bg-slate-800/50 hover:bg-white"
                 />
                 {searchDpl && (
                   <button
@@ -831,7 +831,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 <p className="text-slate-500 font-medium">Memuat data DPL...</p>
               </div>
             ) : filteredDplList.length === 0 ? (
-              <div className="text-center py-16 text-slate-500 font-medium border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50">
+              <div className="text-center py-16 text-slate-500 font-medium border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-800/50">
                 <User size={40} className="mx-auto text-slate-300 mb-2" />
                 Tidak ada data DPL yang sesuai pencarian.
               </div>
@@ -841,7 +841,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   {paginatedDpl.map((dp) => (
                     <div
                       key={dp.id}
-                      className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 flex flex-col justify-between hover:shadow-xs transition-shadow"
+                      className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col justify-between hover:shadow-xs transition-shadow"
                     >
                       <div>
                         <div className="flex items-start justify-between gap-2">
@@ -864,7 +864,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
 
                 {/* DPL Pagination */}
                 {totalDplPages > 1 && (
-                  <div className="p-4 border border-slate-100 dark:border-slate-800 bg-slate-50/70 rounded-xl flex items-center justify-between">
+                  <div className="p-4 border border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/70 rounded-xl flex items-center justify-between">
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
                       Halaman <span className="font-bold text-slate-900 dark:text-slate-100">{dplPage}</span> dari{" "}
                       <span className="font-bold text-slate-900 dark:text-slate-100">{totalDplPages}</span> ({filteredDplList.length} DPL total)
@@ -914,7 +914,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
 
             <div className="space-y-3">
               <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Daftar Universitas Mitra</h2>
-              <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/20">
+              <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/20 dark:bg-slate-800/20">
                 {uniList.map((uni) => (
                   <div key={uni} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                     <span className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{uni}</span>
@@ -1180,7 +1180,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
                     !selectedLeaderStudentId
                       ? "border-red-500 bg-red-50/60 ring-1 ring-red-500 font-bold"
-                      : "border-slate-200 hover:bg-slate-50"
+                      : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -1207,7 +1207,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
                       selectedLeaderStudentId === mhs.id
                         ? "border-amber-500 bg-amber-50/60 ring-1 ring-amber-500 font-bold"
-                        : "border-slate-200 hover:bg-slate-50"
+                        : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -1257,7 +1257,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       {isMembersModalOpen && selectedGroupForMembers && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden border border-slate-100 dark:border-slate-800 max-h-[85vh] flex flex-col">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/70">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/70 dark:bg-slate-800/70">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   <Users size={20} className="text-teal-600" />
@@ -1344,13 +1344,13 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 </h4>
 
                 {(!selectedGroupForMembers.students || selectedGroupForMembers.students.length === 0) ? (
-                  <div className="text-center py-8 text-slate-400 font-semibold text-xs border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50">
+                  <div className="text-center py-8 text-slate-400 font-semibold text-xs border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/50">
                     Belum ada mahasiswa yang dialokasikan ke kelompok ini.
                   </div>
                 ) : (
                   <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden">
                     {selectedGroupForMembers.students.map((st: any) => (
-                      <div key={st.id} className="p-3 bg-white dark:bg-slate-900 flex items-center justify-between hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition">
+                      <div key={st.id} className="p-3 bg-white dark:bg-slate-900 flex items-center justify-between hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/80 transition">
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">{st.user?.name || `Mahasiswa ${st.id}`}</span>
@@ -1384,7 +1384,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 flex justify-end">
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-end">
               <button
                 type="button"
                 onClick={() => setIsMembersModalOpen(false)}
@@ -1401,14 +1401,14 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       {isDetailModalOpen && selectedDetailKelompok && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
           <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden animate-scale-up border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col">
-            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/80">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/80 dark:bg-slate-800/80">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
                     Kel. {selectedDetailKelompok.kelurahan || "Wilayah Dampingan"}
                   </span>
                   {selectedDetailKelompok.cakupanRw && (
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-200/80 text-slate-700 dark:text-slate-300">
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-200/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300">
                       RW: {Array.isArray(selectedDetailKelompok.cakupanRw) ? selectedDetailKelompok.cakupanRw.join(", ") : selectedDetailKelompok.cakupanRw}
                     </span>
                   )}
@@ -1417,7 +1417,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               </div>
               <button
                 onClick={() => setIsDetailModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-200/60 transition cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition cursor-pointer"
               >
                 <X size={20} />
               </button>
@@ -1490,7 +1490,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 </div>
 
                 {(!selectedDetailKelompok.students || selectedDetailKelompok.students.length === 0) ? (
-                  <div className="text-center py-8 text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50">
+                  <div className="text-center py-8 text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-800/50">
                     Belum ada mahasiswa yang dialokasikan ke kelompok ini.
                   </div>
                 ) : (
@@ -1508,7 +1508,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                         {selectedDetailKelompok.students.map((st: any, idx: number) => (
-                          <tr key={st.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/70 transition">
+                          <tr key={st.id} className="hover:bg-slate-50/70 dark:bg-slate-800/70 dark:hover:bg-slate-800/70 transition">
                             <td className="py-2 px-3 text-center text-slate-400 font-bold">{idx + 1}</td>
                             <td className="py-2 px-3 font-mono font-bold text-slate-800 dark:text-slate-100">{st.nim || "-"}</td>
                             <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">{st.user?.name || `Mahasiswa ${st.id.substring(0, 6)}`}</td>
@@ -1532,7 +1532,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 flex justify-between items-center text-xs">
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/70 flex justify-between items-center text-xs">
               <span className="text-slate-400">Total {selectedDetailKelompok.students?.length || 0} Mahasiswa</span>
               <button
                 type="button"

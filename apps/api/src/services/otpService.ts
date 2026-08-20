@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * OTP Service — Kirim & verifikasi kode OTP via WhatsApp (Fonnte API)
  *
@@ -112,7 +112,7 @@ export class OtpService {
     memSet("otp:reset:" + normalized, otp, this.OTP_TTL);
 
     const message =
-      `*TrashCare — Kode OTP Reset Kata Sandi*\n\n` +
+      `*BERSEKA — Kode OTP Reset Kata Sandi*\n\n` +
       `Kode OTP Anda: *${otp}*\n\n` +
       `Kode ini berlaku selama *5 menit*.\n` +
       `Jangan bagikan kode ini kepada siapapun.\n\n` +

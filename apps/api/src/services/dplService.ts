@@ -1542,8 +1542,11 @@ export const dplService = {
     const minMinutes = Number(configMap.get("attendance_min_duration_minutes") ?? 0);
     const minSeconds = Number(configMap.get("attendance_min_duration_seconds") ?? 0);
 
+    const minTotalHours = (minHours * 3600 + minMinutes * 60 + minSeconds) / 3600;
     const targetHarianRaw = Number(configMap.get("kkn_target_harian_jam"));
-    const targetHarian = !isNaN(targetHarianRaw) && targetHarianRaw > 0 ? targetHarianRaw : (minHours > 0 ? minHours : 2);
+    const targetHarian = !isNaN(targetHarianRaw) && targetHarianRaw > 0
+      ? (minTotalHours > 0 && Math.abs(targetHarianRaw - minTotalHours) <= 0.005 ? minTotalHours : targetHarianRaw)
+      : (minTotalHours > 0 ? minTotalHours : 2);
     const targetHariTotal = Number(configMap.get("kkn_target_total_hari") || 50);
     const targetJamRaw = Number(configMap.get("kkn_target_total_jam"));
     const targetJamTotal = !isNaN(targetJamRaw) && targetJamRaw > 0 ? targetJamRaw : Math.round(targetHariTotal * targetHarian);

@@ -492,7 +492,7 @@ export default function DetailSurveiKkn() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/50 border-b border-slate-100 dark:border-slate-800">
+                  <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
                     <th className="px-6 py-4 font-bold text-xs text-slate-500 uppercase tracking-wider">No</th>
                     <th className="px-6 py-4 font-bold text-xs text-slate-500 uppercase tracking-wider">Nama</th>
                     <th className="px-6 py-4 font-bold text-xs text-slate-500 uppercase tracking-wider">Jenis Aktor / Posisi</th>
@@ -502,7 +502,7 @@ export default function DetailSurveiKkn() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
                   {kp.map((actor: any, idx: number) => (
-                    <tr key={actor.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                    <tr key={actor.id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="px-6 py-4 text-slate-400 font-bold">{idx + 1}</td>
                       <td className="px-6 py-4 font-extrabold text-slate-800 dark:text-slate-100">{renderValue(actor.nama)}</td>
                       <td className="px-6 py-4">
@@ -650,7 +650,7 @@ export default function DetailSurveiKkn() {
       {/* Content Area */}
       <div className="min-h-[500px]">
         {isLoadingDetail ? (
-          <div className="flex flex-col items-center justify-center py-32 bg-slate-50/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+          <div className="flex flex-col items-center justify-center py-32 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
             <Loader2 className="animate-spin text-emerald-600 mb-4" size={40} />
             <p className="text-slate-500 font-medium">Memuat data secara penuh...</p>
           </div>

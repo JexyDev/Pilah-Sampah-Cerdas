@@ -147,7 +147,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
           totalJumlahRumahDiRw: ps.totalJumlahRumahDiRw ?? "",
           persentasePemilahan:
             ps.persentasePemilahan !== null && ps.persentasePemilahan !== undefined
-              ? (Number(ps.persentasePemilahan) * 100).toFixed(1)
+              ? (Number(ps.persentasePemilahan) * 100).toFixed(2)
               : "",
           tingkatPemilahan: ps.tingkatPemilahan || "",
           catatan: ps.catatan || "",
@@ -285,7 +285,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
           <div>
             <h2 className="text-lg font-black text-slate-800 dark:text-slate-100">
               Edit Data Hasil Survei: Kel. {namaKelurahan || kelurahanId}
@@ -536,7 +536,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                           setPemilahan((prev) => {
                             const jml = Number(val);
                             const tot = Number(prev.totalJumlahRumahDiRw);
-                            const pct = tot > 0 && val !== "" ? ((jml / tot) * 100).toFixed(1) : prev.persentasePemilahan;
+                            const pct = tot > 0 && val !== "" ? ((jml / tot) * 100).toFixed(2) : prev.persentasePemilahan;
                             return { ...prev, jumlahRumahMemilah: val, persentasePemilahan: pct };
                           });
                         }}
@@ -553,7 +553,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                           setPemilahan((prev) => {
                             const tot = Number(val);
                             const jml = Number(prev.jumlahRumahMemilah);
-                            const pct = tot > 0 && prev.jumlahRumahMemilah !== "" ? ((jml / tot) * 100).toFixed(1) : prev.persentasePemilahan;
+                            const pct = tot > 0 && prev.jumlahRumahMemilah !== "" ? ((jml / tot) * 100).toFixed(2) : prev.persentasePemilahan;
                             return { ...prev, totalJumlahRumahDiRw: val, persentasePemilahan: pct };
                           });
                         }}
@@ -661,7 +661,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                       { key: "ecobrickKerajinanDaurUlang", label: "Ecobrick / Kerajinan Daur Ulang" },
                       { key: "buruanSae", label: "Buruan Sae / Kebun Warga" },
                       { key: "pengepulMitraDaurUlang", label: "Pengepul Mitra Daur Ulang" },
-                      { key: "digitalisasiData", label: "Digitalisasi Data (TrashCare / Aplikasi)" },
+                      { key: "digitalisasiData", label: "Digitalisasi Data (BERSEKA / Aplikasi)" },
                     ].map((item) => (
                       <label
                         key={item.key}

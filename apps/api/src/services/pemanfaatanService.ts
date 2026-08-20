@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
@@ -273,7 +273,7 @@ export class PemanfaatanService {
 
     const id = crypto.randomUUID();
     const userId = (data.userId || "").replace(/'/g, "''");
-    const wargaNama = (data.wargaNama || "Warga TrashCare").replace(/'/g, "''");
+    const wargaNama = (data.wargaNama || "Warga BERSEKA").replace(/'/g, "''");
     const kategori = (data.kategori || "Pemanfaatan Sampah").replace(/'/g, "''");
     const judul = (data.judul || "").replace(/'/g, "''");
     const isiKritikSaran = (data.isiKritikSaran || "").replace(/'/g, "''");

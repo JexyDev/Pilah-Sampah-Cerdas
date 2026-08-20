@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
@@ -43,13 +43,26 @@ const getInitialLayoutState = () => {
   return !isPublicPath(window.location.pathname);
 };
 
+const checkIsDeveloper = (): boolean => {
+  if (typeof window === "undefined") return false;
+  try {
+    const rawUser = localStorage.getItem("psc_user") || sessionStorage.getItem("psc_user");
+    if (!rawUser) return false;
+    const parsed = JSON.parse(rawUser);
+    const role = (parsed?.peran || parsed?.role || "").toUpperCase();
+    return role === "DEVELOPER" || role === "SUPER_USER";
+  } catch {
+    return false;
+  }
+};
+
 export const useThemeStore = create<ThemeState>((set, get) => ({
-  theme: typeof window !== "undefined" && (localStorage.getItem("trashcare-theme") as "light" | "dark") === "dark" ? "dark" : "light",
+  theme: typeof window !== "undefined" && checkIsDeveloper() && (localStorage.getItem("trashcare-theme") as "light" | "dark") === "dark" ? "dark" : "light",
   isInsideMainLayout: getInitialLayoutState(),
 
   setInsideMainLayout: (inside: boolean) => {
     set({ isInsideMainLayout: inside });
-    if (inside) {
+    if (inside && checkIsDeveloper()) {
       applyThemeToDOM(get().theme);
     } else {
       applyThemeToDOM("light");
@@ -57,6 +70,11 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   },
 
   toggleTheme: () => {
+    if (!checkIsDeveloper()) {
+      applyThemeToDOM("light");
+      set({ theme: "light" });
+      return;
+    }
     const current = get().theme;
     const nextTheme = current === "light" ? "dark" : "light";
     localStorage.setItem("trashcare-theme", nextTheme);
@@ -67,15 +85,26 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   },
 
   setTheme: (theme: "light" | "dark") => {
+    if (!checkIsDeveloper() && theme === "dark") {
+      applyThemeToDOM("light");
+      set({ theme: "light" });
+      return;
+    }
     localStorage.setItem("trashcare-theme", theme);
-    if (get().isInsideMainLayout) {
+    if (get().isInsideMainLayout && checkIsDeveloper()) {
       applyThemeToDOM(theme);
+    } else {
+      applyThemeToDOM("light");
     }
     set({ theme });
   },
 
   applyTheme: () => {
-    applyThemeToDOM(get().theme);
+    if (checkIsDeveloper()) {
+      applyThemeToDOM(get().theme);
+    } else {
+      applyThemeToDOM("light");
+    }
   },
 
   resetThemeToLight: () => {
@@ -83,6 +112,12 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   },
 
   initTheme: () => {
+    if (!checkIsDeveloper()) {
+      localStorage.removeItem("trashcare-theme");
+      applyThemeToDOM("light");
+      set({ theme: "light", isInsideMainLayout: false });
+      return;
+    }
     let saved = localStorage.getItem("trashcare-theme") as "light" | "dark" | null;
     if (saved !== "dark") {
       saved = "light";

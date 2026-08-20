@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
@@ -589,7 +589,7 @@ const Monitoring: React.FC = () => {
         <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
           <div className="flex items-center gap-2">
             <span className="text-slate-400">Cakupan Wilayah:</span>
-            <strong className="text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200/60">
+            <strong className="text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200/60 dark:border-slate-800/60">
               {getScopeLabel()}
             </strong>
           </div>
@@ -831,7 +831,7 @@ const Monitoring: React.FC = () => {
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-2xs border ${
                     showKelurahanBoundaries
                       ? "bg-[#009966]/10 text-[#009966] border-[#009966]/30 shadow-xs"
-                      : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100"
+                      : "bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
                   }`}
                   title={showKelurahanBoundaries ? "Sembunyikan Batas Wilayah" : "Tampilkan Batas Wilayah"}
                 >
@@ -990,7 +990,7 @@ const Monitoring: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-100/90 dark:bg-slate-800/90 rounded-xl border border-slate-200/60 dark:border-slate-700">
+                  <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-100/90 dark:bg-slate-800/90 dark:bg-slate-800/90 rounded-xl border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700">
                     <button
                       type="button"
                       onClick={() => setActiveLegendTab("sampah")}
@@ -1423,7 +1423,7 @@ const Monitoring: React.FC = () => {
                     setTableSearchInput(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full pl-9 pr-8 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#009966] bg-slate-50/70"
+                  className="w-full pl-9 pr-8 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#009966] bg-slate-50/70 dark:bg-slate-800/70"
                 />
                 {tableSearchInput && (
                   <button
@@ -1442,7 +1442,7 @@ const Monitoring: React.FC = () => {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-50/70 cursor-pointer focus:outline-none"
+                className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-50/70 dark:bg-slate-800/70 cursor-pointer focus:outline-none"
               >
                 <option value={10}>10 Baris</option>
                 <option value={25}>25 Baris</option>
@@ -1494,7 +1494,7 @@ const Monitoring: React.FC = () => {
                     return (
                       <tr
                         key={`tbl-bin-${bin.id || binCode}`}
-                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors text-xs text-slate-700 dark:text-slate-300 font-medium"
+                        className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/80 transition-colors text-xs text-slate-700 dark:text-slate-300 font-medium"
                       >
                         {/* 1. QR CODE */}
                         <td className="py-3 px-4 text-center whitespace-nowrap">
@@ -1526,7 +1526,7 @@ const Monitoring: React.FC = () => {
                         <td className="py-3 px-4 whitespace-nowrap">
                           <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
                             isResidu
-                              ? "bg-slate-100 text-slate-700 border border-slate-200"
+                              ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                               : isAnorganik
                               ? "bg-amber-50 text-amber-800 border border-amber-200"
                               : "bg-emerald-50 text-emerald-700 border border-emerald-200"

@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  *
@@ -101,7 +101,7 @@ export class VendorWasteAiAdapter implements IWasteAiAdapter {
         confidenceScore: Number(data.confidenceScore || 0.9),
         estimatedVolumeLiter: Number(data.estimatedVolumeLiter || 2.0),
         detections: data.detections || [],
-        vendorName: data.vendorName || "TrashCare-v1",
+        vendorName: data.vendorName || "BERSEKA-v1",
         annotatedImageBase64: data.annotatedImageBase64,
         rawPayload: data,
       };

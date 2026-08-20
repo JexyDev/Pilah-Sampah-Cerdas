@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -321,9 +321,9 @@ export const gamificationService = {
           name: p.name,
           wilayah: p.rw?.name || "Semua Area",
           totalCompleted,
-          avgSlaMinutes: parseFloat(avgSlaMinutes.toFixed(1)),
-          successRatePercent: parseFloat((successRate * 100).toFixed(1)),
-          totalPoints: parseFloat(compositeScore.toFixed(1)),
+          avgSlaMinutes: parseFloat(avgSlaMinutes.toFixed(2)),
+          successRatePercent: parseFloat((successRate * 100).toFixed(2)),
+          totalPoints: parseFloat(compositeScore.toFixed(2)),
           totalKgHandled: totalKg,
         };
       })
@@ -376,7 +376,7 @@ export const gamificationService = {
         nim: s.nim,
         kelompok: s.kelompok?.name || "Tanpa Kelompok",
         kelompokId: s.kelompokId,
-        totalHours: parseFloat(totalHours.toFixed(1)),
+        totalHours: parseFloat(totalHours.toFixed(2)),
         activeBins: activeBinsCount,
         dplScore,
         finalScore: parseFloat(finalScore.toFixed(2)),

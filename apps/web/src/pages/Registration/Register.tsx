@@ -1,9 +1,9 @@
 /**
- * Project: TrashCare Web App
+ * Project: BERSEKA Web App
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
- * Halaman Registrasi Terpadu TrashCare (Default: Warga, Opsi: Mahasiswa KKN & Petugas Residu)
+ * Halaman Registrasi Terpadu BERSEKA (Default: Warga, Opsi: Mahasiswa KKN & Petugas Residu)
  */
 
 import React, { useState, useEffect } from "react";
@@ -278,7 +278,7 @@ export const Register: React.FC = () => {
                   className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     role === "WARGA"
                       ? "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20"
-                      : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
                   }`}
                 >
                   <User size={14} />
@@ -291,7 +291,7 @@ export const Register: React.FC = () => {
                   className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     role === "MAHASISWA_KKN"
                       ? "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20"
-                      : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
                   }`}
                 >
                   <GraduationCap size={14} />
@@ -304,7 +304,7 @@ export const Register: React.FC = () => {
                   className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     role === "PETUGAS_RESIDU"
                       ? "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20"
-                      : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
                   }`}
                 >
                   <Truck size={14} />

@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo.
@@ -240,7 +240,7 @@ const NotificationModal = ({
             className={`w-full py-2.5 rounded-xl text-xs font-extrabold transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-2 ${
               photo && !isSubmitting
                 ? "bg-[#009966] hover:bg-[#008855] text-white"
-                : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed"
             }`}
           >
             {isSubmitting ? (
@@ -548,7 +548,7 @@ const Notifikasi: React.FC = () => {
               </span>
             )}
           </div>
-          <p className="text-slate-500 text-sm mt-1">
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
             Daftar pemberitahuan terkini pemantauan tempat sampah, jadwal penjemputan residu, dan aktivitas KKN.
           </p>
         </div>
@@ -624,7 +624,7 @@ const Notifikasi: React.FC = () => {
             className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer ${
               filterTab === "SEMUA"
                 ? "bg-[#009966] text-white shadow-md shadow-emerald-700/20"
-                : "bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100"
+                : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
             }`}
           >
             Semua ({notifications.length})
@@ -634,7 +634,7 @@ const Notifikasi: React.FC = () => {
             className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
               filterTab === "CRITICAL"
                 ? "bg-rose-600 text-white shadow-md shadow-rose-700/20"
-                : "bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100"
+                : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
             }`}
           >
             <AlertCircle size={15} /> Kritis / Aksi ({criticalCount})
@@ -644,7 +644,7 @@ const Notifikasi: React.FC = () => {
             className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
               filterTab === "INFO"
                 ? "bg-sky-600 text-white shadow-md shadow-sky-700/20"
-                : "bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100"
+                : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
             }`}
           >
             <Info size={15} /> Informasi ({infoCount})
@@ -684,7 +684,7 @@ const Notifikasi: React.FC = () => {
                 className={`p-4 rounded-2xl border transition-all cursor-pointer group flex items-start gap-4 ${
                   !notif.isRead
                     ? "bg-emerald-50/40 border-emerald-300/80 shadow-2xs"
-                    : "bg-white border-slate-200/80 hover:bg-slate-50/80 dark:hover:bg-slate-800/80"
+                    : "bg-white border-slate-200/80 hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/80"
                 }`}
               >
                 {/* Visual Icon Badge */}

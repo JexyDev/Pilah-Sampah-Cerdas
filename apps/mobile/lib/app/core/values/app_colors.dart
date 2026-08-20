@@ -7,20 +7,21 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // --- Primary Blue (Anorganik / sky blue accents) ---
-  static const Color primaryBlue = Color(0xFF0084DC); // Dari palette
-  static const Color primaryBlueDark = Color(0xFF0267AC); // Deep Sky Blue
-  static const Color primaryBlueLight = Color(0xFFFAFBFF); // Dari palette
+  // --- Primary Blue (Anorganik / sky ocean blue accents from BERSEKA hand mark) ---
+  static const Color primaryBlue = Color(0xFF0072CE); // Ocean Blue
+  static const Color primaryBlueDark = Color(0xFF00569C); // Deep Ocean Blue
+  static const Color primaryBlueLight = Color(0xFFE0F2FE); // Soft Light Blue
 
-  // --- Primary Color (Clean Sky Blue khas Warga & Petugas Pemilahan) ---
+  // --- Primary Color (BERSEKA Deep Forest Emerald & Eco Leaf Green) ---
   static const Color primary = primaryGreen;
-  static const Color primaryGreen = Color(0xFF009966); // Dari palette
-  static const Color primaryGreenLight = Color(0xFFE8F5E9); // Soft Light Green
-  static const Color organicColor = Color(0xFF009966); // Green for organic waste
+  static const Color primaryGreen = Color(0xFF004D38); // BERSEKA Forest Emerald
+  static const Color primaryGreenLight = Color(0xFFDCFCE7); // Soft Light Emerald Green
+  static const Color organicColor = Color(0xFF15803D); // Eco Green for organic waste
+  static const Color ecoLeafGreen = Color(0xFF38A116); // Vibrant Leaf Green tag line
 
   // --- Non-Organic (orange/amber/yellow) ---
-  static const Color nonOrganicColor = Color(0xFFF59E0B); // Yellow for non-organic
-  static const Color nonOrganicBg = Color(0xFFFEF3C7); // Light yellow
+  static const Color nonOrganicColor = Color(0xFF0072CE); // Blue for non-organic
+  static const Color nonOrganicBg = Color(0xFFE0F2FE); // Light blue
 
   // --- Semantic ---
   static const Color dangerRed = Color(0xFFEF4444); // Modern tailwind red

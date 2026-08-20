@@ -201,7 +201,7 @@ class _BinCardLarge extends StatelessWidget {
                 ? 'Tempat Sampah Dinonaktifkan di Web'
                 : bin.isResetPending
                     ? 'Pengajuan pengosongan sedang diproses'
-                    : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — ${bin.currentVolumeL.toStringAsFixed(1)} KG / ${bin.maxCapacityL.toStringAsFixed(0)} KG',
+                    : '${(bin.capacityPercent * 100).toStringAsFixed(2)}% terisi — ${bin.currentVolumeL.toStringAsFixed(2)} KG / ${bin.maxCapacityL.toStringAsFixed(2)} KG',
             style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
           ),
         ],

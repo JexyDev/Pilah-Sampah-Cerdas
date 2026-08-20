@@ -319,7 +319,7 @@ class PetugasPemilahanView extends ConsumerWidget {
                 const Text('Skor Kinerja Petugas (KPI)', style: TextStyle(color: Colors.white70, fontSize: 12)),
                 const SizedBox(height: 2),
                 Text(
-                  '${kpiScore.toStringAsFixed(1)}% / Sangat Baik',
+                  '${kpiScore.toStringAsFixed(2)}% / Sangat Baik',
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ],

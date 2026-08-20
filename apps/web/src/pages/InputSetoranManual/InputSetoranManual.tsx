@@ -237,7 +237,7 @@ const InputSetoranManual: React.FC = () => {
                 <div className="mt-2 p-3 bg-emerald-50 dark:bg-emerald-950/60 rounded-xl border border-emerald-100 dark:border-emerald-700/50 flex justify-between items-center">
                   <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Estimasi Poin:</span>
                   <span className="text-sm font-black text-[#009966] dark:text-emerald-400">
-                    +{estimatedPoints.toFixed(1)} Poin
+                    +{estimatedPoints.toFixed(2)} Poin
                   </span>
                 </div>
               )}

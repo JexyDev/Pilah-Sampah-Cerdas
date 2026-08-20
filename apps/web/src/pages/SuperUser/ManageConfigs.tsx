@@ -1,6 +1,6 @@
 import { CheckCircle2, RefreshCw, AlertTriangle, Save, Pencil } from "lucide-react";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -155,7 +155,7 @@ export const ManageConfigs: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
                 {configs.map((c, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-slate-800/60 transition">
+                  <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800/60 transition">
                     <td className="px-6 py-4 font-mono text-xs text-primary font-bold">{c.key}</td>
                     <td className="px-6 py-4 font-medium text-gray-900 dark:text-slate-100 max-w-[200px] truncate">{c.value}</td>
                     <td className="px-6 py-4 text-gray-500 max-w-xs truncate">{c.deskripsi || "-"}</td>
@@ -294,7 +294,7 @@ export const ManageConfigs: React.FC = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setSelectedConfig(null)}
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 transition"
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800/60 transition"
                 >
                   Batal
                 </button>

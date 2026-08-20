@@ -22,7 +22,7 @@ export function SegmentedTabs<T extends string = string>({
 }: SegmentedTabsProps<T>) {
   return (
     <div
-      className={`bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1 overflow-x-auto scrollbar-none ${className}`}
+      className={`bg-slate-100/90 dark:bg-slate-800/90 dark:bg-slate-800/90 p-1.5 rounded-xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1 overflow-x-auto scrollbar-none ${className}`}
     >
       {tabs.map((tab) => {
         const Icon = tab.icon;

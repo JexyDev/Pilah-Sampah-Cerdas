@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -478,7 +478,7 @@ const MasterRw: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
+              <tr className="bg-slate-50/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                 <th className="py-3.5 px-4 text-center w-16 whitespace-nowrap">NO</th>
                 <th className="py-3.5 px-4 whitespace-nowrap">PROVINSI</th>
                 <th className="py-3.5 px-4 whitespace-nowrap">KOTA, KABUPATEN</th>
@@ -522,7 +522,7 @@ const MasterRw: React.FC = () => {
                   return (
                     <tr
                       key={group.kelurahanId}
-                      className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors text-xs text-slate-700 dark:text-slate-300 font-medium"
+                      className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/80 transition-colors text-xs text-slate-700 dark:text-slate-300 font-medium"
                     >
                       {/* NO */}
                       <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-500 whitespace-nowrap">
@@ -666,7 +666,7 @@ const MasterRw: React.FC = () => {
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fade-in">
           <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 max-w-lg w-full overflow-hidden">
-            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-2xl bg-emerald-100 text-[#009966] flex items-center justify-center font-bold">
                   {modalType === "add" ? <Plus size={18} /> : <Pencil size={18} />}
@@ -898,7 +898,7 @@ const MasterRw: React.FC = () => {
                       className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
                         isChecked
                           ? "bg-rose-50/70 border-rose-200 text-rose-900 font-extrabold"
-                          : "bg-white border-slate-200 hover:border-slate-300 text-slate-700 font-bold"
+                          : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-700 dark:text-slate-300 font-bold"
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -914,7 +914,7 @@ const MasterRw: React.FC = () => {
                         className={`text-[10px] font-black px-2 py-0.5 rounded-md uppercase ${
                           isChecked
                             ? "bg-rose-100 text-rose-700 border border-rose-200"
-                            : "bg-slate-100 text-slate-400"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
                         }`}
                       >
                         {isChecked ? "Akan Dihapus" : "Tetap Simpan"}
@@ -934,7 +934,7 @@ const MasterRw: React.FC = () => {
             </div>
 
             {/* Footer Buttons */}
-            <div className="p-4 bg-slate-50/80 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+            <div className="p-4 bg-slate-50/80 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setIsDeleteModalOpen(false)}

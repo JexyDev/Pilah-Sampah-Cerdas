@@ -1173,7 +1173,7 @@ class _HorizontalBar extends StatelessWidget {
               style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
             Text(
-              '${percentage.toStringAsFixed(1)}%',
+              '${percentage.toStringAsFixed(2)}%',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,

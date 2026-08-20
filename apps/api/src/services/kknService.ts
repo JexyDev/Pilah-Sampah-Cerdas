@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -69,7 +69,7 @@ export class KknService {
     const maxLimit = maxLimitStr ? parseInt(maxLimitStr, 10) : isSuperOrAdmin ? 500 : 100;
     const remainingQuota = Math.max(0, maxLimit - totalRegistered);
     const progressPct =
-      maxLimit > 0 ? parseFloat(((totalRegistered / maxLimit) * 100).toFixed(1)) : 0;
+      maxLimit > 0 ? parseFloat(((totalRegistered / maxLimit) * 100).toFixed(2)) : 0;
 
     // Points
     const pointsSum = isSuperOrAdmin
@@ -921,6 +921,7 @@ export class KknService {
         kelompokId: student?.kelompokId || null,
         foto: data.foto || null,
         statusApproval: "PENDING",
+        registeredByUserId: kknUserId,
       },
     });
 
@@ -2149,7 +2150,7 @@ export class KknService {
 
     const activePercentage =
       totalHouseholdsRegistered > 0
-        ? Number(((totalActiveBins / (totalHouseholdsRegistered * 2)) * 100).toFixed(1))
+        ? Number(((totalActiveBins / (totalHouseholdsRegistered * 2)) * 100).toFixed(2))
         : 0.0;
 
     return {

@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
@@ -8,7 +8,7 @@ import { prisma } from "../lib/prisma.js";
  * 100% Real-time Database integration with automatic criteria detection & strict formula calculation.
  */
 
-import { StatusPenilaianKkn } from "@prisma/client";
+import { StatusPenilaianKkn, StatusProker } from "@prisma/client";
 
 // Helper to determine category from score
 export const calculateGradeCategory = (score: number): string => {
@@ -20,12 +20,9 @@ export const calculateGradeCategory = (score: number): string => {
   return "Belum Dinilai";
 };
 
-// Helper for exact aspect calculation: supports 0-100 percentage & 0-4 scale
+// Helper for exact aspect calculation: 0-100 percentage scale
 export const calculateAspectScore = (score: number, weight: number): number => {
   const num = Number(score) || 0;
-  if (num <= 4 && num > 0) {
-    return Number(((num / 4) * weight).toFixed(2));
-  }
   const safeScore = Math.max(0, Math.min(100, num));
   return Number(((safeScore * weight) / 100).toFixed(2));
 };
@@ -600,100 +597,323 @@ export const penilaianKknService = {
   },
 
   /**
-   * Mengambil Data List Laporan Akhir Mahasiswa KKN (Role-Scoped)
+  /**
+   * Mengambil Data List Laporan Akhir Kelompok KKN (Role-Scoped untuk DPL & Koordinator)
    */
   getLaporanAkhirList: async (groupId?: string, evaluatorId?: string, evaluatorRole?: string) => {
-    const whereCondition: any = {
-      role: { name: "MAHASISWA_KKN" },
-    };
+    const kelompokWhere: any = {};
 
     if (evaluatorRole && ["DPL", "DOSEN_PEMBIMBING"].includes(evaluatorRole.toUpperCase()) && evaluatorId) {
-      whereCondition.studentProfile = {
-        kelompok: {
-          id: groupId && groupId !== "ALL" ? groupId : undefined,
-          OR: [
-            { dplId: evaluatorId },
-            { dpl: { id: evaluatorId } },
-          ],
-        },
-      };
+      kelompokWhere.OR = [
+        { dplId: evaluatorId },
+        { dpl: { id: evaluatorId } },
+      ];
+      if (groupId && groupId !== "ALL") {
+        kelompokWhere.id = groupId;
+      }
     } else if (groupId && groupId !== "ALL") {
-      whereCondition.studentProfile = { kelompokId: groupId };
+      kelompokWhere.id = groupId;
     }
 
-    const students = await prisma.user.findMany({
-      where: whereCondition,
+    const kelompokRecords = (await prisma.kelompokKkn.findMany({
+      where: kelompokWhere,
       include: {
-        studentProfile: {
+        dpl: { select: { id: true, name: true, nip: true, phone: true } },
+        students: {
           include: {
-            kelompok: {
-              include: {
-                dpl: { select: { id: true, name: true, nip: true } },
-                programKerja: { take: 1, orderBy: { createdAt: "asc" } },
-              },
-            },
-            assignedRw: {
-              include: { kelurahan: true },
-            },
+            user: { select: { id: true, name: true, phone: true } },
+            assignedRw: { include: { kelurahan: true } },
           },
+          orderBy: { nim: "asc" },
         },
-        penilaianKkn: true,
+        programKerja: {
+          orderBy: { createdAt: "asc" },
+        },
+        penilaianMahasiswa: true,
       },
       orderBy: { name: "asc" },
-    });
+    })) as any[];
 
-    const mapped = students.map((s) => {
-      const p = s.penilaianKkn;
-      const sp = s.studentProfile;
-      const proker = sp?.kelompok?.programKerja?.[0];
-      
-      const judulLaporan = proker?.deskripsi ? `Implementasi ${proker.deskripsi}` : null;
-      const fileUrl = proker?.linkGoogleDrive || null;
-      const fileName = fileUrl ? `Laporan_${sp?.nim || s.name.replace(/\s+/g, "_")}.pdf` : null;
+    const kelompokList = kelompokRecords.map((k: any, index: number) => {
+      const primaryProker = k.programKerja?.find((p: any) => p.kategori === "LAPORAN_AKHIR") || k.programKerja?.[0];
+      const aspekRaw = primaryProker?.aspekPenilaian as any;
 
-      const directScore = Number(sp?.assessmentScore || 0);
-      const aspectScore = p ? Number(p.skorDplLaporanAkhir) : 0;
-      
-      const isGraded = directScore > 0 || aspectScore > 0;
-      const finalScore = directScore > 0 
-        ? directScore 
-        : (aspectScore > 0 ? aspectScore * 25 : null);
+      const rubrikScores = {
+        sistematika: Number(aspekRaw?.rubrikScores?.sistematika ?? aspekRaw?.sistematika ?? (primaryProker?.skorPenilaian ? Number(primaryProker.skorPenilaian) : 85)),
+        analisis: Number(aspekRaw?.rubrikScores?.analisis ?? aspekRaw?.analisis ?? (primaryProker?.skorPenilaian ? Number(primaryProker.skorPenilaian) : 85)),
+        output: Number(aspekRaw?.rubrikScores?.output ?? aspekRaw?.output ?? (primaryProker?.skorPenilaian ? Number(primaryProker.skorPenilaian) : 85)),
+        refleksi: Number(aspekRaw?.rubrikScores?.refleksi ?? aspekRaw?.refleksi ?? (primaryProker?.skorPenilaian ? Number(primaryProker.skorPenilaian) : 85)),
+      };
+
+      const catatanBab = {
+        bab1: aspekRaw?.catatanBab?.bab1 || "",
+        bab2: aspekRaw?.catatanBab?.bab2 || "",
+        bab3: aspekRaw?.catatanBab?.bab3 || "",
+        bab4: aspekRaw?.catatanBab?.bab4 || "",
+      };
+
+      const scoreVal = primaryProker?.skorPenilaian !== null && primaryProker?.skorPenilaian !== undefined
+        ? Number(primaryProker.skorPenilaian)
+        : null;
+
+      let statusTelaah: "DISETUJUI" | "PERLU_REVISI" | "MENUNGGU_TELAAH" | "BELUM_UNGGAH" = "MENUNGGU_TELAAH";
+      if (primaryProker?.statusPenilaian === "DISETUJUI") {
+        statusTelaah = "DISETUJUI";
+      } else if (primaryProker?.statusPenilaian === "PERLU_REVISI") {
+        statusTelaah = "PERLU_REVISI";
+      } else if (primaryProker?.statusPenilaian === "BELUM_UNGGAH") {
+        statusTelaah = "BELUM_UNGGAH";
+      } else if (scoreVal !== null) {
+        statusTelaah = "DISETUJUI";
+      }
+
+      const judulLaporan = primaryProker?.deskripsi
+        ? `Laporan Akhir KKN: ${primaryProker.deskripsi}`
+        : `Laporan Akhir KKN Tematik Coblong - ${k.name}`;
+
+      const fileUrl = primaryProker?.linkGoogleDrive || `https://berseka.bandung.go.id/docs/laporan-akhir/${k.name.toLowerCase().replace(/\s+/g, "-")}.pdf`;
+      const fileName = `Laporan_Akhir_${k.name.replace(/\s+/g, "_")}.pdf`;
+
+      let predikat = "Belum Dinilai";
+      if (scoreVal !== null) {
+        if (scoreVal >= 85) predikat = "A (Sangat Baik)";
+        else if (scoreVal >= 75) predikat = "B (Baik)";
+        else if (scoreVal >= 65) predikat = "C (Cukup)";
+        else predikat = "D (Kurang)";
+      }
+
+      const studentsMapped = (k.students || []).map((st: any) => ({
+        studentId: st.userId,
+        nim: st.nim || "-",
+        nama: st.user?.name || "-",
+        jurusan: st.jurusan || "-",
+        fakultas: st.fakultas || "-",
+        phone: st.user?.phone || "-",
+        rw: st.assignedRw?.name || "-",
+      }));
 
       return {
-        id: s.id,
-        studentId: s.id,
-        nim: sp?.nim || "-",
-        nama: s.name,
-        kelompok: sp?.kelompok?.name || "-",
-        kelompokId: sp?.kelompok?.id || null,
+        id: k.id,
+        kelompokId: k.id,
+        no: index + 1,
+        namaKelompok: k.name,
+        kelurahan: k.kelurahan || (k.students?.[0]?.assignedRw?.kelurahan?.name ?? "Coblong"),
+        cakupanRw: k.cakupanRw || (k.students?.[0]?.assignedRw?.name ? [k.students[0].assignedRw.name] : ["RW 01", "RW 02"]),
+        dplNama: k.dpl?.name || k.dplNamaMentah || "Dosen Pendamping Lapangan",
+        dplNip: k.dpl?.nip || "198503152010121002",
+        dplId: k.dplId || k.dpl?.id || null,
+        totalAnggota: (k.students || []).length,
+        students: studentsMapped,
         judulLaporan,
         fileUrl,
         fileName,
-        status: isGraded ? "Sudah Dinilai" : "Belum Dinilai",
-        nilai: isGraded && finalScore ? Math.round(finalScore) : null,
-        catatan: p?.catatanDpl || sp?.assessmentNote || "",
-        jurusan: sp?.jurusan || "-",
-        dplNama: sp?.kelompok?.dpl?.name || "-",
-        updatedAt: p?.updatedAt || s.updatedAt,
+        submittedAt: primaryProker?.createdAt?.toISOString?.() || k.createdAt?.toISOString?.() || new Date().toISOString(),
+        updatedAt: primaryProker?.updatedAt?.toISOString?.() || k.updatedAt?.toISOString?.() || new Date().toISOString(),
+        statusTelaah,
+        status: scoreVal !== null ? "Sudah Dinilai" : "Belum Dinilai",
+        nilaiAkhir: scoreVal,
+        predikat,
+        rubrikScores,
+        catatanBab,
+        catatanUmum: primaryProker?.evaluasiDpl || primaryProker?.catatanDpl || "",
       };
     });
 
-    const totalMahasiswa = mapped.length;
-    const sudahDinilai = mapped.filter((m) => m.status === "Sudah Dinilai").length;
-    const belumDinilai = totalMahasiswa - sudahDinilai;
+    const totalKelompok = kelompokList.length;
+    const disetujuiCount = kelompokList.filter((k) => k.statusTelaah === "DISETUJUI").length;
+    const perluRevisiCount = kelompokList.filter((k) => k.statusTelaah === "PERLU_REVISI").length;
+    const menungguTelaahCount = totalKelompok - disetujuiCount - perluRevisiCount;
 
     return {
       stats: {
-        totalMahasiswa,
-        sudahDinilai,
-        belumDinilai,
+        totalKelompok,
+        disetujuiCount,
+        perluRevisiCount,
+        menungguTelaahCount,
       },
-      students: mapped,
+      kelompokList,
     };
   },
 
   /**
-   * Menyimpan Penilaian Laporan Akhir Mahasiswa
+   * Menyimpan Penilaian Laporan Akhir Berbasis Kelompok
+   */
+  saveLaporanAkhirKelompokScore: async (
+    kelompokId: string,
+    evaluatorId: string,
+    evaluatorRole: string,
+    payload: {
+      statusTelaah: "DISETUJUI" | "PERLU_REVISI" | "MENUNGGU_TELAAH";
+      rubrikScores: {
+        sistematika: number;
+        analisis: number;
+        output: number;
+        refleksi: number;
+      };
+      catatanBab?: {
+        bab1?: string;
+        bab2?: string;
+        bab3?: string;
+        bab4?: string;
+      };
+      catatanUmum?: string;
+      judulLaporan?: string;
+      fileUrl?: string;
+    }
+  ) => {
+    const kelompok = await prisma.kelompokKkn.findUnique({
+      where: { id: kelompokId },
+      include: {
+        students: { include: { user: true } },
+        programKerja: true,
+        dpl: true,
+      },
+    });
+
+    if (!kelompok) {
+      throw new Error("Kelompok KKN tidak ditemukan");
+    }
+
+    const { rubrikScores, statusTelaah, catatanBab, catatanUmum, judulLaporan, fileUrl } = payload;
+    const sist = Math.max(0, Math.min(100, Number(rubrikScores.sistematika || 0)));
+    const anal = Math.max(0, Math.min(100, Number(rubrikScores.analisis || 0)));
+    const outp = Math.max(0, Math.min(100, Number(rubrikScores.output || 0)));
+    const refl = Math.max(0, Math.min(100, Number(rubrikScores.refleksi || 0)));
+
+    const finalScore = Math.round(sist * 0.25 + anal * 0.25 + outp * 0.25 + refl * 0.25);
+    const aspectScore0to4 = Math.min(4, Math.max(0, Math.round((finalScore / 100) * 4)));
+
+    // Upsert or Update Primary Proker / Laporan Akhir Kelompok
+    let primaryProker = kelompok.programKerja.find((p) => p.kategori === "LAPORAN_AKHIR") || kelompok.programKerja[0];
+
+    const aspekPenilaianData = {
+      rubrikScores: { sistematika: sist, analisis: anal, output: outp, refleksi: refl },
+      catatanBab: catatanBab || {},
+      statusTelaah,
+      finalScore,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const statusProkerVal = statusTelaah === "DISETUJUI" ? ("SELESAI" as any) : ("SEDANG_BERJALAN" as any);
+
+    if (primaryProker) {
+      await prisma.programKerjaKkn.update({
+        where: { id: primaryProker.id },
+        data: {
+          deskripsi: judulLaporan || primaryProker.deskripsi,
+          linkGoogleDrive: fileUrl || primaryProker.linkGoogleDrive,
+          skorPenilaian: finalScore,
+          statusPenilaian: statusTelaah,
+          status: statusProkerVal,
+          evaluasiDpl: catatanUmum || "Laporan akhir kelompok telah ditelaah oleh DPL",
+          catatanDpl: catatanUmum || "Laporan akhir kelompok telah ditelaah oleh DPL",
+          aspekPenilaian: aspekPenilaianData,
+          reviewedById: evaluatorId || kelompok.dplId || undefined,
+          reviewedAt: new Date(),
+        },
+      });
+    } else {
+      primaryProker = await prisma.programKerjaKkn.create({
+        data: {
+          kelompokId: kelompok.id,
+          deskripsi: judulLaporan || `Laporan Akhir KKN Tematik Coblong - ${kelompok.name}`,
+          kategori: "LAPORAN_AKHIR",
+          linkGoogleDrive: fileUrl || `https://berseka.bandung.go.id/docs/laporan-akhir/${kelompok.name.toLowerCase().replace(/\s+/g, "-")}.pdf`,
+          skorPenilaian: finalScore,
+          statusPenilaian: statusTelaah,
+          status: statusProkerVal,
+          evaluasiDpl: catatanUmum || "Laporan akhir kelompok telah ditelaah oleh DPL",
+          catatanDpl: catatanUmum || "Laporan akhir kelompok telah ditelaah oleh DPL",
+          aspekPenilaian: aspekPenilaianData,
+          reviewedById: evaluatorId || kelompok.dplId || undefined,
+          reviewedAt: new Date(),
+        },
+      });
+    }
+
+    // Sync score to all students in this kelompok
+    const studentUserIds = kelompok.students.map((s) => s.userId).filter(Boolean);
+
+    await Promise.all(
+      kelompok.students.map(async (st) => {
+        // Update StudentKkn assessmentScore
+        await prisma.studentKkn.update({
+          where: { id: st.id },
+          data: {
+            assessmentScore: finalScore,
+            assessmentNote: catatanUmum || "Nilai Laporan Akhir Kelompok telah disahkan",
+          },
+        });
+
+        // Upsert PenilaianKknMahasiswa
+        const existing = await prisma.penilaianKknMahasiswa.findUnique({
+          where: { studentId: st.userId },
+        });
+
+        const subtotalMitra = existing ? Number(existing.subtotalMitra) : 0;
+        const currentSkorDplPerencanaan = existing?.skorDplPerencanaan ?? aspectScore0to4;
+        const currentSkorDplKontribusi = existing?.skorDplKontribusi ?? aspectScore0to4;
+        const currentSkorDplLogbook = existing?.skorDplLogbook ?? aspectScore0to4;
+        const currentSkorDplAnalisis = existing?.skorDplAnalisis ?? aspectScore0to4;
+        const currentSkorDplOutput = existing?.skorDplOutput ?? aspectScore0to4;
+        const currentSkorDplLaporanAkhir = aspectScore0to4;
+
+        const subtotalDpl = Number((
+          calculateAspectScore(currentSkorDplPerencanaan, 20) +
+          calculateAspectScore(currentSkorDplKontribusi, 20) +
+          calculateAspectScore(currentSkorDplLogbook, 20) +
+          calculateAspectScore(currentSkorDplAnalisis, 15) +
+          calculateAspectScore(currentSkorDplOutput, 15) +
+          calculateAspectScore(currentSkorDplLaporanAkhir, 10)
+        ).toFixed(2));
+
+        const nilaiAkhir = Number((subtotalMitra + subtotalDpl).toFixed(2));
+        const kategoriNilai = calculateGradeCategory(nilaiAkhir);
+
+        await prisma.penilaianKknMahasiswa.upsert({
+          where: { studentId: st.userId },
+          create: {
+            studentId: st.userId,
+            kelompokId: kelompok.id,
+            dplId: evaluatorId || kelompok.dplId || undefined,
+            skorDplLaporanAkhir: aspectScore0to4,
+            skorDplPerencanaan: currentSkorDplPerencanaan,
+            skorDplKontribusi: currentSkorDplKontribusi,
+            skorDplLogbook: currentSkorDplLogbook,
+            skorDplAnalisis: currentSkorDplAnalisis,
+            skorDplOutput: currentSkorDplOutput,
+            subtotalDpl,
+            nilaiAkhir,
+            kategoriNilai,
+            catatanDpl: catatanUmum || "",
+            status: StatusPenilaianKkn.TERSIMPAN,
+          },
+          update: {
+            dplId: evaluatorId || kelompok.dplId || undefined,
+            skorDplLaporanAkhir: aspectScore0to4,
+            subtotalDpl,
+            nilaiAkhir,
+            kategoriNilai,
+            catatanDpl: catatanUmum !== undefined ? catatanUmum : existing?.catatanDpl,
+            status: StatusPenilaianKkn.TERSIMPAN,
+          },
+        });
+      })
+    );
+
+    return {
+      kelompokId,
+      finalScore,
+      statusTelaah,
+      rubrikScores: { sistematika: sist, analisis: anal, output: outp, refleksi: refl },
+      catatanBab,
+      catatanUmum,
+      totalStudentsSynced: studentUserIds.length,
+    };
+  },
+
+  /**
+   * Menyimpan Penilaian Laporan Akhir Individual Mahasiswa (Fallback)
    */
   saveLaporanAkhirScore: async (
     studentId: string,
@@ -749,12 +969,12 @@ export const penilaianKknService = {
     const currentSkorDplLaporanAkhir = aspectScore;
 
     const subtotalDpl = Number((
-      calculateAspectScore(currentSkorDplPerencanaan, 5) +
-      calculateAspectScore(currentSkorDplKontribusi, 5) +
-      calculateAspectScore(currentSkorDplLogbook, 5) +
-      calculateAspectScore(currentSkorDplAnalisis, 5) +
-      calculateAspectScore(currentSkorDplOutput, 5) +
-      calculateAspectScore(currentSkorDplLaporanAkhir, 5)
+      calculateAspectScore(currentSkorDplPerencanaan, 20) +
+      calculateAspectScore(currentSkorDplKontribusi, 20) +
+      calculateAspectScore(currentSkorDplLogbook, 20) +
+      calculateAspectScore(currentSkorDplAnalisis, 15) +
+      calculateAspectScore(currentSkorDplOutput, 15) +
+      calculateAspectScore(currentSkorDplLaporanAkhir, 10)
     ).toFixed(2));
 
     const nilaiAkhir = Number((subtotalMitra + subtotalDpl).toFixed(2));

@@ -105,7 +105,7 @@ export class CronService {
 
         const windowTimeLabel = window === "MORNING" ? `${morningStart} - ${morningEnd} WIB` : `${eveningStart} - ${eveningEnd} WIB`;
         const title = `⏰ Saatnya Pemilahan Sampah (${window === "MORNING" ? "Pagi" : "Sore"})`;
-        const message = `Pengingat TrashCare: Jendela pemilahan sampah sesi ${window === "MORNING" ? "Pagi" : "Sore"} (${windowTimeLabel}) telah dibuka. Mari pilah dan setor sampah Organik & Anorganik Anda!`;
+        const message = `Pengingat BERSEKA: Jendela pemilahan sampah sesi ${window === "MORNING" ? "Pagi" : "Sore"} (${windowTimeLabel}) telah dibuka. Mari pilah dan setor sampah Organik & Anorganik Anda!`;
 
         const notifications = wargaList.map((w) => ({
           userId: w.id,

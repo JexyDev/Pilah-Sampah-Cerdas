@@ -22,7 +22,7 @@ import {
   Calendar,
 } from "lucide-react";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -535,7 +535,7 @@ const JadwalKegiatan: React.FC = () => {
         </div>
 
         {/* View Switcher Tabs */}
-        <div className="bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-1">
+        <div className="bg-slate-100/90 dark:bg-slate-800/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-1">
           <button
             type="button"
             onClick={() => setActiveMainTab("TABEL_TIMELINE")}
@@ -597,22 +597,22 @@ const JadwalKegiatan: React.FC = () => {
 
             {/* 4 Summary Stat Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-              <div className="bg-slate-50/80 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
+              <div className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">Total Kegiatan</span>
                 <span className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 block">{TIMELINE_KKN_DATA.length} Tahapan</span>
                 <span className="text-[10.5px] text-slate-400 font-medium">Pra-kegiatan hingga penutupan</span>
               </div>
-              <div className="bg-slate-50/80 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
+              <div className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">Fase Program</span>
                 <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400 mt-1 block">4 Fase</span>
                 <span className="text-[10.5px] text-emerald-600 dark:text-emerald-400 font-semibold">Persiapan, Pilot, Implementasi, Evaluasi</span>
               </div>
-              <div className="bg-slate-50/80 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
+              <div className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">Durasi Penerjunan</span>
                 <span className="text-2xl font-black text-indigo-700 dark:text-indigo-400 mt-1 block">12 Pekan</span>
                 <span className="text-[10.5px] text-indigo-600 dark:text-indigo-400 font-semibold">12 Agustus – 31 Oktober 2026</span>
               </div>
-              <div className="bg-slate-50/80 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
+              <div className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">Wilayah Sasaran</span>
                 <span className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 block">6 Kelurahan</span>
                 <span className="text-[10.5px] text-slate-400 font-medium">Wilayah Binaan Program KKN</span>
@@ -660,7 +660,7 @@ const JadwalKegiatan: React.FC = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/90 text-slate-500 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
+                  <tr className="bg-slate-50/90 dark:bg-slate-800/90 text-slate-500 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
                     <th className="py-3.5 px-4 w-12 text-center">No</th>
                     <th className="py-3.5 px-4 w-32">Tahap / Minggu</th>
                     <th className="py-3.5 px-4 w-36">Tanggal</th>
@@ -673,7 +673,7 @@ const JadwalKegiatan: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                   {filteredTimeline.map((item, idx) => (
-                    <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors">
+                    <tr key={item.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/80 transition-colors">
                       <td className="py-3.5 px-4 text-center font-bold text-slate-400">
                         {idx + 1}
                       </td>
@@ -878,7 +878,7 @@ const JadwalKegiatan: React.FC = () => {
 
         {/* Right Sidebar: Details */}
         <aside className="w-full lg:w-[340px] max-h-[50vh] lg:max-h-none bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-outline-variant/50 flex flex-col shrink-0 overflow-hidden transition-all">
-          <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 flex flex-col gap-2">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <h3 className="text-[15px] font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <CalendarCheck className="text-emerald-600" size={18} />
@@ -1003,7 +1003,7 @@ const JadwalKegiatan: React.FC = () => {
                           >
                             <div
                               onClick={() => count > 1 && toggleGroupExpand(groupKey)}
-                              className={`p-3 flex flex-col gap-2 ${count > 1 ? "cursor-pointer hover:bg-slate-50/60 dark:hover:bg-slate-800/60" : ""}`}
+                              className={`p-3 flex flex-col gap-2 ${count > 1 ? "cursor-pointer hover:bg-slate-50/60 dark:bg-slate-800/60 dark:hover:bg-slate-800/60" : ""}`}
                             >
                               <div className="flex justify-between items-center">
                                 <span className={`text-[10px] px-2 py-0.5 rounded border uppercase tracking-wider font-extrabold ${catTheme.badge}`}>
@@ -1068,7 +1068,7 @@ const JadwalKegiatan: React.FC = () => {
                                 {group.items.map((item, idx) => (
                                   <div
                                     key={item.id || idx}
-                                    className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/60 flex items-center justify-between text-[11px] hover:border-emerald-300 transition-colors"
+                                    className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[11px] hover:border-emerald-300 transition-colors"
                                   >
                                     <div className="flex items-center gap-2">
                                       <div className={`w-1.5 h-1.5 rounded-full ${catTheme.dot}`}></div>
@@ -1111,7 +1111,7 @@ const JadwalKegiatan: React.FC = () => {
 
                 // Standard full timeline view
                 return (
-                  <div className="relative pl-3 space-y-3 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                  <div className="relative pl-3 space-y-3 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
                     {daySchedules.map((schedule) => {
                       const categoryColors: Record<string, { badge: string; dot: string }> = {
                         Pengangkutan: { badge: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
@@ -1179,7 +1179,7 @@ const JadwalKegiatan: React.FC = () => {
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-[740px] max-w-full overflow-hidden flex flex-col transform transition-all duration-200 border border-slate-200 dark:border-slate-800 max-h-[90vh]">
               {/* Modal Header */}
-              <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80">
+              <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/80">
                 <div>
                   <h3 className="text-base font-black text-slate-900 dark:text-slate-100">
                     {editId ? "Edit Jadwal Kegiatan" : "Buat Jadwal Kegiatan Baru"}
@@ -1191,7 +1191,7 @@ const JadwalKegiatan: React.FC = () => {
                   </p>
                 </div>
                 <button
-                  className="text-slate-400 hover:text-slate-700 p-1.5 rounded-full hover:bg-slate-200/60 transition-colors cursor-pointer"
+                  className="text-slate-400 hover:text-slate-700 p-1.5 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors cursor-pointer"
                   onClick={() => {
                     setIsModalOpen(false);
                     setEditId(null);
@@ -1322,7 +1322,7 @@ const JadwalKegiatan: React.FC = () => {
                               <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Meter</span>
                               <span className="bg-emerald-700 text-white px-2 py-0.5 rounded-md text-[11px] font-mono font-bold shadow-2xs">
                                 {Number(formData.radius || 100) >= 1000
-                                  ? `${(Number(formData.radius || 100) / 1000).toFixed(1).replace(/\.0$/, "")} km`
+                                  ? `${(Number(formData.radius || 100) / 1000).toFixed(2)} km`
                                   : `${formData.radius || 100} m`}
                               </span>
                             </div>
@@ -1619,12 +1619,12 @@ const JadwalKegiatan: React.FC = () => {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 flex justify-end gap-2.5">
+              <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 flex justify-end gap-2.5">
                 {modalStep === 1 ? (
                   <>
                     <button
                       type="button"
-                      className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
+                      className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 rounded-xl transition-colors cursor-pointer"
                       onClick={() => {
                         setIsModalOpen(false);
                         setEditId(null);
@@ -1650,7 +1650,7 @@ const JadwalKegiatan: React.FC = () => {
                   <>
                     <button
                       type="button"
-                      className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
+                      className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 rounded-xl transition-colors cursor-pointer"
                       onClick={() => setModalStep(1)}
                     >
                       Kembali ke Peta
