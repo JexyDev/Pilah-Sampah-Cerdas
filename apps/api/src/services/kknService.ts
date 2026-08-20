@@ -1887,10 +1887,15 @@ export class KknService {
     const ruleTargetMinutes = (ruleConfigs.attendanceMinDurationHours * 60) + ruleConfigs.attendanceMinDurationMinutes + (ruleConfigs.attendanceMinDurationSeconds / 60);
     const targetDurationMinutes = ruleTargetMinutes > 0 ? ruleTargetMinutes : 2;
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
+    // Hitung batas hari WIB (UTC+7) — jadwal disimpan UTC, harus query dengan window WIB
+    const nowForBoundary = new Date();
+    const nowWibBoundary = new Date(nowForBoundary.getTime() + 7 * 60 * 60 * 1000);
+    const todayWibStr = nowWibBoundary.toISOString().slice(0, 10);
+    const todayStart = new Date(`${todayWibStr}T00:00:00+07:00`);
+    const todayEnd = new Date(`${todayWibStr}T23:59:59.999+07:00`);
+    const yesterdayWibStr = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000 + 7 * 60 * 60 * 1000)
+      .toISOString().slice(0, 10);
+    const yesterdayStart = new Date(`${yesterdayWibStr}T00:00:00+07:00`);
 
     // Fetch all valid student ID representations to prevent any user ID mismatch
     const studentUserIds = Array.from(new Set([userId, student?.id, student?.userId].filter(Boolean) as string[]));
@@ -1919,8 +1924,6 @@ export class KknService {
       select: { scheduleId: true },
     });
     const completedScheduleIds = new Set(completedAttendances.map((a) => a.scheduleId));
-
-    const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
 
     // 🎯 Filter jadwal aktif khusus untuk kelompok KKN mahasiswa ybs (isActive: true)
     let activeSchedules: any[] = [];

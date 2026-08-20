@@ -1657,11 +1657,17 @@ export class KknAttendanceService {
       }
     }
 
-    const startOfDay = new Date(targetDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const yesterdayStart = new Date(startOfDay.getTime() - 24 * 60 * 60 * 1000);
-    const endOfDay = new Date(targetDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    // Hitung batas hari dalam WIB (UTC+7) agar jadwal tanggal hari ini di WIB selalu masuk window
+    // targetDate adalah waktu sekarang (UTC). Konversi ke WIB dulu untuk mendapat tanggal WIB yang benar.
+    const targetWib = new Date(targetDate.getTime() + 7 * 60 * 60 * 1000);
+    const todayWibDateStr = targetWib.toISOString().slice(0, 10); // "YYYY-MM-DD" WIB
+
+    // startOfDay = jam 00:00:00 WIB = jam 17:00:00 UTC hari sebelumnya
+    const startOfDay = new Date(`${todayWibDateStr}T00:00:00+07:00`);
+    const endOfDay = new Date(`${todayWibDateStr}T23:59:59.999+07:00`);
+    const yesterdayWibDateStr = new Date(startOfDay.getTime() - 24 * 60 * 60 * 1000 + 7 * 60 * 60 * 1000)
+      .toISOString().slice(0, 10);
+    const yesterdayStart = new Date(`${yesterdayWibDateStr}T00:00:00+07:00`);
 
     // 1. Cek pengajuan izin/sakit mahasiswa yang sudah disetujui pada tanggal ini
     const approvedLeave = await prisma.studentLeaveRequest.findFirst({
