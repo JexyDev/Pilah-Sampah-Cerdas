@@ -16,11 +16,12 @@
 
 Sebelum membuat atau mengubah kode/dokumentasi, AI Agent WAJIB membaca dan mematuhi aturan (*rules*), alur kerja (*workflows*), dan *skills* yang ada pada folder [.agent/](.agent/) (khususnya [.agent/AGENTS.md](.agent/AGENTS.md), `.agent/rules/`, dan `.agent/workflows/`).
 
-### 🛡️ PRINSIP ANTI-HALUSINASI (GROUNDED CODE & FACTUAL TRUTH):
-1. **DILARANG MENGARANG (NO HALLUCINATED LOGIC/ENDPOINTS):** Jangan pernah mengarang skema data, endpoint API, path file, atau nama komponen yang tidak terverifikasi langsung di codebase. Selalu lakukan `view_file` atau `grep_search` pada file sumber sebelum menulis kode.
-2. **DILARANG DATA DUMMY TANPA LABEL:** Jangan menanamkan data dummy/hardcode yang seolah-olah data asli backend.
-3. **PATUHI ATURAN KATA 'TEMPAT SAMPAH':** **DILARANG** menggunakan kata 'tong' atau 'tong sampah' pada UI/dokumentasi. Selalu gunakan **'Tempat Sampah'**.
-4. **CEK KOMPILASI KODE:** Setiap perubahan kode Dart WAJIB dites secara lokal dengan `flutter analyze` dan dipastikan **0 Error (Clean Compilation)**.
+### 🛡️ PRINSIP ANTI-HALUSINASI & ISOLASI REPOSITORI:
+1. 🚫 **ISOLASI REPOSITORI (STRICT ISOLATION):** Repositori `mobile` ini khusus dikembangkan untuk Aplikasi Client Mobile Flutter. AI Agent yang bekerja di folder/branch `mobile` **DILARANG KERAS** menyentuh, membuat, atau mengubah file/folder Monorepo `main` (`apps/api`, `apps/web`, `prisma/`, `main/`, dll). Perubahan backend/web dikelola secara terpisah pada repositori `main` (branch `main`).
+2. **DILARANG MENGARANG (NO HALLUCINATED LOGIC/ENDPOINTS):** Jangan pernah mengarang skema data, endpoint API, path file, atau nama komponen yang tidak terverifikasi langsung di codebase. Selalu lakukan `view_file` atau `grep_search` pada file sumber sebelum menulis kode.
+3. **DILARANG DATA DUMMY TANPA LABEL:** Jangan menanamkan data dummy/hardcode yang seolah-olah data asli backend.
+4. **PATUHI ATURAN KATA 'TEMPAT SAMPAH':** **DILARANG** menggunakan kata 'tong' atau 'tong sampah' pada UI/dokumentasi. Selalu gunakan **'Tempat Sampah'**.
+5. **CEK KOMPILASI KODE:** Setiap perubahan kode Dart WAJIB dites secara lokal dengan `flutter analyze` dan dipastikan **0 Error (Clean Compilation)**.
 
 ---
 
