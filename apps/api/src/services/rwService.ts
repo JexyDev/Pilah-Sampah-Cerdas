@@ -343,9 +343,13 @@ export const rwService = {
   },
 
   getPendingFacilities: async (rwId: number, userRole?: string) => {
+    const isAdmin = userRole === "SUPER_USER" || userRole === "ADMIN_DLH" || userRole === "DEVELOPER";
     const areaIds = await getRwAreaIds(rwId, userRole);
     return prisma.facility.findMany({
-      where: { rwId: { in: areaIds }, statusApproval: "PENDING" },
+      where: {
+        statusApproval: "PENDING",
+        ...(isAdmin ? {} : { rwId: { in: areaIds } }),
+      },
       include: {
         registeredBy: {
           select: {
@@ -365,13 +369,17 @@ export const rwService = {
     rwId: number,
     userRole?: string
   ) => {
+    const isAdmin = userRole === "SUPER_USER" || userRole === "ADMIN_DLH" || userRole === "DEVELOPER";
     const areaIds = await getRwAreaIds(rwId, userRole);
     const facilityCheck = await prisma.facility.findUnique({
       where: { id: facilityId },
       include: { kelompok: { include: { students: true } } },
     });
-    if (!facilityCheck || !facilityCheck.rwId || !areaIds.includes(facilityCheck.rwId)) {
-      throw new Error("Fasilitas tidak ditemukan atau tidak berada di wilayah RW Anda");
+    if (!facilityCheck) {
+      throw new Error("Fasilitas tidak ditemukan");
+    }
+    if (!isAdmin && (!facilityCheck.rwId || !areaIds.includes(facilityCheck.rwId))) {
+      throw new Error("Fasilitas tidak berada di wilayah RW Anda");
     }
 
     const updated = await prisma.facility.update({
@@ -399,9 +407,13 @@ export const rwService = {
   },
 
   getFacilities: async (rwId: number, userRole?: string) => {
+    const isAdmin = userRole === "SUPER_USER" || userRole === "ADMIN_DLH" || userRole === "DEVELOPER";
     const areaIds = await getRwAreaIds(rwId, userRole);
     return prisma.facility.findMany({
-      where: { rwId: { in: areaIds }, statusApproval: "APPROVED" },
+      where: {
+        statusApproval: "APPROVED",
+        ...(isAdmin ? {} : { rwId: { in: areaIds } }),
+      },
       include: {
         productionLogs: true,
         registeredBy: {
@@ -425,10 +437,14 @@ export const rwService = {
     rwId: number,
     userRole?: string
   ) => {
+    const isAdmin = userRole === "SUPER_USER" || userRole === "ADMIN_DLH" || userRole === "DEVELOPER";
     const areaIds = await getRwAreaIds(rwId, userRole);
     const facilityCheck = await prisma.facility.findUnique({ where: { id: facilityId } });
-    if (!facilityCheck || !facilityCheck.rwId || !areaIds.includes(facilityCheck.rwId)) {
-      throw new Error("Fasilitas tidak ditemukan atau tidak berada di wilayah RW Anda");
+    if (!facilityCheck) {
+      throw new Error("Fasilitas tidak ditemukan");
+    }
+    if (!isAdmin && (!facilityCheck.rwId || !areaIds.includes(facilityCheck.rwId))) {
+      throw new Error("Fasilitas tidak berada di wilayah RW Anda");
     }
 
     return prisma.facilityProductionLog.create({
