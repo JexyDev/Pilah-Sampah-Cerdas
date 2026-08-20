@@ -1086,18 +1086,16 @@ export class KknAttendanceService {
       dplStudentUserIds = dplGroups.flatMap((g) => g.students.map((s) => s.userId));
     }
 
-    let studentWhereCondition: any = { role: { name: "MAHASISWA_KKN" } };
+    let studentWhereCondition: any = { studentProfile: { isNot: null } };
 
-    if (dplStudentUserIds) {
+    if (dplStudentUserIds && dplStudentUserIds.length > 0) {
       studentWhereCondition = {
         id: { in: dplStudentUserIds },
-        role: { name: "MAHASISWA_KKN" },
       };
     } else if (schedule?.kelompok?.students && schedule.kelompok.students.length > 0) {
       const groupUserIds = schedule.kelompok.students.map((s) => s.userId);
       studentWhereCondition = {
         id: { in: groupUserIds },
-        role: { name: "MAHASISWA_KKN" },
       };
     } else if (schedule?.title) {
       const groups = await prisma.kelompokKkn.findMany({
@@ -1118,7 +1116,6 @@ export class KknAttendanceService {
         const groupUserIds = matchedGroup.students.map((s) => s.userId);
         studentWhereCondition = {
           id: { in: groupUserIds },
-          role: { name: "MAHASISWA_KKN" },
         };
       }
     }
