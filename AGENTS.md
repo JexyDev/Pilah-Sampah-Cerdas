@@ -56,3 +56,49 @@ lib/
 [ ] Token disimpan aman via SafeStorage
 [ ] Tidak ada hardcoded credentials/secrets
 ```
+
+---
+
+## 5. Standar Commit Message
+
+Format: `<type>(<scope>): <deskripsi singkat>`
+
+| Type | Kapan dipakai |
+|------|----------------|
+| `feat` | Fitur baru |
+| `fix` | Perbaikan bug |
+| `refactor` | Ubah struktur kode tanpa ubah behavior |
+| `docs` | Perubahan dokumentasi |
+| `test` | Menambah/mengubah test |
+| `chore` | Config, dependency, tooling |
+
+Contoh: `feat(mobile): tambah tracking lokasi mahasiswa kkn`
+
+---
+
+## 6. Git Branching Strategy (SOP)
+
+**Penamaan branch:**
+```text
+feat/mobile-<deskripsi-singkat>      -> contoh: feat/mobile-auth
+fix/mobile-<deskripsi-singkat>       -> contoh: fix/mobile-notif-crash
+refactor/mobile-<deskripsi-singkat>
+```
+
+---
+
+## 7. Kebijakan Identitas Pengguna & 'Tempat Sampah' Mandate (WAJIB DIIKUTI)
+
+- **NIK (Nomor Induk Kependudukan)**: DIHAPUS dari SELURUH antarmuka pengguna (UI), local storage, form input, dan logic API. **Tidak ada role atau modul yang menggunakan NIK**.
+- **Identitas Auth Universal**: Warga, Mahasiswa KKN, DPL, dan Petugas menggunakan **Nomor Telepon (+62)** untuk login utama.
+- **LARANGAN KATA 'TONG' (WAJIB DIIKUTI)**: **DILARANG** menggunakan kata **'tong'** atau **'tong sampah'** di seluruh teks UI, nama berkas, notifikasi, log, komentar kode, maupun dokumentasi. SELALU gunakan istilah **'Tempat Sampah'** (contoh: 'Kapasitas Tempat Sampah', 'Tempat Sampah Organik').
+
+---
+
+## 8. Kebijakan Anti-Dummy & Integrasi Data Real (WAJIB DIIKUTI)
+
+- **Batasan Data Mock**: Data tiruan/mock HANYA BOLEH berada di testing fixtures. DILARANG menanamkan data dummy statis di dalam komponen UI / view Flutter tanpa indikator status.
+- **Pengembangan UI Tanpa API**: Jika API backend belum terintegrasi, AI wajib mencantumkan label visual yang jelas pada UI (misal badge `[Belum Terhubung API]`). DILARANG menyajikan data hardcode seolah-olah data tersebut live.
+- **Semua chart & progress stats** pada mobile wajib dirender secara dinamis dari response JSON backend.
+- Pelanggaran terhadap aturan real data ini dianggap setara dengan bug kritis (❌).
+
