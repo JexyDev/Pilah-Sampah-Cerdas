@@ -230,12 +230,24 @@ router.post(
 );
 
 router.post(
-  "/location-ping",
+  ["/location-ping", "/kkn/location-ping", "/mahasiswa/location-ping", "/mahasiswa/ping"],
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
   async (req, res) => {
     try {
-      const { latitude, longitude } = req.body;
+      const latRaw = req.body.latitude ?? req.body.lat;
+      const lngRaw = req.body.longitude ?? req.body.lng;
+      const latitude = Number(latRaw);
+      const longitude = Number(lngRaw);
+
+      if (isNaN(latitude) || isNaN(longitude)) {
+        return res.status(400).json({
+          success: false,
+          error: "INVALID_COORDINATES",
+          message: "Koordinat latitude dan longitude yang valid diperlukan",
+        });
+      }
+
       const result = await kknAttendanceServiceInstance.pingLocation(
         req.user!.userId,
         latitude,
@@ -243,7 +255,7 @@ router.post(
       );
       res.json(result);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json({ success: false, error: error.message });
     }
   }
 );
