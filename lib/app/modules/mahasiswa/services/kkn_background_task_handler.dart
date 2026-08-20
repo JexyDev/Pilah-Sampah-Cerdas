@@ -376,13 +376,9 @@ class KknBackgroundTaskHandler extends TaskHandler {
     }
     
     // ═════════════════════════════════════════════════════════
-    // STEP 4: Ping lokasi ke backend (skip jika posisi sama)
+    // STEP 4: Ping lokasi ke backend (selalu ping per cycle 30 detik)
     // ═════════════════════════════════════════════════════════
-    final movedEnough = Geolocator.distanceBetween(
-      pos.latitude, pos.longitude, _lastPingLat, _lastPingLng
-    ) > 5; // Hanya ping jika bergerak > 5 meter
-    
-    if (movedEnough && _apiBaseUrl != null && _authToken != null) {
+    if (_apiBaseUrl != null && _authToken != null && _authToken!.isNotEmpty) {
       _lastPingLat = pos.latitude;
       _lastPingLng = pos.longitude;
       // Ping backend secara fire-and-forget (jangan blocking)
