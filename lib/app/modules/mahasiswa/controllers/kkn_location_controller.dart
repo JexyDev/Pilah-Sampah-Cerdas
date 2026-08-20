@@ -313,8 +313,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       
       if (response['actualInZoneMinutes'] != null) {
         final actualMins = num.tryParse(response['actualInZoneMinutes'].toString()) ?? 0;
-        if (actualMins > 0) {
-          _accumulatedSeconds = actualMins.toInt() * 60;
+        final serverSecs = (actualMins * 60).toInt();
+        if (_accumulatedSeconds == 0 && serverSecs > 0) {
+          _accumulatedSeconds = serverSecs;
           await _savePersistentTimer();
         }
       }
@@ -821,7 +822,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       if (mergedData['actualInZoneMinutes'] != null) {
         final actualMins = num.tryParse(mergedData['actualInZoneMinutes'].toString()) ?? 0;
         final serverSecs = (actualMins * 60).toInt();
-        if (serverSecs > _accumulatedSeconds) {
+        // Inisialisasi dari server HANYA jika timer lokal bernilai 0 (pertama kali dibuka / re-install)
+        if (_accumulatedSeconds == 0 && serverSecs > 0) {
           _accumulatedSeconds = serverSecs;
           await _savePersistentTimer();
         }
