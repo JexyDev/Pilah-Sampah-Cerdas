@@ -935,7 +935,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       'Anda sedang berada di dalam zona KKN. Jangan tutup aplikasi atau GPS Anda.',
     );
 
-    _zoneDurationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _zoneDurationTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
       if (!mounted) return;
       final now = DateTime.now();
 
