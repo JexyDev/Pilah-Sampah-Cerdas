@@ -376,6 +376,8 @@ export class KknAttendanceService {
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
+    // Bug #5 fix: samakan window waktu dengan pingLocation (sertakan kemarin untuk kegiatan overnight)
+    const yesterdayStartBatch = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
 
     const student = await prisma.studentKkn.findUnique({
       where: { userId: studentId },
@@ -383,7 +385,7 @@ export class KknAttendanceService {
 
     const activeSchedules = await prisma.schedule.findMany({
       where: {
-        date: { gte: todayStart, lte: todayEnd },
+        date: { gte: yesterdayStartBatch, lte: todayEnd },
         isActive: true,
         ...(student?.kelompokId ? { OR: [{ kelompokId: student.kelompokId }, { kelompokId: null }] } : {}),
       },
@@ -527,11 +529,22 @@ export class KknAttendanceService {
       });
 
       if (attendance) {
-        const isFinished = attendance.checkOutAt !== null || attendance.status === "HADIR" || attendance.status === "SELESAI";
+        // Bug #1 fix: SELESAI_TELAT juga dianggap finished; BERLANGSUNG bukan "LAPANGAN"
+        const isFinished =
+          attendance.checkOutAt !== null ||
+          attendance.status === "HADIR" ||
+          attendance.status === "SELESAI" ||
+          attendance.status === "SELESAI_TELAT";
         isAttended = isFinished;
         attendanceStatus = isFinished
-          ? (attendance.status === "SELESAI" ? "SELESAI" : "HADIR")
-          : (attendance.status === "ALPA" ? "ALPA" : "LAPANGAN");
+          ? (["SELESAI", "SELESAI_TELAT"].includes(attendance.status)
+              ? attendance.status
+              : "HADIR")
+          : (attendance.status === "ALPA"
+              ? "ALPA"
+              : attendance.status === "BERLANGSUNG"
+                ? "BERLANGSUNG"
+                : "BELUM_ABSEN");
         checkInTime = attendance.attendedAt;
         checkOutTime = attendance.checkOutAt;
         method = attendance.method;
@@ -794,19 +807,35 @@ export class KknAttendanceService {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
-    // Find the latest active check-in today that has not checked out yet
+    // Bug #2 fix: query juga handle attendedAt NULL (record dibuat tanpa attendedAt)
+    // Pertama coba yang sudah punya attendedAt hari ini
     let attendance = await prisma.activityAttendance.findFirst({
       where: {
         studentId,
         ...(scheduleId ? { scheduleId } : {}),
         attendedAt: { gte: startOfDay },
         checkOutAt: null,
+        status: { in: ["BERLANGSUNG", "HADIR"] },
       },
       orderBy: { attendedAt: "desc" },
     });
 
+    // Fallback: cari record BERLANGSUNG yang attendedAt-nya NULL (dibuat dari mulaiKegiatan tanpa set attendedAt)
     if (!attendance) {
-      // Fallback: check if already checked out today
+      attendance = await prisma.activityAttendance.findFirst({
+        where: {
+          studentId,
+          ...(scheduleId ? { scheduleId } : {}),
+          attendedAt: undefined,   // prisma will not filter on this field
+          checkOutAt: null,
+          status: { in: ["BERLANGSUNG", "HADIR"] },
+        },
+        orderBy: { id: "desc" },
+      });
+    }
+
+    if (!attendance) {
+      // Final fallback: check if already checked out today
       attendance = await prisma.activityAttendance.findFirst({
         where: {
           studentId,
@@ -822,11 +851,12 @@ export class KknAttendanceService {
     }
 
     const checkOutTime = new Date();
-    const attendedTime = new Date(attendance.attendedAt);
+    // Bug #8 fix: guard attendedAt null agar tidak kalkulasi dari epoch (1970)
+    const attendedTime = attendance.attendedAt ? new Date(attendance.attendedAt) : checkOutTime;
     const rawDurationMinutes = Math.max(0, Math.floor((checkOutTime.getTime() - attendedTime.getTime()) / (1000 * 60)));
 
     // Calculate actual in-zone duration from GPS logs (not simple time diff)
-    const dayStart = new Date(attendance.attendedAt);
+    const dayStart = attendance.attendedAt ? new Date(attendance.attendedAt) : new Date(checkOutTime);
     dayStart.setHours(0, 0, 0, 0);
     const todayLogsForCheckout = await prisma.studentLocation.findMany({
       where: {
@@ -1281,31 +1311,37 @@ export class KknAttendanceService {
         const lat = scheduleLoc.latitude ? Number(scheduleLoc.latitude) : 0;
         const lng = scheduleLoc.longitude ? Number(scheduleLoc.longitude) : 0;
 
-        // Auto-synchronize ActivityAttendance in DB for approved leaves
+        // Bug #12 fix: ganti upsert tanpa syarat dengan conditional create/update
+        // untuk menghindari side-effect write berbahaya pada setiap GET request
         try {
-          await prisma.activityAttendance.upsert({
-            where: {
-              studentId_scheduleId: {
+          const existingLeaveAtt = await prisma.activityAttendance.findUnique({
+            where: { studentId_scheduleId: { studentId: s.id, scheduleId } },
+          });
+          if (!existingLeaveAtt) {
+            await prisma.activityAttendance.create({
+              data: {
                 studentId: s.id,
                 scheduleId,
+                status: attStatus,
+                method: "IZIN_DPL",
+                latitude: lat,
+                longitude: lng,
+                attendedAt: schedule?.date || new Date(),
               },
-            },
-            create: {
-              studentId: s.id,
-              scheduleId,
-              status: attStatus,
-              method: "IZIN_DPL",
-              latitude: lat,
-              longitude: lng,
-              attendedAt: schedule?.date || new Date(),
-            },
-            update: {
-              status: attStatus,
-              method: "IZIN_DPL",
-            },
-          });
+            });
+          } else if (
+            existingLeaveAtt.status !== attStatus &&
+            existingLeaveAtt.status !== "HADIR" &&
+            existingLeaveAtt.status !== "SELESAI" &&
+            existingLeaveAtt.status !== "SELESAI_TELAT"
+          ) {
+            await prisma.activityAttendance.update({
+              where: { id: existingLeaveAtt.id },
+              data: { status: attStatus, method: "IZIN_DPL" },
+            });
+          }
         } catch (_syncErr) {
-          // Continue if already exists
+          // Continue if sync fails
         }
 
         unAttendedList.push({
@@ -1768,7 +1804,17 @@ export class KknAttendanceService {
       };
     });
 
-    return result;
+    // Bug #4 fix: filter jadwal kemarin yang sudah SELESAI dan tidak ada attendance-nya
+    // Jadwal kemarin hanya tampil jika: (1) overnight (masih aktif) ATAU (2) sudah ada statusKehadiran
+    const filtered = result.filter((r) => {
+      if (r.status === "SELESAI") {
+        // Kegiatan sudah lewat — tampilkan hanya jika mahasiswa sudah punya catatan kehadiran
+        return r.statusKehadiran !== null;
+      }
+      return true;
+    });
+
+    return filtered;
   }
 
   /**
