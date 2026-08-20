@@ -27,11 +27,11 @@ import { useThemeStore } from "../../store/useThemeStore";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 
-// Official High-Resolution BERSEKA Icon Mark Asset
-const BersekaLogoIcon: React.FC<{ className?: string }> = ({ className = "w-12 h-12" }) => (
+// Official High-Resolution BERSEKA Full Logo Asset
+const BersekaLogoIcon: React.FC<{ className?: string }> = ({ className = "h-10 sm:h-11 w-auto" }) => (
   <img
-    src="/image/berseka-icon.png"
-    alt="BERSEKA Icon"
+    src="/app-logo.png"
+    alt="BERSEKA"
     className={`${className} object-contain shrink-0`}
   />
 );
@@ -395,7 +395,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                 <button
                   onClick={handleVerifyOtp}
                   disabled={loading || otp.join("").length < 6}
-                  className="flex-1 h-12 bg-[#009966] hover:bg-emerald-700 text-white text-xs font-extrabold rounded-2xl flex items-center justify-center gap-1.5 transition-all shadow-md disabled:opacity-50 cursor-pointer"
+                  className="flex-1 h-12 bg-[#055c46] hover:bg-[#044d3a] text-white text-xs font-extrabold rounded-2xl flex items-center justify-center gap-1.5 transition-all shadow-md disabled:opacity-50 cursor-pointer"
                 >
                   {loading ? (
                     <><RefreshCcw className="animate-spin" size={16} /><span>Memverifikasi...</span></>
@@ -408,13 +408,13 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
               <div className="text-center pt-1">
                 {resendCooldown > 0 ? (
                   <p className="text-[11px] text-slate-400 font-medium">
-                    Kirim ulang kode dalam <strong className="text-[#009966] font-bold">{resendCooldown} detik</strong>
+                    Kirim ulang kode dalam <strong className="text-[#055c46] font-bold">{resendCooldown} detik</strong>
                   </p>
                 ) : (
                   <button
                     onClick={() => { handleRequestOtp(); }}
                     disabled={loading}
-                    className="text-[11px] text-[#009966] hover:text-emerald-700 font-extrabold cursor-pointer hover:underline"
+                    className="text-[11px] text-[#055c46] hover:text-[#044d3a] font-extrabold cursor-pointer hover:underline"
                   >
                     Tidak menerima kode? Kirim ulang →
                   </button>
@@ -427,7 +427,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
           {step === "new_password" && (
             <>
               <div className="text-center space-y-2">
-                <div className="w-14 h-14 rounded-full bg-emerald-50 text-[#009966] border border-emerald-100/80 flex items-center justify-center mx-auto shadow-xs">
+                <div className="w-14 h-14 rounded-full bg-[#f3fbf5] text-[#055c46] border border-[#c8e6b2] flex items-center justify-center mx-auto shadow-xs">
                   <Lock size={26} />
                 </div>
                 <p className="text-sm text-slate-600 font-medium leading-relaxed max-w-xs mx-auto">
@@ -455,7 +455,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input
-                      className={`w-full pl-11 pr-11 h-12 bg-white border ${pwError ? "border-rose-500" : "border-slate-300 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl text-sm font-bold text-slate-900 outline-none transition-all`}
+                      className={`w-full pl-11 pr-11 h-12 bg-white border ${pwError ? "border-rose-500" : "border-slate-300 focus:border-[#055c46] focus:ring-2 focus:ring-[#055c46]/20"} rounded-2xl text-sm font-bold text-slate-900 outline-none transition-all`}
                       placeholder="Kata sandi baru (min. 8 karakter)"
                       type={showNewPw ? "text" : "password"}
                       value={newPassword}
@@ -474,7 +474,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input
-                      className={`w-full pl-11 pr-11 h-12 bg-white border ${(pwError && confirmPassword) ? "border-rose-500" : "border-slate-300 focus:border-[#009966] focus:ring-2 focus:ring-emerald-500/20"} rounded-2xl text-sm font-bold text-slate-900 outline-none transition-all`}
+                      className={`w-full pl-11 pr-11 h-12 bg-white border ${(pwError && confirmPassword) ? "border-rose-500" : "border-slate-300 focus:border-[#055c46] focus:ring-2 focus:ring-[#055c46]/20"} rounded-2xl text-sm font-bold text-slate-900 outline-none transition-all`}
                       placeholder="Ulangi kata sandi baru"
                       type={showConfirmPw ? "text" : "password"}
                       value={confirmPassword}
@@ -498,7 +498,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
               <button
                 onClick={handleResetPassword}
                 disabled={loading || !newPassword || !confirmPassword}
-                className="w-full h-13 bg-[#009966] hover:bg-emerald-700 text-white text-sm font-extrabold rounded-2xl flex items-center justify-center gap-2 transition-all shadow-md disabled:opacity-50 cursor-pointer"
+                className="w-full h-13 bg-[#055c46] hover:bg-[#044d3a] text-white text-sm font-extrabold rounded-2xl flex items-center justify-center gap-2 transition-all shadow-md disabled:opacity-50 cursor-pointer"
               >
                 {loading ? (
                   <><RefreshCcw className="animate-spin" size={17} /><span>Menyimpan Kata Sandi...</span></>
@@ -665,23 +665,23 @@ const Login: React.FC = () => {
       <div className="w-full max-w-[1120px] bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden grid grid-cols-1 md:grid-cols-12 z-10 transition-all duration-500 animate-fade-in-up">
 
         {/* Left Side: Rich Eco Feature Panel (Desktop Eco-Monitoring Showcase) */}
-        <div className="hidden md:flex md:col-span-5 bg-gradient-to-br from-[#0f3d2e] via-[#14532d] to-[#064e3b] text-white p-8 sm:p-10 flex-col justify-between relative overflow-hidden">
+        <div className="hidden md:flex md:col-span-6 bg-gradient-to-br from-[#055c46] via-[#044d3a] to-[#0a2e23] text-white p-8 sm:p-10 flex-col justify-between relative overflow-hidden">
           {/* Background Decorative Animated Element */}
-          <div className="absolute top-0 right-0 w-72 h-72 bg-emerald-400/15 rounded-full blur-3xl pointer-events-none animate-float" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-teal-400/10 rounded-full blur-3xl pointer-events-none animate-float" style={{ animationDelay: "2s" }} />
+          <div className="absolute top-0 right-0 w-72 h-72 bg-[#549e26]/20 rounded-full blur-3xl pointer-events-none animate-float" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#0062bd]/15 rounded-full blur-3xl pointer-events-none animate-float" style={{ animationDelay: "2s" }} />
 
           <div className="relative z-10 space-y-6 my-auto">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-emerald-300/30 text-white text-xs font-extrabold tracking-wide shadow-xs">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs font-extrabold tracking-wide shadow-xs">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#549e26] animate-pulse shrink-0"></span>
               <span>Web Monitoring BERSEKA</span>
             </div>
 
             <div className="space-y-3">
               <h2 className="text-3xl sm:text-4xl font-black leading-tight tracking-tight text-white">
-                Sampah Terdata,<br />Kampung Berseka.
+                Bersih, Sehat,<br />Kampung Asri.
               </h2>
               <p className="text-xs text-emerald-100/90 leading-relaxed font-medium">
-                Sistem pemantauan dan tata kelola sampah terpadu BERSEKA (Bersih, Sehat, Kampung Asri) dalam kerangka kegiatan KKN Berdampak UNIKOM dan Pemerintah Kecamatan Coblong.
+                Sistem pemantauan dan tata kelola sampah terpadu BERSEKA (Bersih, Sehat, Kampung Asri) dalam kerangka kegiatan KKN Berdampak Universitas Komputer Indonesia dan Pemerintah Kecamatan Coblong.
               </p>
             </div>
 
@@ -692,7 +692,7 @@ const Login: React.FC = () => {
                   <span className="material-symbols-outlined text-sm">analytics</span>
                 </div>
                 <div>
-                  <p className="font-extrabold text-white text-xs">Monitoring Real-Time</p>
+                  <p className="font-extrabold text-white text-xs">Pemantauan Real-Time</p>
                   <p className="text-[11px] text-emerald-200/80 font-medium">Pemantauan volume sampah organik &amp; anorganik.</p>
                 </div>
               </div>
@@ -719,28 +719,23 @@ const Login: React.FC = () => {
             </div>
           </div>
 
-          <div className="pt-6 border-t border-white/15 relative z-10 text-[10px] text-emerald-200/80 font-medium">
-            © 2026 Universitas Komputer Indonesia. Hak Cipta Dilindungi.
+          <div className="pt-4 relative z-10 text-[11px] text-emerald-200/80 font-medium">
+            © 2026 Universitas Komputer Indonesia. All Rights Reserved.
           </div>
         </div>
 
         {/* Right Side: Clean Modern Login Form */}
-        <div className="col-span-12 md:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-white space-y-6">
+        <div className="col-span-12 md:col-span-6 p-6 sm:p-10 flex flex-col justify-between bg-white space-y-6">
 
           <div className="space-y-5">
 
             {/* Header Brand Block */}
             <div className="flex items-center justify-between flex-wrap gap-3">
-              <Link to="/" className="flex items-center gap-2.5 group">
-                <BersekaLogoIcon className="w-10 h-10 transition-transform group-hover:scale-105 shrink-0" />
-                <span className="text-xl font-black tracking-tight leading-normal text-left relative -top-[2px]">
-                  <span className="text-[#175C3B]">BER</span>
-                  <span className="text-[#009966]">SE</span>
-                  <span className="text-[#0073E6]">KA</span>
-                </span>
+              <Link to="/" className="flex items-center gap-2 group">
+                <BersekaLogoIcon className="h-10 sm:h-11 w-auto transition-transform group-hover:scale-105 shrink-0" />
               </Link>
 
-              <Link to="/" className="text-xs font-extrabold text-emerald-600 hover:text-emerald-700 transition">
+              <Link to="/" className="text-xs font-extrabold text-[#055c46] hover:text-[#044d3a] transition">
                 Kembali ke Beranda →
               </Link>
             </div>
@@ -758,14 +753,14 @@ const Login: React.FC = () => {
               {/* Phone Input */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
-                  Nomor HP
+                  Nomor Telepon
                 </label>
                 <div className="relative">
                   <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
                     id="login-phone"
                     autoFocus
-                    className={`w-full pl-10 pr-4 h-12 bg-white text-slate-900 placeholder:text-slate-400 border ${identifierError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-semibold focus:ring-1 outline-none transition-all shadow-2xs`}
+                    className={`w-full pl-10 pr-4 h-12 bg-white text-slate-900 placeholder:text-slate-400 border ${identifierError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-[#055c46] focus:ring-2 focus:ring-[#055c46]/20"} rounded-xl text-sm font-semibold outline-none transition-all shadow-2xs`}
                     placeholder="08123456789 atau +6281234567890"
                     type="text"
                     value={identifier}
@@ -803,7 +798,7 @@ const Login: React.FC = () => {
                   <input
                     id="login-password"
                     ref={passwordInputRef}
-                    className={`w-full pl-10 pr-11 h-12 bg-white text-slate-900 placeholder:text-slate-400 border ${passwordError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-semibold focus:ring-1 outline-none transition-all shadow-2xs`}
+                    className={`w-full pl-10 pr-11 h-12 bg-white text-slate-900 placeholder:text-slate-400 border ${passwordError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-[#055c46] focus:ring-2 focus:ring-[#055c46]/20"} rounded-xl text-sm font-semibold outline-none transition-all shadow-2xs`}
                     placeholder="Masukkan kata sandi akun"
                     type={showPassword ? "text" : "password"}
                     value={password}
@@ -841,8 +836,8 @@ const Login: React.FC = () => {
                     onClick={() => setRememberMe(!rememberMe)}
                     className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${
                       rememberMe
-                        ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
-                        : "bg-white border-slate-300 hover:border-emerald-400"
+                        ? "bg-[#055c46] border-[#055c46] text-white shadow-xs"
+                        : "bg-white border-slate-300 hover:border-[#055c46]"
                     }`}
                   >
                     {rememberMe && (
@@ -856,14 +851,13 @@ const Login: React.FC = () => {
                     onClick={() => setRememberMe(!rememberMe)}
                   >
                     <span>Ingat Saya</span>
-                    <span className="text-[10px] text-slate-400 font-medium hidden sm:inline">(Tetap masuk)</span>
                   </label>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => setShowForgotModal(true)}
-                  className="text-xs text-emerald-600 hover:text-emerald-700 font-extrabold transition cursor-pointer hover:underline"
+                  className="text-xs text-[#055c46] hover:text-[#044d3a] font-extrabold transition cursor-pointer hover:underline"
                 >
                   Lupa Kata Sandi?
                 </button>
@@ -874,7 +868,7 @@ const Login: React.FC = () => {
                 type="submit"
                 id="login-submit-btn"
                 disabled={isBtnDisabled}
-                className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/20 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 mt-4 cursor-pointer"
+                className="w-full h-12 bg-[#055c46] hover:bg-[#044d3a] text-white text-sm font-extrabold rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-[#055c46]/20 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 mt-4 cursor-pointer"
               >
                 {isLocalLoading || isStoreLoading ? (
                   <><RefreshCcw className="animate-spin" size={16} /><span>Memproses...</span></>
@@ -889,22 +883,22 @@ const Login: React.FC = () => {
 
       </div>
 
-      {/* Floating Action Button: Download Aplikasi Mobile APK (Icon-Only Animated) */}
-      <div className="fixed bottom-6 right-8 sm:right-10 z-50 group flex items-center justify-center p-2 overflow-visible">
+      {/* Floating Action Button: Download Aplikasi Mobile APK */}
+      <div className="fixed bottom-6 right-6 sm:right-10 z-50 group flex items-center justify-center pointer-events-auto">
         <div className="relative flex items-center justify-center">
           {/* Outer Animated Ping Ripple Effect */}
-          <span className="absolute -inset-1 rounded-full bg-[#009966]/40 animate-ping opacity-75 pointer-events-none" />
+          <span className="absolute -inset-1.5 rounded-full bg-[#055c46]/30 animate-ping opacity-75 pointer-events-none" />
           
           <Link
             to="/download"
-            className="relative w-14 h-14 bg-gradient-to-r from-[#009966] to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white rounded-full flex items-center justify-center shadow-xl shadow-emerald-900/30 hover:scale-110 active:scale-95 transition-all duration-300 border border-white/40 cursor-pointer shrink-0"
+            className="relative w-14 h-14 bg-[#055c46] hover:bg-[#044d3a] text-white rounded-full flex items-center justify-center shadow-2xl shadow-[#055c46]/40 hover:scale-110 active:scale-95 transition-all duration-300 border-2 border-white/80 cursor-pointer shrink-0"
             aria-label="Unduh Aplikasi Mobile BERSEKA (APK)"
           >
             <Download size={22} className="text-white group-hover:rotate-12 transition-transform" />
             
             {/* Tooltip on Hover */}
             <span className="absolute right-16 top-1/2 -translate-y-1/2 px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-black tracking-wide whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 translate-x-2 transition-all duration-300 shadow-xl border border-slate-800">
-              Unduh Aplikasi Mobile (APK)
+              Unduh Aplikasi Mobile BERSEKA (APK)
             </span>
           </Link>
         </div>

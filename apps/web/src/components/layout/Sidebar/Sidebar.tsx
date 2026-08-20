@@ -14,14 +14,12 @@ import {
   MapPin,
   FileText,
   LogOut,
-  Sprout,
   Database,
   Trophy,
   Info,
   GraduationCap,
   ChevronDown,
   Clock,
-  Tags,
   Recycle,
   ShieldCheck,
   Award,
@@ -33,6 +31,7 @@ import { useAuthStore } from "../../../store/useAuthStore";
 import type { UserRole } from "../../../store/useAuthStore";
 import showToast from "../../../utils/showToast";
 import type { LucideIcon } from "lucide-react";
+import FallingLeavesBackground from "./FallingLeavesBackground";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -63,21 +62,21 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge }) => {
   return (
     <Link
       to={to}
-      className={`relative flex items-center gap-2.5 px-3.5 py-2 rounded-xl transition-all duration-200 ease-out text-[12.5px] group overflow-hidden transform-gpu ${
+      className={`relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-300 ease-out text-[12.5px] group overflow-hidden transform-gpu z-10 ${
         isCurrentActive
-          ? "bg-emerald-50/90 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-semibold shadow-[0_2px_10px_rgba(0,153,102,0.12)] border border-[#009966]/15 dark:border-emerald-700/30 scale-[1.01]"
-          : "text-slate-600 dark:text-slate-400 hover:text-[#009966] dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:translate-x-1 font-medium active:scale-[0.98]"
+          ? "bg-[#f3fbf5]/90 dark:bg-emerald-950/80 text-[#055c46] dark:text-emerald-300 font-bold shadow-xs border border-[#c8e6b2]/90 dark:border-emerald-700/50 scale-[1.01] backdrop-blur-[2px]"
+          : "text-slate-600 dark:text-slate-300 hover:text-[#055c46] dark:hover:text-emerald-400 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 hover:translate-x-1 font-medium active:scale-[0.98]"
       }`}
     >
-      {/* Left Curved Green Accent Indicator */}
+      {/* Left Curved Accent Indicator Bar */}
       {isCurrentActive && (
-        <span className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-[#009966] dark:bg-emerald-500 rounded-r-full shadow-xs" />
+        <span className="absolute left-0 top-2 bottom-2 w-1.5 bg-[#549e26] dark:bg-emerald-500 rounded-r-full shadow-xs animate-pulse" />
       )}
 
-      <Icon className={`shrink-0 transition-transform duration-200 ease-out ${isCurrentActive ? "text-[#009966] dark:text-emerald-400 scale-105" : "text-slate-500 dark:text-slate-400 group-hover:text-[#009966] dark:group-hover:text-emerald-400 group-hover:scale-105"}`} size={16} />
+      <Icon className={`shrink-0 transition-all duration-300 ease-out ${isCurrentActive ? "text-[#055c46] dark:text-emerald-400 scale-110" : "text-slate-400 dark:text-slate-400 group-hover:text-[#055c46] dark:group-hover:text-emerald-400 group-hover:scale-110"}`} size={17} />
       <span className="flex-1 truncate tracking-tight">{label}</span>
       {badge !== undefined && (
-        <span className="bg-[#009966] dark:bg-emerald-600 text-white text-[9.5px] font-bold px-1.5 py-0.2 rounded-full shadow-2xs group-hover:scale-105 transition-transform">{badge}</span>
+        <span className="bg-[#549e26] dark:bg-emerald-600 text-white text-[9.5px] font-bold px-1.5 py-0.2 rounded-full shadow-2xs group-hover:scale-105 transition-transform">{badge}</span>
       )}
     </Link>
   );
@@ -98,14 +97,14 @@ const NavItemCollapsed: React.FC<NavItemProps> = ({ to, icon: Icon, label }) => 
     <Link
       to={to}
       title={label}
-      className={`relative w-9 h-9 rounded-xl flex items-center justify-center my-0.5 transition-all group cursor-pointer shrink-0 ${
+      className={`relative w-10 h-10 rounded-xl flex items-center justify-center my-0.5 transition-all duration-200 group cursor-pointer shrink-0 ${
         isCurrentActive
-          ? "bg-[#009966] dark:bg-emerald-600 text-white shadow-md shadow-emerald-900/20 scale-105"
-          : "text-slate-500 dark:text-slate-400 hover:text-[#009966] dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+          ? "bg-[#055c46] dark:bg-emerald-600 text-white shadow-md shadow-emerald-900/20 scale-105"
+          : "text-slate-500 dark:text-slate-400 hover:text-[#055c46] dark:hover:text-emerald-400 hover:bg-[#f3fbf5] dark:hover:bg-slate-800"
       }`}
     >
-      <Icon size={16} />
-      <span className="absolute left-14 bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-2xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[70] border border-slate-700/60">
+      <Icon size={17} className="transition-transform duration-200 group-hover:scale-110" />
+      <span className="absolute left-14 bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-2xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[70] border border-slate-700/60">
         {label}
       </span>
     </Link>
@@ -161,25 +160,25 @@ const NavGroup: React.FC<{
     <div className="space-y-0.5">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl transition-all duration-200 text-[12.5px] text-left group relative overflow-hidden ${
+        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 text-[12.5px] text-left group relative overflow-hidden ${
           isAnySubActive
-            ? "bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-semibold"
-            : "text-slate-600 dark:text-slate-400 hover:text-[#009966] dark:hover:text-emerald-400 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 font-medium"
+            ? "bg-[#f3fbf5] dark:bg-emerald-950/70 text-[#055c46] dark:text-emerald-400 font-bold border border-[#c8e6b2]/80 dark:border-emerald-700/40"
+            : "text-slate-600 dark:text-slate-400 hover:text-[#055c46] dark:hover:text-emerald-400 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 font-medium"
         }`}
       >
         {isAnySubActive && (
-          <span className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-[#009966] dark:bg-emerald-500 rounded-r-full" />
+          <span className="absolute left-0 top-2 bottom-2 w-1.5 bg-[#549e26] dark:bg-emerald-500 rounded-r-full" />
         )}
 
-        <Icon className={`shrink-0 transition-colors ${isAnySubActive ? "text-[#009966] dark:text-emerald-400" : "text-slate-500 dark:text-slate-400 group-hover:text-[#009966] dark:group-hover:text-emerald-400"}`} size={16} />
-        <span className="flex-1 font-semibold text-slate-700 dark:text-slate-300 truncate">{label}</span>
+        <Icon className={`shrink-0 transition-all duration-200 ${isAnySubActive ? "text-[#055c46] dark:text-emerald-400 scale-110" : "text-slate-400 dark:text-slate-500 group-hover:text-[#055c46] dark:group-hover:text-emerald-400 group-hover:scale-110"}`} size={17} />
+        <span className="flex-1 font-bold text-slate-800 dark:text-slate-200 truncate tracking-tight">{label}</span>
         <ChevronDown
           size={14}
-          className={`transition-transform duration-200 text-slate-400 ${isOpen ? "rotate-180" : ""}`}
+          className={`transition-transform duration-300 ${isOpen ? "rotate-180 text-[#055c46] dark:text-emerald-400 font-bold" : "text-slate-400"}`}
         />
       </button>
       {isOpen && (
-        <div className="ml-3.5 pl-2 border-l-2 border-slate-200/80 dark:border-slate-800 my-0.5 space-y-0.5">
+        <div className="ml-4 pl-3 border-l-2 border-slate-200/80 dark:border-slate-800 my-1 space-y-0.5 transition-all">
           {items.map((sub, idx) => {
             const isActive = isSubActive(sub.to, idx);
             return (
@@ -187,17 +186,17 @@ const NavGroup: React.FC<{
                 key={sub.to}
                 to={sub.to}
                 title={sub.label}
-                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[12px] transition-all group ${
+                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[12px] transition-all duration-200 group ${
                   isActive
-                    ? "bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-semibold shadow-2xs"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#009966] dark:hover:text-emerald-400 hover:translate-x-0.5 font-medium active:scale-[0.98]"
+                    ? "bg-[#f3fbf5] dark:bg-emerald-950/70 text-[#055c46] dark:text-emerald-400 font-bold border border-[#c8e6b2]/60 shadow-2xs"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#055c46] dark:hover:text-emerald-400 hover:translate-x-1 font-medium active:scale-[0.98]"
                 }`}
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all ${
                     isActive
-                      ? "bg-[#009966] dark:bg-emerald-400 scale-125 ring-2 ring-emerald-200 dark:ring-emerald-800"
-                      : "bg-slate-300 dark:bg-slate-600 group-hover:bg-[#009966] dark:group-hover:bg-emerald-400"
+                      ? "bg-[#549e26] dark:bg-emerald-400 scale-125 ring-3 ring-[#549e26]/30 dark:ring-emerald-800"
+                      : "bg-slate-300 dark:bg-slate-600 group-hover:bg-[#549e26] dark:group-hover:bg-emerald-400"
                   }`}
                 />
                 <span className="truncate">{sub.label}</span>
@@ -211,7 +210,7 @@ const NavGroup: React.FC<{
 };
 
 const SectionHeader: React.FC<{ label: string }> = ({ label }) => (
-  <div className="px-4 pt-4 pb-1.5 text-[10.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+  <div className="px-3.5 pt-4 pb-1.5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
     {label}
   </div>
 );
@@ -820,13 +819,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       <aside
         className={`${
           isCollapsed ? "w-[84px]" : "w-[280px]"
-        } h-screen fixed left-0 top-0 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 flex flex-col z-50 transition-all duration-300 ease-in-out transform lg:translate-x-0 ${
+        } h-screen fixed left-0 top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-r border-slate-200/80 dark:border-slate-800 flex flex-col z-50 transition-all duration-300 ease-in-out transform lg:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        } overflow-hidden shadow-lg`}
       >
+        {/* Animated Falling Leaves Background */}
+        <FallingLeavesBackground />
         {/* Render Collapsed Mini Sidebar */}
         {isCollapsed ? (
-          <div className="flex flex-col h-full items-center justify-between py-3">
+          <div className="relative z-10 flex flex-col h-full items-center justify-between py-3">
             {/* Top Brand Logo & Clock */}
             <div className="flex flex-col items-center w-full border-b border-slate-100 dark:border-slate-800 pb-2 mb-1 gap-2 shrink-0">
               <div
@@ -834,7 +835,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 className="w-12 h-12 rounded-2xl bg-[#e5f7ed] dark:bg-emerald-950/60 border border-[#009966]/20 dark:border-emerald-700/30 flex items-center justify-center p-1.5 shadow-sm hover:scale-105 transition-all cursor-pointer"
               >
                 <img
-                  src="/image/berseka-icon.png"
+                  src="/app-logo.png"
                   alt="BERSEKA Logo"
                   className="w-full h-full object-contain"
                 />
@@ -895,38 +896,36 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           </div>
         ) : (
           /* Render Full Sidebar */
-          <div className="flex flex-col h-full justify-between overflow-hidden">
+          <div className="relative z-10 flex flex-col h-full justify-between overflow-hidden">
             {/* Top Brand Logo Header Section with Real-Time Clock */}
-            <div className="pt-4 pb-3 px-3.5 border-b border-slate-100/80 dark:border-slate-800 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-emerald-50/20 dark:from-emerald-950/20 via-transparent to-transparent shrink-0 group">
-              {/* Four Animated Eco Background Watermarks */}
-              <Sprout size={16} className="absolute top-3 left-4 text-[#009966]/40 dark:text-emerald-500/30 animate-pulse [animation-duration:2.5s] transition-transform group-hover:scale-110" />
-              <Tags size={16} className="absolute top-3 right-4 text-[#009966]/40 dark:text-emerald-500/30 animate-pulse [animation-duration:3s] transition-transform group-hover:scale-110" />
-              <Recycle size={16} className="absolute bottom-3 left-4 text-[#009966]/40 dark:text-emerald-500/30 animate-spin [animation-duration:12s] transition-transform group-hover:scale-110" />
-              <Trash2 size={16} className="absolute bottom-3 right-4 text-[#0284c7]/40 dark:text-sky-500/30 animate-pulse [animation-duration:2.8s] transition-transform group-hover:scale-110" />
-
-              <Link to="/dasbor" className="flex flex-col items-center group cursor-pointer relative z-10 mb-3">
+            <div className="pt-4 pb-3 px-3.5 border-b border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-[#f3fbf5]/40 dark:from-emerald-950/20 via-transparent to-transparent shrink-0">
+              <Link to="/dasbor" className="flex items-center justify-center gap-3 group cursor-pointer relative z-10 mb-3 px-2 w-full text-center">
                 <img
-                  src="/image/berseka-icon.png"
-                  alt="BERSEKA Icon"
-                  className="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105 mb-1"
+                  src="/app-logo.png"
+                  alt="BERSEKA Logo"
+                  className="h-10 w-auto object-contain transition-all duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_2px_8px_rgba(5,92,70,0.15)] shrink-0"
                 />
-                <span className="text-lg font-black tracking-tight leading-none">
-                  <span className="text-[#175C3B] dark:text-emerald-400">BER</span>
-                  <span className="text-[#009966] dark:text-emerald-300">SE</span>
-                  <span className="text-[#0073E6] dark:text-sky-400">KA</span>
-                </span>
-              </Link>
-
-              {/* Real-time System Clock Card (Placed at top) */}
-              <div className="w-full bg-slate-50/90 dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xs text-center space-y-0.5 transition-all relative z-10">
-                <div className="flex items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400 mb-0.5">
-                  <Clock size={12} className="text-[#009966] dark:text-emerald-400" />
-                  <p className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 truncate">
-                    {dateStr || "Jumat, 14 Agustus 2026"}
+                <div className="flex flex-col justify-center text-left min-w-0">
+                  {/* ponytail: static header layout; abstract to brand config if dynamic multi-tenant text is required */}
+                  <h1 className="text-[20px] font-black tracking-wide text-[#055c46] dark:text-emerald-400 group-hover:text-[#549e26] dark:group-hover:text-emerald-300 transition-colors uppercase leading-none mb-1 truncate">
+                    BERSEKA
+                  </h1>
+                  <p className="text-[10px] font-bold text-[#549e26] dark:text-emerald-500 tracking-tight leading-tight truncate">
+                    Bersih, Sehat, Kampung Asri
                   </p>
                 </div>
-                <p className="text-sm font-black text-slate-900 dark:text-slate-100 tracking-wider font-mono">
-                  {timeStr || "02.59.16 WIB"}
+              </Link>
+
+              {/* Real-time System Clock Card */}
+              <div className="w-full bg-[#f3fbf5]/90 dark:bg-slate-800/90 hover:bg-[#ebf7ee] dark:hover:bg-slate-700/90 p-2.5 rounded-2xl border border-[#c8e6b2]/80 dark:border-slate-700/80 shadow-xs text-center space-y-0.5 transition-all duration-300 relative z-10 hover:scale-[1.02] backdrop-blur-xs">
+                <div className="flex items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400 mb-0.5">
+                  <Clock size={13} className="text-[#055c46] dark:text-emerald-400 animate-pulse" />
+                  <p className="text-[10.5px] font-black text-slate-600 dark:text-slate-300 truncate">
+                    {dateStr || "Kamis, 20 Agustus 2026"}
+                  </p>
+                </div>
+                <p className="text-sm font-black text-[#055c46] dark:text-emerald-400 tracking-wider font-mono">
+                  {timeStr || "09.55.12 WIB"}
                 </p>
               </div>
             </div>
@@ -974,13 +973,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               })}
             </nav>
 
-            {/* Bottom Section: Logout Link */}
+            {/* Bottom Footer Section: Clean Logout Button */}
             <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center justify-start gap-3 px-4 py-2.5 rounded-2xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 transition-all cursor-pointer group font-semibold text-[13px]"
+                className="w-full flex items-center justify-start gap-3 px-3.5 py-2.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 transition-all duration-200 cursor-pointer group font-semibold text-xs border border-transparent hover:border-rose-200 dark:hover:border-rose-800/60 active:scale-[0.98]"
               >
-                <LogOut size={18} className="text-rose-500 dark:text-rose-400 shrink-0 group-hover:-translate-x-0.5 transition-transform" />
+                <LogOut size={16} className="text-rose-500 dark:text-rose-400 shrink-0 group-hover:-translate-x-0.5 transition-transform" />
                 <span className="text-rose-600 dark:text-rose-400 font-bold text-xs">Keluar Sistem</span>
               </button>
             </div>

@@ -20,14 +20,14 @@
   --color-outline: #cbd5e1;
   --color-outline-variant: #e2e8f0;
 
-  --color-primary: #006d37;
-  --color-primary-container: #27ae60;
+  --color-primary: #055c46;
+  --color-primary-container: #549e26;
   --color-on-primary: #ffffff;
-  --color-on-primary-container: #00391a;
-  --color-primary-fixed: #7efba4;
-  --color-primary-fixed-dim: #61de8a;
-  --color-on-primary-fixed: #00210c;
-  --color-on-primary-fixed-variant: #005228;
+  --color-on-primary-container: #022c22;
+  --color-primary-fixed: #f3fbf5;
+  --color-primary-fixed-dim: #c8e6b2;
+  --color-on-primary-fixed: #055c46;
+  --color-on-primary-fixed-variant: #549e26;
 
   --color-secondary: #006397;
   --color-secondary-container: #5cb8fd;
@@ -66,14 +66,14 @@
   --color-outline: #334155;
   --color-outline-variant: #1e293b;
 
-  --color-primary: #10b981;
-  --color-primary-container: #065f46;
+  --color-primary: #34d399;
+  --color-primary-container: #055c46;
   --color-on-primary: #022c22;
   --color-on-primary-container: #d1fae5;
-  --color-primary-fixed: #34d399;
-  --color-primary-fixed-dim: #10b981;
-  --color-on-primary-fixed: #064e3b;
-  --color-on-primary-fixed-variant: #047857;
+  --color-primary-fixed: #055c46;
+  --color-primary-fixed-dim: #549e26;
+  --color-on-primary-fixed: #34d399;
+  --color-on-primary-fixed-variant: #10b981;
 
   --color-secondary: #38bdf8;
   --color-secondary-container: #075985;
@@ -338,5 +338,41 @@ input:-webkit-autofill:active {
 .dark .recharts-text.recharts-cartesian-axis-tick-value {
   fill: #94a3b8 !important;
 }
+
+/* ==========================================================
+   FALLING LEAVES & SIDEBAR ANIMATIONS
+   ========================================================== */
+@keyframes leaf-fall {
+  0% {
+    transform: translateY(-30px) rotate(0deg) translateX(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(105vh) rotate(360deg) translateX(var(--leaf-sway, 25px));
+    opacity: 0;
+  }
+}
+
+.animate-falling-leaf {
+  animation: leaf-fall var(--fall-duration, 10s) cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation-delay: var(--fall-delay, 0s);
+  will-change: transform, opacity;
+}
+
+@keyframes gentle-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.95; }
+  50% { transform: scale(1.03); opacity: 1; }
+}
+
+.animate-gentle-pulse {
+  animation: gentle-pulse 3s ease-in-out infinite;
+}
+
 
 

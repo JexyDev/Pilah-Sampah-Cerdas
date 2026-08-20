@@ -7,15 +7,27 @@ html {
 }
 
 :root {
-  --primary-emerald: #009966;
-  --primary-emerald-hover: #047857;
-  --primary-emerald-light: #ecfdf5;
-  --accent-blue: #0073E6;
-  --accent-blue-hover: #005bb5;
-  --accent-blue-light: #eaf3ff;
-  --brand-green: #59B828;
-  --dark-slate: #0f172a;
-  --bg-light: #f8fafc;
+  /* Official BERSEKA 8-Color Palette */
+  --berseka-leaf-green: #549E26;
+  --berseka-ocean-blue: #0062BD;
+  --berseka-mint-light: #F3FBF5;
+  --berseka-forest-dark: #055C46;
+  --berseka-mint-badge: #C8E6B2;
+  --berseka-sky-blue: #6FA0D6;
+  --berseka-sage-green: #7DAE62;
+  --berseka-slate-teal: #5D8D83;
+  --berseka-vibrant-green: #4FB523;
+
+  /* Theme mappings */
+  --primary-emerald: var(--berseka-forest-dark);
+  --primary-emerald-hover: #044D3A;
+  --primary-emerald-light: var(--berseka-mint-light);
+  --accent-blue: var(--berseka-ocean-blue);
+  --accent-blue-hover: #0052A3;
+  --accent-blue-light: #EBF3FB;
+  --brand-green: var(--berseka-leaf-green);
+  --dark-slate: #0F172A;
+  --bg-light: #F8FAFC;
 }
 
 .landing-page {
@@ -119,7 +131,7 @@ html {
 }
 
 .nav-links-centered button:hover {
-  color: #059669;
+  color: #055c46;
 }
 
 .nav-links-centered button::after {
@@ -129,7 +141,7 @@ html {
   left: 0;
   width: 0;
   height: 2.5px;
-  background-color: #059669;
+  background-color: #055c46;
   transition: width 0.2s ease;
   border-radius: 99px;
 }
@@ -141,26 +153,26 @@ html {
 
 /* FRESH ECO EMERALD BUTTONS */
 .btn-primary-clean {
-  background-color: #059669;
+  background-color: #055c46;
   color: #ffffff;
   font-weight: 700;
   font-size: 0.875rem;
   padding: 0.625rem 1.375rem;
   border-radius: 0.75rem;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 3px rgba(5, 150, 105, 0.2);
+  box-shadow: 0 1px 3px rgba(5, 92, 70, 0.2);
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  border: 1px solid #059669;
+  border: 1px solid #055c46;
   white-space: nowrap;
 }
 
 .btn-primary-clean:hover {
-  background-color: #047857;
-  border-color: #047857;
+  background-color: #044b39;
+  border-color: #044b39;
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
+  box-shadow: 0 4px 14px rgba(5, 92, 70, 0.3);
 }
 
 .btn-secondary-clean {
@@ -991,8 +1003,8 @@ html {
 
 .sdg-heading h2 {
   max-width: 700px;
-
-  margin: 0 0 10px;
+  margin: 0 auto 10px;
+  text-align: center;
 
   font-family: inherit;
   font-size: clamp(1.5rem, 2.5vw, 2rem);

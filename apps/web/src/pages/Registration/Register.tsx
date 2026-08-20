@@ -13,11 +13,11 @@ import { User, Phone, Lock, Eye, EyeOff, MapPin, GraduationCap, Truck, ArrowRigh
 import { useThemeStore } from "../../store/useThemeStore";
 import api from "../../utils/api";
 
-// Official High-Resolution BERSEKA Icon Mark Asset
-const BersekaLogoIcon: React.FC<{ className?: string }> = ({ className = "w-10 h-10" }) => (
+// Official High-Resolution BERSEKA Full Logo Asset
+const BersekaLogoIcon: React.FC<{ className?: string }> = ({ className = "h-9 w-auto" }) => (
   <img
-    src="/image/berseka-icon.png"
-    alt="BERSEKA Icon"
+    src="/app-logo.png"
+    alt="BERSEKA"
     className={`${className} object-contain shrink-0`}
   />
 );
@@ -233,13 +233,8 @@ export const Register: React.FC = () => {
             
             {/* Header */}
             <div className="flex items-center justify-between">
-              <Link to="/" className="flex items-center gap-2.5 group">
-                <BersekaLogoIcon className="w-9 h-9 transition-transform group-hover:scale-105 shrink-0" />
-                <span className="text-lg font-black tracking-tight leading-normal text-left relative -top-[2px]">
-                  <span className="text-[#175C3B]">BER</span>
-                  <span className="text-[#009966]">SE</span>
-                  <span className="text-[#0073E6]">KA</span>
-                </span>
+              <Link to="/" className="flex items-center gap-2 group">
+                <BersekaLogoIcon className="h-9 w-auto transition-transform group-hover:scale-105 shrink-0" />
               </Link>
 
               <Link to="/login" className="text-xs font-extrabold text-emerald-600 hover:text-emerald-700 transition">

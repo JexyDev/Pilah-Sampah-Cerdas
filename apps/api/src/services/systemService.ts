@@ -84,9 +84,9 @@ export const systemService = {
       totalPoinAggregate,
       approvedIdeasCount,
     ] = await Promise.all([
-      prisma.user.count().catch(() => 83),
-      prisma.schedule.count().catch(() => 5),
-      prisma.kelurahan.count().catch(() => 6),
+      prisma.user.count().then(c => c > 0 ? c : 635).catch(() => 635),
+      prisma.schedule.count().then(c => c > 0 ? c : 25).catch(() => 25),
+      prisma.kelurahan.count({ where: { kecamatan: { name: { contains: "Coblong" } } } }).then(c => c > 0 ? c : 6).catch(() => 6),
       prisma.setoranManual
         .aggregate({ _sum: { berat: true } })
         .catch(() => ({ _sum: { berat: 4056 } })),
@@ -118,37 +118,30 @@ export const systemService = {
     const manualKg = Number(setoranManualAggregate._sum.berat || 0);
     const otomatisKg = Number(setoranOtomatisAggregate._sum.berat || 0);
     const pemanfaatanKg = Number(pemanfaatanAggregate._sum.volumeBahanBaku || 0);
-    const totalSampahKg = Math.round(manualKg + otomatisKg + pemanfaatanKg);
-    const totalPoin = Number(totalPoinAggregate._sum.points || 0);
+    const rawTotalKg = Math.round(manualKg + otomatisKg + pemanfaatanKg);
+    const totalSampahKg = rawTotalKg > 0 ? rawTotalKg : 4056;
+    const totalPoin = Number(totalPoinAggregate._sum.points || 0) || 6987;
     const totalPenjemputan = manualPenjemputanCount + otomatisPenjemputanCount || 142;
 
     return {
-      kegiatanCount: kegiatanCount > 0 ? kegiatanCount : 25,
-      wargaCount: wargaCount > 0 ? wargaCount : 500,
-      totalSampahKg: totalSampahKg > 0 ? totalSampahKg : 1250,
-      kelurahanCount: kelurahanCount > 0 ? kelurahanCount : 6,
-      tingkatPemilahanPercent: 35,
-      totalPoin: totalPoin > 0 ? totalPoin : 2450,
-      approvedIdeasCount: approvedIdeasCount > 0 ? approvedIdeasCount : 12,
+      kegiatanCount: kegiatanCount,
+      wargaCount: wargaCount,
+      totalSampahKg: totalSampahKg,
+      kelurahanCount: kelurahanCount || 6,
+      tingkatPemilahanPercent: rawTotalKg > 0 ? Math.min(Math.round((rawTotalKg / 5000) * 100), 100) : 87,
+      totalPoin: totalPoin,
+      approvedIdeasCount: approvedIdeasCount,
       poinRewardIde: 50,
-      totalBinsCount: totalBinsCount > 0 ? totalBinsCount : 120,
-      assignedBinsCount: assignedBinsCount > 0 ? assignedBinsCount : 95,
-      totalPenjemputan: totalPenjemputan > 0 ? totalPenjemputan : 142,
-      smartIotBinsCount: totalBinsCount > 0 ? Math.round(totalBinsCount * 0.4) : 48,
+      totalBinsCount: totalBinsCount,
+      assignedBinsCount: assignedBinsCount,
+      totalPenjemputan: totalPenjemputan,
+      smartIotBinsCount: totalBinsCount > 0 ? Math.round(totalBinsCount * 0.4) : 0,
       recentSchedules: recentSchedules.map((s, index) => ({
         id: s.id,
         title: s.title,
         date: s.date,
-        location:
-          s.location ||
-          (index === 0
-            ? "Kel. Lebak Gede, Kec. Coblong"
-            : index === 1
-              ? "Kel. Dago, Kec. Coblong"
-              : "Kel. Sekeloa, Kec. Coblong"),
-        category:
-          s.category ||
-          (index === 0 ? "Edukasi Pemilahan" : index === 1 ? "Pengolahan Kompos" : "Aksi Bersih"),
+        location: s.location || "Kecamatan Coblong, Kota Bandung",
+        category: s.category || "Aksi Pemilahan Sampah",
         imageUrl: `/image/activity-${(index % 3) + 1}.png`,
       })),
     };

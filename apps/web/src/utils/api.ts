@@ -14,7 +14,7 @@ export const getApiBaseUrl = (): string => {
   if (typeof window !== "undefined") {
     const { hostname } = window.location;
     if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return `http://${hostname}:3000/api/v1`;
+      return `http://${hostname}:3001/api/v1`;
     }
     return "/api/v1";
   }

@@ -28,11 +28,11 @@ import ImageTigaRoleMobile from "../../assets/images/image_tiga_role_mobile.webp
 import { useThemeStore } from "../../store/useThemeStore";
 import api from "../../services/api";
 
-// Official High-Resolution BERSEKA Icon Asset (Matches Landing Page & Login Page 1:1)
-const BersekaLogoIcon: React.FC<{ className?: string }> = ({ className = "w-10 h-10" }) => (
+// Official High-Resolution BERSEKA Full Logo Asset
+const BersekaLogoIcon: React.FC<{ className?: string }> = ({ className = "h-10 sm:h-11 w-auto" }) => (
   <img
-    src="/image/berseka-icon.png"
-    alt="BERSEKA Icon"
+    src="/app-logo.png"
+    alt="BERSEKA"
     className={`${className} object-contain shrink-0`}
   />
 );
@@ -146,26 +146,21 @@ const DownloadPage: React.FC = () => {
         {/* Navigation Header - Matches Landing Page Navbar Glassmorphism */}
         <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-3.5 shadow-xs">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2.5 group shrink-0">
-              <BersekaLogoIcon className="w-10 h-10 sm:w-11 sm:h-11 transition-transform group-hover:scale-105 shrink-0" />
-              <span className="text-2xl font-black tracking-tight leading-none text-left relative -top-[1px]">
-                <span className="text-[#175C3B]">BER</span>
-                <span className="text-[#009966]">SE</span>
-                <span className="text-[#0073E6]">KA</span>
-              </span>
+            <Link to="/" className="flex items-center gap-2 group shrink-0">
+              <BersekaLogoIcon className="h-10 sm:h-11 w-auto transition-transform group-hover:scale-105 shrink-0" />
             </Link>
 
             <div className="flex items-center gap-3">
               <Link
                 to="/"
-                className="hidden sm:inline-flex items-center gap-1.5 px-4 h-9.5 rounded-xl text-slate-700 hover:text-emerald-700 hover:bg-slate-100 text-xs font-bold transition"
+                className="hidden sm:inline-flex items-center gap-1.5 px-4 h-9.5 rounded-xl text-slate-700 hover:text-[#055c46] hover:bg-slate-100 text-xs font-bold transition"
               >
                 <ArrowLeft size={15} />
                 <span>Beranda</span>
               </Link>
               <Link
                 to="/login"
-                className="inline-flex items-center gap-2 px-4 h-9.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold transition shadow-md shadow-emerald-600/20"
+                className="inline-flex items-center gap-2 px-4 h-9.5 rounded-xl bg-[#055c46] hover:bg-[#044d3a] text-white text-xs font-extrabold transition shadow-md shadow-[#055c46]/20"
               >
                 <span>Portal Web</span>
                 <ArrowRight size={15} />
@@ -187,25 +182,25 @@ const DownloadPage: React.FC = () => {
             <div className="lg:col-span-7 space-y-6 text-left">
               
               {/* Real-time Status Badge */}
-              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-extrabold shadow-xs">
+              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#f3fbf5] border border-[#c8e6b2] text-[#055c46] text-xs font-extrabold shadow-xs">
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#549e26] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#055c46]"></span>
                 </span>
                 <span>Terintegrasi Real-Time API Backend BERSEKA</span>
                 <span className="text-slate-300">•</span>
-                <span className="text-emerald-700 font-bold">v{release.version}</span>
+                <span className="text-[#055c46] font-bold">v{release.version}</span>
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight text-slate-900">
                 Pilah Sampah Lebih Mudah <br />
-                <span className="text-emerald-700">
+                <span className="text-[#055c46]">
                   Dalam Genggaman.
                 </span>
               </h1>
 
               <p className="text-sm sm:text-base text-slate-600 font-medium leading-relaxed max-w-2xl">
-                Platform layanan mobile terintegrasi bagi <strong className="text-emerald-700 font-bold">Warga</strong>, <strong className="text-emerald-700 font-bold">Mahasiswa Kuliah Kerja Nyata (KKN) Berdampak</strong>, dan <strong className="text-emerald-700 font-bold">Petugas Residu</strong> terintegrasi.
+                Platform layanan mobile terintegrasi bagi <strong className="text-[#055c46] font-bold">Warga</strong>, <strong className="text-[#055c46] font-bold">Mahasiswa</strong>, dan <strong className="text-[#055c46] font-bold">Petugas Pemilah</strong>.
               </p>
 
               {/* Primary Download CTA Button & Real-time Metadata */}
@@ -213,7 +208,7 @@ const DownloadPage: React.FC = () => {
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   <button
                     onClick={handleDownloadApk}
-                    className="px-8 h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-base rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-xl shadow-emerald-600/25 hover:scale-[1.02] active:scale-[0.98] cursor-pointer group"
+                    className="px-8 h-14 bg-[#055c46] hover:bg-[#044d3a] text-white font-extrabold text-base rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-xl shadow-[#055c46]/25 hover:scale-[1.02] active:scale-[0.98] cursor-pointer group"
                   >
                     <Download size={22} className="group-hover:translate-y-0.5 transition-transform" />
                     <span>Unduh Berkas APK (v{release.version})</span>
@@ -222,30 +217,30 @@ const DownloadPage: React.FC = () => {
 
                 {/* Release Metadata Pills */}
                 <div className="flex items-center gap-4 text-xs text-slate-600 font-medium pt-1 flex-wrap">
-                  <span className="flex items-center gap-1.5 text-emerald-700 font-bold">
+                  <span className="flex items-center gap-1.5 text-[#055c46] font-bold">
                     <ShieldCheck size={16} />
                     Versi {release.version} (Build {release.buildNumber})
                   </span>
                   <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
                   <span className="flex items-center gap-1.5 text-slate-600">
-                    <Smartphone size={16} className="text-sky-600" />
+                    <Smartphone size={16} className="text-[#0062bd]" />
                     {release.minAndroidVersion || "Android 7.0+"}
                   </span>
                   <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
                   <span className="flex items-center gap-1.5 text-slate-900 font-bold">
-                    <HardDrive size={16} className="text-emerald-700 shrink-0" />
+                    <HardDrive size={16} className="text-[#055c46] shrink-0" />
                     {release.formattedSize}
                   </span>
                 </div>
 
                 {/* Real-time Release Notes Alert Box */}
-                <div className="bg-white border border-emerald-200/90 rounded-2xl p-5 shadow-sm space-y-3 text-left">
+                <div className="bg-white border border-[#c8e6b2] rounded-2xl p-5 shadow-sm space-y-3 text-left">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shrink-0">
+                      <div className="w-7 h-7 rounded-lg bg-[#f3fbf5] text-[#055c46] flex items-center justify-center font-bold shrink-0">
                         <Sparkles size={14} />
                       </div>
-                      <span className="text-xs font-black text-emerald-800 uppercase tracking-wider">
+                      <span className="text-xs font-black text-[#055c46] uppercase tracking-wider">
                         Catatan Rilis Terbitan {release.publisher ? release.publisher.replace(/Super User/gi, "Developer").replace(/\s*\(.*?\)/g, "").trim() : "Developer"}
                       </span>
                     </div>
@@ -261,7 +256,7 @@ const DownloadPage: React.FC = () => {
 
                   {lastUpdatedTime && (
                     <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 text-[11px] text-slate-500 font-medium">
-                      <span className="flex items-center gap-1.5 text-emerald-700 font-bold">
+                      <span className="flex items-center gap-1.5 text-[#055c46] font-bold">
                         <RefreshCcw size={12} className="animate-spin" /> Live Sinkronisasi Backend API
                       </span>
                       <span>Tersinkronisasi otomatis pada pkl {lastUpdatedTime}</span>
@@ -291,7 +286,7 @@ const DownloadPage: React.FC = () => {
                   <div className="w-full bg-slate-50/80 rounded-2xl p-4 border border-slate-200/60 flex items-center justify-center">
                     <img
                       src={ImageTigaRoleMobile}
-                      alt="Ilustrasi Warga, Mahasiswa KKN, dan Petugas Residu"
+                      alt="Ilustrasi Warga, Mahasiswa, dan Petugas Pemilah"
                       className="w-full h-auto max-h-56 object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
                     />
                   </div>
@@ -301,14 +296,35 @@ const DownloadPage: React.FC = () => {
                       Satu aplikasi mobile untuk seluruh partisipan pengelolaan sampah di tingkat RW.
                     </p>
                     <div className="grid grid-cols-3 gap-2 text-[11px]">
-                      <div className="bg-emerald-50/80 p-2.5 rounded-xl text-center font-extrabold text-emerald-800 border border-emerald-200/60">
+                      <div className="bg-[#f3fbf5] p-2.5 rounded-xl text-center font-extrabold text-[#055c46] border border-[#c8e6b2]/60">
                         🏡 Warga
                       </div>
                       <div className="bg-teal-50/80 p-2.5 rounded-xl text-center font-extrabold text-teal-800 border border-teal-200/60">
                         🎓 Mahasiswa
                       </div>
                       <div className="bg-sky-50/80 p-2.5 rounded-xl text-center font-extrabold text-sky-800 border border-sky-200/60">
-                        🚚 Petugas Residu
+                        🚚 Petugas Pemilah
+                      </div>
+                    </div>
+
+                    {/* QR Code Instant Download Box */}
+                    <div className="pt-3 border-t border-slate-100 flex items-center gap-4 bg-[#f3fbf5]/60 p-3.5 rounded-2xl border border-[#c8e6b2]/50">
+                      <div className="p-1.5 bg-white rounded-xl shadow-xs border border-slate-200 shrink-0">
+                        <img
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+                            typeof window !== "undefined" ? `${window.location.origin}${release.apkUrl || "/api/v1/system/download-apk"}` : release.apkUrl || "/api/v1/system/download-apk"
+                          )}&color=055c46`}
+                          alt="Pindai QR Code untuk Unduh APK BERSEKA"
+                          className="w-16 h-16 object-contain"
+                        />
+                      </div>
+                      <div className="space-y-1 text-left">
+                        <p className="text-xs font-black text-slate-900 flex items-center gap-1">
+                          <span>📱 Pindai QR Code</span>
+                        </p>
+                        <p className="text-[11px] text-slate-600 font-medium leading-tight">
+                          Arahkan kamera ponsel Anda untuk mengunduh berkas APK secara langsung.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -323,19 +339,19 @@ const DownloadPage: React.FC = () => {
         <section className="py-12 bg-white border-b border-slate-200/80 w-full">
           <div className="max-w-7xl mx-auto px-4 sm:px-8 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div className="space-y-1">
-              <p className="text-2xl sm:text-3xl font-black text-emerald-600">{stats.wargaCount}</p>
+              <p className="text-2xl sm:text-3xl font-black text-[#055c46]">{stats.wargaCount}</p>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Warga Terdaftar</p>
             </div>
             <div className="space-y-1">
-              <p className="text-2xl sm:text-3xl font-black text-teal-600">{stats.kelurahanCount}</p>
+              <p className="text-2xl sm:text-3xl font-black text-[#549e26]">{stats.kelurahanCount}</p>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Kelurahan Terintegrasi</p>
             </div>
             <div className="space-y-1">
-              <p className="text-2xl sm:text-3xl font-black text-sky-600">{stats.totalSampahKg.toLocaleString("id-ID")} Kg</p>
+              <p className="text-2xl sm:text-3xl font-black text-[#0062bd]">{stats.totalSampahKg.toLocaleString("id-ID")} Kg</p>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Sampah Terdata</p>
             </div>
             <div className="space-y-1">
-              <p className="text-2xl sm:text-3xl font-black text-amber-600">{stats.totalPenjemputan}</p>
+              <p className="text-2xl sm:text-3xl font-black text-[#5d8d83]">{stats.totalPenjemputan}</p>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Log Transaksi Residu</p>
             </div>
           </div>
@@ -357,12 +373,12 @@ const DownloadPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
 
               {/* Role Card 1: Warga */}
-              <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all duration-300 hover:-translate-y-1 group">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 flex items-center justify-center shrink-0">
+              <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs hover:shadow-md hover:border-[#055c46] transition-all duration-300 hover:-translate-y-1 group">
+                <div className="w-12 h-12 rounded-2xl bg-[#f3fbf5] text-[#055c46] border border-[#c8e6b2] flex items-center justify-center shrink-0">
                   <Users size={24} />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-lg font-black text-slate-900 group-hover:text-emerald-600 transition-colors">
+                  <h3 className="text-lg font-black text-slate-900 group-hover:text-[#055c46] transition-colors">
                     Warga
                   </h3>
                   <p className="text-xs text-slate-600 font-medium leading-relaxed">
@@ -371,15 +387,15 @@ const DownloadPage: React.FC = () => {
                 </div>
                 <ul className="space-y-2.5 text-xs text-slate-700 font-semibold pt-3 border-t border-slate-100">
                   <li className="flex items-center gap-2.5">
-                    <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                    <CheckCircle2 size={16} className="text-[#055c46] shrink-0" />
                     <span>Setor sampah via pemindaian QR Code Tempat Sampah</span>
                   </li>
                   <li className="flex items-center gap-2.5">
-                    <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                    <CheckCircle2 size={16} className="text-[#055c46] shrink-0" />
                     <span>Kumpulkan Poin Insentif Warga Terintegrasi</span>
                   </li>
                   <li className="flex items-center gap-2.5">
-                    <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                    <CheckCircle2 size={16} className="text-[#055c46] shrink-0" />
                     <span>Apresiasi +50 Poin untuk Pengajuan Ide Daur Ulang</span>
                   </li>
                 </ul>
@@ -414,14 +430,14 @@ const DownloadPage: React.FC = () => {
                 </ul>
               </div>
 
-              {/* Role Card 3: Petugas Residu */}
+              {/* Role Card 3: Petugas Pemilah */}
               <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs hover:shadow-md hover:border-sky-300 transition-all duration-300 hover:-translate-y-1 group">
                 <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 border border-sky-200/60 flex items-center justify-center shrink-0">
                   <Truck size={24} />
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-lg font-black text-slate-900 group-hover:text-sky-600 transition-colors">
-                    Petugas Residu
+                    Petugas Pemilah
                   </h3>
                   <p className="text-xs text-slate-600 font-medium leading-relaxed">
                     Manajemen jadwal penjemputan residu bulanan, pencatatan beban timbangan sampah, dan verifikasi lokasi warga.
@@ -531,17 +547,17 @@ const DownloadPage: React.FC = () => {
 
             {/* Bottom CTA Banner */}
             <div className="pt-8 pb-4">
-              <div className="bg-emerald-800 text-white rounded-2xl p-8 sm:p-10 max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-left shadow-sm border border-emerald-700/50">
+              <div className="bg-gradient-to-r from-[#055c46] to-[#044d3a] text-white rounded-2xl p-8 sm:p-10 max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-left shadow-sm border border-[#055c46]">
                 <div className="space-y-1">
-                  <h3 className="text-xl font-extrabold text-white">Siap Berpartisipasi dalam Pilah Sampah Cerdas?</h3>
+                  <h3 className="text-xl font-black">Siap Mewujudkan Kampung BERSEKA?</h3>
                   <p className="text-xs text-emerald-100 font-medium">Unduh aplikasinya sekarang dan kumpulkan poin insentif Anda!</p>
                 </div>
                 <button
                   onClick={handleDownloadApk}
-                  className="px-6 h-12 bg-white hover:bg-slate-100 text-emerald-800 font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shrink-0 transition-all shadow-xs cursor-pointer"
+                  className="px-6 h-12 bg-white hover:bg-slate-100 text-[#055c46] font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shrink-0 transition-all shadow-xs cursor-pointer"
                 >
                   <Download size={16} />
-                  <span>Unduh APK Sekarang (v{release.version})</span>
+                  <span>Unduh Aplikasi Mobile (v{release.version})</span>
                 </button>
               </div>
             </div>
@@ -553,21 +569,16 @@ const DownloadPage: React.FC = () => {
 
       {/* ----------------- FOOTER (100% Identical to Landing Page) ----------------- */}
       <footer className="w-full bg-slate-900 text-slate-400 py-16 text-sm border-t border-slate-800 text-left relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 grid grid-cols-1 md:grid-cols-4 gap-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10">
           
-          <div className="space-y-4">
+          <div className="space-y-4 lg:col-span-1 col-span-full">
             <div className="flex items-center gap-2.5 text-white font-black text-xl">
-              <BersekaLogoIcon className="w-8 h-8 shrink-0" />
-              <span className="text-xl font-black tracking-tight leading-normal text-left">
-                <span className="text-[#10b981]">BER</span>
-                <span className="text-[#34d399]">SE</span>
-                <span className="text-[#38bdf8]">KA</span>
-              </span>
+              <BersekaLogoIcon className="h-10 sm:h-12 w-auto shrink-0" />
             </div>
             <p className="text-xs text-slate-400 leading-relaxed font-medium">
               Bersih, Sehat, Kampung Asri — Sistem Pemilahan dan Pengelolaan Sampah Terintegrasi Kecamatan Coblong.
             </p>
-            <p className="text-xs text-slate-400 font-semibold">© 2026 BERSEKA • Universitas Komputer Indonesia & Kecamatan Coblong</p>
+            <p className="text-xs text-slate-400 font-semibold">© 2026 Universitas Komputer Indonesia. All Rights Reserved.</p>
           </div>
 
           <div>
@@ -581,16 +592,21 @@ const DownloadPage: React.FC = () => {
           </div>
 
           <div>
-            <h5 className="text-white font-extrabold text-xs uppercase tracking-wider mb-4">Layanan</h5>
+            <h5 className="text-white font-extrabold text-xs uppercase tracking-wider mb-4">Layanan Warga</h5>
+            <ul className="space-y-2.5 text-xs font-semibold">
+              <li><Link to="/login" className="hover:text-white transition">Portal Rukun Warga</Link></li>
+              <li><Link to="/login" className="hover:text-white transition">Portal Dosen Pembimbing (DPL)</Link></li>
+              <li><Link to="/login" className="hover:text-white transition">Pendampingan Kuliah Kerja Nyata</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h5 className="text-white font-extrabold text-xs uppercase tracking-wider mb-4">Layanan Dinas</h5>
             <ul className="space-y-2.5 text-xs font-semibold">
               <li><Link to="/login" className="hover:text-white transition">Portal Pimpinan</Link></li>
               <li><Link to="/login" className="hover:text-white transition">Portal Dinas Lingkungan Hidup</Link></li>
-              <li><Link to="/login" className="hover:text-white transition">Portal Camat</Link></li>
-              <li><Link to="/login" className="hover:text-white transition">Portal Lurah</Link></li>
-              <li><Link to="/login" className="hover:text-white transition">Portal Rukun Warga</Link></li>
-              <li><Link to="/login" className="hover:text-white transition">Portal Dosen Pendamping Lapangan</Link></li>
-              <li><Link to="/login" className="hover:text-white transition">Monitoring Data Sampah</Link></li>
-              <li><Link to="/login" className="hover:text-white transition">Pendampingan Kuliah Kerja Nyata</Link></li>
+              <li><Link to="/login" className="hover:text-white transition">Portal Camat & Lurah</Link></li>
+              <li><Link to="/login" className="hover:text-white transition">Pemantauan Data Sampah</Link></li>
             </ul>
           </div>
 
