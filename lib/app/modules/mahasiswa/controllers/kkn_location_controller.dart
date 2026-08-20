@@ -842,6 +842,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         state = state.copyWith(
           activeActivity: mergedData,
           targetDurationMinutes: duration,
+          inZoneDurationSeconds: _accumulatedSeconds,
         );
       }
     } catch (e) {
