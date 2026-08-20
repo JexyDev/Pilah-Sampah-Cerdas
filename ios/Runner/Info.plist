@@ -5,7 +5,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
-		<string>TrashCare</string>
+		<string>BERSEKA</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
@@ -54,16 +54,16 @@
 		</array>
 		<!-- Location Usage Descriptions -->
 		<key>NSLocationWhenInUseUsageDescription</key>
-		<string>TrashCare memerlukan akses lokasi untuk memantau kehadiran KKN Anda secara real-time berdasarkan radius kegiatan.</string>
+		<string>BERSEKA memerlukan akses lokasi untuk memantau kehadiran KKN Anda secara real-time berdasarkan radius kegiatan.</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>TrashCare memerlukan akses lokasi di latar belakang agar waktu kehadiran KKN tetap tercatat meskipun Anda sedang menggunakan aplikasi lain.</string>
+		<string>BERSEKA memerlukan akses lokasi di latar belakang agar waktu kehadiran KKN tetap tercatat meskipun Anda sedang menggunakan aplikasi lain.</string>
 		<key>NSLocationAlwaysUsageDescription</key>
-		<string>TrashCare memerlukan akses lokasi di latar belakang agar waktu kehadiran KKN tetap tercatat meskipun Anda sedang menggunakan aplikasi lain.</string>
+		<string>BERSEKA memerlukan akses lokasi di latar belakang agar waktu kehadiran KKN tetap tercatat meskipun Anda sedang menggunakan aplikasi lain.</string>
 		<!-- Camera Usage -->
 		<key>NSCameraUsageDescription</key>
-		<string>TrashCare memerlukan akses kamera untuk scan QR code dan mengambil foto bukti setoran sampah.</string>
+		<string>BERSEKA memerlukan akses kamera untuk scan QR code dan mengambil foto bukti setoran sampah.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
-		<string>TrashCare memerlukan akses galeri untuk memilih foto bukti setoran sampah.</string>
+		<string>BERSEKA memerlukan akses galeri untuk memilih foto bukti setoran sampah.</string>
 		<key>UIStatusBarHidden</key>
 		<false/>
 	</dict>
