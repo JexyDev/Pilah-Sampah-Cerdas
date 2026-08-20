@@ -231,18 +231,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         activeZone['radius'] ??= 100;
 
         if (activeZone['actualInZoneSeconds'] != null) {
-          final serverSecs = int.tryParse(activeZone['actualInZoneSeconds'].toString()) ?? 0;
-          if (serverSecs > _accumulatedSeconds || !state.isTracking || _accumulatedSeconds == 0) {
-            _accumulatedSeconds = serverSecs;
-            await _savePersistentTimer();
-          }
+          _accumulatedSeconds = int.tryParse(activeZone['actualInZoneSeconds'].toString()) ?? 0;
+          await _savePersistentTimer();
         } else if (activeZone['actualInZoneMinutes'] != null) {
           final actualMins = num.tryParse(activeZone['actualInZoneMinutes'].toString()) ?? 0;
-          final serverSecs = (actualMins * 60).toInt();
-          if (serverSecs > _accumulatedSeconds || !state.isTracking || _accumulatedSeconds == 0) {
-            _accumulatedSeconds = serverSecs;
-            await _savePersistentTimer();
-          }
+          _accumulatedSeconds = (actualMins * 60).toInt();
+          await _savePersistentTimer();
         }
 
         final status = (activeZone['attendanceStatus'] ?? activeZone['status'] ?? activeZone['kehadiran'] ?? '')
@@ -843,18 +837,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       final bool isAttended = mergedData['isAttended'] == true || status == 'hadir';
 
       if (mergedData['actualInZoneSeconds'] != null) {
-        final serverSecs = int.tryParse(mergedData['actualInZoneSeconds'].toString()) ?? 0;
-        if (serverSecs > _accumulatedSeconds || !state.isTracking || _accumulatedSeconds == 0) {
-          _accumulatedSeconds = serverSecs;
-          await _savePersistentTimer();
-        }
+        _accumulatedSeconds = int.tryParse(mergedData['actualInZoneSeconds'].toString()) ?? 0;
+        await _savePersistentTimer();
       } else if (mergedData['actualInZoneMinutes'] != null) {
         final actualMins = num.tryParse(mergedData['actualInZoneMinutes'].toString()) ?? 0;
-        final serverSecs = (actualMins * 60).toInt();
-        if (serverSecs > _accumulatedSeconds || !state.isTracking || _accumulatedSeconds == 0) {
-          _accumulatedSeconds = serverSecs;
-          await _savePersistentTimer();
-        }
+        _accumulatedSeconds = (actualMins * 60).toInt();
+        await _savePersistentTimer();
       }
 
       if (isAttended || status == 'hadir') {
