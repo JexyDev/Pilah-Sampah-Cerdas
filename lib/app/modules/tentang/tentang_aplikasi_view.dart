@@ -25,11 +25,11 @@ class TentangAplikasiView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                width: 120,
-                height: 120,
+                width: 200,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
                   color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.05),
@@ -38,10 +38,9 @@ class TentangAplikasiView extends StatelessWidget {
                     ),
                   ],
                 ),
-                clipBehavior: Clip.antiAlias,
                 child: Image.asset(
                   AppAssets.logo,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                 ),
               ),
               const SizedBox(height: 24),
@@ -51,15 +50,6 @@ class TentangAplikasiView extends StatelessWidget {
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
                   color: AppColors.primaryGreen,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Versi 1.0.0',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 32),
