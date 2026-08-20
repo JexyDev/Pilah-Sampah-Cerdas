@@ -705,26 +705,28 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                     shape: const RoundedRectangleBorder(
                       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                     ),
-                    builder: (context) => Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ListTile(
-                          leading: const Icon(Icons.add, color: AppColors.primaryGreen),
-                          title: const Text('Ajukan Program Kerja Baru'),
-                          onTap: () {
-                            Navigator.pop(context);
-                            Navigator.pushNamed(context, AppRoutes.pengajuanProgramKerja);
-                          },
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.history, color: AppColors.primaryBlue),
-                          title: const Text('Riwayat & Status Proker'),
-                          onTap: () {
-                            Navigator.pop(context);
-                            Navigator.pushNamed(context, AppRoutes.riwayatProgramKerja);
-                          },
-                        ),
-                      ],
+                    builder: (context) => SafeArea(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            leading: const Icon(Icons.add, color: AppColors.primaryGreen),
+                            title: const Text('Ajukan Program Kerja Baru'),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.pushNamed(context, AppRoutes.pengajuanProgramKerja);
+                            },
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.history, color: AppColors.primaryBlue),
+                            title: const Text('Riwayat & Status Proker'),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.pushNamed(context, AppRoutes.riwayatProgramKerja);
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
