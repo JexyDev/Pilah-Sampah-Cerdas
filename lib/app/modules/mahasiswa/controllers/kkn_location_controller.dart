@@ -819,7 +819,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
       if (mergedData['actualInZoneMinutes'] != null) {
         final actualMins = num.tryParse(mergedData['actualInZoneMinutes'].toString()) ?? 0;
-        if (actualMins > 0 && !isAttended) {
+        if (actualMins > 0) {
           _accumulatedSeconds = actualMins.toInt() * 60;
           await _savePersistentTimer();
         }
@@ -902,20 +902,14 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
                 .toString()
                 .toLowerCase();
 
-        // Jika sudah ada status final (hadir/izin/sakit) atau sukses absen
-        if (status == 'izin' ||
-            status == 'sakit' ||
-            status == 'hadir' ||
-            state.isSuccessAttendance) {
-          final bool isHadir = status == 'hadir' || state.isSuccessAttendance;
-          _stopZoneTimer(resetCompletely: !isHadir);
+        // Jika sudah ada status final (izin/sakit), hentikan tracking kegiatan
+        if (status == 'izin' || status == 'sakit') {
+          _stopZoneTimer(resetCompletely: true);
           state = state.copyWith(
-            inZoneDurationSeconds: isHadir ? _accumulatedSeconds : 0,
+            inZoneDurationSeconds: 0,
             isEligibleForAttendance: false,
-            isSuccessAttendance: isHadir,
-            zoneResetWarning: isHadir
-                ? 'Anda sudah berhasil melakukan absensi (Hadir) pada jadwal ini.'
-                : 'Anda tercatat ${status.toUpperCase()} pada jadwal ini, absensi ditutup.',
+            isSuccessAttendance: false,
+            zoneResetWarning: 'Anda tercatat ${status.toUpperCase()} pada jadwal ini, absensi ditutup.',
             clearWarning: false,
           );
           return; // Stop processing further
