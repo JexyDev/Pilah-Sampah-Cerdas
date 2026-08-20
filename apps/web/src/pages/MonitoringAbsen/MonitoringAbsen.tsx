@@ -2208,7 +2208,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   <Clock size={14} className="text-emerald-600 dark:text-emerald-400" />
                   Jam Kerja Operasional
                 </span>
-                <span className="font-extrabold text-slate-900 dark:text-slate-100">{activeSchedule?.time || configTargets.jamKerja || "08:00 – 16:00 WIB"}</span>
+                <span className="font-extrabold text-slate-900 dark:text-slate-100">{configTargets.jamKerja || "08:00 – 16:00"}</span>
               </div>
 
               <div className="flex items-center justify-between text-xs">
@@ -3435,6 +3435,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         </label>
                         <input
                           type="time"
+                          lang="id"
                           value={startTime}
                           onChange={(e) => setStartTime(e.target.value)}
                           className="w-full h-10 px-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none"
@@ -3446,6 +3447,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         </label>
                         <input
                           type="time"
+                          lang="id"
                           value={endTime}
                           onChange={(e) => setEndTime(e.target.value)}
                           className="w-full h-10 px-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none"

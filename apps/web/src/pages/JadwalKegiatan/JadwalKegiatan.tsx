@@ -191,6 +191,8 @@ const JadwalKegiatan: React.FC = () => {
   };
 
   const [groups, setGroups] = useState<any[]>([]);
+  const [timeStart, setTimeStart] = useState<string>("08:00");
+  const [timeEnd, setTimeEnd] = useState<string>("16:00");
 
   const [formData, setFormData] = useState<any>({
     title: "",
@@ -273,15 +275,15 @@ const JadwalKegiatan: React.FC = () => {
       }
     }
 
-    // Simpan tanggal sebagai midnight WIB (UTC+7) agar konsisten dengan
-    // query window API berbasis WIB. new Date("YYYY-MM-DD") adalah UTC midnight
-    // yang bisa jadi beda hari di WIB (jam 07:00 pagi WIB).
+    // Simpan tanggal sebagai midnight WIB (UTC+7)
     const formattedIsoDate = new Date(`${formData.date}T00:00:00+07:00`).toISOString();
     if (!formattedIsoDate) {
       toast.error("Format tanggal tidak valid");
       return;
     }
 
+    // Gabung waktu range — selalu format 24-jam dari <input type="time">
+    const timeFormatted = `${timeStart} - ${timeEnd}`;
 
     try {
       const isCircle = geofenceMode === "CIRCLE";
@@ -298,6 +300,7 @@ const JadwalKegiatan: React.FC = () => {
       const payload = {
         ...formData,
         date: formattedIsoDate,
+        time: timeFormatted,
         latitude: calcLat,
         longitude: calcLng,
         radius: formData.radius !== "" ? parseInt(String(formData.radius), 10) : 100,
@@ -316,6 +319,8 @@ const JadwalKegiatan: React.FC = () => {
       setEditId(null);
       fetchSchedules();
       setFormData({ title: "", date: "", time: "", category: "Pengangkutan", location: "", latitude: "", longitude: "", radius: 100, polygon: [], kelompokId: "" });
+      setTimeStart("08:00");
+      setTimeEnd("16:00");
       setGeofenceMode("CIRCLE");
       setManualLat("");
       setManualLng("");
@@ -353,6 +358,15 @@ const JadwalKegiatan: React.FC = () => {
       polygon: schedule.polygon || (schedule.latitude && schedule.longitude ? [[Number(schedule.latitude), Number(schedule.longitude)]] : []),
       kelompokId: schedule.kelompokId || "",
     });
+    // Parse existing time range "HH:MM - HH:MM" back into separate fields
+    if (schedule.time) {
+      const stripped = schedule.time.replace(/\s*(WIB|WITA|WIT)\s*/gi, "").trim();
+      const parts = stripped.split("-");
+      if (parts.length >= 2) {
+        setTimeStart(parts[0].trim().replace(".", ":") || "08:00");
+        setTimeEnd(parts[1].trim().replace(".", ":") || "16:00");
+      }
+    }
     setModalStep(1);
     setIsModalOpen(true);
   };
@@ -1541,7 +1555,7 @@ const JadwalKegiatan: React.FC = () => {
                       </div>
                       <div className="flex-1 flex flex-col gap-1.5">
                         <label className="text-xs font-black text-slate-800 dark:text-slate-100">
-                          Waktu Pelaksanaan <span className="text-red-500">*</span>
+                          Waktu Mulai <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
                           <Clock
@@ -1550,8 +1564,27 @@ const JadwalKegiatan: React.FC = () => {
                           />
                           <input
                             type="time"
-                            value={formData.time}
-                            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                            lang="id"
+                            value={timeStart}
+                            onChange={(e) => setTimeStart(e.target.value)}
+                            className="pl-9 pr-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-emerald-600 w-full text-xs font-bold text-slate-800 dark:text-slate-100"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex-1 flex flex-col gap-1.5">
+                        <label className="text-xs font-black text-slate-800 dark:text-slate-100">
+                          Waktu Selesai <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <Clock
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                            size={16}
+                          />
+                          <input
+                            type="time"
+                            lang="id"
+                            value={timeEnd}
+                            onChange={(e) => setTimeEnd(e.target.value)}
                             className="pl-9 pr-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-emerald-600 w-full text-xs font-bold text-slate-800 dark:text-slate-100"
                           />
                         </div>
