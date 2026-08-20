@@ -503,7 +503,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
                         {/* Nilai */}
                         <td className="py-3.5 px-3 text-center font-bold text-slate-800 dark:text-slate-200">
-                          {s.subtotalDpl > 0 ? s.subtotalDpl.toFixed(0) : "—"}
+                          {s.subtotalDpl > 0 ? Number(s.subtotalDpl).toFixed(1) : "—"}
                         </td>
 
                         {/* Status Badge */}
