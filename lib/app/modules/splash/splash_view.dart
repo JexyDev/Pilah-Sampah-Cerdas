@@ -137,7 +137,7 @@ class _SplashViewState extends ConsumerState<SplashView>
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Logo Asli Web
+                      // Logo Asli (Transparent)
                       SlideTransition(
                         position: _titleSlide,
                         child: FadeTransition(
@@ -145,39 +145,26 @@ class _SplashViewState extends ConsumerState<SplashView>
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 24),
                             child: Image.asset(
-                              AppAssets.logo,
-                              height: 100,
+                              AppAssets.icon,
+                              height: 120, // Diperbesar sedikit agar lebih jelas
                               fit: BoxFit.contain,
                             ),
                           ),
                         ),
                       ),
-                      // Tagline
+                      // Tagline (Sesuai Icon)
                       SlideTransition(
                         position: _taglineSlide,
                         child: FadeTransition(
                           opacity: _taglineFade,
-                          child: RichText(
+                          child: Text(
+                            'Bersih, Sehat, Kampung Asri',
                             textAlign: TextAlign.center,
-                            text: TextSpan(
-                              style: GoogleFonts.poppins(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
-                                height: 1.3,
-                              ),
-                              children: const [
-                                TextSpan(text: 'Sampah '),
-                                TextSpan(
-                                  text: 'Terdata',
-                                  style: TextStyle(color: AppColors.primaryBlue),
-                                ),
-                                TextSpan(text: ',\nKampung '),
-                                TextSpan(
-                                  text: 'Berseka',
-                                  style: TextStyle(color: AppColors.primaryGreen),
-                                ),
-                              ],
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primaryGreen,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ),

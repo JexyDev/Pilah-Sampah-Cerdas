@@ -84,4 +84,6 @@ flutter:
 
   assets:
     - assets/logo_berseka.webp
+    - assets/app-logo.png
+    - assets/app-icon.png
     - assets/icons/

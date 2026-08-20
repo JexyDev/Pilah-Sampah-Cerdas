@@ -67,10 +67,10 @@ class _TentangAplikasiViewState extends State<TentangAplikasiView> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(100),
                   child: Image.asset(
-                    'assets/logo_berseka.webp',
+                    'assets/app-icon.png',
                     width: 140,
                     height: 140,
-                    fit: BoxFit.cover,
+                    fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) => const Icon(
                       Icons.eco_rounded,
                       size: 80,

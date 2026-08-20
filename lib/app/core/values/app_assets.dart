@@ -4,5 +4,6 @@ class AppAssets {
   AppAssets._();
 
   // ─── Logo ─────────────────────────────────────────────────────────────────
-  static const String logo = 'assets/logo_berseka.webp';
+  static const String logo = 'assets/app-logo.png';
+  static const String icon = 'assets/app-icon.png';
 }
