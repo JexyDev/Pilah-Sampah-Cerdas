@@ -1106,9 +1106,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                isSuccess
-                                    ? '$targetMenit mnt 0 dtk'
-                                    : '$durasiMenit mnt $durasiDetik dtk',
+                                '$durasiMenit mnt $durasiDetik dtk',
                                 style: const TextStyle(
                                   color: Colors.orange,
                                   fontWeight: FontWeight.bold,
@@ -1138,9 +1136,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        isSuccess
-                            ? '100.0%'
-                            : '${targetMenit > 0 ? ((durasiMenit / targetMenit) * 100).toStringAsFixed(1) : 0}%',
+                        '${targetMenit > 0 ? ((durasiMenit / targetMenit) * 100).toStringAsFixed(1) : 0}%',
                         style: const TextStyle(
                           color: Colors.orange,
                           fontWeight: FontWeight.bold,
@@ -1152,11 +1148,9 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                 ),
                 const SizedBox(height: 16),
                 LinearProgressIndicator(
-                  value: isSuccess
-                      ? 1.0
-                      : (targetMenit > 0
-                            ? (durasiMenit / targetMenit).clamp(0.0, 1.0)
-                            : 0),
+                  value: targetMenit > 0
+                      ? (durasiMenit / targetMenit).clamp(0.0, 1.0)
+                      : 0,
                   backgroundColor: Colors.grey[300],
                   color: isSuccess ? AppColors.primaryGreen : Colors.orange,
                   minHeight: 6,

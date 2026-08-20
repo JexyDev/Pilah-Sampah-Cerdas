@@ -524,7 +524,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             state = state.copyWith(
               activeActivity: activeZone,
               targetDurationMinutes: targetMins,
-              inZoneDurationSeconds: (isAttended || attendanceStatus == 'hadir') ? targetMins * 60 : _accumulatedSeconds,
+              inZoneDurationSeconds: _accumulatedSeconds,
             );
           }
         }
@@ -1338,8 +1338,6 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           : response.isNotEmpty;
 
       if (isSuccess) {
-        _accumulatedSeconds = 0;
-        _zoneEntryTime = DateTime.now();
         state = state.copyWith(
           isSuccessAttendance: true,
           attendanceTime:
@@ -1347,8 +1345,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
               DateTime.now().toLocal().toString().split('.')[0],
           attendanceId: response['id']?.toString(),
           isInsideRadius: true,
-          inZoneDurationSeconds: 0,
+          inZoneDurationSeconds: _accumulatedSeconds,
         );
+        await _savePersistentTimer();
 
         if (user != null) {
           await FirebaseNotificationService().saveNotification(
