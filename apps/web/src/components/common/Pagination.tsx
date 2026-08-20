@@ -1,11 +1,11 @@
 /**
  * Component: Pagination
- * Standardized Pagination component for TrashCare Data Tables
+ * Standardized Pagination component for BERSEKA Data Tables
  * 
  * Features:
  * - Items per page selector ("Tampilkan 10 data per halaman")
  * - Item range info ("Menampilkan 1–10 dari 26 data")
- * - Numbered page buttons with active state matching TrashCare theme
+ * - Numbered page buttons with active state matching BERSEKA theme
  * - Chevron Previous/Next navigation
  */
 

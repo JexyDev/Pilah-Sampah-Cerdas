@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
@@ -95,22 +95,48 @@ export interface AssessmentData {
   finalizedAt?: string | null;
 }
 
-export interface LaporanAkhirItem {
+export interface LaporanAkhirKelompokItem {
   id: string;
-  studentId: string;
-  nim: string;
-  nama: string;
-  kelompok: string;
-  kelompokId?: string | null;
-  judulLaporan?: string | null;
-  fileUrl?: string | null;
-  fileName?: string | null;
+  kelompokId: string;
+  no: number;
+  namaKelompok: string;
+  kelurahan: string;
+  cakupanRw: string[] | any;
+  dplNama: string;
+  dplNip: string;
+  dplId?: string | null;
+  totalAnggota: number;
+  students: Array<{
+    studentId: string;
+    nim: string;
+    nama: string;
+    jurusan: string;
+    fakultas?: string;
+    phone?: string;
+    rw?: string;
+  }>;
+  judulLaporan: string;
+  fileUrl: string | null;
+  fileName: string | null;
+  submittedAt: string;
+  updatedAt: string;
+  statusTelaah: "DISETUJUI" | "PERLU_REVISI" | "MENUNGGU_TELAAH" | "BELUM_UNGGAH";
   status: "Sudah Dinilai" | "Belum Dinilai";
-  nilai: number | null;
-  catatan?: string;
-  jurusan?: string;
-  dplNama?: string;
-  updatedAt?: string;
+  nilaiAkhir: number | null;
+  predikat: string;
+  rubrikScores: {
+    sistematika: number;
+    analisis: number;
+    output: number;
+    refleksi: number;
+  };
+  catatanBab: {
+    bab1: string;
+    bab2: string;
+    bab3: string;
+    bab4: string;
+  };
+  catatanUmum: string;
 }
 
 export interface StudentPenilaianResponse {
@@ -121,11 +147,12 @@ export interface StudentPenilaianResponse {
 
 export interface LaporanAkhirResponse {
   stats: {
-    totalMahasiswa: number;
-    sudahDinilai: number;
-    belumDinilai: number;
+    totalKelompok: number;
+    disetujuiCount: number;
+    perluRevisiCount: number;
+    menungguTelaahCount: number;
   };
-  students: LaporanAkhirItem[];
+  kelompokList: LaporanAkhirKelompokItem[];
 }
 
 export const penilaianKknApiService = {
@@ -152,6 +179,31 @@ export const penilaianKknApiService = {
   getLaporanAkhirList: async (groupId?: string): Promise<LaporanAkhirResponse> => {
     const res = await api.get("/penilaian-kkn/laporan-akhir", { params: { groupId } });
     return res.data.data;
+  },
+
+  saveLaporanAkhirKelompokScore: async (
+    kelompokId: string,
+    payload: {
+      statusTelaah: "DISETUJUI" | "PERLU_REVISI" | "MENUNGGU_TELAAH";
+      rubrikScores: {
+        sistematika: number;
+        analisis: number;
+        output: number;
+        refleksi: number;
+      };
+      catatanBab?: {
+        bab1?: string;
+        bab2?: string;
+        bab3?: string;
+        bab4?: string;
+      };
+      catatanUmum?: string;
+      judulLaporan?: string;
+      fileUrl?: string;
+    }
+  ) => {
+    const res = await api.post(`/penilaian-kkn/laporan-akhir/kelompok/${kelompokId}/assess`, payload);
+    return res.data;
   },
 
   saveLaporanAkhirScore: async (studentId: string, score: number, catatan?: string) => {

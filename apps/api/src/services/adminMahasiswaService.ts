@@ -69,14 +69,14 @@ export const adminMahasiswaService = {
     const formattedPhone = formatPhoneNumber(data.no_telepon);
     const existingPhone = await prisma.user.findUnique({ where: { phone: formattedPhone } });
     if (existingPhone) {
-      throw new Error("Nomor telepon (+62) sudah terdaftar di sistem TrashCare");
+      throw new Error("Nomor telepon (+62) sudah terdaftar di sistem BERSEKA");
     }
 
     const cleanNim = data.nim && data.nim.trim() !== "" && data.nim !== "-" ? data.nim.trim() : null;
     if (cleanNim) {
       const existingNim = await prisma.studentKkn.findUnique({ where: { nim: cleanNim } });
       if (existingNim) {
-        throw new Error("NIM (Nomor Induk Mahasiswa) sudah terdaftar di sistem TrashCare");
+        throw new Error("NIM (Nomor Induk Mahasiswa) sudah terdaftar di sistem BERSEKA");
       }
     }
 
@@ -132,7 +132,7 @@ export const adminMahasiswaService = {
         where: { nim: cleanNim, userId: { not: id } },
       });
       if (existingNim) {
-        throw new Error("NIM (Nomor Induk Mahasiswa) sudah terdaftar di sistem TrashCare");
+        throw new Error("NIM (Nomor Induk Mahasiswa) sudah terdaftar di sistem BERSEKA");
       }
     }
 

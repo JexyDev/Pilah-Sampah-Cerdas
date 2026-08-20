@@ -1,12 +1,12 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
  * Component: Pengelolaan Sampah & Daur Ulang Hilir
  * - 100% End-to-End API Integration dengan Backend PostgreSQL (`/api/v1/pemanfaatan`)
  * - Mobile Ready REST API Response Compatible
- * - Design Standar Industri: Executive Hero Banner, KPI Summary Cards, Multi-Filter, Responsive Table, Lightbox Preview, & TrashCare Standardized Pagination.
+ * - Design Standar Industri: Executive Hero Banner, KPI Summary Cards, Multi-Filter, Responsive Table, Lightbox Preview, & BERSEKA Standardized Pagination.
  */
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -199,8 +199,8 @@ export const PemanfaatanSampah: React.FC = () => {
   }, [filteredItems]);
 
   const conversionRatio = useMemo(() => {
-    if (totalVolumeBahan === 0) return "0.0";
-    return Math.min(100, Math.round((totalHasilPemanfaatan / totalVolumeBahan) * 100)).toFixed(1);
+    if (totalVolumeBahan === 0) return "0.00";
+    return Math.min(100, (totalHasilPemanfaatan / totalVolumeBahan) * 100).toFixed(2);
   }, [totalVolumeBahan, totalHasilPemanfaatan]);
 
   const activeRwCount = useMemo(() => {
@@ -412,7 +412,7 @@ export const PemanfaatanSampah: React.FC = () => {
           <div>
             <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Volume Bahan Baku</p>
             <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">
-              {totalVolumeBahan >= 1000 ? (totalVolumeBahan / 1000).toFixed(1) : totalVolumeBahan.toLocaleString("id-ID", { maximumFractionDigits: 1 })}{" "}
+              {totalVolumeBahan >= 1000 ? (totalVolumeBahan / 1000).toFixed(2) : totalVolumeBahan.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
               <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalVolumeBahan >= 1000 ? "Ton" : "Kg"}</span>
             </p>
           </div>
@@ -425,7 +425,7 @@ export const PemanfaatanSampah: React.FC = () => {
           <div>
             <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Hasil Olahan Daur</p>
             <p className="text-lg font-black text-emerald-700 dark:text-emerald-400 mt-0.5">
-              {totalHasilPemanfaatan >= 1000 ? (totalHasilPemanfaatan / 1000).toFixed(1) : totalHasilPemanfaatan.toLocaleString("id-ID", { maximumFractionDigits: 1 })}{" "}
+              {totalHasilPemanfaatan >= 1000 ? (totalHasilPemanfaatan / 1000).toFixed(2) : totalHasilPemanfaatan.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
               <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalHasilPemanfaatan >= 1000 ? "Ton" : "Kg"}</span>
             </p>
           </div>
@@ -684,7 +684,7 @@ export const PemanfaatanSampah: React.FC = () => {
           </div>
         )}
 
-        {/* Standardized TrashCare Pagination */}
+        {/* Standardized BERSEKA Pagination */}
         {filteredItems.length > 0 && (
           <Pagination
             currentPage={currentPage}

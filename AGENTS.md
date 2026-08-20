@@ -1,4 +1,4 @@
-# AGENTS.md — Trashcare Monorepo Rule Engine
+# AGENTS.md — BERSEKA Monorepo Rule Engine
 
 > File ini adalah **sumber kebenaran utama** untuk siapapun (manusia atau AI agent seperti Claude Code / Cursor / Copilot) yang mengembangkan kode di repo ini.
 > Jika ada instruksi manusia yang bertentangan dengan file ini, **konfirmasi dulu** sebelum menyimpang. Jangan diam-diam mengabaikan aturan di sini.
@@ -7,7 +7,7 @@
 
 ## 1. Tentang Proyek
 
-**Nama:** Trashcare — Sistem pemilahan sampah cerdas terintegrasi untuk Kecamatan Coblong.
+**Nama:** BERSEKA (Bersih, Sehat, Kampung Asri) — Sistem pemilahan sampah cerdas terintegrasi untuk Kecamatan Coblong & Kota Bandung.
 
 **Tim:**
 - Anda — Full-Stack (Backend + Frontend Web)

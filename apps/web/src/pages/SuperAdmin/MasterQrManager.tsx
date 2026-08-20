@@ -1,6 +1,6 @@
 import { QrCode, AlertTriangle, PlayCircle, Printer } from "lucide-react";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -180,7 +180,7 @@ export const MasterQrManager: React.FC = () => {
           return `
           <div class="qr-card" style="border-color: ${colorTheme};">
             <div class="qr-header" style="background-color: ${colorTheme};">
-              TRASHCARE PSC
+              BERSEKA PSC
             </div>
             <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
               q.qrCode
@@ -190,7 +190,7 @@ export const MasterQrManager: React.FC = () => {
               ${q.category?.name || "Semua Jenis"}
             </div>
             <div class="qr-details">
-              ${q.rtRw ? `${q.rtRw.name} - Kel. ${q.rtRw.kelurahan.name}` : "TrashCare Batch QR"}
+              ${q.rtRw ? `${q.rtRw.name} - Kel. ${q.rtRw.kelurahan.name}` : "BERSEKA Batch QR"}
             </div>
           </div>
           `;
@@ -201,7 +201,7 @@ export const MasterQrManager: React.FC = () => {
     printWindow.document.write(`
       <html>
         <head>
-          <title>TrashCare - Master QR Codes</title>
+          <title>BERSEKA - Master QR Codes</title>
           <style>
             @page {
               size: A4;
@@ -304,7 +304,7 @@ export const MasterQrManager: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `Master_QR_Trashcare_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute("download", `Master_QR_BERSEKA_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

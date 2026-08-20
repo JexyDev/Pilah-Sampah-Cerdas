@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare Analytics & Leaderboard Overview Board
+ * Project: BERSEKA Analytics & Leaderboard Overview Board
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
@@ -314,7 +314,7 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           setVolumeData(
             d.regions.map((k: any) => ({
               name: `Kel. ${k.kelurahanName}`,
-              val: parseFloat((Number(k.totalPoints || 0)).toFixed(1)),
+              val: parseFloat((Number(k.totalPoints || 0)).toFixed(2)),
             }))
           );
 
@@ -401,8 +401,8 @@ export const AnalyticsOverviewBoard: React.FC = () => {
   const totalVolumeKg = volumeData.reduce((acc, d) => acc + d.val, 0);
   const totalVolumeDisplay =
     totalVolumeKg >= 1000
-      ? `${(totalVolumeKg / 1000).toFixed(1)} ton`
-      : `${totalVolumeKg.toFixed(1)} kg`;
+      ? `${(totalVolumeKg / 1000).toFixed(2)} ton`
+      : `${totalVolumeKg.toFixed(2)} kg`;
 
   const CustomComplianceTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {

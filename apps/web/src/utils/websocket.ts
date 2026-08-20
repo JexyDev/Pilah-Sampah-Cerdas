@@ -1,9 +1,9 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
- * WebSocket Real-Time Client for TrashCare
+ * WebSocket Real-Time Client for BERSEKA
  */
 
 type DepositCallback = (deposit: any) => void;
@@ -13,7 +13,7 @@ type StudentCheckoutCallback = (checkoutData: any) => void;
 type StudentAttendanceCallback = (attendanceData: any) => void;
 type StatusCallback = (status: "CONNECTED" | "CONNECTING" | "DISCONNECTED") => void;
 
-class TrashcareWebSocketClient {
+class BERSEKAWebSocketClient {
   private socket: WebSocket | null = null;
   private depositListeners: Set<DepositCallback> = new Set();
   private studentLocationListeners: Set<StudentLocationCallback> = new Set();
@@ -22,21 +22,61 @@ class TrashcareWebSocketClient {
   private studentAttendanceListeners: Set<StudentAttendanceCallback> = new Set();
   private statusListeners: Set<StatusCallback> = new Set();
   private reconnectTimeout: any = null;
+  private heartbeatInterval: any = null;
   private status: "CONNECTED" | "CONNECTING" | "DISCONNECTED" = "DISCONNECTED";
   private isIntentionallyClosed = false;
 
   private getWsUrl(): string {
     if (typeof window === "undefined") return "ws://localhost:3000";
 
+    // 1. Explicit WS env var
+    const envWs = (import.meta as any).env?.VITE_WS_URL;
+    if (envWs) return envWs;
+
+    // 2. Derive from VITE_API_BASE_URL if available
+    const envApi = (import.meta as any).env?.VITE_API_BASE_URL;
+    if (envApi && (envApi.startsWith("http://") || envApi.startsWith("https://"))) {
+      try {
+        const apiUrl = new URL(envApi);
+        const wsProto = apiUrl.protocol === "https:" ? "wss:" : "ws:";
+        return `${wsProto}//${apiUrl.host}`;
+      } catch (_e) {
+        // Fallback below
+      }
+    }
+
     const isHttps = window.location.protocol === "https:";
     const protocol = isHttps ? "wss:" : "ws:";
     const hostname = window.location.hostname;
+    const port = window.location.port;
 
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
+    // In local dev (Vite running on port 5173/5174/etc, backend on port 3000):
+    if (port && port !== "3000" && (hostname === "localhost" || hostname === "127.0.0.1" || hostname.startsWith("192.168.") || hostname.startsWith("10.") || hostname.startsWith("172."))) {
       return `${protocol}//${hostname}:3000`;
     }
 
+    // Default: use window host
     return `${protocol}//${window.location.host}`;
+  }
+
+  private startHeartbeat() {
+    this.stopHeartbeat();
+    this.heartbeatInterval = setInterval(() => {
+      if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+        try {
+          this.socket.send(JSON.stringify({ type: "PING" }));
+        } catch (_e) {
+          // Socket write failed, connection might be broken
+        }
+      }
+    }, 20000);
+  }
+
+  private stopHeartbeat() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
   }
 
   public connect() {
@@ -54,6 +94,7 @@ class TrashcareWebSocketClient {
 
       this.socket.onopen = () => {
         this.setStatus("CONNECTED");
+        this.startHeartbeat();
         const token = localStorage.getItem("psc_access_token") ?? sessionStorage.getItem("psc_access_token");
         if (token && this.socket?.readyState === WebSocket.OPEN) {
           this.socket.send(JSON.stringify({ type: "AUTH", token }));
@@ -63,6 +104,10 @@ class TrashcareWebSocketClient {
       this.socket.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
+          if (msg.type === "PONG") {
+            // Heartbeat response acknowledged
+            return;
+          }
           if (msg.type === "NEW_DEPOSIT" && msg.data) {
             this.depositListeners.forEach((listener) => {
               try {
@@ -110,6 +155,7 @@ class TrashcareWebSocketClient {
       };
 
       this.socket.onclose = () => {
+        this.stopHeartbeat();
         this.setStatus("DISCONNECTED");
         this.socket = null;
         if (!this.isIntentionallyClosed) {
@@ -118,6 +164,7 @@ class TrashcareWebSocketClient {
       };
 
       this.socket.onerror = () => {
+        this.stopHeartbeat();
         this.setStatus("DISCONNECTED");
         if (this.socket) {
           this.socket.close();
@@ -125,6 +172,7 @@ class TrashcareWebSocketClient {
       };
     } catch (err) {
       console.error("[WS] Connection init error:", err);
+      this.stopHeartbeat();
       this.setStatus("DISCONNECTED");
       this.scheduleReconnect();
     }
@@ -134,12 +182,26 @@ class TrashcareWebSocketClient {
     if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
     this.reconnectTimeout = setTimeout(() => {
       this.connect();
-    }, 4000);
+    }, 3000);
   }
 
   private setStatus(status: "CONNECTED" | "CONNECTING" | "DISCONNECTED") {
     this.status = status;
     this.statusListeners.forEach((l) => l(status));
+  }
+
+  public sendLocation(latitude: number, longitude: number) {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      const token = localStorage.getItem("psc_access_token") ?? sessionStorage.getItem("psc_access_token");
+      this.socket.send(
+        JSON.stringify({
+          type: "LOCATION_UPDATE",
+          latitude,
+          longitude,
+          token,
+        })
+      );
+    }
   }
 
   public onDeposit(callback: DepositCallback): () => void {
@@ -192,6 +254,7 @@ class TrashcareWebSocketClient {
 
   public disconnect() {
     this.isIntentionallyClosed = true;
+    this.stopHeartbeat();
     if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
     if (this.socket) {
       this.socket.close();
@@ -201,4 +264,4 @@ class TrashcareWebSocketClient {
   }
 }
 
-export const wsClient = new TrashcareWebSocketClient();
+export const wsClient = new BERSEKAWebSocketClient();

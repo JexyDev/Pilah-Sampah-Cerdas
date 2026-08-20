@@ -781,7 +781,7 @@ export const DplDashboardPage: React.FC = () => {
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Jam Presensi KKN</span>
                 <div className="mt-1">
                   <span className="text-2xl font-black text-indigo-700 dark:text-indigo-400">
-                    {groups.reduce((acc, g) => acc + ((g as any).actualHours || 0), 0).toFixed(1)}
+                    {groups.reduce((acc, g) => acc + ((g as any).actualHours || 0), 0).toFixed(2)}
                   </span>
                   <span className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1.5">Jam</span>
                 </div>
@@ -807,7 +807,7 @@ export const DplDashboardPage: React.FC = () => {
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Sampah Terpilah</span>
                 <div className="mt-1">
                   <span className="text-2xl font-black text-slate-900 dark:text-slate-100">
-                    {groups.reduce((acc, g) => acc + (g.totalWasteWeight || 0), 0).toFixed(1)}
+                    {groups.reduce((acc, g) => acc + (g.totalWasteWeight || 0), 0).toFixed(2)}
                   </span>
                   <span className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1.5">Kg</span>
                 </div>
@@ -1088,11 +1088,11 @@ export const DplDashboardPage: React.FC = () => {
                           <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">{st.jurusan || "-"}</td>
                           <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">{st.kelompokName || "-"}</td>
                           <td className="py-2.5 px-3 text-center font-bold text-emerald-700 dark:text-emerald-400">
-                            {st.attendanceRate ? `${st.attendanceRate}%` : "0%"}
+                            {st.attendanceRate ? `${Number(st.attendanceRate).toFixed(2)}%` : "0.00%"}
                           </td>
                           <td className="py-2.5 px-3 text-center font-black text-slate-900 dark:text-slate-100">
                             {st.assessmentScore !== null && st.assessmentScore !== undefined && st.assessmentScore > 0
-                              ? st.assessmentScore
+                              ? Number(st.assessmentScore).toFixed(2)
                               : <span className="text-slate-400 font-normal">Belum Dinilai</span>}
                           </td>
                           <td className="py-2.5 px-3 text-center">
@@ -1301,7 +1301,7 @@ export const DplDashboardPage: React.FC = () => {
               <span className="text-xl font-extrabold text-blue-700 dark:text-blue-400 mt-0.5 block">
                 {(() => {
                   const assessed = students.filter(s => s.assessmentScore !== null && s.assessmentScore !== undefined);
-                  return assessed.length > 0 ? (assessed.reduce((acc, s) => acc + (s.assessmentScore || 0), 0) / assessed.length).toFixed(1) : "-";
+                  return assessed.length > 0 ? (assessed.reduce((acc, s) => acc + (s.assessmentScore || 0), 0) / assessed.length).toFixed(2) : "-";
                 })()}
               </span>
             </div>
@@ -1459,8 +1459,8 @@ export const DplDashboardPage: React.FC = () => {
                               </div>
                               <span className="text-[9px] font-bold text-slate-500">
                                 {st.progressPercentage !== undefined
-                                  ? st.progressPercentage
-                                  : Math.round(((st.attendedCount * 4) / (st.targetHours || 200)) * 100)}% Tercapai
+                                  ? Number(st.progressPercentage).toFixed(2)
+                                  : (((st.attendedCount * 4) / (st.targetHours || 200)) * 100).toFixed(2)}% Tercapai
                               </span>
                             </div>
                           </div>
@@ -1473,7 +1473,7 @@ export const DplDashboardPage: React.FC = () => {
                         <td className="px-4 py-3.5 text-center">
                           {hasScore ? (
                             <div className="inline-flex items-center gap-1.5">
-                              <span className="font-black text-slate-900 dark:text-slate-100 text-sm">{st.assessmentScore}</span>
+                              <span className="font-black text-slate-900 dark:text-slate-100 text-sm">{Number(st.assessmentScore).toFixed(2)}</span>
                               <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${grade.bg}`}>
                                 {grade.letter}
                               </span>

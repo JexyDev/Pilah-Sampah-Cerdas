@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -1025,6 +1025,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       const lng = Number(locData.longitude);
       if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
 
+      const recordedAt = locData.recordedAt || new Date().toISOString();
+
       setStudentLocations((prev) => {
         const index = prev.findIndex((s) => s.studentId === locData.studentId);
         const studentInfo = locData.student || {
@@ -1035,6 +1037,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           studentProfile: {
             nim: locData.nim || "-",
             jurusan: locData.jurusan || "-",
+            kelompokId: locData.kelompokId || null,
           },
         };
 
@@ -1043,7 +1046,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           studentId: locData.studentId,
           latitude: String(lat),
           longitude: String(lng),
-          recordedAt: locData.recordedAt || new Date().toISOString(),
+          recordedAt: recordedAt,
           student: studentInfo,
         };
 
@@ -1053,7 +1056,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             ...next[index],
             latitude: String(lat),
             longitude: String(lng),
-            recordedAt: updatedItem.recordedAt,
+            recordedAt: recordedAt,
             student: {
               ...next[index].student,
               ...studentInfo,
@@ -1063,6 +1066,20 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         } else {
           return [updatedItem, ...prev];
         }
+      });
+
+      // Synchronize attendance list coordinates in real time
+      setAttendance((prev) => {
+        return prev.map((a) => {
+          if (a.studentId === locData.studentId || a.student?.id === locData.studentId) {
+            return {
+              ...a,
+              latitude: String(lat),
+              longitude: String(lng),
+            };
+          }
+          return a;
+        });
       });
     });
 
@@ -2597,7 +2614,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         : "-";
 
                       const targetKumulatif = configTargets.targetTotalJam || 200;
-                      const percentCapaian = rec.totalHours !== undefined ? Math.round(((rec.totalHours || 0) / (targetKumulatif || 1)) * 100) : 0;
+                      const percentCapaian = rec.totalHours !== undefined ? Number((((rec.totalHours || 0) / (targetKumulatif || 1)) * 100).toFixed(2)) : 0;
                       const isExceeded = percentCapaian > 100;
 
                       const formattedActualTarget = isLeaveOrPending
@@ -2630,14 +2647,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               )
                             : `${isAttended ? (durationMins > 0 ? formatDurationUnits(durationMins) : "< 1 Menit") : "0 Menit"} / ${formatHoursToUnits(scheduleTargetHours)}`);
 
-                      let poinDampingan = 0;
-                      if (isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal) {
-                        poinDampingan = 0;
-                      } else if (durationMins >= scheduleTargetHours * 60) {
-                        poinDampingan = 10;
-                      } else if (isAttended) {
-                        poinDampingan = 10;
-                      }
+                      const poinDampingan = (isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal) ? 0 : (isAttended ? 10 : 0);
 
                       // Pastel avatar backgrounds
                       const avatarColors = [
@@ -2781,15 +2791,32 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             {poinDampingan}
                           </td>
                           <td className="py-3.5 px-4 text-center">
-                            <button
-                              type="button"
-                              onClick={() => handleFocusMahasiswaMap(rec)}
-                              className="px-3 py-1.5 bg-white dark:bg-slate-900 hover:bg-emerald-50 text-emerald-700 font-bold text-xs rounded-xl border border-emerald-300 transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
-                              title="Lihat posisi GPS pada peta"
-                            >
-                              <MapPin size={13} className="text-emerald-600" />
-                              <span>Lihat Peta</span>
-                            </button>
+                            <div className="flex flex-col items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleFocusMahasiswaMap(rec)}
+                                className="px-3 py-1.5 bg-white dark:bg-slate-900 hover:bg-emerald-50 text-emerald-700 font-bold text-xs rounded-xl border border-emerald-300 transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
+                                title="Lihat posisi GPS pada peta"
+                              >
+                                <MapPin size={13} className="text-emerald-600" />
+                                <span>Lihat Peta</span>
+                              </button>
+                              {(() => {
+                                const liveLoc = studentLocations.find(
+                                  (l) => l.studentId === rec.student.id || l.student?.id === rec.student.id
+                                );
+                                if (!liveLoc) return null;
+                                const recTime = new Date(liveLoc.recordedAt).getTime();
+                                const isRecent = !isNaN(recTime) && Date.now() - recTime < 5 * 60 * 1000;
+                                if (!isRecent) return null;
+                                return (
+                                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700 animate-pulse">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    <span>Live GPS</span>
+                                  </span>
+                                );
+                              })()}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -2959,7 +2986,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       {rec.totalHours !== undefined ? (
                         (() => {
                           const targetKumulatif = configTargets.targetTotalJam || 200;
-                          const percentCapaian = Math.round(((rec.totalHours || 0) / (targetKumulatif || 1)) * 100);
+                          const percentCapaian = Number((((rec.totalHours || 0) / (targetKumulatif || 1)) * 100).toFixed(2));
                           const isExceeded = percentCapaian > 100;
                           return isExceeded ? (
                             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
@@ -2987,14 +3014,31 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         </span>
                       )}
 
-                      <button
-                        type="button"
-                        onClick={() => handleFocusMahasiswaMap(rec)}
-                        className="text-emerald-700 hover:text-emerald-800 font-black flex items-center gap-1 text-[11px] cursor-pointer"
-                      >
-                        <Navigation size={11} />
-                        <span>Peta GPS</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const liveLoc = studentLocations.find(
+                            (l) => l.studentId === rec.student.id || l.student?.id === rec.student.id
+                          );
+                          if (!liveLoc) return null;
+                          const recTime = new Date(liveLoc.recordedAt).getTime();
+                          const isRecent = !isNaN(recTime) && Date.now() - recTime < 5 * 60 * 1000;
+                          if (!isRecent) return null;
+                          return (
+                            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700 animate-pulse">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                              <span>Live</span>
+                            </span>
+                          );
+                        })()}
+                        <button
+                          type="button"
+                          onClick={() => handleFocusMahasiswaMap(rec)}
+                          className="text-emerald-700 hover:text-emerald-800 font-black flex items-center gap-1 text-[11px] cursor-pointer"
+                        >
+                          <Navigation size={11} />
+                          <span>Peta GPS</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );

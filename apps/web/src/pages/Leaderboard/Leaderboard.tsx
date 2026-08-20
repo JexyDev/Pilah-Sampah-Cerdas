@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
@@ -760,7 +760,7 @@ const Leaderboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Standard TrashCare Pagination Bar */}
+              {/* Standard BERSEKA Pagination Bar */}
               {currentData.length > 0 && (
                 <Pagination
                   currentPage={currentPage}

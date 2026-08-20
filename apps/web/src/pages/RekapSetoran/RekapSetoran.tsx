@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
@@ -247,7 +247,7 @@ export default function RekapSetoran() {
           <div>
             <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Total Berat Sampah</p>
             <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">
-              {totalWeight >= 1000 ? (totalWeight / 1000).toFixed(1) : totalWeight.toLocaleString("id-ID", { maximumFractionDigits: 1 })}{" "}
+              {totalWeight >= 1000 ? (totalWeight / 1000).toFixed(2) : totalWeight.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
               <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalWeight >= 1000 ? "Ton" : "Kg"}</span>
             </p>
           </div>
@@ -463,7 +463,7 @@ export default function RekapSetoran() {
           </div>
         )}
 
-        {/* TrashCare Standardized Pagination */}
+        {/* BERSEKA Standardized Pagination */}
         {!loading && filteredDeposits.length > 0 && (
           <Pagination
             currentPage={currentPage}

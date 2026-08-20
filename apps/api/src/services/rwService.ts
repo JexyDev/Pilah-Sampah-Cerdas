@@ -486,8 +486,8 @@ export const rwService = {
           }
         : null,
       stats: {
-        totalResiduKg: Number(totalResiduKg.toFixed(1)),
-        todayResiduKg: Number(todayResiduKg.toFixed(1)),
+        totalResiduKg: Number(totalResiduKg.toFixed(2)),
+        todayResiduKg: Number(todayResiduKg.toFixed(2)),
         totalPengangkutan: logs.length,
       },
       logs: logs.map((l) => ({

@@ -1,6 +1,6 @@
 import { ChevronDown, Search, Loader2, MapPinPlus, X, Trash2, AlertTriangle, Pencil } from "lucide-react";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -303,7 +303,7 @@ const ManajemenLokasi: React.FC = () => {
         <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
           <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-lg rounded-xl p-4 border border-outline-variant/30 dark:border-slate-800 flex flex-col gap-3">
             <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-              Kapasitas Tong / Zona
+              Kapasitas Tempat Sampah / Zona
             </p>
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
@@ -502,7 +502,7 @@ const ManajemenLokasi: React.FC = () => {
                       >
                         <Popup>
                           <div className="text-[12px] space-y-2">
-                            <strong className="text-sm font-bold block mb-1 border-b pb-1">Data Tong Rumah Tangga</strong>
+                            <strong className="text-sm font-bold block mb-1 border-b pb-1">Data Tempat Sampah Rumah Tangga</strong>
                             {group.bins.map(b => {
                               const vol = Number(b.currentVolumeLiter || 0);
                               const max = Number(b.maxCapacityLiter || 25);
@@ -511,7 +511,7 @@ const ManajemenLokasi: React.FC = () => {
                                 <div key={b.id} className="border-b last:border-0 pb-1 mb-1">
                                   <span className="font-bold text-primary">{b.category?.name === "ORGANIC" ? "🌱 Organik" : "♻️ Anorganik"} ({b.kode})</span>
                                   <br />
-                                  Kapasitas: {pct.toFixed(1)}% terisi ({vol}L / {max}L)
+                                  Kapasitas: {pct.toFixed(2)}% terisi ({vol}L / {max}L)
                                   <br />
                                   RT/RW: {b.rtRw || "-"}
                                   <br />

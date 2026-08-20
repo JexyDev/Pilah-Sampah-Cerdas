@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Avatar Utility for General Scenery & Landscape Default Profile Pictures (No People Photos)
  */

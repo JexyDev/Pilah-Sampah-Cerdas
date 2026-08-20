@@ -147,7 +147,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
           totalJumlahRumahDiRw: ps.totalJumlahRumahDiRw ?? "",
           persentasePemilahan:
             ps.persentasePemilahan !== null && ps.persentasePemilahan !== undefined
-              ? (Number(ps.persentasePemilahan) * 100).toFixed(1)
+              ? (Number(ps.persentasePemilahan) * 100).toFixed(2)
               : "",
           tingkatPemilahan: ps.tingkatPemilahan || "",
           catatan: ps.catatan || "",
@@ -536,7 +536,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                           setPemilahan((prev) => {
                             const jml = Number(val);
                             const tot = Number(prev.totalJumlahRumahDiRw);
-                            const pct = tot > 0 && val !== "" ? ((jml / tot) * 100).toFixed(1) : prev.persentasePemilahan;
+                            const pct = tot > 0 && val !== "" ? ((jml / tot) * 100).toFixed(2) : prev.persentasePemilahan;
                             return { ...prev, jumlahRumahMemilah: val, persentasePemilahan: pct };
                           });
                         }}
@@ -553,7 +553,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                           setPemilahan((prev) => {
                             const tot = Number(val);
                             const jml = Number(prev.jumlahRumahMemilah);
-                            const pct = tot > 0 && prev.jumlahRumahMemilah !== "" ? ((jml / tot) * 100).toFixed(1) : prev.persentasePemilahan;
+                            const pct = tot > 0 && prev.jumlahRumahMemilah !== "" ? ((jml / tot) * 100).toFixed(2) : prev.persentasePemilahan;
                             return { ...prev, totalJumlahRumahDiRw: val, persentasePemilahan: pct };
                           });
                         }}
@@ -661,7 +661,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                       { key: "ecobrickKerajinanDaurUlang", label: "Ecobrick / Kerajinan Daur Ulang" },
                       { key: "buruanSae", label: "Buruan Sae / Kebun Warga" },
                       { key: "pengepulMitraDaurUlang", label: "Pengepul Mitra Daur Ulang" },
-                      { key: "digitalisasiData", label: "Digitalisasi Data (TrashCare / Aplikasi)" },
+                      { key: "digitalisasiData", label: "Digitalisasi Data (BERSEKA / Aplikasi)" },
                     ].map((item) => (
                       <label
                         key={item.key}

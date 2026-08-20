@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare Login Page (Modern Clean 2-Column Split Layout & HD Vector Logo)
+ * Project: BERSEKA Login Page (Modern Clean 2-Column Split Layout & HD Vector Logo)
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */

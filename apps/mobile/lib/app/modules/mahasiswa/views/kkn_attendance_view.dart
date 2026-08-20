@@ -1116,8 +1116,8 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                       ),
                       child: Text(
                         isSuccess
-                            ? '100.0%'
-                            : '${targetMenit > 0 ? ((durasiMenit / targetMenit) * 100).toStringAsFixed(1) : 0}%',
+                            ? '100.00%'
+                            : '${targetMenit > 0 ? ((durasiMenit / targetMenit) * 100).toStringAsFixed(2) : 0}%',
                         style: const TextStyle(
                           color: Colors.orange,
                           fontWeight: FontWeight.bold,

@@ -40,7 +40,7 @@ export const BarChartRace: React.FC = () => {
               name: rawName.startsWith("Kel") ? rawName : `Kel. ${rawName}`,
               color: style.color,
               logo: style.logo,
-              tonaseKg: parseFloat(Number(r.totalWeightKg || r.totalWeight || (r.totalPoints ? r.totalPoints * 0.1 : 0)).toFixed(1)),
+              tonaseKg: parseFloat(Number(r.totalWeightKg || r.totalWeight || (r.totalPoints ? r.totalPoints * 0.1 : 0)).toFixed(2)),
               compliancePct: Math.min(100, Math.max(0, Math.round(Number(r.complianceRate ?? r.compliance ?? 0)))),
               totalPoints: Math.round(Number(r.totalPoints || 0)),
             };

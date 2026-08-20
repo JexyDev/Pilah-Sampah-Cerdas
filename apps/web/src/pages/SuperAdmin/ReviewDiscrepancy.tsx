@@ -1,6 +1,6 @@
 import { ShieldCheck, Image as ImageIcon, X, Filter, Check } from "lucide-react";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -279,13 +279,13 @@ export const ReviewDiscrepancy: React.FC = () => {
                 <div className="space-y-1">
                   <span className="text-[9px] uppercase font-bold text-gray-400">Model AI</span>
                   <div className="text-sm font-bold text-indigo-700 font-mono">{selectedLog.aiClassification}</div>
-                  <span className="text-[10px] text-gray-500 block">Conf: {Number(selectedLog.aiConfidence).toFixed(1)}%</span>
-                  <span className="text-[10px] text-gray-500 block">Berat: {selectedLog.weightKg} Kg</span>
+                  <span className="text-[10px] text-gray-500 block">Conf: {Number(selectedLog.aiConfidence).toFixed(2)}%</span>
+                  <span className="text-[10px] text-gray-500 block">Berat: {Number(selectedLog.weightKg || 0).toFixed(2)} Kg</span>
                 </div>
                 <div className="space-y-1 border-l border-gray-200 pl-4">
                   <span className="text-[9px] uppercase font-bold text-gray-400">Fisik Petugas</span>
                   <div className="text-sm font-bold text-orange-700 font-mono">{selectedLog.petugasClassification}</div>
-                  <span className="text-[10px] text-gray-500 block">Actual: {selectedLog.actualWeightPetugas || selectedLog.weightKg} Kg</span>
+                  <span className="text-[10px] text-gray-500 block">Actual: {Number(selectedLog.actualWeightPetugas || selectedLog.weightKg || 0).toFixed(2)} Kg</span>
                   <span className="text-[10px] text-gray-500 block truncate" title={selectedLog.geolocation}>Lokasi: {selectedLog.geolocation || "-"}</span>
                 </div>
               </div>

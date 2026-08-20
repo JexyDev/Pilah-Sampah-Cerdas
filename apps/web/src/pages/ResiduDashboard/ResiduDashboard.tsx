@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -666,7 +666,7 @@ const ResiduDashboard: React.FC = () => {
                           </div>
                           <div>
                             <p className="text-slate-500 mb-0.5">Confidence AI</p>
-                            <p className="font-bold text-slate-800 dark:text-slate-100">{l?.aiConfidence ? `${(Number(l.aiConfidence)*100).toFixed(1)}%` : "-"}</p>
+                            <p className="font-bold text-slate-800 dark:text-slate-100">{l?.aiConfidence ? `${(Number(l.aiConfidence)*100).toFixed(2)}%` : "-"}</p>
                           </div>
                           <div className="col-span-2">
                             <p className="text-slate-500 mb-0.5">Geolokasi Saat Setor</p>

@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
@@ -140,7 +140,53 @@ export const penilaianKknController = {
   },
 
   /**
-   * Menyimpan Penilaian Laporan Akhir Mahasiswa
+   * Menyimpan Penilaian Laporan Akhir Berbasis Kelompok
+   */
+  saveLaporanAkhirKelompokScore: async (req: Request, res: Response) => {
+    try {
+      const { kelompokId } = req.params;
+      const { statusTelaah, rubrikScores, catatanBab, catatanUmum, judulLaporan, fileUrl } = req.body;
+
+      if (!kelompokId) {
+        res.status(400).json({ success: false, message: "ID Kelompok (kelompokId) wajib disertakan" });
+        return;
+      }
+
+      if (!rubrikScores || typeof rubrikScores !== "object") {
+        res.status(400).json({ success: false, message: "Objek rubrikScores wajib disertakan" });
+        return;
+      }
+
+      const evaluatorId = req.user?.userId || (req.user as any)?.id || "";
+      const evaluatorRole = String(req.user?.role || "").toUpperCase();
+
+      const result = await penilaianKknService.saveLaporanAkhirKelompokScore(
+        kelompokId,
+        evaluatorId,
+        evaluatorRole,
+        {
+          statusTelaah: statusTelaah || "DISETUJUI",
+          rubrikScores,
+          catatanBab,
+          catatanUmum,
+          judulLaporan,
+          fileUrl,
+        }
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Penilaian laporan akhir kelompok KKN berhasil disimpan dan disinkronkan ke seluruh anggota",
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[penilaianKknController] saveLaporanAkhirKelompokScore error:", error);
+      res.status(500).json({ success: false, message: error.message || "Internal server error" });
+    }
+  },
+
+  /**
+   * Menyimpan Penilaian Laporan Akhir Mahasiswa (Fallback Individual)
    */
   saveLaporanAkhirScore: async (req: Request, res: Response) => {
     try {

@@ -1,11 +1,11 @@
 {
-  "name": "TrashCare",
-  "short_name": "TrashCare",
-  "description": "Platform cerdas manajemen pemilahan sampah berbasis AI, Kecamatan Coblong, Kota Bandung.",
+  "name": "BERSEKA",
+  "short_name": "BERSEKA",
+  "description": "Platform cerdas manajemen pemilahan sampah berbasis AI, Kecamatan Coblong, Kota Bandung. Bersih, Sehat, Kampung Asri.",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#4CAF50",
-  "theme_color": "#4CAF50",
+  "background_color": "#004D38",
+  "theme_color": "#004D38",
   "orientation": "portrait-primary",
   "prefer_related_applications": false,
   "icons": [

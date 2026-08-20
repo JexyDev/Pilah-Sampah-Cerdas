@@ -1,7 +1,7 @@
 import { X, Star, Banknote, Recycle, AlertCircle, Eye, LineChart, BarChart, Leaf, TrendingUp, TrendingDown, Wallet, Zap, MapPin, AlertTriangle, Truck, Pencil, Trash2, Calendar, ChevronRight, GraduationCap, Search, CheckCircle2, Sparkles, RotateCcw, UserCheck, Code2, ShieldCheck, Award, BookOpen, RefreshCcw, Settings, Save, Loader2, Building2, History, Home, Bell, Megaphone, Archive, Send, Users, ShoppingBag } from "lucide-react";
 
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
@@ -64,8 +64,8 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
   const totalRW = locations.length;
   const avgPatuh =
     totalRW > 0
-      ? (locations.reduce((acc, curr) => acc + Number(curr.patuh || 0), 0) / totalRW).toFixed(1)
-      : "0";
+      ? (locations.reduce((acc, curr) => acc + Number(curr.patuh || 0), 0) / totalRW).toFixed(2)
+      : "0.00";
   const highPatuhCount = locations.filter((loc) => Number(loc.patuh || 0) >= 85).length;
   const medPatuhCount = locations.filter(
     (loc) => Number(loc.patuh || 0) >= 60 && Number(loc.patuh || 0) < 85
@@ -1691,7 +1691,7 @@ const Dashboard: React.FC = () => {
             trendUp: true,
           },
           setoranHariIni: {
-            value: `${Number(kpi.setoranHariIniKg ?? 0).toFixed(1)} Kg`,
+            value: `${Number(kpi.setoranHariIniKg ?? 0).toFixed(2)} Kg`,
             trend: "Aktivitas Setoran",
             trendLabel: timeFilter === "semua" ? "Total Keseluruhan" : `Periode ${timeFilter}`,
             trendUp: true,
@@ -1699,7 +1699,7 @@ const Dashboard: React.FC = () => {
           totalPoin: {
             value:
               (kpi.totalPoin ?? 0) > 1000
-                ? `${((kpi.totalPoin ?? 0) / 1000).toFixed(1)}K`
+                ? `${((kpi.totalPoin ?? 0) / 1000).toFixed(2)}K`
                 : Number(kpi.totalPoin ?? 0).toLocaleString("id-ID"),
             trend: "Akumulasi Poin",
             trendLabel: "Peringkat Warga",
@@ -1712,9 +1712,9 @@ const Dashboard: React.FC = () => {
             trendUp: true 
           },
           komposisiSampah: {
-            organik: { berat: `${organikKg.toFixed(1)} Kg`, persentase: `${pctOrganik}%` },
-            anorganik: { berat: `${anorganikKg.toFixed(1)} Kg`, persentase: `${pctAnorganik}%` },
-            residu: { berat: `${residuKg.toFixed(1)} Kg`, persentase: `${pctResidu}%` },
+            organik: { berat: `${organikKg.toFixed(2)} Kg`, persentase: `${pctOrganik}%` },
+            anorganik: { berat: `${anorganikKg.toFixed(2)} Kg`, persentase: `${pctAnorganik}%` },
+            residu: { berat: `${residuKg.toFixed(2)} Kg`, persentase: `${pctResidu}%` },
             pctOrganik,
             pctAnorganik,
             pctResidu,
@@ -1939,7 +1939,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. KPI Section (5 Cards for TrashCare Domain) */}
+      {/* 2. KPI Section (5 Cards for BERSEKA Domain) */}
       <div className="px-1 text-[10.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
         Ringkasan Operasional Pemilahan Sampah
       </div>
@@ -2253,7 +2253,7 @@ const Dashboard: React.FC = () => {
                       {dominantLabel}
                     </span>
                     <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold block mt-0.5 font-mono">
-                      {totalKg.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg Total
+                      {totalKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kg Total
                     </span>
                   </div>
                 </div>
@@ -2266,7 +2266,7 @@ const Dashboard: React.FC = () => {
                         Organik
                       </div>
                       <div className="font-mono font-bold text-slate-700 dark:text-slate-200">
-                        {rawOrg.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg{" "}
+                        {rawOrg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kg{" "}
                         <span className="text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">({pctOrg}%)</span>
                       </div>
                     </div>
@@ -2285,7 +2285,7 @@ const Dashboard: React.FC = () => {
                         Anorganik
                       </div>
                       <div className="font-mono font-bold text-slate-700 dark:text-slate-200">
-                        {rawAnorg.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg{" "}
+                        {rawAnorg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kg{" "}
                         <span className="text-amber-600 dark:text-amber-400 font-extrabold ml-1">({pctAnorg}%)</span>
                       </div>
                     </div>
@@ -2304,7 +2304,7 @@ const Dashboard: React.FC = () => {
                         Residu
                       </div>
                       <div className="font-mono font-bold text-slate-700 dark:text-slate-200">
-                        {rawResidu.toLocaleString("id-ID", { maximumFractionDigits: 1 })} Kg{" "}
+                        {rawResidu.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kg{" "}
                         <span className="text-rose-600 dark:text-rose-400 font-extrabold ml-1">({pctResidu}%)</span>
                       </div>
                     </div>

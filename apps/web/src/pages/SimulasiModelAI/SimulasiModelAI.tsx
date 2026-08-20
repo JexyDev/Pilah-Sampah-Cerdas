@@ -102,7 +102,7 @@ const SimulasiModelAI: React.FC = () => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1>🤖 Simulasi Model AI TrashCare</h1>
+        <h1>🤖 Simulasi Model AI BERSEKA</h1>
         <p>Pengujian Real-Time Klasifikasi Sampah (YOLOv8-seg ONNX Engine)</p>
       </div>
 
@@ -169,11 +169,11 @@ const SimulasiModelAI: React.FC = () => {
               <div className={styles.statGrid}>
                 <div className={styles.statBox}>
                   <span>Akurasi (Confidence)</span>
-                  <strong>{(result.confidenceScore * 100).toFixed(1)}%</strong>
+                  <strong>{(result.confidenceScore * 100).toFixed(2)}%</strong>
                 </div>
                 <div className={styles.statBox}>
                   <span>Estimasi Volume</span>
-                  <strong>{result.estimatedVolumeLiter.toFixed(1)} Liter</strong>
+                  <strong>{result.estimatedVolumeLiter.toFixed(2)} Liter</strong>
                 </div>
                 <div className={styles.statBox}>
                   <span>Waktu Inferensi (Latency)</span>

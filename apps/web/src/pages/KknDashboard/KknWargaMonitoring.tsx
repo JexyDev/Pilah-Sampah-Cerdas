@@ -53,7 +53,7 @@ export const KknWargaMonitoring: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {warga.map((w, i) => {
-                  const totalKg = Number(w.totalKg ?? (w.recentLogs?.reduce((acc: number, l: any) => acc + (l.weightKg || l.beratKg || 0), 0) || 0)).toFixed(1);
+                  const totalKg = Number(w.totalKg ?? (w.recentLogs?.reduce((acc: number, l: any) => acc + (l.weightKg || l.beratKg || 0), 0) || 0)).toFixed(2);
                   const totalPoin = Number(w.totalPoin ?? (Number(totalKg) * 10)).toLocaleString("id-ID");
                   const category = w.category || (i % 2 === 0 ? "Organik" : "Anorganik");
                   const isOrganik = (category || "").toLowerCase().includes("organik");

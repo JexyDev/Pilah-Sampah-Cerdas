@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare Landing Page (Update CTA button text to 'Login')
+ * Project: BERSEKA Landing Page (Update CTA button text to 'Login')
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */

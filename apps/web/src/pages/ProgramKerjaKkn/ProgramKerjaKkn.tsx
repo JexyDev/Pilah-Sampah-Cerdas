@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
@@ -416,13 +416,13 @@ export const ProgramKerjaKkn: React.FC = () => {
   // Metric KPI Computations (3 Standardized Statuses)
   const totalCount = prokerList.length;
   const pendingCount = prokerList.filter((p) => normalizeStatus(p.status) === "BELUM_DISETUJUI").length;
-  const pendingPct = totalCount > 0 ? ((pendingCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
+  const pendingPct = totalCount > 0 ? ((pendingCount / totalCount) * 100).toFixed(2).replace(".", ",") : "0,00";
 
   const disetujuiCount = prokerList.filter((p) => normalizeStatus(p.status) === "DITERIMA").length;
-  const disetujuiPct = totalCount > 0 ? ((disetujuiCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
+  const disetujuiPct = totalCount > 0 ? ((disetujuiCount / totalCount) * 100).toFixed(2).replace(".", ",") : "0,00";
 
   const ditolakCount = prokerList.filter((p) => normalizeStatus(p.status) === "DITOLAK").length;
-  const ditolakPct = totalCount > 0 ? ((ditolakCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
+  const ditolakPct = totalCount > 0 ? ((ditolakCount / totalCount) * 100).toFixed(2).replace(".", ",") : "0,00";
 
   const totalBiaya = prokerList.reduce((acc, p) => acc + (Number(p.kebutuhanBiaya) || 0), 0);
 

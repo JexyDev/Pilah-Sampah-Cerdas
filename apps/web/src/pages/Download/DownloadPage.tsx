@@ -1,7 +1,7 @@
 /**
- * Project: TrashCare Mobile APK Download Page (Real-Time Synchronized Light Theme)
+ * Project: BERSEKA Mobile APK Download Page (Real-Time Synchronized Light Theme)
  * Developed by: PT Makerindo & Universitas Komputer Indonesia
- * Copyright (c) 2026 TrashCare. All rights reserved.
+ * Copyright (c) 2026 BERSEKA. All rights reserved.
  */
 
 import React, { useState, useEffect } from "react";

@@ -22,7 +22,7 @@ import {
   Calendar,
 } from "lucide-react";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -1322,7 +1322,7 @@ const JadwalKegiatan: React.FC = () => {
                               <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Meter</span>
                               <span className="bg-emerald-700 text-white px-2 py-0.5 rounded-md text-[11px] font-mono font-bold shadow-2xs">
                                 {Number(formData.radius || 100) >= 1000
-                                  ? `${(Number(formData.radius || 100) / 1000).toFixed(1).replace(/\.0$/, "")} km`
+                                  ? `${(Number(formData.radius || 100) / 1000).toFixed(2)} km`
                                   : `${formData.radius || 100} m`}
                               </span>
                             </div>

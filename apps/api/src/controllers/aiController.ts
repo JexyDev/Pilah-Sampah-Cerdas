@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -100,7 +100,7 @@ export class AiController {
       const result = await aiService.detectWasteMock(userId, filePath);
       const quotaRemaining = await redisService.getRemainingQuota(userId);
 
-      const weightKg = Number((((result as any).volumeEstimate || 2.5) * 0.4).toFixed(1)) || 1.0;
+      const weightKg = Number((((result as any).volumeEstimate || 2.5) * 0.4).toFixed(2)) || 1.0;
       const confidence = (result as any).confidence || 0.94;
       const organicPercentage = ((result as any).organik_percent ?? 94) / 100;
       const estimatedPoints = Math.round(weightKg * 100.0 * confidence * 0.9) || 85;

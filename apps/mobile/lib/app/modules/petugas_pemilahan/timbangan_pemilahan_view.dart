@@ -338,7 +338,7 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            weight.toStringAsFixed(1),
+                            weight.toStringAsFixed(2),
                             style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primaryBlue, height: 1),
                           ),
                           const SizedBox(width: 4),
@@ -382,7 +382,7 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    newTotal.toStringAsFixed(1),
+                                    newTotal.toStringAsFixed(2),
                                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryGreen, height: 1),
                                   ),
                                   const SizedBox(width: 4),
@@ -399,7 +399,7 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          '↑ +${weight.toStringAsFixed(1)} kg',
+                          '↑ +${weight.toStringAsFixed(2)} kg',
                           style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
                         ),
                       ),

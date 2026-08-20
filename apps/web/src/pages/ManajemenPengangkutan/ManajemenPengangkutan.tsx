@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
@@ -7,7 +7,7 @@
  * - Scope Wilayah: Rukun Warga (Terstandarisasi dengan Master Data & Hasil Klasifikasi)
  * - 100% End-to-End API Integration dengan Backend Express PostgreSQL (`/api/v1/pengangkutan`, `/api/v1/bins/reset-requests`)
  * - Mobile REST API Compatible (Standard Payload Contracts)
- * - Design Standar Industri: Executive Hero Banner, Squircle KPI Metrics, High-Contrast Filter Controls, Interactive Tables, & TrashCare Standardized Pagination.
+ * - Design Standar Industri: Executive Hero Banner, Squircle KPI Metrics, High-Contrast Filter Controls, Interactive Tables, & BERSEKA Standardized Pagination.
  */
 
 import React, { useEffect, useState, useMemo } from "react";
@@ -718,7 +718,7 @@ export const ManajemenPengangkutan: React.FC = () => {
               </div>
             )}
 
-            {/* TrashCare Standardized Pagination Controls */}
+            {/* BERSEKA Standardized Pagination Controls */}
             {!loading && filteredTasks.length > 0 && (
               <Pagination
                 currentPage={currentPage}

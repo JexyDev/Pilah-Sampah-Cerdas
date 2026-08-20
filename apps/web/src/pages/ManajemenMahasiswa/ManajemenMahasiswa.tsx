@@ -484,7 +484,7 @@ const ManajemenMahasiswa: React.FC = () => {
               </tbody>
             </table>
           </div>
-          {/* Standard TrashCare Pagination */}
+          {/* Standard BERSEKA Pagination */}
           {!loading && filteredMahasiswas.length > 0 && (
             <Pagination
               currentPage={currentPage}

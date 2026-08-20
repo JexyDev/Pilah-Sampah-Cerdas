@@ -254,7 +254,7 @@ class NotificationEngine {
       await _flutterLocalNotificationsPlugin.show(
         id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
         title: 'Log Timbangan Berhasil Disimpan! âš–ï¸',
-        body: 'Log timbangan $type seberat ${weightKg.toStringAsFixed(1)} kg berhasil diunggah ke server.',
+        body: 'Log timbangan $type seberat ${weightKg.toStringAsFixed(2)} kg berhasil diunggah ke server.',
         notificationDetails: platformDetails,
       );
     } catch (e) {

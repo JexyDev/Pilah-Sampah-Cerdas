@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -1298,7 +1298,7 @@ const KknDashboard: React.FC = () => {
                           </p>
                         </div>
                         <span className="font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
-                          {log.weightKg} kg
+                          {Number(log.weightKg || 0).toFixed(2)} kg
                         </span>
                       </div>
                     ))

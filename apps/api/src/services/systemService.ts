@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -171,8 +171,8 @@ export const systemService = {
     }
   ) => {
     const formattedSize = data.fileSizeBytes
-      ? `${(data.fileSizeBytes / (1024 * 1024)).toFixed(1)} MB`
-      : "24.8 MB";
+      ? `${(data.fileSizeBytes / (1024 * 1024)).toFixed(2)} MB`
+      : "24.80 MB";
 
     const targetVersion = data.latestVersion || data.version || "1.0.0";
     const targetUrl = data.downloadUrl || data.apkUrl || "http://157.10.252.252:3000/api/v1/system/download-apk";
@@ -231,7 +231,7 @@ export const systemService = {
           version,
           latestVersion: version,
           buildNumber: parsed.buildNumber || 100,
-          releaseNotes: parsed.releaseNotes || "Versi terbaru aplikasi TrashCare",
+          releaseNotes: parsed.releaseNotes || "Versi terbaru aplikasi BERSEKA",
           apkUrl: downloadUrl,
           downloadUrl,
           fileSizeBytes: parsed.fileSizeBytes || 26004512,
@@ -248,7 +248,7 @@ export const systemService = {
       version: "1.0.0",
       latestVersion: "1.0.0",
       buildNumber: 100,
-      releaseNotes: "Versi stabil aplikasi Pilah Sampah TrashCare.",
+      releaseNotes: "Versi stabil aplikasi Pilah Sampah BERSEKA.",
       apkUrl: "http://157.10.252.252:3000/api/v1/system/download-apk",
       downloadUrl: "http://157.10.252.252:3000/api/v1/system/download-apk",
       fileSizeBytes: 26004512,

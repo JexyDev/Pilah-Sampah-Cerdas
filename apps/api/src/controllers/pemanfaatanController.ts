@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
@@ -166,7 +166,7 @@ export class PemanfaatanController {
 
       const result = await pemanfaatanService.createFeedback({
         userId,
-        wargaNama: wargaNama || "Warga TrashCare",
+        wargaNama: wargaNama || "Warga BERSEKA",
         kategori: kategori || "Pemanfaatan Sampah",
         judul,
         isiKritikSaran,
@@ -206,7 +206,7 @@ export class PemanfaatanController {
 
       const result = await pemanfaatanService.respondFeedback(id, {
         tanggapan,
-        ditanggapiOleh: responderName || "Pengelola TrashCare",
+        ditanggapiOleh: responderName || "Pengelola BERSEKA",
         status: status || "SELESAI",
       });
 

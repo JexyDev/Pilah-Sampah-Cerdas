@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
@@ -220,14 +220,14 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     const s5 = parseNum(formScores.skorDplOutput);
     const s6 = parseNum(formScores.skorDplLaporanAkhir);
 
-    const score1 = Number(((s1 * 20) / 100).toFixed(1));
-    const score2 = Number(((s2 * 20) / 100).toFixed(1));
-    const score3 = Number(((s3 * 20) / 100).toFixed(1));
-    const score4 = Number(((s4 * 15) / 100).toFixed(1));
-    const score5 = Number(((s5 * 15) / 100).toFixed(1));
-    const score6 = Number(((s6 * 10) / 100).toFixed(1));
+    const score1 = Number(((s1 * 20) / 100).toFixed(2));
+    const score2 = Number(((s2 * 20) / 100).toFixed(2));
+    const score3 = Number(((s3 * 20) / 100).toFixed(2));
+    const score4 = Number(((s4 * 15) / 100).toFixed(2));
+    const score5 = Number(((s5 * 15) / 100).toFixed(2));
+    const score6 = Number(((s6 * 10) / 100).toFixed(2));
 
-    const total = Number((score1 + score2 + score3 + score4 + score5 + score6).toFixed(1));
+    const total = Number((score1 + score2 + score3 + score4 + score5 + score6).toFixed(2));
     const predikat = total > 0 ? getPredikat(total) : "Belum Dinilai";
 
     return {
@@ -503,7 +503,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
                         {/* Nilai */}
                         <td className="py-3.5 px-3 text-center font-bold text-slate-800 dark:text-slate-200">
-                          {s.subtotalDpl > 0 ? Number(s.subtotalDpl).toFixed(1) : "—"}
+                          {s.subtotalDpl > 0 ? Number(s.subtotalDpl).toFixed(2) : "—"}
                         </td>
 
                         {/* Status Badge */}
@@ -746,7 +746,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                             </div>
                           </td>
                           <td className="py-2 px-2 text-right font-bold text-slate-800 dark:text-slate-200">
-                            {computedSkor.toFixed(1)}
+                            {computedSkor.toFixed(2)}
                           </td>
                         </tr>
                       );
@@ -773,7 +773,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                     Nilai Akhir
                   </span>
                   <span className="text-2xl font-black text-[#009966] dark:text-emerald-400 mt-0.5 block">
-                    {computedScores.total.toFixed(1)}
+                    {computedScores.total.toFixed(2)}
                   </span>
                 </div>
                 <div className="text-center">

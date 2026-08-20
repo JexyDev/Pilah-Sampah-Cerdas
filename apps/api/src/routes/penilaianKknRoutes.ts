@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
@@ -17,6 +17,7 @@ router.post("/save", authMiddleware, penilaianKknController.savePenilaian);
 router.post("/finalize", authMiddleware, penilaianKknController.finalizePenilaian);
 router.get("/rekap", authMiddleware, penilaianKknController.getRekapPenilaian);
 router.get("/laporan-akhir", authMiddleware, penilaianKknController.getLaporanAkhirList);
+router.post("/laporan-akhir/kelompok/:kelompokId/assess", authMiddleware, penilaianKknController.saveLaporanAkhirKelompokScore);
 router.post("/laporan-akhir/:studentId/assess", authMiddleware, penilaianKknController.saveLaporanAkhirScore);
 
 export default router;

@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Centralized Prisma Client Singleton to prevent connection pool exhaustion.
  */

@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare Dynamic Island Toast Standard
+ * Project: BERSEKA Dynamic Island Toast Standard
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */

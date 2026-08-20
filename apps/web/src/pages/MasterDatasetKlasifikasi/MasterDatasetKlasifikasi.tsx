@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo.
@@ -670,7 +670,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
           </table>
         </div>
 
-        {/* Standardized TrashCare Pagination Footer */}
+        {/* Standardized BERSEKA Pagination Footer */}
         {filteredDataset.length > 0 && (
           <Pagination
             currentPage={currentPage}
@@ -772,7 +772,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
 
                 <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
                   <span className="text-[10px] font-black uppercase text-slate-400">Metadata VPS Host</span>
-                  <p className="font-extrabold text-slate-800 dark:text-slate-100">{vpsData?.os.hostname || "TrashCare VPS"}</p>
+                  <p className="font-extrabold text-slate-800 dark:text-slate-100">{vpsData?.os.hostname || "BERSEKA VPS"}</p>
                   <p className="text-emerald-700 font-bold">PostgreSQL DB: {vpsData?.database.queryLatencyMs || 62} ms</p>
                 </div>
 

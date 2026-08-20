@@ -7,13 +7,13 @@ html {
 }
 
 :root {
-  --primary-emerald: #009966;
-  --primary-emerald-hover: #047857;
+  --primary-emerald: #004d38;
+  --primary-emerald-hover: #003627;
   --primary-emerald-light: #ecfdf5;
-  --accent-blue: #0073E6;
-  --accent-blue-hover: #005bb5;
-  --accent-blue-light: #eaf3ff;
-  --brand-green: #59B828;
+  --accent-blue: #0072ce;
+  --accent-blue-hover: #0284c7;
+  --accent-blue-light: #e0f2fe;
+  --brand-green: #38a116;
   --dark-slate: #0f172a;
   --bg-light: #f8fafc;
 }

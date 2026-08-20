@@ -1,9 +1,9 @@
 /**
- * Project: TrashCare Web App
+ * Project: BERSEKA Web App
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
- * Halaman Registrasi Terpadu TrashCare (Default: Warga, Opsi: Mahasiswa KKN & Petugas Residu)
+ * Halaman Registrasi Terpadu BERSEKA (Default: Warga, Opsi: Mahasiswa KKN & Petugas Residu)
  */
 
 import React, { useState, useEffect } from "react";

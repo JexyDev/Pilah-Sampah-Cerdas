@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare - Sistem Pemilahan Sampah Cerdas KKN Coblong
+ * Project: BERSEKA - Sistem Pemilahan Sampah Cerdas KKN Coblong
  * Page: Penilaian Program Kerja KKN (DPL / Tim Penilai)
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
@@ -205,7 +205,7 @@ export const PenilaianProkerPage: React.FC = () => {
       const val = inputNilai[item.no];
       const numericVal = typeof val === "number" && !isNaN(val) ? Math.min(100, Math.max(0, val)) : 0;
       if (typeof val === "number" && !isNaN(val)) filledCount++;
-      const score = Number(((numericVal * item.bobot) / 100).toFixed(1));
+      const score = Number(((numericVal * item.bobot) / 100).toFixed(2));
       totalScore += score;
       return {
         ...item,
@@ -215,7 +215,7 @@ export const PenilaianProkerPage: React.FC = () => {
       };
     });
 
-    const finalScore = Number(totalScore.toFixed(1));
+    const finalScore = Number(totalScore.toFixed(2));
 
     // Menentukan Predikat
     let predikat = "Kurang";
@@ -786,7 +786,7 @@ export const PenilaianProkerPage: React.FC = () => {
                             </div>
                           </td>
                           <td className="py-2 px-2.5 text-right font-bold text-slate-800 dark:text-slate-200">
-                            {r.skor.toFixed(1)}
+                            {r.skor.toFixed(2)}
                           </td>
                         </tr>
                       ))}
@@ -799,7 +799,7 @@ export const PenilaianProkerPage: React.FC = () => {
                         <td className="py-2 px-2 text-center">100%</td>
                         <td></td>
                         <td className="py-2 px-2.5 text-right text-emerald-700 dark:text-emerald-400">
-                          {calculatedRubrik.totalScore.toFixed(1)}
+                          {calculatedRubrik.totalScore.toFixed(2)}
                         </td>
                       </tr>
                     </tfoot>
@@ -818,7 +818,7 @@ export const PenilaianProkerPage: React.FC = () => {
                       Nilai Akhir
                     </span>
                     <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-                      {calculatedRubrik.totalScore.toFixed(1)}
+                      {calculatedRubrik.totalScore.toFixed(2)}
                     </span>
                   </div>
                 </div>

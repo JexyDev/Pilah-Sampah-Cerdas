@@ -1,5 +1,5 @@
 /**
- * Seed data hierarki wilayah — TrashCare
+ * Seed data hierarki wilayah — BERSEKA
  * Provinsi Jawa Barat → Kota Bandung → 6 Kecamatan (fokus Coblong) → Kelurahan → RW → RT
  * Data berdasarkan administratif resmi Kemendagri / Pemkot Bandung.
  */
@@ -15,7 +15,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log("🌱 Seeding data wilayah TrashCare...\n");
+  console.log("🌱 Seeding data wilayah BERSEKA...\n");
 
   // ─────────────────────────────────────────────
   // 0. CLEANUP — Hapus kecamatan & kelurahan lama yang bukan Coblong
@@ -595,7 +595,7 @@ async function main() {
     { key: "attendance_min_duration_minutes", value: "0", tipe: "number", deskripsi: "Durasi minimal presensi KKN (Menit)" },
     { key: "attendance_min_duration_seconds", value: "0", tipe: "number", deskripsi: "Durasi minimal presensi KKN (Detik)" },
     { key: "attendance_out_of_zone_tolerance_minutes", value: "15", tipe: "number", deskripsi: "Toleransi waktu di luar zona (Menit)" },
-    { key: "APP_VERSION", value: "1.0.0", tipe: "string", deskripsi: "Versi aplikasi TrashCare" },
+    { key: "APP_VERSION", value: "1.0.0", tipe: "string", deskripsi: "Versi aplikasi BERSEKA" },
   ];
 
   for (const config of configs) {
@@ -607,7 +607,7 @@ async function main() {
   }
   console.log(`✅ System configs: ${configs.length} konfigurasi sistem`);
 
-  console.log("\n🎉 Seeding selesai! Database TrashCare siap digunakan.\n");
+  console.log("\n🎉 Seeding selesai! Database BERSEKA siap digunakan.\n");
 }
 
 main()

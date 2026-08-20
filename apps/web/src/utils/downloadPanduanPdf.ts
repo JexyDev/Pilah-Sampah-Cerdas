@@ -1,8 +1,8 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Utility to generate and trigger PDF print/download of Buku Panduan TrashCare
+ * Utility to generate and trigger PDF print/download of Buku Panduan BERSEKA
  */
 
 import toast from "react-hot-toast";
@@ -19,7 +19,7 @@ export const downloadPanduanPdf = () => {
     <html lang="id">
     <head>
       <meta charset="UTF-8">
-      <title>Buku Panduan Operasional Ekosistem TrashCare - Kecamatan Coblong</title>
+      <title>Buku Panduan Operasional Ekosistem BERSEKA - Kecamatan Coblong</title>
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         
@@ -250,7 +250,7 @@ export const downloadPanduanPdf = () => {
         <div class="section-box">
           <div class="section-title">1. Ketentuan Utama Ekosistem</div>
           <p style="font-size: 9pt; color: #334155; margin-top: 4px;">
-            TrashCare menghadirkan ekosistem tata kelola sampah berbasis geolokasi dan akuntabilitas data di Kecamatan Coblong, Kota Bandung.
+            BERSEKA menghadirkan ekosistem tata kelola sampah berbasis geolokasi dan akuntabilitas data di Kecamatan Coblong, Kota Bandung.
           </p>
           <ul style="font-size: 8.5pt;">
             <li><strong>Autentikasi Akun Warga:</strong> Menggunakan Nomor WhatsApp (+62) dengan verifikasi Kode OTP tanpa penggunaan NIK.</li>
@@ -384,7 +384,7 @@ export const downloadPanduanPdf = () => {
         </div>
 
         <div class="footer">
-          TrashCare Ecosystem • KKN Berdampak UNIKOM • Kecamatan Coblong, Kota Bandung (2026)
+          BERSEKA Ecosystem • KKN Berdampak UNIKOM • Kecamatan Coblong, Kota Bandung (2026)
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
@@ -392,8 +392,8 @@ export default function SetorSampah() {
           </div>
           <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
             {totalBerat >= 1000
-              ? (totalBerat / 1000).toLocaleString("id-ID", { maximumFractionDigits: 2 })
-              : totalBerat.toLocaleString("id-ID", { maximumFractionDigits: 1 })}{" "}
+              ? (totalBerat / 1000).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+              : totalBerat.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
             <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
               {totalBerat >= 1000 ? "Ton" : "Kg"}
             </span>

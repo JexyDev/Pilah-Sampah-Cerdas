@@ -173,7 +173,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
           userId: user.id,
           role: 'PETUGAS_PEMILAHAN',
           title: 'Input Timbangan Berhasil',
-          desc: '${actualWeightKg.toStringAsFixed(1)} kg $classification tercatat. '
+          desc: '${actualWeightKg.toStringAsFixed(2)} kg $classification tercatat. '
               'Poin: +$poinFromBackend pts.',
           type: 'TIMBANGAN_PEMILAHAN',
           id: 'timbangan_${DateTime.now().millisecondsSinceEpoch}',

@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -472,9 +472,9 @@ export const dashboardService = {
     });
 
     const totalCheck = setoranWithBin.length;
-    const sortingComplianceRate = totalCheck > 0 ? parseFloat(((compliantCount / totalCheck) * 100).toFixed(1)) : 0;
-    const organikComplianceRate = organikBinTotal > 0 ? parseFloat(((organikBinCorrect / organikBinTotal) * 100).toFixed(1)) : 0;
-    const anorganikComplianceRate = anorganikBinTotal > 0 ? parseFloat(((anorganikBinCorrect / anorganikBinTotal) * 100).toFixed(1)) : 0;
+    const sortingComplianceRate = totalCheck > 0 ? parseFloat(((compliantCount / totalCheck) * 100).toFixed(2)) : 0;
+    const organikComplianceRate = organikBinTotal > 0 ? parseFloat(((organikBinCorrect / organikBinTotal) * 100).toFixed(2)) : 0;
+    const anorganikComplianceRate = anorganikBinTotal > 0 ? parseFloat(((anorganikBinCorrect / anorganikBinTotal) * 100).toFixed(2)) : 0;
 
     // Real count of bins by category in filtered area
     const realOrganikBinCount = await prisma.bin.count({
@@ -679,10 +679,10 @@ export const dashboardService = {
 
       result.push({
         label: `Mng ${weekNumber}`,
-        weight: parseFloat(totalWeight.toFixed(1)),
-        organic: parseFloat(organicWeight.toFixed(1)),
-        inorganic: parseFloat(inorganicWeight.toFixed(1)),
-        residu: parseFloat(residuWeight.toFixed(1)),
+        weight: parseFloat(totalWeight.toFixed(2)),
+        organic: parseFloat(organicWeight.toFixed(2)),
+        inorganic: parseFloat(inorganicWeight.toFixed(2)),
+        residu: parseFloat(residuWeight.toFixed(2)),
       });
     }
 
@@ -721,8 +721,8 @@ export const dashboardService = {
     return {
       poin,
       saldo,
-      organik: parseFloat(organikKg.toFixed(1)),
-      anorganik: parseFloat(anorganikKg.toFixed(1)),
+      organik: parseFloat(organikKg.toFixed(2)),
+      anorganik: parseFloat(anorganikKg.toFixed(2)),
       quotaRemaining,
     };
   },
@@ -764,8 +764,8 @@ export const dashboardService = {
       peakLatency,
       cacheMetrics,
       activeConnections: 120 + Math.floor(Math.random() * 50),
-      networkIncoming: (10 + Math.random() * 40).toFixed(1),
-      networkOutgoing: (5 + Math.random() * 20).toFixed(1),
+      networkIncoming: (10 + Math.random() * 40).toFixed(2),
+      networkOutgoing: (5 + Math.random() * 20).toFixed(2),
     };
   },
   getRegions: async () => {

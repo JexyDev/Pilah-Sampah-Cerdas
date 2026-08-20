@@ -552,7 +552,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
               Expanded(
                 child: Text(
                   'Sampah: ${result.detectedType.displayName} '
-                  '(${(result.volumeEstimate * (isOrganic ? 0.4 : 0.2)).toStringAsFixed(1)} kg) '
+                  '(${(result.volumeEstimate * (isOrganic ? 0.4 : 0.2)).toStringAsFixed(2)} kg) '
                   '— Arahkan ke tempat sampah ${result.detectedType.displayName.toUpperCase()}',
                   style: const TextStyle(
                     color: Colors.white,

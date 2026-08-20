@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Component: TaskforceDashboardPage (Dasbor Panitia Taskforce KKN)
  * Focused on managing DPLs, 32 KKN Groups, 560 Students, and Attendance/Survey Progress.
  */

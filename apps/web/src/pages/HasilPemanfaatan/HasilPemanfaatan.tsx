@@ -248,9 +248,9 @@ export const HasilPemanfaatan: React.FC = () => {
   const inProgressCount = items.filter((i) => i.status === "DALAM_PROSES").length;
   const resolvedCount = items.filter((i) => i.status === "SELESAI").length;
   const avgRating = useMemo(() => {
-    if (items.length === 0) return "5.0";
+    if (items.length === 0) return "5.00";
     const sum = items.reduce((acc, curr) => acc + (curr.rating || 5), 0);
-    return (sum / items.length).toFixed(1);
+    return (sum / items.length).toFixed(2);
   }, [items]);
 
   // Metrics summary - Products
@@ -594,10 +594,10 @@ export const HasilPemanfaatan: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-center font-bold text-slate-700 dark:text-slate-300">
-                        {p.jumlahBahanMasukKg} Kg
+                        {Number(p.jumlahBahanMasukKg || 0).toFixed(2)} Kg
                       </td>
                       <td className="px-4 py-3.5 text-center font-extrabold text-emerald-700 dark:text-emerald-400">
-                        {p.jumlahHasilKg} {p.unitHasil || "Kg"}
+                        {Number(p.jumlahHasilKg || 0).toFixed(2)} {p.unitHasil || "Kg"}
                       </td>
                       <td className="px-4 py-3.5 text-center font-extrabold text-amber-600 dark:text-amber-400">
                         {p.nilaiEkonomiRp ? `Rp ${p.nilaiEkonomiRp.toLocaleString("id-ID")}` : "-"}

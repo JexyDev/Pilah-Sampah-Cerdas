@@ -1,6 +1,6 @@
 /**
  * Component: EmptyTableState
- * Standardized Empty State component for TrashCare Data Tables & Lists
+ * Standardized Empty State component for BERSEKA Data Tables & Lists
  * 
  * Features:
  * - Differentiates between "Search / Filter Empty" vs "No Data Available (Initial)"

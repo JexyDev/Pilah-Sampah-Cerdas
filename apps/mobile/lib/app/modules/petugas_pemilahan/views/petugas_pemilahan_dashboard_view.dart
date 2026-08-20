@@ -301,7 +301,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
               const Text('Indeks Kinerja (KPI)', style: TextStyle(color: Colors.white70, fontSize: 13)),
               const SizedBox(height: 4),
               Text(
-                '${kpiScore.toStringAsFixed(1)} / 100',
+                '${kpiScore.toStringAsFixed(2)} / 100',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white),
               ),
               const SizedBox(height: 4),
@@ -432,7 +432,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                         title: 'Kg Hari Ini',
                         value: dashboard == null
                             ? '-'
-                            : dashboard.totalWeightKg.toStringAsFixed(1),
+                            : dashboard.totalWeightKg.toStringAsFixed(2),
                         unit: 'Kg',
                         icon: Icons.scale_rounded,
                         color: AppColors.dangerRed,
@@ -442,7 +442,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                         title: 'Bulanan',
                         value: dashboard == null
                             ? '-'
-                            : dashboard.monthlyWeightKg.toStringAsFixed(1),
+                            : dashboard.monthlyWeightKg.toStringAsFixed(2),
                         unit: 'Kg/Bulan',
                         icon: Icons.delete_sweep_rounded,
                         color: AppColors.warningOrange,

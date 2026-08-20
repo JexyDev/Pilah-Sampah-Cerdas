@@ -1,6 +1,6 @@
 import { Loader2, Trash2, X, Pencil, Tags, Coins, QrCode, AlertTriangle, Eye, Layers, Sparkles, Check, Upload } from "lucide-react";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.

@@ -351,11 +351,11 @@ export const EvaluasiDampakKkn: React.FC = () => {
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                       {item.pemilahanSampah?.persentasePemilahan !== null && item.pemilahanSampah?.persentasePemilahan !== undefined
-                        ? `${(item.pemilahanSampah.persentasePemilahan * 100).toFixed(1)}%` 
+                        ? `${(item.pemilahanSampah.persentasePemilahan * 100).toFixed(2)}%` 
                         : "-"}
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
-                      {item.volumeSampah?.totalVolumeKgPerHari ? `${item.volumeSampah.totalVolumeKgPerHari} Kg` : "-"}
+                      {item.volumeSampah?.totalVolumeKgPerHari ? `${Number(item.volumeSampah.totalVolumeKgPerHari).toFixed(2)} Kg` : "-"}
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                       {item.bankSampahPengolahan?.bankSampahAktif !== null && item.bankSampahPengolahan?.bankSampahAktif !== undefined
@@ -460,7 +460,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                     <div className="flex items-baseline gap-2">
                       <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100">
                         {avgDeltaPemilahan > 0 ? "+" : ""}
-                        {(avgDeltaPemilahan * 100).toFixed(1)}%
+                        {(avgDeltaPemilahan * 100).toFixed(2)}%
                       </h3>
                       <span
                         className={`text-xs font-bold flex items-center gap-0.5 ${
@@ -491,7 +491,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                     <div className="flex items-baseline gap-2">
                       <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100">
                         {avgDeltaVolume > 0 ? "+" : ""}
-                        {avgDeltaVolume.toFixed(1)} Kg
+                        {avgDeltaVolume.toFixed(2)} Kg
                       </h3>
                       <span
                         className={`text-xs font-bold flex items-center gap-0.5 ${
@@ -522,7 +522,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                     <div className="flex items-baseline gap-2">
                       <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100">
                         {avgDeltaKegiatan > 0 ? "+" : ""}
-                        {avgDeltaKegiatan.toFixed(1)} Kegiatan
+                        {avgDeltaKegiatan.toFixed(2)} Kegiatan
                       </h3>
                       <span
                         className={`text-xs font-bold flex items-center gap-0.5 ${
@@ -555,7 +555,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                     <XAxis dataKey="namaKelurahan" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `${val * 100}%`} />
                     <RechartsTooltip 
-                      formatter={(val: any) => [`${(Number(val) * 100).toFixed(1)}%`, '']}
+                      formatter={(val: any) => [`${(Number(val) * 100).toFixed(2)}%`, '']}
                       cursor={{fill: '#f1f5f9'}} 
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', fontWeight: 600 }}
                     />
@@ -626,7 +626,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                           {item.pemilahan.delta !== null ? (
                             <span className={item.pemilahan.delta > 0 ? "text-emerald-600 flex items-center gap-1" : item.pemilahan.delta < 0 ? "text-rose-600 flex items-center gap-1" : "text-slate-500 flex items-center gap-1"}>
                                {item.pemilahan.delta > 0 ? <TrendingUp size={14}/> : item.pemilahan.delta < 0 ? <TrendingDown size={14}/> : <Minus size={14}/>}
-                               {item.pemilahan.delta > 0 ? '+' : ''}{(item.pemilahan.delta * 100).toFixed(1)}%
+                               {item.pemilahan.delta > 0 ? '+' : ''}{(item.pemilahan.delta * 100).toFixed(2)}%
                             </span>
                           ) : "-"}
                         </td>
@@ -634,7 +634,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                           {item.volumeSampah.delta !== null ? (
                             <span className={item.volumeSampah.delta < 0 ? "text-emerald-600 flex items-center gap-1" : item.volumeSampah.delta > 0 ? "text-rose-600 flex items-center gap-1" : "text-slate-500 flex items-center gap-1"}>
                                {item.volumeSampah.delta > 0 ? <TrendingUp size={14}/> : item.volumeSampah.delta < 0 ? <TrendingDown size={14}/> : <Minus size={14}/>}
-                               {item.volumeSampah.delta > 0 ? '+' : ''}{item.volumeSampah.delta} Kg
+                               {item.volumeSampah.delta > 0 ? '+' : ''}{Number(item.volumeSampah.delta).toFixed(2)} Kg
                             </span>
                           ) : "-"}
                         </td>
