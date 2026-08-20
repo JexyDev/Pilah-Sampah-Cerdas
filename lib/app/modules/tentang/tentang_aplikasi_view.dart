@@ -23,7 +23,7 @@ class _TentangAplikasiViewState extends State<TentangAplikasiView> {
     final info = await PackageInfo.fromPlatform();
     if (mounted) {
       setState(() {
-        _version = 'Versi ${info.version} (Build ${info.buildNumber})';
+        _version = 'Versi ${info.version}';
       });
     }
   }
@@ -110,18 +110,24 @@ class _TentangAplikasiViewState extends State<TentangAplikasiView> {
               const Spacer(),
               Text(
                 _version,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontFamily: 'Poppins',
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textHint,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Text(
-                '© ${DateTime.now().year} Universitas Komputer Indonesia. All Rights Reserved.',
+                '© ${DateTime.now().year} Universitas Komputer Indonesia.\nAll Rights Reserved.',
+                textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontFamily: 'Poppins',
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
                   color: AppColors.textHint,
+                  height: 1.4,
                 ),
               ),
               const SizedBox(height: 32),

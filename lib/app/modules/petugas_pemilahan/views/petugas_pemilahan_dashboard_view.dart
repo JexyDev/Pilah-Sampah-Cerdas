@@ -394,33 +394,6 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
               padding: const EdgeInsets.all(AppDimensions.md),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  // Banner
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md, vertical: 12),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.info_outline_rounded, color: AppColors.primaryGreen, size: 20),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Pencatatan timbangan pemilahan fisik terakumulasi otomatis ke Tempat Sampah Pemilahan Global RW.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primaryBlueDark,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-
                   // Kinerja KPI
                   _buildKpiCard(dashboard?.kpiScore ?? 0),
                   const SizedBox(height: 18),

@@ -140,9 +140,9 @@ class PetugasPemilahanView extends ConsumerWidget {
                       ),
                       const SizedBox(height: 12),
                       ...state.pengajuanList.map((pengajuan) {
-                        final wargaName = pengajuan['wargaName'] ?? 'Warga';
+                        final wargaName = pengajuan['wargaName'] ?? '';
                         final pengajuanId = pengajuan['id'] ?? '';
-                        final alasan = pengajuan['alasan'] ?? 'Pengajuan pengosongan bin penuh';
+                        final alasan = pengajuan['alasan'] ?? '';
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(16),

@@ -89,10 +89,10 @@ class PengajuanWargaView extends ConsumerWidget {
     WidgetRef ref,
     Map<String, dynamic> pengajuan,
   ) {
-    final wargaName = pengajuan['wargaName'] ?? 'Warga';
+    final wargaName = pengajuan['wargaName'] ?? '';
     final pengajuanId = pengajuan['id'] ?? '';
-    final alasan = pengajuan['alasan'] ?? 'Pengajuan pengosongan bin penuh';
-    final binCode = pengajuan['binCode'] ?? '-';
+    final alasan = pengajuan['alasan'] ?? '';
+    final binCode = pengajuan['binCode'] ?? '';
     final alamat = pengajuan['address'] ?? pengajuan['alamat'] ?? '';
     final createdAt = pengajuan['createdAt'] ?? '';
 

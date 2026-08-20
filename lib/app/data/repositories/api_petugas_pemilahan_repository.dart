@@ -259,9 +259,9 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
 
             return {
               'id': e['id']?.toString() ?? '',
-              'wargaName': user['name']?.toString() ?? e['wargaName']?.toString() ?? 'Warga',
-              'binCode': bin['qrCode']?.toString() ?? e['binCode']?.toString() ?? e['binId']?.toString() ?? '-',
-              'alasan': e['alasan']?.toString() ?? e['reason']?.toString() ?? 'Pengajuan pengosongan tempat sampah penuh',
+              'wargaName': user['name']?.toString() ?? e['wargaName']?.toString() ?? '',
+              'binCode': bin['qrCode']?.toString() ?? e['binCode']?.toString() ?? e['binId']?.toString() ?? '',
+              'alasan': e['alasan']?.toString() ?? e['reason']?.toString() ?? '',
               'address': user['address']?.toString() ?? e['address']?.toString() ?? e['alamat']?.toString() ?? '',
               'rtRw': rtRw['name']?.toString() ?? e['rw']?.toString() ?? '',
               'kelurahan': kelurahan['name']?.toString() ?? e['kelurahan']?.toString() ?? '',
