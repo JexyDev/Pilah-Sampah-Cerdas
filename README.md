@@ -1,61 +1,74 @@
-﻿# Backend Service — Pilah Sampah Cerdas
+# BERSEKA Mobile App — Client Application
 
-Layanan backend berbasis **Express.js (TypeScript)** untuk mengelola database PostgreSQL, antrian deteksi AI di Redis, dan sistem notifikasi/poin.
+Aplikasi Mobile Client resmi untuk **BERSEKA (Bersih, Sehat, Kampung Asri)** berbasis **Flutter**. Aplikasi ini memfasilitasi Warga untuk memantau status tempat sampah, melakukan penyetoran sampah cerdas terverifikasi AI, pendaftaran QR oleh Mahasiswa KKN, serta timbangan residu oleh Petugas Pemilahan.
+
+---
 
 ## 🛠️ Persyaratan Sistem (Prerequisites)
-Sebelum menjalankan, pastikan Anda telah memasang:
-*   [Node.js (v18 atau lebih baru)](https://nodejs.org/)
-*   [Docker Desktop](https://www.docker.com/)
+
+Sebelum mulai mengembangkan, pastikan Anda telah memasang:
+* **Flutter SDK**: `>=3.22.x` (Target minimal `>=3.44.0` per pubspec)
+* **Dart SDK**: `>=3.12.x`
+* **Android Studio / Xcode**: Untuk emulator dan SDK Android/iOS
 
 ---
 
 ## 🚀 Panduan Memulai Cepat (Local Development)
 
-### 1. Jalankan Database & Cache (Docker)
-Buka terminal di folder `/backend` lalu jalankan perintah berikut untuk menyalakan PostgreSQL dan Redis secara otomatis di background:
+### 1. Install Dependencies
+Jalankan perintah ini di root folder `mobile` untuk mengunduh semua paket dependensi pubspec:
 ```bash
-docker-compose up -d
-```
-Gunakan perintah `docker-compose ps` untuk memastikan status container berjalan (`running`).
-
-### 2. Setup Environment Variables
-Salin file `.env.example` menjadi `.env` di folder `/backend`:
-```bash
-cp .env.example .env
-```
-Sesuaikan konfigurasi koneksi database di `.env`:
-```env
-DATABASE_URL="postgresql://psc_user:psc_password@localhost:5432/psc_db?schema=public"
-REDIS_URL="redis://localhost:6379"
-PORT=3000
+flutter pub get
 ```
 
-### 3. Install Dependencies
-Jalankan instalasi modul node:
+### 2. Konfigurasi Endpoint API
+Secara default, aplikasi akan terhubung ke domain produksi `https://berseka.id`. 
+Untuk mengarahkan endpoint ke localhost atau IP dev backend lokal, gunakan opsi `--dart-define` saat menjalankan/membangun aplikasi:
 ```bash
-npm install
+flutter run --dart-define=API_BASE_URL=http://localhost:3000
 ```
 
-### 4. Setup Prisma Database Schema & Seed
-Jalankan migrasi database PostgreSQL dan buat tabel secara otomatis sesuai skema SDD:
+### 3. Jalankan Aplikasi
+Jalankan aplikasi ke perangkat terhubung atau emulator:
 ```bash
-# Jalankan migrasi Prisma
-npx prisma migrate dev --name init
-
-# Generate Prisma Client
-npx prisma generate
+flutter run
 ```
-
-### 5. Jalankan Backend (Development Mode)
-Jalankan server dengan auto-reload (nodemon):
-```bash
-npm run dev
-```
-Server backend akan aktif di `http://localhost:3000`.
 
 ---
 
-## 🧪 Pengujian API (API Testing)
-Gunakan tools API client seperti Postman atau Thunder Client ke endpoint berikut:
-*   `POST http://localhost:3000/api/v1/waste/detect-mock` (Upload / deteksi AI)
-*   `POST http://localhost:3000/api/v1/bins/scan` (Scan transaksi buang sampah)
+## 🏗️ Struktur Folder `lib/app/`
+
+```text
+lib/
+├── app/
+│   ├── core/
+│   │   ├── theme/          # Tema Visual & Warna
+│   │   ├── utils/          # Kompresi Gambar, Geofencing, Sanitizer
+│   │   └── values/         # Konstanta API (api_constants.dart), Konfigurasi (app_config.dart)
+│   ├── data/
+│   │   ├── models/         # Entity & Objek Data (Bin, User, WasteLog)
+│   │   ├── providers/      # API Client & Offline Cache Interceptor
+│   │   └── repositories/   # Abstraksi Pengambilan Data (API & Local)
+│   └── modules/
+│       ├── beranda/        # Tampilan Home Screen
+│       ├── auth/           # Login Warga (OTP) & Logins email lainnya
+│       ├── scan/           # Scanner QR & Alur Pemrosesan AI Kamera
+│       ├── mahasiswa/      # Halaman Pendaftaran Posko & Aktivasi QR KKN
+│       ├── petugas_pemilahan/# Timbangan manual Petugas Residu
+│       └── splash/         # Splash screen minimalis
+├── main.dart               # Entry Point Aplikasi
+```
+
+---
+
+## 📦 Perintah Build Produksi (Release Build)
+
+Build APK Rilis untuk Android:
+```bash
+flutter build apk --release --dart-define=API_BASE_URL=https://berseka.id
+```
+
+Build Bundle App untuk Google Play Store:
+```bash
+flutter build appbundle --release --dart-define=API_BASE_URL=https://berseka.id
+```

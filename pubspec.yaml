@@ -83,31 +83,5 @@ flutter:
   uses-material-design: true
 
   assets:
-    # Gambar Onboarding (Mockup UI)
-    # - assets/on_boarding/
-
-    # Logo aplikasi
     - assets/logo_berseka.webp
     - assets/icons/
-    - assets/icons/calendar.png
-    - assets/icons/medical-report.png
-    - assets/icons/paper.png
-    - assets/icons/recycle-bin.png
-    - assets/icons/waste.png
-    - assets/icons/notification.png
-
-    # Stitch UI — screen reference assets
-    - assets/stitch_ui/aktivasi_bin.png/screen.png
-    - assets/stitch_ui/beranda.png/screen.png
-    - assets/stitch_ui/bin_mismatch.png/screen.png
-    - assets/stitch_ui/failed_scan_step_1.png/screen.png
-    - assets/stitch_ui/login.png_1/screen.png
-    - assets/stitch_ui/login.png_2/screen.png
-    - assets/stitch_ui/poin_saya.png/screen.png
-    - assets/stitch_ui/profil_rumah_tangga.png/screen.png
-    - assets/stitch_ui/riwayat_pemilahan.png/screen.png
-    - assets/stitch_ui/scan_barcode.png/screen.png
-    - assets/stitch_ui/scan_qr_bin.png/screen.png
-    - assets/stitch_ui/splash_screen_minimalist.png/screen.png
-    - assets/stitch_ui/success_final_step.png/screen.png
-    - assets/stitch_ui/success_scan_step_1.png/screen.png

@@ -5,29 +5,4 @@ class AppAssets {
 
   // ─── Logo ─────────────────────────────────────────────────────────────────
   static const String logo = 'assets/logo_berseka.webp';
-
-  // ─── Stitch UI — Screen References ───────────────────────────────────────
-  static const String splash =
-      'assets/stitch_ui/splash_screen_minimalist.png/screen.png';
-  static const String login1 = 'assets/stitch_ui/login.png_1/screen.png';
-  static const String login2 = 'assets/stitch_ui/login.png_2/screen.png';
-  static const String beranda = 'assets/stitch_ui/beranda.png/screen.png';
-  static const String scanBarcode =
-      'assets/stitch_ui/scan_barcode.png/screen.png';
-  static const String scanQrBin = 'assets/stitch_ui/scan_qr_bin.png/screen.png';
-  static const String riwayat =
-      'assets/stitch_ui/riwayat_pemilahan.png/screen.png';
-  static const String poin = 'assets/stitch_ui/poin_saya.png/screen.png';
-  static const String profil =
-      'assets/stitch_ui/profil_rumah_tangga.png/screen.png';
-  static const String aktivasiBin =
-      'assets/stitch_ui/aktivasi_bin.png/screen.png';
-  static const String binMismatch =
-      'assets/stitch_ui/bin_mismatch.png/screen.png';
-  static const String failedScan =
-      'assets/stitch_ui/failed_scan_step_1.png/screen.png';
-  static const String successStep1 =
-      'assets/stitch_ui/success_scan_step_1.png/screen.png';
-  static const String successFinal =
-      'assets/stitch_ui/success_final_step.png/screen.png';
 }
