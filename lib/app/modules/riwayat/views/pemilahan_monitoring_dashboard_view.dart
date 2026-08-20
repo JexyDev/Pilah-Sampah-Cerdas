@@ -44,7 +44,7 @@ class _PemilahanMonitoringDashboardViewState
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        title: const Text('Dashboard Monitoring Pemilahan Sampah'),
+        title: const Text('Dashboard Monitoring Pemilahan Sampah', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: Colors.white)),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),

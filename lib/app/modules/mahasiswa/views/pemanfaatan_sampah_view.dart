@@ -564,15 +564,15 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> w
       appBar: AppBar(
         title: const Text(
           'Kegiatan Mahasiswa',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.textPrimary),
         ),
-        backgroundColor: AppColors.primaryGreen,
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Colors.white,  shadowColor: Colors.black12, surfaceTintColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        elevation: 0,
+        
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.white,

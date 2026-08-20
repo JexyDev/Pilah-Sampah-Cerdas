@@ -131,7 +131,7 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal mengambil foto: $e'), backgroundColor: AppColors.dangerRed),
+        SnackBar(content: Text('Gagal mengambil foto: $e'), backgroundColor: AppColors.maroonRed),
       );
     }
   }
@@ -142,7 +142,7 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
       ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Foto bukti timbangan pemilahan wajib diambil!'),
-          backgroundColor: AppColors.dangerRed,
+          backgroundColor: AppColors.maroonRed,
         ),
       );
       return;
@@ -153,7 +153,7 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
       ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Berat timbangan tidak valid!'),
-          backgroundColor: AppColors.dangerRed,
+          backgroundColor: AppColors.maroonRed,
         ),
       );
       return;
@@ -164,7 +164,7 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
       ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Koneksi terputus. Data disimpan sebagai draft.'),
-          backgroundColor: AppColors.dangerRed,
+          backgroundColor: AppColors.maroonRed,
         ),
       );
       return;
@@ -214,7 +214,7 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMsg),
-          backgroundColor: AppColors.dangerRed,
+          backgroundColor: AppColors.maroonRed,
         ),
       );
     }

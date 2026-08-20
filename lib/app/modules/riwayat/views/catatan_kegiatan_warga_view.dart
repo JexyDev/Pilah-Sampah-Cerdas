@@ -22,7 +22,7 @@ class CatatanKegiatanWargaView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        title: const Text('Catatan Kegiatan Pemilahan Sampah'),
+        title: const Text('Catatan Kegiatan Pemilahan Sampah', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: Colors.white)),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),

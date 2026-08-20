@@ -36,14 +36,14 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
       appBar: AppBar(
         title: const Text(
           'Notifikasi KKN Mahasiswa',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.textPrimary),
         ),
-        backgroundColor: AppColors.primaryGreen,
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
+        backgroundColor: Colors.white,  shadowColor: Colors.black12, surfaceTintColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        
         actions: [
           IconButton(
-            icon: const Icon(Icons.done_all_rounded, color: Colors.white),
+            icon: const Icon(Icons.done_all_rounded, color: AppColors.textPrimary),
             tooltip: 'Tandai Semua Dibaca',
             onPressed: () async {
               await ref.read(markReadProvider.notifier).markAllRead();
@@ -51,7 +51,7 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
             },
           ),
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+            icon: const Icon(Icons.refresh_rounded, color: AppColors.textPrimary),
             onPressed: () => ref.invalidate(mahasiswaNotificationsProvider),
           ),
         ],

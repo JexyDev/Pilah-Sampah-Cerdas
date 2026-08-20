@@ -192,7 +192,7 @@ class PengajuanWargaView extends ConsumerWidget {
                             content: Text(ok
                                 ? 'Pengajuan berhasil diterima & siap diproses!'
                                 : (errorMsg ?? 'Gagal memproses pengajuan.')),
-                            backgroundColor: ok ? AppColors.primaryGreen : AppColors.dangerRed,
+                            backgroundColor: ok ? AppColors.primaryGreen : AppColors.maroonRed,
                             behavior: SnackBarBehavior.floating,
                           ),
                         );

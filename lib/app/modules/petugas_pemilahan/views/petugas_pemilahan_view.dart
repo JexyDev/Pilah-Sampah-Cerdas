@@ -187,7 +187,7 @@ class PetugasPemilahanView extends ConsumerWidget {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
                                             content: Text(ok ? 'Pengajuan berhasil diterima & diproses!' : (errorMsg ?? 'Gagal memproses pengajuan.')),
-                                            backgroundColor: ok ? AppColors.primaryGreen : AppColors.dangerRed,
+                                            backgroundColor: ok ? AppColors.primaryGreen : AppColors.maroonRed,
                                           ),
                                         );
                                       }
@@ -458,7 +458,7 @@ class PetugasPemilahanView extends ConsumerWidget {
                       minHeight: 8,
                       backgroundColor: Colors.grey[200],
                       color: bin.volumePercentage >= 80
-                          ? AppColors.dangerRed
+                          ? AppColors.maroonRed
                           : (bin.volumePercentage >= 70 ? AppColors.warningYellow : AppColors.primaryGreen),
                     ),
                   ),

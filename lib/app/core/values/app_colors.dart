@@ -24,6 +24,8 @@ class AppColors {
 
   // --- Semantic ---
   static const Color dangerRed = Color(0xFFEF4444); // Modern tailwind red
+  static const Color maroonRed = Color(0xFF9F1239); // Rose 800 / Maroon Error Red
+  static const Color residuColor = Color(0xFF64748B); // Slate 500 / Abu-abu untuk Residu
   static const Color warningYellow = Color(0xFFF59E0B);
   static const Color warningOrange = Color(0xFFF97316);
   static const Color success = Color(0xFF10B981);

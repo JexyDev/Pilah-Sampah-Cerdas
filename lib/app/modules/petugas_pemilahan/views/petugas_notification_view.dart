@@ -32,7 +32,7 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
       appBar: AppBar(
         title: const Text(
           'Notifikasi Petugas Pemilahan',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryGreen),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.primaryGreen),
         ),
         backgroundColor: Colors.white,
         iconTheme: const IconThemeData(color: AppColors.primaryGreen),

@@ -29,7 +29,7 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Poin & Performa'),
+        title: const Text('Poin & Performa', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.primaryGreen)),
         actions: [
           IconButton(
             icon: const Icon(Icons.info_outline_rounded),
@@ -131,10 +131,10 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    _buildPoinRuleRow(Icons.scale_rounded, 'Timbangan Dasar', '1 Kg = 2 Poin'),
-                    _buildPoinRuleRow(Icons.camera_alt_rounded, 'Bonus Foto Valid', '+10 Poin / Input'),
-                    _buildPoinRuleRow(Icons.verified_rounded, 'Penyelesaian Jadwal', '+50 Poin (100% Selesai)'),
-                    _buildPoinRuleRow(Icons.assessment_rounded, 'Bonus Mingguan', 'KPI Score x 5 Poin'),
+                    _buildPoinRuleRow(Icons.scale_rounded, 'Timbangan Dasar', '1 Kg = 1 Poin'),
+                    _buildPoinRuleRow(Icons.camera_alt_rounded, 'Bonus Foto Valid', '+5 Poin / Input'),
+                    _buildPoinRuleRow(Icons.verified_rounded, 'Penyelesaian Jadwal', '+10 Poin (100% Selesai)'),
+                    _buildPoinRuleRow(Icons.assessment_rounded, 'Bonus Mingguan', 'KPI Score x 1 Poin'),
                   ],
                 ),
               ),

@@ -41,7 +41,7 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
             );
           } else {
             ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Gagal mengunggah foto.'), backgroundColor: AppColors.dangerRed),
+              const SnackBar(content: Text('Gagal mengunggah foto.'), backgroundColor: AppColors.maroonRed),
             );
           }
         }
@@ -125,7 +125,7 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
                 );
               }
             },
-            style: TextButton.styleFrom(foregroundColor: AppColors.dangerRed),
+            style: TextButton.styleFrom(foregroundColor: AppColors.maroonRed),
             child: const Text('Keluar'),
           ),
         ],
@@ -142,7 +142,7 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
       appBar: AppBar(
         title: const Text(
           'Profil & Pengaturan',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryGreen),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.primaryGreen),
         ),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primaryGreen,
@@ -323,12 +323,12 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
                     leading: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.dangerRed.withValues(alpha: 0.1),
+                        color: AppColors.maroonRed.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.logout_rounded, color: AppColors.dangerRed, size: 20),
+                      child: const Icon(Icons.logout_rounded, color: AppColors.maroonRed, size: 20),
                     ),
-                    title: const Text('Keluar Akun', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.dangerRed)),
+                    title: const Text('Keluar Akun', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.maroonRed)),
                     onTap: _confirmLogout,
                   ),
                 ],

@@ -120,15 +120,15 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
       appBar: AppBar(
         title: const Text(
           'Pengajuan Tidak Hadir / Izin',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
         ),
-        backgroundColor: AppColors.primaryGreen,
+        backgroundColor: Colors.white,  shadowColor: Colors.black12, surfaceTintColor: Colors.transparent,
         foregroundColor: Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        elevation: 0,
+        
       ),
       body: _isSuccess ? _buildSuccessView() : _buildForm(),
     );

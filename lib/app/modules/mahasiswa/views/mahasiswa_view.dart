@@ -656,7 +656,8 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.groups_rounded,
-                title: 'Kelompok KKN',
+                  iconAsset: 'assets/icons/employees.png',
+                  title: 'Kelompok KKN',
                 subtitle: 'Lihat tim & DPL',
                 gradientColors: const [
                   AppColors.primaryBlueLight,
@@ -694,8 +695,8 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                 title: 'Kegiatan Mahasiswa',
                 subtitle: 'Individu & Pemanfaatan',
                 gradientColors: const [
-                  AppColors.primaryBlue,
-                  AppColors.primaryBlueDark,
+                  AppColors.primaryBlueLight,
+                    AppColors.primaryBlue,
                 ],
                 onTap: () =>
                     Navigator.pushNamed(context, AppRoutes.pemanfaatanSampah),
@@ -724,11 +725,12 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.analytics_rounded,
-                title: 'Monitoring Warga',
+                  iconAsset: 'assets/icons/view.png',
+                  title: 'Monitoring Warga',
                 subtitle: 'Pantau poin & aktivitas',
                 gradientColors: const [
-                  AppColors.primaryGreen,
-                  AppColors.successDark,
+                  AppColors.primaryBlueLight,
+                    AppColors.primaryBlue,
                 ],
                 onTap: () => Navigator.pushNamed(
                   context,
@@ -741,11 +743,12 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.add_business_rounded,
-                title: 'Fasilitas Warga',
+                  iconAsset: 'assets/icons/recycle-bin.png',
+                  title: 'Fasilitas Warga',
                 subtitle: 'Daftar fasilitas baru',
                 gradientColors: const [
-                  AppColors.warningYellow,
-                  AppColors.warningOrange,
+                  AppColors.primaryBlueLight,
+                    AppColors.primaryBlue,
                 ],
                 onTap: () =>
                     Navigator.pushNamed(context, AppRoutes.registerFasilitas),
@@ -1301,3 +1304,4 @@ class _WargaCard extends StatelessWidget {
     );
   }
 }
+

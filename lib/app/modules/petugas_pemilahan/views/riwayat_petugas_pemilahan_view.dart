@@ -76,12 +76,12 @@ class _RiwayatPetugasPemilahanViewState extends ConsumerState<RiwayatPetugasPemi
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.dangerRed.withValues(alpha: 0.12),
+                        color: AppColors.residuColor.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.scale_rounded,
-                        color: AppColors.dangerRed,
+                        color: AppColors.residuColor,
                         size: 24,
                       ),
                     ),
@@ -154,7 +154,7 @@ class _RiwayatPetugasPemilahanViewState extends ConsumerState<RiwayatPetugasPemi
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Riwayat Tugas'),
+        title: const Text('Riwayat Tugas', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.primaryGreen)),
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(petugasPemilahanControllerProvider.notifier).refreshAll(),
@@ -260,10 +260,10 @@ class _RiwayatPetugasPemilahanViewState extends ConsumerState<RiwayatPetugasPemi
                                         Container(
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
-                                            color: AppColors.dangerRed.withValues(alpha: 0.1),
+                                            color: AppColors.residuColor.withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(12),
                                           ),
-                                          child: const Icon(Icons.scale_rounded, color: AppColors.dangerRed, size: 24),
+                                          child: const Icon(Icons.scale_rounded, color: AppColors.residuColor, size: 24),
                                         ),
                                         const SizedBox(width: 14),
                                         Expanded(
@@ -284,12 +284,12 @@ class _RiwayatPetugasPemilahanViewState extends ConsumerState<RiwayatPetugasPemi
                                                   Container(
                                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                     decoration: BoxDecoration(
-                                                      color: AppColors.dangerRed.withValues(alpha: 0.1),
+                                                      color: AppColors.residuColor.withValues(alpha: 0.1),
                                                       borderRadius: BorderRadius.circular(8),
                                                     ),
                                                     child: Text(
                                                       '$weight Kg',
-                                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.dangerRed),
+                                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.residuColor),
                                                     ),
                                                   ),
                                                 ],

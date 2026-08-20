@@ -112,7 +112,7 @@ class SopKerjaPetugasWidget extends StatelessWidget {
                     stepNumber: '2',
                     title: 'Catat Pelanggaran (Opsional)',
                     icon: Icons.report_problem_rounded,
-                    color: AppColors.dangerRed,
+                    color: AppColors.maroonRed,
                     description:
                         'Jika menemukan sampah berbahaya (B3/Belum Terpilah) di dalam tempat sampah pemilahan, tekan opsi "Catat Pelanggaran" dan sertakan foto bukti.',
                     tips: 'Tips: Laporan ini membantu edukasi warga oleh Ketua RW.',

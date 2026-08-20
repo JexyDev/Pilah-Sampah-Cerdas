@@ -183,9 +183,9 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                     margin: const EdgeInsets.only(right: 12),
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: isOnline ? AppColors.primaryGreen.withValues(alpha: 0.1) : AppColors.dangerRed.withValues(alpha: 0.1),
+                      color: isOnline ? AppColors.primaryGreen.withValues(alpha: 0.1) : AppColors.maroonRed.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: isOnline ? AppColors.primaryGreen.withValues(alpha: 0.3) : AppColors.dangerRed.withValues(alpha: 0.3)),
+                      border: Border.all(color: isOnline ? AppColors.primaryGreen.withValues(alpha: 0.3) : AppColors.maroonRed.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [
@@ -194,7 +194,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                           height: 8,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: isOnline ? AppColors.primaryGreen : AppColors.dangerRed,
+                            color: isOnline ? AppColors.primaryGreen : AppColors.maroonRed,
                             boxShadow: [
                               if (isOnline)
                                 BoxShadow(
@@ -211,7 +211,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: isOnline ? AppColors.primaryGreen : AppColors.dangerRed,
+                            color: isOnline ? AppColors.primaryGreen : AppColors.maroonRed,
                           ),
                         ),
                       ],
@@ -250,7 +250,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                           padding: const EdgeInsets.all(3),
                           constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
                           decoration: const BoxDecoration(
-                            color: AppColors.dangerRed,
+                            color: AppColors.maroonRed,
                             shape: BoxShape.circle,
                           ),
                           child: Text(
@@ -435,7 +435,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                             : dashboard.totalWeightKg.toStringAsFixed(1),
                         unit: 'Kg',
                         icon: Icons.scale_rounded,
-                        color: AppColors.dangerRed,
+                        color: AppColors.residuColor,
                       ),
                       const SizedBox(width: 14),
                       _buildStatCard(
@@ -594,10 +594,10 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                           ),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: AppColors.dangerRed.withValues(alpha: 0.1),
+                              backgroundColor: AppColors.residuColor.withValues(alpha: 0.1),
                               child: const Icon(
                                 Icons.scale_rounded,
-                                color: AppColors.dangerRed,
+                                color: AppColors.residuColor,
                                 size: 20,
                               ),
                             ),
@@ -628,7 +628,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
-                                color: AppColors.dangerRed,
+                                color: AppColors.residuColor,
                               ),
                             ),
                           ),

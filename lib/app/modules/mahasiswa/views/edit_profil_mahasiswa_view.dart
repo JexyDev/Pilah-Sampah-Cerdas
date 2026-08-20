@@ -122,11 +122,11 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
       appBar: AppBar(
         title: const Text(
           'Edit Profil Mahasiswa',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.textPrimary),
         ),
-        backgroundColor: AppColors.primaryGreen,
+        backgroundColor: Colors.white,  shadowColor: Colors.black12, surfaceTintColor: Colors.transparent,
         foregroundColor: Colors.white,
-        elevation: 0,
+        
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppDimensions.md),

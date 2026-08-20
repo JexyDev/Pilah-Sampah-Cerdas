@@ -58,7 +58,7 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
       ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMsg),
-          backgroundColor: AppColors.dangerRed,
+          backgroundColor: AppColors.maroonRed,
         ),
       );
     }
@@ -71,7 +71,7 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
       appBar: AppBar(
         title: const Text(
           'Ganti Kata Sandi',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryGreen),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.primaryGreen),
         ),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primaryGreen,

@@ -123,7 +123,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   }
 
   Widget _buildFab(bool isOnline, UserRole role) {
-    final fabColor = (role == UserRole.petugasPemilahan) ? AppColors.dangerRed : AppColors.primaryGreen;
+    final fabColor = (role == UserRole.petugasPemilahan) ? AppColors.residuColor : AppColors.primaryGreen;
 
     return Container(
       width: 60,

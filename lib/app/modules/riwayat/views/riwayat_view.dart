@@ -70,7 +70,7 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
-      appBar: AppBar(title: const Text('Riwayat Pemilahan')),
+      appBar: AppBar(title: const Text('Riwayat Pemilahan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: Colors.white))),
       body: Column(
         children: [
           // Header Bar Filter
