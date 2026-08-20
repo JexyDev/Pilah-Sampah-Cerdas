@@ -137,17 +137,35 @@ class _SplashViewState extends ConsumerState<SplashView>
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Logo Asli (Transparent)
+                      // Logo Asli (Transparent Circle)
                       SlideTransition(
                         position: _titleSlide,
                         child: FadeTransition(
                           opacity: _titleFade,
                           child: Padding(
-                            padding: const EdgeInsets.only(bottom: 24),
+                            padding: const EdgeInsets.only(bottom: 12),
                             child: Image.asset(
-                              AppAssets.icon,
-                              height: 120, // Diperbesar sedikit agar lebih jelas
+                              'assets/app-logo.png', // The circle icon requested
+                              height: 100,
                               fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Text BERSEKA
+                      SlideTransition(
+                        position: _titleSlide,
+                        child: FadeTransition(
+                          opacity: _titleFade,
+                          child: Text(
+                            'BERSEKA',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              fontSize: 34,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF005841), // Dark Green dari desain
+                              letterSpacing: 1.2,
+                              height: 1.1,
                             ),
                           ),
                         ),
@@ -162,8 +180,8 @@ class _SplashViewState extends ConsumerState<SplashView>
                             textAlign: TextAlign.center,
                             style: GoogleFonts.poppins(
                               fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primaryGreen,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF5CA432), // Light Green dari desain
                               letterSpacing: 0.5,
                             ),
                           ),
