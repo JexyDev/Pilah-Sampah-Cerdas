@@ -1976,8 +1976,20 @@ export class KknService {
         const parts = normalizedTime.split("-");
         const startParts = parts[0].trim().replace(".", ":").split(":");
         const endParts = parts[1].trim().replace(".", ":").split(":");
-        if (startParts.length >= 2) startMins = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
-        if (endParts.length >= 2) endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
+        if (startParts.length >= 2) {
+          const h = parseInt(startParts[0], 10);
+          const m = parseInt(startParts[1], 10);
+          const cleanH = isNaN(h) ? 8 : (h === 24 ? 0 : h);
+          const cleanM = isNaN(m) ? 0 : m;
+          startMins = cleanH * 60 + cleanM;
+        }
+        if (endParts.length >= 2) {
+          const h = parseInt(endParts[0], 10);
+          const m = parseInt(endParts[1], 10);
+          const cleanH = isNaN(h) ? 16 : (h === 24 ? 24 : h);
+          const cleanM = isNaN(m) ? 0 : m;
+          endMins = cleanH * 60 + cleanM;
+        }
       }
 
       const schDateStr = sch.date ? new Date(new Date(sch.date).getTime() + 7 * 60 * 60 * 1000).toISOString().substring(0, 10) : todayStr;

@@ -1688,8 +1688,14 @@ export class KknAttendanceService {
       // Hitung menit mulai dan selesai
       const [startH, startM] = jamMulai.replace(".", ":").split(":").map(Number);
       const [endH, endM] = jamSelesai.replace(".", ":").split(":").map(Number);
-      const startMinutesTotal = (startH || 8) * 60 + (startM || 0);
-      const endMinutesTotal = (endH || 16) * 60 + (endM || 0);
+
+      const cleanStartH = !isNaN(startH) ? (startH === 24 ? 0 : startH) : 8;
+      const cleanStartM = !isNaN(startM) ? startM : 0;
+      const cleanEndH = !isNaN(endH) ? (endH === 24 ? 24 : endH) : 16;
+      const cleanEndM = !isNaN(endM) ? endM : 0;
+
+      const startMinutesTotal = cleanStartH * 60 + cleanStartM;
+      const endMinutesTotal = cleanEndH * 60 + cleanEndM;
 
       const isOvernight = endMinutesTotal <= startMinutesTotal;
       const schDateStr = sch.date ? new Date(new Date(sch.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10) : todayStr;
