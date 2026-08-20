@@ -1706,15 +1706,18 @@ export class KknAttendanceService {
     }
 
     const now = new Date();
-    const currentHour = (now.getUTCHours() + 7) % 24;
-    const currentMinute = now.getUTCMinutes();
+    // Gunakan WIB (UTC+7) konsisten untuk semua perbandingan waktu
+    const nowWib = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const currentHour = nowWib.getUTCHours();
+    const currentMinute = nowWib.getUTCMinutes();
     const currentMinutesTotal = currentHour * 60 + currentMinute;
-    const todayStr = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    // todayStr dalam format YYYY-MM-DD WIB
+    const todayStr = nowWib.toISOString().slice(0, 10);
 
     const result = schedules.map((sch) => {
       let jamMulai = "08:00";
       let jamSelesai = "16:00";
-      const normalizedTime = (sch.time || "").replace(/[–—~]|s\/d|sd/gi, "-").trim();
+      const normalizedTime = (sch.time || "").replace(/[\u2013\u2014~]|s\/d|sd/gi, "-").trim();
       if (normalizedTime.includes("-")) {
         const parts = normalizedTime.split("-");
         jamMulai = parts[0].trim();
@@ -1734,8 +1737,20 @@ export class KknAttendanceService {
       const endMinutesTotal = cleanEndH * 60 + cleanEndM;
 
       const isOvernight = endMinutesTotal <= startMinutesTotal;
-      const schDateStr = sch.date ? new Date(new Date(sch.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10) : todayStr;
+
+      // Normalize tanggal jadwal ke WIB untuk perbandingan string YYYY-MM-DD
+      // sch.date dari Prisma adalah UTC. Kita harus convert ke WIB sebelum ambil date string.
+      let schDateStr = todayStr;
+      if (sch.date) {
+        const schDateUtc = new Date(sch.date);
+        // Tambah offset WIB (+7 jam)
+        const schDateWib = new Date(schDateUtc.getTime() + 7 * 60 * 60 * 1000);
+        schDateStr = schDateWib.toISOString().slice(0, 10);
+      }
       const isSchedDateToday = schDateStr === todayStr;
+
+      // Bandingkan apakah jadwal ada di masa depan (pakai string tanggal WIB)
+      const isFutureDate = schDateStr > todayStr;
 
       // Status waktu kegiatan
       let scheduleStatus = "AKTIF";
@@ -1754,9 +1769,11 @@ export class KknAttendanceService {
           } else {
             scheduleStatus = "AKTIF";
           }
-        } else if (sch.date && new Date(sch.date) > now) {
+        } else if (isFutureDate) {
+          // Jadwal masa depan (belum tiba tanggalnya)
           scheduleStatus = "BELUM_MULAI";
         } else {
+          // Jadwal kemarin atau lebih lama
           scheduleStatus = "SELESAI";
         }
       }

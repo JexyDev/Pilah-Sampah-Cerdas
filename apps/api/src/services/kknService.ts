@@ -1964,8 +1964,10 @@ export class KknService {
 
     let activeSchedule: any = null;
     const now = new Date();
-    const currentWibMinutes = ((now.getUTCHours() + 7) % 24) * 60 + now.getUTCMinutes();
-    const todayStr = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().substring(0, 10);
+    // WIB (UTC+7) konsisten
+    const nowWibAz = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const currentWibMinutes = nowWibAz.getUTCHours() * 60 + nowWibAz.getUTCMinutes();
+    const todayStr = nowWibAz.toISOString().substring(0, 10);
 
     // 1. Time Window Matching: Pick schedule matching current time e.g. "08:00 - 10:00" vs "13:00 - 15:00"
     for (const sch of targetScheduleList) {
@@ -1992,7 +1994,9 @@ export class KknService {
         }
       }
 
-      const schDateStr = sch.date ? new Date(new Date(sch.date).getTime() + 7 * 60 * 60 * 1000).toISOString().substring(0, 10) : todayStr;
+      const schDateStr = sch.date
+        ? new Date(new Date(sch.date).getTime() + 7 * 60 * 60 * 1000).toISOString().substring(0, 10)
+        : todayStr;
       const isSchedDateToday = schDateStr === todayStr;
 
       let isTimeMatch = false;
