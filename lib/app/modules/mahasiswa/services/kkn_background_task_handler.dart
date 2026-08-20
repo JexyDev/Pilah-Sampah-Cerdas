@@ -480,9 +480,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
 
   void _handleAttendanceSuccess() async {
     debugPrint('[KKN-BG] Attendance success — stopping service');
-    _accumulatedSeconds = 0;
-    await _saveDuration(0);
-    await _autoStop('Presensi berhasil tercatat. Tracking dihentikan.');
+    await _autoStop('Presensi berhasil tercatat.');
   }
 
   void _handleUpdateTarget(Map data) {
