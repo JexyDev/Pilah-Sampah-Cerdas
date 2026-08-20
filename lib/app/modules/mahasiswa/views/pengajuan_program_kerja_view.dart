@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
@@ -112,8 +112,20 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
               const SizedBox(height: 8),
               TextFormField(
                 controller: _tanggalCtrl,
+                readOnly: true,
                 decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'YYYY-MM-DD', suffixIcon: Icon(Icons.calendar_today)),
                 validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime(2030),
+                  );
+                  if (picked != null) {
+                    _tanggalCtrl.text = picked.toIso8601String().split('T').first;
+                  }
+                },
               ),
               const SizedBox(height: 16),
               const Text('Deskripsi Singkat', style: TextStyle(fontWeight: FontWeight.bold)),
