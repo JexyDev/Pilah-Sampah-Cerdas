@@ -10,10 +10,10 @@ on:
       - mobile
 
 jobs:
-  validate-and-build:
-    name: Validate Code & Build Release APK
+  validate:
+    name: Validate Code & Run Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
 
     steps:
       - name: Checkout Code
@@ -39,14 +39,3 @@ jobs:
 
       - name: Run Unit Tests
         run: flutter test
-
-      - name: Build Release APK
-        run: flutter build apk --release --dart-define=API_BASE_URL=https://berseka.id
-
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: berseka-mobile-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
-          retention-days: 14
