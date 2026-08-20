@@ -132,6 +132,10 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
       const data = await penilaianKknApiService.getLaporanAkhirList();
       if (data && Array.isArray(data.kelompokList)) {
         setKelompokList(data.kelompokList);
+      } else if (Array.isArray(data)) {
+        setKelompokList(data);
+      } else if (data && typeof data === "object" && Array.isArray((data as any).data?.kelompokList)) {
+        setKelompokList((data as any).data.kelompokList);
       }
     } catch (err: any) {
       console.error("Gagal memuat data laporan akhir:", err);
@@ -483,32 +487,94 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Top Section: Search & Filters + 4 KPI Summary Cards */}
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-            {/* Search & Filter Controls */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
-              {/* Search Box */}
-              <div className="relative min-w-[240px] sm:min-w-[280px] flex-1 sm:flex-initial">
-                <Search
-                  size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-                <input
-                  type="text"
-                  placeholder="Cari kelompok, kelurahan, judul..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] transition shadow-2xs placeholder:text-slate-400"
-                />
+          {/* 4 KPI Summary Cards (Full-Width Responsive Grid) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {/* Card 1: Total Kelompok */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 flex items-center gap-3.5 shadow-2xs">
+              <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                <Users size={22} />
               </div>
+              <div>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block whitespace-nowrap">
+                  Total Kelompok
+                </span>
+                <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 leading-tight">
+                  {totalKelompok}
+                </span>
+              </div>
+            </div>
 
+            {/* Card 2: Disetujui */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 flex items-center gap-3.5 shadow-2xs">
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <CheckCircle2 size={22} />
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block whitespace-nowrap">
+                  Disetujui
+                </span>
+                <span className="text-xl sm:text-2xl font-black text-[#009966] dark:text-emerald-400 leading-tight">
+                  {disetujuiCount}
+                </span>
+              </div>
+            </div>
+
+            {/* Card 3: Menunggu Telaah */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 flex items-center gap-3.5 shadow-2xs">
+              <div className="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <Clock size={22} />
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block whitespace-nowrap">
+                  Menunggu Telaah
+                </span>
+                <span className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 leading-tight">
+                  {menungguTelaahCount}
+                </span>
+              </div>
+            </div>
+
+            {/* Card 4: Perlu Revisi */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 flex items-center gap-3.5 shadow-2xs">
+              <div className="w-11 h-11 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <AlertTriangle size={22} />
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block whitespace-nowrap">
+                  Perlu Revisi
+                </span>
+                <span className="text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400 leading-tight">
+                  {perluRevisiCount}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Search & Filter Bar (Di Bawah Card Data) */}
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3.5">
+            {/* Search Box */}
+            <div className="relative flex-1 min-w-[240px]">
+              <Search
+                size={16}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                type="text"
+                placeholder="Cari kelompok, kelurahan, DPL, judul laporan, atau mahasiswa..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] transition placeholder:text-slate-400"
+              />
+            </div>
+
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5">
               {/* Filter Kelurahan */}
-              <div className="relative min-w-[170px]">
+              <div className="relative w-full sm:w-48">
                 <Building size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 <select
                   value={kelurahanFilter}
                   onChange={(e) => setKelurahanFilter(e.target.value)}
-                  className="w-full pl-9 pr-8 py-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] transition shadow-2xs cursor-pointer appearance-none"
+                  className="w-full pl-9 pr-8 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] transition cursor-pointer appearance-none"
                 >
                   <option value="ALL">Semua Kelurahan</option>
                   {uniqueKelurahanList.map((k) => (
@@ -523,11 +589,11 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
               </div>
 
               {/* Filter Status Dokumen */}
-              <div className="relative min-w-[160px]">
+              <div className="relative w-full sm:w-48">
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] transition shadow-2xs cursor-pointer appearance-none pr-9"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] transition cursor-pointer appearance-none pr-9"
                 >
                   <option value="ALL">Semua Status Dokumen</option>
                   <option value="DISETUJUI">Disetujui</option>
@@ -537,69 +603,6 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
                   <ChevronDown size={14} />
-                </div>
-              </div>
-            </div>
-
-            {/* 4 KPI Summary Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 shrink-0">
-              {/* Card 1: Total Kelompok */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-2.5 sm:px-3.5 sm:py-2.5 flex items-center gap-2.5 shadow-2xs">
-                <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                  <Users size={18} />
-                </div>
-                <div>
-                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block whitespace-nowrap">
-                    Total Kelompok
-                  </span>
-                  <span className="text-lg sm:text-xl font-black text-blue-700 dark:text-blue-400 leading-tight">
-                    {totalKelompok}
-                  </span>
-                </div>
-              </div>
-
-              {/* Card 2: Disetujui */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-2.5 sm:px-3.5 sm:py-2.5 flex items-center gap-2.5 shadow-2xs">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 flex items-center justify-center shrink-0">
-                  <CheckCircle2 size={18} />
-                </div>
-                <div>
-                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block whitespace-nowrap">
-                    Disetujui
-                  </span>
-                  <span className="text-lg sm:text-xl font-black text-[#009966] dark:text-emerald-400 leading-tight">
-                    {disetujuiCount}
-                  </span>
-                </div>
-              </div>
-
-              {/* Card 3: Menunggu Telaah */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-2.5 sm:px-3.5 sm:py-2.5 flex items-center gap-2.5 shadow-2xs">
-                <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                  <Clock size={18} />
-                </div>
-                <div>
-                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block whitespace-nowrap">
-                    Menunggu Telaah
-                  </span>
-                  <span className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400 leading-tight">
-                    {menungguTelaahCount}
-                  </span>
-                </div>
-              </div>
-
-              {/* Card 4: Perlu Revisi */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-2.5 sm:px-3.5 sm:py-2.5 flex items-center gap-2.5 shadow-2xs">
-                <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-                  <AlertTriangle size={18} />
-                </div>
-                <div>
-                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block whitespace-nowrap">
-                    Perlu Revisi
-                  </span>
-                  <span className="text-lg sm:text-xl font-black text-rose-600 dark:text-rose-400 leading-tight">
-                    {perluRevisiCount}
-                  </span>
                 </div>
               </div>
             </div>

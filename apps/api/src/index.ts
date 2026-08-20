@@ -157,6 +157,7 @@ app.use("/api/rw", rwRouter);
 app.use("/api/rt", rwRouter);
 app.use("/api/areas", areaRouter);
 app.use("/api/wilayah", areaRouter);
+app.use("/api/penilaian-kkn", penilaianKknRouter);
 
 // Global Error Handler Middleware
 app.use((err: any, req: any, res: any, _next: any) => {
