@@ -2150,6 +2150,50 @@ export class KknAttendanceService {
   }
 
   /**
+   * Menjeda sesi kegiatan
+   * Endpoint: POST /api/v1/kkn/kegiatan/:id/jeda
+   */
+  async jedaKegiatan(
+    studentUserId: string,
+    scheduleId: string,
+    payload: { alasan: string; totalDurasiDalamZonaMenit?: number }
+  ) {
+    const existing = await prisma.activityAttendance.findUnique({
+      where: {
+        studentId_scheduleId: {
+          studentId: studentUserId,
+          scheduleId,
+        },
+      },
+    });
+
+    if (!existing) {
+      throw new Error("Kegiatan aktif tidak ditemukan.");
+    }
+
+    if (existing.status === "SELESAI") {
+      throw new Error("Kegiatan sudah diselesaikan.");
+    }
+
+    const currentLogs = existing.jedaLogs as any[] || [];
+    currentLogs.push({
+      alasan: payload.alasan,
+      waktuJeda: new Date().toISOString(),
+      durasiSebelumJedaMenit: payload.totalDurasiDalamZonaMenit || 0
+    });
+
+    const updated = await prisma.activityAttendance.update({
+      where: { id: existing.id },
+      data: {
+        jedaLogs: currentLogs,
+        // Status tetap DALAM_RADIUS atau BERLANGSUNG, tidak SELESAI
+      },
+    });
+
+    return updated;
+  }
+
+  /**
    * Catat pelanggaran keluar zona dengan pemotongan poin di ledger
    * Endpoint: POST /api/v1/kkn/out-of-zone-violation
    */

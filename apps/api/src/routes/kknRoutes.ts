@@ -472,6 +472,13 @@ router.post(
 );
 
 router.post(
+  "/kegiatan/:id/jeda",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.jedaKegiatan
+);
+
+router.post(
   "/kegiatan/:id/selesai",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),

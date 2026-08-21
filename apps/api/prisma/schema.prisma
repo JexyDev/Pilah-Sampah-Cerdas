@@ -242,13 +242,13 @@ model Household {
   id        String   @id @default(uuid())
   userId    String   @map("id_pengguna")
   address   String
-  rwId      Int      @map("id_rw")
+  rwId      Int?     @map("id_rw")
   latitude  Decimal  @db.Decimal(11, 8)
   longitude Decimal  @db.Decimal(11, 8)
   createdAt DateTime @default(now()) @map("dibuat_pada")
   updatedAt DateTime @updatedAt @map("diperbarui_pada")
   user      User     @relation(fields: [userId], references: [id])
-  rw        Rw       @relation(fields: [rwId], references: [id])
+  rw        Rw?      @relation(fields: [rwId], references: [id])
 
   @@map("rumah_tangga")
 }
@@ -472,12 +472,12 @@ model KknHandoverHistory {
   id           String   @id @default(uuid())
   fromUserId   String   @map("id_pengguna_dari")
   toUserId     String   @map("id_pengguna_ke")
-  rwId         Int      @map("id_rw")
+  rwId         Int?     @map("id_rw")
   notes        String?
   handoverDate DateTime @default(now()) @map("tanggal_serah_terima")
   fromUser     User     @relation("FromStudentHandovers", fields: [fromUserId], references: [id], onDelete: Cascade)
   toUser       User     @relation("ToStudentHandovers", fields: [toUserId], references: [id], onDelete: Cascade)
-  rw           Rw       @relation(fields: [rwId], references: [id], onDelete: Cascade)
+  rw           Rw?      @relation(fields: [rwId], references: [id], onDelete: Cascade)
 
   @@map("riwayat_serah_terima_kkn")
 }
@@ -493,6 +493,7 @@ model ActivityAttendance {
   checkOutAt DateTime? @map("waktu_checkout")
   status     String    @default("DALAM_RADIUS") @map("status")
   actualInZoneMinutes Int?      @map("durasi_aktual_dalam_zona_menit")
+  jedaLogs   Json?     @map("log_jeda")
   schedule   Schedule  @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
   student    User      @relation("StudentAttendance", fields: [studentId], references: [id], onDelete: Cascade)
 
@@ -671,7 +672,7 @@ model SetoranManual {
 
 model Pemanfaatan {
   id                      String   @id @default(uuid())
-  rwId                    Int      @map("id_rw")
+  rwId                    Int?     @map("id_rw")
   nomorCaraPemanfaatan    String   @unique @map("nomor_cara_pemanfaatan")
   program                 String   @map("program")
   teknologi               String   @map("teknologi")
@@ -690,7 +691,7 @@ model Pemanfaatan {
   volumeBioaktivatorLiter Decimal? @map("volume_bioaktivator_liter") @db.Decimal(8, 2)
   masaFermentasiHari      Int?     @map("masa_fermentasi_hari")
   createdAt               DateTime @default(now()) @map("dibuat_pada")
-  rw                      Rw       @relation(fields: [rwId], references: [id], onDelete: Cascade)
+  rw                      Rw?      @relation(fields: [rwId], references: [id], onDelete: Cascade)
 
   @@map("pemanfaatan_sampah")
 }

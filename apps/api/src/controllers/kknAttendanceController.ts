@@ -404,6 +404,37 @@ export const kknAttendanceController = {
     }
   },
 
+  jedaKegiatan: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const studentUserId = (req as any).user?.userId || (req as any).user?.id;
+      const { id } = req.params;
+      const { totalDurasiDalamZonaMenit, alasan } = req.body;
+
+      if (!alasan) {
+        res.status(400).json({ success: false, message: "Alasan jeda wajib diisi." });
+        return;
+      }
+
+      const result = await kknAttendanceService.jedaKegiatan(studentUserId, id, {
+        alasan,
+        totalDurasiDalamZonaMenit,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Kegiatan berhasil dijeda sementara.",
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] jedaKegiatan error:", error);
+      res.status(500).json({
+        success: false,
+        error: "INTERNAL_SERVER_ERROR",
+        message: error.message || "Gagal menjeda kegiatan KKN",
+      });
+    }
+  },
+
   recordOutOfZoneViolation: async (req: Request, res: Response): Promise<void> => {
     try {
       const studentUserId = (req as any).user?.userId || (req as any).user?.id;
