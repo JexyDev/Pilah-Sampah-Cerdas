@@ -410,6 +410,12 @@ export class KknAttendanceService {
     const autoAttendanceTriggered: string[] = [];
     let inZoneMinutes = 0;
     let isInsideZone = false;
+    
+    // Data tambahan untuk sinkronisasi UI real-time
+    let activeScheduleId: string | null = null;
+    let activeJamMasuk: string | null = null;
+    let activeActualInZoneSeconds = 0;
+    let activeTargetDurationMinutes = 0;
 
     // Load geofence buffer from Rule Engine config (replaces hardcoded 15m)
     const ruleConfigs = await configService.getRuleEngineConfigs();
@@ -468,7 +474,7 @@ export class KknAttendanceService {
           polygon: sch.polygon,
         };
 
-        const durationInZone = calculateInZoneDurationMinutes(todayLogs, geofence, bufferMeters);
+        let durationInZone = calculateInZoneDurationMinutes(todayLogs, geofence, bufferMeters);
         inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
 
         // Cek posisi saat ini menggunakan buffer dinamis
@@ -487,6 +493,15 @@ export class KknAttendanceService {
 
         // Update actualInZoneMinutes pada attendance yang sedang BERLANGSUNG
         if (existingAtt && existingAtt.status === "BERLANGSUNG") {
+          // Kalkulasi dinamis berdasarkan waktu mulai agar 100% real-time dengan UI
+          const elapsedSeconds = Math.max(0, Math.floor((Date.now() - existingAtt.attendedAt.getTime()) / 1000));
+          durationInZone = Math.floor(elapsedSeconds / 60);
+          
+          activeScheduleId = existingAtt.scheduleId;
+          activeJamMasuk = existingAtt.attendedAt.toISOString();
+          activeActualInZoneSeconds = elapsedSeconds;
+          activeTargetDurationMinutes = durasiWajibMenit;
+
           await prisma.activityAttendance.update({
             where: { id: existingAtt.id },
             data: { actualInZoneMinutes: durationInZone },
@@ -515,6 +530,10 @@ export class KknAttendanceService {
       currentStatus: isInsideZone ? "LAPANGAN" : "DI_LUAR_ZONA",
       inZoneMinutes,
       autoAttendanceTriggered,
+      scheduleId: activeScheduleId,
+      jam_masuk: activeJamMasuk,
+      actualInZoneSeconds: activeActualInZoneSeconds,
+      targetDurationMinutes: activeTargetDurationMinutes,
     };
   }
 
@@ -1868,9 +1887,9 @@ export class KknAttendanceService {
       let actualInZoneMinutes = 0;
       const att = sch.attendances?.[0];
       if (att && (att.status === "BERLANGSUNG" || att.status === "DALAM_RADIUS" || att.status === "DI_ZONA")) {
-        // Gunakan murni actualInZoneMinutes dari GPS logs, jangan gunakan elapsed time fallback
-        actualInZoneMinutes = att.actualInZoneMinutes || 0;
-        actualInZoneSeconds = actualInZoneMinutes * 60;
+        // Kalkulasi dinamis: (Waktu Saat Ini) - (jam_masuk)
+        actualInZoneSeconds = Math.max(0, Math.floor((Date.now() - att.attendedAt.getTime()) / 1000));
+        actualInZoneMinutes = Math.floor(actualInZoneSeconds / 60);
       } else if (att && (att.status === "HADIR" || att.status === "SELESAI" || att.status === "SELESAI_TELAT")) {
         // Kegiatan sudah selesai — gunakan nilai tersimpan di DB
         actualInZoneMinutes = att.actualInZoneMinutes ?? 0;
@@ -2090,6 +2109,7 @@ export class KknAttendanceService {
       jamMulai,
       jamSelesai,
       durasiWajibMenit,
+      attendedAt: attendance.attendedAt.toISOString(),
       lokasi: {
         alamat: schedule.location || "Lokasi Kegiatan KKN",
         latitude: schedule.latitude ? Number(schedule.latitude) : latitude,
