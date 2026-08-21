@@ -2265,6 +2265,7 @@ export class KknService {
         attendanceStatus,
         status: attendanceStatus,
         kehadiran: attendanceStatus,
+        attendedAt: attendanceForActiveSchedule?.attendedAt,
         polygonPoints: activeSchedule.polygon && Array.isArray(activeSchedule.polygon) ? activeSchedule.polygon : [],
       };
     }
