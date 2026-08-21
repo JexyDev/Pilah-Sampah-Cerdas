@@ -2536,13 +2536,25 @@ export class KknService {
 
     const { programKerjaId, beratOutputKg, nilaiEkonomiRp, fotoDokumentasiUrl } = payload;
     
+    let programName = "PANEN_HASIL";
+    
+    if (programKerjaId) {
+      const proker = await prisma.programKerjaKkn.findUnique({ where: { id: programKerjaId } });
+      if (proker) {
+        if (proker.statusUsulan === "BELUM_DISETUJUI" || proker.statusUsulan === "DITOLAK") {
+          throw new Error("Program kerja belum disetujui atau ditolak DPL, tidak bisa mencatat hasil panen.");
+        }
+        programName = proker.deskripsi || programName;
+      }
+    }
+    
     const uniqueNo = `PANEN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     const report = await prisma.pemanfaatan.create({
       data: {
         rwId: targetRwId,
         nomorCaraPemanfaatan: uniqueNo,
-        program: programKerjaId || "PANEN_HASIL", // Menyimpan ID proker di kolom program
+        program: programName,
         teknologi: "PANEN", // Penanda bahwa ini adalah pilar 3
         bahanBaku: "PANEN_HASIL",
         volumeBahanBaku: 0, // Tidak ada input, hanya output
