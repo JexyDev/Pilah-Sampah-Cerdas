@@ -20,6 +20,8 @@ import {
   CheckCircle2,
   FileSpreadsheet,
   Calendar,
+  Upload,
+  RotateCcw,
 } from "lucide-react";
 /**
  * Project: BERSEKA
@@ -28,8 +30,9 @@ import {
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { MapContainer, Marker, useMapEvents, useMap, Polygon, Polyline, Circle } from "react-leaflet";
@@ -37,10 +40,10 @@ import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import L from "leaflet";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import {
-  TIMELINE_KKN_DATA,
   TIMELINE_KKN_HEADER,
-  type TimelineKknItem,
 } from "../../data/timelineKknData";
+import { TimelineKknModal } from "./components/TimelineKknModal";
+import { TimelineImportModal } from "./components/TimelineImportModal";
 
 // Fix default Leaflet icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -122,6 +125,9 @@ const JadwalKegiatan: React.FC = () => {
       "PETUGAS_RESIDU",
     ].includes(userRole);
 
+  const canManageTimeline =
+    !isDpl && ["SUPER_USER", "DEVELOPER", "PANITIA_TASKFORCE"].includes(userRole);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalStep, setModalStep] = useState(1);
   const [editId, setEditId] = useState<string | null>(null);
@@ -134,41 +140,188 @@ const JadwalKegiatan: React.FC = () => {
 
   // Main Tab: Tabel Timeline (Excel View) vs Kalender & Agenda Interaktif
   const [activeMainTab, setActiveMainTab] = useState<"TABEL_TIMELINE" | "KALENDER_AGENDA">("TABEL_TIMELINE");
+
+  // Dynamic Timeline State & Filters
+  const [timelineList, setTimelineList] = useState<any[]>([]);
+  const [timelineLoading, setTimelineLoading] = useState(false);
   const [timelineSearch, setTimelineSearch] = useState("");
   const [selectedFase, setSelectedFase] = useState<string>("ALL");
-  const [timelineList] = useState<TimelineKknItem[]>(TIMELINE_KKN_DATA);
+  const [selectedScope, setSelectedScope] = useState<string>("ALL");
+  const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
+  const [startDateFilter, setStartDateFilter] = useState<string>("");
+  const [endDateFilter, setEndDateFilter] = useState<string>("");
 
-  const filteredTimeline = useMemo(() => {
-    return timelineList.filter((item) => {
-      const q = timelineSearch.toLowerCase();
-      const matchesSearch =
-        item.tahapMinggu.toLowerCase().includes(q) ||
-        item.kegiatanUtama.toLowerCase().includes(q) ||
-        item.outputTarget.toLowerCase().includes(q) ||
-        item.picKeterangan.toLowerCase().includes(q) ||
-        item.fase.toLowerCase().includes(q);
+  // Timeline Modals
+  const [timelineModalOpen, setTimelineModalOpen] = useState(false);
+  const [timelineEditItem, setTimelineEditItem] = useState<any | null>(null);
+  const [timelineDeleteId, setTimelineDeleteId] = useState<string | null>(null);
+  const [timelineImportModalOpen, setTimelineImportModalOpen] = useState(false);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
-      const matchesFase =
-        selectedFase === "ALL" ||
-        item.fase.toLowerCase().includes(selectedFase.toLowerCase());
+  const [groups, setGroups] = useState<any[]>([]);
 
-      return matchesSearch && matchesFase;
-    });
-  }, [timelineList, timelineSearch, selectedFase]);
+  const fetchGroups = async () => {
+    try {
+      const res = await api.get("/kelompok?limit=0");
+      const list = res.data?.groups || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+      setGroups(list);
+    } catch {
+      // ignore
+    }
+  };
+
+  const fetchTimelineList = async () => {
+    setTimelineLoading(true);
+    try {
+      const params: any = {};
+      if (selectedScope !== "ALL") params.kelompokId = selectedScope;
+      if (selectedFase !== "ALL") params.fase = selectedFase;
+      if (selectedStatus !== "ALL") params.statusPelaksanaan = selectedStatus;
+      if (timelineSearch.trim()) params.search = timelineSearch.trim();
+      if (startDateFilter) params.startDate = startDateFilter;
+      if (endDateFilter) params.endDate = endDateFilter;
+
+      const res = await api.get("/timeline-kkn", { params });
+      const rawData = res.data?.data;
+      setTimelineList(Array.isArray(rawData) ? rawData : []);
+    } catch (err: any) {
+      console.error("[fetchTimelineList] error:", err);
+      toast.error("Gagal memuat linimasa kegiatan");
+    } finally {
+      setTimelineLoading(false);
+    }
+  };
+
+  const fetchSchedules = async () => {
+    try {
+      const response = await api.get("/schedules");
+      const raw = response.data.data;
+      setSchedules(Array.isArray(raw) ? raw : []);
+    } catch (err: any) {
+      const errMsg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Gagal memuat data dari server.";
+      setError(errMsg);
+      toast.error(`Gagal memuat jadwal kegiatan: ${errMsg}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSchedules();
+    fetchGroups();
+  }, []);
+
+  useEffect(() => {
+    fetchTimelineList();
+  }, [selectedScope, selectedFase, selectedStatus, timelineSearch, startDateFilter, endDateFilter]);
+
+  const handleQuickStatusChange = async (id: string, newStatus: string) => {
+    try {
+      await api.patch(`/timeline-kkn/${id}/status`, { statusPelaksanaan: newStatus });
+      setTimelineList((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, statusPelaksanaan: newStatus } : item))
+      );
+      toast.success("Status kegiatan diperbarui!");
+    } catch (err: any) {
+      toast.error("Gagal memperbarui status: " + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleConfirmDeleteTimeline = async () => {
+    if (!timelineDeleteId) return;
+    try {
+      await api.delete(`/timeline-kkn/${timelineDeleteId}`);
+      toast.success("Kegiatan linimasa berhasil dihapus!");
+      setTimelineDeleteId(null);
+      fetchTimelineList();
+    } catch (err: any) {
+      toast.error("Gagal menghapus kegiatan: " + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleResetOfficialAcuan = async () => {
+    try {
+      await api.post("/timeline-kkn/seed-defaults", { forceReplace: true });
+      toast.success("Berhasil mengatur ulang ke acuan resmi 12 pekan!");
+      setResetConfirmOpen(false);
+      fetchTimelineList();
+    } catch (err: any) {
+      toast.error("Gagal reset acuan: " + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleExportTimelineExcel = () => {
+    try {
+      const headers = [
+        "Tahap / Minggu",
+        "Tanggal",
+        "Fase",
+        "Kegiatan Utama",
+        "Output / Target",
+        "PIC / Keterangan",
+        "Lingkup / Scope",
+        "Status",
+      ];
+      const rows = timelineList.map((item) => [
+        item.tahapMinggu,
+        item.tanggal,
+        item.fase,
+        item.kegiatanUtama,
+        item.outputTarget,
+        item.picKeterangan,
+        item.kelompok ? `Kelompok ${item.kelompok.name}` : "Global (Semua Kelompok)",
+        item.statusPelaksanaan || "BELUM_DIMULAI",
+      ]);
+
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      ws["!cols"] = [
+        { wch: 18 },
+        { wch: 25 },
+        { wch: 30 },
+        { wch: 45 },
+        { wch: 45 },
+        { wch: 30 },
+        { wch: 30 },
+        { wch: 20 },
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Linimasa_KKN");
+      XLSX.writeFile(wb, `Linimasa_KKN_${new Date().toISOString().split("T")[0]}.xlsx`);
+      toast.success("Data linimasa berhasil diexport ke Excel (.xlsx)!");
+    } catch (err: any) {
+      toast.error("Gagal export Excel: " + err.message);
+    }
+  };
 
   const handleExportTimelineCsv = () => {
-    const headers = ["Tahap / Minggu", "Tanggal", "Fase", "Kegiatan Utama", "Output / Target", "PIC / Keterangan", "Status"];
-    const rows = filteredTimeline.map((item) => [
-      `"${item.tahapMinggu.replace(/"/g, '""')}"`,
-      `"${item.tanggal.replace(/"/g, '""')}"`,
-      `"${item.fase.replace(/"/g, '""')}"`,
-      `"${item.kegiatanUtama.replace(/"/g, '""')}"`,
-      `"${item.outputTarget.replace(/"/g, '""')}"`,
-      `"${item.picKeterangan.replace(/"/g, '""')}"`,
+    const headers = [
+      "Tahap / Minggu",
+      "Tanggal",
+      "Fase",
+      "Kegiatan Utama",
+      "Output / Target",
+      "PIC / Keterangan",
+      "Lingkup / Scope",
+      "Status",
+    ];
+    const rows = timelineList.map((item) => [
+      `"${(item.tahapMinggu || "").replace(/"/g, '""')}"`,
+      `"${(item.tanggal || "").replace(/"/g, '""')}"`,
+      `"${(item.fase || "").replace(/"/g, '""')}"`,
+      `"${(item.kegiatanUtama || "").replace(/"/g, '""')}"`,
+      `"${(item.outputTarget || "").replace(/"/g, '""')}"`,
+      `"${(item.picKeterangan || "").replace(/"/g, '""')}"`,
+      `"${item.kelompok ? "Kelompok " + item.kelompok.name : "Global (Semua Kelompok)"}"`,
       `"${item.statusPelaksanaan || "BELUM_DIMULAI"}"`,
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const csvContent =
+      "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -178,6 +331,12 @@ const JadwalKegiatan: React.FC = () => {
     document.body.removeChild(link);
     toast.success("Tabel Timeline KKN berhasil diunduh (CSV)");
   };
+
+  useEffect(() => {
+    fetchSchedules();
+    fetchGroups();
+  }, []);
+
 
   const [geofenceMode, setGeofenceMode] = useState<"CIRCLE" | "POLYGON">("CIRCLE");
   const [manualLat, setManualLat] = useState<string>("");
@@ -190,7 +349,6 @@ const JadwalKegiatan: React.FC = () => {
     setExpandedGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }));
   };
 
-  const [groups, setGroups] = useState<any[]>([]);
   const [timeStart, setTimeStart] = useState<string>("08:00");
   const [timeEnd, setTimeEnd] = useState<string>("16:00");
 
@@ -206,37 +364,6 @@ const JadwalKegiatan: React.FC = () => {
     polygon: [] as [number, number][],
     kelompokId: "",
   });
-
-  const fetchGroups = async () => {
-    try {
-      const res = await api.get("/kelompok?limit=0");
-      const list = res.data?.groups || res.data?.data || (Array.isArray(res.data) ? res.data : []);
-      setGroups(list);
-    } catch {
-      // ignore
-    }
-  };
-
-  const fetchSchedules = async () => {
-    try {
-      const response = await api.get("/schedules");
-      // Backend returns array under data.data
-      const raw = response.data.data;
-      setSchedules(Array.isArray(raw) ? raw : []);
-    } catch (err: any) {
-      const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || "Gagal memuat data dari server.";
-      setError(errMsg);
-      toast.error(`Gagal memuat jadwal kegiatan: ${errMsg}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSchedules();
-    fetchGroups();
-  }, []);
-
 
   const safeFormatTime = (dateStr: string | null | undefined) => {
     if (!dateStr) return "-";
@@ -568,10 +695,10 @@ const JadwalKegiatan: React.FC = () => {
         </div>
       </div>
 
-      {/* VIEW 1: TABEL TIMELINE (SESUAI SHEET 1 EXCEL DPL) */}
+      {/* VIEW 1: TABEL TIMELINE (DINAMIS DENGAN CRUD, FILTER & IMPORT EXCEL) */}
       {activeMainTab === "TABEL_TIMELINE" && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          {/* Hero Banner: Info Timeline Resmi */}
+          {/* Hero Banner: Info Timeline & Action Buttons */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs space-y-4">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-3.5 flex-1 min-w-0">
@@ -588,58 +715,173 @@ const JadwalKegiatan: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              {/* Action Buttons Toolbar */}
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleExportTimelineExcel}
+                  className="px-3.5 py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="Unduh Linimasa dalam format Excel (.xlsx)"
+                >
+                  <FileSpreadsheet size={14} className="text-emerald-600 dark:text-emerald-400" />
+                  <span>Excel (.xlsx)</span>
+                </button>
                 <button
                   type="button"
                   onClick={handleExportTimelineCsv}
-                  className="px-4 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-extrabold transition flex items-center gap-2 cursor-pointer shadow-2xs"
+                  className="px-3.5 py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="Unduh Linimasa dalam format CSV"
                 >
-                  <Download size={14} className="text-emerald-600 dark:text-emerald-400" />
-                  <span>Unduh CSV</span>
+                  <Download size={14} className="text-slate-500" />
+                  <span>CSV</span>
                 </button>
+
+                {canManageTimeline && (
+                  <>
+                    <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800 hidden sm:block mx-1"></div>
+
+                    <button
+                      type="button"
+                      onClick={() => setTimelineImportModalOpen(true)}
+                      className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      title="Import dari file Excel (.xlsx / .csv)"
+                    >
+                      <Upload size={14} />
+                      <span>Import Excel</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTimelineEditItem(null);
+                        setTimelineModalOpen(true);
+                      }}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+                    >
+                      <Plus size={14} />
+                      <span>Tambah Kegiatan</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setResetConfirmOpen(true)}
+                      className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer"
+                      title="Reset ke Acuan Resmi 12 Pekan"
+                    >
+                      <RotateCcw size={15} />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
-            {/* 4 Summary Stat Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-              <div className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">Total Kegiatan</span>
-                <span className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 block">{TIMELINE_KKN_DATA.length} Tahapan</span>
-                <span className="text-[10.5px] text-slate-400 font-medium">Pra-kegiatan hingga penutupan</span>
-              </div>
-              <div className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">Fase Program</span>
-                <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400 mt-1 block">4 Fase</span>
-                <span className="text-[10.5px] text-emerald-600 dark:text-emerald-400 font-semibold">Persiapan, Pilot, Implementasi, Evaluasi</span>
-              </div>
-              <div className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">Durasi Penerjunan</span>
-                <span className="text-2xl font-black text-indigo-700 dark:text-indigo-400 mt-1 block">12 Pekan</span>
-                <span className="text-[10.5px] text-indigo-600 dark:text-indigo-400 font-semibold">12 Agustus – 31 Oktober 2026</span>
-              </div>
-              <div className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">Wilayah Sasaran</span>
-                <span className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 block">6 Kelurahan</span>
-                <span className="text-[10.5px] text-slate-400 font-medium">Wilayah Binaan Program KKN</span>
-              </div>
-            </div>
+            {/* 4 Dynamic Summary Stat Cards */}
+            {(() => {
+              const total = timelineList.length;
+              const selesai = timelineList.filter((t) => t.statusPelaksanaan === "SELESAI").length;
+              const berjalan = timelineList.filter((t) => t.statusPelaksanaan === "SEDANG_BERJALAN").length;
+              const belum = timelineList.filter(
+                (t) => !t.statusPelaksanaan || t.statusPelaksanaan === "BELUM_DIMULAI"
+              ).length;
+              const pctSelesai = total > 0 ? Math.round((selesai / total) * 100) : 0;
+
+              return (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                  <div className="bg-slate-50/80 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">
+                      Total Kegiatan
+                    </span>
+                    <span className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 block">
+                      {total} Tahapan
+                    </span>
+                    <span className="text-[10.5px] text-slate-400 font-medium">
+                      Sesuai filter & scope aktif
+                    </span>
+                  </div>
+                  <div className="bg-slate-50/80 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">
+                      Selesai Dilaksanakan
+                    </span>
+                    <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400 mt-1 block">
+                      {selesai} ({pctSelesai}%)
+                    </span>
+                    <span className="text-[10.5px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                      Tahapan rampung
+                    </span>
+                  </div>
+                  <div className="bg-slate-50/80 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">
+                      Sedang Berjalan
+                    </span>
+                    <span className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1 block">
+                      {berjalan} Agenda
+                    </span>
+                    <span className="text-[10.5px] text-amber-600 dark:text-amber-400 font-semibold">
+                      Fokus kegiatan saat ini
+                    </span>
+                  </div>
+                  <div className="bg-slate-50/80 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">
+                      Belum Dimulai
+                    </span>
+                    <span className="text-2xl font-black text-slate-600 dark:text-slate-300 mt-1 block">
+                      {belum} Agenda
+                    </span>
+                    <span className="text-[10.5px] text-slate-400 font-medium">
+                      Rencana kerja mendatang
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
-          {/* Filter Bar */}
-          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2 w-full md:w-auto flex-1">
-              <div className="relative flex-1 max-w-md">
+          {/* Multi-Filter Bar */}
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+              {/* Search Bar */}
+              <div className="relative sm:col-span-2 lg:col-span-2">
                 <input
                   type="text"
-                  placeholder="Cari kegiatan utama, target capaian, atau PIC..."
+                  placeholder="Cari kegiatan, output, PIC, atau tanggal..."
                   value={timelineSearch}
                   onChange={(e) => setTimelineSearch(e.target.value)}
                   className="w-full pl-3 pr-8 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 focus:bg-white transition font-medium"
                 />
-                <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                {timelineSearch ? (
+                  <button
+                    onClick={() => setTimelineSearch("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <X size={14} />
+                  </button>
+                ) : (
+                  <Search
+                    size={14}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                  />
+                )}
               </div>
 
-              <div className="min-w-[200px]">
+              {/* Scope Filter */}
+              <div>
+                <select
+                  value={selectedScope}
+                  onChange={(e) => setSelectedScope(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+                >
+                  <option value="ALL">🌐 Semua Scope (Global & Kelompok)</option>
+                  <option value="GLOBAL">🏛️ Hanya Acuan Global</option>
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      👥 Kelompok: {g.name} {g.kelurahan ? `(${g.kelurahan})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Fase Filter */}
+              <div>
                 <select
                   value={selectedFase}
                   onChange={(e) => setSelectedFase(e.target.value)}
@@ -647,72 +889,217 @@ const JadwalKegiatan: React.FC = () => {
                 >
                   <option value="ALL">Semua Fase Program</option>
                   <option value="Pra-Kegiatan">Pra-Kegiatan</option>
-                  <option value="Fase 1">Fase 1 - Persiapan & Observasi</option>
+                  <option value="Fase 1">Fase 1 - Persiapan</option>
                   <option value="Fase 2">Fase 2 - Pilot Project</option>
-                  <option value="Fase 3">Fase 3 - Implementasi & Pendampingan</option>
-                  <option value="Fase 4">Fase 4 - Evaluasi & Penutupan</option>
+                  <option value="Fase 3">Fase 3 - Implementasi</option>
+                  <option value="Fase 4">Fase 4 - Evaluasi</option>
+                </select>
+              </div>
+
+              {/* Status Filter */}
+              <div>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+                >
+                  <option value="ALL">Semua Status</option>
+                  <option value="BELUM_DIMULAI">Belum Dimulai</option>
+                  <option value="SEDANG_BERJALAN">Sedang Berjalan</option>
+                  <option value="SELESAI">Selesai</option>
                 </select>
               </div>
             </div>
 
-            <div className="text-xs font-bold text-slate-500">
-              Menampilkan <strong className="text-slate-900 dark:text-slate-100">{filteredTimeline.length}</strong> kegiatan
+            {/* Sub Filter Row: Date Range & Results Count */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/60">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-slate-400 font-semibold flex items-center gap-1">
+                  <Calendar size={13} /> Rentang Tanggal:
+                </span>
+                <input
+                  type="date"
+                  value={startDateFilter}
+                  onChange={(e) => setStartDateFilter(e.target.value)}
+                  className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 cursor-pointer"
+                />
+                <span className="text-slate-400">s/d</span>
+                <input
+                  type="date"
+                  value={endDateFilter}
+                  onChange={(e) => setEndDateFilter(e.target.value)}
+                  className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 cursor-pointer"
+                />
+                {(timelineSearch ||
+                  selectedFase !== "ALL" ||
+                  selectedScope !== "ALL" ||
+                  selectedStatus !== "ALL" ||
+                  startDateFilter ||
+                  endDateFilter) && (
+                  <button
+                    onClick={() => {
+                      setTimelineSearch("");
+                      setSelectedFase("ALL");
+                      setSelectedScope("ALL");
+                      setSelectedStatus("ALL");
+                      setStartDateFilter("");
+                      setEndDateFilter("");
+                    }}
+                    className="text-[11px] font-bold text-rose-600 hover:text-rose-700 dark:text-rose-400 flex items-center gap-1 ml-1 cursor-pointer"
+                  >
+                    <RotateCcw size={11} /> Reset Filter
+                  </button>
+                )}
+              </div>
+
+              <div className="text-xs font-bold text-slate-500">
+                Menampilkan <strong className="text-slate-900 dark:text-slate-100">{timelineList.length}</strong> kegiatan
+              </div>
             </div>
           </div>
 
-          {/* Tabular Table */}
+          {/* Dynamic Tabular Table */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/90 dark:bg-slate-800/90 text-slate-500 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
-                    <th className="py-3.5 px-4 w-12 text-center">No</th>
-                    <th className="py-3.5 px-4 w-32">Tahap / Minggu</th>
-                    <th className="py-3.5 px-4 w-36">Tanggal</th>
-                    <th className="py-3.5 px-4 w-40">Fase</th>
-                    <th className="py-3.5 px-4 min-w-[280px]">Kegiatan Utama</th>
-                    <th className="py-3.5 px-4 min-w-[260px]">Output / Target</th>
-                    <th className="py-3.5 px-4 w-52">PIC / Keterangan</th>
-                    <th className="py-3.5 px-4 w-28 text-center">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                  {filteredTimeline.map((item, idx) => (
-                    <tr key={item.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/80 transition-colors">
-                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
-                        {idx + 1}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="font-extrabold text-slate-900 dark:text-slate-100 block">
-                          {item.tahapMinggu}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                          <Calendar size={13} className="text-emerald-600 shrink-0" />
-                          {item.tanggal}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {renderFaseBadge(item.fase)}
-                      </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100 leading-relaxed">
-                        {item.kegiatanUtama}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 leading-relaxed">
-                        {item.outputTarget}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-semibold text-[11px] leading-relaxed">
-                        {item.picKeterangan}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        {renderStatusBadge(item.statusPelaksanaan)}
-                      </td>
+            {timelineLoading ? (
+              <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
+                <Loader2 className="animate-spin text-emerald-600" size={32} />
+                <p className="text-xs font-bold">Memuat data linimasa...</p>
+              </div>
+            ) : timelineList.length === 0 ? (
+              <div className="p-12 text-center flex flex-col items-center justify-center gap-3">
+                <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center">
+                  <CalendarDays size={28} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    Tidak ada kegiatan ditemukan
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Coba sesuaikan kata kunci pencarian atau ubah filter scope/fase.
+                  </p>
+                </div>
+                {canManageTimeline && (
+                  <button
+                    onClick={() => {
+                      setTimelineEditItem(null);
+                      setTimelineModalOpen(true);
+                    }}
+                    className="px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition cursor-pointer flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Plus size={14} /> Tambah Kegiatan Pertama
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/90 dark:bg-slate-800/90 text-slate-500 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
+                      <th className="py-3.5 px-4 w-12 text-center">No</th>
+                      <th className="py-3.5 px-4 w-32">Tahap / Minggu</th>
+                      <th className="py-3.5 px-4 w-36">Tanggal</th>
+                      <th className="py-3.5 px-4 w-36">Fase</th>
+                      <th className="py-3.5 px-4 min-w-[260px]">Kegiatan Utama</th>
+                      <th className="py-3.5 px-4 min-w-[240px]">Output / Target</th>
+                      <th className="py-3.5 px-4 w-44">PIC / Keterangan</th>
+                      <th className="py-3.5 px-4 w-36">Lingkup Scope</th>
+                      <th className="py-3.5 px-4 w-36 text-center">Status</th>
+                      {canManageTimeline && <th className="py-3.5 px-4 w-24 text-center">Aksi</th>}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                    {timelineList.map((item, idx) => (
+                      <tr
+                        key={item.id || idx}
+                        className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/80 transition-colors group"
+                      >
+                        <td className="py-3.5 px-4 text-center font-bold text-slate-400">
+                          {idx + 1}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="font-extrabold text-slate-900 dark:text-slate-100 block">
+                            {item.tahapMinggu}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                            <Calendar size={13} className="text-emerald-600 shrink-0" />
+                            {item.tanggal}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {renderFaseBadge(item.fase || "Fase 1: Persiapan")}
+                        </td>
+                        <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100 leading-relaxed">
+                          {item.kegiatanUtama}
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 leading-relaxed">
+                          {item.outputTarget}
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-semibold text-[11px] leading-relaxed">
+                          {item.picKeterangan}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {item.kelompok ? (
+                            <span className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-lg text-[10px] font-extrabold block truncate max-w-[130px]">
+                              👥 {item.kelompok.name}
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-bold block truncate max-w-[130px]">
+                              🌐 Global
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          {canManageTimeline && item.id ? (
+                            <select
+                              value={item.statusPelaksanaan || "BELUM_DIMULAI"}
+                              onChange={(e) => handleQuickStatusChange(item.id, e.target.value)}
+                              className={`px-2.5 py-1 rounded-full text-[10.5px] font-extrabold border outline-none cursor-pointer transition ${
+                                item.statusPelaksanaan === "SELESAI"
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300"
+                                  : item.statusPelaksanaan === "SEDANG_BERJALAN"
+                                  ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300"
+                                  : "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                              }`}
+                            >
+                              <option value="BELUM_DIMULAI">Belum Dimulai</option>
+                              <option value="SEDANG_BERJALAN">Sedang Berjalan</option>
+                              <option value="SELESAI">Selesai</option>
+                            </select>
+                          ) : (
+                            renderStatusBadge(item.statusPelaksanaan)
+                          )}
+                        </td>
+                        {canManageTimeline && (
+                          <td className="py-3.5 px-4 text-center">
+                            <div className="flex items-center justify-center gap-1.5 opacity-90 group-hover:opacity-100 transition">
+                              <button
+                                onClick={() => {
+                                  setTimelineEditItem(item);
+                                  setTimelineModalOpen(true);
+                                }}
+                                className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 rounded-lg transition cursor-pointer"
+                                title="Edit Kegiatan"
+                              >
+                                <Pencil size={13} />
+                              </button>
+                              <button
+                                onClick={() => setTimelineDeleteId(item.id)}
+                                className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-lg transition cursor-pointer"
+                                title="Hapus Kegiatan"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1705,6 +2092,47 @@ const JadwalKegiatan: React.FC = () => {
       </main>
     </div>
       )}
+
+      {/* Timeline Modals */}
+      <TimelineKknModal
+        isOpen={timelineModalOpen}
+        onClose={() => {
+          setTimelineModalOpen(false);
+          setTimelineEditItem(null);
+        }}
+        onSuccess={fetchTimelineList}
+        editItem={timelineEditItem}
+        groups={groups}
+        defaultKelompokId={selectedScope !== "ALL" ? selectedScope : "GLOBAL"}
+      />
+
+      <TimelineImportModal
+        isOpen={timelineImportModalOpen}
+        onClose={() => setTimelineImportModalOpen(false)}
+        onSuccess={fetchTimelineList}
+        groups={groups}
+        defaultKelompokId={selectedScope !== "ALL" ? selectedScope : "GLOBAL"}
+      />
+
+      <ConfirmModal
+        isOpen={Boolean(timelineDeleteId)}
+        onClose={() => setTimelineDeleteId(null)}
+        onConfirm={handleConfirmDeleteTimeline}
+        title="Hapus Kegiatan Linimasa"
+        message="Apakah Anda yakin ingin menghapus kegiatan linimasa ini? Tindakan ini tidak dapat dibatalkan."
+        confirmText="Ya, Hapus Kegiatan"
+        type="danger"
+      />
+
+      <ConfirmModal
+        isOpen={resetConfirmOpen}
+        onClose={() => setResetConfirmOpen(false)}
+        onConfirm={handleResetOfficialAcuan}
+        title="Reset ke Acuan Resmi 12 Pekan"
+        message="Apakah Anda yakin ingin mengatur ulang linimasa global ke acuan resmi 12 pekan KKN UNIKOM Coblong 2026? Data kustom pada acuan global akan ditimpa."
+        confirmText="Ya, Reset Acuan"
+        type="warning"
+      />
     </div>
   );
 };

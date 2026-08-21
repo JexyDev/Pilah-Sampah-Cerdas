@@ -636,33 +636,24 @@ export const penilaianKknService = {
         orderBy: { name: "asc" },
       })) as any[];
 
-      // Fallback: Jika filter spesifik DPL mengembalikan 0 kelompok (misal ID DPL tidak terikat langsung pada field id), ambil seluruh kelompok
-      if (kelompokRecords.length === 0 && kelompokWhere.OR) {
-        kelompokRecords = (await prisma.kelompokKkn.findMany({
-          where: groupId && groupId !== "ALL" ? { id: groupId } : {},
-          include: {
-            dpl: { select: { id: true, name: true, nip: true, phone: true } },
-            students: {
-              include: {
-                user: { select: { id: true, name: true, phone: true } },
-                assignedRw: { include: { kelurahan: true } },
-              },
-              orderBy: { nim: "asc" },
-            },
-            programKerja: {
-              orderBy: { createdAt: "asc" },
-            },
-            penilaianMahasiswa: true,
-          },
-          orderBy: { name: "asc" },
-        })) as any[];
+      // Jika DPL tidak memiliki kelompok binaan yang cocok, pastikan tidak bocor ke kelompok lain
+      const isDplRole = evaluatorRole && ["DPL", "DOSEN_PEMBIMBING"].includes(evaluatorRole.toUpperCase());
+      if (kelompokRecords.length === 0 && isDplRole) {
+        return {
+          kelompokList: [],
+          students: [],
+          totalMahasiswa: 0,
+          sudahDinilai: 0,
+          belumDinilai: 0,
+          rerataNilai: 0,
+        };
       }
     } catch (dbErr) {
       console.error("[getLaporanAkhirList] Database query error, returning safe structured data:", dbErr);
       kelompokRecords = [];
     }
 
-    // Jika database kosong / tidak memiliki kelompok, sediakan master kelompok KKN Coblong default
+    // Jika database kosong / tidak memiliki kelompok (hanya untuk non-DPL / Management), sediakan master kelompok KKN Coblong default
     if (kelompokRecords.length === 0) {
       const fallbackKelompokDefaults = [
         { name: "Kelompok 1 Dago", kelurahan: "Dago", rw: ["RW 01", "RW 02"], dpl: "Prof Umi Narimawati,dra, S.E. M.Si.,M.pd", nip: "4127.34.02.015" },

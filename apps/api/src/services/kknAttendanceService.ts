@@ -1,4 +1,3 @@
-import { prisma } from "../lib/prisma.js";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -6,10 +5,12 @@ import { prisma } from "../lib/prisma.js";
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
+import { prisma } from "../lib/prisma.js";
 import { configService } from "./configService.js";
 import { dplService } from "./dplService.js";
 import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
 import { websocketService } from "./websocketService.js";
+import { validateCoordinate } from "../utils/geoValidation.js";
 
 
 // Helper: Haversine Formula (meters)
@@ -128,23 +129,37 @@ export class KknAttendanceService {
     });
     if (!user) throw new Error("USER_NOT_FOUND");
 
-    let student = await prisma.studentKkn.findUnique({
+    const student = await prisma.studentKkn.findUnique({
       where: { userId },
     });
 
-    if (!student && user.role?.name === "MAHASISWA_KKN") {
-      student = await prisma.studentKkn.create({
-        data: {
-          userId,
-          nim: `3273${Date.now().toString().slice(-6)}`,
-          jurusan: "Teknik Lingkungan",
-          fakultas: "Fakultas Teknik",
-          noWa: user.phone || "08123456789",
-          startDate: new Date(),
-          endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
-        },
-      });
+    // [KRITIAL FIX] Profil mahasiswa wajib lengkap sebelum GPS tracking diizinkan.
+    // Jangan pernah auto-generate data dummy (NIM/jurusan palsu) — melanggar AGENTS.md Rule 11.
+    if (!student) {
+      throw new Error("STUDENT_PROFILE_INCOMPLETE");
     }
+
+    // ─── Geo-validation pipeline ────────────────────────────────────────────────
+    // Ambil lokasi terakhir mahasiswa untuk deteksi teleportasi
+    const lastLocation = await prisma.studentLocation.findFirst({
+      where: { studentId: userId },
+      orderBy: { recordedAt: "desc" },
+      select: { latitude: true, longitude: true, recordedAt: true },
+    });
+
+    const previousPoint = lastLocation
+      ? {
+          latitude: Number(lastLocation.latitude),
+          longitude: Number(lastLocation.longitude),
+          recordedAt: lastLocation.recordedAt,
+        }
+      : null;
+
+    const geoCheck = validateCoordinate(latitude, longitude, previousPoint);
+    if (!geoCheck.valid) {
+      throw new Error(geoCheck.errorCode ?? "INVALID_COORDINATES");
+    }
+    // ────────────────────────────────────────────────────────────────────────────
 
     // 1. Simpan lokasi ke studentLocation (GPS tracking log)
     const newLocation = await prisma.studentLocation.create({

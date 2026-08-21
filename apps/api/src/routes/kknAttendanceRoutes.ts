@@ -255,10 +255,23 @@ router.post(
       );
       res.json(result);
     } catch (error: any) {
-      res.status(400).json({ success: false, error: error.message });
+      const errorCode: string = error.message ?? "INTERNAL_ERROR";
+
+      // Map known error codes to appropriate HTTP status
+      const statusMap: Record<string, number> = {
+        USER_NOT_FOUND: 404,
+        STUDENT_PROFILE_INCOMPLETE: 403,
+        INVALID_COORDINATES: 400,
+        OUT_OF_COBLONG_BOUNDS: 422,
+        LOCATION_TELEPORTATION_DETECTED: 422,
+      };
+
+      const status = statusMap[errorCode] ?? 400;
+      res.status(status).json({ success: false, error: errorCode, message: error.message });
     }
   }
 );
+
 
 router.get(
   "/warga-dampingan",

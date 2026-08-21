@@ -364,6 +364,7 @@ model KelompokKkn {
   dpl           User?             @relation("DplKelompok", fields: [dplId], references: [id])
   students           StudentKkn[]
   schedules          Schedule[]
+  timelines          TimelineKkn[]
   programKerja       ProgramKerjaKkn[]
   penilaianMahasiswa PenilaianKknMahasiswa[]
   facilities         Facility[]
@@ -896,6 +897,28 @@ model Schedule {
   attendances ActivityAttendance[]
 
   @@map("jadwal")
+}
+
+model TimelineKkn {
+  id                String       @id @default(uuid())
+  tahapMinggu       String       @map("tahap_minggu")
+  tanggal           String       @map("tanggal")
+  startDate         DateTime?    @map("tanggal_mulai")
+  endDate           DateTime?    @map("tanggal_selesai")
+  fase              String       @map("fase")
+  kegiatanUtama     String       @map("kegiatan_utama")
+  outputTarget      String       @map("output_target")
+  picKeterangan     String       @map("pic_keterangan")
+  statusPelaksanaan String       @default("BELUM_DIMULAI") @map("status_pelaksanaan")
+  kelompokId        String?      @map("id_kelompok")
+  createdAt         DateTime     @default(now()) @map("dibuat_pada")
+  updatedAt         DateTime     @updatedAt @map("diperbarui_pada")
+  kelompok          KelompokKkn? @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
+
+  @@index([kelompokId])
+  @@index([fase])
+  @@index([statusPelaksanaan])
+  @@map("timeline_kkn")
 }
 
 model BinOwnership {
