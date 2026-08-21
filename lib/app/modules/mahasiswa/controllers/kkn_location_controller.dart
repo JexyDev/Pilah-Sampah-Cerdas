@@ -636,6 +636,23 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           
           if (activeZone['latitude'] != null &&
               activeZone['longitude'] != null) {
+              
+            // [BUGFIX] Sinkronisasi prioritas durasi dari server (backend)
+            int serverSeconds = _accumulatedSeconds;
+            if (activeZone['actualInZoneSeconds'] != null) {
+              serverSeconds = int.tryParse(activeZone['actualInZoneSeconds'].toString()) ?? _accumulatedSeconds;
+            } else if (activeZone['actualInZoneMinutes'] != null) {
+              serverSeconds = (num.tryParse(activeZone['actualInZoneMinutes'].toString()) ?? 0).toInt() * 60;
+            }
+
+            // Jika server punya durasi yang lebih besar (atau kita belum punya data lokal), gunakan server
+            if (serverSeconds > _accumulatedSeconds) {
+              _accumulatedSeconds = serverSeconds;
+              // Reset zona entry time agar akumulasi baru mulai dihitung dari durasi server ini
+              _zoneEntryTime = DateTime.now(); 
+              await _savePersistentTimer();
+            }
+
             state = state.copyWith(
               activeActivity: activeZone,
               targetDurationMinutes: targetMins,
@@ -1082,6 +1099,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             totalElapsed % 5 == 0 &&
             _lastSavedSeconds != totalElapsed) {
           _lastSavedSeconds = totalElapsed;
+          
+          // [BUGFIX] Sinkronisasi _accumulatedSeconds agar tidak ke-reset 
+          // saat ada update background atau update polling
+          _accumulatedSeconds = totalElapsed;
+          _zoneEntryTime = now;
+          
           await _savePersistentTimer();
         }
 
