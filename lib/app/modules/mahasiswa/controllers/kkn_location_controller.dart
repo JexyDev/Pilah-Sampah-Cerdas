@@ -170,7 +170,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
   static const _prefKeyAccumulated = 'kkn_accumulated_seconds';
   static const _prefKeyDate = 'kkn_accumulated_date';
-  static const _prefKeyTarget = 'kkn_accumulated_target';
+  static const _prefKeyTarget = 'kkn_accumulated_target'; // ignore: unused_field
   static const _prefKeyEntryTime = 'kkn_zone_entry_time';
 
   Future<void> _loadPersistentTimer() async {
@@ -211,6 +211,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     } catch (_) {}
   }
 
+  // ignore: unused_element
   Future<void> _savePersistentTimerTempValue(int tempSeconds) async {
     await _savePersistentTimer();
   }
@@ -1084,6 +1085,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     );
   }
 
+  // ignore: unused_element
   Future<void> _sendAutoAlpa() async {
     final user = ref.read(authProvider).user;
     if (user == null || _currentTargetScheduleId == null) return;

@@ -174,7 +174,7 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
                     final fasilitasState = ref.watch(fasilitasWargaListProvider);
                     return fasilitasState.when(
                       loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen)),
-                      error: (e, _) => Text('Gagal memuat fasilitas', style: const TextStyle(color: AppColors.dangerRed, fontSize: 12)),
+                      error: (e, _) => const Text('Gagal memuat fasilitas', style: TextStyle(color: AppColors.dangerRed, fontSize: 12)),
                       data: (list) {
                         if (list.isEmpty) {
                           return const Text('Tidak ada fasilitas warga di RW ini.', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontStyle: FontStyle.italic));

@@ -94,8 +94,8 @@ class KknBackgroundTaskHandler extends TaskHandler {
   String? _authToken;
   
   // Last known position (to skip duplicate pings)
-  double _lastPingLat = 0.0;
-  double _lastPingLng = 0.0;
+  double _lastPingLat = 0.0; // ignore: unused_field
+  double _lastPingLng = 0.0; // ignore: unused_field
   
   // Max service duration: 4 jam
   static const int _maxServiceDurationHours = 4;
