@@ -16,6 +16,8 @@ import '../repositories/kkn_repository.dart';
 import '../repositories/api_kkn_repository.dart';
 import '../repositories/petugas_pemilahan_repository.dart';
 import '../repositories/api_petugas_pemilahan_repository.dart';
+import '../repositories/pemanfaatan_repository.dart';
+import '../repositories/api_pemanfaatan_repository.dart';
 
 final secureStorageProvider = Provider<SafeStorage>((ref) {
   return const SafeStorage();
@@ -65,6 +67,12 @@ final kknRepositoryProvider = Provider<KknRepository>((ref) {
 
 final petugasPemilahanRepositoryProvider = Provider<PetugasPemilahanRepository>((ref) {
   return ApiPetugasPemilahanRepository(
+    apiClient: ref.read(apiClientProvider),
+  );
+});
+
+final pemanfaatanRepositoryProvider = Provider<PemanfaatanRepository>((ref) {
+  return ApiPemanfaatanRepository(
     apiClient: ref.read(apiClientProvider),
   );
 });

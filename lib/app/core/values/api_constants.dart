@@ -95,5 +95,12 @@ class ApiEndpoints {
   static const String notificationsDeviceToken = '/notifications/device-token';
   static const String notificationsUnregisterToken = '/notifications/unregister-token';
   static String notificationsRead(String id) => '/notifications/$id/read';
+
+  // Pemanfaatan & Evaluasi Warga
+  static const String pemanfaatan = '/pemanfaatan';
+  static String pemanfaatanDetail(String id) => '/pemanfaatan/$id';
+  static const String pemanfaatanFeedback = '/pemanfaatan/feedback';
+  static String pemanfaatanFeedbackTanggapan(String id) => '/pemanfaatan/feedback/$id/tanggapan';
+  static String pemanfaatanFeedbackDelete(String id) => '/pemanfaatan/feedback/$id';
 }
 
