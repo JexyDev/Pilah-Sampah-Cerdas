@@ -480,9 +480,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         isAutoStarted: false,
         outOfZoneSeconds: 0,
       );
-      
-      return isSuccess;
     }
+    
+    return isSuccess;
   }
 
   /// Pindah kegiatan: selesai kegiatan lama → mulai kegiatan baru

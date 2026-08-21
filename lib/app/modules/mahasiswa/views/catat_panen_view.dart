@@ -4,7 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
-import 'riwayat_program_kerja_view.dart';
+
+final unharvestedLogbooksProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+  final repo = ref.watch(kknRepositoryProvider);
+  return repo.getUnharvestedLogbooks();
+});
 
 class CatatPanenView extends ConsumerStatefulWidget {
   const CatatPanenView({super.key});
@@ -15,7 +19,7 @@ class CatatPanenView extends ConsumerStatefulWidget {
 
 class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
   final _formKey = GlobalKey<FormState>();
-  String? _selectedProkerId;
+  String? _selectedPemanfaatanId;
   final _beratOutputCtrl = TextEditingController();
   final _nilaiEkonomiCtrl = TextEditingController();
   File? _selectedImage;
@@ -31,8 +35,8 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedProkerId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih Program Kerja terlebih dahulu.')));
+    if (_selectedPemanfaatanId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih Laporan Kegiatan terlebih dahulu.')));
       return;
     }
     
@@ -40,13 +44,14 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
     try {
       final repo = ref.read(kknRepositoryProvider);
       await repo.submitPanenHasil({
-        'programKerjaId': _selectedProkerId,
+        'pemanfaatanId': _selectedPemanfaatanId,
         'beratOutputKg': double.tryParse(_beratOutputCtrl.text.trim()) ?? 0,
         'nilaiEkonomiRp': double.tryParse(_nilaiEkonomiCtrl.text.trim()) ?? 0,
       }, imagePath: _selectedImage?.path);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Berhasil mencatat panen!')));
+        ref.invalidate(unharvestedLogbooksProvider);
         Navigator.pop(context);
       }
     } catch (e) {
@@ -63,7 +68,7 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
 
   @override
   Widget build(BuildContext context) {
-    final prokerState = ref.watch(programKerjaListProvider);
+    final unharvestedState = ref.watch(unharvestedLogbooksProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -84,29 +89,25 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               
-              const Text('Pilih Program (Sumber Hasil)', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Pilih Laporan (Sumber Hasil)', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              prokerState.when(
-                loading: () => const CircularProgressIndicator(),
+              unharvestedState.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Text(e.toString()),
                 data: (list) {
-                  final approvedProker = list.where((p) {
-                    final isApproved = p['status'] == 'APPROVED' || p['statusUsulan'] == 'APPROVED';
-                    final isSelesai = p['statusPelaksanaan'] == 'SELESAI' || p['status_pelaksanaan'] == 'SELESAI' || p['status'] == 'SELESAI';
-                    return isApproved && !isSelesai;
-                  }).toList();
-                  if (approvedProker.isEmpty) {
-                    return const Text('Belum ada Program Kerja yang disetujui DPL.', style: TextStyle(color: AppColors.dangerRed));
+                  if (list.isEmpty) {
+                    return const Text('Tidak ada laporan kegiatan yang belum dipanen.', style: TextStyle(color: AppColors.dangerRed));
                   }
                   return DropdownButtonFormField<String>(
-                    initialValue: _selectedProkerId,
+                    isExpanded: true,
+                    initialValue: _selectedPemanfaatanId,
                     decoration: const InputDecoration(border: OutlineInputBorder()),
-                    hint: const Text('Pilih Proker...'),
-                    items: approvedProker.map((p) => DropdownMenuItem(
+                    hint: const Text('Pilih Laporan...'),
+                    items: list.map((p) => DropdownMenuItem(
                       value: p['id'].toString(),
-                      child: Text(p['judul']),
+                      child: Text("${p['program'] ?? ''} - ${p['teknologi'] ?? ''}"),
                     )).toList(),
-                    onChanged: (val) => setState(() => _selectedProkerId = val),
+                    onChanged: (val) => setState(() => _selectedPemanfaatanId = val),
                   );
                 },
               ),

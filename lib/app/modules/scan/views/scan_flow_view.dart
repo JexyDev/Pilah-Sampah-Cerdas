@@ -1961,7 +1961,7 @@ class _OverflowDialog extends StatelessWidget {
                 icon: const Icon(Icons.cleaning_services_rounded, size: 18, color: AppColors.primaryGreen),
                 label: const FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Text('Ajukan Pengosongan Tong', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryGreen)),
+                  child: Text('Ajukan Pengosongan Tempat Sampah', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryGreen)),
                 ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.primaryGreen),

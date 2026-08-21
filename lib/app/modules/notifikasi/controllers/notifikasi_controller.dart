@@ -52,7 +52,7 @@ bool _isWargaNotification(NotificationEntity notif) {
 
   // Warga HANYA menerima:
   // 1. Pengajuan Pengosongan (Status disetujui / ditolak dll)
-  // 2. Notifikasi Kepenuhan Tong (90%)
+  // 2. Notifikasi Kepenuhan Tempat Sampah (90%)
   // 3. Poin reward
   // 4. Penalti, Peringatan, Jadwal
   final isWargaTopic = type.contains('TONG_PENUH') ||

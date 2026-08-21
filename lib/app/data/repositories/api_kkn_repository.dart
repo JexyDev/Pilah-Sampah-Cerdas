@@ -750,6 +750,22 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
+  Future<List<dynamic>> getUnharvestedLogbooks() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.kknPemanfaatanUnharvested);
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data'] ?? [];
+      }
+      return [];
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(_extractError(e.response?.data, 'Gagal mengambil logbook unharvested'));
+      }
+      rethrow;
+    }
+  }
+
+  @override
   Future<bool> submitPanenHasil(Map<String, dynamic> data, {String? imagePath}) async {
     try {
       FormData formData;

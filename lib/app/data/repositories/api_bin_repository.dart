@@ -747,7 +747,7 @@ class ApiBinRepository implements BinRepository {
     } on DioException catch (e) {
       throw BinException(
         'NETWORK_ERROR',
-        'Gagal mengatur kapasitas tong: ${e.message}',
+        'Gagal mengatur kapasitas tempat sampah: ${e.message}',
       );
     } catch (e) {
       throw BinException('UNKNOWN_ERROR', 'Terjadi kesalahan sistem: $e');

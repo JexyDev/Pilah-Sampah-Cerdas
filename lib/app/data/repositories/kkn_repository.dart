@@ -139,6 +139,9 @@ abstract class KknRepository {
   Future<bool> submitLogbookPemanfaatan(Map<String, dynamic> data, {String? imagePath});
 
   /// Pilar 3: Catat Panen / Hasil
+  /// GET /api/v1/kkn/pemanfaatan-sampah/unharvested
+  Future<List<dynamic>> getUnharvestedLogbooks();
+
   /// POST /api/v1/kkn/panen-hasil
   Future<bool> submitPanenHasil(Map<String, dynamic> data, {String? imagePath});
 }
