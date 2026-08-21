@@ -368,9 +368,26 @@ model KelompokKkn {
   programKerja       ProgramKerjaKkn[]
   penilaianMahasiswa PenilaianKknMahasiswa[]
   facilities         Facility[]
+  poskoKkn           PoskoKkn?
 
   @@index([dplId])
   @@map("kelompok_kkn")
+}
+
+model PoskoKkn {
+  id         String      @id @default(uuid())
+  kelompokId String      @unique @map("id_kelompok")
+  nama       String
+  alamat     String
+  latitude   Decimal     @db.Decimal(11, 8)
+  longitude  Decimal     @db.Decimal(11, 8)
+  fotoUrl    String?     @map("foto_url")
+  keterangan String?
+  createdAt  DateTime    @default(now()) @map("dibuat_pada")
+  updatedAt  DateTime    @updatedAt @map("diperbarui_pada")
+  kelompok   KelompokKkn @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
+
+  @@map("posko_kkn")
 }
 
 model ProgramKerjaKkn {
@@ -583,14 +600,18 @@ model JenisFasilitas {
 }
 
 model FacilityProductionLog {
-  id              String   @id @default(uuid())
-  facilityId      String   @map("id_fasilitas")
-  materialMasukKg Decimal  @map("material_masuk_kg") @db.Decimal(10, 2)
-  outputKg        Decimal  @map("output_kg") @db.Decimal(10, 2)
-  jenisOutput     String   @map("jenis_output")
+  id              String    @id @default(uuid())
+  facilityId      String    @map("id_fasilitas")
+  materialMasukKg Decimal   @map("material_masuk_kg") @db.Decimal(10, 2)
+  outputKg        Decimal   @map("output_kg") @db.Decimal(10, 2)
+  jenisOutput     String    @map("jenis_output")
   periode         String
-  createdAt       DateTime @default(now()) @map("dibuat_pada")
-  facility        Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  inputBy         String?   @map("id_pencatat")
+  isVerified      Boolean   @default(false) @map("is_verified")
+  verifiedBy      String?   @map("id_verifikator")
+  verifiedAt      DateTime? @map("diverifikasi_pada")
+  createdAt       DateTime  @default(now()) @map("dibuat_pada")
+  facility        Facility  @relation(fields: [facilityId], references: [id], onDelete: Cascade)
 
   @@map("catatan_produksi_fasilitas")
 }
@@ -731,6 +752,7 @@ model IdeDaurUlang {
   judul          String
   foto           String?
   material       String
+  sumber         String   @default("WARGA") @map("sumber") // WARGA | MAHASISWA_KKN
   statusApproval String   @default("PENDING") @map("status_persetujuan")
   approvedBy     String?  @map("disetujui_oleh")
   createdAt      DateTime @default(now()) @map("dibuat_pada")

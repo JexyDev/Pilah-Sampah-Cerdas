@@ -20,9 +20,11 @@ export const facilityService = {
     kontak?: string,
     kapasitas?: number,
     latitude?: number,
-    longitude?: number
+    longitude?: number,
+    registeredByUserId?: string,
+    kelompokId?: string
   ) => {
-    // Validate facility type
+    // Validate facility type — posko_kkn hanya didaftarkan via endpoint /posko-kkn
     const validTypes = [
       "loseda",
       "bata_terawang",
@@ -31,7 +33,6 @@ export const facilityService = {
       "tps",
       "buruan_sae",
       "poc",
-      "posko_kkn",
     ];
     if (!validTypes.includes(jenis)) {
       throw new Error("INVALID_FACILITY_TYPE");
@@ -47,6 +48,8 @@ export const facilityService = {
         kapasitas: kapasitas !== undefined ? Number(kapasitas) : null,
         latitude: latitude !== undefined ? Number(latitude) : 0.0,
         longitude: longitude !== undefined ? Number(longitude) : 0.0,
+        registeredByUserId: registeredByUserId ?? undefined,
+        kelompokId: kelompokId ?? undefined,
       },
     });
   },
@@ -218,6 +221,7 @@ export const facilityService = {
           outputKg: Number(outputKg),
           jenisOutput,
           periode,
+          inputBy: userId ?? null,
         },
       });
 
@@ -236,6 +240,24 @@ export const facilityService = {
       }
 
       return log;
+    });
+  },
+
+  /**
+   * Verifikasi log produksi oleh RW/Petugas Pemilah
+   */
+  verifyProduction: async (logId: string, verifiedByUserId: string) => {
+    const log = await prisma.facilityProductionLog.findUnique({ where: { id: logId } });
+    if (!log) throw new Error("PRODUCTION_LOG_NOT_FOUND");
+    if (log.isVerified) throw new Error("Log sudah diverifikasi sebelumnya");
+
+    return prisma.facilityProductionLog.update({
+      where: { id: logId },
+      data: {
+        isVerified: true,
+        verifiedBy: verifiedByUserId,
+        verifiedAt: new Date(),
+      },
     });
   },
 

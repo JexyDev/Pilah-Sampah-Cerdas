@@ -1,3 +1,9 @@
+﻿/**
+ * Project: BERSEKA
+ * Developed by: PT Makerindo
+ * Copyright (c) 2026 PT Makerindo. All rights reserved.
+ */
+
 import { Request, Response } from "express";
 import { ideDaurUlangService } from "../services/ideDaurUlangService.js";
 
@@ -6,13 +12,15 @@ export class IdeDaurUlangController {
     try {
       const { judul, material } = req.body;
       const userId = (req as any).user.userId;
+      const peran = (req as any).user.role;
       const foto = req.file ? `/uploads/${req.file.filename}` : null;
+      const sumber: "WARGA" | "MAHASISWA_KKN" = peran === "MAHASISWA_KKN" ? "MAHASISWA_KKN" : "WARGA";
 
       if (!judul || !material) {
         return res.status(400).json({ success: false, message: "Judul dan material wajib diisi" });
       }
 
-      const ide = await ideDaurUlangService.createIde(userId, judul, material, foto);
+      const ide = await ideDaurUlangService.createIde(userId, judul, material, foto, sumber);
       res.status(201).json({ success: true, data: ide });
     } catch (error) {
       console.error("[IdeDaurUlangController] submitIde error:", error);
@@ -22,10 +30,11 @@ export class IdeDaurUlangController {
 
   async getIdeDaurUlang(req: Request, res: Response) {
     try {
-      const { search, status } = req.query;
+      const { search, status, sumber } = req.query;
       const ides = await ideDaurUlangService.getSemuaIde({
         search: search as string,
         status: status as string,
+        sumber: sumber as string,
       });
       res.status(200).json({ success: true, data: ides });
     } catch (error) {
@@ -45,6 +54,7 @@ export class IdeDaurUlangController {
     }
   }
 
+  /** RW approve ide dari WARGA (+50 poin) */
   async approve(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -54,6 +64,19 @@ export class IdeDaurUlangController {
     } catch (error) {
       console.error("[IdeDaurUlangController] approve error:", error);
       res.status(500).json({ success: false, message: "Gagal approve ide" });
+    }
+  }
+
+  /** DPL approve ide dari MAHASISWA_KKN (+30 poin) */
+  async approveDpl(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const dplUserId = (req as any).user.userId;
+      const ide = await ideDaurUlangService.approveDpl(id, dplUserId);
+      res.status(200).json({ success: true, data: ide, message: "Ide disetujui DPL. Mahasiswa mendapat +30 poin!" });
+    } catch (error: any) {
+      console.error("[IdeDaurUlangController] approveDpl error:", error);
+      res.status(400).json({ success: false, message: error.message || "Gagal approve ide" });
     }
   }
 
@@ -68,6 +91,7 @@ export class IdeDaurUlangController {
       res.status(500).json({ success: false, message: "Gagal reject ide" });
     }
   }
+
   async updateIde(req: Request, res: Response) {
     try {
       const { id } = req.params;

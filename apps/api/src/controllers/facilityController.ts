@@ -7,6 +7,7 @@
 
 import { Request, Response } from "express";
 import { facilityService } from "../services/facilityService.js";
+import { prisma } from "../lib/prisma.js";
 
 export class FacilityController {
   /**
@@ -15,6 +16,9 @@ export class FacilityController {
   async createFacility(req: Request, res: Response): Promise<void> {
     try {
       const { jenis, nama, pic, foto, kontak, kapasitas, latitude, longitude } = req.body;
+      const userId = (req as any).user?.userId;
+      const peran = (req as any).user?.role;
+
       if (!jenis || !nama || !pic) {
         res.status(400).json({
           success: false,
@@ -23,6 +27,17 @@ export class FacilityController {
         });
         return;
       }
+
+      // Auto-resolve kelompokId jika MAHASISWA_KKN
+      let kelompokId: string | undefined;
+      if (peran === "MAHASISWA_KKN" && userId) {
+        const student = await prisma.studentKkn.findUnique({
+          where: { userId },
+          select: { kelompokId: true },
+        });
+        kelompokId = student?.kelompokId ?? undefined;
+      }
+
       const facility = await facilityService.createFacility(
         jenis,
         nama,
@@ -31,7 +46,9 @@ export class FacilityController {
         kontak,
         kapasitas,
         latitude,
-        longitude
+        longitude,
+        userId,
+        kelompokId
       );
       res.status(201).json({ success: true, message: "Fasilitas berhasil dibuat", data: facility });
     } catch (error: any) {
@@ -82,6 +99,22 @@ export class FacilityController {
         userId
       );
       res.status(201).json({ success: true, message: "Pencatatan produksi berhasil", data: log });
+    } catch (error: any) {
+      res
+        .status(400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+    }
+  }
+
+  /**
+   * Verifikasi log produksi oleh RW/Petugas
+   */
+  async verifyProduction(req: Request, res: Response): Promise<void> {
+    try {
+      const { logId } = req.params;
+      const verifiedByUserId = (req as any).user?.userId;
+      const log = await facilityService.verifyProduction(logId, verifiedByUserId);
+      res.status(200).json({ success: true, message: "Log produksi berhasil diverifikasi", data: log });
     } catch (error: any) {
       res
         .status(400)

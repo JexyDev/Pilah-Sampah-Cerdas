@@ -1,8 +1,7 @@
-/**
+﻿/**
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
 import { Router } from "express";
@@ -12,6 +11,7 @@ import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 
 const router = Router();
 
+// Daftar fasilitas baru — MAHASISWA_KKN otomatis terisi kelompokId
 router.post(
   "/",
   authMiddleware,
@@ -22,11 +22,20 @@ router.post(
 router.get("/jenis", authMiddleware, facilityController.getJenisFasilitas);
 router.get("/", authMiddleware, facilityController.getFacilities);
 
+// Input log produksi — MAHASISWA_KKN bisa input
 router.post(
   "/:id/production",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "MAHASISWA_KKN", "RW", "RT"]),
   facilityController.recordProduction
+);
+
+// Verifikasi log produksi — RW/Petugas/Admin
+router.put(
+  "/production/:logId/verify",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT"]),
+  facilityController.verifyProduction
 );
 
 router.post(
