@@ -632,6 +632,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
               activeActivity: activeZone,
               targetDurationMinutes: targetMins,
               inZoneDurationSeconds: _accumulatedSeconds,
+              attendanceTime: activeZone['attendedAt']?.toString(),
             );
           }
         }
@@ -1375,7 +1376,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       isInsideRadius: nowInside,
     );
 
-    if (nowInside) {
+    if (nowInside && state.attendanceTime != null) {
       _startZoneTimer();
       // Reset out-of-zone counter saat kembali ke zona
       if (state.outOfZoneSeconds > 0) {
@@ -1385,8 +1386,15 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       _stopZoneTimer(
         isExitingZone: _accumulatedSeconds > 0 || _zoneEntryTime != null,
       );
+      
+      // Jika statusnya belum masuk (attendanceTime null), reset accumulatedSeconds agar waktu di UI = 0
+      if (state.attendanceTime == null && _accumulatedSeconds > 0) {
+        _accumulatedSeconds = 0;
+        _zoneEntryTime = null;
+      }
+
       // Akumulasi out-of-zone counter (per 10 detik polling)
-      if (state.isTracking && state.selectedKegiatan != null) {
+      if (state.isTracking && state.selectedKegiatan != null && state.attendanceTime != null) {
         final newOutOfZone = state.outOfZoneSeconds + 10;
         state = state.copyWith(outOfZoneSeconds: newOutOfZone);
         // Cek toleransi (default 5 menit = 300 detik)
