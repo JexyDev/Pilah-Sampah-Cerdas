@@ -228,7 +228,7 @@ export const dplController = {
     } catch (error: any) {
       console.error("[dplController.createProgramKerja] error:", error);
       if (error.message === "FORBIDDEN_SCOPE") {
-        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Program kerja ini bukan milik kelompok Anda" });
+        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda" });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -258,7 +258,7 @@ export const dplController = {
     } catch (error: any) {
       console.error("[dplController.updateProgramKerja] error:", error);
       if (error.message === "FORBIDDEN_SCOPE") {
-        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Program kerja ini bukan milik kelompok Anda" });
+        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda" });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -275,7 +275,7 @@ export const dplController = {
     } catch (error: any) {
       console.error("[dplController.deleteProgramKerja] error:", error);
       if (error.message === "FORBIDDEN_SCOPE") {
-        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Program kerja ini bukan milik kelompok Anda" });
+        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda" });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -294,7 +294,7 @@ export const dplController = {
     } catch (error: any) {
       console.error("[dplController.decideProgramKerja] error:", error);
       if (error.message === "FORBIDDEN_SCOPE") {
-        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Program kerja ini bukan milik kelompok Anda" });
+        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda" });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -326,7 +326,7 @@ export const dplController = {
     } catch (error: any) {
       console.error("[dplController.assessProgramKerja] error:", error);
       if (error.message === "FORBIDDEN_SCOPE") {
-        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Program kerja ini bukan milik kelompok Anda" });
+        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda" });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -343,7 +343,7 @@ export const dplController = {
     } catch (error: any) {
       console.error("[dplController.getProgramKerjaBukti] error:", error);
       if (error.message === "FORBIDDEN_SCOPE") {
-        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Program kerja ini bukan milik kelompok Anda" });
+        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda" });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
