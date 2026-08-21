@@ -996,6 +996,47 @@ const JadwalKegiatan: React.FC = () => {
             </div>
           </div>
 
+          {/* Banner Status Pekan KKN Aktif Saat Ini */}
+          {(() => {
+            const activeItem =
+              timelineList.find((t) => t.statusPelaksanaan === "SEDANG_BERJALAN") ||
+              timelineList.find((t) => t.tahapMinggu?.includes("Minggu 2"));
+
+            if (!activeItem) return null;
+
+            return (
+              <div className="bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-teal-500/10 dark:from-amber-950/40 dark:via-emerald-950/40 dark:to-teal-950/40 border border-amber-300/80 dark:border-amber-700/60 rounded-3xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-start sm:items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <Clock size={22} className="animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                        ⚡ Pekan Sedang Berjalan (Hari Ini: 21 Agustus 2026)
+                      </span>
+                      <span className="text-xs font-black text-slate-900 dark:text-slate-100">
+                        {activeItem.tahapMinggu} • {activeItem.tanggal}
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 mt-1">
+                      {activeItem.kegiatanUtama}
+                    </h3>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                      <strong>Target Output:</strong> {activeItem.outputTarget}
+                    </p>
+                  </div>
+                </div>
+                <div className="shrink-0 flex items-center gap-2">
+                  <span className="px-3.5 py-1.5 bg-amber-500 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-xs">
+                    <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                    SEDANG BERJALAN
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Dynamic Tabular Table */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
             {timelineLoading ? (
@@ -1049,7 +1090,11 @@ const JadwalKegiatan: React.FC = () => {
                     {timelineList.map((item, idx) => (
                       <tr
                         key={item.id || idx}
-                        className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/80 transition-colors group"
+                        className={`transition-colors group ${
+                          item.statusPelaksanaan === "SEDANG_BERJALAN"
+                            ? "bg-amber-50/70 dark:bg-amber-950/20 font-semibold ring-1 ring-amber-300/40 dark:ring-amber-800/30"
+                            : "hover:bg-slate-50/80 dark:hover:bg-slate-800/80"
+                        }`}
                       >
                         <td className="py-3.5 px-4 text-center font-bold text-slate-400">
                           {idx + 1}
