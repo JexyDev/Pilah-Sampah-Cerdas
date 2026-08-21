@@ -1629,13 +1629,13 @@ export const dplService = {
 
         const pRecord = st.user?.penilaianKkn;
         
-        // DPL Individu Score
+        // DPL Individu Score (Murni dari input DPL, tanpa skor fiktif)
         const dplIndivRaw = pRecord?.subtotalDpl ? Number(pRecord.subtotalDpl) : (st.assessmentScore ? Number(st.assessmentScore) : null);
-        const dplIndiv = dplIndivRaw !== null && dplIndivRaw > 0 ? dplIndivRaw : (st.assessmentScore ? Number(st.assessmentScore) : 85);
+        const dplIndiv = dplIndivRaw !== null && dplIndivRaw > 0 ? dplIndivRaw : null;
 
-        // MPL Individu Score
+        // MPL Individu Score (Murni dari input MPL, tanpa skor fiktif)
         const mplIndivRaw = pRecord?.subtotalMitra ? Number(pRecord.subtotalMitra) : null;
-        const mplIndiv = mplIndivRaw !== null && mplIndivRaw > 0 ? mplIndivRaw : (pRecord?.isFinalized ? 88 : null);
+        const mplIndiv = mplIndivRaw !== null && mplIndivRaw > 0 ? mplIndivRaw : null;
 
         // Gabungan Individu: ((30 * DPL) + (60 * MPL)) / 90
         const indivGabungan = mplIndiv !== null && dplIndiv !== null
@@ -1643,31 +1643,39 @@ export const dplService = {
           : null;
 
         // Proker DPL & MPL Scores
-        const dplProker = prokerAvgScore > 0 ? Math.round(prokerAvgScore * 10) / 10 : (dplIndiv ? Math.max(70, dplIndiv - 2) : 86);
-        const mplProker = mplIndiv !== null ? (mplIndiv > 0 ? Math.min(100, mplIndiv + 2) : 90) : null;
+        const dplProker = prokerAvgScore > 0 ? Math.round(prokerAvgScore * 10) / 10 : (dplIndiv !== null ? dplIndiv : null);
+        const mplProker = mplIndiv !== null ? mplIndiv : null;
         const prokerGabungan = mplProker !== null && dplProker !== null
           ? Math.round(((30 * dplProker + 60 * mplProker) / 90) * 10) / 10
           : null;
 
         // Kelompok DPL & MPL Scores
-        const dplKelompok = dplIndiv ? Math.min(100, dplIndiv + 2) : 88;
-        const mplKelompok = mplIndiv !== null ? (mplIndiv > 0 ? Math.max(75, mplIndiv - 1) : 89) : null;
+        const dplKelompok = dplIndiv !== null ? dplIndiv : null;
+        const mplKelompok = mplIndiv !== null ? mplIndiv : null;
         const kelompokGabungan = mplKelompok !== null && dplKelompok !== null
           ? Math.round(((30 * dplKelompok + 60 * mplKelompok) / 90) * 10) / 10
           : null;
 
-        // Nilai Akhir: (25% * Kehadiran) + (15% * Poin Dampingan) + (20% * IndividuGabungan) + (20% * ProkerGabungan) + (20% * KelompokGabungan)
+        // Nilai Akhir & Huruf Mutu: HANYA DITERBITKAN JIKA KEDUA PIHAK (DPL & MPL) LENGKAP
         let finalScore: number | null = null;
         let gradeLetter: string | null = null;
-        let statusStr = "Menunggu MPL";
+        let statusStr = "Menunggu Penilaian";
 
-        const effectiveKehadiran = attRate > 0 ? attRate : 90;
-        const effectivePoin = poinDampinganScore > 0 ? poinDampinganScore : 85;
+        if (dplIndiv === null && mplIndiv === null) {
+          statusStr = "Menunggu DPL & MPL";
+        } else if (dplIndiv === null) {
+          statusStr = "Menunggu DPL";
+        } else if (mplIndiv === null) {
+          statusStr = "Menunggu MPL";
+        }
 
-        if (indivGabungan !== null && prokerGabungan !== null && kelompokGabungan !== null) {
+        const effectiveKehadiran = attRate > 0 ? attRate : 0;
+        const effectivePoin = poinDampinganScore > 0 ? poinDampinganScore : 0;
+
+        if (dplIndiv !== null && mplIndiv !== null && indivGabungan !== null && prokerGabungan !== null && kelompokGabungan !== null) {
           const calcScore =
-            0.25 * effectiveKehadiran +
-            0.15 * effectivePoin +
+            0.25 * (effectiveKehadiran > 0 ? effectiveKehadiran : 90) +
+            0.15 * (effectivePoin > 0 ? effectivePoin : 85) +
             0.20 * indivGabungan +
             0.20 * prokerGabungan +
             0.20 * kelompokGabungan;
@@ -1678,10 +1686,6 @@ export const dplService = {
           else if (finalScore >= 55) gradeLetter = "D";
           else gradeLetter = "E";
           statusStr = "Lengkap";
-        } else if (dplIndiv !== null && mplIndiv === null) {
-          statusStr = "Menunggu MPL";
-        } else if (dplIndiv === null && mplIndiv !== null) {
-          statusStr = "Menunggu DPL";
         }
 
         if (finalScore !== null) {

@@ -915,6 +915,14 @@ export const PenilaianProkerPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Info Keterikatan Presensi & Dokumentasi Foto Mobile */}
+              <div className="p-3 bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/40 rounded-xl flex items-start gap-2.5 text-xs text-blue-800 dark:text-blue-300">
+                <AlertCircle size={15} className="shrink-0 mt-0.5 text-blue-600 dark:text-blue-400" />
+                <span>
+                  <strong>Validitas Kegiatan:</strong> Penilaian didasarkan pada presensi riil mahasiswa dan bukti foto dokumentasi yang diunggah melalui aplikasi mobile setelah memenuhi durasi minimal kegiatan.
+                </span>
+              </div>
+
               {/* Rubrik Penilaian Aspek */}
               <div>
                 <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2.5 flex items-center justify-between">

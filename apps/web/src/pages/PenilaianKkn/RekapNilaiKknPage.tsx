@@ -185,37 +185,37 @@ export const RekapNilaiKknPage: React.FC = () => {
 
       if (res && res.students && res.students.length > 0) {
         const formatted = res.students.map((s) => {
-          const dplIndiv = s.individuDpl ?? s.skorIndividu ?? null;
-          const mplIndiv = s.individuMpl ?? (s.status === "Lengkap" ? 88 : null);
+          const dplIndiv = s.individuDpl !== undefined && s.individuDpl !== null ? s.individuDpl : (s.skorIndividu ?? null);
+          const mplIndiv = s.individuMpl !== undefined && s.individuMpl !== null ? s.individuMpl : null;
           const indivGab =
             dplIndiv !== null && mplIndiv !== null
               ? Math.round(((30 * dplIndiv + 60 * mplIndiv) / 90) * 10) / 10
               : null;
 
-          const dplProk = s.prokerDpl ?? s.skorProkerKelompok ?? null;
-          const mplProk = s.prokerMpl ?? (s.status === "Lengkap" ? 90 : null);
+          const dplProk = s.prokerDpl !== undefined && s.prokerDpl !== null ? s.prokerDpl : (s.skorProkerKelompok ?? null);
+          const mplProk = s.prokerMpl !== undefined && s.prokerMpl !== null ? s.prokerMpl : null;
           const prokGab =
             dplProk !== null && mplProk !== null
               ? Math.round(((30 * dplProk + 60 * mplProk) / 90) * 10) / 10
               : null;
 
-          const dplKel = s.kelompokDpl ?? null;
-          const mplKel = s.kelompokMpl ?? (s.status === "Lengkap" ? 89 : null);
+          const dplKel = s.kelompokDpl !== undefined && s.kelompokDpl !== null ? s.kelompokDpl : null;
+          const mplKel = s.kelompokMpl !== undefined && s.kelompokMpl !== null ? s.kelompokMpl : null;
           const kelGab =
             dplKel !== null && mplKel !== null
               ? Math.round(((30 * dplKel + 60 * mplKel) / 90) * 10) / 10
               : null;
 
-          const keh = s.kehadiran ?? s.tingkatKehadiran ?? 90;
-          const poin = s.poinDampingan ?? 80;
+          const keh = s.kehadiran ?? s.tingkatKehadiran ?? 0;
+          const poin = s.poinDampingan ?? 0;
 
-          let nAkhir: number | null = s.nilaiAkhir ?? null;
-          let pred: string | null = s.predikat ?? s.hurufMutu ?? null;
-          let stat = s.status || "Menunggu MPL";
+          let nAkhir: number | null = null;
+          let pred: string | null = null;
+          let stat = s.status || "Menunggu Penilaian";
 
-          if (indivGab !== null && prokGab !== null && kelGab !== null) {
+          if (dplIndiv !== null && mplIndiv !== null && indivGab !== null && prokGab !== null && kelGab !== null) {
             const rawScore =
-              0.25 * keh + 0.15 * poin + 0.2 * indivGab + 0.2 * prokGab + 0.2 * kelGab;
+              0.25 * (keh > 0 ? keh : 90) + 0.15 * (poin > 0 ? poin : 85) + 0.2 * indivGab + 0.2 * prokGab + 0.2 * kelGab;
             nAkhir = Math.round(rawScore * 10) / 10;
             pred =
               nAkhir >= 85
@@ -231,7 +231,13 @@ export const RekapNilaiKknPage: React.FC = () => {
           } else {
             nAkhir = null;
             pred = null;
-            stat = dplIndiv === null ? "Menunggu DPL" : "Menunggu MPL";
+            if (dplIndiv === null && mplIndiv === null) {
+              stat = "Menunggu DPL & MPL";
+            } else if (dplIndiv === null) {
+              stat = "Menunggu DPL";
+            } else {
+              stat = "Menunggu MPL";
+            }
           }
 
           return {
