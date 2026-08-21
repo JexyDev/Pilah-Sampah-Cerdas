@@ -207,3 +207,129 @@ export const TIMELINE_KKN_DATA: TimelineKknItem[] = [
     statusPelaksanaan: "BELUM_DIMULAI",
   },
 ];
+
+const MONTH_MAP: Record<string, number> = {
+  jan: 0,
+  januari: 0,
+  feb: 1,
+  februari: 1,
+  mar: 2,
+  maret: 2,
+  apr: 3,
+  april: 3,
+  mei: 4,
+  jun: 5,
+  juni: 5,
+  jul: 6,
+  juli: 6,
+  ags: 7,
+  agu: 7,
+  agustus: 7,
+  sep: 8,
+  september: 8,
+  okt: 9,
+  oktober: 9,
+  nov: 10,
+  november: 10,
+  des: 11,
+  desember: 11,
+};
+
+export const parseIndonesianDateRange = (str: string): { start: Date | null; end: Date | null } => {
+  if (!str) return { start: null, end: null };
+  const clean = str.replace(/\(.*?\)/g, "").trim().toLowerCase();
+
+  // Pola 1: "12 - 18 agustus 2026"
+  const m1 = clean.match(/(\d{1,2})\s*[-–]\s*(\d{1,2})\s+([a-z]+)\s+(\d{4})/);
+  if (m1) {
+    const d1 = parseInt(m1[1], 10);
+    const d2 = parseInt(m1[2], 10);
+    const mon = MONTH_MAP[m1[3]];
+    const yr = parseInt(m1[4], 10);
+    if (mon !== undefined && !isNaN(yr)) {
+      return {
+        start: new Date(Date.UTC(yr, mon, d1, 0, 0, 0)),
+        end: new Date(Date.UTC(yr, mon, d2, 23, 59, 59)),
+      };
+    }
+  }
+
+  // Pola 2: "26 agustus - 1 september 2026"
+  const m2 = clean.match(/(\d{1,2})\s+([a-z]+)\s*[-–]\s*(\d{1,2})\s+([a-z]+)\s+(\d{4})/);
+  if (m2) {
+    const d1 = parseInt(m2[1], 10);
+    const mon1 = MONTH_MAP[m2[2]];
+    const d2 = parseInt(m2[3], 10);
+    const mon2 = MONTH_MAP[m2[4]];
+    const yr = parseInt(m2[5], 10);
+    if (mon1 !== undefined && mon2 !== undefined && !isNaN(yr)) {
+      return {
+        start: new Date(Date.UTC(yr, mon1, d1, 0, 0, 0)),
+        end: new Date(Date.UTC(yr, mon2, d2, 23, 59, 59)),
+      };
+    }
+  }
+
+  // Pola 3: "1 juli 2026"
+  const m3 = clean.match(/(\d{1,2})\s+([a-z]+)\s+(\d{4})/);
+  if (m3) {
+    const d1 = parseInt(m3[1], 10);
+    const mon = MONTH_MAP[m3[2]];
+    const yr = parseInt(m3[3], 10);
+    if (mon !== undefined && !isNaN(yr)) {
+      return {
+        start: new Date(Date.UTC(yr, mon, d1, 0, 0, 0)),
+        end: new Date(Date.UTC(yr, mon, d1, 23, 59, 59)),
+      };
+    }
+  }
+
+  return { start: null, end: null };
+};
+
+/**
+ * Menghitung status pelaksanaan dinamis mengikuti kalender hari ini (real-time)
+ */
+export const computeTimelineStatus = (
+  startDate?: Date | string | null,
+  endDate?: Date | string | null,
+  tanggalStr?: string,
+  currentStatus?: string
+): "SELESAI" | "SEDANG_BERJALAN" | "BELUM_DIMULAI" => {
+  const now = new Date();
+
+  let start: Date | null = null;
+  let end: Date | null = null;
+
+  if (startDate) {
+    const d = new Date(startDate);
+    if (!isNaN(d.getTime())) start = d;
+  }
+  if (endDate) {
+    const d = new Date(endDate);
+    if (!isNaN(d.getTime())) end = d;
+  }
+
+  if (!start || !end) {
+    const parsed = parseIndonesianDateRange(tanggalStr || "");
+    if (parsed.start) start = parsed.start;
+    if (parsed.end) end = parsed.end;
+  }
+
+  if (!start || !end) {
+    return (currentStatus as any) || "BELUM_DIMULAI";
+  }
+
+  const nowStr = now.toISOString().split("T")[0];
+  const startStr = start.toISOString().split("T")[0];
+  const endStr = end.toISOString().split("T")[0];
+
+  if (nowStr > endStr) {
+    return "SELESAI";
+  }
+  if (nowStr >= startStr && nowStr <= endStr) {
+    return "SEDANG_BERJALAN";
+  }
+  return "BELUM_DIMULAI";
+};
+

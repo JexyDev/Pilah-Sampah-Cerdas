@@ -42,6 +42,7 @@ import { ConfirmModal } from "../../components/common/ConfirmModal";
 import {
   TIMELINE_KKN_HEADER,
   TIMELINE_KKN_DATA,
+  computeTimelineStatus,
 } from "../../data/timelineKknData";
 import { TimelineKknModal } from "./components/TimelineKknModal";
 import { TimelineImportModal } from "./components/TimelineImportModal";
@@ -172,7 +173,16 @@ const JadwalKegiatan: React.FC = () => {
   };
 
   const filterLocalDefaultData = () => {
-    let list = [...TIMELINE_KKN_DATA];
+    let list = TIMELINE_KKN_DATA.map((item) => ({
+      ...item,
+      statusPelaksanaan: computeTimelineStatus(
+        (item as any).startDate,
+        (item as any).endDate,
+        item.tanggal,
+        item.statusPelaksanaan
+      ),
+    }));
+
     if (selectedFase !== "ALL") {
       list = list.filter((item) => item.fase.toLowerCase().includes(selectedFase.toLowerCase()));
     }
@@ -211,7 +221,17 @@ const JadwalKegiatan: React.FC = () => {
       const res = await api.get("/timeline-kkn", { params });
       const rawData = res.data?.data;
       if (Array.isArray(rawData) && rawData.length > 0) {
-        setTimelineList(rawData);
+        // Dinamisasi status real-time mengikuti kalender hari ini
+        const resolved = rawData.map((item: any) => ({
+          ...item,
+          statusPelaksanaan: computeTimelineStatus(
+            item.startDate,
+            item.endDate,
+            item.tanggal,
+            item.statusPelaksanaan
+          ),
+        }));
+        setTimelineList(resolved);
       } else if (
         Array.isArray(rawData) &&
         rawData.length === 0 &&
