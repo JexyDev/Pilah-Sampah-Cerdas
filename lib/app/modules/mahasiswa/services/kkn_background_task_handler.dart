@@ -182,6 +182,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
 
     // CHECK 0: Cek apakah user sudah logout atau service deactivated
     final prefs = await SharedPreferences.getInstance();
+    await prefs.reload(); // Wajib di background service agar mendeteksi perubahan dari UI isolate
     final isActive = prefs.getBool(KknBgPrefKeys.serviceActive) ?? false;
     final authToken = prefs.getString(KknBgPrefKeys.authToken);
     if (!isActive || authToken == null || authToken.isEmpty) {

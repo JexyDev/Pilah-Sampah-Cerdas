@@ -227,7 +227,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
           ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Presensi KKN berhasil tercatat (Hadir)!'),
+              content: Text('Presensi Mulai Kegiatan berhasil! (+10 Poin)'),
               backgroundColor: AppColors.primaryGreen,
               behavior: SnackBarBehavior.floating,
             ),
@@ -1214,10 +1214,10 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
               ),
               label: Text(
                 isSuccess
-                    ? 'Anda Sudah Presensi (Hadir)'
+                    ? 'Presensi Selesai (Hadir)'
                     : (isAlpa
                           ? 'Tanpa Keterangan (Waktu Habis)'
-                          : 'Absen Sekarang'),
+                          : 'Selesai Kegiatan (Presensi Pulang)'),
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
@@ -1260,14 +1260,25 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             if (!isSuccess && !isAlpa && state.isTracking)
               StopTrackingButton(
                 onStop: () async {
-                  await notifier.selesaiKegiatan(alasan: 'MANUAL_STOP');
+                  final isSuccess = await notifier.selesaiKegiatan(alasan: 'MANUAL_STOP');
                   if (mounted) {
                     setState(() => _showDetail = false);
                     ref.read(authProvider.notifier).fetchProfile();
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('+10 Poin berhasil didapatkan dari Presensi Pulang!'),
-                      backgroundColor: AppColors.primaryGreen,
-                    ));
+                    
+                    ScaffoldMessenger.of(context).clearSnackBars();
+                    if (isSuccess) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text('Presensi Selesai Kegiatan berhasil! (+10 Poin)'),
+                        backgroundColor: AppColors.primaryGreen,
+                        behavior: SnackBarBehavior.floating,
+                      ));
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text('Gagal menyelesaikan kegiatan. Silakan coba lagi.'),
+                        backgroundColor: AppColors.dangerRed,
+                        behavior: SnackBarBehavior.floating,
+                      ));
+                    }
                   }
                 },
               ),
@@ -1370,18 +1381,18 @@ class KegiatanKknCard extends StatelessWidget {
       badgeColor = Colors.amber.withValues(alpha: 0.1);
       textColor = Colors.amber.shade800;
       buttonText = 'Izin / Sakit';
-    } else if (statusKehadiran == 'ALPA') {
-      statusText = '⚠️ ALPA';
-      badgeColor = Colors.grey.withValues(alpha: 0.2);
-      textColor = Colors.grey.shade700;
-      buttonText = 'Alpa (Tidak Hadir)';
+    } else if (statusKehadiran == 'ALPA' || statusKehadiran == 'TANPA_KETERANGAN') {
+      statusText = '⚠️ TANPA KETERANGAN';
+      badgeColor = AppColors.dangerRed.withValues(alpha: 0.1);
+      textColor = AppColors.dangerRed;
+      buttonText = 'Tanpa Keterangan (Tidak Hadir)';
     } else {
       statusText = isAktif ? '🟢 AKTIF' : '🔵 BELUM MULAI';
       badgeColor = isAktif
           ? AppColors.primaryGreen.withValues(alpha: 0.1)
           : Colors.blue.withValues(alpha: 0.1);
       textColor = isAktif ? AppColors.primaryGreen : Colors.blue;
-      buttonText = isAktif ? 'Mulai Kegiatan' : 'Belum Dimulai';
+      buttonText = isAktif ? 'Mulai Kegiatan (Presensi Masuk)' : 'Belum Dimulai';
     }
 
     return Card(
@@ -1460,8 +1471,8 @@ class KegiatanKknCard extends StatelessWidget {
                     Text(
                       statusKehadiran == 'HADIR' || statusKehadiran == 'SELESAI'
                           ? 'Anda sudah tercatat hadir pada kegiatan ini.'
-                          : statusKehadiran == 'ALPA'
-                              ? 'Waktu kegiatan telah berakhir. Status: Alpa.'
+                          : (statusKehadiran == 'ALPA' || statusKehadiran == 'TANPA_KETERANGAN')
+                              ? 'Waktu kegiatan telah berakhir. Status: Tanpa Keterangan.'
                               : statusKehadiran == 'IZIN' || statusKehadiran == 'SAKIT'
                                   ? 'Anda memiliki pengajuan $statusKehadiran yang aktif.'
                                   : statusKehadiran == 'SELESAI_TELAT'

@@ -223,18 +223,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Non-critical — abaikan jika Firebase tidak aktif
     }
 
-    // 1. Hentikan total background foreground GPS service KKN & cancel notifikasi
-    try {
-      await stopKknForegroundService();
-    } catch (_) {}
-
-    // 2. Hapus seluruh KKN timer cache & preference di SharedPreferences
+    // 1. Hapus seluruh KKN timer cache & preference di SharedPreferences (termasuk authToken) DULU
     try {
       final prefs = await SharedPreferences.getInstance();
       final kknKeys = prefs.getKeys().where((k) => k.startsWith('kkn_')).toList();
       for (final key in kknKeys) {
         await prefs.remove(key);
       }
+    } catch (_) {}
+
+    // 2. Hentikan total background foreground GPS service KKN & cancel notifikasi
+    try {
+      await stopKknForegroundService();
     } catch (_) {}
 
     await NotificationEngine().cancelAll();

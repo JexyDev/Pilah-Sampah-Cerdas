@@ -180,7 +180,7 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
       if (log.statusKehadiran == 'SELESAI_TELAT') {
         iconColor = Colors.deepOrange;
         bgColor = Colors.deepOrange.withValues(alpha: 0.1);
-      } else if (log.statusKehadiran == 'LEPAS_RADIUS' || log.statusKehadiran == 'ALPA' || log.isGpsActive == false) {
+      } else if (log.statusKehadiran == 'LEPAS_RADIUS' || log.statusKehadiran == 'ALPA' || log.statusKehadiran == 'TANPA_KETERANGAN' || log.isGpsActive == false) {
         iconColor = AppColors.dangerRed;
         bgColor = AppColors.dangerRed.withValues(alpha: 0.1);
       } else {
