@@ -19,9 +19,24 @@ class NetworkExceptionHelper {
           final statusCode = error.response?.statusCode;
           final responseData = error.response?.data;
 
-          // Ambil pesan dari backend jika ada
-          if (responseData is Map<String, dynamic> && responseData['message'] != null) {
-            return responseData['message'].toString();
+          // Periksa errorCode spesifik dari backend sebelum pesan generik
+          if (responseData is Map<String, dynamic>) {
+            final errorCode = responseData['error']?.toString() ?? '';
+            switch (errorCode) {
+              case 'STUDENT_PROFILE_INCOMPLETE':
+                return 'Profil KKN Anda belum lengkap. Hubungi Admin atau DPL untuk melengkapi data NIM dan jurusan sebelum presensi.';
+              case 'OUT_OF_COBLONG_BOUNDS':
+                return 'Koordinat GPS Anda berada di luar wilayah KKN (Kecamatan Coblong). Pastikan GPS aktif dan Anda berada di lokasi yang benar.';
+              case 'LOCATION_TELEPORTATION_DETECTED':
+                return 'Perpindahan lokasi terlalu cepat terdeteksi. Pastikan GPS tidak dalam mode simulasi (Fake GPS).';
+              case 'INVALID_COORDINATES':
+                return 'Koordinat GPS tidak valid. Aktifkan GPS dan coba lagi.';
+              default:
+                // Fallback ke pesan dari backend jika bukan kode yang dikenal
+                if (responseData['message'] != null) {
+                  return responseData['message'].toString();
+                }
+            }
           }
 
           if (statusCode == 400) {

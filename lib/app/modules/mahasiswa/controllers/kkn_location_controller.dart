@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -15,6 +16,7 @@ import '../../../core/utils/network_exception_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../services/kkn_background_task_handler.dart';
+
 
 class KknLocationState {
   final Position? currentPosition;
@@ -1168,26 +1170,50 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           pos.longitude,
         );
 
-      // Jika backend me-trigger auto attendance (karena durasi cukup dll)
-      if (pingResponse.containsKey('autoAttendanceTriggered') &&
-          pingResponse['autoAttendanceTriggered'] != null) {
-        final autoAtt = pingResponse['autoAttendanceTriggered'] as List;
-        if (autoAtt.isNotEmpty) {
-          // Asumsikan data pertama adalah attendance kita
-          final attData = autoAtt.first;
-          state = state.copyWith(
-            isSuccessAttendance: true,
-            attendanceTime:
-                attData['attendedAt']?.toString() ??
-                DateTime.now().toLocal().toString().split('.')[0],
-            attendanceId: attData['id']?.toString(),
-          );
+        // Jika backend me-trigger auto attendance (karena durasi cukup dll)
+        if (pingResponse.containsKey('autoAttendanceTriggered') &&
+            pingResponse['autoAttendanceTriggered'] != null) {
+          final autoAtt = pingResponse['autoAttendanceTriggered'] as List;
+          if (autoAtt.isNotEmpty) {
+            final attData = autoAtt.first;
+            state = state.copyWith(
+              isSuccessAttendance: true,
+              attendanceTime:
+                  attData['attendedAt']?.toString() ??
+                  DateTime.now().toLocal().toString().split('.')[0],
+              attendanceId: attData['id']?.toString(),
+            );
+          }
         }
-      }
+      } on DioException catch (e) {
+        // Ekstrak errorCode spesifik dari backend
+        final responseData = e.response?.data;
+        final errorCode = (responseData is Map<String, dynamic>)
+            ? (responseData['error']?.toString() ?? '')
+            : '';
+
+        // Error kritis: tampilkan ke UI dan hentikan tracking sementara
+        const criticalErrors = {
+          'STUDENT_PROFILE_INCOMPLETE',
+          'OUT_OF_COBLONG_BOUNDS',
+          'LOCATION_TELEPORTATION_DETECTED',
+          'INVALID_COORDINATES',
+        };
+
+        if (criticalErrors.contains(errorCode)) {
+          final message = NetworkExceptionHelper.getErrorMessage(e);
+          state = state.copyWith(
+            error: message,
+            isInsideRadius: false,
+          );
+          _stopZoneTimer(isExitingZone: true);
+        }
+        // Error network sementara (timeout, 429, server error): abaikan agar GPS tetap berjalan
       } catch (_) {
-        // Fail silently for background GPS updates
+        // Fail silently for non-Dio exceptions during background GPS updates
       }
     }
+
 
     // Geofencing checks
     final target = state.activeActivity;
