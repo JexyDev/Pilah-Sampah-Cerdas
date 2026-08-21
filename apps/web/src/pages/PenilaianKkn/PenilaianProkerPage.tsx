@@ -23,6 +23,9 @@ import {
   Image as ImageIcon,
   AlertCircle,
   RefreshCw,
+  Edit3,
+  Eye,
+  PlusCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -55,11 +58,14 @@ export const PenilaianProkerPage: React.FC = () => {
   const [statusPelaksanaanFilter, setStatusPelaksanaanFilter] = useState("ALL");
   const [statusPenilaianFilter, setStatusPenilaianFilter] = useState("ALL");
 
-  // Paginasi Kolom Kiri
+  // Paginasi
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 4; // Menampilkan 4 per halaman sesuai layout 1-4 dari total
+  const itemsPerPage = 10;
 
-  // State Form Rubrik Penilaian (Kolom Kanan)
+  // Modal Penilaian Program Kerja (Popup)
+  const [isAssessModalOpen, setIsAssessModalOpen] = useState(false);
+
+  // State Form Rubrik Penilaian
   const [inputNilai, setInputNilai] = useState<Record<number, number | "">>({
     1: "",
     2: "",
@@ -99,15 +105,6 @@ export const PenilaianProkerPage: React.FC = () => {
       });
 
       setProkerList(data);
-
-      // Auto select first item if none or invalid
-      if (data.length > 0) {
-        if (!selectedProkerId || !data.some((p) => p.id === selectedProkerId)) {
-          setSelectedProkerId(data[0].id);
-        }
-      } else {
-        setSelectedProkerId(null);
-      }
     } catch {
       toast.error("Gagal memuat daftar program kerja");
     } finally {
@@ -231,6 +228,17 @@ export const PenilaianProkerPage: React.FC = () => {
     };
   }, [inputNilai]);
 
+  // Handler Buka Modal Penilaian
+  const handleOpenAssessModal = (proker: ProgramKerjaItem) => {
+    setSelectedProkerId(proker.id);
+    setIsAssessModalOpen(true);
+  };
+
+  // Handler Tutup Modal Penilaian
+  const handleCloseAssessModal = () => {
+    setIsAssessModalOpen(false);
+  };
+
   // Handler Ganti Nilai Aspek
   const handleScoreChange = (no: number, rawVal: string) => {
     if (rawVal === "") {
@@ -243,8 +251,8 @@ export const PenilaianProkerPage: React.FC = () => {
     setInputNilai((prev) => ({ ...prev, [no]: clamped }));
   };
 
-  // Reset / Batal
-  const handleBatal = () => {
+  // Reset / Batal Form Penilaian
+  const handleResetForm = () => {
     if (selectedProker) {
       const newInputs: Record<number, number | ""> = {
         1: "",
@@ -266,7 +274,7 @@ export const PenilaianProkerPage: React.FC = () => {
     }
   };
 
-  // Simpan Nilai ke Backend (Atomic Update)
+  // Simpan Nilai ke Backend
   const handleSimpanNilai = async () => {
     if (!selectedProker) return;
 
@@ -316,6 +324,9 @@ export const PenilaianProkerPage: React.FC = () => {
             : p
         )
       );
+
+      // Tutup popup modal setelah berhasil simpan
+      setIsAssessModalOpen(false);
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Gagal menyimpan penilaian");
     } finally {
@@ -324,16 +335,22 @@ export const PenilaianProkerPage: React.FC = () => {
   };
 
   // Handler Buka Bukti Kegiatan
-  const handleOpenBukti = async () => {
-    if (!selectedProker) return;
+  const handleOpenBukti = async (proker?: ProgramKerjaItem) => {
+    const targetProker = proker || selectedProker;
+    if (!targetProker) return;
+
+    if (!selectedProkerId || selectedProkerId !== targetProker.id) {
+      setSelectedProkerId(targetProker.id);
+    }
+
     setIsBuktiModalOpen(true);
     setLoadingBukti(true);
     try {
-      const res = await dplService.getProgramKerjaBukti(selectedProker.id);
+      const res = await dplService.getProgramKerjaBukti(targetProker.id);
       setBuktiData(res);
     } catch {
       setBuktiData({
-        proker: selectedProker,
+        proker: targetProker,
         attendances: [],
       });
     } finally {
@@ -368,20 +385,39 @@ export const PenilaianProkerPage: React.FC = () => {
   };
 
   // Helper Badge Status Penilaian
-  const renderStatusPenilaianBadge = (statusPenilaian?: string, skor?: number | null) => {
+  const renderStatusPenilaianBadge = (
+    statusPenilaian?: string | null,
+    skor?: number | null,
+    predikat?: string | null
+  ) => {
     const status = statusPenilaian || (skor ? "SUDAH_DINILAI" : "BELUM_DINILAI");
     switch (status) {
       case "SUDAH_DINILAI":
         return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/40">
-            Sudah Dinilai
-          </span>
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/40">
+              <CheckCircle2 size={11} />
+              <span>Sudah Dinilai</span>
+            </span>
+            {skor !== undefined && skor !== null && (
+              <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
+                {skor.toFixed(1)} {predikat ? `(${predikat})` : ""}
+              </span>
+            )}
+          </div>
         );
       case "SEDANG_DINILAI":
         return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/40">
-            Sedang Dinilai
-          </span>
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/40">
+              Sedang Dinilai
+            </span>
+            {skor !== undefined && skor !== null && skor > 0 && (
+              <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                Skor: {skor.toFixed(1)}
+              </span>
+            )}
+          </div>
         );
       default:
         return (
@@ -422,7 +458,7 @@ export const PenilaianProkerPage: React.FC = () => {
             Penilaian Program Kerja
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Evaluasi pelaksanaan dan dampak program kerja setiap kelompok KKN
+            Evaluasi pelaksanaan dan dampak program kerja setiap kelompok KKN secara komprehensif
           </p>
         </div>
 
@@ -520,209 +556,223 @@ export const PenilaianProkerPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Grid Layout Dua Kolom (Split-View) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* Kolom Kiri: Tabel Program Kerja (Master) */}
-        <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs overflow-hidden flex flex-col">
-          {loading ? (
-            <div className="p-12 flex flex-col items-center justify-center gap-3 text-slate-400">
-              <Loader2 className="animate-spin text-emerald-600" size={28} />
-              <span className="text-xs font-medium">Memuat program kerja kelompok...</span>
-            </div>
-          ) : filteredProkers.length === 0 ? (
-            <div className="p-8">
-              <EmptyTableState
-                entityName="Program Kerja KKN"
-                isSearch={!!(searchQuery || kategoriFilter !== "ALL" || statusPelaksanaanFilter !== "ALL" || statusPenilaianFilter !== "ALL")}
-                searchQuery={searchQuery}
-                onResetSearch={() => {
-                  setSearchQuery("");
-                  setKategoriFilter("ALL");
-                  setStatusPelaksanaanFilter("ALL");
-                  setStatusPenilaianFilter("ALL");
-                }}
-              />
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-bold">
-                      <th className="py-3 px-3 w-10 text-center">No.</th>
-                      <th className="py-3 px-3.5 min-w-[130px]">Nama Kelompok</th>
-                      <th className="py-3 px-3 min-w-[100px]">Kategori Program Kerja</th>
-                      <th className="py-3 px-3.5 min-w-[170px]">Deskripsi Program Kerja</th>
-                      <th className="py-3 px-3 text-center min-w-[95px]">Status Pelaksanaan</th>
-                      <th className="py-3 px-3 text-center min-w-[95px]">Status Penilaian</th>
-                      <th className="py-3 px-3 text-center min-w-[90px]">Aksi Penilaian</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 font-normal">
-                    {paginatedProkers.map((p, idx) => {
-                      const isSelected = selectedProkerId === p.id;
-                      const rowNumber = startIndex + idx;
-                      const statusPenilaian =
-                        p.statusPenilaian || (p.skorPenilaian ? "SUDAH_DINILAI" : "BELUM_DINILAI");
+      {/* Tabel Program Kerja KKN (Full Width Master View) */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs overflow-hidden flex flex-col">
+        {loading ? (
+          <div className="p-12 flex flex-col items-center justify-center gap-3 text-slate-400">
+            <Loader2 className="animate-spin text-emerald-600" size={28} />
+            <span className="text-xs font-medium">Memuat daftar program kerja kelompok...</span>
+          </div>
+        ) : filteredProkers.length === 0 ? (
+          <div className="p-8">
+            <EmptyTableState
+              entityName="Program Kerja KKN"
+              isSearch={!!(searchQuery || kategoriFilter !== "ALL" || statusPelaksanaanFilter !== "ALL" || statusPenilaianFilter !== "ALL")}
+              searchQuery={searchQuery}
+              onResetSearch={() => {
+                setSearchQuery("");
+                setKategoriFilter("ALL");
+                setStatusPelaksanaanFilter("ALL");
+                setStatusPenilaianFilter("ALL");
+              }}
+            />
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-bold">
+                    <th className="py-3.5 px-3 w-12 text-center">No.</th>
+                    <th className="py-3.5 px-4 min-w-[160px]">Nama Kelompok & Wilayah</th>
+                    <th className="py-3.5 px-3.5 min-w-[120px]">Kategori</th>
+                    <th className="py-3.5 px-4 min-w-[260px]">Deskripsi Program Kerja</th>
+                    <th className="py-3.5 px-3.5 text-center min-w-[120px]">Status Pelaksanaan</th>
+                    <th className="py-3.5 px-3.5 text-center min-w-[130px]">Status Penilaian</th>
+                    <th className="py-3.5 px-4 text-center min-w-[160px]">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 font-normal">
+                  {paginatedProkers.map((p, idx) => {
+                    const rowNumber = startIndex + idx;
+                    const statusPenilaian =
+                      p.statusPenilaian || (p.skorPenilaian ? "SUDAH_DINILAI" : "BELUM_DINILAI");
 
-                      return (
-                        <tr
-                          key={p.id}
-                          onClick={() => setSelectedProkerId(p.id)}
-                          className={`transition-colors cursor-pointer select-none ${
-                            isSelected
-                              ? "bg-emerald-50/50 dark:bg-emerald-950/20"
-                              : "hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/40"
-                          }`}
-                        >
-                          {/* No with Green Left Stripe Indicator on Active */}
-                          <td
-                            className={`py-3 px-3 text-center font-bold text-slate-600 dark:text-slate-300 relative ${
-                              isSelected ? "border-l-4 border-l-emerald-700 text-emerald-800 dark:text-emerald-400 font-extrabold" : ""
-                            }`}
-                          >
-                            {rowNumber}
-                          </td>
+                    return (
+                      <tr
+                        key={p.id}
+                        className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/40 transition-colors"
+                      >
+                        {/* No */}
+                        <td className="py-3.5 px-3 text-center font-bold text-slate-500 dark:text-slate-400">
+                          {rowNumber}
+                        </td>
 
-                          {/* Nama Kelompok */}
-                          <td className="py-3 px-3.5">
-                            <div className="font-bold text-slate-900 dark:text-slate-100 text-xs">
-                              {p.kelompokName}
-                            </div>
-                            <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                              Kel. {p.kelurahan}
-                            </div>
-                          </td>
+                        {/* Nama Kelompok */}
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-slate-900 dark:text-slate-100 text-xs">
+                            {p.kelompokName}
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                            Kel. {p.kelurahan}
+                          </div>
+                        </td>
 
-                          {/* Kategori */}
-                          <td className="py-3 px-3">
-                            {renderKategoriBadge(p.kategori)}
-                          </td>
+                        {/* Kategori */}
+                        <td className="py-3.5 px-3.5">
+                          {renderKategoriBadge(p.kategori)}
+                        </td>
 
-                          {/* Deskripsi */}
-                          <td className="py-3 px-3.5">
-                            <p className="text-slate-700 dark:text-slate-300 leading-snug line-clamp-2">
-                              {p.deskripsi}
-                            </p>
-                          </td>
+                        {/* Deskripsi */}
+                        <td className="py-3.5 px-4">
+                          <p className="text-slate-700 dark:text-slate-300 leading-snug line-clamp-2 text-xs">
+                            {p.deskripsi}
+                          </p>
+                        </td>
 
-                          {/* Status Pelaksanaan */}
-                          <td className="py-3 px-3 text-center">
-                            {renderStatusPelaksanaanBadge(p.status)}
-                          </td>
+                        {/* Status Pelaksanaan */}
+                        <td className="py-3.5 px-3.5 text-center">
+                          {renderStatusPelaksanaanBadge(p.status)}
+                        </td>
 
-                          {/* Status Penilaian */}
-                          <td className="py-3 px-3 text-center">
-                            {renderStatusPenilaianBadge(p.statusPenilaian, p.skorPenilaian)}
-                          </td>
+                        {/* Status Penilaian */}
+                        <td className="py-3.5 px-3.5 text-center">
+                          {renderStatusPenilaianBadge(p.statusPenilaian, p.skorPenilaian, p.predikat)}
+                        </td>
 
-                          {/* Aksi Penilaian Button */}
-                          <td className="py-3 px-3 text-center">
+                        {/* Aksi Buttons */}
+                        <td className="py-3.5 px-4 text-center">
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
                             {statusPenilaian === "SEDANG_DINILAI" ? (
                               <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedProkerId(p.id);
-                                }}
-                                className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
+                                onClick={() => handleOpenAssessModal(p)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
+                                title="Lanjutkan Pengisian Nilai"
                               >
-                                Lanjutkan
+                                <Edit3 size={12} />
+                                <span>Lanjutkan</span>
                               </button>
                             ) : statusPenilaian === "SUDAH_DINILAI" ? (
                               <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedProkerId(p.id);
-                                }}
-                                className="px-3 py-1.5 border border-blue-500 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg font-semibold text-xs transition-colors cursor-pointer"
+                                onClick={() => handleOpenAssessModal(p)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 border border-emerald-600 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg font-semibold text-xs transition-colors cursor-pointer"
+                                title="Lihat / Edit Nilai"
                               >
-                                Lihat Nilai
+                                <Eye size={12} />
+                                <span>Lihat / Edit Nilai</span>
                               </button>
                             ) : (
                               <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedProkerId(p.id);
-                                }}
-                                className="px-3 py-1.5 border border-emerald-600 text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40 rounded-lg font-semibold text-xs transition-colors cursor-pointer"
+                                onClick={() => handleOpenAssessModal(p)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
+                                title="Beri Penilaian Baru"
                               >
-                                Beri Nilai
+                                <PlusCircle size={12} />
+                                <span>Beri Nilai</span>
                               </button>
                             )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+
+                            <button
+                              onClick={() => handleOpenBukti(p)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                              title="Lihat Dokumentasi Kegiatan"
+                            >
+                              <FileText size={12} />
+                              <span className="hidden xl:inline">Bukti</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Paginasi Bagian Bawah Tabel */}
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+              <span>
+                Menampilkan {startIndex}-{endIndex} dari {totalItems} program kerja
+              </span>
+
+              <div className="flex items-center gap-1">
+                <button
+                  disabled={currentPage <= 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <ChevronLeft size={14} />
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                      currentPage === pageNum
+                        ? "bg-emerald-700 text-white"
+                        : "border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+
+                <button
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <ChevronRight size={14} />
+                </button>
               </div>
+            </div>
+          </>
+        )}
+      </div>
 
-              {/* Paginasi Bagian Bawah Tabel */}
-              <div className="p-3.5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
-                <span>
-                  Menampilkan {startIndex}-{endIndex} dari {totalItems} program kerja
-                </span>
-
-                <div className="flex items-center gap-1">
-                  <button
-                    disabled={currentPage <= 1}
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  >
-                    <ChevronLeft size={14} />
-                  </button>
-
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                    <button
-                      key={pageNum}
-                      onClick={() => setCurrentPage(pageNum)}
-                      className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                        currentPage === pageNum
-                          ? "bg-emerald-700 text-white"
-                          : "border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  ))}
-
-                  <button
-                    disabled={currentPage >= totalPages}
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  >
-                    <ChevronRight size={14} />
-                  </button>
+      {/* MODAL POPUP: Form Penilaian Program Kerja */}
+      {isAssessModalOpen && selectedProker && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-3xl w-full border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] my-auto animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-700 flex items-center justify-center text-white shrink-0 shadow-xs">
+                  <Award size={18} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100 leading-tight">
+                    Form Penilaian Program Kerja
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    {selectedProker.kelompokName} • Kel. {selectedProker.kelurahan}
+                  </p>
                 </div>
               </div>
-            </>
-          )}
-        </div>
 
-        {/* Kolom Kanan: Form Penilaian Program Kerja (Detail) */}
-        <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-2xs">
-          <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-3.5">
-            Form Penilaian Program Kerja
-          </h2>
-
-          {!selectedProker ? (
-            <div className="p-8 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
-              <Users size={32} className="text-slate-300" />
-              <p className="text-xs">Pilih salah satu program kerja di tabel sebelah kiri untuk mulai menilai.</p>
+              <button
+                onClick={handleCloseAssessModal}
+                disabled={isSaving}
+                className="w-8 h-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {/* Header Info Kelompok & Proker Card */}
-              <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/40 rounded-xl border border-slate-200/70 dark:border-slate-800 flex items-start justify-between gap-3">
+
+            {/* Modal Content Scrollable */}
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-4 text-xs">
+              {/* Header Info Card */}
+              <div className="p-4 bg-slate-50/90 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-700 flex items-center justify-center text-white shrink-0 shadow-xs">
-                    <Users size={20} />
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                    <Users size={16} />
                   </div>
                   <div>
-                    <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-tight">
+                    <h4 className="font-bold text-slate-900 dark:text-slate-100 text-xs">
                       {selectedProker.kelompokName}
-                    </h3>
-                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 line-clamp-2">
+                    </h4>
+                    <p className="text-slate-600 dark:text-slate-300 mt-0.5 text-xs">
                       {selectedProker.deskripsi}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
@@ -732,20 +782,37 @@ export const PenilaianProkerPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Tombol Lihat Bukti Kegiatan */}
-                <button
-                  onClick={handleOpenBukti}
-                  className="px-2.5 py-1.5 border border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg text-xs font-semibold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
-                >
-                  <FileText size={13} />
-                  <span>Lihat Bukti Kegiatan</span>
-                </button>
+                <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenBukti(selectedProker)}
+                    className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                  >
+                    <FileText size={13} />
+                    <span>Lihat Bukti Kegiatan</span>
+                  </button>
+
+                  {selectedProker.linkGoogleDrive && (
+                    <a
+                      href={selectedProker.linkGoogleDrive}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                      title="Buka Google Drive"
+                    >
+                      <ExternalLink size={13} />
+                    </a>
+                  )}
+                </div>
               </div>
 
-              {/* Subheading Aspek Penilaian */}
+              {/* Rubrik Penilaian Aspek */}
               <div>
-                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">
-                  Aspek Penilaian
+                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2.5 flex items-center justify-between">
+                  <span>Aspek Penilaian (7 Indikator Rubrik)</span>
+                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                    Masukkan nilai 0 - 100
+                  </span>
                 </h4>
 
                 {/* Tabel 7 Aspek Rubrik Penilaian */}
@@ -754,22 +821,22 @@ export const PenilaianProkerPage: React.FC = () => {
                     <thead>
                       <tr className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-[11px] font-bold border-b border-slate-200 dark:border-slate-800">
                         <th className="py-2.5 px-2 text-center w-8">No.</th>
-                        <th className="py-2.5 px-2.5">Aspek Penilaian</th>
-                        <th className="py-2.5 px-2 text-center w-14">Bobot</th>
-                        <th className="py-2.5 px-2 text-center w-28">Nilai</th>
-                        <th className="py-2.5 px-2.5 text-right w-14">Skor</th>
+                        <th className="py-2.5 px-3">Aspek Penilaian</th>
+                        <th className="py-2.5 px-2 text-center w-16">Bobot</th>
+                        <th className="py-2.5 px-2 text-center w-28">Nilai (0-100)</th>
+                        <th className="py-2.5 px-3 text-right w-16">Skor</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {calculatedRubrik.rubrik.map((r) => (
                         <tr key={r.no} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/30">
-                          <td className="py-2 px-2 text-center font-bold text-slate-400">
+                          <td className="py-2.5 px-2 text-center font-bold text-slate-400">
                             {r.no}
                           </td>
-                          <td className="py-2 px-2.5 font-medium text-slate-800 dark:text-slate-200">
+                          <td className="py-2.5 px-3 font-medium text-slate-800 dark:text-slate-200">
                             {r.aspek}
                           </td>
-                          <td className="py-2 px-2 text-center font-semibold text-slate-600 dark:text-slate-300">
+                          <td className="py-2.5 px-2 text-center font-semibold text-slate-600 dark:text-slate-300">
                             {r.bobot}%
                           </td>
                           <td className="py-1.5 px-2 text-center">
@@ -781,11 +848,11 @@ export const PenilaianProkerPage: React.FC = () => {
                                 placeholder="0-100"
                                 value={r.nilai}
                                 onChange={(e) => handleScoreChange(r.no, e.target.value)}
-                                className="w-16 px-1.5 py-1 text-center font-bold text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                                className="w-20 px-2 py-1 text-center font-bold text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
                               />
                             </div>
                           </td>
-                          <td className="py-2 px-2.5 text-right font-bold text-slate-800 dark:text-slate-200">
+                          <td className="py-2.5 px-3 text-right font-bold text-slate-800 dark:text-slate-200">
                             {r.skor.toFixed(2)}
                           </td>
                         </tr>
@@ -793,12 +860,12 @@ export const PenilaianProkerPage: React.FC = () => {
                     </tbody>
                     <tfoot>
                       <tr className="bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/70 border-t border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-800 dark:text-slate-200">
-                        <td colSpan={2} className="py-2 px-3 text-left">
-                          Total Bobot
+                        <td colSpan={2} className="py-2.5 px-3 text-left">
+                          Total Bobot & Nilai
                         </td>
-                        <td className="py-2 px-2 text-center">100%</td>
+                        <td className="py-2.5 px-2 text-center">100%</td>
                         <td></td>
-                        <td className="py-2 px-2.5 text-right text-emerald-700 dark:text-emerald-400">
+                        <td className="py-2.5 px-3 text-right text-emerald-700 dark:text-emerald-400 text-xs">
                           {calculatedRubrik.totalScore.toFixed(2)}
                         </td>
                       </tr>
@@ -807,8 +874,8 @@ export const PenilaianProkerPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Summary Box Nilai Akhir & Predikat Sesuai Gambar */}
-              <div className="bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/50 rounded-xl p-3 flex items-center justify-between">
+              {/* Summary Box Nilai Akhir & Predikat */}
+              <div className="bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/50 rounded-xl p-3.5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-700 flex items-center justify-center text-emerald-700 dark:text-emerald-400 shrink-0">
                     <Award size={22} />
@@ -836,22 +903,33 @@ export const PenilaianProkerPage: React.FC = () => {
               {/* Catatan DPL */}
               <div>
                 <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5">
-                  Catatan DPL
+                  Catatan Evaluasi / Rekomendasi DPL
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="Tuliskan evaluasi, catatan, atau rekomendasi perbaikan program..."
+                  placeholder="Tuliskan evaluasi, feedback, atau rekomendasi perbaikan program kerja ini..."
                   value={catatanDpl}
                   onChange={(e) => setCatatanDpl(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 resize-none"
+                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 resize-none"
                 />
               </div>
+            </div>
 
-              {/* Tombol Aksi Bawah */}
-              <div className="flex items-center justify-end gap-2.5 pt-1">
+            {/* Modal Footer */}
+            <div className="px-5 py-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/40">
+              <button
+                type="button"
+                onClick={handleResetForm}
+                disabled={isSaving}
+                className="px-3.5 py-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Reset Nilai
+              </button>
+
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={handleBatal}
+                  onClick={handleCloseAssessModal}
                   disabled={isSaving}
                   className="px-4 py-2 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
                 >
@@ -862,7 +940,7 @@ export const PenilaianProkerPage: React.FC = () => {
                   type="button"
                   onClick={handleSimpanNilai}
                   disabled={isSaving}
-                  className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                  className="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
                 >
                   {isSaving ? (
                     <>
@@ -872,20 +950,20 @@ export const PenilaianProkerPage: React.FC = () => {
                   ) : (
                     <>
                       <CheckCircle2 size={14} />
-                      <span>Simpan Nilai</span>
+                      <span>Simpan Penilaian</span>
                     </>
                   )}
                 </button>
               </div>
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Modal Bukti Kegiatan & Dokumentasi */}
+      {/* Modal Bukti Kegiatan & Dokumentasi (z-[60] to open over assessment popup if triggered) */}
       {isBuktiModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col max-h-[85vh]">
+        <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
             {/* Modal Header */}
             <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -904,7 +982,7 @@ export const PenilaianProkerPage: React.FC = () => {
 
               <button
                 onClick={() => setIsBuktiModalOpen(false)}
-                className="w-7 h-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                className="w-7 h-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
               >
                 <X size={16} />
               </button>
