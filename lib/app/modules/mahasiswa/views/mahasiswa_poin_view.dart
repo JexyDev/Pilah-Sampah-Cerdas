@@ -86,7 +86,13 @@ class MahasiswaPoinView extends ConsumerWidget {
 
   Widget _buildHeader(BuildContext context, String name, int personalPoints) {
     return Container(
-      color: Colors.white,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.white, Color(0xFFF8FAFC)], // F8FAFC is typical backgroundCanvas
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 16,
         left: 20,
@@ -232,6 +238,7 @@ class MahasiswaPoinView extends ConsumerWidget {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppColors.border),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
                 child: Row(
                   children: [
@@ -272,6 +279,7 @@ class MahasiswaPoinView extends ConsumerWidget {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppColors.border),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
                 child: Row(
                   children: [
@@ -347,6 +355,7 @@ class MahasiswaPoinView extends ConsumerWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.border),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
         ),
         child: Column(
           children: [
@@ -371,6 +380,7 @@ class MahasiswaPoinView extends ConsumerWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.border),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
             ),
             child: const Column(
               children: [
@@ -420,6 +430,7 @@ class _StatCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -495,6 +506,7 @@ class _PoinHistoryItem extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Row(
         children: [

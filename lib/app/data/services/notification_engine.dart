@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -17,7 +18,7 @@ class NotificationEngine {
 
   bool _isInitialized = false;
 
-  Future<void> init() async {
+  Future<void> init({GlobalKey<NavigatorState>? navigatorKey}) async {
     if (_isInitialized || kIsWeb) return;
 
     try {
@@ -34,6 +35,16 @@ class NotificationEngine {
 
       await _flutterLocalNotificationsPlugin.initialize(
         settings: initializationSettings,
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
+          debugPrint('[NotificationEngine] Notification tapped, payload: ${response.payload}');
+          if (navigatorKey != null && navigatorKey.currentState != null && response.payload != null) {
+            if (response.payload == 'ROUTE_POIN') {
+              navigatorKey.currentState!.pushNamed('/poin');
+            } else if (response.payload == 'ROUTE_HISTORY') {
+              navigatorKey.currentState!.pushNamed('/mahasiswa/riwayat');
+            }
+          }
+        },
       );
 
       _isInitialized = true;
@@ -267,6 +278,7 @@ class NotificationEngine {
     required String title,
     required String body,
     Color color = const Color(0xFF0284C7),
+    String? payload,
   }) async {
     try {
       final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
@@ -286,6 +298,7 @@ class NotificationEngine {
         id: id,
         title: title,
         body: body,
+        payload: payload,
         notificationDetails: platformDetails,
       );
     } catch (e) {

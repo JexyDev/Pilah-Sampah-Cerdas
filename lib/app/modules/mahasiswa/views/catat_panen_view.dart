@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -113,7 +113,7 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
               TextFormField(
                 controller: _beratOutputCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(border: OutlineInputBorder(), suffixText: 'Kg', hintText: 'Misal: 5.5'),
+                decoration: const InputDecoration(border: OutlineInputBorder(), suffixText: 'Kg', hintText: 'Contoh: 5.5'),
                 validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 16),
@@ -123,7 +123,7 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
               TextFormField(
                 controller: _nilaiEkonomiCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(border: OutlineInputBorder(), prefixText: 'Rp ', hintText: 'Misal: 50000'),
+                decoration: const InputDecoration(border: OutlineInputBorder(), prefixText: 'Rp ', hintText: 'Contoh: 50000'),
                 validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 16),

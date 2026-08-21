@@ -262,6 +262,13 @@ class _MahasiswaNotificationCard extends StatelessWidget {
         border: Border.all(
           color: item.isRead ? AppColors.border : AppColors.primaryGreen.withValues(alpha: 0.3),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,

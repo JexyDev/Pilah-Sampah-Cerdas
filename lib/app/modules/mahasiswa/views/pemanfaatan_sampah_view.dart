@@ -214,7 +214,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
           TextFormField(
             controller: _programPemanfaatanCtrl,
             decoration: InputDecoration(
-              hintText: 'Misal: Maggotisasi / Komposter',
+              hintText: 'Contoh: Maggotisasi / Komposter',
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
@@ -229,7 +229,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
           TextFormField(
             controller: _teknologiCtrl,
             decoration: InputDecoration(
-              hintText: 'Misal: Biopori / Bata Terawang',
+              hintText: 'Contoh: Biopori / Bata Terawang',
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
@@ -244,7 +244,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
           TextFormField(
             controller: _bahanBakuCtrl,
             decoration: InputDecoration(
-              hintText: 'Misal: Sampah Sayur / Buah',
+              hintText: 'Contoh: Sampah Sayur / Buah',
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
@@ -393,7 +393,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
             controller: _nomorProkerCtrl,
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
-              hintText: 'Misal: 1',
+              hintText: 'Contoh: 1',
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
@@ -473,7 +473,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
           TextFormField(
             controller: _waktuPelaksanaanCtrl,
             decoration: InputDecoration(
-              hintText: 'Misal: Agustus 2026',
+              hintText: 'Contoh: Agustus 2026',
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),

@@ -175,7 +175,7 @@ void main() async {
   try {
     await LocalNotificationService.instance.init(navigatorKey);
     // Background fixed schedule notification engine (New Requirement)
-    await NotificationEngine().init();
+    await NotificationEngine().init(navigatorKey: navigatorKey);
   } catch (e) {
     debugPrint('[LocalNotif] Setup failed: $e');
   }
