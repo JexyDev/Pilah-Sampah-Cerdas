@@ -160,9 +160,13 @@ export const timelineKknService = {
     const role = (userRole || "").toUpperCase();
 
     // Inisialisasi data bawaan jika database masih kosong sama sekali
-    const count = await prisma.timelineKkn.count();
-    if (count === 0) {
-      await timelineKknService.seedDefaultCoblong();
+    try {
+      const count = await prisma.timelineKkn.count();
+      if (count === 0) {
+        await timelineKknService.seedDefaultCoblong();
+      }
+    } catch (e: any) {
+      console.warn("[timelineKknService.getAll] auto-seed warning:", e?.message || e);
     }
 
     let allowedKelompokIds: string[] | null = null; // null = dapat melihat semua kelompok

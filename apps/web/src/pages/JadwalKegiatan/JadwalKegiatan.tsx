@@ -41,6 +41,7 @@ import L from "leaflet";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import {
   TIMELINE_KKN_HEADER,
+  TIMELINE_KKN_DATA,
 } from "../../data/timelineKknData";
 import { TimelineKknModal } from "./components/TimelineKknModal";
 import { TimelineImportModal } from "./components/TimelineImportModal";
@@ -142,7 +143,7 @@ const JadwalKegiatan: React.FC = () => {
   const [activeMainTab, setActiveMainTab] = useState<"TABEL_TIMELINE" | "KALENDER_AGENDA">("TABEL_TIMELINE");
 
   // Dynamic Timeline State & Filters
-  const [timelineList, setTimelineList] = useState<any[]>([]);
+  const [timelineList, setTimelineList] = useState<any[]>(TIMELINE_KKN_DATA);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [timelineSearch, setTimelineSearch] = useState("");
   const [selectedFase, setSelectedFase] = useState<string>("ALL");
@@ -170,6 +171,32 @@ const JadwalKegiatan: React.FC = () => {
     }
   };
 
+  const filterLocalDefaultData = () => {
+    let list = [...TIMELINE_KKN_DATA];
+    if (selectedFase !== "ALL") {
+      list = list.filter((item) => item.fase.toLowerCase().includes(selectedFase.toLowerCase()));
+    }
+    if (selectedStatus !== "ALL") {
+      list = list.filter((item) => (item.statusPelaksanaan || "BELUM_DIMULAI") === selectedStatus);
+    }
+    if (timelineSearch.trim()) {
+      const q = timelineSearch.trim().toLowerCase();
+      list = list.filter(
+        (item) =>
+          item.tahapMinggu.toLowerCase().includes(q) ||
+          item.kegiatanUtama.toLowerCase().includes(q) ||
+          item.outputTarget.toLowerCase().includes(q) ||
+          item.picKeterangan.toLowerCase().includes(q) ||
+          item.fase.toLowerCase().includes(q) ||
+          item.tanggal.toLowerCase().includes(q)
+      );
+    }
+    if (selectedScope !== "ALL" && selectedScope !== "GLOBAL") {
+      list = [];
+    }
+    setTimelineList(list);
+  };
+
   const fetchTimelineList = async () => {
     setTimelineLoading(true);
     try {
@@ -183,10 +210,21 @@ const JadwalKegiatan: React.FC = () => {
 
       const res = await api.get("/timeline-kkn", { params });
       const rawData = res.data?.data;
-      setTimelineList(Array.isArray(rawData) ? rawData : []);
+      if (Array.isArray(rawData) && rawData.length > 0) {
+        setTimelineList(rawData);
+      } else if (
+        Array.isArray(rawData) &&
+        rawData.length === 0 &&
+        selectedScope !== "ALL" &&
+        selectedScope !== "GLOBAL"
+      ) {
+        setTimelineList([]);
+      } else {
+        filterLocalDefaultData();
+      }
     } catch (err: any) {
-      console.error("[fetchTimelineList] error:", err);
-      toast.error("Gagal memuat linimasa kegiatan");
+      console.warn("[fetchTimelineList] API unavailable, using local default reference data:", err?.message || err);
+      filterLocalDefaultData();
     } finally {
       setTimelineLoading(false);
     }

@@ -394,6 +394,21 @@ archiveAuditLogsCron.start();
         "masa_fermentasi_hari" INTEGER,
         "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
       );`,
+      `CREATE TABLE IF NOT EXISTS "timeline_kkn" (
+        "id" TEXT PRIMARY KEY,
+        "tahap_minggu" TEXT NOT NULL,
+        "tanggal" TEXT NOT NULL,
+        "start_date" TIMESTAMP(3),
+        "end_date" TIMESTAMP(3),
+        "fase" TEXT NOT NULL,
+        "kegiatan_utama" TEXT NOT NULL,
+        "output_target" TEXT NOT NULL,
+        "pic_keterangan" TEXT NOT NULL,
+        "status_pelaksanaan" TEXT NOT NULL DEFAULT 'BELUM_DIMULAI',
+        "id_kelompok" TEXT,
+        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`,
     ];
 
     for (const stmt of alterStatements) {
