@@ -63,7 +63,9 @@ describe("Pemanfaatan Service CRUD & Business Logic Tests", () => {
     if (!testUser) return;
 
     // 1. Create feedback with rating clamping
-    const feedback = await pemanfaatanService.createFeedback(testUser.id, {
+    const feedback = await pemanfaatanService.createFeedback({
+      userId: testUser.id,
+      wargaNama: testUser.name || "Warga Test",
       judul: "<b>Usulan Komposter RW 01</b>",
       kategori: "Pengolahan Kompos",
       isiKritikSaran: "Mohon ditambah kapasitas bak komposter di pos RW.",
