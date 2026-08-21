@@ -177,6 +177,20 @@ export class KknAttendanceService {
       latitude,
       longitude,
       recordedAt: newLocation.recordedAt,
+      namaMahasiswa: user.name,
+      nim: student.nim,
+      jurusan: student.jurusan,
+      kelompokId: student.kelompokId,
+      student: {
+        id: userId,
+        name: user.name,
+        phone: user.phone,
+        studentProfile: {
+          nim: student.nim,
+          jurusan: student.jurusan,
+          kelompokId: student.kelompokId,
+        },
+      },
     });
 
     // Cleanup student locations older than 24 hours
