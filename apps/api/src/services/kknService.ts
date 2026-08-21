@@ -2471,13 +2471,28 @@ export class KknService {
     if (!student) throw new Error("Mahasiswa tidak ditemukan");
     const targetRwId = student.assignedRwId || 1;
 
-    const { programKerjaId, teknologi, bahanBaku, beratInputKg, fotoDokumentasiUrl } = payload;
+    const { programKerjaId, fasilitasId, teknologi, bahanBaku, beratInputKg, fotoDokumentasiUrl } = payload;
     
-    // Validasi apakah proker ada dan disetujui (opsional, tapi disarankan)
+    let programName = "LOGBOOK_HARIAN";
+    
+    // Validasi apakah proker ada dan disetujui
     if (programKerjaId) {
       const proker = await prisma.programKerjaKkn.findUnique({ where: { id: programKerjaId } });
-        if (proker && (proker.status === "BELUM_DISETUJUI" || proker.status === "DITOLAK")) {
+      if (proker) {
+        if (proker.statusUsulan === "BELUM_DISETUJUI" || proker.statusUsulan === "DITOLAK") {
           throw new Error("Program kerja belum disetujui atau ditolak DPL, tidak bisa menambah logbook pemanfaatan.");
+        }
+        programName = proker.judul || programName;
+      }
+    }
+
+    let teknologiString = teknologi || "Tidak Spesifik";
+    
+    if (fasilitasId) {
+      const fasilitas = await prisma.facility.findUnique({ where: { id: fasilitasId } });
+      if (fasilitas) {
+        // Append facility name to teknologi so web displays it in lokasiFasilitas
+        teknologiString = `${teknologiString} - ${fasilitas.nama}`;
       }
     }
 
@@ -2487,8 +2502,8 @@ export class KknService {
       data: {
         rwId: targetRwId,
         nomorCaraPemanfaatan: uniqueNo,
-        program: programKerjaId || "LOGBOOK_HARIAN", // Menyimpan ID proker di kolom program
-        teknologi: teknologi || "Tidak Spesifik",
+        program: programName,
+        teknologi: teknologiString,
         bahanBaku: bahanBaku || "Sampah Organik",
         volumeBahanBaku: Number(beratInputKg) || 0,
         unitBahanBaku: "Kg",
