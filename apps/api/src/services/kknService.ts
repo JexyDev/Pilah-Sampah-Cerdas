@@ -2142,13 +2142,19 @@ export class KknService {
       if (endParts.length >= 2) {
         const endHour = parseInt(endParts[0], 10);
         const endMin = parseInt(endParts[1], 10);
-        const schedDate = activeSchedule.date ? new Date(activeSchedule.date) : new Date();
-        const year = schedDate.getFullYear();
-        const month = schedDate.getMonth();
-        const day = schedDate.getDate();
-        const endDateObj = new Date(year, month, day, endHour, endMin, 59, 999);
+        const rawDate = activeSchedule.date ? new Date(activeSchedule.date) : new Date();
+        const wibDate = new Date(rawDate.getTime() + 7 * 60 * 60 * 1000);
+        
+        const yyyy = wibDate.getUTCFullYear();
+        const mm = String(wibDate.getUTCMonth() + 1).padStart(2, "0");
+        const dd = String(wibDate.getUTCDate()).padStart(2, "0");
+        const hh = String(endHour).padStart(2, "0");
+        const m = String(endMin).padStart(2, "0");
+        
+        const endDateObj = new Date(`${yyyy}-${mm}-${dd}T${hh}:${m}:59+07:00`);
+        
         if (isOvernight) {
-          endDateObj.setDate(endDateObj.getDate() + 1);
+          endDateObj.setTime(endDateObj.getTime() + 24 * 60 * 60 * 1000);
         }
         if (new Date() > endDateObj) {
           isExpired = true;
