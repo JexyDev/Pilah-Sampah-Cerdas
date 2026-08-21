@@ -339,8 +339,8 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
   Widget build(BuildContext context) {
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (next.user?.role == UserRole.mahasiswaKkn) {
-        ref.read(locationPingControllerProvider.notifier).startTracking();
-        ref.read(kknLocationProvider.notifier).startTracking();
+        // GPS tidak lagi auto-start saat login.
+        // GPS hanya aktif saat mahasiswa menekan "Mulai Kegiatan".
       } else if (previous?.user?.role == UserRole.mahasiswaKkn && next.user == null) {
         ref.read(locationPingControllerProvider.notifier).stopTracking();
         ref.read(kknLocationProvider.notifier).stopTracking();

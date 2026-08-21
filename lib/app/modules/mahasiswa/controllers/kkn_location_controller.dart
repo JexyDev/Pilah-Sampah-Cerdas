@@ -10,6 +10,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/models/user_entity.dart';
 import 'mahasiswa_controller.dart';
+import 'location_ping_controller.dart';
 import 'mahasiswa_notifikasi_controller.dart';
 import '../../../data/services/notification_engine.dart';
 import '../../../core/utils/network_exception_helper.dart';
@@ -417,8 +418,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         attendanceTime: response['attendedAt']?.toString() ?? DateTime.now().toLocal().toString().split('.')[0],
       );
 
-      // Start GPS tracking
+      // Start GPS tracking (kedua lapisan GPS aktif bersamaan)
       await startTracking();
+      ref.read(locationPingControllerProvider.notifier).startTracking();
       return null;
     } catch (e) {
       final errMsg = e.toString().replaceAll('Exception:', '').trim();
@@ -462,7 +464,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       debugPrint('[KKN] selesaiKegiatan error: $e');
       isSuccess = false;
     } finally {
+      // === GPS LIFECYCLE: Matikan semua lapisan GPS ===
       await stopTracking();
+      ref.read(locationPingControllerProvider.notifier).stopTracking();
       
       // Bersihkan timer persisten
       _accumulatedSeconds = 0;
@@ -471,6 +475,10 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove('kkn_accumulated_seconds');
         await prefs.remove('kkn_zone_entry_time');
+        // Bersihkan data target background service agar tidak auto-restart
+        await prefs.remove('kkn_bg_target_lat');
+        await prefs.remove('kkn_bg_target_lng');
+        await prefs.remove('kkn_bg_schedule_id');
       } catch (_) {}
 
       state = state.copyWith(
@@ -1524,8 +1532,22 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         ref.invalidate(mahasiswaNotificationsProvider);
         // Segarkan dasbor Poin Mahasiswa secara reaktif
         ref.read(mahasiswaControllerProvider.notifier).fetchDashboardData();
-        // Auto-stop background service setelah presensi berhasil
+        
+        // === GPS LIFECYCLE: Matikan semua lapisan GPS setelah presensi berhasil ===
         notifyAttendanceSuccess();
+        await stopTracking();
+        ref.read(locationPingControllerProvider.notifier).stopTracking();
+        // Reset accumulated seconds agar tidak terbawa ke sesi berikutnya
+        _accumulatedSeconds = 0;
+        _zoneEntryTime = null;
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('kkn_accumulated_seconds');
+          await prefs.remove('kkn_zone_entry_time');
+          await prefs.remove('kkn_bg_target_lat');
+          await prefs.remove('kkn_bg_target_lng');
+          await prefs.remove('kkn_bg_schedule_id');
+        } catch (_) {}
         return true;
       } else {
         final msg = response['message']?.toString() ?? 'Gagal mencatat presensi.';
@@ -1545,6 +1567,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     _zoneDurationTimer?.cancel();
     if (_backgroundServiceStarted) {
       FlutterForegroundTask.removeTaskDataCallback(_onBackgroundData);
+      // Force stop foreground service saat controller di-dispose
+      FlutterForegroundTask.sendDataToTask({'type': 'STOP'});
+      stopKknForegroundService();
     }
     super.dispose();
   }
