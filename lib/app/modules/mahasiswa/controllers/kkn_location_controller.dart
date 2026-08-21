@@ -513,16 +513,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       isSuccess = false;
     } finally {
       // === GPS LIFECYCLE: Matikan tracking lokal, tapi jangan hapus state accumulated ===
-      await ref.read(locationPingControllerProvider.notifier).stopTracking();
-      await KknBackgroundTaskHandler.stopBackgroundService();
-      _isTracking = false;
-      _timer?.cancel();
-      _timer = null;
-      state = state.copyWith(status: KknAttendanceStatus.outOfZone);
+      await stopTracking();
+      ref.read(locationPingControllerProvider.notifier).stopTracking();
       
       // Update local storage untuk checkpoint durasi
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_prefKeyAccumulatedSeconds, _accumulatedSeconds);
+      await prefs.setInt('kkn_accumulated_seconds', _accumulatedSeconds);
       // Jangan hapus session ID karena jika belum selesai, mereka cuma lanjut sesi
     }
     return isSuccess;
