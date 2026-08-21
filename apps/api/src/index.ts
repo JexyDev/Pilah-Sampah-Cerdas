@@ -398,8 +398,8 @@ archiveAuditLogsCron.start();
         "id" TEXT PRIMARY KEY,
         "tahap_minggu" TEXT NOT NULL,
         "tanggal" TEXT NOT NULL,
-        "start_date" TIMESTAMP(3),
-        "end_date" TIMESTAMP(3),
+        "tanggal_mulai" TIMESTAMP(3),
+        "tanggal_selesai" TIMESTAMP(3),
         "fase" TEXT NOT NULL,
         "kegiatan_utama" TEXT NOT NULL,
         "output_target" TEXT NOT NULL,
@@ -409,6 +409,11 @@ archiveAuditLogsCron.start();
         "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
       );`,
+      'ALTER TABLE "timeline_kkn" ADD COLUMN IF NOT EXISTS "tanggal_mulai" TIMESTAMP(3);',
+      'ALTER TABLE "timeline_kkn" ADD COLUMN IF NOT EXISTS "tanggal_selesai" TIMESTAMP(3);',
+      'CREATE INDEX IF NOT EXISTS "timeline_kkn_id_kelompok_idx" ON "timeline_kkn"("id_kelompok");',
+      'CREATE INDEX IF NOT EXISTS "timeline_kkn_fase_idx" ON "timeline_kkn"("fase");',
+      'CREATE INDEX IF NOT EXISTS "timeline_kkn_status_pelaksanaan_idx" ON "timeline_kkn"("status_pelaksanaan");',
     ];
 
     for (const stmt of alterStatements) {
