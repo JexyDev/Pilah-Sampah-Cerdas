@@ -1,11 +1,64 @@
 import { prisma } from "../lib/prisma.js";
+import { websocketService } from "./websocketService.js";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
 
+function sanitizeString(str?: string | null): string {
+  if (!str) return "";
+  return String(str)
+    .replace(/<[^>]*>?/gm, "") // strip HTML/Script tags
+    .trim();
+}
 
+function calculateNilaiEkonomi(program: string, teknologi: string, hasil: number, _unitHasil: string): number {
+  const h = Number(hasil) || 0;
+  if (h <= 0) return 0;
+  const t = (teknologi || "").toLowerCase();
+  const p = (program || "").toLowerCase();
+
+  if (t.includes("maggot") || p.includes("maggot")) {
+    return Math.round(h * 8000); // Rp 8.000 / Kg
+  }
+  if (t.includes("poc") || t.includes("cair") || p.includes("poc")) {
+    return Math.round(h * 15000); // Rp 15.000 / Liter
+  }
+  if (t.includes("bank") || p.includes("bank")) {
+    return Math.round(h * 3000); // Rp 3.000 / Kg
+  }
+  return Math.round(h * 2500); // Rp 2.500 / Kg default kompos
+}
+
+function formatPemanfaatanRecord(item: any) {
+  const bahanMasuk = Number(item.volumeBahanBaku || 0);
+  const hasil = Number(item.hasil || 0);
+  const nilaiEkonomi = calculateNilaiEkonomi(item.program, item.teknologi, hasil, item.unitHasil);
+
+  const rwName = item.rw?.name || (item.rwId ? `RW ${item.rwId}` : "RW 01");
+
+  return {
+    ...item,
+    // Standard UI / Mobile mapped keys
+    namaProgram: item.program || "Program Pengolahan Mandiri",
+    jenisProgram: item.teknologi || "Kompos Organik",
+    kategoriBahan: (item.bahanBaku || "").toLowerCase().includes("anorganik") ? "ANORGANIK" : "ORGANIK",
+    jumlahBahanMasukKg: bahanMasuk,
+    jumlahHasilKg: hasil,
+    unitHasil: item.unitHasil || "Kg",
+    lokasiFasilitas: `Fasilitas ${item.teknologi || "Komunal"} (${rwName})`,
+    penanggungJawab: "Pengelola RW & Mahasiswa KKN",
+    targetPenerimaManfaat: item.jenisKomoditas
+      ? `Kelompok Tani / Buruan Sae (${item.jenisKomoditas})`
+      : "Warga Sekitar RW",
+    nilaiEkonomiRp: nilaiEkonomi,
+    status: hasil > 0 ? "PANEN" : "PROSES",
+    tanggalPencatatan: item.tanggalPencatatan
+      ? new Date(item.tanggalPencatatan).toISOString()
+      : new Date().toISOString(),
+  };
+}
 
 export class PemanfaatanService {
   async create(data: {
@@ -28,13 +81,31 @@ export class PemanfaatanService {
     volumeBioaktivatorLiter?: number;
     masaFermentasiHari?: number;
   }) {
-    return prisma.pemanfaatan.create({
+    const sanitizedData = {
+      ...data,
+      program: sanitizeString(data.program),
+      teknologi: sanitizeString(data.teknologi),
+      bahanBaku: sanitizeString(data.bahanBaku),
+      jenisKomoditas: data.jenisKomoditas ? sanitizeString(data.jenisKomoditas) : undefined,
+    };
+
+    const created = await prisma.pemanfaatan.create({
       data: {
-        ...data,
-        volumeBahanBaku: data.volumeBahanBaku,
-        hasil: data.hasil,
+        ...sanitizedData,
+        volumeBahanBaku: sanitizedData.volumeBahanBaku,
+        hasil: sanitizedData.hasil,
+      },
+      include: {
+        rw: { include: { kelurahan: true } },
       },
     });
+
+    const formatted = formatPemanfaatanRecord(created);
+    try {
+      websocketService.broadcastPemanfaatanUpdate({ action: "CREATE", data: formatted });
+    } catch (_e) {}
+
+    return formatted;
   }
 
   async getAll(user?: any) {
@@ -95,13 +166,15 @@ export class PemanfaatanService {
       }
     }
 
-    return prisma.pemanfaatan.findMany({
+    const items = await prisma.pemanfaatan.findMany({
       where: whereClause,
       include: {
         rw: { include: { kelurahan: true } },
       },
       orderBy: { createdAt: "desc" },
     });
+
+    return items.map(formatPemanfaatanRecord);
   }
 
   async getById(id: string) {
@@ -115,7 +188,7 @@ export class PemanfaatanService {
       },
     });
     if (!item) throw new Error("PEMANFAATAN_NOT_FOUND");
-    return item;
+    return formatPemanfaatanRecord(item);
   }
 
   async update(
@@ -144,19 +217,43 @@ export class PemanfaatanService {
     const item = await prisma.pemanfaatan.findUnique({ where: { id } });
     if (!item) throw new Error("PEMANFAATAN_NOT_FOUND");
 
-    return prisma.pemanfaatan.update({
+    const sanitizedData = {
+      ...data,
+      program: data.program ? sanitizeString(data.program) : undefined,
+      teknologi: data.teknologi ? sanitizeString(data.teknologi) : undefined,
+      bahanBaku: data.bahanBaku ? sanitizeString(data.bahanBaku) : undefined,
+      jenisKomoditas: data.jenisKomoditas ? sanitizeString(data.jenisKomoditas) : undefined,
+    };
+
+    const updated = await prisma.pemanfaatan.update({
       where: { id },
-      data,
+      data: sanitizedData,
+      include: {
+        rw: { include: { kelurahan: true } },
+      },
     });
+
+    const formatted = formatPemanfaatanRecord(updated);
+    try {
+      websocketService.broadcastPemanfaatanUpdate({ action: "UPDATE", data: formatted });
+    } catch (_e) {}
+
+    return formatted;
   }
 
   async delete(id: string) {
     const item = await prisma.pemanfaatan.findUnique({ where: { id } });
     if (!item) throw new Error("PEMANFAATAN_NOT_FOUND");
 
-    return prisma.pemanfaatan.delete({
+    await prisma.pemanfaatan.delete({
       where: { id },
     });
+
+    try {
+      websocketService.broadcastPemanfaatanUpdate({ action: "DELETE", id });
+    } catch (_e) {}
+
+    return { success: true, id };
   }
 
   // ─────────────────────────────────────────────
@@ -251,19 +348,32 @@ export class PemanfaatanService {
     rwId?: number;
     fotoBuktiUrl?: string;
   }) {
+    const cleanJudul = sanitizeString(data.judul);
+    const cleanIsi = sanitizeString(data.isiKritikSaran);
+    const cleanKategori = sanitizeString(data.kategori || "Pemanfaatan Sampah");
+    const cleanWargaNama = sanitizeString(data.wargaNama || "Warga BERSEKA");
+    const rawRating = Number(data.rating || 5);
+    const cleanRating = Math.max(1, Math.min(5, isNaN(rawRating) ? 5 : Math.round(rawRating)));
+
+    let createdFeedback: any;
+
     try {
       if ((prisma as any).kritikSaranPemanfaatan?.create) {
-        return await (prisma as any).kritikSaranPemanfaatan.create({
+        createdFeedback = await (prisma as any).kritikSaranPemanfaatan.create({
           data: {
             userId: data.userId,
-            wargaNama: data.wargaNama,
-            kategori: data.kategori || "Pemanfaatan Sampah",
-            judul: data.judul,
-            isiKritikSaran: data.isiKritikSaran,
-            rating: data.rating || 5,
+            wargaNama: cleanWargaNama,
+            kategori: cleanKategori,
+            judul: cleanJudul,
+            isiKritikSaran: cleanIsi,
+            rating: cleanRating,
             rwId: data.rwId || null,
             fotoBuktiUrl: data.fotoBuktiUrl || null,
             status: "MENUNGGU",
+          },
+          include: {
+            user: { select: { id: true, name: true, phone: true } },
+            rw: { include: { kelurahan: true } },
           },
         });
       }
@@ -271,25 +381,44 @@ export class PemanfaatanService {
       console.warn("[PemanfaatanService] Prisma create failed, using SQL fallback:", err);
     }
 
-    const id = crypto.randomUUID();
-    const userId = (data.userId || "").replace(/'/g, "''");
-    const wargaNama = (data.wargaNama || "Warga BERSEKA").replace(/'/g, "''");
-    const kategori = (data.kategori || "Pemanfaatan Sampah").replace(/'/g, "''");
-    const judul = (data.judul || "").replace(/'/g, "''");
-    const isiKritikSaran = (data.isiKritikSaran || "").replace(/'/g, "''");
-    const rating = data.rating || 5;
-    const rwIdVal = data.rwId ? data.rwId : "NULL";
-    const fotoVal = data.fotoBuktiUrl ? `'${data.fotoBuktiUrl.replace(/'/g, "''")}'` : "NULL";
+    if (!createdFeedback) {
+      const id = crypto.randomUUID();
+      const userId = (data.userId || "").replace(/'/g, "''");
+      const wargaNama = cleanWargaNama.replace(/'/g, "''");
+      const kategori = cleanKategori.replace(/'/g, "''");
+      const judul = cleanJudul.replace(/'/g, "''");
+      const isiKritikSaran = cleanIsi.replace(/'/g, "''");
+      const rwIdVal = data.rwId ? data.rwId : "NULL";
+      const fotoVal = data.fotoBuktiUrl ? `'${data.fotoBuktiUrl.replace(/'/g, "''")}'` : "NULL";
 
-    await prisma.$executeRawUnsafe(`
-      INSERT INTO "kritik_saran_pemanfaatan" (
-        "id", "id_pengguna", "warga_nama", "kategori", "judul", "isi_kritik_saran", "rating", "status", "foto_bukti_url", "id_rw", "dibuat_pada", "diperbarui_pada"
-      ) VALUES (
-        '${id}', '${userId}', '${wargaNama}', '${kategori}', '${judul}', '${isiKritikSaran}', ${rating}, 'MENUNGGU', ${fotoVal}, ${rwIdVal}, NOW(), NOW()
-      )
-    `);
+      await prisma.$executeRawUnsafe(`
+        INSERT INTO "kritik_saran_pemanfaatan" (
+          "id", "id_pengguna", "warga_nama", "kategori", "judul", "isi_kritik_saran", "rating", "status", "foto_bukti_url", "id_rw", "dibuat_pada", "diperbarui_pada"
+        ) VALUES (
+          '${id}', '${userId}', '${wargaNama}', '${kategori}', '${judul}', '${isiKritikSaran}', ${cleanRating}, 'MENUNGGU', ${fotoVal}, ${rwIdVal}, NOW(), NOW()
+        )
+      `);
 
-    return { id, ...data, status: "MENUNGGU", createdAt: new Date() };
+      createdFeedback = {
+        id,
+        userId: data.userId,
+        wargaNama: cleanWargaNama,
+        kategori: cleanKategori,
+        judul: cleanJudul,
+        isiKritikSaran: cleanIsi,
+        rating: cleanRating,
+        status: "MENUNGGU",
+        fotoBuktiUrl: data.fotoBuktiUrl || null,
+        rwId: data.rwId || null,
+        createdAt: new Date(),
+      };
+    }
+
+    try {
+      websocketService.broadcastPemanfaatanFeedback({ action: "NEW_FEEDBACK", data: createdFeedback });
+    } catch (_e) {}
+
+    return createdFeedback;
   }
 
   async respondFeedback(
@@ -300,15 +429,25 @@ export class PemanfaatanService {
       status?: string;
     }
   ) {
+    const cleanTanggapan = sanitizeString(data.tanggapan);
+    const cleanPenanggap = sanitizeString(data.ditanggapiOleh || "Pengelola BERSEKA");
+    const cleanStatus = sanitizeString(data.status || "SELESAI");
+
+    let updatedFeedback: any;
+
     try {
       if ((prisma as any).kritikSaranPemanfaatan?.update) {
-        return await (prisma as any).kritikSaranPemanfaatan.update({
+        updatedFeedback = await (prisma as any).kritikSaranPemanfaatan.update({
           where: { id },
           data: {
-            tanggapan: data.tanggapan,
-            ditanggapiOleh: data.ditanggapiOleh,
+            tanggapan: cleanTanggapan,
+            ditanggapiOleh: cleanPenanggap,
             ditanggapiPada: new Date(),
-            status: data.status || "SELESAI",
+            status: cleanStatus,
+          },
+          include: {
+            user: { select: { id: true, name: true, phone: true } },
+            rw: { include: { kelurahan: true } },
           },
         });
       }
@@ -316,41 +455,75 @@ export class PemanfaatanService {
       console.warn("[PemanfaatanService] Prisma update failed, using SQL fallback:", err);
     }
 
-    const safeId = id.replace(/'/g, "''");
-    const safeTanggapan = (data.tanggapan || "").replace(/'/g, "''");
-    const safePenanggap = (data.ditanggapiOleh || "").replace(/'/g, "''");
-    const safeStatus = (data.status || "SELESAI").replace(/'/g, "''");
+    if (!updatedFeedback) {
+      const safeId = id.replace(/'/g, "''");
+      const safeTanggapan = cleanTanggapan.replace(/'/g, "''");
+      const safePenanggap = cleanPenanggap.replace(/'/g, "''");
+      const safeStatus = cleanStatus.replace(/'/g, "''");
 
-    await prisma.$executeRawUnsafe(`
-      UPDATE "kritik_saran_pemanfaatan"
-      SET "tanggapan" = '${safeTanggapan}',
-          "ditanggapi_oleh" = '${safePenanggap}',
-          "ditanggapi_pada" = NOW(),
-          "status" = '${safeStatus}',
-          "diperbarui_pada" = NOW()
-      WHERE "id" = '${safeId}'
-    `);
+      await prisma.$executeRawUnsafe(`
+        UPDATE "kritik_saran_pemanfaatan"
+        SET "tanggapan" = '${safeTanggapan}',
+            "ditanggapi_oleh" = '${safePenanggap}',
+            "ditanggapi_pada" = NOW(),
+            "status" = '${safeStatus}',
+            "diperbarui_pada" = NOW()
+        WHERE "id" = '${safeId}'
+      `);
 
-    return { id, ...data, ditanggapiPada: new Date() };
-  }
-
-  async deleteFeedback(id: string) {
-    try {
-      if ((prisma as any).kritikSaranPemanfaatan?.delete) {
-        return await (prisma as any).kritikSaranPemanfaatan.delete({
-          where: { id },
-        });
-      }
-    } catch (err) {
-      console.warn("[PemanfaatanService] Prisma delete failed, using SQL fallback:", err);
+      updatedFeedback = { id, tanggapan: cleanTanggapan, ditanggapiOleh: cleanPenanggap, status: cleanStatus, ditanggapiPada: new Date() };
     }
 
-    const safeId = id.replace(/'/g, "''");
-    await prisma.$executeRawUnsafe(`
-      DELETE FROM "kritik_saran_pemanfaatan" WHERE "id" = '${safeId}'
-    `);
-    return { success: true };
+    try {
+      websocketService.broadcastPemanfaatanFeedback({ action: "RESPOND_FEEDBACK", data: updatedFeedback });
+    } catch (_e) {}
+
+    return updatedFeedback;
+  }
+
+  async deleteFeedback(id: string, requestUser?: any) {
+    // Check ownership or admin permissions
+    if (requestUser) {
+      const userRole = String(requestUser.role || "").toUpperCase();
+      const isAdmin = ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "RW", "PANITIA_TASKFORCE"].includes(userRole);
+      
+      if (!isAdmin) {
+        // If not admin, check if user is the author
+        const existing = await prisma.kritikSaranPemanfaatan.findUnique({ where: { id } }).catch(() => null);
+        const userId = requestUser.userId || requestUser.id;
+        if (existing && existing.userId !== userId) {
+          throw new Error("FORBIDDEN_DELETE_FEEDBACK");
+        }
+      }
+    }
+
+    try {
+      if ((prisma as any).kritikSaranPemanfaatan?.delete) {
+        await (prisma as any).kritikSaranPemanfaatan.delete({
+          where: { id },
+        });
+      } else {
+        const safeId = id.replace(/'/g, "''");
+        await prisma.$executeRawUnsafe(`
+          DELETE FROM "kritik_saran_pemanfaatan" WHERE "id" = '${safeId}'
+        `);
+      }
+    } catch (err: any) {
+      if (err.message === "FORBIDDEN_DELETE_FEEDBACK") throw err;
+      console.warn("[PemanfaatanService] Prisma delete fallback:", err);
+      const safeId = id.replace(/'/g, "''");
+      await prisma.$executeRawUnsafe(`
+        DELETE FROM "kritik_saran_pemanfaatan" WHERE "id" = '${safeId}'
+      `);
+    }
+
+    try {
+      websocketService.broadcastPemanfaatanFeedback({ action: "DELETE_FEEDBACK", id });
+    } catch (_e) {}
+
+    return { success: true, id };
   }
 }
 
 export const pemanfaatanService = new PemanfaatanService();
+

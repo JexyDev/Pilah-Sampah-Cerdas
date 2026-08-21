@@ -219,9 +219,14 @@ export class PemanfaatanController {
   async deleteFeedback(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      await pemanfaatanService.deleteFeedback(id);
+      const user = (req as any).user;
+      await pemanfaatanService.deleteFeedback(id, user);
       res.status(200).json({ success: true, message: "Kritik & saran berhasil dihapus" });
     } catch (error: any) {
+      if (error.message === "FORBIDDEN_DELETE_FEEDBACK") {
+        res.status(403).json({ success: false, message: "Anda tidak memiliki izin untuk menghapus kritik & saran ini" });
+        return;
+      }
       res.status(400).json({ success: false, message: error.message });
     }
   }

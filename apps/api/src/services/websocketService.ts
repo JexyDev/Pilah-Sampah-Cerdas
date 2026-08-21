@@ -460,4 +460,44 @@ export const websocketService = {
       }
     });
   },
+
+  /**
+   * Broadcast pemanfaatan program update (create/update/delete)
+   */
+  broadcastPemanfaatanUpdate: (data: any) => {
+    const message = JSON.stringify({
+      type: "PEMANFAATAN_UPDATE",
+      data,
+    });
+
+    allSockets.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(message);
+        } catch (err) {
+          console.error("[WebSocketService] broadcastPemanfaatanUpdate error:", err);
+        }
+      }
+    });
+  },
+
+  /**
+   * Broadcast kritik & saran feedback update
+   */
+  broadcastPemanfaatanFeedback: (data: any) => {
+    const message = JSON.stringify({
+      type: "PEMANFAATAN_FEEDBACK_UPDATE",
+      data,
+    });
+
+    allSockets.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(message);
+        } catch (err) {
+          console.error("[WebSocketService] broadcastPemanfaatanFeedback error:", err);
+        }
+      }
+    });
+  },
 };

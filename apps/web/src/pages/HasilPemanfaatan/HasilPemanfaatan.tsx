@@ -21,67 +21,13 @@ import {
   TrendingUp,
   MapPin,
 } from "lucide-react";
-import api from "../../services/api";
+import pemanfaatanApiService, { type FeedbackItem, type PemanfaatanProgram } from "../../services/pemanfaatanService";
 import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import PageHeader from "../../components/common/PageHeader";
-
-interface FeedbackItem {
-  id: string;
-  userId: string;
-  wargaNama: string;
-  kategori: string;
-  judul: string;
-  isiKritikSaran: string;
-  rating: number;
-  status: "MENUNGGU" | "DALAM_PROSES" | "SELESAI" | "DITOLAK" | string;
-  tanggapan?: string | null;
-  ditanggapiOleh?: string | null;
-  ditanggapiPada?: string | null;
-  fotoBuktiUrl?: string | null;
-  rwId?: number | null;
-  createdAt: string;
-  user?: {
-    id: string;
-    name: string;
-    phone: string;
-  };
-  rw?: {
-    id: number;
-    name: string;
-    kelurahan?: {
-      name: string;
-    };
-  } | null;
-}
-
-interface PemanfaatanProgram {
-  id: string;
-  namaProgram: string;
-  jenisProgram: string;
-  kategoriBahan: "ORGANIK" | "ANORGANIK" | string;
-  jumlahBahanMasukKg: number;
-  jumlahHasilKg: number;
-  unitHasil: string;
-  lokasiFasilitas?: string | null;
-  penanggungJawab?: string | null;
-  targetPenerimaManfaat?: string | null;
-  nilaiEkonomiRp?: number | null;
-  tanggalPencatatan: string;
-  status: "TERENCANA" | "PROSES" | "PANEN" | "DISTRIBUSI" | string;
-  fotoDokumentasiUrl?: string | null;
-  rwId: number;
-  rw?: {
-    id: number;
-    name: string;
-    kelurahan?: {
-      name: string;
-    };
-  };
-}
 
 export const HasilPemanfaatan: React.FC = () => {
   const { user } = useAuthStore();
@@ -127,14 +73,8 @@ export const HasilPemanfaatan: React.FC = () => {
   const fetchFeedbackList = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/pemanfaatan/feedback");
-      if (res.data && res.data.success) {
-        setItems(Array.isArray(res.data.data) ? res.data.data : []);
-      } else if (Array.isArray(res.data)) {
-        setItems(res.data);
-      } else {
-        setItems([]);
-      }
+      const data = await pemanfaatanApiService.getFeedbackList();
+      setItems(data);
     } catch (e: any) {
       console.warn("[HasilPemanfaatan] Gagal memuat feedback:", e?.message || e);
       setItems([]);
@@ -145,14 +85,8 @@ export const HasilPemanfaatan: React.FC = () => {
 
   const fetchProgramList = async () => {
     try {
-      const res = await api.get("/pemanfaatan");
-      if (res.data && res.data.success) {
-        setPrograms(Array.isArray(res.data.data) ? res.data.data : []);
-      } else if (Array.isArray(res.data)) {
-        setPrograms(res.data);
-      } else {
-        setPrograms([]);
-      }
+      const data = await pemanfaatanApiService.getPrograms();
+      setPrograms(data);
     } catch (e: any) {
       console.warn("[HasilPemanfaatan] Gagal memuat program:", e?.message || e);
       setPrograms([]);
@@ -276,7 +210,7 @@ export const HasilPemanfaatan: React.FC = () => {
 
     try {
       setSubmittingAdd(true);
-      const res = await api.post("/pemanfaatan/feedback", {
+      const res = await pemanfaatanApiService.createFeedback({
         judul: formJudul,
         kategori: formKategori,
         isiKritikSaran: formIsi,
@@ -284,7 +218,7 @@ export const HasilPemanfaatan: React.FC = () => {
         fotoBuktiUrl: formFotoUrl || null,
       });
 
-      if (res.data && res.data.success) {
+      if (res && (res.success || res.id)) {
         showToast.success("Kritik & saran berhasil disampaikan");
         setShowAddModal(false);
         setFormJudul("");
@@ -318,12 +252,12 @@ export const HasilPemanfaatan: React.FC = () => {
 
     try {
       setSubmittingRespond(true);
-      const res = await api.put(`/pemanfaatan/feedback/${selectedItemForRespond.id}/tanggapan`, {
+      const res = await pemanfaatanApiService.respondFeedback(selectedItemForRespond.id, {
         tanggapan: respondTanggapan,
         status: respondStatus,
       });
 
-      if (res.data && res.data.success) {
+      if (res && res.success) {
         showToast.success("Tanggapan resmi berhasil disimpan");
         setShowRespondModal(false);
         setSelectedItemForRespond(null);
@@ -346,8 +280,8 @@ export const HasilPemanfaatan: React.FC = () => {
     if (!deleteFeedbackId) return;
     try {
       setIsDeleting(true);
-      const res = await api.delete(`/pemanfaatan/feedback/${deleteFeedbackId}`);
-      if (res.data && res.data.success) {
+      const res = await pemanfaatanApiService.deleteFeedback(deleteFeedbackId);
+      if (res && res.success) {
         showToast.success("Kritik & saran berhasil dihapus");
         setDeleteFeedbackId(null);
         fetchFeedbackList();
