@@ -1914,6 +1914,7 @@ export class KknAttendanceService {
         statusKehadiran,
         actualInZoneSeconds,
         actualInZoneMinutes,
+        attendedAt: att?.attendedAt ? att.attendedAt.toISOString() : null,
         time: `${jamMulai} - ${jamSelesai}`,
         kelompok: {
           id: sch.kelompok?.id || student?.kelompok?.id || "KLP-001",
