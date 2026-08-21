@@ -2482,7 +2482,7 @@ export class KknService {
         if (proker.statusUsulan === "BELUM_DISETUJUI" || proker.statusUsulan === "DITOLAK") {
           throw new Error("Program kerja belum disetujui atau ditolak DPL, tidak bisa menambah logbook pemanfaatan.");
         }
-        programName = proker.judul || programName;
+        programName = proker.deskripsi || programName;
       }
     }
 
