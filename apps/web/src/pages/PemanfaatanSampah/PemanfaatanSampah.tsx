@@ -128,61 +128,70 @@ export const PemanfaatanSampah: React.FC = () => {
 
       <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
         
-        {/* View Mode Toggle */}
-        <div className="flex bg-slate-100 p-1 rounded-xl w-fit border border-slate-200 shadow-inner">
-          <button
-            onClick={() => setViewMode("TABLE")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition ${
-              viewMode === "TABLE" ? "bg-white text-[#009966] shadow-sm" : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            <ListIcon size={16} /> Tabel Data
-          </button>
-          <button
-            onClick={() => setViewMode("MAP")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition ${
-              viewMode === "MAP" ? "bg-white text-[#009966] shadow-sm" : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            <MapIcon size={16} /> Peta GIS
-          </button>
-        </div>
-
-        {/* Search & Filter */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input
-              type="text"
-              placeholder="Cari fasilitas..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#009966] transition"
-            />
+        {/* Toolbar: View Toggle, Search & Filter */}
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col xl:flex-row gap-4 xl:items-center">
+          
+          {/* View Mode Toggle */}
+          <div className="flex bg-slate-100/80 p-1.5 rounded-xl w-full xl:w-fit border border-slate-200/60 shadow-inner shrink-0">
+            <button
+              onClick={() => setViewMode("TABLE")}
+              className={`flex-1 xl:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
+                viewMode === "TABLE" 
+                  ? "bg-white text-[#009966] shadow-sm ring-1 ring-black/5" 
+                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/60"
+              }`}
+            >
+              <ListIcon size={18} /> Tabel Data
+            </button>
+            <button
+              onClick={() => setViewMode("MAP")}
+              className={`flex-1 xl:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
+                viewMode === "MAP" 
+                  ? "bg-white text-[#009966] shadow-sm ring-1 ring-black/5" 
+                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/60"
+              }`}
+            >
+              <MapIcon size={18} /> Peta GIS
+            </button>
           </div>
-          <select
-            value={selectedJenis}
-            onChange={(e) => setSelectedJenis(e.target.value)}
-            className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:border-[#009966]"
-          >
-            <option value="ALL">Semua Jenis</option>
-            <option value="loseda">Loseda</option>
-            <option value="bata_terawang">Bata Terawang</option>
-            <option value="rumah_maggot">Rumah Maggot</option>
-            <option value="bank_sampah">Bank Sampah</option>
-            <option value="tps">TPS</option>
-            <option value="buruan_sae">Buruan Sae</option>
-            <option value="poc">POC</option>
-          </select>
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:border-[#009966]"
-          >
-            <option value="ALL">Semua Status</option>
-            <option value="APPROVED">Disetujui</option>
-            <option value="PENDING">Pending</option>
-          </select>
+
+          <div className="h-px xl:h-8 w-full xl:w-px bg-slate-200 hidden xl:block"></div>
+
+          <div className="flex-1 flex flex-col sm:flex-row gap-3 w-full">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input
+                type="text"
+                placeholder="Cari fasilitas..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 hover:bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-[#009966] focus:ring-4 focus:ring-[#009966]/10 transition-all"
+              />
+            </div>
+            <select
+              value={selectedJenis}
+              onChange={(e) => setSelectedJenis(e.target.value)}
+              className="px-4 py-2.5 bg-slate-50 hover:bg-white border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:border-[#009966] focus:ring-4 focus:ring-[#009966]/10 transition-all cursor-pointer"
+            >
+              <option value="ALL">Semua Jenis</option>
+              <option value="loseda">Loseda</option>
+              <option value="bata_terawang">Bata Terawang</option>
+              <option value="rumah_maggot">Rumah Maggot</option>
+              <option value="bank_sampah">Bank Sampah</option>
+              <option value="tps">TPS</option>
+              <option value="buruan_sae">Buruan Sae</option>
+              <option value="poc">POC</option>
+            </select>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="px-4 py-2.5 bg-slate-50 hover:bg-white border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:border-[#009966] focus:ring-4 focus:ring-[#009966]/10 transition-all cursor-pointer"
+            >
+              <option value="ALL">Semua Status</option>
+              <option value="APPROVED">Disetujui</option>
+              <option value="PENDING">Pending</option>
+            </select>
+          </div>
         </div>
 
         {/* Content */}
