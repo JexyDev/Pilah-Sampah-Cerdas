@@ -368,7 +368,7 @@ export class KknAttendanceService {
     studentId: string,
     locations: { latitude: number; longitude: number; timestamp?: string }[]
   ) {
-    const savedLocations = [];
+    const savedLocations: any[] = [];
     let latestLoc: { latitude: number; longitude: number } | null = null;
 
     for (const loc of locations) {
@@ -493,29 +493,35 @@ export class KknAttendanceService {
 
         // Update actualInZoneMinutes pada attendance yang sedang BERLANGSUNG
         if (existingAtt && existingAtt.status === "BERLANGSUNG") {
-          // Kalkulasi dinamis berdasarkan waktu mulai agar 100% real-time dengan UI
-          const elapsedSeconds = Math.max(0, Math.floor((Date.now() - existingAtt.attendedAt.getTime()) / 1000));
-          durationInZone = Math.floor(elapsedSeconds / 60);
-          
           activeScheduleId = existingAtt.scheduleId;
           activeJamMasuk = existingAtt.attendedAt.toISOString();
-          activeActualInZoneSeconds = elapsedSeconds;
           activeTargetDurationMinutes = durasiWajibMenit;
 
-          await prisma.activityAttendance.update({
-            where: { id: existingAtt.id },
-            data: { actualInZoneMinutes: durationInZone },
-          });
+          if (isInsideZone) {
+            // Mahasiswa DI DALAM zona — update durasi berdasarkan GPS logs yang tervalidasi geofence
+            // durationInZone sudah dihitung dari calculateInZoneDurationMinutes() (L471)
+            activeActualInZoneSeconds = durationInZone * 60;
 
-          // Broadcast real-time WebSocket attendance update for Web Dashboard
-          websocketService.broadcastStudentAttendance({
-            id: existingAtt.id,
-            studentId: existingAtt.studentId,
-            scheduleId: existingAtt.scheduleId,
-            status: "BERLANGSUNG",
-            attendedAt: existingAtt.attendedAt.toISOString(),
-            actualInZoneMinutes: durationInZone,
-          });
+            await prisma.activityAttendance.update({
+              where: { id: existingAtt.id },
+              data: { actualInZoneMinutes: durationInZone },
+            });
+
+            // Broadcast real-time WebSocket attendance update for Web Dashboard
+            websocketService.broadcastStudentAttendance({
+              id: existingAtt.id,
+              studentId: existingAtt.studentId,
+              scheduleId: existingAtt.scheduleId,
+              status: "BERLANGSUNG",
+              attendedAt: existingAtt.attendedAt.toISOString(),
+              actualInZoneMinutes: durationInZone,
+            });
+          } else {
+            // Mahasiswa DI LUAR zona — gunakan nilai terakhir dari DB, JANGAN tambah durasi
+            const lastStoredMinutes = existingAtt.actualInZoneMinutes ?? 0;
+            activeActualInZoneSeconds = lastStoredMinutes * 60;
+            durationInZone = lastStoredMinutes;
+          }
         }
 
         // Catatan: Status tetap BERLANGSUNG sampai mahasiswa menekan tombol "Absen Sekarang" (manual check-in)
@@ -1887,9 +1893,10 @@ export class KknAttendanceService {
       let actualInZoneMinutes = 0;
       const att = sch.attendances?.[0];
       if (att && (att.status === "BERLANGSUNG" || att.status === "DALAM_RADIUS" || att.status === "DI_ZONA")) {
-        // Kalkulasi dinamis: (Waktu Saat Ini) - (jam_masuk)
-        actualInZoneSeconds = Math.max(0, Math.floor((Date.now() - att.attendedAt.getTime()) / 1000));
-        actualInZoneMinutes = Math.floor(actualInZoneSeconds / 60);
+        // Gunakan nilai tersimpan di DB (yang hanya di-update saat GPS ping memvalidasi posisi di dalam zona)
+        // Tidak menggunakan Date.now() - attendedAt karena itu menghitung elapsed time tanpa validasi geofence
+        actualInZoneMinutes = att.actualInZoneMinutes ?? 0;
+        actualInZoneSeconds = actualInZoneMinutes * 60;
       } else if (att && (att.status === "HADIR" || att.status === "SELESAI" || att.status === "SELESAI_TELAT")) {
         // Kegiatan sudah selesai — gunakan nilai tersimpan di DB
         actualInZoneMinutes = att.actualInZoneMinutes ?? 0;
