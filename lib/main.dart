@@ -241,7 +241,7 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         final user = ref.read(authProvider).user;
         if (user != null && (title.isNotEmpty || body.isNotEmpty)) {
           final notifId = message.data['notificationId']?.toString() ?? message.messageId ?? 'fcm_${DateTime.now().millisecondsSinceEpoch}';
-
+          
           await FirebaseNotificationService().saveNotification(
             userId: user.id,
             role: user.role.name,
@@ -261,11 +261,15 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
           );
         }
 
+        final isPoin = type.contains('POIN') || titleUpper.contains('POIN');
+        final payloadRoute = isPoin ? 'ROUTE_POIN' : 'ROUTE_NOTIF';
+
         // Tampilkan notifikasi sistem di luar aplikasi (system notification tray)
         NotificationEngine().showGenericNotification(
           id: message.messageId.hashCode,
           title: title,
           body: body,
+          payload: payloadRoute,
         );
 
         // Selalu refresh daftar notifikasi seluruh role saat ada push masuk

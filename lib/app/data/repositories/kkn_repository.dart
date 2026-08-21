@@ -92,6 +92,9 @@ abstract class KknRepository {
   /// Mendapatkan master data jenis fasilitas (GET /kkn/fasilitas/jenis)
   Future<List<JenisFasilitas>> getJenisFasilitas();
 
+  /// Mendapatkan daftar fasilitas fisik warga berdasarkan RW (GET /facilities)
+  Future<List<Map<String, dynamic>>> getFasilitasWarga();
+
   /// Mendaftarkan fasilitas daur ulang (Rumah Maggot dll)
   Future<Map<String, dynamic>> registerFasilitas(Map<String, dynamic> data, {String? imagePath});
 

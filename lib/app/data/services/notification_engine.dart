@@ -42,6 +42,8 @@ class NotificationEngine {
               navigatorKey.currentState!.pushNamed('/poin');
             } else if (response.payload == 'ROUTE_HISTORY') {
               navigatorKey.currentState!.pushNamed('/mahasiswa/riwayat');
+            } else if (response.payload == 'ROUTE_NOTIF') {
+              navigatorKey.currentState!.pushNamed('/mahasiswa/notifikasi');
             }
           }
         },

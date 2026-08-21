@@ -90,7 +90,11 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
                 loading: () => const CircularProgressIndicator(),
                 error: (e, _) => Text(e.toString()),
                 data: (list) {
-                  final approvedProker = list.where((p) => p['status'] == 'APPROVED').toList();
+                  final approvedProker = list.where((p) {
+                    final isApproved = p['status'] == 'APPROVED' || p['statusUsulan'] == 'APPROVED';
+                    final isSelesai = p['statusPelaksanaan'] == 'SELESAI' || p['status_pelaksanaan'] == 'SELESAI' || p['status'] == 'SELESAI';
+                    return isApproved && !isSelesai;
+                  }).toList();
                   if (approvedProker.isEmpty) {
                     return const Text('Belum ada Program Kerja yang disetujui DPL.', style: TextStyle(color: AppColors.dangerRed));
                   }

@@ -10,6 +10,11 @@ import '../../riwayat/controllers/riwayat_controller.dart' show pointHistoryProv
 import '../controllers/mahasiswa_notifikasi_controller.dart';
 import 'riwayat_program_kerja_view.dart'; // import provider untuk dropdown program kerja
 
+final fasilitasWargaListProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final repo = ref.read(kknRepositoryProvider);
+  return repo.getFasilitasWarga();
+});
+
 class LogbookPemanfaatanView extends ConsumerStatefulWidget {
   const LogbookPemanfaatanView({super.key});
 
@@ -20,6 +25,7 @@ class LogbookPemanfaatanView extends ConsumerStatefulWidget {
 class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView> {
   final _formKey = GlobalKey<FormState>();
   String? _selectedProkerId;
+  String? _selectedFasilitasId;
   final _teknologiCtrl = TextEditingController();
   final _bahanBakuCtrl = TextEditingController();
   final _beratInputCtrl = TextEditingController();
@@ -46,6 +52,7 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
       final repo = ref.read(kknRepositoryProvider);
       await repo.submitLogbookPemanfaatan({
         'programKerjaId': _selectedProkerId,
+        if (_selectedFasilitasId != null) 'fasilitasId': _selectedFasilitasId,
         'teknologi': _teknologiCtrl.text.trim(),
         'bahanBaku': _bahanBakuCtrl.text.trim(),
         'beratInputKg': double.tryParse(_beratInputCtrl.text.trim()) ?? 0,
@@ -128,7 +135,11 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
                     loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen)),
                     error: (e, _) => Text(e.toString(), style: const TextStyle(color: AppColors.dangerRed)),
                     data: (list) {
-                      final approvedProker = list.where((p) => p['status'] == 'APPROVED').toList();
+                      final approvedProker = list.where((p) {
+                        final isApproved = p['status'] == 'APPROVED' || p['statusUsulan'] == 'APPROVED';
+                        final isSelesai = p['statusPelaksanaan'] == 'SELESAI' || p['status_pelaksanaan'] == 'SELESAI' || p['status'] == 'SELESAI';
+                        return isApproved && !isSelesai;
+                      }).toList();
                       if (approvedProker.isEmpty) {
                         return Container(
                           padding: const EdgeInsets.all(12),
@@ -155,6 +166,31 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
                       );
                     },
                   ),
+
+                  const SizedBox(height: 16),
+                  const Text('Pilih Fasilitas Warga (Opsional)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
+                  const SizedBox(height: 8),
+                  Consumer(builder: (context, ref, _) {
+                    final fasilitasState = ref.watch(fasilitasWargaListProvider);
+                    return fasilitasState.when(
+                      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen)),
+                      error: (e, _) => Text('Gagal memuat fasilitas', style: const TextStyle(color: AppColors.dangerRed, fontSize: 12)),
+                      data: (list) {
+                        if (list.isEmpty) {
+                          return const Text('Tidak ada fasilitas warga di RW ini.', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontStyle: FontStyle.italic));
+                        }
+                        return DropdownButtonFormField<String>(
+                          initialValue: _selectedFasilitasId,
+                          decoration: _inputDecoration('Pilih Fasilitas...'),
+                          items: list.map((f) => DropdownMenuItem(
+                            value: f['id'].toString(),
+                            child: Text(f['nama'] ?? '-', style: const TextStyle(fontSize: 14)),
+                          )).toList(),
+                          onChanged: (val) => setState(() => _selectedFasilitasId = val),
+                        );
+                      }
+                    );
+                  }),
                 ],
               ),
 

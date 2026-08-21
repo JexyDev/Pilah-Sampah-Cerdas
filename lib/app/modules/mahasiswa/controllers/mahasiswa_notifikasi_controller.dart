@@ -49,6 +49,14 @@ bool _isMahasiswaNotification(NotificationEntity notif) {
       type.contains('POIN') ||
       type.contains('KKN') ||
       type.contains('KELOMPOK') ||
+      type.contains('PROGRAM') ||
+      type.contains('PROKER') ||
+      type.contains('FASILITAS') ||
+      type.contains('INOVASI') ||
+      type.contains('PERSETUJUAN') ||
+      type.contains('APPROVE') ||
+      type.contains('TOLAK') ||
+      type.contains('REJECT') ||
       title.contains('PEMANFAATAN') ||
       title.contains('AI') ||
       title.contains('AKTIVASI') ||

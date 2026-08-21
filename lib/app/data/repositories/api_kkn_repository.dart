@@ -532,6 +532,23 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
+  Future<List<Map<String, dynamic>>> getFasilitasWarga() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.kknFacilities);
+      if (response.statusCode == 200) {
+        final data = response.data['data'];
+        if (data is List) {
+          return data.cast<Map<String, dynamic>>();
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('[KKN] getFasilitasWarga error: $e');
+      return [];
+    }
+  }
+
+  @override
   Future<Map<String, dynamic>> registerFasilitas(Map<String, dynamic> data, {String? imagePath}) async {
     try {
       if (imagePath != null) {
