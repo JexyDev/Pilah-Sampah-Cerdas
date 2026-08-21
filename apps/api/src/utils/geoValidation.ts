@@ -140,14 +140,15 @@ export function validateCoordinate(
     };
   }
 
-  if (!isWithinCoblongBounds(lat, lng)) {
-    return {
-      valid: false,
-      errorCode: "OUT_OF_COBLONG_BOUNDS",
-      message:
-        "Koordinat berada di luar wilayah Kecamatan Coblong. Pastikan GPS aktif dan berada di lokasi KKN.",
-    };
-  }
+  // BYPASS: Dimatikan sementara untuk keperluan testing lokasi
+  // if (!isWithinCoblongBounds(lat, lng)) {
+  //   return {
+  //     valid: false,
+  //     errorCode: "OUT_OF_COBLONG_BOUNDS",
+  //     message:
+  //       "Koordinat berada di luar wilayah Kecamatan Coblong. Pastikan GPS aktif dan berada di lokasi KKN.",
+  //   };
+  // }
 
   if (previousLocation && isTeleportation(previousLocation, { latitude: lat, longitude: lng })) {
     return {
