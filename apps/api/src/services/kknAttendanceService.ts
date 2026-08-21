@@ -275,7 +275,7 @@ export class KknAttendanceService {
               data: { actualInZoneMinutes: durationInZone },
             });
           }
-        } else if (durationInZone > 0) {
+        } else if (isInsideZone) {
           try {
             await prisma.activityAttendance.create({
               data: {
@@ -285,9 +285,10 @@ export class KknAttendanceService {
                 method: "GPS_ACTIVITY",
                 latitude,
                 longitude,
-                actualInZoneMinutes: durationInZone,
+                actualInZoneMinutes: 0,
               },
             });
+            autoAttendanceTriggered = true;
           } catch (_createErr) {
             // Continue if concurrent request created record
           }
@@ -301,6 +302,8 @@ export class KknAttendanceService {
       status: isInsideZone ? "LAPANGAN" : "DI_LUAR_ZONA",
       currentStatus: isInsideZone ? "LAPANGAN" : "DI_LUAR_ZONA",
       inZoneMinutes,
+      actualInZoneSeconds: inZoneMinutes * 60,
+      actualInZoneMinutes: inZoneMinutes,
       autoAttendanceTriggered,
     };
   }
@@ -1846,6 +1849,20 @@ export class KknAttendanceService {
       const latNum = sch.latitude ? Number(sch.latitude) : -6.8906;
       const lngNum = sch.longitude ? Number(sch.longitude) : 107.615;
 
+      // Hitung actualInZoneSeconds real-time dari record attendance
+      let actualInZoneSeconds = 0;
+      let actualInZoneMinutes = 0;
+      const att = sch.attendances?.[0];
+      if (att && (att.status === "BERLANGSUNG" || att.status === "DALAM_RADIUS" || att.status === "DI_ZONA")) {
+        // Gunakan murni actualInZoneMinutes dari GPS logs, jangan gunakan elapsed time fallback
+        actualInZoneMinutes = att.actualInZoneMinutes || 0;
+        actualInZoneSeconds = actualInZoneMinutes * 60;
+      } else if (att && (att.status === "HADIR" || att.status === "SELESAI" || att.status === "SELESAI_TELAT")) {
+        // Kegiatan sudah selesai — gunakan nilai tersimpan di DB
+        actualInZoneMinutes = att.actualInZoneMinutes ?? 0;
+        actualInZoneSeconds = actualInZoneMinutes * 60;
+      }
+
       return {
         id: sch.id,
         namaKegiatan: sch.title,
@@ -1862,6 +1879,8 @@ export class KknAttendanceService {
         },
         status: scheduleStatus,
         statusKehadiran,
+        actualInZoneSeconds,
+        actualInZoneMinutes,
         time: `${jamMulai} - ${jamSelesai}`,
         kelompok: {
           id: sch.kelompok?.id || student?.kelompok?.id || "KLP-001",
@@ -1952,6 +1971,7 @@ export class KknAttendanceService {
         longitude,
         method: "GPS_ACTIVITY",
         checkOutAt: null,
+        actualInZoneMinutes: 0,
       },
       create: {
         studentId: studentUserId,
@@ -2067,6 +2087,8 @@ export class KknAttendanceService {
       invalidationHours: (ruleConfigs as any).attendanceGeofenceInvalidationHours ?? 2,
       serverTimestamp: new Date().toISOString(),
       attendanceId: attendance.id,
+      actualInZoneSeconds: 0,
+      actualInZoneMinutes: 0,
     };
   }
 
