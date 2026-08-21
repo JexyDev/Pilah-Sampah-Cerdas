@@ -409,6 +409,14 @@ class KknBackgroundTaskHandler extends TaskHandler {
         case 'UPDATE_TARGET':
           _handleUpdateTarget(data);
           break;
+        case 'SYNC_DURATION':
+          final seconds = (data['seconds'] as num?)?.toInt() ?? 0;
+          if (seconds > _accumulatedSeconds) {
+            _accumulatedSeconds = seconds;
+            _zoneEntryTime = DateTime.now(); 
+            _saveDuration(_accumulatedSeconds, entryTime: _zoneEntryTime);
+          }
+          break;
       }
     }
   }

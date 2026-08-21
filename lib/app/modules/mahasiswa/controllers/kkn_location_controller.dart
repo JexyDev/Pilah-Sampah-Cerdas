@@ -651,6 +651,13 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
               // Reset zona entry time agar akumulasi baru mulai dihitung dari durasi server ini
               _zoneEntryTime = DateTime.now(); 
               await _savePersistentTimer();
+              
+              if (_backgroundServiceStarted) {
+                FlutterForegroundTask.sendDataToTask({
+                  'type': 'SYNC_DURATION',
+                  'seconds': serverSeconds,
+                });
+              }
             }
 
             state = state.copyWith(
