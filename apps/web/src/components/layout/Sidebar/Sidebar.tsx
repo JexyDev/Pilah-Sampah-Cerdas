@@ -31,7 +31,7 @@ import { useAuthStore } from "../../../store/useAuthStore";
 import type { UserRole } from "../../../store/useAuthStore";
 import showToast from "../../../utils/showToast";
 import type { LucideIcon } from "lucide-react";
-import FallingLeavesBackground from "./FallingLeavesBackground";
+// import FallingLeavesBackground from "./FallingLeavesBackground";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -909,8 +909,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           <div className="relative z-10 flex flex-col h-full justify-between overflow-hidden">
             {/* Top Brand Logo Header Section with Real-Time Clock */}
             <div className="pt-4 pb-3 px-3.5 border-b border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-[#f3fbf5]/40 dark:from-emerald-950/20 via-transparent to-transparent shrink-0">
-              {/* Animated Falling Leaves restricted to top logo header */}
-              <FallingLeavesBackground />
+              {/* ponytail: FallingLeavesBackground di-hide sesuai permintaan */}
+              {/* <FallingLeavesBackground /> */}
               <Link to="/dasbor" className="flex items-center justify-center gap-3 group cursor-pointer relative z-10 mb-3 px-2 w-full text-center">
                 <img
                   src="/app-logo.png"

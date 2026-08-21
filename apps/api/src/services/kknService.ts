@@ -2437,12 +2437,26 @@ export class KknService {
         judul = descSplit[0].replace(/\*\*/g, "");
       }
       const st = String(item.status);
+      let u = (item as any).statusUsulan;
+      if (!u) {
+        if (st === "DITERIMA" || st === "SEDANG_BERJALAN" || st === "SELESAI" || st === "APPROVED" || st === "DISETUJUI") u = "DISETUJUI";
+        else if (st === "DITOLAK" || st === "REJECTED" || st === "TIDAK_DISETUJUI") u = "DITOLAK";
+        else u = "BELUM_DISETUJUI";
+      }
+      let pl = (item as any).statusPelaksanaan;
+      if (!pl) {
+        if (st === "SELESAI") pl = "SELESAI";
+        else if (st === "SEDANG_BERJALAN" || st === "BERJALAN") pl = "SEDANG_BERJALAN";
+        else pl = "BELUM_MULAI";
+      }
       return {
         id: item.id,
         judul,
         kategori: item.kategori,
         rencanaAnggaran: Number(item.kebutuhanBiaya) || 0,
         status: (st === "DITERIMA" || st === "SEDANG_BERJALAN" || st === "SELESAI" || st === "APPROVED" || st === "DISETUJUI") ? "APPROVED" : (st === "DITOLAK" ? "REJECTED" : "PENDING"),
+        statusUsulan: u,
+        statusPelaksanaan: pl,
         catatanDpl: catatan,
         tanggal: item.createdAt.toISOString(),
       };

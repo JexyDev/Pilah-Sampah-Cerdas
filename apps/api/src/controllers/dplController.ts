@@ -183,12 +183,14 @@ export const dplController = {
       const userRole = (req.user as any)?.role;
       const groupId = req.query.groupId as string | undefined;
       const kategori = req.query.kategori as string | undefined;
+      const statusUsulan = req.query.statusUsulan as string | undefined;
       const statusPelaksanaan = req.query.statusPelaksanaan as string | undefined;
       const statusPenilaian = req.query.statusPenilaian as string | undefined;
       const search = req.query.search as string | undefined;
 
       const data = await dplService.getProgramKerja(dplUserId, groupId, userRole, {
         kategori,
+        statusUsulan,
         statusPelaksanaan,
         statusPenilaian,
         search,
@@ -204,7 +206,7 @@ export const dplController = {
     try {
       const dplUserId = getUserId(req);
       const userRole = (req.user as any)?.role;
-      const { kelompokId, nomor, deskripsi, kategori, sumber, waktuPelaksanaan, linkGoogleDrive, kebutuhanBiaya, status } = req.body;
+      const { kelompokId, nomor, deskripsi, kategori, sumber, waktuPelaksanaan, linkGoogleDrive, kebutuhanBiaya, status, statusUsulan, statusPelaksanaan } = req.body;
       if (!kelompokId || !deskripsi) {
         res.status(400).json({ error: "BAD_REQUEST", message: "kelompokId dan deskripsi wajib diisi" });
         return;
@@ -219,6 +221,8 @@ export const dplController = {
         linkGoogleDrive,
         kebutuhanBiaya: kebutuhanBiaya !== undefined ? Number(kebutuhanBiaya) : 0,
         status,
+        statusUsulan,
+        statusPelaksanaan,
       });
       res.status(201).json({ success: true, data });
     } catch (error: any) {
@@ -236,7 +240,7 @@ export const dplController = {
       const id = req.params.id;
       const dplUserId = getUserId(req);
       const userRole = (req.user as any)?.role;
-      const { nomor, deskripsi, kategori, sumber, waktuPelaksanaan, linkGoogleDrive, kebutuhanBiaya, status, catatanDpl } = req.body;
+      const { nomor, deskripsi, kategori, sumber, waktuPelaksanaan, linkGoogleDrive, kebutuhanBiaya, status, statusUsulan, statusPelaksanaan, catatanDpl } = req.body;
       const data = await dplService.updateProgramKerja(id, dplUserId, userRole, {
         nomor: nomor !== undefined ? Number(nomor) : undefined,
         deskripsi,
@@ -246,6 +250,8 @@ export const dplController = {
         linkGoogleDrive,
         kebutuhanBiaya: kebutuhanBiaya !== undefined ? Number(kebutuhanBiaya) : undefined,
         status,
+        statusUsulan,
+        statusPelaksanaan,
         catatanDpl,
       });
       res.json({ success: true, data });
@@ -281,25 +287,9 @@ export const dplController = {
       const dplUserId = getUserId(req);
       const userRole = (req.user as any)?.role;
       const id = req.params.id;
-      const { status, catatanDpl } = req.body;
-      const validStatuses = [
-        "DITERIMA",
-        "DISETUJUI",
-        "DITOLAK",
-        "TIDAK_DISETUJUI",
-        "SEDANG_BERJALAN",
-        "SEDANG_DILAKSANAKAN",
-        "SELESAI",
-        "BELUM_DISETUJUI",
-      ];
-      if (!validStatuses.includes(status)) {
-        res.status(400).json({
-          error: "BAD_REQUEST",
-          message: `Status harus salah satu dari: ${validStatuses.join(", ")}`,
-        });
-        return;
-      }
-      const data = await dplService.decideProgramKerja(dplUserId, id, status as any, catatanDpl, userRole);
+      const { status, statusUsulan, statusPelaksanaan, catatanDpl } = req.body;
+      const effectiveStatus = status || statusUsulan || "DISETUJUI";
+      const data = await dplService.decideProgramKerja(dplUserId, id, effectiveStatus as any, catatanDpl, userRole, statusPelaksanaan);
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[dplController.decideProgramKerja] error:", error);
@@ -316,7 +306,7 @@ export const dplController = {
       const dplUserId = getUserId(req);
       const userRole = (req.user as any)?.role;
       const id = req.params.id;
-      const { skorPenilaian, evaluasiDpl, aspekPenilaian, predikat, statusPenilaian } = req.body;
+      const { skorPenilaian, evaluasiDpl, aspekPenilaian, predikat, statusPenilaian, statusPelaksanaan } = req.body;
       if (skorPenilaian === undefined || isNaN(Number(skorPenilaian))) {
         res.status(400).json({ error: "BAD_REQUEST", message: "skorPenilaian (angka 0-100) wajib diisi" });
         return;
@@ -329,7 +319,8 @@ export const dplController = {
         userRole,
         aspekPenilaian,
         predikat,
-        statusPenilaian
+        statusPenilaian,
+        statusPelaksanaan
       );
       res.json({ success: true, data });
     } catch (error: any) {

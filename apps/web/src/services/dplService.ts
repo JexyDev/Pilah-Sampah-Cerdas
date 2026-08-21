@@ -140,6 +140,8 @@ export interface ProgramKerjaItem {
   linkGoogleDrive?: string | null;
   kebutuhanBiaya: number;
   status: "BELUM_DISETUJUI" | "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI";
+  statusUsulan?: "BELUM_DISETUJUI" | "DISETUJUI" | "DITOLAK" | string;
+  statusPelaksanaan?: "BELUM_MULAI" | "SEDANG_BERJALAN" | "SELESAI" | string;
   catatanDpl?: string | null;
   reviewedByName?: string | null;
   reviewedAt?: string | null;
@@ -162,8 +164,8 @@ export interface RekapNilaiStudent {
   kelompokName: string;
   kelurahan: string;
   isKetua: boolean;
-  kehadiran?: number | null;
-  poinDampingan?: number | null;
+  kehadiran: number;
+  poinDampingan: number;
   individuDpl?: number | null;
   individuMpl?: number | null;
   individuGabungan?: number | null;
@@ -176,7 +178,6 @@ export interface RekapNilaiStudent {
   nilaiAkhir?: number | null;
   predikat?: string | null;
   status?: string;
-  // Backward compatibility fields
   skorIndividu?: number;
   catatanIndividu?: string;
   skorProkerKelompok?: number;
@@ -219,7 +220,7 @@ export interface ConfigTargets {
 export const dplService = {
   getGroupSummary: async (): Promise<GroupSummary[]> => {
     try {
-      const res = await api.get("/dpl/groups");
+      const res = await api.get("/dpl/group-summary");
       if (res.data.success && Array.isArray(res.data.data)) {
         return res.data.data;
       }
@@ -311,6 +312,7 @@ export const dplService = {
     groupId?: string,
     filters?: {
       kategori?: string;
+      statusUsulan?: string;
       statusPelaksanaan?: string;
       statusPenilaian?: string;
       search?: string;
@@ -340,6 +342,8 @@ export const dplService = {
     linkGoogleDrive?: string;
     kebutuhanBiaya?: number;
     status?: "BELUM_DISETUJUI" | "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI";
+    statusUsulan?: "BELUM_DISETUJUI" | "DISETUJUI" | "DITOLAK" | string;
+    statusPelaksanaan?: "BELUM_MULAI" | "SEDANG_BERJALAN" | "SELESAI" | string;
   }) => {
     const res = await api.post("/dpl/program-kerja", data);
     return res.data;
@@ -356,6 +360,8 @@ export const dplService = {
       linkGoogleDrive?: string;
       kebutuhanBiaya?: number;
       status?: "BELUM_DISETUJUI" | "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI";
+      statusUsulan?: "BELUM_DISETUJUI" | "DISETUJUI" | "DITOLAK" | string;
+      statusPelaksanaan?: "BELUM_MULAI" | "SEDANG_BERJALAN" | "SELESAI" | string;
       catatanDpl?: string;
     }
   ) => {
@@ -368,8 +374,13 @@ export const dplService = {
     return res.data;
   },
 
-  decideProgramKerja: async (id: string, status: "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI" | "BELUM_DISETUJUI", catatanDpl?: string) => {
-    const res = await api.patch(`/dpl/program-kerja/${id}/decision`, { status, catatanDpl });
+  decideProgramKerja: async (
+    id: string,
+    status: "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI" | "BELUM_DISETUJUI",
+    catatanDpl?: string,
+    statusPelaksanaan?: string
+  ) => {
+    const res = await api.patch(`/dpl/program-kerja/${id}/decision`, { status, statusUsulan: status, statusPelaksanaan, catatanDpl });
     return res.data;
   },
 
@@ -379,7 +390,8 @@ export const dplService = {
     evaluasiDpl?: string,
     aspekPenilaian?: AspekPenilaianItem[],
     predikat?: string,
-    statusPenilaian?: "BELUM_DINILAI" | "SEDANG_DINILAI" | "SUDAH_DINILAI"
+    statusPenilaian?: "BELUM_DINILAI" | "SEDANG_DINILAI" | "SUDAH_DINILAI",
+    statusPelaksanaan?: string
   ) => {
     const res = await api.patch(`/dpl/program-kerja/${id}/penilaian`, {
       skorPenilaian,
@@ -387,6 +399,7 @@ export const dplService = {
       aspekPenilaian,
       predikat,
       statusPenilaian,
+      statusPelaksanaan,
     });
     return res.data;
   },

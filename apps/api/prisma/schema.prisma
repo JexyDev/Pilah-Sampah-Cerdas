@@ -383,6 +383,8 @@ model ProgramKerjaKkn {
   linkGoogleDrive  String?      @map("link_google_drive")
   kebutuhanBiaya   Decimal      @default(0.00) @map("kebutuhan_biaya") @db.Decimal(12, 2)
   status           StatusProker @default(BELUM_DISETUJUI) @map("status")
+  statusUsulan     String?      @default("BELUM_DISETUJUI") @map("status_usulan")
+  statusPelaksanaan String?     @default("BELUM_MULAI") @map("status_pelaksanaan")
   catatanDpl       String?      @map("catatan_dpl")
   reviewedById     String?      @map("id_pereview")
   reviewedAt       DateTime?    @map("direview_pada")

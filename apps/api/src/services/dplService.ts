@@ -255,14 +255,31 @@ export const dplService = {
           totalWasteWeight,
           avgAttendanceRate,
           totalGroupPoints: pointSum._sum.points || 0,
-          programKerja: prokerList.map((p) => ({
-            id: p.id,
-            nomor: p.nomor || 1,
-            deskripsi: p.deskripsi,
-            kebutuhanBiaya: Number(p.kebutuhanBiaya || 0),
-            status: p.status,
-            skorPenilaian: p.skorPenilaian !== null ? Number(p.skorPenilaian) : null,
-          })),
+          programKerja: prokerList.map((p) => {
+            const legacySt = String(p.status || "").toUpperCase();
+            let u = (p as any).statusUsulan;
+            if (!u) {
+              if (legacySt === "DITERIMA" || legacySt === "DISETUJUI" || legacySt === "SEDANG_BERJALAN" || legacySt === "SELESAI") u = "DISETUJUI";
+              else if (legacySt === "DITOLAK" || legacySt === "TIDAK_DISETUJUI") u = "DITOLAK";
+              else u = "BELUM_DISETUJUI";
+            }
+            let pl = (p as any).statusPelaksanaan;
+            if (!pl) {
+              if (legacySt === "SELESAI") pl = "SELESAI";
+              else if (legacySt === "SEDANG_BERJALAN" || legacySt === "SEDANG_DILAKSANAKAN") pl = "SEDANG_BERJALAN";
+              else pl = "BELUM_MULAI";
+            }
+            return {
+              id: p.id,
+              nomor: p.nomor || 1,
+              deskripsi: p.deskripsi,
+              kebutuhanBiaya: Number(p.kebutuhanBiaya || 0),
+              status: p.status,
+              statusUsulan: u,
+              statusPelaksanaan: pl,
+              skorPenilaian: p.skorPenilaian !== null ? Number(p.skorPenilaian) : null,
+            };
+          }),
         };
       })
     );
@@ -986,6 +1003,7 @@ export const dplService = {
     role?: any,
     filters?: {
       kategori?: string;
+      statusUsulan?: string;
       statusPelaksanaan?: string;
       statusPenilaian?: string;
       search?: string;
@@ -1014,12 +1032,46 @@ export const dplService = {
       prokerWhere.kategori = { equals: filters.kategori, mode: "insensitive" };
     }
 
+    // Filter Status Usulan (DISETUJUI / DITOLAK / BELUM_DISETUJUI)
+    if (filters?.statusUsulan && filters.statusUsulan !== "ALL") {
+      const u = filters.statusUsulan.toUpperCase();
+      if (u === "DISETUJUI" || u === "DITERIMA") {
+        prokerWhere.OR = [
+          { statusUsulan: { in: ["DISETUJUI", "DITERIMA"] } },
+          { status: { in: ["DITERIMA", "SEDANG_BERJALAN", "SELESAI"] } },
+        ];
+      } else if (u === "DITOLAK" || u === "TIDAK_DISETUJUI") {
+        prokerWhere.OR = [
+          { statusUsulan: { in: ["DITOLAK", "TIDAK_DISETUJUI"] } },
+          { status: "DITOLAK" },
+        ];
+      } else if (u === "BELUM_DISETUJUI" || u === "MENUNGGU" || u === "PENDING") {
+        prokerWhere.OR = [
+          { statusUsulan: { in: ["BELUM_DISETUJUI", "MENUNGGU", "PENDING"] } },
+          { status: "BELUM_DISETUJUI" },
+        ];
+      }
+    }
+
+    // Filter Status Pelaksanaan (BELUM_MULAI / SEDANG_BERJALAN / SELESAI)
     if (filters?.statusPelaksanaan && filters.statusPelaksanaan !== "ALL") {
-      let normStatus: any = filters.statusPelaksanaan;
-      if (normStatus === "SELESAI") normStatus = "SELESAI";
-      else if (normStatus === "BERJALAN" || normStatus === "SEDANG_BERJALAN") normStatus = "SEDANG_BERJALAN";
-      else if (normStatus === "BELUM_MULAI" || normStatus === "BELUM_DISETUJUI") normStatus = "BELUM_DISETUJUI";
-      prokerWhere.status = normStatus;
+      const p = filters.statusPelaksanaan.toUpperCase();
+      if (p === "SELESAI" || p === "SUDAH") {
+        prokerWhere.OR = [
+          { statusPelaksanaan: "SELESAI" },
+          { status: "SELESAI" },
+        ];
+      } else if (p === "BERJALAN" || p === "SEDANG_BERJALAN" || p === "SEDANG" || p === "SEDANG_DILAKSANAKAN") {
+        prokerWhere.OR = [
+          { statusPelaksanaan: { in: ["SEDANG_BERJALAN", "SEDANG_DILAKSANAKAN", "BERJALAN"] } },
+          { status: "SEDANG_BERJALAN" },
+        ];
+      } else if (p === "BELUM_MULAI" || p === "BELUM") {
+        prokerWhere.OR = [
+          { statusPelaksanaan: { in: ["BELUM_MULAI", "BELUM"] } },
+          { status: { in: ["BELUM_DISETUJUI", "DITERIMA"] } },
+        ];
+      }
     }
 
     if (filters?.statusPenilaian && filters.statusPenilaian !== "ALL") {
@@ -1057,6 +1109,31 @@ export const dplService = {
         else calculatedPredikat = "Kurang";
       }
 
+      // Standarisasi Status Usulan (DISETUJUI / DITOLAK / BELUM_DISETUJUI)
+      let resolvedStatusUsulan = (p as any).statusUsulan;
+      const legacySt = String(p.status || "").toUpperCase();
+      if (!resolvedStatusUsulan) {
+        if (legacySt === "DITERIMA" || legacySt === "DISETUJUI" || legacySt === "SEDANG_BERJALAN" || legacySt === "SELESAI") {
+          resolvedStatusUsulan = "DISETUJUI";
+        } else if (legacySt === "DITOLAK" || legacySt === "TIDAK_DISETUJUI") {
+          resolvedStatusUsulan = "DITOLAK";
+        } else {
+          resolvedStatusUsulan = "BELUM_DISETUJUI";
+        }
+      }
+
+      // Standarisasi Status Pelaksanaan (BELUM_MULAI / SEDANG_BERJALAN / SELESAI)
+      let resolvedStatusPelaksanaan = (p as any).statusPelaksanaan;
+      if (!resolvedStatusPelaksanaan) {
+        if (legacySt === "SELESAI") {
+          resolvedStatusPelaksanaan = "SELESAI";
+        } else if (legacySt === "SEDANG_BERJALAN" || legacySt === "SEDANG_DILAKSANAKAN") {
+          resolvedStatusPelaksanaan = "SEDANG_BERJALAN";
+        } else {
+          resolvedStatusPelaksanaan = "BELUM_MULAI";
+        }
+      }
+
       return {
         id: p.id,
         kelompokId: p.kelompokId,
@@ -1070,6 +1147,8 @@ export const dplService = {
         linkGoogleDrive: p.linkGoogleDrive || null,
         kebutuhanBiaya: Number(p.kebutuhanBiaya || 0),
         status: p.status,
+        statusUsulan: resolvedStatusUsulan,
+        statusPelaksanaan: resolvedStatusPelaksanaan,
         catatanDpl: p.catatanDpl,
         reviewedByName: p.reviewedBy?.name || null,
         reviewedAt: p.reviewedAt,
@@ -1099,40 +1178,62 @@ export const dplService = {
       linkGoogleDrive?: string;
       kebutuhanBiaya?: number;
       status?: "BELUM_DISETUJUI" | "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI";
+      statusUsulan?: "BELUM_DISETUJUI" | "DISETUJUI" | "DITOLAK" | string;
+      statusPelaksanaan?: "BELUM_MULAI" | "SEDANG_BERJALAN" | "SELESAI" | string;
     }
   ) => {
     const groups = await prisma.kelompokKkn.findMany({
       where: getKelompokWhere(dplUserId, role),
       select: { id: true },
     });
-    const allowedGroupIds = groups.map(g => g.id);
+    const allowedGroupIds = groups.map((g) => g.id);
 
     if (!allowedGroupIds.includes(data.kelompokId)) {
       throw new Error("FORBIDDEN_SCOPE");
     }
 
-    let normalizedStatus: any = data.status || "BELUM_DISETUJUI";
-    if (normalizedStatus === "DISETUJUI") normalizedStatus = "DITERIMA";
-    if (normalizedStatus === "TIDAK_DISETUJUI") normalizedStatus = "DITOLAK";
-    if (normalizedStatus === "SEDANG_DILAKSANAKAN") normalizedStatus = "SEDANG_BERJALAN";
-    if (!["BELUM_DISETUJUI", "DITERIMA", "DITOLAK", "SEDANG_BERJALAN", "SELESAI"].includes(normalizedStatus)) {
-      normalizedStatus = "BELUM_DISETUJUI";
+    let normalizedStatusUsulan = data.statusUsulan || data.status || "BELUM_DISETUJUI";
+    if (normalizedStatusUsulan === "DITERIMA") normalizedStatusUsulan = "DISETUJUI";
+    if (normalizedStatusUsulan === "TIDAK_DISETUJUI") normalizedStatusUsulan = "DITOLAK";
+
+    let normalizedStatusPelaksanaan = data.statusPelaksanaan || "BELUM_MULAI";
+    if (normalizedStatusPelaksanaan === "BERJALAN" || normalizedStatusPelaksanaan === "SEDANG") normalizedStatusPelaksanaan = "SEDANG_BERJALAN";
+    if (normalizedStatusPelaksanaan === "SUDAH") normalizedStatusPelaksanaan = "SELESAI";
+
+    // Legacy status synchronization
+    let legacyStatus: any = "BELUM_DISETUJUI";
+    if (normalizedStatusPelaksanaan === "SELESAI") {
+      legacyStatus = "SELESAI";
+    } else if (normalizedStatusPelaksanaan === "SEDANG_BERJALAN") {
+      legacyStatus = "SEDANG_BERJALAN";
+    } else if (normalizedStatusUsulan === "DISETUJUI") {
+      legacyStatus = "DITERIMA";
+    } else if (normalizedStatusUsulan === "DITOLAK") {
+      legacyStatus = "DITOLAK";
     }
 
+    const createPayload: any = {
+      kelompokId: data.kelompokId,
+      nomor: data.nomor || 1,
+      deskripsi: data.deskripsi,
+      kategori: data.kategori || "LAINNYA",
+      sumber: data.sumber || "MAHASISWA",
+      waktuPelaksanaan: data.waktuPelaksanaan || null,
+      linkGoogleDrive: data.linkGoogleDrive || null,
+      kebutuhanBiaya: data.kebutuhanBiaya || 0,
+      status: legacyStatus,
+      statusUsulan: normalizedStatusUsulan,
+      statusPelaksanaan: normalizedStatusPelaksanaan,
+    };
+
     const proker = await prisma.programKerjaKkn.create({
-      data: {
-        kelompokId: data.kelompokId,
-        nomor: data.nomor || 1,
-        deskripsi: data.deskripsi,
-        kategori: data.kategori || "LAINNYA",
-        sumber: data.sumber || "MAHASISWA",
-        waktuPelaksanaan: data.waktuPelaksanaan || null,
-        linkGoogleDrive: data.linkGoogleDrive || null,
-        kebutuhanBiaya: data.kebutuhanBiaya || 0,
-        status: normalizedStatus,
-      },
+      data: createPayload,
     });
-    return proker;
+    return {
+      ...proker,
+      statusUsulan: (proker as any).statusUsulan || normalizedStatusUsulan,
+      statusPelaksanaan: (proker as any).statusPelaksanaan || normalizedStatusPelaksanaan,
+    };
   },
 
   /**
@@ -1151,6 +1252,8 @@ export const dplService = {
       linkGoogleDrive?: string;
       kebutuhanBiaya?: number;
       status?: "BELUM_DISETUJUI" | "DITERIMA" | "DITOLAK" | "SEDANG_BERJALAN" | "SELESAI";
+      statusUsulan?: "BELUM_DISETUJUI" | "DISETUJUI" | "DITOLAK" | string;
+      statusPelaksanaan?: "BELUM_MULAI" | "SEDANG_BERJALAN" | "SELESAI" | string;
       catatanDpl?: string;
     }
   ) => {
@@ -1161,7 +1264,7 @@ export const dplService = {
       where: getKelompokWhere(userId, role),
       select: { id: true },
     });
-    const allowedGroupIds = groups.map(g => g.id);
+    const allowedGroupIds = groups.map((g) => g.id);
 
     if (!allowedGroupIds.includes(prokerExisting.kelompokId)) {
       throw new Error("FORBIDDEN_SCOPE");
@@ -1175,20 +1278,70 @@ export const dplService = {
     if (data.waktuPelaksanaan !== undefined) updateData.waktuPelaksanaan = data.waktuPelaksanaan;
     if (data.linkGoogleDrive !== undefined) updateData.linkGoogleDrive = data.linkGoogleDrive;
     if (data.kebutuhanBiaya !== undefined) updateData.kebutuhanBiaya = data.kebutuhanBiaya;
-    if (data.status !== undefined) {
-      let normalizedStatus: any = data.status;
-      if (normalizedStatus === "DISETUJUI") normalizedStatus = "DITERIMA";
-      if (normalizedStatus === "TIDAK_DISETUJUI") normalizedStatus = "DITOLAK";
-      if (normalizedStatus === "SEDANG_DILAKSANAKAN") normalizedStatus = "SEDANG_BERJALAN";
-      updateData.status = normalizedStatus;
+
+    let targetUsulan = data.statusUsulan;
+    let targetPelaksanaan = data.statusPelaksanaan;
+
+    if (data.status !== undefined && !targetUsulan && !targetPelaksanaan) {
+      const s = String(data.status).toUpperCase();
+      if (s === "SELESAI") {
+        targetUsulan = "DISETUJUI";
+        targetPelaksanaan = "SELESAI";
+      } else if (s === "SEDANG_BERJALAN" || s === "SEDANG_DILAKSANAKAN") {
+        targetUsulan = "DISETUJUI";
+        targetPelaksanaan = "SEDANG_BERJALAN";
+      } else if (s === "DITERIMA" || s === "DISETUJUI") {
+        targetUsulan = "DISETUJUI";
+        targetPelaksanaan = "BELUM_MULAI";
+      } else if (s === "DITOLAK" || s === "TIDAK_DISETUJUI") {
+        targetUsulan = "DITOLAK";
+        targetPelaksanaan = "BELUM_MULAI";
+      } else {
+        targetUsulan = "BELUM_DISETUJUI";
+        targetPelaksanaan = "BELUM_MULAI";
+      }
     }
+
+    if (targetUsulan !== undefined) {
+      let normU = targetUsulan;
+      if (normU === "DITERIMA") normU = "DISETUJUI";
+      if (normU === "TIDAK_DISETUJUI") normU = "DITOLAK";
+      updateData.statusUsulan = normU;
+    }
+
+    if (targetPelaksanaan !== undefined) {
+      let normP = targetPelaksanaan;
+      if (normP === "BERJALAN" || normP === "SEDANG") normP = "SEDANG_BERJALAN";
+      if (normP === "SUDAH") normP = "SELESAI";
+      updateData.statusPelaksanaan = normP;
+    }
+
+    // Sync legacy status
+    const effectiveUsulan = updateData.statusUsulan || (prokerExisting as any).statusUsulan || "BELUM_DISETUJUI";
+    const effectivePelaksanaan = updateData.statusPelaksanaan || (prokerExisting as any).statusPelaksanaan || "BELUM_MULAI";
+    if (effectivePelaksanaan === "SELESAI") {
+      updateData.status = "SELESAI";
+    } else if (effectivePelaksanaan === "SEDANG_BERJALAN") {
+      updateData.status = "SEDANG_BERJALAN";
+    } else if (effectiveUsulan === "DISETUJUI") {
+      updateData.status = "DITERIMA";
+    } else if (effectiveUsulan === "DITOLAK") {
+      updateData.status = "DITOLAK";
+    } else {
+      updateData.status = "BELUM_DISETUJUI";
+    }
+
     if (data.catatanDpl !== undefined) updateData.catatanDpl = data.catatanDpl;
 
     const proker = await prisma.programKerjaKkn.update({
       where: { id },
       data: updateData,
     });
-    return proker;
+    return {
+      ...proker,
+      statusUsulan: (proker as any).statusUsulan || effectiveUsulan,
+      statusPelaksanaan: (proker as any).statusPelaksanaan || effectivePelaksanaan,
+    };
   },
 
   /**
@@ -1202,7 +1355,7 @@ export const dplService = {
       where: getKelompokWhere(userId, role),
       select: { id: true },
     });
-    const allowedGroupIds = groups.map(g => g.id);
+    const allowedGroupIds = groups.map((g) => g.id);
 
     if (!allowedGroupIds.includes(prokerExisting.kelompokId)) {
       throw new Error("FORBIDDEN_SCOPE");
@@ -1221,7 +1374,8 @@ export const dplService = {
     id: string,
     status: "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI" | "BELUM_DISETUJUI",
     catatanDpl?: string,
-    role?: any
+    role?: any,
+    statusPelaksanaan?: string
   ) => {
     const prokerExisting = await prisma.programKerjaKkn.findUnique({ where: { id } });
     if (!prokerExisting) throw new Error("Program kerja tidak ditemukan");
@@ -1230,7 +1384,7 @@ export const dplService = {
       where: getKelompokWhere(dplUserId, role),
       select: { id: true },
     });
-    const allowedGroupIds = groups.map(g => g.id);
+    const allowedGroupIds = groups.map((g) => g.id);
 
     if (!allowedGroupIds.includes(prokerExisting.kelompokId)) {
       throw new Error("FORBIDDEN_SCOPE");
@@ -1241,16 +1395,35 @@ export const dplService = {
     if (normalizedStatus === "TIDAK_DISETUJUI") normalizedStatus = "DITOLAK";
     if (normalizedStatus === "SEDANG_DILAKSANAKAN") normalizedStatus = "SEDANG_BERJALAN";
 
+    let statusUsulan = "BELUM_DISETUJUI";
+    if (normalizedStatus === "DITERIMA" || normalizedStatus === "SEDANG_BERJALAN" || normalizedStatus === "SELESAI") {
+      statusUsulan = "DISETUJUI";
+    } else if (normalizedStatus === "DITOLAK") {
+      statusUsulan = "DITOLAK";
+    }
+
+    let newStatusPelaksanaan = statusPelaksanaan || (prokerExisting as any).statusPelaksanaan || "BELUM_MULAI";
+    if (normalizedStatus === "SELESAI") newStatusPelaksanaan = "SELESAI";
+    else if (normalizedStatus === "SEDANG_BERJALAN") newStatusPelaksanaan = "SEDANG_BERJALAN";
+
+    const updatePayload: any = {
+      status: normalizedStatus,
+      statusUsulan,
+      statusPelaksanaan: newStatusPelaksanaan,
+      catatanDpl: catatanDpl !== undefined ? (catatanDpl || null) : undefined,
+      reviewedById: dplUserId,
+      reviewedAt: new Date(),
+    };
+
     const proker = await prisma.programKerjaKkn.update({
       where: { id },
-      data: {
-        status: normalizedStatus,
-        catatanDpl: catatanDpl !== undefined ? (catatanDpl || null) : undefined,
-        reviewedById: dplUserId,
-        reviewedAt: new Date(),
-      },
+      data: updatePayload,
     });
-    return proker;
+    return {
+      ...proker,
+      statusUsulan: (proker as any).statusUsulan || statusUsulan,
+      statusPelaksanaan: (proker as any).statusPelaksanaan || newStatusPelaksanaan,
+    };
   },
 
   /**
@@ -1264,7 +1437,8 @@ export const dplService = {
     role?: any,
     aspekPenilaian?: any,
     predikat?: string,
-    statusPenilaian?: "BELUM_DINILAI" | "SEDANG_DINILAI" | "SUDAH_DINILAI"
+    statusPenilaian?: "BELUM_DINILAI" | "SEDANG_DINILAI" | "SUDAH_DINILAI",
+    statusPelaksanaan?: string
   ) => {
     if (skorPenilaian < 0 || skorPenilaian > 100) {
       throw new Error("Skor penilaian harus berada di rentang 0-100");
@@ -1277,7 +1451,7 @@ export const dplService = {
       where: getKelompokWhere(dplUserId, role),
       select: { id: true },
     });
-    const allowedGroupIds = groups.map(g => g.id);
+    const allowedGroupIds = groups.map((g) => g.id);
 
     if (!allowedGroupIds.includes(prokerExisting.kelompokId)) {
       throw new Error("FORBIDDEN_SCOPE");
@@ -1306,6 +1480,12 @@ export const dplService = {
       updateData.aspekPenilaian = aspekPenilaian;
     }
 
+    if (statusPelaksanaan) {
+      updateData.statusPelaksanaan = statusPelaksanaan;
+      if (statusPelaksanaan === "SELESAI") updateData.status = "SELESAI";
+      else if (statusPelaksanaan === "SEDANG_BERJALAN") updateData.status = "SEDANG_BERJALAN";
+    }
+
     const proker = await prisma.programKerjaKkn.update({
       where: { id },
       data: updateData,
@@ -1317,6 +1497,8 @@ export const dplService = {
       predikat: (proker as any).predikat || finalPredikat,
       statusPenilaian: (proker as any).statusPenilaian || finalStatusPenilaian,
       aspekPenilaian: (proker as any).aspekPenilaian || aspekPenilaian || null,
+      statusUsulan: (proker as any).statusUsulan || "DISETUJUI",
+      statusPelaksanaan: (proker as any).statusPelaksanaan || statusPelaksanaan || "BELUM_MULAI",
     };
   },
 
@@ -1551,22 +1733,54 @@ export const dplService = {
 
     const allProkers = groups.flatMap((g) => g.programKerja || []);
     const totalProkers = allProkers.length;
-    const totalProkerDisetujui = allProkers.filter((p) => p.status === "DITERIMA").length;
-    const totalProkerTidakDisetujui = allProkers.filter((p) => p.status === "DITOLAK").length;
-    const totalProkerSedangDilaksanakan = allProkers.filter((p) => p.status === "SEDANG_BERJALAN").length;
-    const totalProkerSelesai = allProkers.filter((p) => p.status === "SELESAI").length;
+
+    // Helper resolver status usulan & pelaksanaan
+    const resolveProkerStatus = (p: any) => {
+      const legacySt = String(p.status || "").toUpperCase();
+      let u = p.statusUsulan;
+      if (!u) {
+        if (legacySt === "DITERIMA" || legacySt === "DISETUJUI" || legacySt === "SEDANG_BERJALAN" || legacySt === "SELESAI") u = "DISETUJUI";
+        else if (legacySt === "DITOLAK" || legacySt === "TIDAK_DISETUJUI") u = "DITOLAK";
+        else u = "BELUM_DISETUJUI";
+      }
+      let pl = p.statusPelaksanaan;
+      if (!pl) {
+        if (legacySt === "SELESAI") pl = "SELESAI";
+        else if (legacySt === "SEDANG_BERJALAN" || legacySt === "SEDANG_DILAKSANAKAN") pl = "SEDANG_BERJALAN";
+        else pl = "BELUM_MULAI";
+      }
+      return { usulan: u, pelaksanaan: pl };
+    };
+
+    const totalUsulanDisetujui = allProkers.filter((p) => resolveProkerStatus(p).usulan === "DISETUJUI").length;
+    const totalUsulanDitolak = allProkers.filter((p) => resolveProkerStatus(p).usulan === "DITOLAK").length;
+    const totalUsulanMenunggu = allProkers.filter((p) => resolveProkerStatus(p).usulan === "BELUM_DISETUJUI").length;
+
+    const totalPelaksanaanBelumMulai = allProkers.filter((p) => resolveProkerStatus(p).pelaksanaan === "BELUM_MULAI").length;
+    const totalPelaksanaanSedangBerjalan = allProkers.filter((p) => resolveProkerStatus(p).pelaksanaan === "SEDANG_BERJALAN").length;
+    const totalPelaksanaanSelesai = allProkers.filter((p) => resolveProkerStatus(p).pelaksanaan === "SELESAI").length;
 
     return {
-      groups: groups.map((g) => ({
-        id: g.id,
-        name: g.name,
-        kelurahan: g.kelurahan || null,
-        totalProker: g.programKerja.length,
-        prokerDisetujui: g.programKerja.filter((p) => p.status === "DITERIMA").length,
-        prokerTidakDisetujui: g.programKerja.filter((p) => p.status === "DITOLAK").length,
-        prokerSedangDilaksanakan: g.programKerja.filter((p) => p.status === "SEDANG_BERJALAN").length,
-        prokerSelesai: g.programKerja.filter((p) => p.status === "SELESAI").length,
-      })),
+      groups: groups.map((g) => {
+        const grpProkers = g.programKerja || [];
+        return {
+          id: g.id,
+          name: g.name,
+          kelurahan: g.kelurahan || null,
+          totalProker: grpProkers.length,
+          usulanDisetujui: grpProkers.filter((p) => resolveProkerStatus(p).usulan === "DISETUJUI").length,
+          usulanDitolak: grpProkers.filter((p) => resolveProkerStatus(p).usulan === "DITOLAK").length,
+          usulanMenunggu: grpProkers.filter((p) => resolveProkerStatus(p).usulan === "BELUM_DISETUJUI").length,
+          pelaksanaanBelumMulai: grpProkers.filter((p) => resolveProkerStatus(p).pelaksanaan === "BELUM_MULAI").length,
+          pelaksanaanSedangBerjalan: grpProkers.filter((p) => resolveProkerStatus(p).pelaksanaan === "SEDANG_BERJALAN").length,
+          pelaksanaanSelesai: grpProkers.filter((p) => resolveProkerStatus(p).pelaksanaan === "SELESAI").length,
+          // Compatibility fields
+          prokerDisetujui: grpProkers.filter((p) => resolveProkerStatus(p).usulan === "DISETUJUI").length,
+          prokerTidakDisetujui: grpProkers.filter((p) => resolveProkerStatus(p).usulan === "DITOLAK").length,
+          prokerSedangDilaksanakan: grpProkers.filter((p) => resolveProkerStatus(p).pelaksanaan === "SEDANG_BERJALAN").length,
+          prokerSelesai: grpProkers.filter((p) => resolveProkerStatus(p).pelaksanaan === "SELESAI").length,
+        };
+      }),
       students: allStudentsList,
       stats: {
         totalStudents,
@@ -1574,10 +1788,21 @@ export const dplService = {
         rerataKehadiran,
         proker: {
           total: totalProkers,
-          disetujui: totalProkerDisetujui,
-          tidakDisetujui: totalProkerTidakDisetujui,
-          sedangDilaksanakan: totalProkerSedangDilaksanakan,
-          selesai: totalProkerSelesai,
+          usulan: {
+            disetujui: totalUsulanDisetujui,
+            ditolak: totalUsulanDitolak,
+            menunggu: totalUsulanMenunggu,
+          },
+          pelaksanaan: {
+            belumMulai: totalPelaksanaanBelumMulai,
+            sedangBerjalan: totalPelaksanaanSedangBerjalan,
+            selesai: totalPelaksanaanSelesai,
+          },
+          // Compatibility fields
+          disetujui: totalUsulanDisetujui,
+          tidakDisetujui: totalUsulanDitolak,
+          sedangDilaksanakan: totalPelaksanaanSedangBerjalan,
+          selesai: totalPelaksanaanSelesai,
         },
       },
     };
