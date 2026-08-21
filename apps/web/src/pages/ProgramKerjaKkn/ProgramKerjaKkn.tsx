@@ -20,6 +20,7 @@ import {
   Clock,
   Check,
   AlertCircle,
+  ListFilter,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
@@ -52,11 +53,12 @@ export const ProgramKerjaKkn: React.FC = () => {
   const [prokerList, setProkerList] = useState<ProgramKerjaItem[]>([]);
   const [kelompokList, setKelompokList] = useState<any[]>([]);
 
-  // 5 Filter States
+  // 5 Filter States (Termasuk Status Usulan & Status Pelaksanaan)
   const [selectedKelompokId, setSelectedKelompokId] = useState<string>("ALL");
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
   const [sourceFilter, setSourceFilter] = useState<string>("ALL");
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [statusUsulanFilter, setStatusUsulanFilter] = useState<string>("ALL");
+  const [statusPelaksanaanFilter, setStatusPelaksanaanFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Pagination states
@@ -77,6 +79,8 @@ export const ProgramKerjaKkn: React.FC = () => {
     linkGoogleDrive: string;
     kebutuhanBiaya: number;
     status: ProgramKerjaItem["status"];
+    statusUsulan: "BELUM_DISETUJUI" | "DISETUJUI" | "DITOLAK";
+    statusPelaksanaan: "BELUM_MULAI" | "SEDANG_BERJALAN" | "SELESAI";
     catatanDpl: string;
   }>({
     kelompokId: "",
@@ -88,6 +92,8 @@ export const ProgramKerjaKkn: React.FC = () => {
     linkGoogleDrive: "",
     kebutuhanBiaya: 0,
     status: "BELUM_DISETUJUI",
+    statusUsulan: "BELUM_DISETUJUI",
+    statusPelaksanaan: "BELUM_MULAI",
     catatanDpl: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -178,42 +184,42 @@ export const ProgramKerjaKkn: React.FC = () => {
         try {
           const kelRes = await api.get("/kelompok");
           const list =
-            kelRes.data?.data ||
-            kelRes.data?.groups ||
-            (Array.isArray(kelRes.data) ? kelRes.data : []);
-          if (Array.isArray(list) && list.length > 0) {
-            groups = list;
-          }
-        } catch (_e) {
-          // Fallback to dpl groups
-          const dplGroups = await dplService.getGroupSummary();
-          if (Array.isArray(dplGroups) && dplGroups.length > 0) {
-            groups = dplGroups.map((g: any) => ({
-              id: g.id,
-              name: g.name || g.namaKelompok,
-              kelurahan: g.kelurahan,
-              cakupanRw: g.cakupanRw,
-            }));
-          }
+            kelRes.data?.data?.kelompok ||
+            (Array.isArray(kelRes.data?.data) ? kelRes.data?.data : []);
+          groups = list.map((g: any) => ({
+            id: g.id,
+            name: g.name,
+            kelurahan: g.kelurahan,
+            cakupanRw: g.cakupanRw,
+          }));
+        } catch (e) {
+          console.error("Gagal memuat daftar kelompok master:", e);
         }
       }
 
       setKelompokList(groups);
 
-      // Auto-set selected group for DPL if single group
-      const queryGroupId =
-        selectedKelompokId !== "ALL"
-          ? selectedKelompokId
-          : isDpl && groups.length === 1
-          ? groups[0].id
-          : undefined;
+      // Auto set default selected group for DPL if only 1 group assigned
+      let activeGroupId: string | undefined = undefined;
+      if (isDpl && groups.length === 1) {
+        setSelectedKelompokId(groups[0].id);
+        activeGroupId = groups[0].id;
+      } else if (selectedKelompokId !== "ALL") {
+        activeGroupId = selectedKelompokId;
+      }
 
-      // 2. Fetch Proker list
-      const data = await dplService.getProgramKerja(queryGroupId);
-      setProkerList(data);
+      // 2. Fetch Program Kerja list
+      const prokers = await dplService.getProgramKerja(activeGroupId, {
+        kategori: categoryFilter !== "ALL" ? categoryFilter : undefined,
+        statusUsulan: statusUsulanFilter !== "ALL" ? statusUsulanFilter : undefined,
+        statusPelaksanaan: statusPelaksanaanFilter !== "ALL" ? statusPelaksanaanFilter : undefined,
+        search: searchQuery.trim() ? searchQuery : undefined,
+      });
+
+      setProkerList(prokers);
     } catch (err: any) {
       console.error("Gagal memuat program kerja:", err);
-      toast.error("Gagal memuat data program kerja KKN");
+      toast.error("Gagal memuat data program kerja");
     } finally {
       setLoading(false);
     }
@@ -221,7 +227,7 @@ export const ProgramKerjaKkn: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [selectedKelompokId]);
+  }, [selectedKelompokId, categoryFilter, sourceFilter, statusUsulanFilter, statusPelaksanaanFilter]);
 
   const handleOpenAddModal = () => {
     setFormMode("add");
@@ -231,7 +237,10 @@ export const ProgramKerjaKkn: React.FC = () => {
     const defaultKelompokId =
       selectedKelompokId !== "ALL"
         ? selectedKelompokId
-        : kelompokList[0]?.id || "";
+        : kelompokList.length > 0
+        ? kelompokList[0].id
+        : "";
+
     setFormData({
       kelompokId: defaultKelompokId,
       nomor: prokerList.length + 1,
@@ -242,6 +251,8 @@ export const ProgramKerjaKkn: React.FC = () => {
       linkGoogleDrive: "",
       kebutuhanBiaya: 0,
       status: "BELUM_DISETUJUI",
+      statusUsulan: "BELUM_DISETUJUI",
+      statusPelaksanaan: "BELUM_MULAI",
       catatanDpl: "",
     });
     setIsFormModalOpen(true);
@@ -252,6 +263,10 @@ export const ProgramKerjaKkn: React.FC = () => {
     setEditingId(item.id);
     setFormStartDate("");
     setFormEndDate("");
+
+    const normU = normalizeStatusUsulan(item.statusUsulan, item.status);
+    const normP = normalizeStatusPelaksanaan(item.statusPelaksanaan, item.status);
+
     setFormData({
       kelompokId: item.kelompokId,
       nomor: item.nomor || 1,
@@ -262,6 +277,8 @@ export const ProgramKerjaKkn: React.FC = () => {
       linkGoogleDrive: item.linkGoogleDrive || "",
       kebutuhanBiaya: Number(item.kebutuhanBiaya) || 0,
       status: item.status || "BELUM_DISETUJUI",
+      statusUsulan: normU,
+      statusPelaksanaan: normP,
       catatanDpl: item.catatanDpl || "",
     });
     setIsFormModalOpen(true);
@@ -286,6 +303,8 @@ export const ProgramKerjaKkn: React.FC = () => {
           waktuPelaksanaan: formData.waktuPelaksanaan,
           linkGoogleDrive: formData.linkGoogleDrive,
           kebutuhanBiaya: Number(formData.kebutuhanBiaya) || 0,
+          statusUsulan: formData.statusUsulan,
+          statusPelaksanaan: formData.statusPelaksanaan,
         });
         toast.success("Rencana program kerja berhasil ditambahkan");
       } else if (editingId) {
@@ -298,6 +317,8 @@ export const ProgramKerjaKkn: React.FC = () => {
           linkGoogleDrive: formData.linkGoogleDrive,
           kebutuhanBiaya: Number(formData.kebutuhanBiaya) || 0,
           status: formData.status,
+          statusUsulan: formData.statusUsulan,
+          statusPelaksanaan: formData.statusPelaksanaan,
           catatanDpl: formData.catatanDpl,
         });
         toast.success("Program kerja berhasil diperbarui");
@@ -369,12 +390,32 @@ export const ProgramKerjaKkn: React.FC = () => {
     }
   };
 
-  // Standardized Status Normalizer (3 Statuses: Menunggu Persetujuan, Disetujui, Ditolak)
-  const normalizeStatus = (status?: string): "BELUM_DISETUJUI" | "DITERIMA" | "DITOLAK" => {
-    const s = String(status || "").toUpperCase();
-    if (s === "DITERIMA" || s === "DISETUJUI" || s === "SEDANG_BERJALAN" || s === "SEDANG_DILAKSANAKAN" || s === "SELESAI") return "DITERIMA";
-    if (s === "DITOLAK" || s === "TIDAK_DISETUJUI") return "DITOLAK";
+  // Normalizer Status Usulan (Menunggu Persetujuan, Disetujui, Ditolak)
+  const normalizeStatusUsulan = (statusUsulan?: string, legacyStatus?: string): "BELUM_DISETUJUI" | "DISETUJUI" | "DITOLAK" => {
+    let u = statusUsulan;
+    const leg = String(legacyStatus || "").toUpperCase();
+    if (!u) {
+      if (leg === "DITERIMA" || leg === "DISETUJUI" || leg === "SEDANG_BERJALAN" || leg === "SELESAI") u = "DISETUJUI";
+      else if (leg === "DITOLAK" || leg === "TIDAK_DISETUJUI") u = "DITOLAK";
+      else u = "BELUM_DISETUJUI";
+    }
+    if (u === "DISETUJUI" || u === "DITERIMA") return "DISETUJUI";
+    if (u === "DITOLAK" || u === "TIDAK_DISETUJUI") return "DITOLAK";
     return "BELUM_DISETUJUI";
+  };
+
+  // Normalizer Status Pelaksanaan (Belum Mulai, Sedang Berjalan, Selesai)
+  const normalizeStatusPelaksanaan = (statusPelaksanaan?: string, legacyStatus?: string): "BELUM_MULAI" | "SEDANG_BERJALAN" | "SELESAI" => {
+    let p = statusPelaksanaan;
+    const leg = String(legacyStatus || "").toUpperCase();
+    if (!p) {
+      if (leg === "SELESAI") p = "SELESAI";
+      else if (leg === "SEDANG_BERJALAN" || leg === "SEDANG_DILAKSANAKAN" || leg === "BERJALAN") p = "SEDANG_BERJALAN";
+      else p = "BELUM_MULAI";
+    }
+    if (p === "SELESAI") return "SELESAI";
+    if (p === "SEDANG_BERJALAN" || p === "SEDANG_DILAKSANAKAN" || p === "BERJALAN") return "SEDANG_BERJALAN";
+    return "BELUM_MULAI";
   };
 
   // Filtered proker data
@@ -393,19 +434,19 @@ export const ProgramKerjaKkn: React.FC = () => {
         sourceFilter === "ALL" ||
         (item.sumber || "Mahasiswa").toLowerCase() === sourceFilter.toLowerCase();
 
-      const normalized = normalizeStatus(item.status);
-      let matchesStatus = true;
-      if (statusFilter !== "ALL") {
-        matchesStatus = normalized === statusFilter;
-      }
+      const normU = normalizeStatusUsulan(item.statusUsulan, item.status);
+      const matchesUsulan = statusUsulanFilter === "ALL" || normU === statusUsulanFilter;
 
-      return matchesSearch && matchesCategory && matchesSource && matchesStatus;
+      const normP = normalizeStatusPelaksanaan(item.statusPelaksanaan, item.status);
+      const matchesPelaksanaan = statusPelaksanaanFilter === "ALL" || normP === statusPelaksanaanFilter;
+
+      return matchesSearch && matchesCategory && matchesSource && matchesUsulan && matchesPelaksanaan;
     });
-  }, [prokerList, searchQuery, categoryFilter, sourceFilter, statusFilter]);
+  }, [prokerList, searchQuery, categoryFilter, sourceFilter, statusUsulanFilter, statusPelaksanaanFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedKelompokId, categoryFilter, sourceFilter, statusFilter]);
+  }, [searchQuery, selectedKelompokId, categoryFilter, sourceFilter, statusUsulanFilter, statusPelaksanaanFilter]);
 
   const totalPages = Math.ceil(filteredProkers.length / itemsPerPage) || 1;
   const paginatedProkers = useMemo(() => {
@@ -413,16 +454,16 @@ export const ProgramKerjaKkn: React.FC = () => {
     return filteredProkers.slice(start, start + itemsPerPage);
   }, [filteredProkers, currentPage, itemsPerPage]);
 
-  // Metric KPI Computations (3 Standardized Statuses)
+  // Metric KPI Computations
   const totalCount = prokerList.length;
-  const pendingCount = prokerList.filter((p) => normalizeStatus(p.status) === "BELUM_DISETUJUI").length;
+  const pendingCount = prokerList.filter((p) => normalizeStatusUsulan(p.statusUsulan, p.status) === "BELUM_DISETUJUI").length;
   const pendingPct = totalCount > 0 ? ((pendingCount / totalCount) * 100).toFixed(2).replace(".", ",") : "0,00";
 
-  const disetujuiCount = prokerList.filter((p) => normalizeStatus(p.status) === "DITERIMA").length;
+  const disetujuiCount = prokerList.filter((p) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI").length;
   const disetujuiPct = totalCount > 0 ? ((disetujuiCount / totalCount) * 100).toFixed(2).replace(".", ",") : "0,00";
 
-  const ditolakCount = prokerList.filter((p) => normalizeStatus(p.status) === "DITOLAK").length;
-  const ditolakPct = totalCount > 0 ? ((ditolakCount / totalCount) * 100).toFixed(2).replace(".", ",") : "0,00";
+  const sedangBerjalanCount = prokerList.filter((p) => normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status) === "SEDANG_BERJALAN").length;
+  const selesaiCount = prokerList.filter((p) => normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status) === "SELESAI").length;
 
   const totalBiaya = prokerList.reduce((acc, p) => acc + (Number(p.kebutuhanBiaya) || 0), 0);
 
@@ -439,7 +480,8 @@ export const ProgramKerjaKkn: React.FC = () => {
       "Deskripsi",
       "Waktu Pelaksanaan",
       "Biaya (Rp)",
-      "Status",
+      "Status Usulan",
+      "Status Pelaksanaan",
       "Catatan DPL",
       "Bukti Google Drive",
     ];
@@ -451,7 +493,8 @@ export const ProgramKerjaKkn: React.FC = () => {
       `"${p.deskripsi.replace(/"/g, '""')}"`,
       `"${p.waktuPelaksanaan || "-"}"`,
       p.kebutuhanBiaya,
-      `"${normalizeStatus(p.status)}"`,
+      `"${normalizeStatusUsulan(p.statusUsulan, p.status)}"`,
+      `"${normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status)}"`,
       `"${(p.catatanDpl || "-").replace(/"/g, '""')}"`,
       `"${p.linkGoogleDrive || "-"}"`,
     ]);
@@ -464,10 +507,8 @@ export const ProgramKerjaKkn: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success("Data program kerja berhasil diekspor ke CSV!");
   };
 
-  // Helper Badge Renderers
   const renderKategoriBadge = (kat?: string) => {
     const k = (kat || "Pemilahan").toLowerCase();
     if (k.includes("pemilahan")) {
@@ -528,17 +569,17 @@ export const ProgramKerjaKkn: React.FC = () => {
     );
   };
 
-  const renderStatusPelaksanaanBadge = (status?: string, catatanDpl?: string | null) => {
-    const st = normalizeStatus(status);
+  const renderStatusUsulanBadge = (statusUsulan?: string, legacyStatus?: string, catatanDpl?: string | null) => {
+    const st = normalizeStatusUsulan(statusUsulan, legacyStatus);
     switch (st) {
       case "BELUM_DISETUJUI":
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 rounded-full font-bold text-[11px] shadow-2xs">
             <Clock size={12} className="shrink-0 text-amber-600 dark:text-amber-400" />
-            <span>Menunggu Persetujuan</span>
+            <span>Menunggu</span>
           </span>
         );
-      case "DITERIMA":
+      case "DISETUJUI":
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 rounded-full font-bold text-[11px] shadow-2xs">
             <CheckCircle2 size={12} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
@@ -554,10 +595,34 @@ export const ProgramKerjaKkn: React.FC = () => {
             </span>
             {catatanDpl && (
               <span className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold max-w-[150px] truncate" title={catatanDpl}>
-                Catatan: {catatanDpl}
+                {catatanDpl}
               </span>
             )}
           </div>
+        );
+    }
+  };
+
+  const renderStatusPelaksanaanBadge = (statusPelaksanaan?: string, legacyStatus?: string) => {
+    const pl = normalizeStatusPelaksanaan(statusPelaksanaan, legacyStatus);
+    switch (pl) {
+      case "SELESAI":
+        return (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/40">
+            Selesai
+          </span>
+        );
+      case "SEDANG_BERJALAN":
+        return (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/40">
+            Sedang Berjalan
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/60">
+            Belum Mulai
+          </span>
         );
     }
   };
@@ -571,7 +636,7 @@ export const ProgramKerjaKkn: React.FC = () => {
             Program Kerja KKN
           </h1>
           <p className="text-slate-500 text-xs mt-1">
-            Menampilkan usulan dan status verifikasi program kerja mahasiswa KKN yang divalidasi oleh Dosen Pendamping Lapangan.
+            Menampilkan status usulan (persetujuan DPL) dan status pelaksanaan program kerja mahasiswa KKN.
           </p>
         </div>
 
@@ -632,7 +697,7 @@ export const ProgramKerjaKkn: React.FC = () => {
         {/* Card 3: Disetujui */}
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-emerald-200/80 dark:border-emerald-900/40 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-emerald-700 dark:text-emerald-400 font-bold">Disetujui</span>
+            <span className="text-xs text-emerald-700 dark:text-emerald-400 font-bold">Disetujui (ACC DPL)</span>
             <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-200/60 dark:border-emerald-800/40">
               <CheckCircle2 size={17} />
             </div>
@@ -643,24 +708,31 @@ export const ProgramKerjaKkn: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 4: Ditolak */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-rose-200/80 dark:border-rose-900/40 shadow-xs flex flex-col justify-between">
+        {/* Card 4: Pelaksanaan */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-blue-200/80 dark:border-blue-900/40 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-rose-700 dark:text-rose-400 font-bold">Ditolak</span>
-            <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-200/60 dark:border-rose-800/40">
-              <XCircle size={17} />
+            <span className="text-xs text-blue-700 dark:text-blue-400 font-bold">Pelaksanaan</span>
+            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-200/60 dark:border-blue-800/40">
+              <ListFilter size={17} />
             </div>
           </div>
-          <div className="mt-3">
-            <h3 className="text-2xl font-black text-rose-600 dark:text-rose-400">{ditolakCount}</h3>
-            <span className="text-[11px] text-rose-700/80 dark:text-rose-400/80 font-medium">{ditolakPct}% dari total</span>
+          <div className="mt-3 flex items-baseline gap-3">
+            <div>
+              <span className="text-lg font-black text-blue-600 dark:text-blue-400">{sedangBerjalanCount}</span>
+              <span className="text-[10px] text-slate-500 ml-1 font-semibold">Berjalan</span>
+            </div>
+            <span className="text-slate-300">•</span>
+            <div>
+              <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">{selesaiCount}</span>
+              <span className="text-[10px] text-slate-500 ml-1 font-semibold">Selesai</span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Toolbar Filter */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 flex-1 max-w-4xl">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 flex-1 max-w-5xl">
           {/* Filter 1: Kelompok */}
           <div>
             <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Kelompok</span>
@@ -719,23 +791,38 @@ export const ProgramKerjaKkn: React.FC = () => {
             </select>
           </div>
 
-          {/* Filter 4: Status */}
+          {/* Filter 4: Status Usulan */}
           <div>
-            <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Status Persetujuan</span>
+            <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Status Usulan</span>
             <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              value={statusUsulanFilter}
+              onChange={(e) => setStatusUsulanFilter(e.target.value)}
               className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
             >
-              <option value="ALL">Semua Status</option>
+              <option value="ALL">Semua Usulan</option>
               <option value="BELUM_DISETUJUI">Menunggu Persetujuan</option>
-              <option value="DITERIMA">Disetujui</option>
+              <option value="DISETUJUI">Disetujui</option>
               <option value="DITOLAK">Ditolak</option>
+            </select>
+          </div>
+
+          {/* Filter 5: Status Pelaksanaan */}
+          <div>
+            <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Status Pelaksanaan</span>
+            <select
+              value={statusPelaksanaanFilter}
+              onChange={(e) => setStatusPelaksanaanFilter(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+            >
+              <option value="ALL">Semua Pelaksanaan</option>
+              <option value="BELUM_MULAI">Belum Mulai</option>
+              <option value="SEDANG_BERJALAN">Sedang Berjalan</option>
+              <option value="SELESAI">Selesai</option>
             </select>
           </div>
         </div>
 
-        {/* Filter 5: Cari Program Kerja */}
+        {/* Filter 6: Cari Program Kerja */}
         <div className="w-full md:w-64">
           <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Cari program kerja</span>
           <div className="relative">
@@ -761,14 +848,15 @@ export const ProgramKerjaKkn: React.FC = () => {
         ) : filteredProkers.length === 0 ? (
           <EmptyTableState
             entityName="Program Kerja KKN"
-            isSearch={!!(searchQuery || (selectedKelompokId !== "ALL" && !isDpl) || categoryFilter !== "ALL" || sourceFilter !== "ALL" || statusFilter !== "ALL")}
+            isSearch={!!(searchQuery || (selectedKelompokId !== "ALL" && !isDpl) || categoryFilter !== "ALL" || sourceFilter !== "ALL" || statusUsulanFilter !== "ALL" || statusPelaksanaanFilter !== "ALL")}
             searchQuery={searchQuery}
             onResetSearch={() => {
               setSearchQuery("");
               if (isManagement) setSelectedKelompokId("ALL");
               setCategoryFilter("ALL");
               setSourceFilter("ALL");
-              setStatusFilter("ALL");
+              setStatusUsulanFilter("ALL");
+              setStatusPelaksanaanFilter("ALL");
             }}
           />
         ) : (
@@ -779,10 +867,11 @@ export const ProgramKerjaKkn: React.FC = () => {
                   <th className="py-3.5 px-3 w-12 text-center">No</th>
                   <th className="py-3.5 px-3 w-28 text-center">Kategori</th>
                   <th className="py-3.5 px-3 w-24 text-center">Sumber</th>
-                  <th className="py-3.5 px-4 min-w-[280px]">Deskripsi Kegiatan</th>
+                  <th className="py-3.5 px-4 min-w-[260px]">Deskripsi Kegiatan</th>
                   <th className="py-3.5 px-3 w-36">Waktu Pelaksanaan</th>
                   <th className="py-3.5 px-3 w-32 font-bold">Biaya</th>
-                  <th className="py-3.5 px-3 w-44 text-center">Status Persetujuan</th>
+                  <th className="py-3.5 px-3 w-36 text-center">Status Usulan</th>
+                  <th className="py-3.5 px-3 w-36 text-center">Status Pelaksanaan</th>
                   <th className="py-3.5 px-3 w-28 text-center">Bukti</th>
                   {canModifyProker && <th className="py-3.5 px-4 w-48 text-center">Aksi DPL</th>}
                 </tr>
@@ -790,7 +879,7 @@ export const ProgramKerjaKkn: React.FC = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 {paginatedProkers.map((p, idx) => {
                   const driveUrl = p.linkGoogleDrive || "https://drive.google.com";
-                  const normalizedSt = normalizeStatus(p.status);
+                  const normalizedU = normalizeStatusUsulan(p.statusUsulan, p.status);
 
                   return (
                     <tr key={p.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition-colors">
@@ -815,7 +904,10 @@ export const ProgramKerjaKkn: React.FC = () => {
                         Rp {Number(p.kebutuhanBiaya || 0).toLocaleString("id-ID")}
                       </td>
                       <td className="py-3.5 px-3 text-center">
-                        {renderStatusPelaksanaanBadge(p.status, p.catatanDpl)}
+                        {renderStatusUsulanBadge(p.statusUsulan, p.status, p.catatanDpl)}
+                      </td>
+                      <td className="py-3.5 px-3 text-center">
+                        {renderStatusPelaksanaanBadge(p.statusPelaksanaan, p.status)}
                       </td>
                       <td className="py-3.5 px-3 text-center">
                         <a
@@ -833,7 +925,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex items-center justify-center gap-2 flex-wrap">
                             {/* Decision Actions when Menunggu Persetujuan */}
-                            {normalizedSt === "BELUM_DISETUJUI" && (
+                            {normalizedU === "BELUM_DISETUJUI" && (
                               <div className="flex items-center gap-1.5">
                                 <button
                                   onClick={() => handleApproveProker(p)}
@@ -863,7 +955,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                             )}
 
                             {/* Decision Action when Ditolak -> quick re-approve */}
-                            {normalizedSt === "DITOLAK" && (
+                            {normalizedU === "DITOLAK" && (
                               <button
                                 onClick={() => handleApproveProker(p)}
                                 title="Ubah Keputusan jadi Disetujui (ACC)"
@@ -875,7 +967,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                             )}
 
                             {/* Decision Action when Disetujui -> option to reject if revision needed */}
-                            {normalizedSt === "DITERIMA" && (
+                            {normalizedU === "DISETUJUI" && (
                               <button
                                 onClick={() =>
                                   setRejectModal({
@@ -1096,19 +1188,36 @@ export const ProgramKerjaKkn: React.FC = () => {
 
               {formMode === "edit" && (
                 <>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Status Persetujuan
-                    </label>
-                    <select
-                      value={normalizeStatus(formData.status)}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                    >
-                      <option value="BELUM_DISETUJUI">Menunggu Persetujuan</option>
-                      <option value="DITERIMA">Disetujui</option>
-                      <option value="DITOLAK">Ditolak</option>
-                    </select>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Status Usulan
+                      </label>
+                      <select
+                        value={formData.statusUsulan}
+                        onChange={(e) => setFormData({ ...formData, statusUsulan: e.target.value as any })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                      >
+                        <option value="BELUM_DISETUJUI">Menunggu Persetujuan</option>
+                        <option value="DISETUJUI">Disetujui</option>
+                        <option value="DITOLAK">Ditolak</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Status Pelaksanaan
+                      </label>
+                      <select
+                        value={formData.statusPelaksanaan}
+                        onChange={(e) => setFormData({ ...formData, statusPelaksanaan: e.target.value as any })}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                      >
+                        <option value="BELUM_MULAI">Belum Mulai</option>
+                        <option value="SEDANG_BERJALAN">Sedang Berjalan</option>
+                        <option value="SELESAI">Selesai</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div>
@@ -1126,7 +1235,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                 </>
               )}
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-end gap-2 pt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsFormModalOpen(false)}

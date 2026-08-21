@@ -653,12 +653,12 @@ export const DplDashboardPage: React.FC = () => {
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
             {location.pathname === "/ajuan-absensi" || activeTab === "APPROVAL"
-              ? "Ajuan Ketidakhadiran"
+              ? "Ajuan Izin/Sakit"
               : "Dasbor"}
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl">
             {location.pathname === "/ajuan-absensi" || activeTab === "APPROVAL"
-              ? "Validasi, verifikasi bukti surat keterangan sakit/izin, dan putusan persetujuan ketidakhadiran mahasiswa KKN bimbingan."
+              ? "Validasi, verifikasi bukti surat keterangan sakit/izin, dan putusan persetujuan izin/sakit mahasiswa KKN bimbingan."
               : "Rekapitulasi portofolio mahasiswa KKN, verifikasi presensi lapangan, dan penilaian akademik wilayah binaan."}
           </p>
         </div>
@@ -679,7 +679,7 @@ export const DplDashboardPage: React.FC = () => {
                 className="bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/40 text-amber-800 dark:text-amber-300 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition cursor-pointer shadow-xs animate-pulse"
               >
                 <AlertTriangle size={14} className="text-amber-600 shrink-0" />
-                <span>{alerts.pendingApprovalsCount} Ajuan Ketidakhadiran</span>
+                <span>{alerts.pendingApprovalsCount} Ajuan Izin/Sakit</span>
               </Link>
             )
           )}
@@ -1551,37 +1551,14 @@ export const DplDashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* VIEW 4: PERSETUJUAN SAKIT / IZIN / KETIDAKHADIRAN */}
+      {/* VIEW 4: PERSETUJUAN SAKIT / IZIN */}
       {activeTab === "APPROVAL" && (
         <div className="space-y-6">
-          {/* Header Navigasi Cepat Kembali */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  if (location.pathname === "/ajuan-absensi") {
-                    navigate("/dasbor");
-                  } else {
-                    setActiveTab("OVERVIEW");
-                  }
-                }}
-                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg transition flex items-center gap-1.5 cursor-pointer"
-              >
-                <ArrowLeft size={14} />
-                <span>Kembali ke Ringkasan Dasbor</span>
-              </button>
-            </div>
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Validasi &amp; Putusan Permohonan Izin / Sakit Mahasiswa Bimbingan
-            </span>
-          </div>
-
           {/* Pending Approval Requests */}
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <FileCheck size={18} className="text-amber-500" /> Permohonan Ketidakhadiran Menunggu Verifikasi DPL
+                <FileCheck size={18} className="text-amber-500" /> Permohonan Izin / Sakit Menunggu Verifikasi DPL
               </h3>
               <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40 text-xs font-bold px-2.5 py-0.5 rounded-full">
                 {alerts?.pendingRequests?.length || 0} Menunggu Verifikasi
@@ -1709,7 +1686,7 @@ export const DplDashboardPage: React.FC = () => {
           {/* Riwayat Approval Log */}
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Riwayat Validasi Ketidakhadiran Mahasiswa</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Riwayat Validasi Izin &amp; Sakit Mahasiswa</h3>
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <select
@@ -1735,7 +1712,7 @@ export const DplDashboardPage: React.FC = () => {
                 <thead className="bg-slate-50 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider text-[10.5px]">
                   <tr>
                     <th className="px-4 py-3.5">Nama Mahasiswa</th>
-                    <th className="px-4 py-3.5">Jenis Ketidakhadiran</th>
+                    <th className="px-4 py-3.5">Jenis Izin / Sakit</th>
                     <th className="px-4 py-3.5">Tanggal / Periode Izin</th>
                     <th className="px-4 py-3.5 min-w-[240px]">Alasan / Catatan</th>
                     <th className="px-4 py-3.5 text-center">Status Keputusan</th>

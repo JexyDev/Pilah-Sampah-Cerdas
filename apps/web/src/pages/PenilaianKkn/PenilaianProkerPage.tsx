@@ -26,6 +26,8 @@ import {
   Edit3,
   Eye,
   PlusCircle,
+  Clock,
+  XCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -36,7 +38,7 @@ import {
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 
 // 7 Standar Aspek Rubrik Penilaian Program Kerja KKN
-const DEFAULT_ASPEK_LIST: Array<{ no: number; aspek: string; bobot: number }> = [
+const ASPEK_RUBRIK_PROKER: Array<{ no: number; aspek: string; bobot: number }> = [
   { no: 1, aspek: "Relevansi & Perencanaan Program", bobot: 15 },
   { no: 2, aspek: "Kualitas Pelaksanaan", bobot: 20 },
   { no: 3, aspek: "Partisipasi & Kerja Sama Tim", bobot: 15 },
@@ -52,9 +54,10 @@ export const PenilaianProkerPage: React.FC = () => {
   const [prokerList, setProkerList] = useState<ProgramKerjaItem[]>([]);
   const [selectedProkerId, setSelectedProkerId] = useState<string | null>(null);
 
-  // Filter States
+  // Filter States (5 Sumbu Filter)
   const [searchQuery, setSearchQuery] = useState("");
   const [kategoriFilter, setKategoriFilter] = useState("ALL");
+  const [statusUsulanFilter, setStatusUsulanFilter] = useState("ALL");
   const [statusPelaksanaanFilter, setStatusPelaksanaanFilter] = useState("ALL");
   const [statusPenilaianFilter, setStatusPenilaianFilter] = useState("ALL");
 
@@ -76,6 +79,7 @@ export const PenilaianProkerPage: React.FC = () => {
     7: "",
   });
   const [catatanDpl, setCatatanDpl] = useState("");
+  const [modalStatusPelaksanaan, setModalStatusPelaksanaan] = useState<string>("SEDANG_BERJALAN");
   const [isSaving, setIsSaving] = useState(false);
 
   // Modal Bukti Kegiatan
@@ -99,6 +103,7 @@ export const PenilaianProkerPage: React.FC = () => {
     try {
       const data = await dplService.getProgramKerja(undefined, {
         kategori: kategoriFilter !== "ALL" ? kategoriFilter : undefined,
+        statusUsulan: statusUsulanFilter !== "ALL" ? statusUsulanFilter : undefined,
         statusPelaksanaan: statusPelaksanaanFilter !== "ALL" ? statusPelaksanaanFilter : undefined,
         statusPenilaian: statusPenilaianFilter !== "ALL" ? statusPenilaianFilter : undefined,
         search: searchQuery.trim() ? searchQuery : undefined,
@@ -114,7 +119,7 @@ export const PenilaianProkerPage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [kategoriFilter, statusPelaksanaanFilter, statusPenilaianFilter]);
+  }, [kategoriFilter, statusUsulanFilter, statusPelaksanaanFilter, statusPenilaianFilter]);
 
   // Client-side filtering fallback for immediate search responsiveness
   const filteredProkers = useMemo(() => {
@@ -131,19 +136,40 @@ export const PenilaianProkerPage: React.FC = () => {
       if (kategoriFilter !== "ALL") {
         if (p.kategori?.toLowerCase() !== kategoriFilter.toLowerCase()) return false;
       }
+      // Status Usulan
+      if (statusUsulanFilter !== "ALL") {
+        const legacySt = String(p.status || "").toUpperCase();
+        let u = p.statusUsulan;
+        if (!u) {
+          if (legacySt === "DITERIMA" || legacySt === "DISETUJUI" || legacySt === "SEDANG_BERJALAN" || legacySt === "SELESAI") u = "DISETUJUI";
+          else if (legacySt === "DITOLAK" || legacySt === "TIDAK_DISETUJUI") u = "DITOLAK";
+          else u = "BELUM_DISETUJUI";
+        }
+        if (statusUsulanFilter === "DISETUJUI" && u !== "DISETUJUI" && u !== "DITERIMA") return false;
+        if (statusUsulanFilter === "DITOLAK" && u !== "DITOLAK" && u !== "TIDAK_DISETUJUI") return false;
+        if (statusUsulanFilter === "BELUM_DISETUJUI" && u !== "BELUM_DISETUJUI" && u !== "MENUNGGU" && u !== "PENDING") return false;
+      }
       // Status Pelaksanaan
       if (statusPelaksanaanFilter !== "ALL") {
-        if (statusPelaksanaanFilter === "SELESAI" && p.status !== "SELESAI") return false;
+        const legacySt = String(p.status || "").toUpperCase();
+        let pl = p.statusPelaksanaan;
+        if (!pl) {
+          if (legacySt === "SELESAI") pl = "SELESAI";
+          else if (legacySt === "SEDANG_BERJALAN" || legacySt === "SEDANG_DILAKSANAKAN" || legacySt === "BERJALAN") pl = "SEDANG_BERJALAN";
+          else pl = "BELUM_MULAI";
+        }
+        if (statusPelaksanaanFilter === "SELESAI" && pl !== "SELESAI") return false;
         if (
-          statusPelaksanaanFilter === "BERJALAN" &&
-          p.status !== "SEDANG_BERJALAN" &&
-          (p.status as string) !== "SEDANG_DILAKSANAKAN"
+          (statusPelaksanaanFilter === "BERJALAN" || statusPelaksanaanFilter === "SEDANG_BERJALAN") &&
+          pl !== "SEDANG_BERJALAN" &&
+          pl !== "SEDANG_DILAKSANAKAN" &&
+          pl !== "BERJALAN"
         )
           return false;
         if (
           statusPelaksanaanFilter === "BELUM_MULAI" &&
-          p.status !== "BELUM_DISETUJUI" &&
-          p.status !== "DITERIMA"
+          pl !== "BELUM_MULAI" &&
+          pl !== "BELUM"
         )
           return false;
       }
@@ -155,7 +181,7 @@ export const PenilaianProkerPage: React.FC = () => {
       }
       return true;
     });
-  }, [prokerList, searchQuery, kategoriFilter, statusPelaksanaanFilter, statusPenilaianFilter]);
+  }, [prokerList, searchQuery, kategoriFilter, statusUsulanFilter, statusPelaksanaanFilter, statusPenilaianFilter]);
 
   // Sync Form State when selected proker changes
   const selectedProker = useMemo(() => {
@@ -181,52 +207,82 @@ export const PenilaianProkerPage: React.FC = () => {
           }
         });
       } else if (selectedProker.skorPenilaian !== null && selectedProker.skorPenilaian !== undefined) {
-        // Fallback default distribution jika sebelumnya hanya skor total
-        const flatScore = Number(selectedProker.skorPenilaian);
+        const avg = selectedProker.skorPenilaian;
         for (let i = 1; i <= 7; i++) {
-          newInputs[i] = flatScore;
+          newInputs[i] = avg;
         }
       }
 
       setInputNilai(newInputs);
       setCatatanDpl(selectedProker.evaluasiDpl || selectedProker.catatanDpl || "");
-    }
-  }, [selectedProkerId, selectedProker]);
 
-  // Kalkulasi Skor per Aspek dan Nilai Akhir Real-time
+      const legacySt = String(selectedProker.status || "").toUpperCase();
+      let initPl = selectedProker.statusPelaksanaan;
+      if (!initPl) {
+        if (legacySt === "SELESAI") initPl = "SELESAI";
+        else if (legacySt === "SEDANG_BERJALAN" || legacySt === "SEDANG_DILAKSANAKAN" || legacySt === "BERJALAN") initPl = "SEDANG_BERJALAN";
+        else initPl = "BELUM_MULAI";
+      }
+      setModalStatusPelaksanaan(initPl);
+    }
+  }, [selectedProker]);
+
+  // Hitung Skor & Predikat Berdasarkan Rubrik 7 Aspek
   const calculatedRubrik = useMemo(() => {
     let totalScore = 0;
-    let filledCount = 0;
+    let totalFilled = 0;
 
-    const rubrik = DEFAULT_ASPEK_LIST.map((item) => {
+    const details = ASPEK_RUBRIK_PROKER.map((item) => {
       const val = inputNilai[item.no];
-      const numericVal = typeof val === "number" && !isNaN(val) ? Math.min(100, Math.max(0, val)) : 0;
-      if (typeof val === "number" && !isNaN(val)) filledCount++;
-      const score = Number(((numericVal * item.bobot) / 100).toFixed(2));
-      totalScore += score;
+      const numericVal = typeof val === "number" ? val : 0;
+      if (typeof val === "number") totalFilled++;
+
+      const skorItem = (numericVal * item.bobot) / 100;
+      totalScore += skorItem;
+
       return {
-        ...item,
+        no: item.no,
+        aspek: item.aspek,
+        bobot: item.bobot,
         nilai: val,
-        numericVal,
-        skor: score,
+        skor: skorItem,
       };
     });
 
-    const finalScore = Number(totalScore.toFixed(2));
-
-    // Menentukan Predikat
-    let predikat = "Kurang";
-    if (finalScore >= 85) predikat = "Sangat Baik";
-    else if (finalScore >= 75) predikat = "Baik";
-    else if (finalScore >= 60) predikat = "Cukup";
+    let predikat = "Belum Dinilai";
+    if (totalFilled > 0) {
+      if (totalScore >= 85) predikat = "Sangat Baik";
+      else if (totalScore >= 70) predikat = "Baik";
+      else if (totalScore >= 60) predikat = "Cukup";
+      else predikat = "Kurang";
+    }
 
     return {
-      rubrik,
-      totalScore: finalScore,
+      rubrik: details,
+      totalScore: Math.round(totalScore * 100) / 100,
+      totalFilled,
+      isComplete: totalFilled === 7,
       predikat,
-      filledCount,
     };
   }, [inputNilai]);
+
+  // Handler Nilai Per Aspek Rubrik
+  const handleScoreChange = (no: number, valStr: string) => {
+    if (valStr === "") {
+      setInputNilai((prev) => ({ ...prev, [no]: "" }));
+      return;
+    }
+    const num = Math.min(100, Math.max(0, Number(valStr)));
+    if (!isNaN(num)) {
+      setInputNilai((prev) => ({ ...prev, [no]: num }));
+    }
+  };
+
+  // Handler Reset Form Modal
+  const handleResetForm = () => {
+    setInputNilai({ 1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "" });
+    setCatatanDpl("");
+  };
 
   // Handler Buka Modal Penilaian
   const handleOpenAssessModal = (proker: ProgramKerjaItem) => {
@@ -234,52 +290,17 @@ export const PenilaianProkerPage: React.FC = () => {
     setIsAssessModalOpen(true);
   };
 
-  // Handler Tutup Modal Penilaian
+  // Handler Tutup Modal
   const handleCloseAssessModal = () => {
     setIsAssessModalOpen(false);
   };
 
-  // Handler Ganti Nilai Aspek
-  const handleScoreChange = (no: number, rawVal: string) => {
-    if (rawVal === "") {
-      setInputNilai((prev) => ({ ...prev, [no]: "" }));
-      return;
-    }
-    const num = Number(rawVal);
-    if (isNaN(num)) return;
-    const clamped = Math.min(100, Math.max(0, num));
-    setInputNilai((prev) => ({ ...prev, [no]: clamped }));
-  };
-
-  // Reset / Batal Form Penilaian
-  const handleResetForm = () => {
-    if (selectedProker) {
-      const newInputs: Record<number, number | ""> = {
-        1: "",
-        2: "",
-        3: "",
-        4: "",
-        5: "",
-        6: "",
-        7: "",
-      };
-      if (Array.isArray(selectedProker.aspekPenilaian) && selectedProker.aspekPenilaian.length > 0) {
-        selectedProker.aspekPenilaian.forEach((item) => {
-          if (item.no >= 1 && item.no <= 7) newInputs[item.no] = item.nilai;
-        });
-      }
-      setInputNilai(newInputs);
-      setCatatanDpl(selectedProker.evaluasiDpl || selectedProker.catatanDpl || "");
-      toast("Form penilaian direset ke kondisi awal", { icon: "↩️" });
-    }
-  };
-
-  // Simpan Nilai ke Backend
+  // Handler Simpan Penilaian Program Kerja
   const handleSimpanNilai = async () => {
     if (!selectedProker) return;
 
-    if (calculatedRubrik.filledCount === 0) {
-      toast.error("Harap masukkan nilai pada aspek penilaian");
+    if (calculatedRubrik.totalFilled === 0) {
+      toast.error("Silakan isi setidaknya satu nilai aspek sebelum menyimpan");
       return;
     }
 
@@ -293,8 +314,7 @@ export const PenilaianProkerPage: React.FC = () => {
         skor: r.skor,
       }));
 
-      const statusPenilaian: "BELUM_DINILAI" | "SEDANG_DINILAI" | "SUDAH_DINILAI" =
-        calculatedRubrik.filledCount === 7 ? "SUDAH_DINILAI" : "SEDANG_DINILAI";
+      const statusPenilaian = calculatedRubrik.isComplete ? "SUDAH_DINILAI" : "SEDANG_DINILAI";
 
       await dplService.assessProgramKerja(
         selectedProker.id,
@@ -302,7 +322,8 @@ export const PenilaianProkerPage: React.FC = () => {
         catatanDpl,
         payloadAspek,
         calculatedRubrik.predikat,
-        statusPenilaian
+        statusPenilaian,
+        modalStatusPelaksanaan
       );
 
       toast.success(
@@ -320,6 +341,7 @@ export const PenilaianProkerPage: React.FC = () => {
                 aspekPenilaian: payloadAspek,
                 predikat: calculatedRubrik.predikat,
                 statusPenilaian: statusPenilaian,
+                statusPelaksanaan: modalStatusPelaksanaan,
               }
             : p
         )
@@ -358,9 +380,54 @@ export const PenilaianProkerPage: React.FC = () => {
     }
   };
 
-  // Helper Badge Status Pelaksanaan
-  const renderStatusPelaksanaanBadge = (status: string) => {
-    switch (status) {
+  // Helper Badge Status Usulan (Approval: Disetujui / Ditolak / Menunggu)
+  const renderStatusUsulanBadge = (statusUsulan?: string, legacyStatus?: string) => {
+    let u = statusUsulan;
+    const leg = String(legacyStatus || "").toUpperCase();
+    if (!u) {
+      if (leg === "DITERIMA" || leg === "DISETUJUI" || leg === "SEDANG_BERJALAN" || leg === "SELESAI") u = "DISETUJUI";
+      else if (leg === "DITOLAK" || leg === "TIDAK_DISETUJUI") u = "DITOLAK";
+      else u = "BELUM_DISETUJUI";
+    }
+
+    switch (u) {
+      case "DISETUJUI":
+      case "DITERIMA":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/40">
+            <CheckCircle2 size={11} />
+            <span>Disetujui</span>
+          </span>
+        );
+      case "DITOLAK":
+      case "TIDAK_DISETUJUI":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-200/80 dark:border-rose-800/40">
+            <XCircle size={11} />
+            <span>Ditolak</span>
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/40">
+            <Clock size={11} />
+            <span>Menunggu</span>
+          </span>
+        );
+    }
+  };
+
+  // Helper Badge Status Pelaksanaan (Execution: Belum Mulai / Sedang Berjalan / Selesai)
+  const renderStatusPelaksanaanBadge = (statusPelaksanaan?: string, legacyStatus?: string) => {
+    let p = statusPelaksanaan;
+    const leg = String(legacyStatus || "").toUpperCase();
+    if (!p) {
+      if (leg === "SELESAI") p = "SELESAI";
+      else if (leg === "SEDANG_BERJALAN" || leg === "SEDANG_DILAKSANAKAN" || leg === "BERJALAN") p = "SEDANG_BERJALAN";
+      else p = "BELUM_MULAI";
+    }
+
+    switch (p) {
       case "SELESAI":
         return (
           <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/40">
@@ -372,7 +439,7 @@ export const PenilaianProkerPage: React.FC = () => {
       case "BERJALAN":
         return (
           <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/40">
-            Berjalan
+            Sedang Berjalan
           </span>
         );
       default:
@@ -458,7 +525,7 @@ export const PenilaianProkerPage: React.FC = () => {
             Penilaian Program Kerja
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Evaluasi pelaksanaan dan dampak program kerja setiap kelompok KKN secara komprehensif
+            Evaluasi pelaksanaan dan dampak program kerja setiap kelompok KKN berdasarkan status usulan dan status pelaksanaan
           </p>
         </div>
 
@@ -472,14 +539,14 @@ export const PenilaianProkerPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Baris Filter Interaktif (4 Kontrol) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+      {/* Baris Filter Interaktif (5 Kontrol: Search, Kategori, Status Usulan, Status Pelaksanaan, Status Penilaian) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
         {/* Search */}
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Cari kelompok atau program kerja..."
+            placeholder="Cari kelompok / proker..."
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -513,7 +580,28 @@ export const PenilaianProkerPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Filter Status Pelaksanaan */}
+        {/* Filter Status Usulan (Approval: Menunggu / Disetujui / Ditolak) */}
+        <div className="relative">
+          <CheckCircle2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <select
+            value={statusUsulanFilter}
+            onChange={(e) => {
+              setStatusUsulanFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 cursor-pointer appearance-none"
+          >
+            <option value="ALL">Semua Status Usulan</option>
+            <option value="BELUM_DISETUJUI">Menunggu Persetujuan</option>
+            <option value="DISETUJUI">Disetujui</option>
+            <option value="DITOLAK">Ditolak</option>
+          </select>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+            ▼
+          </div>
+        </div>
+
+        {/* Filter Status Pelaksanaan (Execution: Belum Mulai / Sedang Berjalan / Selesai) */}
         <div className="relative">
           <ListFilter size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <select
@@ -526,7 +614,7 @@ export const PenilaianProkerPage: React.FC = () => {
           >
             <option value="ALL">Semua Status Pelaksanaan</option>
             <option value="BELUM_MULAI">Belum Mulai</option>
-            <option value="BERJALAN">Berjalan</option>
+            <option value="BERJALAN">Sedang Berjalan</option>
             <option value="SELESAI">Selesai</option>
           </select>
           <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
@@ -567,11 +655,12 @@ export const PenilaianProkerPage: React.FC = () => {
           <div className="p-8">
             <EmptyTableState
               entityName="Program Kerja KKN"
-              isSearch={!!(searchQuery || kategoriFilter !== "ALL" || statusPelaksanaanFilter !== "ALL" || statusPenilaianFilter !== "ALL")}
+              isSearch={!!(searchQuery || kategoriFilter !== "ALL" || statusUsulanFilter !== "ALL" || statusPelaksanaanFilter !== "ALL" || statusPenilaianFilter !== "ALL")}
               searchQuery={searchQuery}
               onResetSearch={() => {
                 setSearchQuery("");
                 setKategoriFilter("ALL");
+                setStatusUsulanFilter("ALL");
                 setStatusPelaksanaanFilter("ALL");
                 setStatusPenilaianFilter("ALL");
               }}
@@ -587,7 +676,8 @@ export const PenilaianProkerPage: React.FC = () => {
                     <th className="py-3.5 px-4 min-w-[160px]">Nama Kelompok & Wilayah</th>
                     <th className="py-3.5 px-3.5 min-w-[120px]">Kategori</th>
                     <th className="py-3.5 px-4 min-w-[260px]">Deskripsi Program Kerja</th>
-                    <th className="py-3.5 px-3.5 text-center min-w-[120px]">Status Pelaksanaan</th>
+                    <th className="py-3.5 px-3.5 text-center min-w-[130px]">Status Usulan</th>
+                    <th className="py-3.5 px-3.5 text-center min-w-[130px]">Status Pelaksanaan</th>
                     <th className="py-3.5 px-3.5 text-center min-w-[130px]">Status Penilaian</th>
                     <th className="py-3.5 px-4 text-center min-w-[160px]">Aksi</th>
                   </tr>
@@ -630,9 +720,14 @@ export const PenilaianProkerPage: React.FC = () => {
                           </p>
                         </td>
 
+                        {/* Status Usulan */}
+                        <td className="py-3.5 px-3.5 text-center">
+                          {renderStatusUsulanBadge(p.statusUsulan, p.status)}
+                        </td>
+
                         {/* Status Pelaksanaan */}
                         <td className="py-3.5 px-3.5 text-center">
-                          {renderStatusPelaksanaanBadge(p.status)}
+                          {renderStatusPelaksanaanBadge(p.statusPelaksanaan, p.status)}
                         </td>
 
                         {/* Status Penilaian */}
@@ -775,21 +870,35 @@ export const PenilaianProkerPage: React.FC = () => {
                     <p className="text-slate-600 dark:text-slate-300 mt-0.5 text-xs">
                       {selectedProker.deskripsi}
                     </p>
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
                       {renderKategoriBadge(selectedProker.kategori)}
-                      {renderStatusPelaksanaanBadge(selectedProker.status)}
+                      {renderStatusUsulanBadge(selectedProker.statusUsulan, selectedProker.status)}
+                      {renderStatusPelaksanaanBadge(selectedProker.statusPelaksanaan, selectedProker.status)}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+                  <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-lg">
+                    <span className="text-[11px] font-medium text-slate-500">Pelaksanaan:</span>
+                    <select
+                      value={modalStatusPelaksanaan}
+                      onChange={(e) => setModalStatusPelaksanaan(e.target.value)}
+                      className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-hidden cursor-pointer"
+                    >
+                      <option value="BELUM_MULAI">Belum Mulai</option>
+                      <option value="SEDANG_BERJALAN">Sedang Berjalan</option>
+                      <option value="SELESAI">Selesai</option>
+                    </select>
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => handleOpenBukti(selectedProker)}
                     className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
                   >
                     <FileText size={13} />
-                    <span>Lihat Bukti Kegiatan</span>
+                    <span>Lihat Bukti</span>
                   </button>
 
                   {selectedProker.linkGoogleDrive && (
