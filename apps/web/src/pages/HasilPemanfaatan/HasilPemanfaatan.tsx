@@ -101,12 +101,27 @@ export const HasilPemanfaatan: React.FC = () => {
   const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
   const dplKelurahan = user?.kelurahan || "";
 
+  // Extract DPL assigned RW numbers from dplKelompok
+  const dplCakupanRwNumbers = useMemo(() => {
+    if (!isDpl || !user?.dplKelompok) return [];
+    const rws: string[] = [];
+    user.dplKelompok.forEach((k: any) => {
+      if (Array.isArray(k.cakupanRw)) {
+        rws.push(...k.cakupanRw.map(String));
+      } else if (typeof k.cakupanRw === "string" || typeof k.cakupanRw === "number") {
+        rws.push(String(k.cakupanRw));
+      }
+    });
+    return rws.map((r) => r.toLowerCase().replace(/^rw\s*/i, "").trim());
+  }, [user, isDpl]);
+
   // Filtered feedback calculation
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
       const q = (searchQuery || "").toLowerCase().trim();
       const rwName = item?.rw?.name || (item?.rwId ? `RW ${item.rwId}` : "");
       const kelName = item?.rw?.kelurahan?.name || "";
+      const rwNumberMatch = rwName.toLowerCase().replace(/^rw\s*/i, "").trim();
 
       const matchesSearch =
         !q ||
@@ -126,9 +141,12 @@ export const HasilPemanfaatan: React.FC = () => {
       const matchesDplKelurahan =
         !isDpl || !dplKelurahan || kelName.toLowerCase().includes((dplKelurahan || "").toLowerCase());
 
-      return matchesSearch && matchesStatus && matchesKategori && matchesDplKelurahan;
+      const matchesDplRw =
+        !isDpl || dplCakupanRwNumbers.length === 0 || dplCakupanRwNumbers.includes(rwNumberMatch);
+
+      return matchesSearch && matchesStatus && matchesKategori && matchesDplKelurahan && matchesDplRw;
     });
-  }, [items, searchQuery, statusFilter, kategoriFilter, isDpl, dplKelurahan]);
+  }, [items, searchQuery, statusFilter, kategoriFilter, isDpl, dplKelurahan, dplCakupanRwNumbers]);
 
   // Filtered programs calculation
   const filteredPrograms = useMemo(() => {
@@ -136,6 +154,7 @@ export const HasilPemanfaatan: React.FC = () => {
       const q = (searchQuery || "").toLowerCase().trim();
       const rwName = p?.rw?.name || (p?.rwId ? `RW ${p.rwId}` : "");
       const kelName = p?.rw?.kelurahan?.name || "";
+      const rwNumberMatch = rwName.toLowerCase().replace(/^rw\s*/i, "").trim();
       const matchesSearch =
         !q ||
         (p?.namaProgram || "").toLowerCase().includes(q) ||
@@ -151,9 +170,12 @@ export const HasilPemanfaatan: React.FC = () => {
       const matchesDplKelurahan =
         !isDpl || !dplKelurahan || kelName.toLowerCase().includes((dplKelurahan || "").toLowerCase());
 
-      return matchesSearch && matchesKategori && matchesDplKelurahan;
+      const matchesDplRw =
+        !isDpl || dplCakupanRwNumbers.length === 0 || dplCakupanRwNumbers.includes(rwNumberMatch);
+
+      return matchesSearch && matchesKategori && matchesDplKelurahan && matchesDplRw;
     });
-  }, [programs, searchQuery, kategoriFilter, isDpl, dplKelurahan]);
+  }, [programs, searchQuery, kategoriFilter, isDpl, dplKelurahan, dplCakupanRwNumbers]);
 
   // Reset pagination when filters change
   useEffect(() => {
