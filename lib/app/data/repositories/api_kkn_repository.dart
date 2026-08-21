@@ -657,6 +657,29 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
+  Future<Map<String, dynamic>> jedaKegiatan(String id, {required int totalDurasiDalamZonaMenit, required String alasan}) async {
+    try {
+      final response = await apiClient.dio.post(
+        ApiEndpoints.kknJedaKegiatan(id),
+        data: {
+          'totalDurasiDalamZonaMenit': totalDurasiDalamZonaMenit,
+          'alasan': alasan,
+        },
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data as Map<String, dynamic>? ?? {'success': true};
+      }
+      throw Exception('Gagal menjeda kegiatan');
+    } catch (e) {
+      if (e is DioException) {
+        final msg = _extractError(e.response?.data, '');
+        throw Exception(msg ?? 'Gagal menjeda kegiatan');
+      }
+      rethrow;
+    }
+  }
+
+  @override
   Future<Map<String, dynamic>> recordOutOfZoneViolation({required String scheduleId, required double outOfZoneMinutes}) async {
     try {
       final response = await apiClient.dio.post(

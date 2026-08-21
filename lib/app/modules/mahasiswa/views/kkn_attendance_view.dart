@@ -1259,8 +1259,8 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
           const SizedBox(height: 16),
             if (!isSuccess && !isAlpa && state.isTracking)
               StopTrackingButton(
-                onStop: () async {
-                  final isSuccess = await notifier.selesaiKegiatan(alasan: 'MANUAL_STOP');
+                onStop: (String alasan) async {
+                  final isSuccess = await notifier.jedaKegiatan(alasan);
                   if (mounted) {
                     setState(() => _showDetail = false);
                     ref.read(authProvider.notifier).fetchProfile();
@@ -1268,15 +1268,13 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                     ScaffoldMessenger.of(context).clearSnackBars();
                     if (isSuccess) {
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text('Presensi Selesai Kegiatan berhasil! (+10 Poin)'),
-                        backgroundColor: AppColors.primaryGreen,
-                        behavior: SnackBarBehavior.floating,
+                        content: Text('Kegiatan berhasil dijeda sementara.'),
+                        backgroundColor: AppColors.primary,
                       ));
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text('Gagal menyelesaikan kegiatan. Silakan coba lagi.'),
+                        content: Text('Gagal menjeda kegiatan.'),
                         backgroundColor: AppColors.dangerRed,
-                        behavior: SnackBarBehavior.floating,
                       ));
                     }
                   }
@@ -1535,7 +1533,7 @@ class KegiatanKknCard extends StatelessWidget {
 }
 
 class StopTrackingButton extends StatelessWidget {
-  final VoidCallback onStop;
+  final Function(String) onStop;
 
   const StopTrackingButton({super.key, required this.onStop});
 
@@ -1544,18 +1542,62 @@ class StopTrackingButton extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: TextButton.icon(
-        onPressed: onStop,
-        icon: const Icon(Icons.exit_to_app_rounded, color: AppColors.dangerRed),
+        onPressed: () {
+          final TextEditingController alasanCtrl = TextEditingController();
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Jeda Kegiatan'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Silakan masukkan alasan Anda menjeda atau keluar sementara dari kegiatan.'),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: alasanCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Alasan Jeda',
+                      hintText: 'Misal: Baterai habis, izin ke kampus...',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 2,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Batal'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final alasan = alasanCtrl.text.trim();
+                    if (alasan.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Alasan tidak boleh kosong.')),
+                      );
+                      return;
+                    }
+                    Navigator.pop(ctx);
+                    onStop(alasan);
+                  },
+                  child: const Text('Jeda'),
+                ),
+              ],
+            ),
+          );
+        },
+        icon: const Icon(Icons.pause_circle_filled, color: AppColors.primary),
         label: const Text(
-          'Keluar dari Kegiatan',
+          'Keluar Sementara (Jeda)',
           style: TextStyle(
-            color: AppColors.dangerRed,
+            color: AppColors.primary,
             fontWeight: FontWeight.bold,
           ),
         ),
         style: TextButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 12),
-          backgroundColor: AppColors.dangerRed.withValues(alpha: 0.1),
+          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),

@@ -493,6 +493,41 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     return isSuccess;
   }
 
+  /// Jeda Kegiatan: panggil endpoint Jeda, dan matikan GPS lokal, tetapi pertahankan accumulatedSeconds.
+  Future<bool> jedaKegiatan(String alasan) async {
+    final scheduleId = _currentTargetScheduleId;
+    if (scheduleId == null) return false;
+
+    bool isSuccess = false;
+    try {
+      final repo = ref.read(kknRepositoryProvider);
+      final totalMenit = (_accumulatedSeconds / 60).ceil();
+      await repo.jedaKegiatan(
+        scheduleId,
+        totalDurasiDalamZonaMenit: totalMenit,
+        alasan: alasan,
+      );
+      isSuccess = true;
+    } catch (e) {
+      debugPrint('[KKN] jedaKegiatan error: $e');
+      isSuccess = false;
+    } finally {
+      // === GPS LIFECYCLE: Matikan tracking lokal, tapi jangan hapus state accumulated ===
+      await ref.read(locationPingControllerProvider.notifier).stopTracking();
+      await KknBackgroundTaskHandler.stopBackgroundService();
+      _isTracking = false;
+      _timer?.cancel();
+      _timer = null;
+      state = state.copyWith(status: KknAttendanceStatus.outOfZone);
+      
+      // Update local storage untuk checkpoint durasi
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_prefKeyAccumulatedSeconds, _accumulatedSeconds);
+      // Jangan hapus session ID karena jika belum selesai, mereka cuma lanjut sesi
+    }
+    return isSuccess;
+  }
+
   /// Pindah kegiatan: selesai kegiatan lama → mulai kegiatan baru
   Future<String?> switchKegiatan(String newKegiatanId) async {
     await selesaiKegiatan(alasan: 'PINDAH_KEGIATAN');
@@ -766,13 +801,16 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         final lat = (data['lat'] as num?)?.toDouble();
         final lng = (data['lng'] as num?)?.toDouble();
         
-        // Update accumulated seconds dari background
-        _accumulatedSeconds = totalSeconds;
-        _zoneEntryTime = DateTime.now();
+        // [BUGFIX] Update accumulated seconds dari background HANYA jika nilainya lebih besar atau masuk akal
+        // Jangan biarkan background me-reset durasi UI ke 0 jika server sudah memberikan durasi yang valid
+        if (totalSeconds > _accumulatedSeconds || _accumulatedSeconds == 0) {
+          _accumulatedSeconds = totalSeconds;
+          _zoneEntryTime = DateTime.now();
+        }
         
         state = state.copyWith(
-          inZoneDurationSeconds: totalSeconds,
-          isEligibleForAttendance: isEligible,
+          inZoneDurationSeconds: _accumulatedSeconds,
+          isEligibleForAttendance: isEligible || _accumulatedSeconds >= (state.targetDurationMinutes * 60),
           isInsideRadius: isInside,
           distanceToTarget: distance,
           currentPosition: (lat != null && lng != null) 

@@ -116,6 +116,7 @@ abstract class KknRepository {
 
   /// Akhiri kegiatan KKN
   /// POST /api/v1/kkn/kegiatan/{id}/selesai
+  Future<Map<String, dynamic>> jedaKegiatan(String id, {required int totalDurasiDalamZonaMenit, required String alasan});
   Future<Map<String, dynamic>> selesaiKegiatan(String id, {required String sessionId, required int totalDurasiDalamZonaMenit, required String alasan});
 
   /// Catat pelanggaran keluar zona (penalti poin)

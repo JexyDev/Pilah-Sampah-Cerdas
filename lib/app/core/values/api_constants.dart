@@ -76,6 +76,7 @@ class ApiEndpoints {
   static const String kknKegiatanAktif = '/kkn/kegiatan-aktif';
   static String kknMulaiKegiatan(String id) => '/kkn/kegiatan/$id/mulai';
   static String kknSelesaiKegiatan(String id) => '/kkn/kegiatan/$id/selesai';
+  static String kknJedaKegiatan(String id) => '/kkn/kegiatan/$id/jeda';
   static String kknCheckOut(String id) => '/kkn-attendance/kegiatan/$id/check-out';
   static const String kknOutOfZoneViolation = '/kkn/out-of-zone-violation';
 
