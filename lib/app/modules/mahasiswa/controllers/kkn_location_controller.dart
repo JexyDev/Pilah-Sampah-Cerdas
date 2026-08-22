@@ -724,9 +724,11 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   Future<void> stopTracking() async {
     _trackingTimer?.cancel();
     _trackingTimer = null;
-    _zoneDurationTimer?.cancel();
-    _zoneDurationTimer = null;
-    NotificationEngine().cancelOngoingKKNNotification();
+    
+    // Alih-alih hanya meng-cancel timer, gunakan _stopZoneTimer() agar 
+    // durasi sisa ditambahkan ke _accumulatedSeconds dan _zoneEntryTime di-reset.
+    _stopZoneTimer(resetCompletely: false);
+    
     await _stopBackgroundService();
     state = state.copyWith(isTracking: false);
   }
