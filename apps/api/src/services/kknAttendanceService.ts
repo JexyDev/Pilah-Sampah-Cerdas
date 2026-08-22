@@ -1846,7 +1846,7 @@ export class KknAttendanceService {
           where: { studentId: userId },
         },
       },
-      orderBy: { date: "asc" },
+      orderBy: { createdAt: "desc" },
     });
 
     if (schedules.length === 0) {
@@ -1861,7 +1861,7 @@ export class KknAttendanceService {
             where: { studentId: userId },
           },
         },
-        orderBy: { date: "asc" },
+        orderBy: { createdAt: "desc" },
       });
     }
 
@@ -2005,6 +2005,7 @@ export class KknAttendanceService {
           id: sch.kelompok?.id || student?.kelompok?.id || "KLP-001",
           nama: sch.kelompok?.name || student?.kelompok?.name || "Kelompok KKN",
         },
+        createdAt: sch.createdAt.toISOString(),
       };
     });
 
