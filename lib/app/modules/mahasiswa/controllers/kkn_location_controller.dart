@@ -639,6 +639,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
                   .toString()
                   .toLowerCase();
           final bool isAttended = activeZone['isAttended'] == true || attendanceStatus == 'hadir';
+          final bool isBerlangsung = attendanceStatus == 'berlangsung';
 
           final double rawTargetMins = double.tryParse(activeZone['targetDurationMinutes']?.toString() ?? '') ??
               double.tryParse(activeZone['durationMinutes']?.toString() ?? '') ??
@@ -712,7 +713,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       await fetchTargetLocation();
     }
 
-    // Initial check
+    // Initial check (local location update)
     await _performLocationUpdate();
 
     // Setup periodic updates every 10 seconds (Real-Time Responsiveness)
@@ -724,8 +725,17 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     // ═════════════════════════════════════════════════════════════════
     // START BACKGROUND FOREGROUND SERVICE
     // Agar GPS tetap jalan meski layar mati / user pindah app
+    // HANYA JALANKAN JIKA KEGIATAN SUDAH RESMI DIMULAI
     // ═════════════════════════════════════════════════════════════════
-    _startBackgroundService();
+    final currentStatus = state.activeActivity?['attendanceStatus']?.toString().toLowerCase() ?? 
+                         state.activeActivity?['statusKehadiran']?.toString().toLowerCase() ?? '';
+                         
+    if (currentStatus == 'berlangsung') {
+      _startBackgroundService();
+      ref.read(locationPingControllerProvider.notifier).startTracking();
+    } else {
+      await _stopBackgroundService();
+    }
   }
 
   /// Stop the tracking timer
@@ -1299,8 +1309,13 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
     state = state.copyWith(currentPosition: pos, error: null, clearError: true);
 
-    // Send update to backend only if background service is not handling it
-    if (!_backgroundServiceStarted) {
+    // Mengecek apakah mahasiswa sudah menekan "Mulai Kegiatan"
+    final currentStatus = state.activeActivity?['attendanceStatus']?.toString().toLowerCase() ?? 
+                         state.activeActivity?['statusKehadiran']?.toString().toLowerCase() ?? '';
+    final isBerlangsung = currentStatus == 'berlangsung';
+
+    // Send update to backend only if background service is not handling it AND activity has officially started
+    if (!_backgroundServiceStarted && isBerlangsung) {
       try {
         final repo = ref.read(kknRepositoryProvider);
         final pingResponse = await repo.sendLocationPing(

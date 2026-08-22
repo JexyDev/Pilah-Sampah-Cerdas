@@ -551,7 +551,25 @@ class KknBackgroundTaskHandler extends TaskHandler {
       
       request.write(payload);
       final response = await request.close();
-      await response.drain();
+      
+      if (response.statusCode == 200) {
+        final responseBody = await response.transform(utf8.decoder).join();
+        try {
+          final jsonResponse = jsonDecode(responseBody);
+          final data = jsonResponse['data'] as Map<String, dynamic>?;
+          
+          final activeScheduleId = data?['activeScheduleId'];
+          
+          // Jika backend tidak mengembalikan activeScheduleId, berarti sesi sudah selesai/di-checkout
+          if (activeScheduleId == null && _scheduleId != null) {
+            debugPrint('[KKN-BG] Jadwal selesai di backend (auto-checkout). Menghentikan GPS.');
+            _autoStop('Waktu kegiatan telah habis atau sudah di-checkout oleh sistem.');
+          }
+        } catch (_) {}
+      } else {
+        await response.drain();
+      }
+      
       client.close();
       debugPrint('[KKN-BG] Ping sent successfully to $url ($lat, $lng)');
     } catch (e) {

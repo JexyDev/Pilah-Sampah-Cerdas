@@ -206,6 +206,13 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
       final poskoArea = data?['poskoArea']?.toString() ?? data?['kelurahan']?.toString();
 
       if (mounted) {
+        // Jika backend merespons tapi activeScheduleId null, berarti jadwal sudah di-checkout / habis
+        if (data == null || !data.containsKey('activeScheduleId') || data['activeScheduleId'] == null) {
+          stopTracking();
+          _ref.read(kknLocationProvider.notifier).stopTracking();
+          return;
+        }
+
         state = state.copyWith(
           lastLatitude: lat,
           lastLongitude: lng,
