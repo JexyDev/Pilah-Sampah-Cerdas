@@ -34,7 +34,11 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    final picked = await picker.pickImage(
+      source: ImageSource.camera,
+      preferredCameraDevice: CameraDevice.rear,
+      imageQuality: 70,
+    );
     if (picked != null) {
       setState(() => _selectedImage = File(picked.path));
     }
@@ -257,9 +261,9 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
                                   decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3))),
                                   child: const Icon(Icons.add_a_photo_rounded, size: 32, color: AppColors.primaryGreen),
                                 ),
-                                const SizedBox(height: 12),
-                                const Text('Ambil / Pilih Foto Kegiatan', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600, fontSize: 13)),
-                              ],
+                                  const SizedBox(height: 12),
+                                  const Text('Ambil Foto Kegiatan (Kamera Langsung)', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600, fontSize: 13)),
+                                ],
                             ),
                     ),
                   ),
