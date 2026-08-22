@@ -10,6 +10,7 @@
 
 import { prisma } from "../lib/prisma.js";
 import { StatusLogbookKkn, TipeAktivitasKkn } from "@prisma/client";
+import { getKelompokWhere } from "./dplService.js";
 
 // Target standar logbook per kelompok selama KKN (misal: 6 hari/pekan x 4 pekan = 24 aktivitas)
 const DEFAULT_LOGBOOK_TARGET = 24;
@@ -107,16 +108,11 @@ export class LogbookService {
     const where: any = {};
 
     if (isDpl) {
-      const dplGroups = await prisma.kelompokKkn.findMany({
-        where: {
-          OR: [
-            { dplId: userId },
-            { dpl: { id: userId } },
-          ],
-        },
+      const allowedGroups = await prisma.kelompokKkn.findMany({
+        where: await getKelompokWhere(userId, userRole),
         select: { id: true },
       });
-      const dplGroupIds = dplGroups.map((g) => g.id);
+      const dplGroupIds = allowedGroups.map((g) => g.id);
 
       if (filters.groupId && filters.groupId !== "ALL") {
         where.kelompokId = filters.groupId;
@@ -591,12 +587,19 @@ export class LogbookService {
    * Mengambil Riwayat Logbook Monitoring Mingguan DPL
    */
   async getDplLogbooks(dplUserId: string, userRole: string, groupId?: string) {
-    const isSuper = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH"].includes(userRole.toUpperCase());
+    const isSuper = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH", "PEMIMPIN", "PANITIA_TASKFORCE"].includes(userRole.toUpperCase());
     const where: any = {};
 
     if (!isSuper) {
+      const allowedGroups = await prisma.kelompokKkn.findMany({
+        where: await getKelompokWhere(dplUserId, userRole),
+        select: { id: true },
+      });
+      const allowedGroupIds = allowedGroups.map((g) => g.id);
+
       where.OR = [
         { dplId: dplUserId },
+        { kelompokId: { in: allowedGroupIds } },
         { kelompok: { dplId: dplUserId } },
       ];
     }
@@ -624,7 +627,7 @@ export class LogbookService {
       kelompokId: item.kelompokId,
       kelompokNama: item.kelompok.name,
       kelurahan: item.kelompok.kelurahan || "-",
-      pekanKe: item.pekanKe,
+      pekanKe: item.pekanKe || 1,
       tanggal: item.tanggal.toISOString().split("T")[0],
       tempat: item.tempat,
       deskripsi: item.deskripsi,
@@ -658,15 +661,30 @@ export class LogbookService {
     if (!payload.tempat || payload.tempat.trim() === "") throw new Error("Tempat monitoring wajib diisi");
     if (!payload.deskripsi || payload.deskripsi.trim() === "") throw new Error("Deskripsi kegiatan monitoring wajib diisi");
 
-    const isSuper = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH"].includes(userRole.toUpperCase());
+    const isSuper = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH", "PEMIMPIN", "PANITIA_TASKFORCE"].includes(userRole.toUpperCase());
     const kelompok = await prisma.kelompokKkn.findUnique({
       where: { id: payload.kelompokId },
       include: { students: true },
     });
 
     if (!kelompok) throw new Error("Kelompok KKN tidak ditemukan");
-    if (!isSuper && kelompok.dplId !== dplUserId) {
-      throw new Error("Akses ditolak: Anda hanya dapat mengisi logbook untuk kelompok bimbingan Anda.");
+    if (!isSuper) {
+      const allowedGroups = await prisma.kelompokKkn.findMany({
+        where: await getKelompokWhere(dplUserId, userRole),
+        select: { id: true },
+      });
+      const allowedGroupIds = allowedGroups.map((g) => g.id);
+      if (kelompok.dplId && kelompok.dplId !== dplUserId && !allowedGroupIds.includes(kelompok.id)) {
+        throw new Error("Akses ditolak: Anda hanya dapat mengisi logbook untuk kelompok bimbingan Anda.");
+      }
+    }
+
+    // Auto-link kelompok if unlinked
+    if (!kelompok.dplId) {
+      await prisma.kelompokKkn.update({
+        where: { id: kelompok.id },
+        data: { dplId: dplUserId },
+      });
     }
 
     const logbookDate = new Date(payload.tanggal);
@@ -677,7 +695,7 @@ export class LogbookService {
         dplId: dplUserId,
         kelompokId: payload.kelompokId,
         tanggal: logbookDate,
-        pekanKe: Number(payload.pekanKe),
+        pekanKe: Number(payload.pekanKe || 1),
         tempat: payload.tempat.trim(),
         deskripsi: payload.deskripsi.trim(),
         arahanEvaluasi: payload.arahanEvaluasi?.trim() || null,

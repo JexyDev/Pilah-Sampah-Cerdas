@@ -64,7 +64,12 @@ const checkRouteActive = (
     if (tPath === cPath) return true;
     const logbookAliases = ["/logbook-kkn", "/dpl/logbook", "/logbook"];
     if (logbookAliases.includes(tPath) && logbookAliases.includes(cPath)) return true;
-    const dplLogAliases = ["/log-aktivitas-dpl", "/dpl/log-aktivitas"];
+    const dplLogAliases = [
+      "/log-aktivitas-dpl",
+      "/dpl/log-aktivitas",
+      "/catat-kegiatan-dpl",
+      "/dpl/catat-kegiatan",
+    ];
     if (dplLogAliases.includes(tPath) && dplLogAliases.includes(cPath)) return true;
     if (tQuery?.includes("tab=dpl") && dplLogAliases.includes(cPath) && logbookAliases.includes(tPath)) return true;
     const userMasterAliases = ["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"];
@@ -87,7 +92,7 @@ const checkRouteActive = (
       const targetTab = (targetParams.get("tab") || "").toLowerCase();
       let currentTab = (currentParams.get("tab") || "").toLowerCase();
       if (!currentTab) {
-        if (["/log-aktivitas-dpl", "/dpl/log-aktivitas"].includes(pathname)) {
+        if (["/log-aktivitas-dpl", "/dpl/log-aktivitas", "/catat-kegiatan-dpl", "/dpl/catat-kegiatan"].includes(pathname)) {
           currentTab = "dpl";
         } else {
           currentTab = "mahasiswa";
@@ -622,7 +627,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         {
           to: "/logbook-kkn?tab=dpl",
           icon: BookOpen,
-          label: "Log Aktivitas DPL",
+          label: "Catat Kegiatan DPL",
           allowed: [
             "DEVELOPER",
             "SUPER_USER",

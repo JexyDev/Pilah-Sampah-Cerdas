@@ -18,6 +18,7 @@ import {
   XCircle,
   Coins,
   Clock,
+  Calendar,
   Check,
   AlertCircle,
   ListFilter,
@@ -128,6 +129,37 @@ export const ProgramKerjaKkn: React.FC = () => {
   const [formStartDate, setFormStartDate] = useState("");
   const [formEndDate, setFormEndDate] = useState("");
 
+  const getTodayDateString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatIndonesianTimestamp = (dateStr?: string | Date | null) => {
+    if (!dateStr) return { date: "-", time: "-", full: "-" };
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return { date: "-", time: "-", full: "-" };
+
+    const dateFormatted = d.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    const timeFormatted = d.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
+    return {
+      date: dateFormatted,
+      time: `${timeFormatted} WIB`,
+      full: `${dateFormatted}, ${timeFormatted} WIB`,
+    };
+  };
+
   const formatIndonesianDateRange = (startStr: string, endStr: string) => {
     if (!startStr) return "";
     const startDate = new Date(startStr);
@@ -155,6 +187,20 @@ export const ProgramKerjaKkn: React.FC = () => {
   };
 
   const handleDateChange = (start: string, end: string) => {
+    const today = getTodayDateString();
+
+    // Validasi pencegahan tanggal masa lampau pada mode tambah baru
+    if (formMode === "add" && start && start < today) {
+      toast.error("Tanggal rencana kegiatan tidak boleh di masa lampau");
+      start = today;
+    }
+
+    // Validasi tanggal selesai tidak boleh mendahului tanggal mulai
+    if (end && start && end < start) {
+      toast.error("Tanggal selesai tidak boleh sebelum tanggal mulai");
+      end = start;
+    }
+
     setFormStartDate(start);
     setFormEndDate(end);
     if (start) {
@@ -232,8 +278,11 @@ export const ProgramKerjaKkn: React.FC = () => {
   const handleOpenAddModal = () => {
     setFormMode("add");
     setEditingId(null);
-    setFormStartDate("");
-    setFormEndDate("");
+    const today = getTodayDateString();
+    setFormStartDate(today);
+    setFormEndDate(today);
+    const initialRange = formatIndonesianDateRange(today, today);
+
     const defaultKelompokId =
       selectedKelompokId !== "ALL"
         ? selectedKelompokId
@@ -247,7 +296,7 @@ export const ProgramKerjaKkn: React.FC = () => {
       deskripsi: "",
       kategori: "Pemilahan",
       sumber: isDpl ? "DPL" : "Mahasiswa",
-      waktuPelaksanaan: "",
+      waktuPelaksanaan: initialRange,
       linkGoogleDrive: "",
       kebutuhanBiaya: 0,
       status: "BELUM_DISETUJUI",
@@ -288,6 +337,17 @@ export const ProgramKerjaKkn: React.FC = () => {
     e.preventDefault();
     if (!formData.kelompokId || !formData.deskripsi.trim()) {
       toast.error("Kelompok dan deskripsi kegiatan wajib diisi");
+      return;
+    }
+
+    const today = getTodayDateString();
+    if (formMode === "add" && formStartDate && formStartDate < today) {
+      toast.error("Tanggal rencana kegiatan tidak boleh di masa lampau");
+      return;
+    }
+
+    if (formStartDate && formEndDate && formEndDate < formStartDate) {
+      toast.error("Tanggal selesai tidak boleh lebih awal dari tanggal mulai");
       return;
     }
 
@@ -478,6 +538,7 @@ export const ProgramKerjaKkn: React.FC = () => {
       "Kategori",
       "Sumber",
       "Deskripsi",
+      "Waktu Dibuat",
       "Waktu Pelaksanaan",
       "Biaya (Rp)",
       "Status Usulan",
@@ -491,6 +552,7 @@ export const ProgramKerjaKkn: React.FC = () => {
       `"${p.kategori || "Pemilahan"}"`,
       `"${p.sumber || "Mahasiswa"}"`,
       `"${p.deskripsi.replace(/"/g, '""')}"`,
+      `"${formatIndonesianTimestamp(p.createdAt).full}"`,
       `"${p.waktuPelaksanaan || "-"}"`,
       p.kebutuhanBiaya,
       `"${normalizeStatusUsulan(p.statusUsulan, p.status)}"`,
@@ -867,7 +929,8 @@ export const ProgramKerjaKkn: React.FC = () => {
                   <th className="py-3.5 px-3 w-12 text-center">No</th>
                   <th className="py-3.5 px-3 w-28 text-center">Kategori</th>
                   <th className="py-3.5 px-3 w-24 text-center">Sumber</th>
-                  <th className="py-3.5 px-4 min-w-[260px]">Deskripsi Kegiatan</th>
+                  <th className="py-3.5 px-4 min-w-[240px]">Deskripsi Kegiatan</th>
+                  <th className="py-3.5 px-3 w-36 text-center">Waktu Dibuat</th>
                   <th className="py-3.5 px-3 w-36">Waktu Pelaksanaan</th>
                   <th className="py-3.5 px-3 w-32 font-bold">Biaya</th>
                   <th className="py-3.5 px-3 w-36 text-center">Status Usulan</th>
@@ -880,6 +943,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                 {paginatedProkers.map((p, idx) => {
                   const driveUrl = p.linkGoogleDrive || "https://drive.google.com";
                   const normalizedU = normalizeStatusUsulan(p.statusUsulan, p.status);
+                  const timestampInfo = formatIndonesianTimestamp(p.createdAt);
 
                   return (
                     <tr key={p.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition-colors">
@@ -896,6 +960,18 @@ export const ProgramKerjaKkn: React.FC = () => {
                         <p className="text-slate-900 dark:text-slate-100 leading-relaxed font-normal">
                           {p.deskripsi}
                         </p>
+                      </td>
+                      <td className="py-3.5 px-3 text-center">
+                        <div className="inline-flex flex-col items-center justify-center">
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1">
+                            <Calendar size={11} className="text-slate-400 shrink-0" />
+                            {timestampInfo.date}
+                          </span>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5 flex items-center gap-1">
+                            <Clock size={10} className="text-slate-400 shrink-0" />
+                            {timestampInfo.time}
+                          </span>
+                        </div>
                       </td>
                       <td className="py-3.5 px-3 text-slate-600 dark:text-slate-400 font-medium">
                         {p.waktuPelaksanaan || "-"}
@@ -1135,6 +1211,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                     <span className="text-[10px] text-slate-500 font-bold block mb-0.5">Tanggal Mulai</span>
                     <input
                       type="date"
+                      min={formMode === "add" ? getTodayDateString() : undefined}
                       value={formStartDate}
                       onChange={(e) => handleDateChange(e.target.value, formEndDate)}
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
@@ -1144,12 +1221,16 @@ export const ProgramKerjaKkn: React.FC = () => {
                     <span className="text-[10px] text-slate-500 font-bold block mb-0.5">Tanggal Selesai</span>
                     <input
                       type="date"
+                      min={formStartDate || (formMode === "add" ? getTodayDateString() : undefined)}
                       value={formEndDate}
                       onChange={(e) => handleDateChange(formStartDate, e.target.value)}
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                     />
                   </div>
                 </div>
+                <p className="text-[10.5px] text-slate-400 dark:text-slate-500 mb-1.5">
+                  *Rencana kegiatan baru tidak dapat memilih tanggal di masa lampau.
+                </p>
                 <input
                   type="text"
                   placeholder="Contoh: 19 – 20 Agustus 2026"

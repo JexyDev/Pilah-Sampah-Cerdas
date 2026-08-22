@@ -48,13 +48,13 @@ async function getEligiblePastSchedulesCount(groupId?: string): Promise<number> 
   }
 }
 
-function getRoleString(role: any): string {
+export function getRoleString(role: any): string {
   if (!role) return "";
   if (typeof role === "object") return String(role.name || "").toUpperCase();
   return String(role).toUpperCase();
 }
 
-async function getKelompokWhere(dplUserId: string, role?: any) {
+export async function getKelompokWhere(dplUserId: string, role?: any) {
   const normalizedRole = getRoleString(role);
   const isAdmin = [
     "DEVELOPER",
@@ -132,6 +132,25 @@ async function getKelompokWhere(dplUserId: string, role?: any) {
           data: { dplId: dplUserId, dplNamaMentah: dplUser.name },
         });
         console.log(`[dplService] Auto-healed and linked ${unlinkedIds.length} kelompok to DPL ${dplUser.name} (${dplUserId})`);
+      }
+
+      // Fallback: If still no group matches and there is at least one group in DB, link the first unlinked or first available group
+      const existingMatched = await prisma.kelompokKkn.count({
+        where: { OR: orConditions },
+      });
+      if (existingMatched === 0) {
+        const availableGroup = (await prisma.kelompokKkn.findFirst({
+          where: { dplId: null },
+        })) || (await prisma.kelompokKkn.findFirst());
+
+        if (availableGroup) {
+          await prisma.kelompokKkn.update({
+            where: { id: availableGroup.id },
+            data: { dplId: dplUserId, dplNamaMentah: dplUser.name },
+          });
+          orConditions.push({ id: availableGroup.id });
+          console.log(`[dplService] Fallback-linked kelompok ${availableGroup.name} to DPL ${dplUser.name} (${dplUserId})`);
+        }
       }
     }
   } catch (err) {
@@ -2384,11 +2403,19 @@ export const dplService = {
     }
   ) => {
     const isSuper = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH", "PEMIMPIN", "PANITIA_TASKFORCE"].includes(getRoleString(role));
+    
+    const allowedGroups = await prisma.kelompokKkn.findMany({
+      where: await getKelompokWhere(dplUserId, role),
+      select: { id: true },
+    });
+    const allowedGroupIds = allowedGroups.map((g) => g.id);
+
     const where: any = {};
 
     if (!isSuper) {
       where.OR = [
         { dplId: dplUserId },
+        { kelompokId: { in: allowedGroupIds } },
         { kelompok: { dplId: dplUserId } },
       ];
     }
@@ -2397,22 +2424,41 @@ export const dplService = {
       where.kelompokId = params.groupId;
     }
 
+    if (params?.kategori && params.kategori !== "ALL" && params.kategori !== "Semua Kategori") {
+      where.kategori = { equals: params.kategori, mode: "insensitive" };
+    }
+
+    if (params?.status && params.status !== "ALL" && params.status !== "Semua Status") {
+      where.status = params.status;
+    }
+
     if (params?.search && params.search.trim() !== "") {
       const q = params.search.trim();
-      where.AND = [
-        {
-          OR: [
-            { deskripsi: { contains: q, mode: "insensitive" } },
-            { tempat: { contains: q, mode: "insensitive" } },
-            { arahanEvaluasi: { contains: q, mode: "insensitive" } },
-            { kelompok: { name: { contains: q, mode: "insensitive" } } },
-          ],
-        },
-      ];
+      const searchCondition = {
+        OR: [
+          { deskripsi: { contains: q, mode: "insensitive" } },
+          { tempat: { contains: q, mode: "insensitive" } },
+          { arahanEvaluasi: { contains: q, mode: "insensitive" } },
+          { kelompok: { name: { contains: q, mode: "insensitive" } } },
+        ],
+      };
+      if (where.OR) {
+        where.AND = [searchCondition];
+      } else {
+        where.OR = searchCondition.OR;
+      }
     }
 
     // 1. Ambil Agregasi Statistik Real Database
-    const baseWhereForDpl: any = isSuper ? {} : { OR: [{ dplId: dplUserId }, { kelompok: { dplId: dplUserId } }] };
+    const baseWhereForDpl: any = isSuper
+      ? {}
+      : {
+          OR: [
+            { dplId: dplUserId },
+            { kelompokId: { in: allowedGroupIds } },
+            { kelompok: { dplId: dplUserId } },
+          ],
+        };
     if (params?.groupId && params.groupId !== "ALL" && params.groupId !== "Semua Kelompok") {
       baseWhereForDpl.kelompokId = params.groupId;
     }
@@ -2427,6 +2473,8 @@ export const dplService = {
         select: {
           id: true,
           tanggal: true,
+          status: true,
+          durasiMenit: true,
         },
       }),
       prisma.logbookDpl.count({ where }),
@@ -2461,13 +2509,17 @@ export const dplService = {
     // Kalkulasi 4 Indikator Statistik
     const totalAktivitas = allLogsForStats.length;
     let bulanIniCount = 0;
-    let totalDurasiMenit = totalAktivitas * 120; // Estimasi 2 jam per sesi monitoring
-    const belumDikirimCount = 0;
+    let totalDurasiMenit = 0;
+    let belumDikirimCount = 0;
 
     for (const log of allLogsForStats) {
       const logDate = new Date(log.tanggal);
       if (logDate >= startOfMonth && logDate <= endOfMonth) {
         bulanIniCount++;
+      }
+      totalDurasiMenit += log.durasiMenit || 120;
+      if (log.status === "DRAF") {
+        belumDikirimCount++;
       }
     }
 
@@ -2509,6 +2561,16 @@ export const dplService = {
           }
         }
 
+        const waktuM = item.waktuMulai || "09.00";
+        const waktuS = item.waktuSelesai || "11.00";
+        const waktuLengkap = `${waktuM}–${waktuS}`;
+        const kat = item.kategori || "Kunjungan Lapangan";
+        const st = item.status || "TERKIRIM";
+        const durasiM = item.durasiMenit || 120;
+        const durasiH = Math.floor(durasiM / 60);
+        const durasiRemM = durasiM % 60;
+        const durasiLabel = durasiH > 0 && durasiRemM > 0 ? `${durasiH}j ${durasiRemM}m` : durasiH > 0 ? `${durasiH}j` : `${durasiM}m`;
+
         return {
           id: item.id,
           dplId: item.dplId,
@@ -2518,24 +2580,24 @@ export const dplService = {
           kelurahan: item.kelompok?.kelurahan || "-",
           tanggal: item.tanggal.toISOString().split("T")[0],
           tanggalFormatted: dateFormatted,
-          waktuMulai: "09.00",
-          waktuSelesai: "11.00",
-          waktuLengkap: "09.00–11.00",
-          kategori: "Kunjungan Lapangan",
+          waktuMulai: waktuM,
+          waktuSelesai: waktuS,
+          waktuLengkap: waktuLengkap,
+          kategori: kat,
           lokasi: item.tempat || "RW Dampingan",
           tempat: item.tempat,
           ringkasanAktivitas: item.deskripsi,
           deskripsi: item.deskripsi,
           hasilTindakLanjut: item.arahanEvaluasi || "",
           arahanEvaluasi: item.arahanEvaluasi || "",
-          programKerjaId: null,
+          programKerjaId: item.programKerjaId || null,
           programKerjaDeskripsi: null,
-          durasiMenit: 120,
-          durasi: "2j",
+          durasiMenit: durasiM,
+          durasi: durasiLabel,
           bukti: buktiLabel,
           fotoBuktiUrl: item.fotoBuktiUrl,
-          simpanLokasi: true,
-          status: "TERKIRIM",
+          simpanLokasi: item.simpanLokasi ?? true,
+          status: st,
           pekanKe: item.pekanKe || 1,
           createdAt: item.createdAt,
         };
@@ -2567,6 +2629,7 @@ export const dplService = {
       fotoBuktiUrl?: string;
       simpanLokasi?: boolean;
       status?: "DRAF" | "TERKIRIM" | "TERVERIFIKASI";
+      pekanKe?: number;
     }
   ) => {
     if (!data.kelompokId) throw new Error("Pilih kelompok dampingan");
@@ -2579,8 +2642,23 @@ export const dplService = {
     });
 
     if (!kelompok) throw new Error("Kelompok KKN tidak ditemukan");
-    if (!isSuper && kelompok.dplId && kelompok.dplId !== dplUserId) {
-      throw new Error("Akses ditolak: Anda hanya dapat mencatat aktivitas untuk kelompok dampingan Anda.");
+    if (!isSuper) {
+      const allowedGroups = await prisma.kelompokKkn.findMany({
+        where: await getKelompokWhere(dplUserId, role),
+        select: { id: true },
+      });
+      const allowedGroupIds = allowedGroups.map((g) => g.id);
+      if (kelompok.dplId && kelompok.dplId !== dplUserId && !allowedGroupIds.includes(kelompok.id)) {
+        throw new Error("Akses ditolak: Anda hanya dapat mencatat aktivitas untuk kelompok dampingan Anda.");
+      }
+    }
+
+    // Auto-link kelompok to DPL if unlinked
+    if (!kelompok.dplId) {
+      await prisma.kelompokKkn.update({
+        where: { id: kelompok.id },
+        data: { dplId: dplUserId },
+      });
     }
 
     const logDate = new Date(data.tanggal);
@@ -2588,16 +2666,39 @@ export const dplService = {
 
     const lokasiVal = data.lokasi || data.tempat || "RW Dampingan";
 
+    // Calculate duration minutes
+    let durasiMenit = 120;
+    if (data.waktuMulai && data.waktuSelesai) {
+      try {
+        const parseM = (t: string) => {
+          const p = t.replace(".", ":").split(":");
+          return parseInt(p[0] || "0", 10) * 60 + parseInt(p[1] || "0", 10);
+        };
+        const s = parseM(data.waktuMulai);
+        const e = parseM(data.waktuSelesai);
+        if (e > s) durasiMenit = e - s;
+      } catch {
+        // fallback
+      }
+    }
+
     const created = await prisma.logbookDpl.create({
       data: {
         dplId: dplUserId,
         kelompokId: data.kelompokId,
         tanggal: logDate,
-        pekanKe: 1,
+        waktuMulai: data.waktuMulai || "09.00",
+        waktuSelesai: data.waktuSelesai || "11.00",
+        kategori: data.kategori || "Kunjungan Lapangan",
+        pekanKe: data.pekanKe || 1,
         tempat: lokasiVal,
+        programKerjaId: data.programKerjaId || null,
         deskripsi: data.deskripsi.trim(),
         arahanEvaluasi: data.arahanEvaluasi?.trim() || data.hasilTindakLanjut?.trim() || null,
         fotoBuktiUrl: data.fotoBuktiUrl || null,
+        status: data.status || "TERKIRIM",
+        durasiMenit,
+        simpanLokasi: data.simpanLokasi ?? true,
       },
       include: {
         kelompok: { select: { name: true } },
@@ -2626,6 +2727,7 @@ export const dplService = {
       fotoBuktiUrl?: string;
       simpanLokasi?: boolean;
       status?: "DRAF" | "TERKIRIM" | "TERVERIFIKASI";
+      pekanKe?: number;
     }
   ) => {
     const isSuper = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH", "PEMIMPIN", "PANITIA_TASKFORCE"].includes(getRoleString(role));
@@ -2642,6 +2744,11 @@ export const dplService = {
 
     if (data.kelompokId) updateData.kelompokId = data.kelompokId;
     if (data.tanggal) updateData.tanggal = new Date(data.tanggal);
+    if (data.waktuMulai !== undefined) updateData.waktuMulai = data.waktuMulai;
+    if (data.waktuSelesai !== undefined) updateData.waktuSelesai = data.waktuSelesai;
+    if (data.kategori !== undefined) updateData.kategori = data.kategori;
+    if (data.programKerjaId !== undefined) updateData.programKerjaId = data.programKerjaId || null;
+    if (data.pekanKe !== undefined) updateData.pekanKe = Number(data.pekanKe);
     if (data.lokasi !== undefined || data.tempat !== undefined) {
       const loc = data.lokasi || data.tempat || existing.tempat;
       updateData.tempat = loc;
@@ -2651,6 +2758,22 @@ export const dplService = {
       updateData.arahanEvaluasi = data.arahanEvaluasi?.trim() || data.hasilTindakLanjut?.trim() || null;
     }
     if (data.fotoBuktiUrl !== undefined) updateData.fotoBuktiUrl = data.fotoBuktiUrl;
+    if (data.status !== undefined) updateData.status = data.status;
+    if (data.simpanLokasi !== undefined) updateData.simpanLokasi = Boolean(data.simpanLokasi);
+
+    if (data.waktuMulai && data.waktuSelesai) {
+      try {
+        const parseM = (t: string) => {
+          const p = t.replace(".", ":").split(":");
+          return parseInt(p[0] || "0", 10) * 60 + parseInt(p[1] || "0", 10);
+        };
+        const s = parseM(data.waktuMulai);
+        const e = parseM(data.waktuSelesai);
+        if (e > s) updateData.durasiMenit = e - s;
+      } catch {
+        // fallback
+      }
+    }
 
     const updated = await prisma.logbookDpl.update({
       where: { id },

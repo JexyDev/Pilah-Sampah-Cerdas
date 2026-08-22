@@ -575,7 +575,23 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
+          path="/catat-kegiatan-dpl"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER"]}>
+              <LogAktivitasDpl />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/dpl/log-aktivitas"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER"]}>
+              <LogAktivitasDpl />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dpl/catat-kegiatan"
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER"]}>
               <LogAktivitasDpl />

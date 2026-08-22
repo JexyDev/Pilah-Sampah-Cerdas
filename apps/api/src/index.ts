@@ -465,6 +465,13 @@ archiveAuditLogsCron.start();
         "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
       );`,
+      'ALTER TABLE "logbook_dpl" ADD COLUMN IF NOT EXISTS "waktu_mulai" TEXT;',
+      'ALTER TABLE "logbook_dpl" ADD COLUMN IF NOT EXISTS "waktu_selesai" TEXT;',
+      'ALTER TABLE "logbook_dpl" ADD COLUMN IF NOT EXISTS "kategori" TEXT DEFAULT \'Kunjungan Lapangan\';',
+      'ALTER TABLE "logbook_dpl" ADD COLUMN IF NOT EXISTS "id_program_kerja" TEXT;',
+      'ALTER TABLE "logbook_dpl" ADD COLUMN IF NOT EXISTS "status" TEXT DEFAULT \'TERKIRIM\';',
+      'ALTER TABLE "logbook_dpl" ADD COLUMN IF NOT EXISTS "durasi_menit" INTEGER DEFAULT 120;',
+      'ALTER TABLE "logbook_dpl" ADD COLUMN IF NOT EXISTS "simpan_lokasi" BOOLEAN DEFAULT true;',
       'CREATE INDEX IF NOT EXISTS "logbook_kkn_id_kelompok_tanggal_idx" ON "logbook_kkn"("id_kelompok", "tanggal_kegiatan" DESC);',
       'CREATE INDEX IF NOT EXISTS "logbook_kkn_id_penulis_idx" ON "logbook_kkn"("id_penulis");',
       'CREATE INDEX IF NOT EXISTS "logbook_kkn_status_persetujuan_idx" ON "logbook_kkn"("status_persetujuan");',

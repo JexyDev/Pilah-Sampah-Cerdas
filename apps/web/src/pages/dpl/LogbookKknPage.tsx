@@ -209,6 +209,12 @@ export const LogbookKknPage: React.FC = () => {
       // 1. Ambil daftar kelompok
       const groupData = await dplService.getGroupSummary().catch(() => []);
       setGroups(groupData);
+      if (groupData.length > 0) {
+        setDplForm((prev) => ({
+          ...prev,
+          kelompokId: prev.kelompokId || (selectedGroup !== "ALL" ? selectedGroup : groupData[0].id),
+        }));
+      }
 
       // 2. Ambil logbook mahasiswa
       const mhsData = await logbookApiService.getMahasiswaLogbooks({
@@ -501,7 +507,7 @@ export const LogbookKknPage: React.FC = () => {
                 className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-colors"
               >
                 <Plus className="w-4 h-4" />
-                Catat Logbook DPL
+                Catat Kegiatan DPL
               </button>
             )}
 
@@ -608,7 +614,7 @@ export const LogbookKknPage: React.FC = () => {
             }`}
           >
             <ShieldCheck className="w-4 h-4" />
-            Log Aktivitas DPL
+            Catat Kegiatan DPL
             <span className="ml-1 px-2 py-0.5 text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full">
               {dplLogbooks.length}
             </span>
@@ -1304,7 +1310,7 @@ export const LogbookKknPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3">
               <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 text-sm">
                 <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                Catat Logbook Monitoring DPL
+                Catat Kegiatan DPL
               </h3>
               <button
                 onClick={() => setShowDplLogbookModal(false)}
@@ -1431,7 +1437,7 @@ export const LogbookKknPage: React.FC = () => {
                   className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm flex items-center gap-1.5"
                 >
                   {isSubmittingDplLog && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                  Simpan Logbook DPL
+                  Simpan
                 </button>
               </div>
             </form>

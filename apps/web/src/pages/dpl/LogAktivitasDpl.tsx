@@ -258,17 +258,17 @@ export const LogAktivitasDpl: React.FC = () => {
 
       if (editingLogId) {
         await dplActivityLogService.updateActivityLog(editingLogId, formData);
-        toast.success(status === "DRAF" ? "Draf berhasil diperbarui" : "Aktivitas berhasil dikirim!");
+        toast.success(status === "DRAF" ? "Draf berhasil diperbarui" : "Kegiatan DPL berhasil disimpan!");
       } else {
         await dplActivityLogService.createActivityLog(formData);
-        toast.success(status === "DRAF" ? "Draf aktivitas berhasil disimpan" : "Aktivitas berhasil dicatat & dikirim!");
+        toast.success(status === "DRAF" ? "Draf kegiatan berhasil disimpan" : "Kegiatan DPL berhasil disimpan!");
       }
 
       resetForm();
       fetchActivityLogs();
     } catch (err: any) {
-      console.error("Gagal menyimpan aktivitas:", err);
-      toast.error(err.response?.data?.message || "Gagal menyimpan aktivitas DPL");
+      console.error("Gagal menyimpan kegiatan:", err);
+      toast.error(err.response?.data?.message || "Gagal menyimpan kegiatan DPL");
     } finally {
       setSubmitting(false);
     }
@@ -292,6 +292,24 @@ export const LogAktivitasDpl: React.FC = () => {
 
     // Scroll to right form smoothly
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Delete Click Handler
+  const handleDeleteLog = async (id: string) => {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus catatan kegiatan DPL ini?")) return;
+    try {
+      await dplActivityLogService.deleteActivityLog(id);
+      toast.success("Kegiatan DPL berhasil dihapus");
+      if (editingLogId === id) {
+        resetForm();
+      }
+      if (selectedDetailLog?.id === id) {
+        setSelectedDetailLog(null);
+      }
+      fetchActivityLogs();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || "Gagal menghapus kegiatan");
+    }
   };
 
   // Export CSV Handler
@@ -331,14 +349,14 @@ export const LogAktivitasDpl: React.FC = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Log_Aktivitas_DPL_${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute("download", `Catat_Kegiatan_DPL_${new Date().toISOString().split("T")[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     toast.success("File CSV berhasil diunduh");
   };
 
-  const displayName = user?.name || "Dr. Agus Mulyana, M.T.";
+  const displayName = user?.name || (user as any)?.nama || "Iyan Andriana, S.T., M.T.";
 
   return (
     <div className="min-h-screen bg-slate-50/60 p-4 md:p-6 lg:p-8 space-y-6">
@@ -347,9 +365,9 @@ export const LogAktivitasDpl: React.FC = () => {
           ───────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Log Aktivitas DPL</h1>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Catat Kegiatan DPL</h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Catat, dokumentasikan, dan pantau aktivitas pendampingan DPL melalui web
+            Catat, dokumentasikan, dan pantau kegiatan pendampingan DPL melalui web
           </p>
         </div>
 
@@ -421,10 +439,10 @@ export const LogAktivitasDpl: React.FC = () => {
           3. MAIN 2-COLUMN LAYOUT
           ───────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* ── LEFT COLUMN: RIWAYAT AKTIVITAS DPL (7 Cols) ── */}
+        {/* ── LEFT COLUMN: RIWAYAT KEGIATAN DPL (7 Cols) ── */}
         <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-800 tracking-tight">Riwayat Aktivitas DPL</h2>
+            <h2 className="text-lg font-bold text-slate-800 tracking-tight">Riwayat Kegiatan DPL</h2>
           </div>
 
           {/* Filter Bar */}
@@ -434,7 +452,7 @@ export const LogAktivitasDpl: React.FC = () => {
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Cari aktivitas..."
+                placeholder="Cari kegiatan..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -544,7 +562,7 @@ export const LogAktivitasDpl: React.FC = () => {
                     <td colSpan={9} className="py-8 text-center text-slate-400">
                       <div className="flex flex-col items-center justify-center gap-1.5">
                         <AlertCircle className="w-6 h-6 text-slate-300" />
-                        <span className="font-medium text-slate-600">Belum ada aktivitas DPL</span>
+                        <span className="font-medium text-slate-600">Belum ada kegiatan DPL</span>
                         <span className="text-[11px] text-slate-400">
                           Gunakan formulir di sisi kanan untuk menambahkan entri baru.
                         </span>
@@ -629,15 +647,21 @@ export const LogAktivitasDpl: React.FC = () => {
                           >
                             Lihat
                           </button>
-                          {item.status === "DRAF" && (
-                            <button
-                              type="button"
-                              onClick={() => handleEditClick(item)}
-                              className="px-2.5 py-1 rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 text-[11px] font-semibold transition-colors"
-                            >
-                              Edit
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleEditClick(item)}
+                            className="px-2.5 py-1 rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 text-[11px] font-semibold transition-colors"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteLog(item.id)}
+                            className="px-2 py-1 rounded-md border border-rose-300 text-rose-600 hover:bg-rose-50 text-[11px] font-semibold transition-colors"
+                            title="Hapus Kegiatan"
+                          >
+                            Hapus
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -650,7 +674,7 @@ export const LogAktivitasDpl: React.FC = () => {
           {/* Table Footer / Pagination */}
           <div className="flex items-center justify-between pt-2 text-xs text-slate-500">
             <span>
-              Menampilkan {logs.length} dari {totalItems} aktivitas
+              Menampilkan {logs.length} dari {totalItems} kegiatan
             </span>
             <div className="flex items-center gap-1">
               <button
@@ -687,14 +711,14 @@ export const LogAktivitasDpl: React.FC = () => {
           </div>
         </div>
 
-        {/* ── RIGHT COLUMN: TAMBAH AKTIVITAS DPL FORM (5 Cols) ── */}
+        {/* ── RIGHT COLUMN: CATAT KEGIATAN DPL FORM (5 Cols) ── */}
         <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
               <h2 className="text-lg font-bold text-slate-800 tracking-tight">
-                {editingLogId ? "Edit Aktivitas DPL" : "Tambah Aktivitas DPL"}
+                {editingLogId ? "Edit Kegiatan DPL" : "Catat Kegiatan DPL"}
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5">Lengkapi data aktivitas sebelum disimpan.</p>
+              <p className="text-xs text-slate-500 mt-0.5">Lengkapi data kegiatan sebelum disimpan.</p>
             </div>
             {editingLogId && (
               <button
@@ -931,7 +955,7 @@ export const LogAktivitasDpl: React.FC = () => {
                 disabled={submitting}
                 className="flex-1 py-2.5 px-4 rounded-xl bg-[#0e5b3f] hover:bg-[#0b4832] text-white font-semibold text-xs shadow-sm transition-colors disabled:opacity-50"
               >
-                {submitting ? "Menyimpan..." : "Kirim Aktivitas"}
+                {submitting ? "Menyimpan..." : "Simpan"}
               </button>
             </div>
           </form>
@@ -1028,14 +1052,34 @@ export const LogAktivitasDpl: React.FC = () => {
               </div>
             )}
 
-            <div className="pt-2 flex justify-end">
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
               <button
                 type="button"
-                onClick={() => setSelectedDetailLog(null)}
-                className="px-4 py-2 bg-slate-800 text-white font-semibold rounded-xl hover:bg-slate-900 transition-colors"
+                onClick={() => handleDeleteLog(selectedDetailLog.id)}
+                className="px-3 py-1.5 bg-rose-50 text-rose-700 font-semibold rounded-xl hover:bg-rose-100 border border-rose-200 transition-colors"
               >
-                Tutup
+                Hapus
               </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const logToEdit = selectedDetailLog;
+                    setSelectedDetailLog(null);
+                    handleEditClick(logToEdit);
+                  }}
+                  className="px-3 py-1.5 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 border border-slate-200 transition-colors"
+                >
+                  Edit Aktivitas
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDetailLog(null)}
+                  className="px-4 py-1.5 bg-slate-800 text-white font-semibold rounded-xl hover:bg-slate-900 transition-colors"
+                >
+                  Tutup
+                </button>
+              </div>
             </div>
           </div>
         </div>
