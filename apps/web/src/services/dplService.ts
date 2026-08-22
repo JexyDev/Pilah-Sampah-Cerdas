@@ -245,8 +245,13 @@ export interface ConfigTargets {
 export const dplService = {
   getGroupSummary: async (): Promise<GroupSummary[]> => {
     try {
-      const res = await api.get("/dpl/group-summary");
-      if (res.data.success && Array.isArray(res.data.data)) {
+      let res;
+      try {
+        res = await api.get("/dpl/groups");
+      } catch {
+        res = await api.get("/dpl/group-summary");
+      }
+      if (res.data && res.data.success && Array.isArray(res.data.data)) {
         return res.data.data;
       }
       return [];

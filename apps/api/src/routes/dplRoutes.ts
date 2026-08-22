@@ -31,6 +31,7 @@ router.use(roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN
  *         description: Berhasil mendapatkan ringkasan kelompok
  */
 router.get("/groups", dplScopeMiddleware, dplController.getGroupSummary);
+router.get("/group-summary", dplScopeMiddleware, dplController.getGroupSummary);
 
 /**
  * @swagger

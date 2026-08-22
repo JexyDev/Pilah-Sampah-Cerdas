@@ -2313,14 +2313,6 @@ export const dplService = {
       where.kelompokId = params.groupId;
     }
 
-    if (params?.kategori && params.kategori !== "ALL" && params.kategori !== "Semua Kategori") {
-      where.kategori = { equals: params.kategori, mode: "insensitive" };
-    }
-
-    if (params?.status && params.status !== "ALL" && params.status !== "Semua Status") {
-      where.status = params.status.toUpperCase();
-    }
-
     if (params?.search && params.search.trim() !== "") {
       const q = params.search.trim();
       where.AND = [
@@ -2328,9 +2320,7 @@ export const dplService = {
           OR: [
             { deskripsi: { contains: q, mode: "insensitive" } },
             { tempat: { contains: q, mode: "insensitive" } },
-            { lokasi: { contains: q, mode: "insensitive" } },
-            { kategori: { contains: q, mode: "insensitive" } },
-            { hasilTindakLanjut: { contains: q, mode: "insensitive" } },
+            { arahanEvaluasi: { contains: q, mode: "insensitive" } },
             { kelompok: { name: { contains: q, mode: "insensitive" } } },
           ],
         },
@@ -2353,8 +2343,6 @@ export const dplService = {
         select: {
           id: true,
           tanggal: true,
-          durasiMenit: true,
-          status: true,
         },
       }),
       prisma.logbookDpl.count({ where }),
@@ -2366,13 +2354,6 @@ export const dplService = {
               id: true,
               name: true,
               kelurahan: true,
-            },
-          },
-          programKerja: {
-            select: {
-              id: true,
-              deskripsi: true,
-              kategori: true,
             },
           },
           dpl: {
@@ -2396,17 +2377,13 @@ export const dplService = {
     // Kalkulasi 4 Indikator Statistik
     const totalAktivitas = allLogsForStats.length;
     let bulanIniCount = 0;
-    let totalDurasiMenit = 0;
-    let belumDikirimCount = 0;
+    let totalDurasiMenit = totalAktivitas * 120; // Estimasi 2 jam per sesi monitoring
+    const belumDikirimCount = 0;
 
     for (const log of allLogsForStats) {
       const logDate = new Date(log.tanggal);
       if (logDate >= startOfMonth && logDate <= endOfMonth) {
         bulanIniCount++;
-      }
-      totalDurasiMenit += log.durasiMenit || 60; // default 60 menit per kegiatan jika kosong
-      if (log.status === "DRAF") {
-        belumDikirimCount++;
       }
     }
 
@@ -2433,15 +2410,6 @@ export const dplService = {
           year: "numeric",
         });
 
-        // Durasi Label
-        let durasiFormatted = item.durasiLabel;
-        if (!durasiFormatted && item.durasiMenit) {
-          const h = Math.floor(item.durasiMenit / 60);
-          const m = item.durasiMenit % 60;
-          durasiFormatted = h > 0 && m > 0 ? `${h}j ${m}m` : h > 0 ? `${h}j` : `${m}m`;
-        }
-        if (!durasiFormatted) durasiFormatted = "2j";
-
         // Bukti Label
         let buktiLabel = "—";
         if (item.fotoBuktiUrl) {
@@ -2460,30 +2428,30 @@ export const dplService = {
         return {
           id: item.id,
           dplId: item.dplId,
-          dplNama: item.dpl.name,
+          dplNama: item.dpl?.name || "DPL",
           kelompokId: item.kelompokId,
-          kelompokNama: item.kelompok.name,
-          kelurahan: item.kelompok.kelurahan || "-",
+          kelompokNama: item.kelompok?.name || "Kelompok KKN",
+          kelurahan: item.kelompok?.kelurahan || "-",
           tanggal: item.tanggal.toISOString().split("T")[0],
           tanggalFormatted: dateFormatted,
-          waktuMulai: item.waktuMulai || "09.00",
-          waktuSelesai: item.waktuSelesai || "11.00",
-          waktuLengkap: `${item.waktuMulai || "09.00"}–${item.waktuSelesai || "11.00"}`,
-          kategori: item.kategori || "Kunjungan Lapangan",
-          lokasi: item.lokasi || item.tempat || "RW 05 Sadang Serang",
+          waktuMulai: "09.00",
+          waktuSelesai: "11.00",
+          waktuLengkap: "09.00–11.00",
+          kategori: "Kunjungan Lapangan",
+          lokasi: item.tempat || "RW Dampingan",
           tempat: item.tempat,
           ringkasanAktivitas: item.deskripsi,
           deskripsi: item.deskripsi,
-          hasilTindakLanjut: item.hasilTindakLanjut || item.arahanEvaluasi || "",
+          hasilTindakLanjut: item.arahanEvaluasi || "",
           arahanEvaluasi: item.arahanEvaluasi || "",
-          programKerjaId: item.programKerjaId || null,
-          programKerjaDeskripsi: item.programKerja?.deskripsi || null,
-          durasiMenit: item.durasiMenit || 120,
-          durasi: durasiFormatted,
+          programKerjaId: null,
+          programKerjaDeskripsi: null,
+          durasiMenit: 120,
+          durasi: "2j",
           bukti: buktiLabel,
           fotoBuktiUrl: item.fotoBuktiUrl,
-          simpanLokasi: item.simpanLokasi ?? true,
-          status: item.status || "TERKIRIM",
+          simpanLokasi: true,
+          status: "TERKIRIM",
           pekanKe: item.pekanKe || 1,
           createdAt: item.createdAt,
         };
@@ -2534,22 +2502,6 @@ export const dplService = {
     const logDate = new Date(data.tanggal);
     if (isNaN(logDate.getTime())) throw new Error("Format tanggal tidak valid");
 
-    // Hitung durasi otomatis
-    const wMulai = data.waktuMulai || "09.00";
-    const wSelesai = data.waktuSelesai || "11.00";
-    const parseMinutes = (timeStr: string) => {
-      const parts = timeStr.trim().replace(".", ":").split(":");
-      return parseInt(parts[0] || "0", 10) * 60 + parseInt(parts[1] || "0", 10);
-    };
-
-    const startM = parseMinutes(wMulai);
-    const endM = parseMinutes(wSelesai);
-    const diffM = Math.max(30, endM > startM ? endM - startM : 120);
-    const h = Math.floor(diffM / 60);
-    const m = diffM % 60;
-    const durasiLabel = h > 0 && m > 0 ? `${h}j ${m}m` : h > 0 ? `${h}j` : `${m}m`;
-
-    const statusVal = data.status === "DRAF" ? "DRAF" : data.status === "TERVERIFIKASI" ? "TERVERIFIKASI" : "TERKIRIM";
     const lokasiVal = data.lokasi || data.tempat || "RW Dampingan";
 
     const created = await prisma.logbookDpl.create({
@@ -2558,20 +2510,10 @@ export const dplService = {
         kelompokId: data.kelompokId,
         tanggal: logDate,
         pekanKe: 1,
-        waktuMulai: wMulai,
-        waktuSelesai: wSelesai,
-        kategori: data.kategori || "Kunjungan Lapangan",
         tempat: lokasiVal,
-        lokasi: lokasiVal,
-        programKerjaId: data.programKerjaId || null,
         deskripsi: data.deskripsi.trim(),
-        hasilTindakLanjut: data.hasilTindakLanjut?.trim() || data.arahanEvaluasi?.trim() || null,
         arahanEvaluasi: data.arahanEvaluasi?.trim() || data.hasilTindakLanjut?.trim() || null,
-        durasiMenit: diffM,
-        durasiLabel,
         fotoBuktiUrl: data.fotoBuktiUrl || null,
-        simpanLokasi: data.simpanLokasi ?? true,
-        status: statusVal,
       },
       include: {
         kelompok: { select: { name: true } },
@@ -2616,41 +2558,15 @@ export const dplService = {
 
     if (data.kelompokId) updateData.kelompokId = data.kelompokId;
     if (data.tanggal) updateData.tanggal = new Date(data.tanggal);
-    if (data.waktuMulai !== undefined) updateData.waktuMulai = data.waktuMulai;
-    if (data.waktuSelesai !== undefined) updateData.waktuSelesai = data.waktuSelesai;
-    if (data.kategori !== undefined) updateData.kategori = data.kategori;
     if (data.lokasi !== undefined || data.tempat !== undefined) {
-      const loc = data.lokasi || data.tempat || existing.lokasi;
-      updateData.lokasi = loc;
+      const loc = data.lokasi || data.tempat || existing.tempat;
       updateData.tempat = loc;
     }
-    if (data.programKerjaId !== undefined) updateData.programKerjaId = data.programKerjaId || null;
     if (data.deskripsi !== undefined) updateData.deskripsi = data.deskripsi.trim();
-    if (data.hasilTindakLanjut !== undefined) {
-      updateData.hasilTindakLanjut = data.hasilTindakLanjut.trim();
-      updateData.arahanEvaluasi = data.hasilTindakLanjut.trim();
-    }
-    if (data.arahanEvaluasi !== undefined) {
-      updateData.arahanEvaluasi = data.arahanEvaluasi.trim();
+    if (data.arahanEvaluasi !== undefined || data.hasilTindakLanjut !== undefined) {
+      updateData.arahanEvaluasi = data.arahanEvaluasi?.trim() || data.hasilTindakLanjut?.trim() || null;
     }
     if (data.fotoBuktiUrl !== undefined) updateData.fotoBuktiUrl = data.fotoBuktiUrl;
-    if (data.simpanLokasi !== undefined) updateData.simpanLokasi = data.simpanLokasi;
-    if (data.status !== undefined) updateData.status = data.status;
-
-    // Recalculate duration if times changed
-    const wMulai = data.waktuMulai || existing.waktuMulai || "09.00";
-    const wSelesai = data.waktuSelesai || existing.waktuSelesai || "11.00";
-    const parseMinutes = (timeStr: string) => {
-      const parts = timeStr.trim().replace(".", ":").split(":");
-      return parseInt(parts[0] || "0", 10) * 60 + parseInt(parts[1] || "0", 10);
-    };
-    const startM = parseMinutes(wMulai);
-    const endM = parseMinutes(wSelesai);
-    const diffM = Math.max(30, endM > startM ? endM - startM : 120);
-    const h = Math.floor(diffM / 60);
-    const m = diffM % 60;
-    updateData.durasiMenit = diffM;
-    updateData.durasiLabel = h > 0 && m > 0 ? `${h}j ${m}m` : h > 0 ? `${h}j` : `${m}m`;
 
     const updated = await prisma.logbookDpl.update({
       where: { id },

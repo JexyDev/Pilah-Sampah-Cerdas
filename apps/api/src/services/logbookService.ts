@@ -107,18 +107,23 @@ export class LogbookService {
     const where: any = {};
 
     if (isDpl) {
-      // Scope ke kelompok yang dibimbing oleh DPL ini
-      where.kelompok = {
-        OR: [
-          { dplId: userId },
-          { dpl: { id: userId } },
-        ],
-      };
+      const dplGroups = await prisma.kelompokKkn.findMany({
+        where: {
+          OR: [
+            { dplId: userId },
+            { dpl: { id: userId } },
+          ],
+        },
+        select: { id: true },
+      });
+      const dplGroupIds = dplGroups.map((g) => g.id);
+
       if (filters.groupId && filters.groupId !== "ALL") {
         where.kelompokId = filters.groupId;
+      } else if (dplGroupIds.length > 0) {
+        where.kelompokId = { in: dplGroupIds };
       }
     } else if (isMhs) {
-      // Mahasiswa: lihat logbook dalam kelompoknya sendiri
       const studentProfile = await prisma.studentKkn.findUnique({
         where: { userId },
       });
@@ -151,11 +156,16 @@ export class LogbookService {
 
     if (filters.search && filters.search.trim() !== "") {
       const q = filters.search.trim();
-      where.OR = [
-        { deskripsi: { contains: q, mode: "insensitive" } },
-        { tempat: { contains: q, mode: "insensitive" } },
-        { penulis: { name: { contains: q, mode: "insensitive" } } },
-        { kelompok: { name: { contains: q, mode: "insensitive" } } },
+      where.AND = [
+        ...(where.AND || []),
+        {
+          OR: [
+            { deskripsi: { contains: q, mode: "insensitive" } },
+            { tempat: { contains: q, mode: "insensitive" } },
+            { penulis: { name: { contains: q, mode: "insensitive" } } },
+            { kelompok: { name: { contains: q, mode: "insensitive" } } },
+          ],
+        },
       ];
     }
 
@@ -227,13 +237,13 @@ export class LogbookService {
       nomor: index + 1,
       id: item.id,
       kelompokId: item.kelompokId,
-      kelompokNama: item.kelompok.name,
-      kelurahan: item.kelompok.kelurahan || "-",
+      kelompokNama: item.kelompok?.name || "Kelompok KKN",
+      kelurahan: item.kelompok?.kelurahan || "-",
       penulisId: item.penulisId,
-      penulisNama: item.penulis.name,
-      penulisNim: item.penulis.studentProfile?.nim || "-",
-      isKetua: Boolean(item.penulis.studentProfile?.isKetua),
-      tanggalKegiatan: item.tanggalKegiatan.toISOString().split("T")[0],
+      penulisNama: item.penulis?.name || "Mahasiswa",
+      penulisNim: item.penulis?.studentProfile?.nim || "-",
+      isKetua: Boolean(item.penulis?.studentProfile?.isKetua),
+      tanggalKegiatan: item.tanggalKegiatan ? item.tanggalKegiatan.toISOString().split("T")[0] : "-",
       waktuMulai: item.waktuMulai || "-",
       waktuSelesai: item.waktuSelesai || "-",
       waktuLengkap: item.waktuMulai ? `${item.waktuMulai}${item.waktuSelesai ? ` - ${item.waktuSelesai}` : ""}` : "-",
@@ -248,10 +258,10 @@ export class LogbookService {
       programKerjaKategori: item.programKerja?.kategori || null,
       fasilitasId: item.fasilitasId,
       fasilitasNama: item.fasilitas?.nama || null,
-      anggotaKelompok: item.kelompok.students?.map((s) => ({
+      anggotaKelompok: item.kelompok?.students?.filter((s) => s.user).map((s) => ({
         id: s.id,
-        name: s.user.name,
-        isKetua: s.isKetua,
+        name: s.user?.name || "Mahasiswa",
+        isKetua: Boolean(s.isKetua),
       })) || [],
       disetujuiKetuaOleh: item.disetujuiKetuaOleh?.name || null,
       disetujuiKetuaPada: item.disetujuiKetuaPada,
@@ -698,6 +708,26 @@ export class LogbookService {
    * Formula: (Total Disetujui / Target 24) x 100
    */
   async getLogbookComplianceScore(kelompokId: string, targetCount = DEFAULT_LOGBOOK_TARGET) {
+    if (!kelompokId || kelompokId === "ALL" || kelompokId.trim() === "") {
+      return {
+        targetCount,
+        totalSubmitted: 0,
+        approvedCount: 0,
+        pendingKetuaCount: 0,
+        pendingDplCount: 0,
+        revisiCount: 0,
+        complianceRate: 0,
+        calculatedScore: 0,
+        pekanBreakdown: {
+          1: { total: 0, approved: 0 },
+          2: { total: 0, approved: 0 },
+          3: { total: 0, approved: 0 },
+          4: { total: 0, approved: 0 },
+        },
+        isTargetMet: false,
+      };
+    }
+
     const totalSubmitted = await prisma.logbookKkn.count({ where: { kelompokId } });
     const approvedCount = await prisma.logbookKkn.count({
       where: {
