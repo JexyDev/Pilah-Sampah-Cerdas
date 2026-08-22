@@ -279,22 +279,46 @@ export class KknAttendanceService {
         let isFutureDatePing = false;
         
         let jamMulaiPing = "08:00";
+        let jamSelesaiPing = "16:00";
         const normalizedTimePing = (sch.time || "").replace(/\s*(WIB|WITA|WIT)\s*/gi, "").replace(/[\u2013\u2014~]|s\/d|sd/gi, "-").trim();
         if (normalizedTimePing.includes("-")) {
-          jamMulaiPing = normalizedTimePing.split("-")[0].trim();
+          const parts = normalizedTimePing.split("-");
+          jamMulaiPing = parts[0].trim();
+          jamSelesaiPing = parts[1].trim();
         }
         const [startHPing, startMPing] = jamMulaiPing.replace(".", ":").split(":").map(Number);
+        const [endHPing, endMPing] = jamSelesaiPing.replace(".", ":").split(":").map(Number);
         const cleanStartHPing = !isNaN(startHPing) ? (startHPing === 24 ? 0 : startHPing) : 8;
         const cleanStartMPing = !isNaN(startMPing) ? startMPing : 0;
+        const cleanEndHPing = !isNaN(endHPing) ? (endHPing === 24 ? 24 : endHPing) : 16;
+        const cleanEndMPing = !isNaN(endMPing) ? endMPing : 0;
         const startMinutesTotal = cleanStartHPing * 60 + cleanStartMPing;
+        const endMinutesTotal = cleanEndHPing * 60 + cleanEndMPing;
+        const isOvernightPing = endMinutesTotal <= startMinutesTotal;
         
-        if (scheduleDateWibStrPing > todayWibStrPing) {
-          isFutureDatePing = true;
-        } else if (scheduleDateWibStrPing === todayWibStrPing) {
-          const currentMinutesTotal = nowWibPing.getUTCHours() * 60 + nowWibPing.getUTCMinutes();
-          
-          if (currentMinutesTotal < startMinutesTotal) {
+        let isFutureDatePing = false;
+        let isExpiredDatePing = false;
+        if (isOvernightPing) {
+          if (scheduleDateWibStrPing === todayWibStrPing) {
+             // Hari pertama overnight
+          } else if (scheduleDateWibStrPing > todayWibStrPing) {
+             isFutureDatePing = true;
+          } else {
+             const currentMinutesTotal = nowWibPing.getUTCHours() * 60 + nowWibPing.getUTCMinutes();
+             if (currentMinutesTotal > endMinutesTotal) isExpiredDatePing = true;
+          }
+        } else {
+          if (scheduleDateWibStrPing > todayWibStrPing) {
             isFutureDatePing = true;
+          } else if (scheduleDateWibStrPing === todayWibStrPing) {
+            const currentMinutesTotal = nowWibPing.getUTCHours() * 60 + nowWibPing.getUTCMinutes();
+            if (currentMinutesTotal < startMinutesTotal) {
+              isFutureDatePing = true;
+            } else if (currentMinutesTotal > endMinutesTotal) {
+              isExpiredDatePing = true;
+            }
+          } else {
+            isExpiredDatePing = true;
           }
         }
 
@@ -329,7 +353,7 @@ export class KknAttendanceService {
               data: { actualInZoneMinutes: durationInZone },
             });
           }
-        } else if (isInsideZone && !isFutureDatePing) {
+        } else if (isInsideZone && !isFutureDatePing && !isExpiredDatePing) {
           try {
             await prisma.activityAttendance.create({
               data: {
