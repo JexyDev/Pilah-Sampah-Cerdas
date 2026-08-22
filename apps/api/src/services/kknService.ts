@@ -1963,7 +1963,7 @@ export class KknService {
 
     // Filter out schedules that student has already completed/checked out
     const pendingSchedules = activeSchedules.filter((sch) => !completedScheduleIds.has(sch.id));
-    const targetScheduleList = pendingSchedules.length > 0 ? pendingSchedules : activeSchedules;
+    const targetScheduleList = pendingSchedules;
 
     let activeSchedule: any = null;
     const now = new Date();

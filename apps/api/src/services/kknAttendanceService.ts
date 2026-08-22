@@ -1265,15 +1265,7 @@ export class KknAttendanceService {
     // agar jika mahasiswa mulaiKegiatan tapi di web sedang dipilih jadwal/kelompok berbeda,
     // data presensi aktifnya tetap muncul secara realtime.
     const list = await prisma.activityAttendance.findMany({
-      where: {
-        OR: [
-          { scheduleId },
-          {
-            status: "BERLANGSUNG",
-            attendedAt: { gte: startOfDay, lte: endOfDay },
-          },
-        ],
-      },
+      where: { scheduleId },
       include: {
         student: {
           select: {
