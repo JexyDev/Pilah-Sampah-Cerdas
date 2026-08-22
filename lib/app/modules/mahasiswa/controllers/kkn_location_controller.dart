@@ -1102,6 +1102,16 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           return; // Stop processing further
         }
 
+        // Bug fix: hentikan timer tanpa reset waktu jika status presensi sudah terverifikasi hadir/selesai
+        if (status == 'hadir' || status == 'selesai' || state.isSuccessAttendance) {
+          _stopZoneTimer(resetCompletely: false);
+          state = state.copyWith(
+            isEligibleForAttendance: false,
+            isSuccessAttendance: true,
+          );
+          return; // Stop processing further
+        }
+
         if (startTimeStr != null && startTimeStr.toString().trim().isNotEmpty) {
           final startTime = DateTime.tryParse(startTimeStr.toString());
           if (startTime != null && now.isBefore(startTime)) {
@@ -1452,13 +1462,13 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       isInsideRadius: nowInside,
     );
 
-    if (nowInside && state.attendanceTime != null) {
+    if (nowInside && state.attendanceTime != null && !state.isSuccessAttendance) {
       _startZoneTimer();
       // Reset out-of-zone counter saat kembali ke zona
       if (state.outOfZoneSeconds > 0) {
         state = state.copyWith(outOfZoneSeconds: 0);
       }
-    } else {
+    } else if (!state.isSuccessAttendance) {
       _stopZoneTimer(
         isExitingZone: _accumulatedSeconds > 0 || _zoneEntryTime != null,
       );
@@ -1478,6 +1488,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           _recordOutOfZoneViolation();
         }
       }
+    } else {
+      // Jika sudah sukses, hentikan timer (jika masih berjalan) tanpa mereset waktu
+      _stopZoneTimer(resetCompletely: false);
     }
   }
 
