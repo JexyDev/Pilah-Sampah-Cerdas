@@ -2631,7 +2631,6 @@ export class KknService {
       },
     });
 
-<<<<<<< Updated upstream
     // Sinkronisasi otomatis ke Logbook KKN (Tabular & Approval 2-Tingkat)
     if (student.kelompokId) {
       try {
@@ -2659,13 +2658,13 @@ export class KknService {
       } catch (err) {
         console.error("[kknService.createLogbookPemanfaatan] sync logbook_kkn error:", err);
       }
-=======
+    }
+
     if (programKerjaId) {
       await prisma.programKerjaKkn.update({
         where: { id: programKerjaId },
         data: { statusPelaksanaan: "SEDANG_BERJALAN" }
       }).catch(() => {});
->>>>>>> Stashed changes
     }
 
     await prisma.pointHistory.create({
@@ -2736,6 +2735,18 @@ export class KknService {
         fotoDokumentasiUrl: fotoDokumentasiUrl || existing.fotoDokumentasiUrl,
       },
     });
+
+    if (student.kelompokId && existing.program) {
+      await prisma.programKerjaKkn.updateMany({
+        where: {
+          kelompokId: student.kelompokId,
+          deskripsi: existing.program,
+        },
+        data: {
+          statusPelaksanaan: "SELESAI",
+        }
+      }).catch((e) => console.error("Update proker SELESAI gagal:", e));
+    }
 
     await prisma.pointHistory.create({
       data: {
