@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   Award,
   BookOpen,
+  ClipboardList,
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -59,19 +60,20 @@ const checkRouteActive = (
   if (currentPathWithSearch === targetUrl) return true;
 
   // Path alias mapping
-  const isPathMatch = (tPath: string, cPath: string) => {
+  const isPathMatch = (tPath: string, cPath: string, tQuery?: string) => {
     if (tPath === cPath) return true;
     const logbookAliases = ["/logbook-kkn", "/dpl/logbook", "/logbook"];
     if (logbookAliases.includes(tPath) && logbookAliases.includes(cPath)) return true;
     const dplLogAliases = ["/log-aktivitas-dpl", "/dpl/log-aktivitas"];
     if (dplLogAliases.includes(tPath) && dplLogAliases.includes(cPath)) return true;
+    if (tQuery?.includes("tab=dpl") && dplLogAliases.includes(cPath) && logbookAliases.includes(tPath)) return true;
     const userMasterAliases = ["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"];
     if (userMasterAliases.includes(tPath) && userMasterAliases.includes(cPath)) return true;
     return false;
   };
 
   // Jika path dasar tidak cocok, tidak mungkin aktif
-  if (!isPathMatch(targetPath, pathname)) {
+  if (!isPathMatch(targetPath, pathname, targetQuery)) {
     return false;
   }
 
@@ -455,6 +457,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "PEMIMPIN",
               ] as UserRole[],
             },
+          ],
+        },
+        {
+          type: "group",
+          label: "Log Aktivitas",
+          icon: ClipboardList,
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "DPL",
+            "DOSEN_PEMBIMBING",
+            "PANITIA_TASKFORCE",
+            "PEMIMPIN",
+            "MAHASISWA_KKN",
+            "LURAH",
+            "CAMAT",
+            "RW",
+          ] as UserRole[],
+          children: [
             {
               to: "/logbook-kkn?tab=mahasiswa",
               label: "Log Aktivitas Mahasiswa",
@@ -463,7 +485,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {
               to: "/logbook-kkn?tab=dpl",
               label: "Log Aktivitas DPL",
-              allowed: ALL_ROLES,
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "DPL",
+                "DOSEN_PEMBIMBING",
+                "PANITIA_TASKFORCE",
+                "PEMIMPIN",
+                "LURAH",
+                "CAMAT",
+                "RW",
+              ] as UserRole[],
             },
           ],
         },
@@ -822,7 +855,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           icon: FileText,
           allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[],
           children: [
-            { to: "/log-aktivitas", label: "Log Aktivitas", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
+            { to: "/log-aktivitas", label: "Audit Trail Sistem", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
             { to: "/pengguna-online", label: "Pengguna Online", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[] },
           ],
         },

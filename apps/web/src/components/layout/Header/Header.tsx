@@ -217,6 +217,23 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Peringkat Warga"];
       case "/laporan-analitik":
         return ["Laporan & Analitik"];
+      case "/logbook-kkn":
+      case "/dpl/logbook":
+      case "/logbook":
+      case "/fasilitas/logbook": {
+        const params = new URLSearchParams(search);
+        const tab = params.get("tab");
+        if (tab === "dpl") {
+          return ["Log Aktivitas", "Log Aktivitas DPL"];
+        }
+        if (tab === "kepatuhan") {
+          return ["Log Aktivitas", "Kepatuhan & Toleransi"];
+        }
+        return ["Log Aktivitas", "Log Aktivitas Mahasiswa"];
+      }
+      case "/log-aktivitas-dpl":
+      case "/dpl/log-aktivitas":
+        return ["Log Aktivitas", "Log Aktivitas DPL"];
       case "/notifikasi":
         return ["Notifikasi"];
       case "/pengaturan":
@@ -225,7 +242,9 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Administrasi", "Pengguna Online"];
       case "/log-aktivitas":
       case "/superUser/audit":
-        return ["Administrasi", "Log Aktivitas"];
+      case "/audit-trail":
+      case "/audit-log":
+        return ["Administrasi", "Audit Trail Sistem"];
       case "/evaluasi-ai":
       case "/superUser/discrepancies":
         return ["Administrasi", "Diskrepansi AI"];
