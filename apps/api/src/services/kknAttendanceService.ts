@@ -351,20 +351,37 @@ export class KknAttendanceService {
               where: { id: existingAtt.id },
               data: { actualInZoneMinutes: durationInZone },
             });
-          }
-        }
+
+            // Broadcast real-time WebSocket attendance update for Web Dashboard
+            websocketService.broadcastStudentAttendance({
+              id: existingAtt.id,
+              studentId: existingAtt.studentId,
+              scheduleId: existingAtt.scheduleId,
+              status: existingAtt.status,
+              attendedAt: existingAtt.attendedAt.toISOString(),
+              actualInZoneMinutes: durationInZone,
+            });
       }
+    }
+
+    let currentScheduleId = activeSchedules.length > 0 ? activeSchedules[0].id : null;
+    if (!currentScheduleId && existingAtt && existingAtt.status === "BERLANGSUNG") {
+      currentScheduleId = existingAtt.scheduleId;
     }
 
     return {
       success: true,
       message: "Lokasi berhasil dilacak",
-      status: isInsideZone ? "LAPANGAN" : "DI_LUAR_ZONA",
-      currentStatus: isInsideZone ? "LAPANGAN" : "DI_LUAR_ZONA",
-      inZoneMinutes,
-      actualInZoneSeconds: inZoneMinutes * 60,
-      actualInZoneMinutes: inZoneMinutes,
-      autoAttendanceTriggered,
+      data: {
+        activeScheduleId: currentScheduleId,
+        status: isInsideZone ? "LAPANGAN" : "DI_LUAR_ZONA",
+        currentStatus: isInsideZone ? "LAPANGAN" : "DI_LUAR_ZONA",
+        inZoneMinutes,
+        actualInZoneSeconds: inZoneMinutes * 60,
+        actualInZoneMinutes: inZoneMinutes,
+        autoAttendanceTriggered,
+        poskoArea: activeArea?.name ?? null,
+      },
     };
   }
 

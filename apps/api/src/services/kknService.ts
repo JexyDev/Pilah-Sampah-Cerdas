@@ -2158,6 +2158,8 @@ export class KknService {
         targetDurationMinutes,
         attendanceStatus: activeLeave ? attendanceStatus : "libur",
         status: activeLeave ? attendanceStatus : "libur",
+        statusKehadiran: activeLeave ? attendanceStatus.toUpperCase() : "LIBUR",
+        polygon: activeSchedule ? activeSchedule.polygon : null,
         kehadiran: activeLeave ? attendanceStatus : "libur",
         polygonPoints: [],
       };
@@ -2312,9 +2314,11 @@ export class KknService {
         actualInZoneSeconds,
         attendanceStatus,
         status: attendanceStatus,
+        statusKehadiran: attendanceStatus.toUpperCase(),
         kehadiran: attendanceStatus,
         attendedAt: attendanceForActiveSchedule?.attendedAt,
-        polygonPoints: activeSchedule.polygon && Array.isArray(activeSchedule.polygon) ? activeSchedule.polygon : [],
+        polygon: activeSchedule && activeSchedule.polygon ? activeSchedule.polygon : null,
+        polygonPoints: activeSchedule && activeSchedule.polygon && Array.isArray(activeSchedule.polygon) ? activeSchedule.polygon : [],
       };
     }
 
@@ -2345,6 +2349,7 @@ export class KknService {
       actualInZoneSeconds,
       attendanceStatus,
       status: attendanceStatus,
+      statusKehadiran: attendanceStatus.toUpperCase(),
       kehadiran: attendanceStatus,
       polygonPoints:
         lat && lng
