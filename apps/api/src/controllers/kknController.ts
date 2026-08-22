@@ -501,8 +501,9 @@ export class KknController {
 
   async getProgramKerja(req: Request, res: Response) {
     try {
-      const data = await kknService.getProgramKerja(req.user!.userId);
-      res.status(200).json({ success: true, data });
+      const targetGroupId = (req.query.groupId || req.query.kelompokId) as string | undefined;
+      const data = await kknService.getProgramKerja(req.user!.userId, targetGroupId);
+      res.status(200).json({ success: true, total: Array.isArray(data) ? data.length : 0, data });
     } catch (error: any) {
       console.error("[KknController] getProgramKerja error:", error);
       res.status(400).json({ success: false, message: error.message });

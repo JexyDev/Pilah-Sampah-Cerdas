@@ -83,7 +83,7 @@ export const logbookApiService = {
     startDate?: string;
     endDate?: string;
   }): Promise<LogbookMahasiswaItem[]> => {
-    const res = await api.get("/api/v1/logbook/mahasiswa", { params });
+    const res = await api.get("/logbook/mahasiswa", { params });
     return res.data?.data || [];
   },
 
@@ -92,7 +92,7 @@ export const logbookApiService = {
    */
   createMahasiswaLogbook: async (data: FormData | Record<string, any>) => {
     const isFormData = data instanceof FormData;
-    const res = await api.post("/api/v1/logbook/mahasiswa", data, {
+    const res = await api.post("/logbook/mahasiswa", data, {
       headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
     });
     return res.data;
@@ -106,7 +106,7 @@ export const logbookApiService = {
     action: "APPROVE" | "REJECT",
     catatanKetua?: string
   ) => {
-    const res = await api.patch(`/api/v1/logbook/mahasiswa/${id}/approve-ketua`, {
+    const res = await api.patch(`/logbook/mahasiswa/${id}/approve-ketua`, {
       action,
       catatanKetua,
     });
@@ -121,7 +121,7 @@ export const logbookApiService = {
     action: "APPROVE" | "REVISI",
     catatanDpl?: string
   ) => {
-    const res = await api.patch(`/api/v1/logbook/mahasiswa/${id}/verifikasi-dpl`, {
+    const res = await api.patch(`/logbook/mahasiswa/${id}/verifikasi-dpl`, {
       action,
       catatanDpl,
     });
@@ -136,7 +136,7 @@ export const logbookApiService = {
     action: "APPROVE" | "REVISI" = "APPROVE",
     catatanDpl?: string
   ) => {
-    const res = await api.post("/api/v1/logbook/mahasiswa/batch-verifikasi-dpl", {
+    const res = await api.post("/logbook/mahasiswa/batch-verifikasi-dpl", {
       logbookIds,
       action,
       catatanDpl,
@@ -148,7 +148,7 @@ export const logbookApiService = {
    * Mengambil riwayat logbook monitoring mingguan DPL
    */
   getDplLogbooks: async (groupId?: string): Promise<LogbookDplItem[]> => {
-    const res = await api.get("/api/v1/logbook/dpl", {
+    const res = await api.get("/logbook/dpl", {
       params: groupId && groupId !== "ALL" ? { groupId } : undefined,
     });
     return res.data?.data || [];
@@ -159,7 +159,7 @@ export const logbookApiService = {
    */
   createDplLogbook: async (data: FormData | Record<string, any>) => {
     const isFormData = data instanceof FormData;
-    const res = await api.post("/api/v1/logbook/dpl", data, {
+    const res = await api.post("/logbook/dpl", data, {
       headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
     });
     return res.data;
@@ -169,7 +169,7 @@ export const logbookApiService = {
    * Mengambil statistik kepatuhan dan skor logbook
    */
   getComplianceScore: async (kelompokId: string): Promise<LogbookComplianceStats> => {
-    const res = await api.get(`/api/v1/logbook/kepatuhan/${kelompokId}`);
+    const res = await api.get(`/logbook/kepatuhan/${kelompokId}`);
     return res.data?.data;
   },
 
@@ -177,7 +177,7 @@ export const logbookApiService = {
    * Mengambil batas toleransi backdate
    */
   getToleranceConfig: async (): Promise<{ toleranceDays: number; description: string }> => {
-    const res = await api.get("/api/v1/logbook/config/toleransi");
+    const res = await api.get("/logbook/config/toleransi");
     return res.data?.data;
   },
 
@@ -185,7 +185,7 @@ export const logbookApiService = {
    * Update batas toleransi (developer)
    */
   updateToleranceConfig: async (toleranceDays: number) => {
-    const res = await api.patch("/api/v1/logbook/config/toleransi", { toleranceDays });
+    const res = await api.patch("/logbook/config/toleransi", { toleranceDays });
     return res.data;
   },
 };

@@ -2470,58 +2470,67 @@ export class KknService {
     };
   }
 
-  async getProgramKerja(userId: string) {
+  async getProgramKerja(userId: string, targetGroupId?: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { role: true, studentProfile: { include: { kelompok: true } } },
     });
-    if (!user) throw new Error("User not found");
+    if (!user) throw new Error("User tidak ditemukan");
 
-    let kelompokId: string | null = null;
-    if (user.role?.name === "MAHASISWA_KKN") {
-      kelompokId = user.studentProfile?.kelompokId || null;
-    } else if (user.role?.name === "DPL") {
-      const kel = await prisma.kelompokKkn.findFirst({ where: { dplId: userId } });
-      kelompokId = kel?.id || null;
-    }
+    const roleName = String(user.role?.name || "").toUpperCase();
+    const isAdmin = [
+      "SUPER_USER",
+      "DEVELOPER",
+      "ADMIN_DLH",
+      "DLH",
+      "DLH_ADMIN",
+      "ADMIN",
+      "PANITIA_TASKFORCE",
+      "PEMIMPIN",
+    ].includes(roleName);
 
-    if (!kelompokId) {
-      // Jika bukan DPL atau Mahasiswa terkait, kembalikan semua atau kosong.
-      if (user.role?.name === "SUPER_USER") {
-        const superList = await prisma.programKerjaKkn.findMany({ orderBy: { createdAt: "desc" } });
-        return superList.map((item, index) => {
-          let judul = item.deskripsi;
-          let deskripsiDetail = item.deskripsi;
-          const descSplit = item.deskripsi.split("\n\n");
-          if (descSplit.length > 1 && item.deskripsi.startsWith("**")) {
-            judul = descSplit[0].replace(/\*\*/g, "");
-            deskripsiDetail = descSplit.slice(1).join("\n\n");
-          }
-          return {
-            id: item.id,
-            submittedAt: item.createdAt.toISOString(),
-            nomor: item.nomor || index + 1,
-            judul,
-            deskripsi: deskripsiDetail,
-            kategori: item.kategori,
-            waktuPelaksanaan: item.waktuPelaksanaan || null,
-            urlGoogleDrive: item.linkGoogleDrive || null,
-            linkGoogleDrive: item.linkGoogleDrive || null,
-            rencanaAnggaran: Number(item.kebutuhanBiaya) || 0,
-            status: item.status,
-            statusUsulan: item.statusUsulan || "BELUM_DISETUJUI",
-            statusPelaksanaan: item.statusPelaksanaan || "BELUM_MULAI",
-            catatanDpl: item.catatanDpl,
-            tanggal: item.createdAt.toISOString(),
-            createdAt: item.createdAt.toISOString(),
-          };
-        });
+    let whereClause: any = {};
+
+    if (isAdmin) {
+      if (targetGroupId && targetGroupId !== "ALL") {
+        whereClause.kelompokId = targetGroupId;
       }
+    } else if (roleName.includes("MAHASISWA")) {
+      const student = user.studentProfile || (await prisma.studentKkn.findUnique({ where: { userId } }));
+      if (!student?.kelompokId) {
+        return [];
+      }
+      whereClause.kelompokId = student.kelompokId;
+    } else if (roleName.includes("DPL") || roleName.includes("DOSEN_PEMBIMBING")) {
+      const kelompokBinaan = await prisma.kelompokKkn.findMany({
+        where: {
+          OR: [{ dplId: userId }, { dpl: { id: userId } }],
+        },
+        select: { id: true },
+      });
+      const dplGroupIds = kelompokBinaan.map((k) => k.id);
+      if (dplGroupIds.length === 0) {
+        return [];
+      }
+      if (targetGroupId && targetGroupId !== "ALL") {
+        if (!dplGroupIds.includes(targetGroupId)) {
+          throw new Error("Akses ditolak: Anda hanya dapat melihat program kerja kelompok bimbingan Anda.");
+        }
+        whereClause.kelompokId = targetGroupId;
+      } else {
+        whereClause.kelompokId = { in: dplGroupIds };
+      }
+    } else {
       return [];
     }
 
     const list = await prisma.programKerjaKkn.findMany({
-      where: { kelompokId },
+      where: whereClause,
+      include: {
+        kelompok: {
+          select: { id: true, name: true, kelurahan: true },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
 
@@ -2549,6 +2558,9 @@ export class KknService {
       }
       return {
         id: item.id,
+        kelompokId: item.kelompokId,
+        kelompokNama: item.kelompok?.name || "Kelompok KKN",
+        kelurahan: item.kelompok?.kelurahan || "-",
         submittedAt: item.createdAt.toISOString(),
         nomor: item.nomor || index + 1,
         judul,
