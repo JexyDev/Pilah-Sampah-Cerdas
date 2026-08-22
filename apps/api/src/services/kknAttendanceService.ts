@@ -462,6 +462,58 @@ export class KknAttendanceService {
           },
         });
 
+        // Hitung batas menit untuk mengetahui apakah jadwal ini sudah SELESAI
+        const jamMulai = sch.time?.split("-")[0]?.trim() || "08:00";
+        const jamSelesai = sch.time?.split("-")[1]?.trim() || "16:00";
+        const [startH, startM] = jamMulai.replace(".", ":").split(":").map(Number);
+        const [endH, endM] = jamSelesai.replace(".", ":").split(":").map(Number);
+        const cleanStartH = !isNaN(startH) ? (startH === 24 ? 0 : startH) : 8;
+        const cleanStartM = !isNaN(startM) ? startM : 0;
+        const cleanEndH = !isNaN(endH) ? (endH === 24 ? 24 : endH) : 16;
+        const cleanEndM = !isNaN(endM) ? endM : 0;
+        const startMinutesTotal = cleanStartH * 60 + cleanStartM;
+        const endMinutesTotal = cleanEndH * 60 + cleanEndM;
+        const isOvernight = endMinutesTotal <= startMinutesTotal;
+
+        const now = new Date();
+        const nowWib = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+        const currentHour = nowWib.getUTCHours();
+        const currentMinute = nowWib.getUTCMinutes();
+        const currentMinutesTotal = currentHour * 60 + currentMinute;
+        const todayStr = nowWib.toISOString().slice(0, 10);
+        
+        let schDateStr = todayStr;
+        if (sch.date) {
+          const schDateUtc = new Date(sch.date);
+          const schDateWib = new Date(schDateUtc.getTime() + 7 * 60 * 60 * 1000);
+          schDateStr = schDateWib.toISOString().slice(0, 10);
+        }
+        
+        const isSchedDateToday = schDateStr === todayStr;
+        const isFutureDate = schDateStr > todayStr;
+        
+        let isExpired = false;
+        if (isOvernight) {
+          if (isSchedDateToday) {
+             // Masih hari pertama overnight
+          } else if (isFutureDate) {
+             // Masih di masa depan
+          } else {
+             isExpired = currentMinutesTotal > endMinutesTotal;
+          }
+        } else {
+          if (isSchedDateToday) {
+             isExpired = currentMinutesTotal > endMinutesTotal;
+          } else if (!isFutureDate) {
+             isExpired = true;
+          }
+        }
+
+        // Jika sudah kadaluarsa (melewati jam pulang), abaikan GPS ping ini agar waktu tidak bertambah
+        if (isExpired) {
+           continue;
+        }
+
         // Skip jika sudah selesai / hadir / sudah checkout
         if (existingAtt && (existingAtt.status === "HADIR" || existingAtt.status === "SELESAI" || existingAtt.status === "SELESAI_TELAT" || existingAtt.checkOutAt !== null)) {
           continue;
@@ -1840,16 +1892,16 @@ export class KknAttendanceService {
       let scheduleStatus = "AKTIF";
       if (isOvernight) {
         if (isSchedDateToday) {
-          scheduleStatus = currentMinutesTotal >= startMinutesTotal ? "AKTIF" : "BELUM_MULAI";
+          scheduleStatus = currentMinutesTotal >= startMinutesTotal ? "AKTIF" : "AKAN_DATANG";
         } else if (isFutureDate) {
-          scheduleStatus = "BELUM_MULAI";
+          scheduleStatus = "AKAN_DATANG";
         } else {
           scheduleStatus = currentMinutesTotal <= endMinutesTotal ? "AKTIF" : "SELESAI";
         }
       } else {
         if (isSchedDateToday) {
           if (currentMinutesTotal < startMinutesTotal) {
-            scheduleStatus = "BELUM_MULAI";
+            scheduleStatus = "AKAN_DATANG";
           } else if (currentMinutesTotal > endMinutesTotal) {
             scheduleStatus = "SELESAI";
           } else {
@@ -1857,7 +1909,7 @@ export class KknAttendanceService {
           }
         } else if (isFutureDate) {
           // Jadwal masa depan (belum tiba tanggalnya)
-          scheduleStatus = "BELUM_MULAI";
+          scheduleStatus = "AKAN_DATANG";
         } else {
           // Jadwal kemarin atau lebih lama
           scheduleStatus = "SELESAI";
@@ -1973,14 +2025,78 @@ export class KknAttendanceService {
       throw new Error("FORBIDDEN: Anda tidak terdaftar pada kelompok kegiatan ini.");
     }
 
-    // Concurrency check: Pastikan tidak ada kegiatan lain yang sedang BERLANGSUNG hari ini (WIB)
-    const nowWibCc = new Date(Date.now() + 7 * 60 * 60 * 1000);
-    const startOfDay = new Date(`${nowWibCc.toISOString().slice(0, 10)}T00:00:00+07:00`);
+    const now = new Date();
+    const nowWibCc = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const todayStr = nowWibCc.toISOString().slice(0, 10);
+    const currentHour = nowWibCc.getUTCHours();
+    const currentMinute = nowWibCc.getUTCMinutes();
+    const currentMinutesTotal = currentHour * 60 + currentMinute;
+    
+    // Hitung menit mulai dan selesai untuk validasi akses
+    let jamMulai = "08:00";
+    let jamSelesai = "16:00";
+    const normalizedTime = (schedule.time || "").replace(/\s*(WIB|WITA|WIT)\s*/gi, "").replace(/[\u2013\u2014~]|s\/d|sd/gi, "-").trim();
+    if (normalizedTime.includes("-")) {
+      const parts = normalizedTime.split("-");
+      jamMulai = parts[0].trim();
+      jamSelesai = parts[1].trim();
+    }
+    const [startH, startM] = jamMulai.replace(".", ":").split(":").map(Number);
+    const [endH, endM] = jamSelesai.replace(".", ":").split(":").map(Number);
+    const cleanStartH = !isNaN(startH) ? (startH === 24 ? 0 : startH) : 8;
+    const cleanStartM = !isNaN(startM) ? startM : 0;
+    const cleanEndH = !isNaN(endH) ? (endH === 24 ? 24 : endH) : 16;
+    const cleanEndM = !isNaN(endM) ? endM : 0;
+    const startMinutesTotal = cleanStartH * 60 + cleanStartM;
+    const endMinutesTotal = cleanEndH * 60 + cleanEndM;
+    const isOvernight = endMinutesTotal <= startMinutesTotal;
+
+    let schDateStr = todayStr;
+    if (schedule.date) {
+      const schDateUtc = new Date(schedule.date);
+      const schDateWib = new Date(schDateUtc.getTime() + 7 * 60 * 60 * 1000);
+      schDateStr = schDateWib.toISOString().slice(0, 10);
+    }
+    const isSchedDateToday = schDateStr === todayStr;
+    const isFutureDate = schDateStr > todayStr;
+
+    let scheduleStatus = "AKTIF";
+    if (isOvernight) {
+      if (isSchedDateToday) {
+        scheduleStatus = currentMinutesTotal >= startMinutesTotal ? "AKTIF" : "AKAN_DATANG";
+      } else if (isFutureDate) {
+        scheduleStatus = "AKAN_DATANG";
+      } else {
+        scheduleStatus = currentMinutesTotal <= endMinutesTotal ? "AKTIF" : "SELESAI";
+      }
+    } else {
+      if (isSchedDateToday) {
+        if (currentMinutesTotal < startMinutesTotal) {
+          scheduleStatus = "AKAN_DATANG";
+        } else if (currentMinutesTotal > endMinutesTotal) {
+          scheduleStatus = "SELESAI";
+        } else {
+          scheduleStatus = "AKTIF";
+        }
+      } else if (isFutureDate) {
+        scheduleStatus = "AKAN_DATANG";
+      } else {
+        scheduleStatus = "SELESAI";
+      }
+    }
+
+    if (scheduleStatus === "AKAN_DATANG") {
+      throw new Error("FORBIDDEN: Jam mulai kegiatan belum bisa diakses (Mendatang).");
+    } else if (scheduleStatus === "SELESAI") {
+      throw new Error("FORBIDDEN: Kegiatan ini sudah selesai.");
+    }
+
+    // Concurrency check: Pastikan tidak ada kegiatan lain yang sedang BERLANGSUNG
+    // Pengecekan mencakup semua hari (tidak dibatasi startOfDay) untuk mencegah sesi menggantung
     const activeOtherSession = await prisma.activityAttendance.findFirst({
       where: {
         studentId: studentUserId,
         scheduleId: { not: scheduleId },
-        attendedAt: { gte: startOfDay },
         checkOutAt: null,
         status: "BERLANGSUNG",
       },
