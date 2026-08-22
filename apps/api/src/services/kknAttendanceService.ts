@@ -295,8 +295,6 @@ export class KknAttendanceService {
         const startMinutesTotal = cleanStartHPing * 60 + cleanStartMPing;
         const endMinutesTotal = cleanEndHPing * 60 + cleanEndMPing;
         const isOvernightPing = endMinutesTotal <= startMinutesTotal;
-        
-        let isFutureDatePing = false;
         let isExpiredDatePing = false;
         if (isOvernightPing) {
           if (scheduleDateWibStrPing === todayWibStrPing) {
