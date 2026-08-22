@@ -2340,6 +2340,8 @@ export class KknAttendanceService {
       invalidationHours: (ruleConfigs as any).attendanceGeofenceInvalidationHours ?? 2,
       serverTimestamp: new Date().toISOString(),
       attendanceId: attendance.id,
+      attendanceStatus: attendance.status,
+      statusKehadiran: attendance.status,
       actualInZoneSeconds: 0,
       actualInZoneMinutes: 0,
       gpsActive: true,
