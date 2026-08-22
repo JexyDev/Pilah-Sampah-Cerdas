@@ -2188,6 +2188,7 @@ export class KknAttendanceService {
     });
 
     // Award +10 points to student on Check-In (Mulai Kegiatan) if not already awarded today
+    const startOfDay = new Date(`${todayStr}T00:00:00+07:00`);
     const existingCheckInPoint = await prisma.pointHistory.findFirst({
       where: {
         userId: studentUserId,
@@ -2213,14 +2214,6 @@ export class KknAttendanceService {
       ruleConfigs.attendanceMinDurationHours * 60 +
       ruleConfigs.attendanceMinDurationMinutes +
       Math.round(ruleConfigs.attendanceMinDurationSeconds / 60) || 120;
-
-    let jamMulai = "08:00";
-    let jamSelesai = "16:00";
-    if (schedule.time && schedule.time.includes("-")) {
-      const parts = schedule.time.split("-");
-      jamMulai = parts[0].trim();
-      jamSelesai = parts[1].trim();
-    }
 
     return {
       sessionId: `SES-${schedule.id.slice(0, 8)}-${studentUserId.slice(-6)}`,
