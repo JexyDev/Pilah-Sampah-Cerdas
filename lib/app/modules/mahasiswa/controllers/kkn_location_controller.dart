@@ -414,8 +414,20 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         }
       }
 
+      final updatedKegiatanList = state.kegiatanList.map((k) {
+        if (k['id']?.toString() == scheduleId || k['scheduleId']?.toString() == scheduleId) {
+          return {
+            ...k,
+            'statusKehadiran': response['statusKehadiran'] ?? 'BERLANGSUNG',
+            'attendanceStatus': response['attendanceStatus'] ?? 'BERLANGSUNG',
+          };
+        }
+        return k;
+      }).toList();
+
       state = state.copyWith(
         selectedKegiatan: response,
+        kegiatanList: updatedKegiatanList,
         sessionId: sessionId,
         activeActivity: targetData,
         targetDurationMinutes: durasiWajib,
@@ -704,7 +716,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
               activeActivity: activeZone,
               targetDurationMinutes: targetMins,
               inZoneDurationSeconds: _accumulatedSeconds,
-              attendanceTime: activeZone['attendedAt']?.toString(),
+              attendanceTime: activeZone['attendedAt']?.toString() ?? state.attendanceTime,
             );
           }
         }
@@ -768,8 +780,19 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       final apiBaseUrl = prefs.getString('api_base_url');
       final authToken = prefs.getString('auth_token');
       
+      // Sesuaikan radius fallback dengan _performLocationUpdate (default 150.0, fallback 500.0)
+      final rawRadius = target['radius']?.toString() ?? '150.0';
+      double radiusFallback = double.tryParse(rawRadius) ?? 150.0;
+      if (radiusFallback <= 0) radiusFallback = 500.0;
+      
+      // Update targetData agar menggunakan radius yang tersinkronisasi
+      final syncedTarget = {
+        ...target,
+        'radius': radiusFallback,
+      };
+
       final result = await startKknForegroundService(
-        targetData: target,
+        targetData: syncedTarget,
         apiBaseUrl: apiBaseUrl,
         authToken: authToken,
       );
