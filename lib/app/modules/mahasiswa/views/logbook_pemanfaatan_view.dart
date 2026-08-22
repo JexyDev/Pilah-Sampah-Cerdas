@@ -141,8 +141,23 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
                     data: (list) {
                       final approvedProker = list.where((p) {
                         final isApproved = p['status'] == 'APPROVED' || p['statusUsulan'] == 'APPROVED';
-                        final isSelesai = p['statusPelaksanaan'] == 'SELESAI' || p['status_pelaksanaan'] == 'SELESAI' || p['status'] == 'SELESAI';
-                        return isApproved && !isSelesai;
+                        
+                        // Check if expired
+                        bool isExpired = false;
+                        final rawWaktu = p['waktuPelaksanaan'] ?? p['waktu_pelaksanaan'] ?? '';
+                        if (rawWaktu.toString().isNotEmpty) {
+                          final RegExp dateRegex = RegExp(r'\d{4}-\d{2}-\d{2}');
+                          final matches = dateRegex.allMatches(rawWaktu.toString());
+                          if (matches.isNotEmpty) {
+                            final lastMatch = matches.last.group(0)!;
+                            final endDate = DateTime.tryParse(lastMatch);
+                            if (endDate != null && DateTime.now().isAfter(endDate.add(const Duration(days: 1)))) {
+                              isExpired = true;
+                            }
+                          }
+                        }
+                        
+                        return isApproved && !isExpired;
                       }).toList();
                       if (approvedProker.isEmpty) {
                         return Container(
