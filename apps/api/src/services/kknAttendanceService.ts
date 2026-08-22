@@ -79,7 +79,7 @@ export function calculateInZoneDurationMinutes(
   }
 
   const overallSpan = Math.max(0, tLast - tFirst);
-  totalMs = Math.max(totalMs, overallSpan);
+  // totalMs = Math.max(totalMs, overallSpan); // Removed to allow gaps (Jeda) to be properly skipped
 
   if (totalMs < 60000 && overallSpan >= 15000) {
     return 1;
