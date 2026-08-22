@@ -1943,34 +1943,36 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
         {/* Action Buttons Toolbar */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* WebSocket Live Status Indicator Badge */}
-          <div
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-bold shadow-2xs ${
-              wsStatus === "CONNECTED"
-                ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
-                : wsStatus === "CONNECTING"
-                ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700"
-            }`}
-            title={
-              wsStatus === "CONNECTED"
-                ? "WebSocket Realtime Terhubung: Presensi dan GPS otomatis diperbarui seketika tanpa perlu refresh halaman."
-                : wsStatus === "CONNECTING"
-                ? "Menghubungkan ke server realtime..."
-                : "WebSocket Terputus (mencoba menyambung kembali)"
-            }
-          >
-            <span
-              className={`w-2 h-2 rounded-full ${
+          {/* WebSocket Live Status Indicator Badge - Eksklusif Role Developer / Super User */}
+          {isSuperUserOrDev && (
+            <div
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-bold shadow-2xs ${
                 wsStatus === "CONNECTED"
-                  ? "bg-emerald-500 animate-pulse"
+                  ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
                   : wsStatus === "CONNECTING"
-                  ? "bg-amber-500 animate-ping"
-                  : "bg-slate-400"
+                  ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700"
               }`}
-            />
-            <span>{wsStatus === "CONNECTED" ? "Live WebSocket" : wsStatus === "CONNECTING" ? "Menghubungkan..." : "Offline"}</span>
-          </div>
+              title={
+                wsStatus === "CONNECTED"
+                  ? "WebSocket Realtime Terhubung: Presensi dan GPS otomatis diperbarui seketika tanpa perlu refresh halaman."
+                  : wsStatus === "CONNECTING"
+                  ? "Menghubungkan ke server realtime..."
+                  : "WebSocket Terputus (mencoba menyambung kembali)"
+              }
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  wsStatus === "CONNECTED"
+                    ? "bg-emerald-500 animate-pulse"
+                    : wsStatus === "CONNECTING"
+                    ? "bg-amber-500 animate-ping"
+                    : "bg-slate-400"
+                }`}
+              />
+              <span>{wsStatus === "CONNECTED" ? "Live WebSocket" : wsStatus === "CONNECTING" ? "Menghubungkan..." : "Offline"}</span>
+            </div>
+          )}
 
           {/* Filter Kelompok KKN (Multi-Tenant Selector untuk Developer / Super User / DLH / Camat) */}
           {!isDpl ? (

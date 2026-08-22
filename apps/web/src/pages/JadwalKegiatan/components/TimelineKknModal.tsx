@@ -27,10 +27,29 @@ const FASE_OPTIONS = [
   "Fase 4: Evaluasi & Penutupan",
 ];
 
+const KELURAHAN_OPTIONS = [
+  "Semua Kelurahan",
+  "Dago",
+  "Lebak Gede",
+  "Lebak Siliwangi",
+  "Sadang Serang",
+  "Sekeloa",
+  "Cipaganti",
+];
+
+const BIDANG_OPTIONS = [
+  "Tata Kelola & Koordinasi",
+  "Pemilahan Sampah",
+  "Edukasi Warga & Sosialisasi",
+  "Pengangkutan & Logistik",
+  "Pengolahan & Bank Sampah",
+  "Evaluasi & Pelaporan",
+];
+
 const STATUS_OPTIONS = [
   { value: "BELUM_DIMULAI", label: "Belum Dimulai", color: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300" },
-  { value: "SEDANG_BERJALAN", label: "Sedang Berjalan", color: "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300" },
-  { value: "SELESAI", label: "Selesai", color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300" },
+  { value: "SEDANG_BERJALAN", label: "Sedang Berjalan", color: "bg-emerald-500 text-white font-extrabold" },
+  { value: "SELESAI", label: "Selesai", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300" },
 ];
 
 export const TimelineKknModal: React.FC<TimelineKknModalProps> = ({
@@ -51,6 +70,9 @@ export const TimelineKknModal: React.FC<TimelineKknModalProps> = ({
     kegiatanUtama: "",
     outputTarget: "",
     picKeterangan: "",
+    kelurahan: "Semua Kelurahan",
+    bidangKegiatan: "Tata Kelola & Koordinasi",
+    linkGoogleDrive: "",
     statusPelaksanaan: "BELUM_DIMULAI",
     kelompokId: defaultKelompokId || "GLOBAL",
   });
@@ -68,6 +90,9 @@ export const TimelineKknModal: React.FC<TimelineKknModalProps> = ({
         kegiatanUtama: editItem.kegiatanUtama || "",
         outputTarget: editItem.outputTarget || "",
         picKeterangan: editItem.picKeterangan || "",
+        kelurahan: editItem.kelurahan || editItem.kelompok?.kelurahan || "Semua Kelurahan",
+        bidangKegiatan: editItem.bidangKegiatan || "Tata Kelola & Koordinasi",
+        linkGoogleDrive: editItem.linkGoogleDrive || "",
         statusPelaksanaan: editItem.statusPelaksanaan || "BELUM_DIMULAI",
         kelompokId: editItem.kelompokId || "GLOBAL",
       });
@@ -81,6 +106,9 @@ export const TimelineKknModal: React.FC<TimelineKknModalProps> = ({
         kegiatanUtama: "",
         outputTarget: "",
         picKeterangan: "",
+        kelurahan: "Semua Kelurahan",
+        bidangKegiatan: "Tata Kelola & Koordinasi",
+        linkGoogleDrive: "",
         statusPelaksanaan: "BELUM_DIMULAI",
         kelompokId: defaultKelompokId || "GLOBAL",
       });
@@ -152,6 +180,9 @@ export const TimelineKknModal: React.FC<TimelineKknModalProps> = ({
         kegiatanUtama: formData.kegiatanUtama.trim(),
         outputTarget: formData.outputTarget.trim() || "-",
         picKeterangan: formData.picKeterangan.trim() || "-",
+        kelurahan: formData.kelurahan,
+        bidangKegiatan: formData.bidangKegiatan,
+        linkGoogleDrive: formData.linkGoogleDrive.trim(),
         statusPelaksanaan: formData.statusPelaksanaan,
         kelompokId: formData.kelompokId === "GLOBAL" ? null : formData.kelompokId,
       };
@@ -190,7 +221,7 @@ export const TimelineKknModal: React.FC<TimelineKknModalProps> = ({
                 {editItem ? "Edit Rencana Kegiatan KKN" : "Tambah Rencana Kegiatan KKN"}
               </h3>
               <p className="text-xs text-slate-500">
-                Lengkapi rincian linimasa, capaian output, dan penanggung jawab kegiatan.
+                Lengkapi rincian linimasa, capaian output, cakupan wilayah, dan tautan dokumentasi Google Drive.
               </p>
             </div>
           </div>
@@ -205,30 +236,55 @@ export const TimelineKknModal: React.FC<TimelineKknModalProps> = ({
 
         {/* Modal Body / Form */}
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 flex-1">
-          {/* Scope Kelompok */}
-          <div className="bg-slate-50/90 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 space-y-2">
+          {/* Cakupan Wilayah & Kelompok */}
+          <div className="bg-slate-50/90 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 space-y-3">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
               <Users size={14} className="text-emerald-600" />
-              Lingkup / Scope Kegiatan
+              Cakupan Wilayah & Kelompok Mahasiswa
             </label>
-            <select
-              value={formData.kelompokId}
-              onChange={(e) => setFormData({ ...formData, kelompokId: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
-            >
-              <option value="GLOBAL">🌐 Global / Semua Kelompok (Acuan Utama Universitas & Kecamatan)</option>
-              {groups.map((g) => (
-                <option key={g.id} value={g.id}>
-                  👥 Kelompok: {g.name} {g.kelurahan ? `(${g.kelurahan})` : ""}
-                </option>
-              ))}
-            </select>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">
+                  Kelurahan Sasaran
+                </label>
+                <select
+                  value={formData.kelurahan}
+                  onChange={(e) => setFormData({ ...formData, kelurahan: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 transition"
+                >
+                  {KELURAHAN_OPTIONS.map((k) => (
+                    <option key={k} value={k}>
+                      {k}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">
+                  Unit Kelompok
+                </label>
+                <select
+                  value={formData.kelompokId}
+                  onChange={(e) => setFormData({ ...formData, kelompokId: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 transition"
+                >
+                  <option value="GLOBAL">🌐 Global (Acuan Seluruh Mahasiswa)</option>
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      👥 {g.name} {g.kelurahan ? `(${g.kelurahan})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
             <p className="text-[11px] text-slate-500">
-              Pilih "Global" jika ini agenda umum seluruh mahasiswa, atau pilih kelompok spesifik jika program kerja khusus kelompok.
+              Pilih "Global" jika merupakan agenda umum tingkat kecamatan/kampus, atau pilih kelurahan/kelompok spesifik.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {/* Tahap / Minggu */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -237,10 +293,10 @@ export const TimelineKknModal: React.FC<TimelineKknModalProps> = ({
               <input
                 type="text"
                 required
-                placeholder="Contoh: Minggu 1, Pra-Kegiatan, Minggu 3-4"
+                placeholder="Contoh: Minggu 1, Pra-Kegiatan"
                 value={formData.tahapMinggu}
                 onChange={(e) => setFormData({ ...formData, tahapMinggu: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 transition"
               />
             </div>
 
@@ -252,11 +308,29 @@ export const TimelineKknModal: React.FC<TimelineKknModalProps> = ({
               <select
                 value={formData.fase}
                 onChange={(e) => setFormData({ ...formData, fase: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 transition"
               >
                 {FASE_OPTIONS.map((f) => (
                   <option key={f} value={f}>
                     {f}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Bidang Kegiatan */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Bidang Kegiatan
+              </label>
+              <select
+                value={formData.bidangKegiatan}
+                onChange={(e) => setFormData({ ...formData, bidangKegiatan: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 transition"
+              >
+                {BIDANG_OPTIONS.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
                   </option>
                 ))}
               </select>
@@ -273,7 +347,7 @@ export const TimelineKknModal: React.FC<TimelineKknModalProps> = ({
                 type="date"
                 value={formData.startDate}
                 onChange={(e) => handleDateChange("start", e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition cursor-pointer"
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 transition cursor-pointer"
               />
             </div>
 
@@ -285,12 +359,12 @@ export const TimelineKknModal: React.FC<TimelineKknModalProps> = ({
                 type="date"
                 value={formData.endDate}
                 onChange={(e) => handleDateChange("end", e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition cursor-pointer"
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 transition cursor-pointer"
               />
             </div>
           </div>
 
-          {/* Label Tanggal Tampilan (Custom text / auto-generated) */}
+          {/* Label Tanggal Tampilan */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
               <span>Label Teks Tanggal di Tabel</span>
@@ -301,7 +375,7 @@ export const TimelineKknModal: React.FC<TimelineKknModalProps> = ({
               placeholder="Contoh: 12 - 18 Agustus 2026 atau 6 Agustus 2026 (Kamis)"
               value={formData.tanggal}
               onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+              className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 transition"
             />
           </div>
 
@@ -316,7 +390,7 @@ export const TimelineKknModal: React.FC<TimelineKknModalProps> = ({
               placeholder="Jelaskan agenda utama, aktivitas pokok lapangan, atau koordinasi..."
               value={formData.kegiatanUtama}
               onChange={(e) => setFormData({ ...formData, kegiatanUtama: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition resize-none"
+              className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 transition resize-none"
             />
           </div>
 
@@ -330,7 +404,22 @@ export const TimelineKknModal: React.FC<TimelineKknModalProps> = ({
               placeholder="Target capaian terukur, dokumen luaran, atau indikator keberhasilan..."
               value={formData.outputTarget}
               onChange={(e) => setFormData({ ...formData, outputTarget: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition resize-none"
+              className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 transition resize-none"
+            />
+          </div>
+
+          {/* URL Google Drive */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+              <span>URL Folder Google Drive (Dokumentasi & Bukti)</span>
+              <span className="text-[11px] font-normal text-slate-400">Opsional / Tautan Cloud</span>
+            </label>
+            <input
+              type="url"
+              placeholder="https://drive.google.com/drive/folders/..."
+              value={formData.linkGoogleDrive}
+              onChange={(e) => setFormData({ ...formData, linkGoogleDrive: e.target.value })}
+              className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 transition"
             />
           </div>
 
@@ -345,7 +434,7 @@ export const TimelineKknModal: React.FC<TimelineKknModalProps> = ({
                 placeholder="Contoh: Mahasiswa KKN, DPL, DLH, Pengurus RW"
                 value={formData.picKeterangan}
                 onChange={(e) => setFormData({ ...formData, picKeterangan: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 transition"
               />
             </div>
 
@@ -357,7 +446,7 @@ export const TimelineKknModal: React.FC<TimelineKknModalProps> = ({
               <select
                 value={formData.statusPelaksanaan}
                 onChange={(e) => setFormData({ ...formData, statusPelaksanaan: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition cursor-pointer"
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 transition cursor-pointer"
               >
                 {STATUS_OPTIONS.map((st) => (
                   <option key={st.value} value={st.value}>

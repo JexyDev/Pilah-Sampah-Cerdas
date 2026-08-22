@@ -56,7 +56,9 @@ interface DepositLog {
 
 export default function SetorSampah() {
   const { user } = useAuthStore();
-  const isLurah = (user?.role || user?.peran || "").toUpperCase() === "LURAH";
+  const role = (user?.role || user?.peran || "").toUpperCase();
+  const isDeveloper = ["DEVELOPER", "SUPER_USER", "DEV"].includes(role);
+  const isLurah = role === "LURAH";
   const userKelurahan =
     user?.kelurahan ||
     (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "Cipaganti");
@@ -353,26 +355,28 @@ export default function SetorSampah() {
           </p>
         </div>
 
-        {/* Real-Time WebSocket Indicator */}
+        {/* Real-Time WebSocket Indicator - Eksklusif Developer / Super User */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
-            <span
-              className={`w-2.5 h-2.5 rounded-full ${
-                wsStatus === "CONNECTED"
-                  ? "bg-emerald-500 animate-pulse"
+          {isDeveloper && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
+              <span
+                className={`w-2.5 h-2.5 rounded-full ${
+                  wsStatus === "CONNECTED"
+                    ? "bg-emerald-500 animate-pulse"
+                    : wsStatus === "CONNECTING"
+                    ? "bg-amber-500"
+                    : "bg-slate-400"
+                }`}
+              />
+              <span className="font-medium text-slate-700 dark:text-slate-300">
+                {wsStatus === "CONNECTED"
+                  ? "Live Stream Terhubung"
                   : wsStatus === "CONNECTING"
-                  ? "bg-amber-500"
-                  : "bg-slate-400"
-              }`}
-            />
-            <span className="font-medium text-slate-700 dark:text-slate-300">
-              {wsStatus === "CONNECTED"
-                ? "Live Stream Terhubung"
-                : wsStatus === "CONNECTING"
-                ? "Menghubungkan..."
-                : "Offline (Klik Refresh)"}
-            </span>
-          </div>
+                  ? "Menghubungkan..."
+                  : "Offline (Klik Refresh)"}
+              </span>
+            </div>
+          )}
 
           <button
             onClick={() => fetchLogs(false)}

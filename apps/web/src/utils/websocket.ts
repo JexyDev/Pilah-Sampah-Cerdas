@@ -4,6 +4,7 @@
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
  * WebSocket Real-Time Client for BERSEKA
+ * Catatan: WebSocket hanya diaktifkan secara eksklusif untuk role Developer / Super User.
  */
 
 type DepositCallback = (deposit: any) => void;
@@ -25,6 +26,24 @@ class BERSEKAWebSocketClient {
   private heartbeatInterval: any = null;
   private status: "CONNECTED" | "CONNECTING" | "DISCONNECTED" = "DISCONNECTED";
   private isIntentionallyClosed = false;
+  private reconnectAttempts = 0;
+  private readonly maxReconnectAttempts = 3;
+
+  /**
+   * Cek apakah user yang login saat ini memiliki peran Developer / Super User
+   */
+  public isDeveloper(): boolean {
+    if (typeof window === "undefined") return false;
+    try {
+      const stored = localStorage.getItem("psc_user") ?? sessionStorage.getItem("psc_user");
+      if (!stored) return false;
+      const user = JSON.parse(stored);
+      const role = String(user?.peran || user?.role || "").toUpperCase();
+      return role === "DEVELOPER" || role === "SUPER_USER" || role === "DEV";
+    } catch {
+      return false;
+    }
+  }
 
   private getWsUrl(): string {
     if (typeof window === "undefined") return "ws://localhost:3000";
@@ -70,7 +89,7 @@ class BERSEKAWebSocketClient {
           // Socket write failed, connection might be broken
         }
       }
-    }, 20000);
+    }, 25000);
   }
 
   private stopHeartbeat() {
@@ -82,7 +101,22 @@ class BERSEKAWebSocketClient {
 
   public connect() {
     if (typeof window === "undefined") return;
+
+    // HANYA role Developer yang diizinkan membuka koneksi WebSocket
+    if (!this.isDeveloper()) {
+      if (this.socket) {
+        this.disconnect();
+      }
+      this.setStatus("DISCONNECTED");
+      return;
+    }
+
     if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
+
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      this.setStatus("DISCONNECTED");
       return;
     }
 
@@ -91,22 +125,29 @@ class BERSEKAWebSocketClient {
 
     try {
       const url = this.getWsUrl();
-      this.socket = new WebSocket(url);
+      const wsInstance = new WebSocket(url);
+      this.socket = wsInstance;
 
-      this.socket.onopen = () => {
+      wsInstance.onopen = () => {
+        if (this.socket !== wsInstance) return;
+        this.reconnectAttempts = 0;
         this.setStatus("CONNECTED");
         this.startHeartbeat();
         const token = localStorage.getItem("psc_access_token") ?? sessionStorage.getItem("psc_access_token");
-        if (token && this.socket?.readyState === WebSocket.OPEN) {
-          this.socket.send(JSON.stringify({ type: "AUTH", token }));
+        if (token && wsInstance.readyState === WebSocket.OPEN) {
+          try {
+            wsInstance.send(JSON.stringify({ type: "AUTH", token }));
+          } catch {
+            // Safe ignore
+          }
         }
       };
 
-      this.socket.onmessage = (event) => {
+      wsInstance.onmessage = (event) => {
+        if (this.socket !== wsInstance) return;
         try {
           const msg = JSON.parse(event.data);
           if (msg.type === "PONG") {
-            // Heartbeat response acknowledged
             return;
           }
           if (msg.type === "NEW_DEPOSIT" && msg.data) {
@@ -150,40 +191,52 @@ class BERSEKAWebSocketClient {
               }
             });
           }
-        } catch (e) {
+        } catch {
           // Non-JSON or ignored frame
         }
       };
 
-      this.socket.onclose = () => {
-        this.stopHeartbeat();
-        this.setStatus("DISCONNECTED");
-        this.socket = null;
-        if (!this.isIntentionallyClosed) {
-          this.scheduleReconnect();
+      wsInstance.onclose = () => {
+        if (this.socket === wsInstance) {
+          this.stopHeartbeat();
+          this.setStatus("DISCONNECTED");
+          this.socket = null;
+          if (!this.isIntentionallyClosed && this.isDeveloper()) {
+            this.scheduleReconnect();
+          }
         }
       };
 
-      this.socket.onerror = () => {
-        this.stopHeartbeat();
-        this.setStatus("DISCONNECTED");
-        if (this.socket) {
-          this.socket.close();
+      wsInstance.onerror = () => {
+        if (this.socket === wsInstance) {
+          this.stopHeartbeat();
+          this.setStatus("DISCONNECTED");
+          // Browser will automatically trigger onclose
         }
       };
-    } catch (err) {
-      console.error("[WS] Connection init error:", err);
+    } catch {
       this.stopHeartbeat();
       this.setStatus("DISCONNECTED");
-      this.scheduleReconnect();
+      if (this.isDeveloper()) {
+        this.scheduleReconnect();
+      }
     }
   }
 
   private scheduleReconnect() {
+    if (!this.isDeveloper() || this.isIntentionallyClosed) return;
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      this.setStatus("DISCONNECTED");
+      return;
+    }
+
     if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
+    const delay = Math.min(3000 * Math.pow(2, this.reconnectAttempts), 15000);
+    this.reconnectAttempts++;
+
     this.reconnectTimeout = setTimeout(() => {
       this.connect();
-    }, 3000);
+    }, delay);
   }
 
   private setStatus(status: "CONNECTED" | "CONNECTING" | "DISCONNECTED") {
@@ -192,22 +245,29 @@ class BERSEKAWebSocketClient {
   }
 
   public sendLocation(latitude: number, longitude: number) {
+    if (!this.isDeveloper()) return;
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       const token = localStorage.getItem("psc_access_token") ?? sessionStorage.getItem("psc_access_token");
-      this.socket.send(
-        JSON.stringify({
-          type: "LOCATION_UPDATE",
-          latitude,
-          longitude,
-          token,
-        })
-      );
+      try {
+        this.socket.send(
+          JSON.stringify({
+            type: "LOCATION_UPDATE",
+            latitude,
+            longitude,
+            token,
+          })
+        );
+      } catch {
+        // Safe ignore
+      }
     }
   }
 
   public onDeposit(callback: DepositCallback): () => void {
     this.depositListeners.add(callback);
-    this.connect();
+    if (this.isDeveloper()) {
+      this.connect();
+    }
     return () => {
       this.depositListeners.delete(callback);
     };
@@ -215,7 +275,9 @@ class BERSEKAWebSocketClient {
 
   public onStudentLocation(callback: StudentLocationCallback): () => void {
     this.studentLocationListeners.add(callback);
-    this.connect();
+    if (this.isDeveloper()) {
+      this.connect();
+    }
     return () => {
       this.studentLocationListeners.delete(callback);
     };
@@ -223,7 +285,9 @@ class BERSEKAWebSocketClient {
 
   public onStudentLogout(callback: StudentLogoutCallback): () => void {
     this.studentLogoutListeners.add(callback);
-    this.connect();
+    if (this.isDeveloper()) {
+      this.connect();
+    }
     return () => {
       this.studentLogoutListeners.delete(callback);
     };
@@ -231,7 +295,9 @@ class BERSEKAWebSocketClient {
 
   public onStudentCheckout(callback: StudentCheckoutCallback): () => void {
     this.studentCheckoutListeners.add(callback);
-    this.connect();
+    if (this.isDeveloper()) {
+      this.connect();
+    }
     return () => {
       this.studentCheckoutListeners.delete(callback);
     };
@@ -239,7 +305,9 @@ class BERSEKAWebSocketClient {
 
   public onStudentAttendance(callback: StudentAttendanceCallback): () => void {
     this.studentAttendanceListeners.add(callback);
-    this.connect();
+    if (this.isDeveloper()) {
+      this.connect();
+    }
     return () => {
       this.studentAttendanceListeners.delete(callback);
     };
@@ -253,12 +321,24 @@ class BERSEKAWebSocketClient {
     };
   }
 
+  public manualReconnect() {
+    this.reconnectAttempts = 0;
+    this.connect();
+  }
+
   public disconnect() {
     this.isIntentionallyClosed = true;
     this.stopHeartbeat();
-    if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
     if (this.socket) {
-      this.socket.close();
+      try {
+        this.socket.close();
+      } catch {
+        // Safe ignore
+      }
       this.socket = null;
     }
     this.setStatus("DISCONNECTED");

@@ -33,6 +33,9 @@ interface TimelineImportModalProps {
 interface ParsedTimelineRow {
   index: number;
   tahapMinggu: string;
+  kelurahan: string;
+  kelompokName: string;
+  bidangKegiatan: string;
   tanggal: string;
   startDate: string | null;
   endDate: string | null;
@@ -40,6 +43,7 @@ interface ParsedTimelineRow {
   kegiatanUtama: string;
   outputTarget: string;
   picKeterangan: string;
+  linkGoogleDrive: string;
   statusPelaksanaan: "SELESAI" | "SEDANG_BERJALAN" | "BELUM_DIMULAI";
   isValid: boolean;
   validationError?: string;
@@ -60,65 +64,85 @@ export const TimelineImportModal: React.FC<TimelineImportModalProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Helper Download Template Excel Resmi
+  // Helper Download Template Excel Resmi Baku UNIKOM
   const handleDownloadTemplate = () => {
     try {
       const wb = XLSX.utils.book_new();
       const headers = [
         "Tahap / Minggu",
+        "Kelurahan",
+        "Kelompok",
         "Tanggal Mulai (YYYY-MM-DD)",
         "Tanggal Selesai (YYYY-MM-DD)",
         "Tanggal Teks (Tampilan)",
         "Fase",
+        "Bidang Kegiatan",
         "Kegiatan Utama",
         "Output / Target",
         "PIC / Penanggung Jawab",
+        "URL Google Drive",
         "Status (SELESAI / SEDANG_BERJALAN / BELUM_DIMULAI)",
       ];
 
       const sampleData = [
         [
           "Pra-Kegiatan",
+          "Semua Kelurahan",
+          "Global",
           "2026-07-01",
           "2026-07-01",
           "1 Juli 2026",
           "Pra-Kegiatan",
+          "Tata Kelola & Koordinasi",
           "Sosialisasi & Pembukaan Kegiatan KKN di Kampus",
           "Civitas akademika memahami program kerja & pembagian wilayah",
           "Wakil Rektor 1 UNIKOM",
+          "https://drive.google.com/drive/folders/contoh-pra-kegiatan",
           "SELESAI",
         ],
         [
           "Minggu 1",
+          "Dago",
+          "Kelompok 1",
           "2026-08-12",
           "2026-08-18",
           "12 - 18 Agustus 2026",
           "Fase 1: Persiapan & Observasi",
+          "Pemilahan Sampah",
           "Penerjunan Lapangan & Koordinasi Perangkat RW/RT",
           "Mahasiswa tiba di posko kelurahan & validasi data baseline sampah",
           "Mahasiswa KKN, DPL, Pengurus RW",
+          "https://drive.google.com/drive/folders/contoh-minggu-1",
           "SEDANG_BERJALAN",
         ],
         [
           "Minggu 2",
+          "Sekeloa",
+          "Kelompok 2",
           "2026-08-19",
           "2026-08-25",
           "19 - 25 Agustus 2026",
           "Fase 1: Persiapan & Observasi",
+          "Edukasi Warga & Sosialisasi",
           "Sosialisasi Pemilahan Sampah Organik & Anorganik",
           "Warga RW binaan memahami pemilahan sampah & sistem BERSEKA",
           "Mahasiswa KKN & Kader Lingkungan",
+          "",
           "BELUM_DIMULAI",
         ],
         [
           "Minggu 3 - 4",
+          "Sadang Serang",
+          "Kelompok 3",
           "2026-08-26",
           "2026-09-08",
           "26 Agustus - 8 September 2026",
           "Fase 2: Pilot Project",
+          "Pengangkutan & Logistik",
           "Uji Coba Pengangkutan Terjadwal & Operasional Bank Sampah Unit",
           "Alur penjemputan residu berjalan & timbangan tercatat ke sistem",
           "Petugas Residu & Tim Bank Sampah",
+          "",
           "BELUM_DIMULAI",
         ],
       ];
@@ -129,18 +153,22 @@ export const TimelineImportModal: React.FC<TimelineImportModalProps> = ({
       // Set column widths
       ws["!cols"] = [
         { wch: 18 },
+        { wch: 20 },
+        { wch: 18 },
         { wch: 25 },
         { wch: 25 },
         { wch: 25 },
         { wch: 30 },
+        { wch: 25 },
         { wch: 45 },
         { wch: 45 },
         { wch: 30 },
+        { wch: 40 },
         { wch: 35 },
       ];
 
       XLSX.utils.book_append_sheet(wb, ws, "Template_Timeline");
-      XLSX.writeFile(wb, "Template_Acuan_Timeline_KKN_BERSEKA.xlsx");
+      XLSX.writeFile(wb, "Template_Acuan_Timeline_KKN_BERSEKA_SIP.xlsx");
       toast.success("Template Excel berhasil diunduh!");
     } catch (err: any) {
       toast.error("Gagal mengunduh template: " + err.message);
@@ -179,13 +207,17 @@ export const TimelineImportModal: React.FC<TimelineImportModalProps> = ({
       };
 
       const idxTahap = getColIndex(["tahap", "minggu", "pekan"]);
+      const idxKelurahan = getColIndex(["kelurahan", "desa", "wilayah"]);
+      const idxKelompok = getColIndex(["kelompok", "group", "posko"]);
       const idxStart = getColIndex(["tanggal mulai", "start", "mulai", "tgl mulai"]);
       const idxEnd = getColIndex(["tanggal selesai", "end", "selesai", "tgl selesai"]);
       const idxTanggal = getColIndex(["tanggal teks", "tanggal", "tgl", "rentang", "waktu"]);
       const idxFase = getColIndex(["fase"]);
+      const idxBidang = getColIndex(["bidang", "kategori", "lingkup"]);
       const idxKegiatan = getColIndex(["kegiatan", "aktivitas", "agenda", "program"]);
       const idxOutput = getColIndex(["output", "target", "capaian", "luaran"]);
       const idxPic = getColIndex(["pic", "penanggung", "keterangan", "mitra"]);
+      const idxDrive = getColIndex(["google drive", "gdrive", "drive", "link drive", "url drive", "tautan"]);
       const idxStatus = getColIndex(["status"]);
 
       const rows: ParsedTimelineRow[] = [];
@@ -195,19 +227,23 @@ export const TimelineImportModal: React.FC<TimelineImportModalProps> = ({
         if (!row || row.every((c) => !c || String(c).trim() === "")) continue;
 
         const tahap = idxTahap !== -1 ? String(row[idxTahap] || "").trim() : `Tahap ${i}`;
+        const kelurahan = idxKelurahan !== -1 ? String(row[idxKelurahan] || "").trim() : "Semua Kelurahan";
+        const kelompok = idxKelompok !== -1 ? String(row[idxKelompok] || "").trim() : "Global";
+        const bidang = idxBidang !== -1 ? String(row[idxBidang] || "").trim() : "Tata Kelola & Koordinasi";
         const startRaw = idxStart !== -1 ? String(row[idxStart] || "").trim() : "";
         const endRaw = idxEnd !== -1 ? String(row[idxEnd] || "").trim() : "";
         const tglText = idxTanggal !== -1 ? String(row[idxTanggal] || "").trim() : "";
-        const faseRaw = idxFase !== -1 ? String(row[idxFase] || "").trim() : "Fase 1: Persiapan";
+        const faseRaw = idxFase !== -1 ? String(row[idxFase] || "").trim() : "Fase 1: Persiapan & Observasi";
         const kegiatan = idxKegiatan !== -1 ? String(row[idxKegiatan] || "").trim() : "";
         const output = idxOutput !== -1 ? String(row[idxOutput] || "").trim() : "-";
         const pic = idxPic !== -1 ? String(row[idxPic] || "").trim() : "-";
+        const linkDrive = idxDrive !== -1 ? String(row[idxDrive] || "").trim() : "";
         const statusRaw = idxStatus !== -1 ? String(row[idxStatus] || "").trim().toUpperCase() : "BELUM_DIMULAI";
 
         let normalizedStatus: "SELESAI" | "SEDANG_BERJALAN" | "BELUM_DIMULAI" = "BELUM_DIMULAI";
         if (statusRaw.includes("SELESAI") || statusRaw.includes("DONE") || statusRaw.includes("FINISHED")) {
           normalizedStatus = "SELESAI";
-        } else if (statusRaw.includes("JALAN") || statusRaw.includes("PROGRESS") || statusRaw.includes("BERJALAN")) {
+        } else if (statusRaw.includes("JALAN") || statusRaw.includes("PROGRESS") || statusRaw.includes("BERJALAN") || statusRaw.includes("SEDANG")) {
           normalizedStatus = "SEDANG_BERJALAN";
         }
 
@@ -230,13 +266,17 @@ export const TimelineImportModal: React.FC<TimelineImportModalProps> = ({
         rows.push({
           index: i,
           tahapMinggu: tahap || `Minggu ${i}`,
+          kelurahan: kelurahan || "Semua Kelurahan",
+          kelompokName: kelompok || "Global",
+          bidangKegiatan: bidang || "Tata Kelola & Koordinasi",
           tanggal: tglText || (startRaw ? `${startRaw} ${endRaw ? "- " + endRaw : ""}` : "Sesuai Jadwal"),
           startDate: parsedStart,
           endDate: parsedEnd,
-          fase: faseRaw || "Fase 1: Persiapan",
+          fase: faseRaw || "Fase 1: Persiapan & Observasi",
           kegiatanUtama: kegiatan,
           outputTarget: output,
           picKeterangan: pic,
+          linkGoogleDrive: linkDrive,
           statusPelaksanaan: normalizedStatus,
           isValid,
           validationError,
@@ -278,6 +318,8 @@ export const TimelineImportModal: React.FC<TimelineImportModalProps> = ({
     try {
       const items = validRows.map((r) => ({
         tahapMinggu: r.tahapMinggu,
+        kelurahan: r.kelurahan,
+        bidangKegiatan: r.bidangKegiatan,
         tanggal: r.tanggal,
         startDate: r.startDate,
         endDate: r.endDate,
@@ -285,6 +327,7 @@ export const TimelineImportModal: React.FC<TimelineImportModalProps> = ({
         kegiatanUtama: r.kegiatanUtama,
         outputTarget: r.outputTarget,
         picKeterangan: r.picKeterangan,
+        linkGoogleDrive: r.linkGoogleDrive,
         statusPelaksanaan: r.statusPelaksanaan,
         kelompokId: targetKelompokId === "GLOBAL" ? null : targetKelompokId,
       }));
@@ -458,17 +501,19 @@ export const TimelineImportModal: React.FC<TimelineImportModalProps> = ({
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-60 overflow-y-auto">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-64 overflow-y-auto">
                 <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
                   <thead className="bg-slate-50 dark:bg-slate-800/80 sticky top-0 text-[10.5px] uppercase font-bold text-slate-500 border-b border-slate-200 dark:border-slate-700">
                     <tr>
                       <th className="py-2.5 px-3 w-10 text-center">#</th>
+                      <th className="py-2.5 px-3 w-28">Kelurahan</th>
+                      <th className="py-2.5 px-3 w-28">Kelompok</th>
                       <th className="py-2.5 px-3 w-28">Tahap</th>
                       <th className="py-2.5 px-3 w-32">Tanggal</th>
-                      <th className="py-2.5 px-3 w-32">Fase</th>
+                      <th className="py-2.5 px-3 w-32">Bidang</th>
                       <th className="py-2.5 px-3 min-w-[200px]">Kegiatan Utama</th>
-                      <th className="py-2.5 px-3 w-32">PIC</th>
-                      <th className="py-2.5 px-3 w-24 text-center">Status</th>
+                      <th className="py-2.5 px-3 w-24">Google Drive</th>
+                      <th className="py-2.5 px-3 w-28 text-center">Status</th>
                       <th className="py-2.5 px-3 w-16 text-center">Validasi</th>
                     </tr>
                   </thead>
@@ -479,15 +524,35 @@ export const TimelineImportModal: React.FC<TimelineImportModalProps> = ({
                         className={!r.isValid ? "bg-rose-50/50 dark:bg-rose-950/20" : "hover:bg-slate-50/60 dark:hover:bg-slate-800/40"}
                       >
                         <td className="py-2 px-3 text-center text-slate-400 font-bold">{idx + 1}</td>
+                        <td className="py-2 px-3 font-semibold text-slate-700 dark:text-slate-300">{r.kelurahan}</td>
+                        <td className="py-2 px-3 font-semibold text-indigo-600 dark:text-indigo-400">{r.kelompokName}</td>
                         <td className="py-2 px-3 font-bold text-slate-800 dark:text-slate-200">{r.tahapMinggu}</td>
                         <td className="py-2 px-3 text-slate-600 dark:text-slate-400">{r.tanggal}</td>
-                        <td className="py-2 px-3 font-semibold text-slate-600 dark:text-slate-400">{r.fase}</td>
+                        <td className="py-2 px-3 font-medium text-slate-600 dark:text-slate-400">{r.bidangKegiatan}</td>
                         <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">{r.kegiatanUtama}</td>
-                        <td className="py-2 px-3 text-slate-500">{r.picKeterangan}</td>
-                        <td className="py-2 px-3 text-center font-bold text-[10px]">
-                          <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-md">
-                            {r.statusPelaksanaan}
-                          </span>
+                        <td className="py-2 px-3">
+                          {r.linkGoogleDrive ? (
+                            <span className="text-emerald-600 font-bold flex items-center gap-1 truncate max-w-[100px]" title={r.linkGoogleDrive}>
+                              🔗 Drive
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-[10px]">-</span>
+                          )}
+                        </td>
+                        <td className="py-2 px-3 text-center font-bold text-[10.5px]">
+                          {r.statusPelaksanaan === "SEDANG_BERJALAN" ? (
+                            <span className="px-2.5 py-0.5 bg-emerald-500 text-white rounded-full font-extrabold shadow-2xs">
+                              Berjalan
+                            </span>
+                          ) : r.statusPelaksanaan === "SELESAI" ? (
+                            <span className="px-2.5 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 rounded-full">
+                              Selesai
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-full">
+                              Belum
+                            </span>
+                          )}
                         </td>
                         <td className="py-2 px-3 text-center">
                           {r.isValid ? (

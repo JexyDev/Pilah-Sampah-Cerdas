@@ -9,11 +9,24 @@ export interface TimelineKknItem {
   id: string;
   tahapMinggu: string;
   tanggal: string;
+  startDate?: string | Date | null;
+  endDate?: string | Date | null;
   fase: string;
   kegiatanUtama: string;
   outputTarget: string;
   picKeterangan: string;
+  kelurahan?: string;
+  kelompokName?: string;
+  kelompokId?: string | null;
+  bidangKegiatan?: string;
+  linkGoogleDrive?: string;
+  realisasiLogbookCount?: number;
   statusPelaksanaan?: "SELESAI" | "SEDANG_BERJALAN" | "BELUM_DIMULAI";
+  kelompok?: {
+    id: string;
+    name: string;
+    kelurahan?: string;
+  } | null;
 }
 
 export const TIMELINE_KKN_HEADER = {
@@ -34,6 +47,9 @@ export const TIMELINE_KKN_DATA: TimelineKknItem[] = [
     kegiatanUtama: "Sosialisasi & Pembukaan Kegiatan KKN di Lantai 17",
     outputTarget: "Civitas akademika memahami program & kegiatan resmi dibuka secara internal",
     picKeterangan: "Wakil Rektor 1 (WR 1) UNIKOM",
+    kelurahan: "Semua Kelurahan",
+    bidangKegiatan: "Tata Kelola & Koordinasi",
+    linkGoogleDrive: "",
     statusPelaksanaan: "SELESAI",
   },
   {

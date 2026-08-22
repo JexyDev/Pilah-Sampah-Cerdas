@@ -146,7 +146,23 @@ api.interceptors.response.use(
       }
     }
 
-    console.error("[API Error]", error.response?.data || error.message);
+    // Format error log cleanly without dumping raw HTML (e.g. Nginx 502 Bad Gateway)
+    const respData = error.response?.data;
+    const isHtmlError = typeof respData === "string" && (respData.includes("<html") || respData.includes("<body"));
+
+    if (isHtmlError || status === 502 || status === 503 || status === 504) {
+      if (error.response) {
+        error.response.data = {
+          success: false,
+          error: "SERVER_UNAVAILABLE",
+          message: "Layanan server sedang dalam pemeliharaan atau memuat ulang (502 Bad Gateway). Silakan coba beberapa saat lagi.",
+        };
+      }
+      console.warn(`[API Notice ${status || 502}] ${error.config?.url || ""}: Layanan server sedang dalam pemeliharaan/memuat ulang.`);
+    } else {
+      console.error("[API Error]", respData || error.message);
+    }
+
     return Promise.reject(error);
   }
 );
