@@ -36,7 +36,8 @@ export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2
 export function calculateInZoneDurationMinutes(
   locations: { recordedAt: Date | string; latitude: any; longitude: any }[],
   geofence: { latitude: number; longitude: number; radius: number; polygon?: any },
-  bufferMeters: number = 15
+  bufferMeters: number = 15,
+  jedaLogs?: any[]
 ): number {
   if (!locations || locations.length < 1) return 0;
 
@@ -73,13 +74,27 @@ export function calculateInZoneDurationMinutes(
     const t1 = new Date(sorted[i].recordedAt).getTime();
     const t2 = new Date(sorted[i + 1].recordedAt).getTime();
     const diff = t2 - t1;
-    if (diff > 0 && diff <= 5 * 60 * 1000) {
+
+    let isJedaGap = false;
+    if (jedaLogs && jedaLogs.length > 0) {
+      for (const log of jedaLogs) {
+        if (log.waktuJeda) {
+          const jTime = new Date(log.waktuJeda).getTime();
+          // Jika waktu jeda berada di antara t1 dan t2, berarti rentang waktu ini adalah masa jeda
+          if (jTime >= t1 && jTime <= t2) {
+            isJedaGap = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!isJedaGap && diff > 0 && diff <= 5 * 60 * 1000) {
       totalMs += diff;
     }
   }
 
   const overallSpan = Math.max(0, tLast - tFirst);
-  // totalMs = Math.max(totalMs, overallSpan); // Removed to allow gaps (Jeda) to be properly skipped
 
   if (totalMs > 0 && totalMs < 60000 && overallSpan >= 15000) {
     return 1;
@@ -289,7 +304,7 @@ export class KknAttendanceService {
           const logMins = logWib.getUTCHours() * 60 + logWib.getUTCMinutes();
           return logMins >= startMinutesTotal;
         });
-        const durationInZone = calculateInZoneDurationMinutes(scheduleLogs, geofence, bufferMeters);
+        const durationInZone = calculateInZoneDurationMinutes(scheduleLogs, geofence, bufferMeters, (existingAtt?.jedaLogs as any[]) || []);
         inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
 
         // Cek posisi saat ini menggunakan buffer dinamis
@@ -555,7 +570,7 @@ export class KknAttendanceService {
         const sessionLogs = (existingAtt && existingAtt.attendedAt) 
           ? todayLogs.filter(log => log.recordedAt >= existingAtt.attendedAt!)
           : todayLogs;
-        let durationInZone = calculateInZoneDurationMinutes(sessionLogs, geofence, bufferMeters);
+        let durationInZone = calculateInZoneDurationMinutes(sessionLogs, geofence, bufferMeters, (existingAtt?.jedaLogs as any[]) || []);
         inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
 
         // Cek posisi saat ini menggunakan buffer dinamis
@@ -1062,7 +1077,7 @@ export class KknAttendanceService {
         radius: schedule.radius ? Number(schedule.radius) : 150,
         polygon: schedule.polygon,
       };
-      actualInZoneMins = calculateInZoneDurationMinutes(todayLogsForCheckout, checkoutGeofence, checkoutBufferMeters);
+      actualInZoneMins = calculateInZoneDurationMinutes(todayLogsForCheckout, checkoutGeofence, checkoutBufferMeters, (attendance.jedaLogs as any[]) || []);
     }
 
     // Determine final status: SELESAI or SELESAI_TELAT
