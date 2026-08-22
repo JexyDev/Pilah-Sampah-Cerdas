@@ -2571,6 +2571,69 @@ export class KknAttendanceService {
       console.error("[AutoCheckout] Error pada autoCheckOutEndedSchedules:", e);
     }
   }
+
+  /**
+   * Ambil riwayat presensi kegiatan mahasiswa (jam masuk, jam pulang, durasi aktual, durasi target).
+   * Digunakan oleh mobile untuk menampilkan data historis setelah GPS mati / presensi berhasil.
+   * Endpoint: GET /api/v1/kkn/kegiatan/:id/presensi-history
+   */
+  async getPresensiHistory(studentUserId: string, scheduleId: string) {
+    const attendance = await prisma.activityAttendance.findUnique({
+      where: {
+        studentId_scheduleId: {
+          studentId: studentUserId,
+          scheduleId,
+        },
+      },
+      include: {
+        schedule: {
+          select: {
+            id: true,
+            title: true,
+            time: true,
+            date: true,
+            location: true,
+            latitude: true,
+            longitude: true,
+            radius: true,
+          },
+        },
+      },
+    });
+
+    if (!attendance) {
+      return null;
+    }
+
+    const targetDurationMinutes = attendance.schedule
+      ? await getScheduleTargetDurationMinutes(attendance.schedule)
+      : 120;
+
+    const actualInZoneMinutes = Number(attendance.actualInZoneMinutes ?? 0);
+    const jamMasuk = attendance.attendedAt;
+    const jamPulang = attendance.checkOutAt;
+
+    let durasiAktualMenit = actualInZoneMinutes;
+    if (durasiAktualMenit === 0 && jamMasuk && jamPulang) {
+      durasiAktualMenit = Math.round((jamPulang.getTime() - jamMasuk.getTime()) / 60000);
+    }
+
+    return {
+      scheduleId: attendance.scheduleId,
+      attendanceId: attendance.id,
+      status: attendance.status,
+      namaKegiatan: attendance.schedule?.title ?? "-",
+      jamMasuk: jamMasuk?.toISOString() ?? null,
+      jamPulang: jamPulang?.toISOString() ?? null,
+      durasiAktualMenit,
+      durasiTargetMenit: targetDurationMinutes,
+      durasiAktualDetik: durasiAktualMenit * 60,
+      durasiTargetDetik: targetDurationMinutes * 60,
+      isHadir: attendance.status === "HADIR" || attendance.status === "SELESAI",
+      isBerlangsung: attendance.status === "BERLANGSUNG",
+      method: attendance.method,
+    };
+  }
 }
 
 export const kknAttendanceService = new KknAttendanceService();

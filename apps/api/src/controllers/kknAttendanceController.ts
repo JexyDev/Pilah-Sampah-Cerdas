@@ -465,5 +465,43 @@ export const kknAttendanceController = {
       });
     }
   },
+  getPresensiHistory: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const studentUserId = (req as any).user?.userId || (req as any).user?.id;
+      const { id: scheduleId } = req.params;
+
+      if (!scheduleId) {
+        res.status(400).json({
+          success: false,
+          error: "VALIDATION_ERROR",
+          message: "scheduleId wajib disertakan",
+        });
+        return;
+      }
+
+      const result = await kknAttendanceService.getPresensiHistory(studentUserId, scheduleId);
+
+      if (!result) {
+        res.status(404).json({
+          success: false,
+          error: "NOT_FOUND",
+          message: "Data presensi tidak ditemukan untuk kegiatan ini",
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] getPresensiHistory error:", error);
+      res.status(500).json({
+        success: false,
+        error: "INTERNAL_SERVER_ERROR",
+        message: "Gagal mendapatkan riwayat presensi kegiatan",
+      });
+    }
+  },
 };
 

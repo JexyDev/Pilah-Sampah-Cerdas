@@ -229,6 +229,13 @@ router.post(
   kknAttendanceController.recordOutOfZoneViolation
 );
 
+router.get(
+  ["/kkn/kegiatan/:id/presensi-history", "/kegiatan/:id/presensi-history"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  kknAttendanceController.getPresensiHistory
+);
+
 router.post(
   ["/location-ping", "/kkn/location-ping", "/mahasiswa/location-ping", "/mahasiswa/ping"],
   authMiddleware,
