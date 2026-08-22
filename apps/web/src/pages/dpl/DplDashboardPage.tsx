@@ -11,12 +11,14 @@ import {
   CalendarCheck,
   AlertTriangle,
   CheckCircle,
+  CheckCircle2,
   XCircle,
   MapPin,
   FileCheck,
   Search,
   Eye,
   ChevronRight,
+  ChevronLeft,
   Users,
   Download,
   GraduationCap,
@@ -28,6 +30,9 @@ import {
   Clock,
   ArrowLeft,
   QrCode,
+  Crown,
+  Building2,
+  Phone,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -72,6 +77,12 @@ export const DplDashboardPage: React.FC = () => {
   const [selectedStudentForCitizens, setSelectedStudentForCitizens] = useState<StudentDetail | null>(null);
   const [assistedCitizensData, setAssistedCitizensData] = useState<AssistedCitizensResponse | null>(null);
   const [loadingCitizens, setLoadingCitizens] = useState(false);
+
+  // Detail Kelompok Modal State (Mendukung hingga 44+ mahasiswa dengan pencarian & paginasi)
+  const [selectedGroupForDetail, setSelectedGroupForDetail] = useState<GroupSummary | null>(null);
+  const [groupStudentSearchQuery, setGroupStudentSearchQuery] = useState("");
+  const [groupStudentPage, setGroupStudentPage] = useState(1);
+  const MODAL_STUDENTS_PER_PAGE = 8;
 
   const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
   const [rejectionReasonInput, setRejectionReasonInput] = useState("");
@@ -265,6 +276,57 @@ export const DplDashboardPage: React.FC = () => {
       bg: "bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-700 font-bold",
     };
   };
+
+  // Normalizer Status Usulan & Pelaksanaan Program Kerja
+  const normalizeStatusUsulan = (statusUsulan?: string, legacyStatus?: string): "BELUM_DISETUJUI" | "DISETUJUI" | "DITOLAK" => {
+    let u = statusUsulan;
+    const leg = String(legacyStatus || "").toUpperCase();
+    if (!u) {
+      if (leg === "DITERIMA" || leg === "DISETUJUI" || leg === "SEDANG_BERJALAN" || leg === "SELESAI") u = "DISETUJUI";
+      else if (leg === "DITOLAK" || leg === "TIDAK_DISETUJUI") u = "DITOLAK";
+      else u = "BELUM_DISETUJUI";
+    }
+    if (u === "DISETUJUI" || u === "DITERIMA") return "DISETUJUI";
+    if (u === "DITOLAK" || u === "TIDAK_DISETUJUI") return "DITOLAK";
+    return "BELUM_DISETUJUI";
+  };
+
+  const normalizeStatusPelaksanaan = (statusPelaksanaan?: string, legacyStatus?: string): "BELUM_MULAI" | "SEDANG_BERJALAN" | "SELESAI" => {
+    let p = statusPelaksanaan;
+    const leg = String(legacyStatus || "").toUpperCase();
+    if (!p) {
+      if (leg === "SELESAI") p = "SELESAI";
+      else if (leg === "SEDANG_BERJALAN" || leg === "SEDANG_DILAKSANAKAN" || leg === "BERJALAN") p = "SEDANG_BERJALAN";
+      else p = "BELUM_MULAI";
+    }
+    if (p === "SELESAI") return "SELESAI";
+    if (p === "SEDANG_BERJALAN" || p === "SEDANG_DILAKSANAKAN" || p === "BERJALAN") return "SEDANG_BERJALAN";
+    return "BELUM_MULAI";
+  };
+
+  // Filtered & Paginated Students for Modal Detail Kelompok (Mendukung 44+ Mahasiswa)
+  const modalGroupStudents = useMemo(() => {
+    if (!selectedGroupForDetail) return [];
+    return students.filter((s) => s.kelompokName === selectedGroupForDetail.name);
+  }, [selectedGroupForDetail, students]);
+
+  const filteredModalGroupStudents = useMemo(() => {
+    if (!groupStudentSearchQuery.trim()) return modalGroupStudents;
+    const q = groupStudentSearchQuery.toLowerCase();
+    return modalGroupStudents.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        s.nim.toLowerCase().includes(q) ||
+        s.jurusan.toLowerCase().includes(q) ||
+        (s.fakultas && s.fakultas.toLowerCase().includes(q))
+    );
+  }, [modalGroupStudents, groupStudentSearchQuery]);
+
+  const totalModalStudentPages = Math.max(1, Math.ceil(filteredModalGroupStudents.length / MODAL_STUDENTS_PER_PAGE));
+  const paginatedModalGroupStudents = useMemo(() => {
+    const start = (groupStudentPage - 1) * MODAL_STUDENTS_PER_PAGE;
+    return filteredModalGroupStudents.slice(start, start + MODAL_STUDENTS_PER_PAGE);
+  }, [filteredModalGroupStudents, groupStudentPage]);
 
   const handleExportPerformanceCsv = () => {
     if (!students || students.length === 0) {
