@@ -208,16 +208,42 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                         const SizedBox(height: 6),
                         if (createdAtStr != null)
                           Text(
-                            '📅 Diajukan: ${_formatDate(createdAtStr)}',
+                            '📅 Diajukan Pada: ${_formatDate(createdAtStr)}',
                             style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                           ),
                         if (waktuPelaksanaanStr != '-')
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2.0),
-                            child: Text(
-                              '🕒 Jadwal: $waktuPelaksanaanStr',
-                              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                            ),
+                          Builder(
+                            builder: (context) {
+                              String mulai = waktuPelaksanaanStr;
+                              String berakhir = '-';
+                              if (waktuPelaksanaanStr.contains(' s/d ')) {
+                                final parts = waktuPelaksanaanStr.split(' s/d ');
+                                if (parts.length >= 2) {
+                                  mulai = _formatDate(parts[0].trim());
+                                  berakhir = _formatDate(parts[1].trim());
+                                }
+                              } else {
+                                mulai = _formatDate(waktuPelaksanaanStr);
+                                berakhir = mulai;
+                              }
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 4.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '🚀 Mulai: $mulai',
+                                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '🛑 Berakhir: $berakhir',
+                                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
                         if (catatanDpl != null && catatanDpl.toString().trim().isNotEmpty) ...[
                           const SizedBox(height: 10),
