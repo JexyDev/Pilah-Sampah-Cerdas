@@ -1,6 +1,8 @@
 import { prisma } from "../lib/prisma.js";
 import cron from "node-cron";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
+import { kknAttendanceService } from "./kknAttendanceService.js";
+
 export class CronService {
   public start() {
     // Notifications for schedule start
@@ -40,6 +42,12 @@ export class CronService {
     cron.schedule("0 2 * * *", () => {
       this.cleanupStaleData();
     });
+
+    // Auto checkout ended KKN schedules every minute
+    cron.schedule("* * * * *", () => {
+      kknAttendanceService.autoCheckOutEndedSchedules();
+    });
+
     console.log("[CronService] Escalation and optimization cron jobs started.");
   }
   public async cleanupStaleData() {

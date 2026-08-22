@@ -11,6 +11,7 @@ import { dplService } from "./dplService.js";
 import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
 import { websocketService } from "./websocketService.js";
 import { validateCoordinate } from "../utils/geoValidation.js";
+import { notificationIntegrationService } from "./notificationIntegrationService.js";
 
 
 // Helper: Haversine Formula (meters)
@@ -36,7 +37,8 @@ export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2
 export function calculateInZoneDurationMinutes(
   locations: { recordedAt: Date | string; latitude: any; longitude: any }[],
   geofence: { latitude: number; longitude: number; radius: number; polygon?: any },
-  bufferMeters: number = 15
+  bufferMeters: number = 15,
+  jedaLogs?: any[]
 ): number {
   if (!locations || locations.length < 1) return 0;
 
@@ -73,17 +75,29 @@ export function calculateInZoneDurationMinutes(
     const t1 = new Date(sorted[i].recordedAt).getTime();
     const t2 = new Date(sorted[i + 1].recordedAt).getTime();
     const diff = t2 - t1;
-    if (diff > 0 && diff <= 5 * 60 * 1000) {
+
+    let isJedaGap = false;
+    if (jedaLogs && jedaLogs.length > 0) {
+      for (const log of jedaLogs) {
+        if (log.waktuJeda) {
+          const jTime = new Date(log.waktuJeda).getTime();
+          // Jika waktu jeda berada di antara t1 dan t2, berarti rentang waktu ini adalah masa jeda
+          if (jTime >= t1 && jTime <= t2) {
+            isJedaGap = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!isJedaGap && diff > 0 && diff <= 5 * 60 * 1000) {
       totalMs += diff;
     }
   }
 
-  const overallSpan = Math.max(0, tLast - tFirst);
-  // totalMs = Math.max(totalMs, overallSpan); // Removed to allow gaps (Jeda) to be properly skipped
-
-  if (totalMs > 0 && totalMs < 60000 && overallSpan >= 15000) {
-    return 1;
-  }
+  // const overallSpan = Math.max(0, tLast - tFirst);
+  // Pembulatan paksa ke 1 menit untuk durasi < 1 menit Dihapus 
+  // agar sinkron persis dengan detik di mobile (menghindari bug web lebih cepat 30-45 detik)
 
   return Math.floor(totalMs / (60 * 1000));
 }
@@ -289,7 +303,7 @@ export class KknAttendanceService {
           const logMins = logWib.getUTCHours() * 60 + logWib.getUTCMinutes();
           return logMins >= startMinutesTotal;
         });
-        const durationInZone = calculateInZoneDurationMinutes(scheduleLogs, geofence, bufferMeters);
+        const durationInZone = calculateInZoneDurationMinutes(scheduleLogs, geofence, bufferMeters, (existingAtt?.jedaLogs as any[]) || []);
         inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
 
         // Cek posisi saat ini menggunakan buffer dinamis
@@ -392,7 +406,7 @@ export class KknAttendanceService {
    */
   async updateStudentLocationsBatch(
     studentId: string,
-    locations: { latitude: number; longitude: number; timestamp?: string }[]
+    locations: { latitude: number; longitude: number; timestamp?: string; inZoneSeconds?: number }[]
   ) {
     const savedLocations: any[] = [];
     let latestLoc: { latitude: number; longitude: number } | null = null;
@@ -555,7 +569,21 @@ export class KknAttendanceService {
         const sessionLogs = (existingAtt && existingAtt.attendedAt) 
           ? todayLogs.filter(log => log.recordedAt >= existingAtt.attendedAt!)
           : todayLogs;
-        let durationInZone = calculateInZoneDurationMinutes(sessionLogs, geofence, bufferMeters);
+        let durationInZone = calculateInZoneDurationMinutes(sessionLogs, geofence, bufferMeters, (existingAtt?.jedaLogs as any[]) || []);
+        
+        // --- LOGIKA SINKRONISASI 2-ARAH ---
+        // Jika mobile mengirimkan durasi (inZoneSeconds), gunakan nilai terbesarnya (Highest Wins)
+        let maxInZoneSeconds = 0;
+        for (const loc of locations) {
+          if (loc.inZoneSeconds && loc.inZoneSeconds > maxInZoneSeconds) {
+            maxInZoneSeconds = loc.inZoneSeconds;
+          }
+        }
+        if (maxInZoneSeconds > 0) {
+          const mobileMinutes = Math.floor(maxInZoneSeconds / 60);
+          durationInZone = Math.max(durationInZone, mobileMinutes);
+        }
+
         inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
 
         // Cek posisi saat ini menggunakan buffer dinamis
@@ -1062,7 +1090,7 @@ export class KknAttendanceService {
         radius: schedule.radius ? Number(schedule.radius) : 150,
         polygon: schedule.polygon,
       };
-      actualInZoneMins = calculateInZoneDurationMinutes(todayLogsForCheckout, checkoutGeofence, checkoutBufferMeters);
+      actualInZoneMins = calculateInZoneDurationMinutes(todayLogsForCheckout, checkoutGeofence, checkoutBufferMeters, (attendance.jedaLogs as any[]) || []);
     }
 
     // Determine final status: SELESAI or SELESAI_TELAT
@@ -2155,32 +2183,47 @@ export class KknAttendanceService {
     }
 
     // Upsert session di activityAttendance
-    const attendance = await prisma.activityAttendance.upsert({
-      where: {
-        studentId_scheduleId: {
+    let attendance;
+    if (existingSession && existingSession.status === "BERLANGSUNG") {
+      // Jika statusnya sudah BERLANGSUNG (sedang resume dari Jeda),
+      // JANGAN reset attendedAt dan actualInZoneMinutes
+      attendance = await prisma.activityAttendance.update({
+        where: { id: existingSession.id },
+        data: {
+          latitude,
+          longitude,
+          method: "GPS_ACTIVITY",
+        },
+      });
+    } else {
+      // Mulai kegiatan baru atau update dari status DI_ZONA/DALAM_RADIUS
+      attendance = await prisma.activityAttendance.upsert({
+        where: {
+          studentId_scheduleId: {
+            studentId: studentUserId,
+            scheduleId,
+          },
+        },
+        update: {
+          attendedAt: new Date(),
+          status: "BERLANGSUNG",
+          latitude,
+          longitude,
+          method: "GPS_ACTIVITY",
+          checkOutAt: null,
+          actualInZoneMinutes: 0,
+        },
+        create: {
           studentId: studentUserId,
           scheduleId,
+          attendedAt: new Date(),
+          status: "BERLANGSUNG",
+          latitude,
+          longitude,
+          method: "GPS_ACTIVITY",
         },
-      },
-      update: {
-        attendedAt: new Date(),
-        status: "BERLANGSUNG",
-        latitude,
-        longitude,
-        method: "GPS_ACTIVITY",
-        checkOutAt: null,
-        actualInZoneMinutes: 0,
-      },
-      create: {
-        studentId: studentUserId,
-        scheduleId,
-        attendedAt: new Date(),
-        status: "BERLANGSUNG",
-        latitude,
-        longitude,
-        method: "GPS_ACTIVITY",
-      },
-    });
+      });
+    }
 
     // Simpan koordinat awal ke studentLocation
     await prisma.studentLocation.create({
@@ -2414,6 +2457,72 @@ export class KknAttendanceService {
         recordedAt: pointRecord.createdAt,
       },
     };
+  }
+
+  /**
+   * Cek semua presensi BERLANGSUNG, jika jadwalnya sudah lewat, checkout otomatis.
+   */
+  async autoCheckOutEndedSchedules() {
+    try {
+      const activeAttendances = await prisma.activityAttendance.findMany({
+        where: {
+          status: { in: ["BERLANGSUNG", "DI_ZONA"] },
+          checkOutAt: null,
+        },
+        include: {
+          schedule: true,
+          student: true,
+        },
+      });
+
+      const nowUtc = new Date();
+      // WIB Time (+7)
+      const nowWib = new Date(nowUtc.getTime() + 7 * 60 * 60 * 1000);
+      const currentMins = nowWib.getUTCHours() * 60 + nowWib.getUTCMinutes();
+
+      for (const att of activeAttendances) {
+        if (!att.schedule || !att.schedule.time) continue;
+
+        const parts = att.schedule.time.split("-");
+        if (parts.length < 2) continue;
+
+        const endStr = parts[1].trim().replace(".", ":");
+        const endParts = endStr.split(":");
+        if (endParts.length < 2) continue;
+
+        const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
+
+        // Jika waktu saat ini sudah lewat / sama dengan batas selesai jadwal
+        if (currentMins >= endMins) {
+          console.log(`[AutoCheckout] Melakukan checkout otomatis untuk Mahasiswa ${att.student.name} pada jadwal ${att.schedule.title}`);
+          
+          await this.checkOutAttendance({
+            studentId: att.studentId,
+            scheduleId: att.scheduleId,
+          });
+
+          // Notifikasi Database
+          await prisma.notification.create({
+            data: {
+              userId: att.studentId,
+              title: "Kegiatan Selesai ✅",
+              message: `Kegiatan ${att.schedule.title} telah usai. Sistem telah mencatat jam kepulangan Anda secara otomatis.`,
+            },
+          });
+
+          // Notifikasi Push FCM
+          if (att.student.fcmToken) {
+            await notificationIntegrationService.sendPushNotification(
+              att.student.fcmToken,
+              "Kegiatan Selesai ✅",
+              `Kegiatan ${att.schedule.title} usai. Checkout berhasil otomatis.`
+            );
+          }
+        }
+      }
+    } catch (e) {
+      console.error("[AutoCheckout] Error pada autoCheckOutEndedSchedules:", e);
+    }
   }
 }
 

@@ -16,7 +16,7 @@ export const kknAttendanceController = {
 
       if (!locations || !Array.isArray(locations)) {
         // Fallback to single ping
-        const { latitude, longitude, lat, lng, timestamp } = req.body;
+        const { latitude, longitude, lat, lng, timestamp, inZoneSeconds } = req.body;
         const finalLat =
           latitude !== undefined
             ? parseFloat(latitude)
@@ -44,6 +44,7 @@ export const kknAttendanceController = {
             latitude: finalLat,
             longitude: finalLng,
             timestamp: timestamp || new Date().toISOString(),
+            inZoneSeconds: inZoneSeconds !== undefined ? parseInt(inZoneSeconds) : undefined,
           },
         ];
       }
