@@ -774,7 +774,7 @@ export class KknAttendanceService {
             longitude,
             status: isAutoAlpa ? "ALPA" : "HADIR",
             attendedAt: existing.attendedAt || new Date(),
-            checkOutAt: existing.checkOutAt,
+            checkOutAt: new Date(),
           },
         });
 
@@ -823,7 +823,7 @@ export class KknAttendanceService {
           latitude,
           longitude,
           status: isAutoAlpa ? "ALPA" : "HADIR",
-          checkOutAt: null,
+          checkOutAt: new Date(),
         },
       });
 
@@ -1331,7 +1331,7 @@ export class KknAttendanceService {
       const latestLoc = locMap.get(att.studentId);
       const leave = leaveMap.get(att.studentId);
 
-      const isFinished = att.checkOutAt !== null || att.status === "SELESAI" || att.status === "SELESAI_TELAT";
+      const isFinished = att.checkOutAt !== null || att.status === "SELESAI" || att.status === "SELESAI_TELAT" || att.status === "HADIR";
 
       let currentStatus = "TERCATAT_ABSEN";
       let status = att.status;
