@@ -2400,16 +2400,20 @@ export class KknService {
       throw new Error("Judul program kerja wajib diisi");
     }
 
-    // Validasi waktu pelaksanaan tidak boleh masa lampau
+    // Validasi waktu pelaksanaan tidak boleh masa lampau dan minimal 3 hari dari pengajuan
     const executionDateRaw = targetTanggal || waktuPelaksanaan;
     if (executionDateRaw) {
       const execDate = new Date(executionDateRaw);
       if (!isNaN(execDate.getTime())) {
         const todayMidnight = new Date();
         todayMidnight.setHours(0, 0, 0, 0);
+        
+        const minDate = new Date(todayMidnight);
+        minDate.setDate(minDate.getDate() + 3);
+
         const checkDateMidnight = new Date(execDate.getFullYear(), execDate.getMonth(), execDate.getDate());
-        if (checkDateMidnight.getTime() < todayMidnight.getTime()) {
-          throw new Error("Waktu pelaksanaan program kerja tidak boleh menggunakan waktu lampau. Pilih tanggal hari ini atau setelahnya.");
+        if (checkDateMidnight.getTime() < minDate.getTime()) {
+          throw new Error("Waktu pelaksanaan program kerja minimal 3 hari dari tanggal pengajuan.");
         }
       }
     }
