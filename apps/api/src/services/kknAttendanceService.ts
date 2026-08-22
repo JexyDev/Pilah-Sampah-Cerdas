@@ -11,6 +11,7 @@ import { dplService } from "./dplService.js";
 import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
 import { websocketService } from "./websocketService.js";
 import { validateCoordinate } from "../utils/geoValidation.js";
+import { notificationIntegrationService } from "./notificationIntegrationService.js";
 
 
 // Helper: Haversine Formula (meters)
@@ -2456,6 +2457,72 @@ export class KknAttendanceService {
         recordedAt: pointRecord.createdAt,
       },
     };
+  }
+
+  /**
+   * Cek semua presensi BERLANGSUNG, jika jadwalnya sudah lewat, checkout otomatis.
+   */
+  async autoCheckOutEndedSchedules() {
+    try {
+      const activeAttendances = await prisma.activityAttendance.findMany({
+        where: {
+          status: { in: ["BERLANGSUNG", "DI_ZONA"] },
+          checkOutAt: null,
+        },
+        include: {
+          schedule: true,
+          student: true,
+        },
+      });
+
+      const nowUtc = new Date();
+      // WIB Time (+7)
+      const nowWib = new Date(nowUtc.getTime() + 7 * 60 * 60 * 1000);
+      const currentMins = nowWib.getUTCHours() * 60 + nowWib.getUTCMinutes();
+
+      for (const att of activeAttendances) {
+        if (!att.schedule || !att.schedule.time) continue;
+
+        const parts = att.schedule.time.split("-");
+        if (parts.length < 2) continue;
+
+        const endStr = parts[1].trim().replace(".", ":");
+        const endParts = endStr.split(":");
+        if (endParts.length < 2) continue;
+
+        const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
+
+        // Jika waktu saat ini sudah lewat / sama dengan batas selesai jadwal
+        if (currentMins >= endMins) {
+          console.log(`[AutoCheckout] Melakukan checkout otomatis untuk Mahasiswa ${att.student.name} pada jadwal ${att.schedule.title}`);
+          
+          await this.checkOutAttendance({
+            studentId: att.studentId,
+            scheduleId: att.scheduleId,
+          });
+
+          // Notifikasi Database
+          await prisma.notification.create({
+            data: {
+              userId: att.studentId,
+              title: "Kegiatan Selesai ✅",
+              message: `Kegiatan ${att.schedule.title} telah usai. Sistem telah mencatat jam kepulangan Anda secara otomatis.`,
+            },
+          });
+
+          // Notifikasi Push FCM
+          if (att.student.fcmToken) {
+            await notificationIntegrationService.sendPushNotification(
+              att.student.fcmToken,
+              "Kegiatan Selesai ✅",
+              `Kegiatan ${att.schedule.title} usai. Checkout berhasil otomatis.`
+            );
+          }
+        }
+      }
+    } catch (e) {
+      console.error("[AutoCheckout] Error pada autoCheckOutEndedSchedules:", e);
+    }
   }
 }
 
