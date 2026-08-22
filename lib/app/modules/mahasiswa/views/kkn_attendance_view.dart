@@ -1386,12 +1386,12 @@ class KegiatanKknCard extends StatelessWidget {
       textColor = AppColors.dangerRed;
       buttonText = 'Tanpa Keterangan (Tidak Hadir)';
     } else {
-      statusText = isAktif ? '🟢 AKTIF' : '🔵 BELUM MULAI';
+      statusText = isAktif ? '🟢 AKTIF' : '🔵 AKAN DATANG';
       badgeColor = isAktif
           ? AppColors.primaryGreen.withValues(alpha: 0.1)
           : Colors.blue.withValues(alpha: 0.1);
       textColor = isAktif ? AppColors.primaryGreen : Colors.blue;
-      buttonText = isAktif ? 'Mulai Kegiatan (Presensi Masuk)' : 'Belum Dimulai';
+      buttonText = isAktif ? 'Mulai Kegiatan (Presensi Masuk)' : 'Mendatang (Belum Masuk Waktu)';
     }
 
     return Card(
