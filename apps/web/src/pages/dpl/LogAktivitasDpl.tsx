@@ -946,16 +946,17 @@ export const LogAktivitasDpl: React.FC = () => {
                 type="button"
                 disabled={submitting}
                 onClick={() => handleSubmit("DRAF")}
-                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-xs shadow-2xs transition-colors disabled:opacity-50"
+                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-xs shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
               >
                 Simpan Draf
               </button>
               <button
-                type="submit"
+                type="button"
                 disabled={submitting}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-[#0e5b3f] hover:bg-[#0b4832] text-white font-semibold text-xs shadow-sm transition-colors disabled:opacity-50"
+                onClick={() => handleSubmit("TERKIRIM")}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-[#0e5b3f] hover:bg-[#0b4832] text-white font-semibold text-xs shadow-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
               >
-                {submitting ? "Menyimpan..." : "Simpan"}
+                {submitting ? "Menyimpan..." : "Kirim Aktivitas"}
               </button>
             </div>
           </form>
