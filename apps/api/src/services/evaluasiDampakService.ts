@@ -159,6 +159,7 @@ export const evaluasiDampakService = {
           pemilahanSampah: true,
           volumeSampah: true,
           bankSampahPengolahan: true,
+          catatanKesimpulan: true,
         },
         orderBy: { kelurahanId: "asc" },
       }),
@@ -168,6 +169,7 @@ export const evaluasiDampakService = {
           pemilahanSampah: true,
           volumeSampah: true,
           bankSampahPengolahan: true,
+          catatanKesimpulan: true,
         },
         orderBy: { kelurahanId: "asc" },
       }),
@@ -221,35 +223,71 @@ export const evaluasiDampakService = {
       const baselineKegiatan = countKegiatan(baseline.bankSampahPengolahan);
       const endlineKegiatan = endline ? countKegiatan(endline.bankSampahPengolahan) : null;
 
+      // Target standar DLH/KKN: Pemilahan minimal 50% atau kenaikan +20% dari baseline
+      const targetPemilahan = baselinePemilahan !== null ? Math.max(50, baselinePemilahan + 20) : 50;
+      const deltaPemilahan =
+        baselinePemilahan !== null && endlinePemilahan !== null
+          ? Number((endlinePemilahan - baselinePemilahan).toFixed(2))
+          : null;
+      const isTargetPemilahanTercapai =
+        endlinePemilahan !== null ? endlinePemilahan >= targetPemilahan || (deltaPemilahan !== null && deltaPemilahan > 0) : false;
+
+      const deltaVolume =
+        baselineVolume !== null && endlineVolume !== null
+          ? Number((endlineVolume - baselineVolume).toFixed(2))
+          : null;
+
+      const deltaKegiatan =
+        baselineKegiatan !== null && endlineKegiatan !== null
+          ? endlineKegiatan - baselineKegiatan
+          : null;
+
+      const evaluasiText =
+        endline?.catatanKesimpulan?.prioritasIntervensi ||
+        baseline.catatanKesimpulan?.prioritasIntervensi ||
+        "Evaluasi efektivitas intervensi pemilahan sampah organik dan anorganik di wilayah kelurahan.";
+
+      const rekomendasiText =
+        endline?.catatanKesimpulan?.catatanTambahanRisikoSosial ||
+        baseline.catatanKesimpulan?.catatanTambahanRisikoSosial ||
+        "Rekomendasi penguatan bank sampah unit dan konsistensi edukasi pemilahan level RT/RW.";
+
       return {
         kelurahanId: baseline.kelurahanId,
         namaKelurahan: baseline.namaKelurahan,
         kecamatan: baseline.kecamatan,
         hasEndline: endline !== null,
+        evaluasi: evaluasiText,
+        rekomendasi: rekomendasiText,
+        target: {
+          persentasePemilahan: targetPemilahan,
+          reduksiVolumeKg: baselineVolume ? Number((baselineVolume * 0.2).toFixed(2)) : 0,
+        },
+        hasilAktual: {
+          pemilahan: endlinePemilahan ?? baselinePemilahan,
+          volumeSampah: endlineVolume ?? baselineVolume,
+          kegiatanPemanfaatan: endlineKegiatan ?? baselineKegiatan,
+        },
         pemilahan: {
           baseline: baselinePemilahan,
           endline: endlinePemilahan,
-          delta:
-            baselinePemilahan !== null && endlinePemilahan !== null
-              ? endlinePemilahan - baselinePemilahan
-              : null,
+          target: targetPemilahan,
+          delta: deltaPemilahan,
+          tercapai: isTargetPemilahanTercapai,
         },
         volumeSampah: {
           baseline: baselineVolume,
           endline: endlineVolume,
-          delta:
-            baselineVolume !== null && endlineVolume !== null
-              ? endlineVolume - baselineVolume
-              : null,
+          delta: deltaVolume,
+          tercapai: deltaVolume !== null ? deltaVolume <= 0 : false, // Reduksi berhasil jika delta <= 0
         },
         kegiatanPemanfaatan: {
           baseline: baselineKegiatan,
           endline: endlineKegiatan,
-          delta:
-            baselineKegiatan !== null && endlineKegiatan !== null
-              ? endlineKegiatan - baselineKegiatan
-              : null,
+          delta: deltaKegiatan,
+          tercapai: deltaKegiatan !== null ? deltaKegiatan >= 0 : false,
         },
+        statusCapaian: isTargetPemilahanTercapai ? "TERCAPAI" : (endline !== null ? "BELUM_TERCAPAI" : "PROSES_EVALUASI"),
       };
     });
 

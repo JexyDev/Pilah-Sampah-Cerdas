@@ -371,6 +371,17 @@ export class LogbookService {
           },
         }).catch(() => {});
       }
+      // Informasikan juga ke DPL
+      if (kelompok.dplId) {
+        await prisma.notification.create({
+          data: {
+            userId: kelompok.dplId,
+            title: "Pengajuan Logbook Baru (Anggota)",
+            message: `Anggota ${user.name} (${kelompok.name}) mencatat logbook aktivitas baru untuk pekan ke-${pekanKe}. Menunggu persetujuan Ketua Kelompok.`,
+            isRead: false,
+          },
+        }).catch(() => {});
+      }
     }
 
     return logbook;

@@ -479,7 +479,13 @@ export const timelineKknService = {
       return item;
     });
 
-    return resolvedItems;
+    return resolvedItems.map((item, idx) => ({
+      ...item,
+      nomor: idx + 1,
+      kelurahan: item.kelompok?.kelurahan || "Coblong (Semua Wilayah)",
+      kelompokNama: item.kelompok?.name || "Seluruh Kelompok KKN",
+      urlGoogleDrive: (item as any).urlGoogleDrive || (item as any).linkGoogleDrive || "https://drive.google.com/drive/folders/kkn-coblong-2026",
+    }));
   },
 
   /**
@@ -504,7 +510,14 @@ export const timelineKknService = {
       item.statusPelaksanaan
     );
 
-    return { ...item, statusPelaksanaan: dynamicStatus };
+    return {
+      ...item,
+      statusPelaksanaan: dynamicStatus,
+      nomor: 1,
+      kelurahan: item.kelompok?.kelurahan || "Coblong (Semua Wilayah)",
+      kelompokNama: item.kelompok?.name || "Seluruh Kelompok KKN",
+      urlGoogleDrive: (item as any).urlGoogleDrive || (item as any).linkGoogleDrive || "https://drive.google.com/drive/folders/kkn-coblong-2026",
+    };
   },
 
   /**
