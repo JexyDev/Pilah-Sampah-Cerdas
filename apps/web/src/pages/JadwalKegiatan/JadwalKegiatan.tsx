@@ -315,35 +315,47 @@ const JadwalKegiatan: React.FC = () => {
   const handleExportTimelineExcel = () => {
     try {
       const headers = [
+        "No",
+        "Kelurahan",
+        "Kelompok",
         "Tahap / Minggu",
         "Tanggal",
         "Fase",
+        "Bidang Kegiatan",
         "Kegiatan Utama",
         "Output / Target",
         "PIC / Keterangan",
-        "Lingkup / Scope",
+        "URL Google Drive",
         "Status",
       ];
-      const rows = timelineList.map((item) => [
+      const rows = timelineList.map((item, idx) => [
+        idx + 1,
+        item.kelurahan || item.kelompok?.kelurahan || "Semua Kelurahan",
+        item.kelompok ? `Kelompok ${item.kelompok.name}` : "Global (Semua Kelompok)",
         item.tahapMinggu,
         item.tanggal,
         item.fase,
+        item.bidangKegiatan || "Tata Kelola & Koordinasi",
         item.kegiatanUtama,
         item.outputTarget,
         item.picKeterangan,
-        item.kelompok ? `Kelompok ${item.kelompok.name}` : "Global (Semua Kelompok)",
+        item.linkGoogleDrive || "-",
         item.statusPelaksanaan || "BELUM_DIMULAI",
       ]);
 
       const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
       ws["!cols"] = [
+        { wch: 8 },
+        { wch: 20 },
+        { wch: 20 },
         { wch: 18 },
         { wch: 25 },
         { wch: 30 },
+        { wch: 25 },
         { wch: 45 },
         { wch: 45 },
         { wch: 30 },
-        { wch: 30 },
+        { wch: 40 },
         { wch: 20 },
       ];
 
@@ -358,23 +370,31 @@ const JadwalKegiatan: React.FC = () => {
 
   const handleExportTimelineCsv = () => {
     const headers = [
+      "No",
+      "Kelurahan",
+      "Kelompok",
       "Tahap / Minggu",
       "Tanggal",
       "Fase",
+      "Bidang Kegiatan",
       "Kegiatan Utama",
       "Output / Target",
       "PIC / Keterangan",
-      "Lingkup / Scope",
+      "URL Google Drive",
       "Status",
     ];
-    const rows = timelineList.map((item) => [
+    const rows = timelineList.map((item, idx) => [
+      idx + 1,
+      `"${(item.kelurahan || item.kelompok?.kelurahan || "Semua Kelurahan").replace(/"/g, '""')}"`,
+      `"${item.kelompok ? "Kelompok " + item.kelompok.name : "Global (Semua Kelompok)"}"`,
       `"${(item.tahapMinggu || "").replace(/"/g, '""')}"`,
       `"${(item.tanggal || "").replace(/"/g, '""')}"`,
       `"${(item.fase || "").replace(/"/g, '""')}"`,
+      `"${(item.bidangKegiatan || "Tata Kelola & Koordinasi").replace(/"/g, '""')}"`,
       `"${(item.kegiatanUtama || "").replace(/"/g, '""')}"`,
       `"${(item.outputTarget || "").replace(/"/g, '""')}"`,
       `"${(item.picKeterangan || "").replace(/"/g, '""')}"`,
-      `"${item.kelompok ? "Kelompok " + item.kelompok.name : "Global (Semua Kelompok)"}"`,
+      `"${(item.linkGoogleDrive || "-").replace(/"/g, '""')}"`,
       `"${item.statusPelaksanaan || "BELUM_DIMULAI"}"`,
     ]);
 
@@ -692,17 +712,17 @@ const JadwalKegiatan: React.FC = () => {
   };
 
   const renderStatusBadge = (status?: string) => {
-    if (status === "SELESAI") {
+    if (status === "SEDANG_BERJALAN") {
       return (
-        <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[10.5px] font-extrabold flex items-center gap-1 w-fit">
-          <CheckCircle2 size={12} /> Selesai
+        <span className="px-3 py-1 bg-emerald-500 text-white rounded-full text-[10.5px] font-extrabold flex items-center gap-1.5 w-fit shadow-2xs">
+          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Berjalan
         </span>
       );
     }
-    if (status === "SEDANG_BERJALAN") {
+    if (status === "SELESAI") {
       return (
-        <span className="px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10.5px] font-extrabold flex items-center gap-1 w-fit">
-          <Clock size={12} /> Berjalan
+        <span className="px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-full text-[10.5px] font-extrabold flex items-center gap-1 w-fit">
+          <CheckCircle2 size={12} /> Selesai
         </span>
       );
     }
