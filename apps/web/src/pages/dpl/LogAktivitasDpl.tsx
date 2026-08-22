@@ -16,7 +16,6 @@ import {
   Hourglass,
   Search,
   Download,
-  Globe,
   UploadCloud,
   ChevronLeft,
   ChevronRight,
@@ -355,12 +354,6 @@ export const LogAktivitasDpl: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Badge Entri melalui Web */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 text-xs font-medium shadow-xs">
-            <Globe className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Entri melalui Web</span>
-          </div>
-
           {/* User Profile Pill */}
           <div className="flex items-center gap-2.5 bg-white border border-slate-200 rounded-full py-1 pl-1 pr-3 shadow-xs">
             <div className="w-7 h-7 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-xs">

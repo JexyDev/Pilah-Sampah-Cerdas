@@ -46,18 +46,80 @@ interface NavItemProps {
   badge?: number;
 }
 
+// Helper penentu rute aktif yang akurat
+const checkRouteActive = (
+  targetUrl: string,
+  pathname: string,
+  search: string,
+  index?: number
+): boolean => {
+  const [targetPath, targetQuery] = targetUrl.split("?");
+  const currentPathWithSearch = pathname + search;
+
+  if (currentPathWithSearch === targetUrl) return true;
+
+  // Path alias mapping
+  const isPathMatch = (tPath: string, cPath: string) => {
+    if (tPath === cPath) return true;
+    const logbookAliases = ["/logbook-kkn", "/dpl/logbook", "/logbook"];
+    if (logbookAliases.includes(tPath) && logbookAliases.includes(cPath)) return true;
+    const dplLogAliases = ["/log-aktivitas-dpl", "/dpl/log-aktivitas"];
+    if (dplLogAliases.includes(tPath) && dplLogAliases.includes(cPath)) return true;
+    const userMasterAliases = ["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"];
+    if (userMasterAliases.includes(tPath) && userMasterAliases.includes(cPath)) return true;
+    return false;
+  };
+
+  // Jika path dasar tidak cocok, tidak mungkin aktif
+  if (!isPathMatch(targetPath, pathname)) {
+    return false;
+  }
+
+  // Jika target memiliki query parameter (contoh: ?tab=mahasiswa, ?role=dpl)
+  if (targetQuery) {
+    const targetParams = new URLSearchParams(targetQuery);
+    const currentParams = new URLSearchParams(search);
+
+    // Tab parameter handling
+    if (targetParams.has("tab")) {
+      const targetTab = (targetParams.get("tab") || "").toLowerCase();
+      const currentTab = (currentParams.get("tab") || "mahasiswa").toLowerCase();
+      return targetTab === currentTab;
+    }
+
+    // Role parameter handling
+    if (targetParams.has("role")) {
+      const targetRole = (targetParams.get("role") || "").toLowerCase();
+      const currentRole = (currentParams.get("role") || "").toLowerCase();
+      if (!search && index !== undefined) {
+        return index === 0;
+      }
+      if (targetRole === currentRole) return true;
+      if (targetRole === "su" && ["su", "admin", "superuser", "super_user"].includes(currentRole)) return true;
+      if (targetRole === "petugas-residu" && ["petugas-residu", "petugas_residu", "petugas"].includes(currentRole)) return true;
+      if (targetRole === "mahasiswa" && ["mahasiswa", "mahasiswa-kkn", "mahasiswa_kkn"].includes(currentRole)) return true;
+      if (targetRole === "taskforce" && ["taskforce", "task-force", "panitia_taskforce"].includes(currentRole)) return true;
+      return false;
+    }
+
+    return search === "?" + targetQuery;
+  }
+
+  // Target tidak memiliki query parameter
+  if (!search) return true;
+  const currentParams = new URLSearchParams(search);
+  if (currentParams.has("tab") || currentParams.has("role")) {
+    return false;
+  }
+  return true;
+};
+
 const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge }) => {
   const location = useLocation();
-  const currentPathWithSearch = location.pathname + location.search;
 
   const isCurrentActive = useMemo(() => {
-    if (to.includes("?")) {
-      return currentPathWithSearch === to;
-    }
-    if (location.pathname !== to) return false;
-    if (!location.search) return true;
-    return currentPathWithSearch === to || location.search === "?tab=OVERVIEW" || location.search === "?tab=KELOMPOK";
-  }, [to, location.pathname, location.search, currentPathWithSearch]);
+    return checkRouteActive(to, location.pathname, location.search);
+  }, [to, location.pathname, location.search]);
 
   return (
     <Link
@@ -84,14 +146,10 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge }) => {
 
 const NavItemCollapsed: React.FC<NavItemProps> = ({ to, icon: Icon, label }) => {
   const location = useLocation();
-  const currentPathWithSearch = location.pathname + location.search;
 
   const isCurrentActive = useMemo(() => {
-    if (to.includes("?")) return currentPathWithSearch === to;
-    if (location.pathname !== to) return false;
-    if (!location.search) return true;
-    return currentPathWithSearch === to;
-  }, [to, location.pathname, location.search, currentPathWithSearch]);
+    return checkRouteActive(to, location.pathname, location.search);
+  }, [to, location.pathname, location.search]);
 
   return (
     <Link
@@ -118,49 +176,14 @@ const NavGroup: React.FC<{
 }> = ({ icon: Icon, label, items }) => {
   const [isOpen, setIsOpen] = React.useState(true);
   const location = useLocation();
-  const currentPath = location.pathname + location.search;
 
   const isSubActive = (subTo: string, index: number) => {
-    if (currentPath === subTo) return true;
-    if (
-      !location.search &&
-      ["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"].includes(location.pathname) &&
-      subTo.startsWith("/master-pengguna")
-    ) {
-      return index === 0;
-    }
-    if (
-      ["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"].includes(location.pathname) &&
-      subTo.startsWith("/master-pengguna?role=")
-    ) {
-      const subRole = subTo.split("?role=")[1]?.toLowerCase();
-      const currentRole = (new URLSearchParams(location.search).get("role") || "").toLowerCase();
-      if (subRole === currentRole) return true;
-      if (subRole === "su" && ["su", "admin", "superuser", "super_user"].includes(currentRole)) return true;
-      if (subRole === "petugas-residu" && ["petugas-residu", "petugas_residu", "petugas"].includes(currentRole)) return true;
-      if (subRole === "mahasiswa" && ["mahasiswa", "mahasiswa-kkn", "mahasiswa_kkn"].includes(currentRole)) return true;
-      if (subRole === "taskforce" && ["taskforce", "task-force", "panitia_taskforce"].includes(currentRole)) return true;
-    }
-    if (
-      ["/logbook-kkn", "/dpl/logbook", "/logbook", "/log-aktivitas-dpl", "/dpl/log-aktivitas"].includes(location.pathname)
-    ) {
-      if (location.pathname === "/log-aktivitas-dpl" || location.pathname === "/dpl/log-aktivitas") {
-        return subTo.includes("tab=dpl") || subTo.includes("log-aktivitas-dpl");
-      }
-      const subTab = new URLSearchParams(subTo.split("?")[1] || "").get("tab") || "mahasiswa";
-      const currentTab = new URLSearchParams(location.search).get("tab") || "mahasiswa";
-      return subTab === currentTab;
-    }
-    return false;
+    return checkRouteActive(subTo, location.pathname, location.search, index);
   };
 
-  const isAnySubActive = items.some(
-    (item, idx) =>
-      isSubActive(item.to, idx) ||
-      (location.pathname === "/master-pengguna" && item.to.startsWith("/master-pengguna")) ||
-      (["/logbook-kkn", "/dpl/logbook", "/logbook", "/log-aktivitas-dpl", "/dpl/log-aktivitas"].includes(location.pathname) &&
-        (item.to.includes("/logbook-kkn") || item.to.includes("/log-aktivitas-dpl")))
-  );
+  const isAnySubActive = useMemo(() => {
+    return items.some((item, idx) => isSubActive(item.to, idx));
+  }, [items, location.pathname, location.search]);
 
   React.useEffect(() => {
     if (isAnySubActive) {
