@@ -2155,32 +2155,47 @@ export class KknAttendanceService {
     }
 
     // Upsert session di activityAttendance
-    const attendance = await prisma.activityAttendance.upsert({
-      where: {
-        studentId_scheduleId: {
+    let attendance;
+    if (existingSession && existingSession.status === "BERLANGSUNG") {
+      // Jika statusnya sudah BERLANGSUNG (sedang resume dari Jeda),
+      // JANGAN reset attendedAt dan actualInZoneMinutes
+      attendance = await prisma.activityAttendance.update({
+        where: { id: existingSession.id },
+        data: {
+          latitude,
+          longitude,
+          method: "GPS_ACTIVITY",
+        },
+      });
+    } else {
+      // Mulai kegiatan baru atau update dari status DI_ZONA/DALAM_RADIUS
+      attendance = await prisma.activityAttendance.upsert({
+        where: {
+          studentId_scheduleId: {
+            studentId: studentUserId,
+            scheduleId,
+          },
+        },
+        update: {
+          attendedAt: new Date(),
+          status: "BERLANGSUNG",
+          latitude,
+          longitude,
+          method: "GPS_ACTIVITY",
+          checkOutAt: null,
+          actualInZoneMinutes: 0,
+        },
+        create: {
           studentId: studentUserId,
           scheduleId,
+          attendedAt: new Date(),
+          status: "BERLANGSUNG",
+          latitude,
+          longitude,
+          method: "GPS_ACTIVITY",
         },
-      },
-      update: {
-        attendedAt: new Date(),
-        status: "BERLANGSUNG",
-        latitude,
-        longitude,
-        method: "GPS_ACTIVITY",
-        checkOutAt: null,
-        actualInZoneMinutes: 0,
-      },
-      create: {
-        studentId: studentUserId,
-        scheduleId,
-        attendedAt: new Date(),
-        status: "BERLANGSUNG",
-        latitude,
-        longitude,
-        method: "GPS_ACTIVITY",
-      },
-    });
+      });
+    }
 
     // Simpan koordinat awal ke studentLocation
     await prisma.studentLocation.create({
