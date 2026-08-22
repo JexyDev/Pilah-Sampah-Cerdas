@@ -116,26 +116,14 @@ export const dplService = {
         const studentUserIds = grp.students.map((s) => s.userId);
         const studentCount = grp.students.length;
 
-        // Query kondisi Tempat Sampah terkait kelompok KKN (berdasarkan pendaftar mahasiswa atau kelurahan/RW kelompok)
-        let binWhere: any = { status: "ACTIVE_BOUND" };
-        if (studentUserIds.length > 0) {
-          binWhere = {
-            status: "ACTIVE_BOUND",
-            OR: [
-              { registeredByStudentId: { in: studentUserIds } },
-              ...(grp.kelurahan
-                ? [{ rw: { kelurahan: { name: { contains: grp.kelurahan, mode: "insensitive" } } } }]
-                : []),
-            ],
-          };
-        } else if (grp.kelurahan) {
-          binWhere = {
-            status: "ACTIVE_BOUND",
-            rw: { kelurahan: { name: { contains: grp.kelurahan, mode: "insensitive" } } },
-          };
-        } else {
-          binWhere = { id: "impossible-id" };
-        }
+        // Query kondisi Tempat Sampah terkait kelompok KKN (strictly berdasarkan pendaftar mahasiswa bimbingan DPL)
+        const binWhere: any =
+          studentUserIds.length > 0
+            ? {
+                status: "ACTIVE_BOUND",
+                registeredByStudentId: { in: studentUserIds },
+              }
+            : { id: "impossible-id" };
 
         const [activatedBinsCount, organikBinsCount, anorganikBinsCount, wasteSum] = await Promise.all([
           prisma.bin.count({
