@@ -405,7 +405,7 @@ export class KknAttendanceService {
    */
   async updateStudentLocationsBatch(
     studentId: string,
-    locations: { latitude: number; longitude: number; timestamp?: string }[]
+    locations: { latitude: number; longitude: number; timestamp?: string; inZoneSeconds?: number }[]
   ) {
     const savedLocations: any[] = [];
     let latestLoc: { latitude: number; longitude: number } | null = null;
@@ -569,6 +569,20 @@ export class KknAttendanceService {
           ? todayLogs.filter(log => log.recordedAt >= existingAtt.attendedAt!)
           : todayLogs;
         let durationInZone = calculateInZoneDurationMinutes(sessionLogs, geofence, bufferMeters, (existingAtt?.jedaLogs as any[]) || []);
+        
+        // --- LOGIKA SINKRONISASI 2-ARAH ---
+        // Jika mobile mengirimkan durasi (inZoneSeconds), gunakan nilai terbesarnya (Highest Wins)
+        let maxInZoneSeconds = 0;
+        for (const loc of locations) {
+          if (loc.inZoneSeconds && loc.inZoneSeconds > maxInZoneSeconds) {
+            maxInZoneSeconds = loc.inZoneSeconds;
+          }
+        }
+        if (maxInZoneSeconds > 0) {
+          const mobileMinutes = Math.floor(maxInZoneSeconds / 60);
+          durationInZone = Math.max(durationInZone, mobileMinutes);
+        }
+
         inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
 
         // Cek posisi saat ini menggunakan buffer dinamis
