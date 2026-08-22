@@ -155,18 +155,26 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> sendLocationPing(double latitude, double longitude) async {
-    final response = await apiClient.dio.post(
-      ApiEndpoints.kknLocationPing,
-      data: {
+  Future<Map<String, dynamic>> sendLocationPing(double latitude, double longitude, {int? inZoneSeconds}) async {
+    try {
+      final Map<String, dynamic> body = {
         'latitude': latitude,
         'longitude': longitude,
-      },
-    );
-    if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
-      return response.data as Map<String, dynamic>;
+      };
+      if (inZoneSeconds != null) {
+        body['inZoneSeconds'] = inZoneSeconds;
+      }
+      final response = await apiClient.dio.post(
+        ApiEndpoints.kknLocationPing,
+        data: body,
+      );
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return response.data as Map<String, dynamic>;
+      }
+      return {};
+    } catch (e) {
+      return {};
     }
-    return {};
   }
 
   @override

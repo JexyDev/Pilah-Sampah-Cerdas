@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../data/providers/repository_providers.dart';
+import 'kkn_location_controller.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // State
@@ -115,7 +116,8 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
       try {
         final lat = (item['lat'] as num).toDouble();
         final lng = (item['lng'] as num).toDouble();
-        await repo.sendLocationPing(lat, lng);
+        final accumulated = _ref.read(kknLocationProvider).inZoneDurationSeconds ?? 0;
+        await repo.sendLocationPing(lat, lng, inZoneSeconds: accumulated);
       } catch (e) {
         // Jika jaringan gagal lagi saat flushing, kembalikan item yang tersisa ke antrean
         _offlineQueue.add(item);
@@ -198,7 +200,8 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
       lng = position.longitude;
 
       final repo = _ref.read(kknRepositoryProvider);
-      final pingResponse = await repo.sendLocationPing(lat, lng);
+      final accumulated = _ref.read(kknLocationProvider).inZoneDurationSeconds ?? 0;
+      final pingResponse = await repo.sendLocationPing(lat, lng, inZoneSeconds: accumulated);
       final data = pingResponse['data'] as Map<String, dynamic>?;
       final poskoArea = data?['poskoArea']?.toString() ?? data?['kelurahan']?.toString();
 

@@ -240,7 +240,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         // Menggunakan durasi dari backend sesuai permintaan terbaru
         if (activeZone['actualInZoneSeconds'] != null) {
           final serverSecs = int.tryParse(activeZone['actualInZoneSeconds'].toString()) ?? 0;
-          if (serverSecs > _accumulatedSeconds || (_accumulatedSeconds - serverSecs).abs() > 60) {
+          if (_accumulatedSeconds == 0 || (_accumulatedSeconds - serverSecs).abs() > 60) {
             _accumulatedSeconds = serverSecs;
             _zoneEntryTime = DateTime.now();
             await _savePersistentTimer();
@@ -248,7 +248,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         } else if (activeZone['actualInZoneMinutes'] != null) {
           final actualMins = num.tryParse(activeZone['actualInZoneMinutes'].toString()) ?? 0;
           final serverSecs = (actualMins * 60).toInt();
-          if (serverSecs > _accumulatedSeconds || (_accumulatedSeconds - serverSecs).abs() > 60) {
+          if (_accumulatedSeconds == 0 || (_accumulatedSeconds - serverSecs).abs() > 60) {
             _accumulatedSeconds = serverSecs;
             _zoneEntryTime = DateTime.now();
             await _savePersistentTimer();
@@ -1004,7 +1004,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       // Menggunakan durasi dari backend (sinkronisasi)
       if (mergedData['actualInZoneSeconds'] != null) {
         final serverSecs = int.tryParse(mergedData['actualInZoneSeconds'].toString()) ?? 0;
-        if (serverSecs > _accumulatedSeconds || (_accumulatedSeconds - serverSecs).abs() > 60) {
+        if (_accumulatedSeconds == 0 || (_accumulatedSeconds - serverSecs).abs() > 60) {
           _accumulatedSeconds = serverSecs;
           _zoneEntryTime = DateTime.now();
           await _savePersistentTimer();
@@ -1012,7 +1012,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       } else if (mergedData['actualInZoneMinutes'] != null) {
         final actualMins = num.tryParse(mergedData['actualInZoneMinutes'].toString()) ?? 0;
         final serverSecs = (actualMins * 60).toInt();
-        if (serverSecs > _accumulatedSeconds || (_accumulatedSeconds - serverSecs).abs() > 60) {
+        if (_accumulatedSeconds == 0 || (_accumulatedSeconds - serverSecs).abs() > 60) {
           _accumulatedSeconds = serverSecs;
           _zoneEntryTime = DateTime.now();
           await _savePersistentTimer();
@@ -1306,6 +1306,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         final pingResponse = await repo.sendLocationPing(
           pos.latitude,
           pos.longitude,
+          inZoneSeconds: _accumulatedSeconds,
         );
 
         // Jika backend me-trigger auto attendance (karena durasi cukup dll)
