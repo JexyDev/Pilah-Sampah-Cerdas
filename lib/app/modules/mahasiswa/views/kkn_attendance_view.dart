@@ -1336,7 +1336,7 @@ class KegiatanKknCard extends StatelessWidget {
     final isAktif =
         (kegiatan['status'] ?? '').toString().toUpperCase() == 'AKTIF';
     final String? statusKehadiran = kegiatan['statusKehadiran']?.toString().toUpperCase();
-    final bool canStart = isAktif && (statusKehadiran == null || statusKehadiran == 'BERLANGSUNG');
+    final bool canStart = isAktif && (statusKehadiran == null || statusKehadiran == 'BERLANGSUNG' || statusKehadiran == 'DI_ZONA' || statusKehadiran == 'DALAM_RADIUS');
 
     final jamMulai = kegiatan['jamMulai'] ?? '-';
     final jamSelesai = kegiatan['jamSelesai'] ?? '-';
@@ -1360,6 +1360,11 @@ class KegiatanKknCard extends StatelessWidget {
       badgeColor = Colors.orange.withValues(alpha: 0.1);
       textColor = Colors.orange;
       buttonText = 'Lanjutkan Sesi';
+    } else if (statusKehadiran == 'DI_ZONA' || statusKehadiran == 'DALAM_RADIUS') {
+      statusText = '🟢 DI DALAM ZONA';
+      badgeColor = AppColors.primaryGreen.withValues(alpha: 0.1);
+      textColor = AppColors.primaryGreen;
+      buttonText = 'Mulai Kegiatan (Presensi Masuk)';
     } else if (statusKehadiran == 'SELESAI') {
       statusText = '🏁 SELESAI';
       badgeColor = Colors.blue.withValues(alpha: 0.1);
@@ -1435,6 +1440,8 @@ class KegiatanKknCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             _buildPopupRow('Lokasi', lokasi.toString()),
+            const SizedBox(height: 4),
+            _buildPopupRow('Tanggal', (kegiatan['tanggal']?.toString() ?? '-').split('-').reversed.join('-')),
             const SizedBox(height: 4),
             _buildPopupRow('Waktu', '$jamMulai - $jamSelesai'),
             const SizedBox(height: 4),

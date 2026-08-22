@@ -317,6 +317,14 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         list = [state.activeActivity!];
       }
 
+      if (list.isNotEmpty) {
+        list.sort((a, b) {
+          final tA = a['createdAt']?.toString() ?? a['jamMulai']?.toString() ?? '';
+          final tB = b['createdAt']?.toString() ?? b['jamMulai']?.toString() ?? '';
+          return tB.compareTo(tA);
+        });
+      }
+
       state = state.copyWith(
         kegiatanList: list,
         isLoadingKegiatan: false,
