@@ -2177,9 +2177,9 @@ export class KknService {
       }
     }
 
-    if (isExpired && (attendanceStatus === "belum_absen" || attendanceStatus === "berlangsung")) {
+    if (isExpired && (attendanceStatus === "belum_absen" || attendanceStatus === "berlangsung" || attendanceStatus === "di_zona" || attendanceStatus === "dalam_radius")) {
       attendanceStatus = "alpa";
-      if (attendanceForActiveSchedule && attendanceForActiveSchedule.status === "BERLANGSUNG") {
+      if (attendanceForActiveSchedule && (attendanceForActiveSchedule.status === "BERLANGSUNG" || attendanceForActiveSchedule.status === "DI_ZONA" || attendanceForActiveSchedule.status === "DALAM_RADIUS")) {
         await prisma.activityAttendance.update({
           where: { id: attendanceForActiveSchedule.id },
           data: { status: "ALPA" },

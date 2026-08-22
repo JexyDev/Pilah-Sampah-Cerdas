@@ -264,18 +264,19 @@ export class KknAttendanceService {
         const scheduleDateWibStrPing = new Date(sch.date.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
         let isFutureDatePing = false;
         
+        let jamMulaiPing = "08:00";
+        const normalizedTimePing = (sch.time || "").replace(/\s*(WIB|WITA|WIT)\s*/gi, "").replace(/[\u2013\u2014~]|s\/d|sd/gi, "-").trim();
+        if (normalizedTimePing.includes("-")) {
+          jamMulaiPing = normalizedTimePing.split("-")[0].trim();
+        }
+        const [startHPing, startMPing] = jamMulaiPing.replace(".", ":").split(":").map(Number);
+        const cleanStartHPing = !isNaN(startHPing) ? (startHPing === 24 ? 0 : startHPing) : 8;
+        const cleanStartMPing = !isNaN(startMPing) ? startMPing : 0;
+        const startMinutesTotal = cleanStartHPing * 60 + cleanStartMPing;
+        
         if (scheduleDateWibStrPing > todayWibStrPing) {
           isFutureDatePing = true;
         } else if (scheduleDateWibStrPing === todayWibStrPing) {
-          let jamMulaiPing = "08:00";
-          const normalizedTimePing = (sch.time || "").replace(/\s*(WIB|WITA|WIT)\s*/gi, "").replace(/[\u2013\u2014~]|s\/d|sd/gi, "-").trim();
-          if (normalizedTimePing.includes("-")) {
-            jamMulaiPing = normalizedTimePing.split("-")[0].trim();
-          }
-          const [startHPing, startMPing] = jamMulaiPing.replace(".", ":").split(":").map(Number);
-          const cleanStartHPing = !isNaN(startHPing) ? (startHPing === 24 ? 0 : startHPing) : 8;
-          const cleanStartMPing = !isNaN(startMPing) ? startMPing : 0;
-          const startMinutesTotal = cleanStartHPing * 60 + cleanStartMPing;
           const currentMinutesTotal = nowWibPing.getUTCHours() * 60 + nowWibPing.getUTCMinutes();
           
           if (currentMinutesTotal < startMinutesTotal) {
@@ -283,9 +284,11 @@ export class KknAttendanceService {
           }
         }
 
-        const scheduleLogs = existingAtt?.attendedAt
-          ? todayLogs.filter((l) => new Date(l.recordedAt) >= new Date(existingAtt.attendedAt))
-          : [];
+        const scheduleLogs = todayLogs.filter((l) => {
+          const logWib = new Date(l.recordedAt.getTime() + 7 * 60 * 60 * 1000);
+          const logMins = logWib.getUTCHours() * 60 + logWib.getUTCMinutes();
+          return logMins >= startMinutesTotal;
+        });
         const durationInZone = calculateInZoneDurationMinutes(scheduleLogs, geofence, bufferMeters);
         inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
 
@@ -318,7 +321,7 @@ export class KknAttendanceService {
               data: {
                 studentId: userId,
                 scheduleId: sch.id,
-                status: "BERLANGSUNG",
+                status: "DI_ZONA",
                 method: "GPS_ACTIVITY",
                 latitude,
                 longitude,
@@ -1951,8 +1954,10 @@ export class KknAttendanceService {
           statusKehadiran = "ALPA";
         } else if (att.checkOutAt || att.status === "HADIR" || att.status === "SELESAI") {
           statusKehadiran = "HADIR";
-        } else if (att.status === "BERLANGSUNG" || att.status === "DALAM_RADIUS" || att.status === "DI_ZONA") {
+        } else if (att.status === "BERLANGSUNG") {
           statusKehadiran = "BERLANGSUNG";
+        } else if (att.status === "DALAM_RADIUS" || att.status === "DI_ZONA") {
+          statusKehadiran = "DI_ZONA";
         }
       } else if (scheduleStatus === "SELESAI") {
         statusKehadiran = "ALPA";
