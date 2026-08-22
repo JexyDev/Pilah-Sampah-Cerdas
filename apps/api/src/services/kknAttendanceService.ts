@@ -1922,19 +1922,31 @@ export class KknAttendanceService {
         jamSelesai = parts[1].trim();
       }
 
-      // Hitung menit mulai dan selesai
-      const [startH, startM] = jamMulai.replace(".", ":").split(":").map(Number);
-      const [endH, endM] = jamSelesai.replace(".", ":").split(":").map(Number);
+        // Ekstrak angka jam dan menit menggunakan regex agar lebih tangguh (robust)
+        const parseTime = (timeStr: string, defaultH: number, defaultM: number) => {
+          const match = timeStr.match(/(\d{1,2})[:.](\d{2})/);
+          if (match) {
+            return [parseInt(match[1], 10), parseInt(match[2], 10)];
+          }
+          const hourMatch = timeStr.match(/(\d{1,2})/);
+          if (hourMatch) {
+            return [parseInt(hourMatch[1], 10), 0];
+          }
+          return [defaultH, defaultM];
+        };
 
-      const cleanStartH = !isNaN(startH) ? (startH === 24 ? 0 : startH) : 8;
-      const cleanStartM = !isNaN(startM) ? startM : 0;
-      const cleanEndH = !isNaN(endH) ? (endH === 24 ? 24 : endH) : 16;
-      const cleanEndM = !isNaN(endM) ? endM : 0;
+        const [startH, startM] = parseTime(jamMulai, 8, 0);
+        const [endH, endM] = parseTime(jamSelesai, 23, 59);
 
-      const startMinutesTotal = cleanStartH * 60 + cleanStartM;
-      const endMinutesTotal = cleanEndH * 60 + cleanEndM;
+        const cleanStartH = startH === 24 ? 0 : startH;
+        const cleanStartM = startM;
+        const cleanEndH = endH === 24 ? 24 : endH;
+        const cleanEndM = endM;
 
-      const isOvernight = endMinutesTotal <= startMinutesTotal;
+        const startMinutesTotal = cleanStartH * 60 + cleanStartM;
+        const endMinutesTotal = cleanEndH * 60 + cleanEndM;
+
+        const isOvernight = endMinutesTotal <= startMinutesTotal;
 
       // Normalize tanggal jadwal ke WIB untuk perbandingan string YYYY-MM-DD
       // sch.date dari Prisma adalah UTC. Kita harus convert ke WIB sebelum ambil date string.
