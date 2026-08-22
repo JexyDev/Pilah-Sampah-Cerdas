@@ -4,7 +4,32 @@ export interface GroupSummary {
   id: string;
   name: string;
   kelurahan: string;
+  kecamatan?: string | null;
+  kabupaten?: string | null;
+  provinsi?: string | null;
   cakupanRw: number[] | string[] | string;
+  posko?: {
+    id: string;
+    nama: string;
+    alamat: string;
+    latitude?: number | null;
+    longitude?: number | null;
+  } | null;
+  ketua?: {
+    id: string;
+    userId: string;
+    name: string;
+    nim: string;
+    phone?: string;
+  } | null;
+  dpl?: {
+    id: string;
+    name: string;
+    nip?: string | null;
+    institusi?: string | null;
+    programStudi?: string | null;
+    phone?: string | null;
+  } | null;
   studentCount: number;
   activeTodayCount?: number;
   actualHours?: number;

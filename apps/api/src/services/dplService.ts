@@ -87,17 +87,61 @@ export const dplService = {
    * 1. Ringkasan Kelompok Bimbingan (Murni scoped ke kelompok DPL sendiri)
    */
   getGroupSummary: async (dplUserId: string, role?: string) => {
+    const kelurahanRecords = await prisma.kelurahan.findMany({
+      include: {
+        kecamatan: {
+          include: {
+            kabupaten: {
+              include: {
+                provinsi: true,
+              },
+            },
+          },
+        },
+        rws: {
+          select: { id: true, name: true, latitude: true, longitude: true },
+        },
+      },
+    });
+
+    const kelurahanMap = new Map<string, (typeof kelurahanRecords)[0]>();
+    kelurahanRecords.forEach((k) => {
+      kelurahanMap.set(k.name.toLowerCase().trim(), k);
+    });
+
     const groups = await prisma.kelompokKkn.findMany({
       where: getKelompokWhere(dplUserId, role),
       include: {
+        dpl: {
+          select: {
+            id: true,
+            name: true,
+            nip: true,
+            institusi: true,
+            programStudi: true,
+            phone: true,
+            provinsi: true,
+            kabupaten: true,
+          },
+        },
+        poskoKkn: {
+          select: {
+            id: true,
+            nama: true,
+            alamat: true,
+            latitude: true,
+            longitude: true,
+          },
+        },
         students: {
           include: {
             user: {
-              select: { id: true, name: true, phone: true },
+              select: { id: true, name: true, phone: true, fotoProfil: true, address: true, rwId: true, rtId: true },
             },
           },
         },
       },
+      orderBy: { name: "asc" },
     });
 
     if (groups.length === 0) {
@@ -115,6 +159,12 @@ export const dplService = {
       groups.map(async (grp) => {
         const studentUserIds = grp.students.map((s) => s.userId);
         const studentCount = grp.students.length;
+        const ketuaStudent = grp.students.find((s) => s.isKetua);
+
+        const matchedKelurahan = grp.kelurahan ? kelurahanMap.get(grp.kelurahan.toLowerCase().trim()) : null;
+        const kecamatanName = matchedKelurahan?.kecamatan?.name || null;
+        const kabupatenName = matchedKelurahan?.kecamatan?.kabupaten?.name || null;
+        const provinsiName = matchedKelurahan?.kecamatan?.kabupaten?.provinsi?.name || null;
 
         // Query kondisi Tempat Sampah terkait kelompok KKN (strictly berdasarkan pendaftar mahasiswa bimbingan DPL)
         const binWhere: any =
@@ -231,7 +281,38 @@ export const dplService = {
           id: grp.id,
           name: grp.name,
           kelurahan: grp.kelurahan || null,
+          kecamatan: kecamatanName,
+          kabupaten: kabupatenName,
+          provinsi: provinsiName,
           cakupanRw: grp.cakupanRw || [],
+          posko: grp.poskoKkn
+            ? {
+                id: grp.poskoKkn.id,
+                nama: grp.poskoKkn.nama,
+                alamat: grp.poskoKkn.alamat,
+                latitude: grp.poskoKkn.latitude ? Number(grp.poskoKkn.latitude) : null,
+                longitude: grp.poskoKkn.longitude ? Number(grp.poskoKkn.longitude) : null,
+              }
+            : null,
+          ketua: ketuaStudent
+            ? {
+                id: ketuaStudent.id,
+                userId: ketuaStudent.userId,
+                name: ketuaStudent.user?.name || "Ketua Kelompok",
+                nim: ketuaStudent.nim,
+                phone: ketuaStudent.user?.phone,
+              }
+            : null,
+          dpl: grp.dpl
+            ? {
+                id: grp.dpl.id,
+                name: grp.dpl.name,
+                nip: grp.dpl.nip,
+                institusi: grp.dpl.institusi,
+                programStudi: grp.dpl.programStudi,
+                phone: grp.dpl.phone,
+              }
+            : null,
           studentCount,
           activeTodayCount,
           actualHours,

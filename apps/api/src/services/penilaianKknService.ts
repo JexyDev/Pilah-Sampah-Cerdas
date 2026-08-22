@@ -115,6 +115,22 @@ export const penilaianKknService = {
         }).catch(() => 0)
       : 0;
 
+    // 3b. Hitung Kepatuhan Logbook KKN (Target standar: 24 aktivitas terverifikasi DPL)
+    const approvedLogbookCount = kelompok?.id
+      ? await prisma.logbookKkn.count({
+          where: {
+            kelompokId: kelompok.id,
+            statusApproval: "DISETUJUI_DPL",
+          },
+        }).catch(() => 0)
+      : 0;
+    const totalSubmittedLogbooks = kelompok?.id
+      ? await prisma.logbookKkn.count({
+          where: { kelompokId: kelompok.id },
+        }).catch(() => 0)
+      : 0;
+    const calculatedLogbookScore = Math.min(100, Math.round((approvedLogbookCount / 24) * 100));
+
     // 4. Mitra Penilai (Ketua RW atau Mitra Lapangan)
     const namaMitra = rw?.name
       ? `Ketua ${rw.name} (${kelurahan?.name || "Coblong"})`
@@ -123,7 +139,10 @@ export const penilaianKknService = {
     // 5. Existing Penilaian Record - Default 0 jika belum dinilai di database
     const existing = studentUser.penilaianKkn;
 
-    const assessment = existing || {
+    const assessment = existing ? {
+      ...existing,
+      skorDplLogbook: existing.skorDplLogbook > 0 ? existing.skorDplLogbook : calculatedLogbookScore,
+    } : {
       id: "",
       studentId,
       kelompokId: kelompok?.id || null,
@@ -141,7 +160,7 @@ export const penilaianKknService = {
       subtotalMitra: 0,
       skorDplPerencanaan: 0,
       skorDplKontribusi: 0,
-      skorDplLogbook: 0,
+      skorDplLogbook: calculatedLogbookScore,
       skorDplAnalisis: 0,
       skorDplOutput: 0,
       skorDplLaporanAkhir: 0,
@@ -202,6 +221,10 @@ export const penilaianKknService = {
         prokerCount,
         isProkerValid: prokerCount >= 1,
         isEvidenceValid: pastSchedulesCount > 0,
+        approvedLogbookCount,
+        totalSubmittedLogbooks,
+        logbookComplianceScore: calculatedLogbookScore,
+        isLogbookValid: approvedLogbookCount >= 24,
       },
       assessment: {
         ...assessment,

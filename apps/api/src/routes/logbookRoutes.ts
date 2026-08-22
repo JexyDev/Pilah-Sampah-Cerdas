@@ -1,0 +1,106 @@
+/**
+ * Project: BERSEKA
+ * Developed by: PT Makerindo
+ * Copyright (c) 2026 PT Makerindo. All rights reserved.
+ * 
+ * Route Logbook KKN (Mahasiswa & DPL)
+ */
+
+import { Router } from "express";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { roleMiddleware } from "../middlewares/roleMiddleware.js";
+import { safeUploadSingleImage } from "../middlewares/uploadMiddleware.js";
+import { logbookController } from "../controllers/logbookController.js";
+
+const router = Router();
+
+// Protect all logbook routes with authentication
+router.use(authMiddleware);
+
+/**
+ * ─────────────────────────────────────────────
+ * LOGBOOK MAHASISWA & AKTIVITAS KELOMPOK
+ * ─────────────────────────────────────────────
+ */
+
+// Mengambil daftar logbook (Tabular) - Mahasiswa, DPL, Super User
+router.get(
+  "/mahasiswa",
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "MAHASISWA_KKN"]),
+  logbookController.getMahasiswaLogbooks
+);
+
+// Submit logbook aktivitas baru oleh Mahasiswa (Mendukung upload bukti foto via kamera)
+router.post(
+  "/mahasiswa",
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  safeUploadSingleImage,
+  logbookController.createMahasiswaLogbook
+);
+
+// Persetujuan / Penolakan Logbook oleh Ketua Kelompok
+router.patch(
+  "/mahasiswa/:id/approve-ketua",
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  logbookController.approveByKetua
+);
+
+// Verifikasi & Feedback Logbook oleh DPL (Single)
+router.patch(
+  "/mahasiswa/:id/verifikasi-dpl",
+  roleMiddleware(["DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
+  logbookController.verifikasiByDpl
+);
+
+// Batch Verifikasi Logbook oleh DPL
+router.post(
+  "/mahasiswa/batch-verifikasi-dpl",
+  roleMiddleware(["DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
+  logbookController.batchVerifikasiByDpl
+);
+
+/**
+ * ─────────────────────────────────────────────
+ * LOGBOOK MONITORING MINGGUAN DPL
+ * ─────────────────────────────────────────────
+ */
+
+// Mengambil riwayat logbook monitoring DPL
+router.get(
+  "/dpl",
+  roleMiddleware(["DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  logbookController.getDplLogbooks
+);
+
+// Submit logbook monitoring mingguan DPL
+router.post(
+  "/dpl",
+  roleMiddleware(["DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "DEVELOPER"]),
+  safeUploadSingleImage,
+  logbookController.createDplLogbook
+);
+
+/**
+ * ─────────────────────────────────────────────
+ * STATISTIK & KONFIGURASI TOLERANSI
+ * ─────────────────────────────────────────────
+ */
+
+// Statistik kepatuhan & skor logbook per kelompok
+router.get(
+  "/kepatuhan/:kelompokId",
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "MAHASISWA_KKN"]),
+  logbookController.getComplianceScore
+);
+
+// Mendapatkan konfigurasi toleransi backdate
+router.get("/config/toleransi", logbookController.getToleranceConfig);
+
+// Mengubah konfigurasi toleransi backdate (developer & super user)
+router.patch(
+  "/config/toleransi",
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
+  logbookController.updateToleranceConfig
+);
+
+export default router;

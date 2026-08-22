@@ -420,6 +420,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "PEMIMPIN",
               ] as UserRole[],
             },
+            {
+              to: "/logbook-kkn",
+              label: "Logbook Aktivitas",
+              allowed: ALL_ROLES,
+            },
           ],
         },
         {

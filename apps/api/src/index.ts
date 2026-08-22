@@ -49,6 +49,7 @@ import panduanRouter from "./routes/panduanRoutes.js";
 import masterKegiatanRouter from "./routes/masterKegiatanRoutes.js";
 import penilaianKknRouter from "./routes/penilaianKknRoutes.js";
 import timelineKknRouter from "./routes/timelineKknRoutes.js";
+import logbookRouter from "./routes/logbookRoutes.js";
 import { systemController } from "./controllers/systemController.js";
 
 import { setupSwagger } from "./swagger.js";
@@ -154,10 +155,12 @@ app.use("/api/v1/panduan", panduanRouter);
 app.use("/api/v1/master-kegiatan", masterKegiatanRouter);
 app.use("/api/v1/penilaian-kkn", penilaianKknRouter);
 app.use("/api/v1/timeline-kkn", timelineKknRouter);
+app.use("/api/v1/logbook", logbookRouter);
 
 // Master API Spec Alias Mounts (Compatibility for mobile client without /v1 prefix)
 app.use("/api/v1/user", userRouter);
 app.use("/api/kkn", kknRouter);
+app.use("/api/logbook", logbookRouter);
 app.use("/api/kkn-attendance", kknAttendanceRouter);
 app.use("/api", kknAttendanceRouter);
 app.use("/api/residu", residuRouter);
@@ -414,6 +417,58 @@ archiveAuditLogsCron.start();
       'CREATE INDEX IF NOT EXISTS "timeline_kkn_id_kelompok_idx" ON "timeline_kkn"("id_kelompok");',
       'CREATE INDEX IF NOT EXISTS "timeline_kkn_fase_idx" ON "timeline_kkn"("fase");',
       'CREATE INDEX IF NOT EXISTS "timeline_kkn_status_pelaksanaan_idx" ON "timeline_kkn"("status_pelaksanaan");',
+      `DO $$ BEGIN
+        CREATE TYPE "TipeAktivitasKkn" AS ENUM ('KELOMPOK', 'INDIVIDU');
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;`,
+      `DO $$ BEGIN
+        CREATE TYPE "StatusLogbookKkn" AS ENUM ('MENUNGGU_PERSETUJUAN_KETUA', 'DITOLAK_KETUA', 'MENUNGGU_VERIFIKASI_DPL', 'DISETUJUI_DPL', 'PERLU_REVISI_DPL');
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;`,
+      `CREATE TABLE IF NOT EXISTS "logbook_kkn" (
+        "id" TEXT PRIMARY KEY,
+        "nomor" INTEGER,
+        "id_kelompok" TEXT NOT NULL,
+        "id_penulis" TEXT NOT NULL,
+        "tanggal_kegiatan" DATE NOT NULL,
+        "waktu_mulai" TEXT,
+        "waktu_selesai" TEXT,
+        "tempat" TEXT NOT NULL,
+        "deskripsi" TEXT NOT NULL,
+        "foto_bukti_url" TEXT NOT NULL,
+        "tipe_aktivitas" "TipeAktivitasKkn" NOT NULL DEFAULT 'KELOMPOK',
+        "id_program_kerja" TEXT,
+        "id_fasilitas" TEXT,
+        "status_persetujuan" "StatusLogbookKkn" NOT NULL DEFAULT 'MENUNGGU_PERSETUJUAN_KETUA',
+        "id_ketua_penyetuju" TEXT,
+        "disetujui_ketua_pada" TIMESTAMP(3),
+        "catatan_ketua" TEXT,
+        "id_dpl_verifikator" TEXT,
+        "diverifikasi_dpl_pada" TIMESTAMP(3),
+        "catatan_dpl" TEXT,
+        "pekan_ke" INTEGER NOT NULL DEFAULT 1,
+        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`,
+      `CREATE TABLE IF NOT EXISTS "logbook_dpl" (
+        "id" TEXT PRIMARY KEY,
+        "id_dpl" TEXT NOT NULL,
+        "id_kelompok" TEXT NOT NULL,
+        "tanggal" DATE NOT NULL,
+        "pekan_ke" INTEGER NOT NULL,
+        "tempat" TEXT NOT NULL,
+        "deskripsi" TEXT NOT NULL,
+        "arahan_evaluasi" TEXT,
+        "foto_bukti_url" TEXT,
+        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`,
+      'CREATE INDEX IF NOT EXISTS "logbook_kkn_id_kelompok_tanggal_idx" ON "logbook_kkn"("id_kelompok", "tanggal_kegiatan" DESC);',
+      'CREATE INDEX IF NOT EXISTS "logbook_kkn_id_penulis_idx" ON "logbook_kkn"("id_penulis");',
+      'CREATE INDEX IF NOT EXISTS "logbook_kkn_status_persetujuan_idx" ON "logbook_kkn"("status_persetujuan");',
+      'CREATE INDEX IF NOT EXISTS "logbook_dpl_id_dpl_pekan_idx" ON "logbook_dpl"("id_dpl", "pekan_ke");',
     ];
 
     for (const stmt of alterStatements) {

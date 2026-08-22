@@ -202,6 +202,10 @@ model User {
   penilaianKkn          PenilaianKknMahasiswa? @relation("StudentPenilaianKkn")
   penilaianKknDiberikan PenilaianKknMahasiswa[] @relation("DplPenilaianKkn")
   facilitiesRegistered  Facility[]           @relation("FacilityRegisteredBy")
+  logbooksWritten       LogbookKkn[]         @relation("LogbookPenulis")
+  logbooksApprovedKetua LogbookKkn[]         @relation("LogbookKetuaPenyetuju")
+  logbooksVerifiedDpl   LogbookKkn[]         @relation("LogbookDplVerifikator")
+  dplLogbooks           LogbookDpl[]         @relation("DplLogbooks")
 
   @@index([roleId])
   @@index([rwId])
@@ -369,6 +373,8 @@ model KelompokKkn {
   penilaianMahasiswa PenilaianKknMahasiswa[]
   facilities         Facility[]
   poskoKkn           PoskoKkn?
+  logbooks           LogbookKkn[]
+  dplLogbooks        LogbookDpl[]
 
   @@index([dplId])
   @@map("kelompok_kkn")
@@ -415,6 +421,7 @@ model ProgramKerjaKkn {
   updatedAt        DateTime     @updatedAt @map("diperbarui_pada")
   kelompok         KelompokKkn  @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
   reviewedBy       User?        @relation("DplReviewedProker", fields: [reviewedById], references: [id])
+  logbooks         LogbookKkn[]
 
   @@map("program_kerja_kkn")
 }
@@ -581,6 +588,7 @@ model Facility {
   kelompok           KelompokKkn?            @relation(fields: [kelompokId], references: [id], onDelete: SetNull)
   registeredByUserId String?                 @map("id_pendaftar")
   registeredBy       User?                   @relation("FacilityRegisteredBy", fields: [registeredByUserId], references: [id], onDelete: SetNull)
+  logbooks           LogbookKkn[]
 
   @@index([rwId])
   @@index([registeredByUserId])
@@ -1318,4 +1326,88 @@ enum StatusPenilaianKkn {
   TERSIMPAN
   FINAL
 }
+
+// ─────────────────────────────────────────────
+// LOGBOOK KKN (MAHASISWA & DPL)
+// ─────────────────────────────────────────────
+
+model LogbookKkn {
+  id                    String            @id @default(uuid())
+  nomor                 Int?              @map("nomor")
+  kelompokId            String            @map("id_kelompok")
+  penulisId             String            @map("id_penulis")
+  tanggalKegiatan       DateTime          @map("tanggal_kegiatan") @db.Date
+  waktuMulai            String?           @map("waktu_mulai")
+  waktuSelesai          String?           @map("waktu_selesai")
+  tempat                String            @map("tempat")
+  deskripsi             String            @map("deskripsi")
+  fotoBuktiUrl          String            @map("foto_bukti_url")
+  tipeAktivitas         TipeAktivitasKkn  @default(KELOMPOK) @map("tipe_aktivitas")
+  programKerjaId        String?           @map("id_program_kerja")
+  fasilitasId           String?           @map("id_fasilitas")
+  
+  // Status Approval 2-Tingkat
+  statusApproval        StatusLogbookKkn  @default(MENUNGGU_PERSETUJUAN_KETUA) @map("status_persetujuan")
+  
+  // Approval Ketua Kelompok
+  disetujuiKetuaOlehId  String?           @map("id_ketua_penyetuju")
+  disetujuiKetuaPada    DateTime?         @map("disetujui_ketua_pada")
+  catatanKetua          String?           @map("catatan_ketua")
+  
+  // Verifikasi DPL
+  diverifikasiDplOlehId String?           @map("id_dpl_verifikator")
+  diverifikasiDplPada   DateTime?         @map("diverifikasi_dpl_pada")
+  catatanDpl            String?           @map("catatan_dpl")
+  
+  pekanKe               Int               @default(1) @map("pekan_ke")
+  createdAt             DateTime          @default(now()) @map("dibuat_pada")
+  updatedAt             DateTime          @updatedAt @map("diperbarui_pada")
+
+  kelompok              KelompokKkn       @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
+  penulis               User              @relation("LogbookPenulis", fields: [penulisId], references: [id], onDelete: Cascade)
+  disetujuiKetuaOleh    User?             @relation("LogbookKetuaPenyetuju", fields: [disetujuiKetuaOlehId], references: [id])
+  diverifikasiDplOleh   User?             @relation("LogbookDplVerifikator", fields: [diverifikasiDplOlehId], references: [id])
+  programKerja          ProgramKerjaKkn?  @relation(fields: [programKerjaId], references: [id], onDelete: SetNull)
+  fasilitas             Facility?         @relation(fields: [fasilitasId], references: [id], onDelete: SetNull)
+
+  @@index([kelompokId, tanggalKegiatan(sort: Desc)])
+  @@index([penulisId])
+  @@index([statusApproval])
+  @@map("logbook_kkn")
+}
+
+model LogbookDpl {
+  id              String         @id @default(uuid())
+  dplId           String         @map("id_dpl")
+  kelompokId      String         @map("id_kelompok")
+  tanggal         DateTime       @map("tanggal") @db.Date
+  pekanKe         Int            @map("pekan_ke")
+  tempat          String         @map("tempat")
+  deskripsi       String         @map("deskripsi")
+  arahanEvaluasi  String?        @map("arahan_evaluasi")
+  fotoBuktiUrl    String?        @map("foto_bukti_url")
+  createdAt       DateTime       @default(now()) @map("dibuat_pada")
+  updatedAt       DateTime       @updatedAt @map("diperbarui_pada")
+
+  dpl             User           @relation("DplLogbooks", fields: [dplId], references: [id], onDelete: Cascade)
+  kelompok        KelompokKkn    @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
+
+  @@index([dplId, pekanKe])
+  @@index([kelompokId])
+  @@map("logbook_dpl")
+}
+
+enum TipeAktivitasKkn {
+  KELOMPOK
+  INDIVIDU
+}
+
+enum StatusLogbookKkn {
+  MENUNGGU_PERSETUJUAN_KETUA
+  DITOLAK_KETUA
+  MENUNGGU_VERIFIKASI_DPL
+  DISETUJUI_DPL
+  PERLU_REVISI_DPL
+}
+
 

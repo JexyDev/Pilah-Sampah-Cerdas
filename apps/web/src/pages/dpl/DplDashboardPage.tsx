@@ -375,6 +375,33 @@ export const DplDashboardPage: React.FC = () => {
 
   const totalApprovalPages = Math.max(1, Math.ceil(filteredApprovalHistory.length / ITEMS_PER_PAGE));
 
+  // Dynamic Kecamatan, Kelurahan & RW calculation from DPL groups (Real Database Relations)
+  const dplKecamatanList = useMemo(() => {
+    const set = new Set<string>();
+    groups.forEach((g) => {
+      if (g.kecamatan && g.kecamatan.trim() !== "") {
+        set.add(g.kecamatan.trim());
+      }
+    });
+    if (set.size === 0) {
+      if ((user as any)?.kecamatan && String((user as any).kecamatan).trim() !== "") {
+        set.add(String((user as any).kecamatan).trim());
+      } else if ((user as any)?.kabupaten && String((user as any).kabupaten).trim() !== "") {
+        set.add(String((user as any).kabupaten).trim());
+      } else if (user?.wilayah && user.wilayah.trim() !== "") {
+        set.add(user.wilayah.trim());
+      }
+    }
+    return Array.from(set);
+  }, [groups, user]);
+
+  const kecamatanBadgeLabel = useMemo(() => {
+    if (dplKecamatanList.length === 0) return "Wilayah Binaan";
+    if (dplKecamatanList.length === 1) return `Kec. ${dplKecamatanList[0]}`;
+    if (dplKecamatanList.length <= 2) return `Kec. ${dplKecamatanList.join(", ")}`;
+    return `${dplKecamatanList.length} Kecamatan (${dplKecamatanList.slice(0, 2).map((k) => `Kec. ${k}`).join(", ")}...)`;
+  }, [dplKecamatanList]);
+
   // Dynamic Kelurahan & RW calculation from DPL groups
   const dplKelurahanList = useMemo(() => {
     const set = new Set<string>();
@@ -764,7 +791,11 @@ export const DplDashboardPage: React.FC = () => {
             <GraduationCap size={16} />
             <span>Portal DPL</span>
             <span className="text-slate-300 dark:text-slate-600">•</span>
-            <span className="text-slate-500 dark:text-slate-400 font-normal">{user?.wilayah || "Wilayah Dampingan"}</span>
+            <span className="text-slate-500 dark:text-slate-400 font-normal">
+              {dplKelurahanList.length > 0
+                ? `${kecamatanBadgeLabel} • ${kelurahanBadgeLabel}`
+                : user?.wilayah || "Wilayah Dampingan"}
+            </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
             Dasbor KKN DPL
@@ -815,7 +846,7 @@ export const DplDashboardPage: React.FC = () => {
           <div className="flex items-center gap-2 flex-wrap text-xs">
             <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 rounded-lg font-extrabold flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
-              Tingkat 1: {user?.wilayah || "Wilayah Operasional"}
+              Tingkat 1: {kecamatanBadgeLabel}
             </span>
             <span className="px-3 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-700/40 rounded-lg font-extrabold">
               Tingkat 2: {kelurahanBadgeLabel}
@@ -1060,7 +1091,7 @@ export const DplDashboardPage: React.FC = () => {
                   key={g.id}
                   className="bg-slate-50/70 dark:bg-slate-800/70 p-4 rounded-xl border border-slate-200/80 dark:border-slate-700 hover:border-emerald-500/40 transition space-y-3 flex flex-col justify-between"
                 >
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">{g.name}</h4>
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40">
@@ -1068,17 +1099,31 @@ export const DplDashboardPage: React.FC = () => {
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                      Kel. {g.kelurahan || "-"} • RW {rwFormatted}
+                      Kel. {g.kelurahan || "-"} {g.kecamatan ? `• Kec. ${g.kecamatan}` : ""} • RW {rwFormatted}
                     </p>
+                    {g.ketua && (
+                      <p className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold flex items-center gap-1 truncate">
+                        <span className="text-slate-400 font-normal">Ketua:</span> {g.ketua.name} ({g.ketua.nim})
+                      </p>
+                    )}
+                    {g.posko && (
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate" title={g.posko.alamat}>
+                        <span className="font-semibold text-slate-600 dark:text-slate-300">Posko:</span> {g.posko.nama}
+                      </p>
+                    )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/60 text-slate-600 dark:text-slate-300">
+                  <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-200/60 dark:border-slate-700/60 text-slate-600 dark:text-slate-300">
                     <div>
                       <span className="text-[10.5px] text-slate-400 block">Tempat Sampah</span>
                       <strong className="text-slate-900 dark:text-slate-100">{g.activatedBinsCount || 0} Unit</strong>
                     </div>
                     <div>
-                      <span className="text-[10.5px] text-slate-400 block">Rerata Presensi</span>
+                      <span className="text-[10.5px] text-slate-400 block">Sampah Terpilah</span>
+                      <strong className="text-slate-900 dark:text-slate-100">{Number(g.totalWasteWeight || 0).toFixed(1)} Kg</strong>
+                    </div>
+                    <div className="col-span-2 flex items-center justify-between pt-1">
+                      <span className="text-[10.5px] text-slate-400">Rerata Presensi</span>
                       <strong className="text-emerald-700 dark:text-emerald-400">{g.avgAttendanceRate || 0}%</strong>
                     </div>
                   </div>
@@ -1144,7 +1189,7 @@ export const DplDashboardPage: React.FC = () => {
 
             <Link
               to="/penilaian-kkn/mahasiswa"
-              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1"
+              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition inline-flex items-center gap-1 shadow-xs"
             >
               <span>Buka Form Penilaian Lengkap</span>
               <ChevronRight size={14} />
@@ -1169,7 +1214,7 @@ export const DplDashboardPage: React.FC = () => {
                   <th className="py-3 px-3 text-center">Presensi</th>
                   <th className="py-3 px-3 text-center">Nilai DPL</th>
                   <th className="py-3 px-3 text-center">Huruf Mutu</th>
-                  <th className="py-3 px-3 text-center">Aksi</th>
+                  <th className="py-3 px-3 text-center">Portofolio</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
@@ -1196,11 +1241,13 @@ export const DplDashboardPage: React.FC = () => {
                       <td className="py-2.5 px-3 text-center font-bold text-emerald-700 dark:text-emerald-400">
                         {st.attendanceRate ? `${Number(st.attendanceRate).toFixed(2)}%` : "0.00%"}
                       </td>
-                      <td className="py-2.5 px-3 text-center font-black text-slate-900 dark:text-slate-100">
+                      <td className="py-2.5 px-3 text-center">
                         {st.assessmentScore !== null && st.assessmentScore !== undefined && st.assessmentScore > 0 ? (
-                          Number(st.assessmentScore).toFixed(2)
+                          <span className="font-black text-slate-900 dark:text-slate-100">
+                            {Number(st.assessmentScore).toFixed(2)}
+                          </span>
                         ) : (
-                          <span className="text-slate-400 font-normal">Belum Dinilai</span>
+                          <span className="text-slate-400 dark:text-slate-500 font-medium text-[11px]">Belum Dinilai</span>
                         )}
                       </td>
                       <td className="py-2.5 px-3 text-center">
@@ -1209,23 +1256,14 @@ export const DplDashboardPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="py-2.5 px-3 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <Link
-                            to="/penilaian-kkn/mahasiswa"
-                            className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1"
-                          >
-                            <Award size={12} />
-                            <span>Beri Nilai</span>
-                          </Link>
-                          <button
-                            onClick={() => handleOpenCitizensDrilldown(st)}
-                            className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1 cursor-pointer"
-                            title="Lihat Portofolio Pendampingan Warga"
-                          >
-                            <QrCode size={12} />
-                            <span>Portofolio</span>
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => handleOpenCitizensDrilldown(st)}
+                          className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1 cursor-pointer"
+                          title="Lihat Portofolio Pendampingan Warga"
+                        >
+                          <QrCode size={12} />
+                          <span>Portofolio</span>
+                        </button>
                       </td>
                     </tr>
                   );

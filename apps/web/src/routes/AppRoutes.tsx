@@ -82,6 +82,7 @@ import PenilaianKknMahasiswaPage from "../pages/PenilaianKkn/PenilaianKknMahasis
 import PenilaianLaporanAkhirPage from "../pages/PenilaianKkn/PenilaianLaporanAkhirPage";
 import MasterPanduanPage from "../pages/MasterData/MasterPanduanPage";
 import MasterKegiatanSampahPage from "../pages/MasterData/MasterKegiatanSampahPage";
+import { LogbookKknPage } from "../pages/dpl/LogbookKknPage";
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
@@ -548,6 +549,24 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/dpl/logbook"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "LURAH", "CAMAT", "RW"]}>
+              <LogbookKknPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/logbook-kkn"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "LURAH", "CAMAT", "RW"]}>
+              <LogbookKknPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/logbook" element={<Navigate to="/logbook-kkn" replace />} />
+        <Route path="/fasilitas/logbook" element={<Navigate to="/logbook-kkn" replace />} />
         <Route path="/validasi-absensi" element={<Navigate to="/ajuan-absensi" replace />} />
         <Route path="/penilaian-kkn" element={<Navigate to="/penilaian-kkn/mahasiswa" replace />} />
         <Route path="/program-kerja" element={<Navigate to="/program-kerja-kkn" replace />} />

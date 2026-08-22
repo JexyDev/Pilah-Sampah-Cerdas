@@ -2536,6 +2536,35 @@ export class KknService {
       },
     });
 
+    // Sinkronisasi otomatis ke Logbook KKN (Tabular & Approval 2-Tingkat)
+    if (student.kelompokId) {
+      try {
+        const isKetua = Boolean(student.isKetua);
+        const dayOfMonth = new Date().getDate();
+        const pekanKe = dayOfMonth <= 7 ? 1 : dayOfMonth <= 14 ? 2 : dayOfMonth <= 21 ? 3 : 4;
+
+        await prisma.logbookKkn.create({
+          data: {
+            kelompokId: student.kelompokId,
+            penulisId: userId,
+            tanggalKegiatan: new Date(),
+            tempat: fasilitasId ? teknologiString : `RW ${targetRwId} (${student.assignedRw?.name || "Wilayah KKN"})`,
+            deskripsi: `Aksi Pemanfaatan Sampah: ${teknologiString} (${bahanBaku || "Sampah Organik"} - ${Number(beratInputKg) || 0} Kg)`,
+            fotoBuktiUrl: fotoDokumentasiUrl || "/uploads/default-pemanfaatan.jpg",
+            tipeAktivitas: "KELOMPOK",
+            programKerjaId: programKerjaId || null,
+            fasilitasId: fasilitasId || null,
+            pekanKe,
+            statusApproval: isKetua ? "MENUNGGU_VERIFIKASI_DPL" : "MENUNGGU_PERSETUJUAN_KETUA",
+            disetujuiKetuaOlehId: isKetua ? userId : null,
+            disetujuiKetuaPada: isKetua ? new Date() : null,
+          },
+        });
+      } catch (err) {
+        console.error("[kknService.createLogbookPemanfaatan] sync logbook_kkn error:", err);
+      }
+    }
+
     await prisma.pointHistory.create({
       data: {
         userId,
