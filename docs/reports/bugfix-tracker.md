@@ -1,4 +1,4 @@
-# Bugfix Tracker
+﻿# Bugfix Tracker
 
 ## DASHBOARD
 - [x] Dropdown pilih RT/wilayah di header tidak berfungsi — terhubung ke `/dashboard/regions`, memperbarui `user.wilayah` dan memfilter seluruh KPI, grafik, serta data tabel di dashboard.
@@ -50,5 +50,5 @@
 - [x] Tombol "Beri / Penyesuaian Poin Manual" (khusus Admin & RW) — modal form submit penyesuaian poin ke `POST /points/adjust` dengan notifikasi otomatis.
 
 ## NOTIFIKASI — BUG RBAC KRITIS (SALAH IZIN AKSES)
-- [x] BUG RBAC Notifikasi: Saat role Admin/RW/Petugas mengklik notifikasi pengosongan tong, komponen `Notifikasi.tsx` menampilkan modal Tinjau Review Pengosongan dengan tombol ACC / Tolak & foto bukti warga, sedangkan form upload foto bukti HANYA ditampilkan untuk role Warga.
+- [x] BUG RBAC Notifikasi: Saat role Admin/RW/Petugas mengklik notifikasi Pengosongan Tempat Sampah, komponen `Notifikasi.tsx` menampilkan modal Tinjau Review Pengosongan dengan tombol ACC / Tolak & foto bukti warga, sedangkan form upload foto bukti HANYA ditampilkan untuk role Warga.
 - [x] Audit komponen notifikasi: setiap role hanya melihat aksi yang relevan (Warga = form pengajuan, Admin/Petugas = review & approval).

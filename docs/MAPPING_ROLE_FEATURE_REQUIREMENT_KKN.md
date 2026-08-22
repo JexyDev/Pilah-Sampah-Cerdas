@@ -314,7 +314,7 @@ erDiagram
 - [ ] Panitia Taskforce ditolak `403 Forbidden` jika mencoba mendaftarkan Admin DLH / Camat / Lurah.
 - [ ] Pembuatan akun Mahasiswa & Warga otomatis menghasilkan record 20 poin di tabel `riwayat_poin`.
 - [ ] Presensi GPS mahasiswa di luar radius menghasilkan error `400 Bad Request`.
-- [ ] Tidak ada penggunaan kata terlarang "tong" di UI dan dokumentasi.
+- [ ] Tidak ada penggunaan kata terlarang "Tempat Sampah" di UI dan dokumentasi.
 
 ---
 *Dokumen resmi spesifikasi teknis modul KKN BERSEKA. PT Makerindo — 2026.*

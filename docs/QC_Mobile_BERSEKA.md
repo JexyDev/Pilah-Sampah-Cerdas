@@ -92,14 +92,14 @@
 | **Saldo / Statistik** | | | | | | | | | |
 | 4.6 | Beranda | Warga: Total Poin tampil dengan benar | | | | | | | |
 | 4.7 | Beranda | Warga: Animasi hitung naik (count-up animation) pada poin berjalan | | | | | | | |
-| 4.8 | Beranda | Petugas: Ringkasan jumlah tong penuh di area tugas tampil | | | | | | | |
+| 4.8 | Beranda | Petugas: Ringkasan jumlah Tempat Sampah Penuh di area tugas tampil | | | | | | | |
 | 4.9 | Beranda | Offline: Angka terakhir dari cache `SharedPreferences` tampil | | | | | | | |
 | **Call-To-Action (CTA)** | | | | | | | | | |
 | 4.10 | Beranda | Tombol FAB / "Mulai Buang Sampah" tampil dan bisa diklik | | | | | | | |
 | 4.11 | Beranda | Offline: Tombol CTA berwarna abu-abu (disabled), `onPressed: null` | | | | | | | |
 | **Notifikasi Cepat** | | | | | | | | | |
 | 4.12 | Beranda | Widget 3 notifikasi terbaru (FCM) tampil | | | | | | | |
-| 4.13 | Beranda | Petugas: Alert tong penuh (>90%) tampil di notifikasi | | | | | | | |
+| 4.13 | Beranda | Petugas: Alert Tempat Sampah Penuh (>90%) tampil di notifikasi | | | | | | | |
 | 4.14 | Beranda | Notifikasi bisa di-tap untuk navigasi ke detail | | | | | | | |
 
 ---
@@ -120,10 +120,10 @@
 | 5.8 | Scan QR | Tombol nyalakan flash/senter berfungsi | | | | | | | |
 | 5.9 | Scan QR | QR Code valid berhasil di-scan dan diproses | | | | | | | |
 | 5.10 | Scan QR | QR Code invalid → Alert dialog "QR tidak dikenali" muncul | | | | | | | |
-| 5.11 | Scan QR | Geofencing: Jarak ≤10m dari tong → scan diterima | | | | | | | |
-| 5.12 | Scan QR | Geofencing: Jarak >10m dari tong → Alert "Anda terlalu jauh dari Tempat Sampah" (Haversine) | | | | | | | |
-| 5.13 | Scan QR | Kapasitas tong aman (<25L) → proses lanjut normal | | | | | | | |
-| 5.14 | Scan QR | Kapasitas tong penuh (≥25L) → Alert "Tempat Sampah Penuh, cari Tempat Sampah lain" | | | | | | | |
+| 5.11 | Scan QR | Geofencing: Jarak ≤10m dari Tempat Sampah → scan diterima | | | | | | | |
+| 5.12 | Scan QR | Geofencing: Jarak >10m dari Tempat Sampah → Alert "Anda terlalu jauh dari Tempat Sampah" (Haversine) | | | | | | | |
+| 5.13 | Scan QR | kapasitas Tempat Sampah aman (<25L) → proses lanjut normal | | | | | | | |
+| 5.14 | Scan QR | Kapasitas Tempat Sampah Penuh (≥25L) → Alert "Tempat Sampah Penuh, cari Tempat Sampah lain" | | | | | | | |
 
 ### 5B. Foto Sampah & Deteksi AI
 
@@ -153,7 +153,7 @@
 | 5.31 | Hasil Deteksi | Submit sukses → Lottie animation sukses tampil | | | | | | | |
 | 5.32 | Hasil Deteksi | Setelah animasi → Halaman Beranda di-refresh otomatis (poin terupdate) | | | | | | | |
 | 5.33 | Hasil Deteksi | Submit gagal (error server) → error message tampil, tidak crash | | | | | | | |
-| 5.34 | Hasil Deteksi | Validasi jenis sampah vs tipe tong: sampah plastik ke tong organik → ditolak (SRS FR-02) | | | | | | | |
+| 5.34 | Hasil Deteksi | Validasi jenis sampah vs tipe Tempat Sampah: sampah plastik ke Tempat Sampah organik → ditolak (SRS FR-02) | | | | | | | |
 
 ---
 
@@ -164,7 +164,7 @@
 | 6.1 | Riwayat | List view card riwayat pembuangan tampil | | | | | | | |
 | 6.2 | Riwayat | Isi card: Tanggal tampil dengan format benar | | | | | | | |
 | 6.3 | Riwayat | Isi card: Waktu tampil dengan format benar | | | | | | | |
-| 6.4 | Riwayat | Isi card: Lokasi Tong tampil | | | | | | | |
+| 6.4 | Riwayat | Isi card: Lokasi Tempat Sampah tampil | | | | | | | |
 | 6.5 | Riwayat | Isi card: Kategori (Organik/Non-Organik) tampil dengan warna benar | | | | | | | |
 | 6.6 | Riwayat | Isi card: Poin yang didapat tampil | | | | | | | |
 | 6.7 | Riwayat | Pull-to-refresh berfungsi (data terupdate) | | | | | | | |
@@ -184,19 +184,19 @@
 | **Peta Live** | | | | | | | | | |
 | 7.1 | Peta | Full screen map (Leaflet/Map) tampil dengan benar | | | | | | | |
 | 7.2 | Peta | Posisi GPS user tampil sebagai titik biru | | | | | | | |
-| 7.3 | Peta | Marker Tong: Icon Hijau untuk kapasitas aman | | | | | | | |
-| 7.4 | Peta | Marker Tong: Icon Merah/Blinking untuk kapasitas penuh (>90%) | | | | | | | |
+| 7.3 | Peta | Marker Tempat Sampah: Icon Hijau untuk kapasitas aman | | | | | | | |
+| 7.4 | Peta | Marker Tempat Sampah: Icon Merah/Blinking untuk kapasitas penuh (>90%) | | | | | | | |
 | 7.5 | Peta | Auto-refresh data setiap 30 detik (SRS NFR-04) | | | | | | | |
 | 7.6 | Peta | Peta bisa di-zoom in/out dan di-pan/geser | | | | | | | |
-| **Detail Tong & Eksekusi** | | | | | | | | | |
+| **Detail Tempat Sampah & Eksekusi** | | | | | | | | | |
 | 7.7 | Peta | Tap marker merah → Bottom Sheet muncul | | | | | | | |
-| 7.8 | Peta | Bottom Sheet: Info Tong ID tampil | | | | | | | |
-| 7.9 | Peta | Bottom Sheet: Alamat tong tampil | | | | | | | |
+| 7.8 | Peta | Bottom Sheet: Info Tempat Sampah ID tampil | | | | | | | |
+| 7.9 | Peta | Bottom Sheet: Alamat Tempat Sampah tampil | | | | | | | |
 | 7.10 | Peta | Bottom Sheet: Persentase kapasitas penuh tampil | | | | | | | |
-| 7.11 | Peta | Tombol "Kosongkan Tong" tampil dan bisa diklik | | | | | | | |
-| 7.12 | Peta | Dialog konfirmasi muncul sebelum eksekusi kosongkan tong | | | | | | | |
+| 7.11 | Peta | Tombol "Kosongkan Tempat Sampah" tampil dan bisa diklik | | | | | | | |
+| 7.12 | Peta | Dialog konfirmasi muncul sebelum eksekusi Kosongkan Tempat Sampah | | | | | | | |
 | 7.13 | Peta | Konfirmasi → Hit API Reset → Marker berubah dari merah ke hijau | | | | | | | |
-| 7.14 | Peta | Error saat reset tong → error handling, tidak crash | | | | | | | |
+| 7.14 | Peta | Error saat Reset Tempat Sampah → error handling, tidak crash | | | | | | | |
 
 ---
 
@@ -228,18 +228,18 @@
 
 ---
 
-## 9. FITUR PENGOSONGAN TONG ON-DEMAND (WARGA — ref: PRD §3)
+## 9. FITUR Pengosongan Tempat Sampah ON-DEMAND (WARGA — ref: PRD §3)
 
 | No | Kategori (Menu) | Fitur / Poin Pengecekan | Status Pengujian | Keterangan | Catatan QC | Status Perbaikan | Respon Developer | Dokumentasi Developer (Link/Bukti) | Verifikasi QC |
 |----|-----------------|------------------------|-----------------|------------|------------|-----------------|-----------------|-----------------------------------|--------------|
-| 9.1 | Pengosongan Tong | Menu "Ajukan Pengosongan Tong" muncul saat kapasitas tong >90% | | | | | | | |
-| 9.2 | Pengosongan Tong | Warga bisa memotret kondisi tong sebagai bukti fisik | | | | | | | |
-| 9.3 | Pengosongan Tong | Tombol "Ajukan Reset" berfungsi dan mengirim request ke backend | | | | | | | |
-| 9.4 | Pengosongan Tong | Status pengajuan tercatat sebagai `PENDING` | | | | | | | |
-| 9.5 | Pengosongan Tong | Status tong tetap penuh di sistem selama masih `PENDING` | | | | | | | |
-| 9.6 | Pengosongan Tong | Feedback sukses setelah pengajuan terkirim | | | | | | | |
-| 9.7 | Pengosongan Tong | Pengajuan yang sudah `APPROVED` → kapasitas tong reset ke 0L | | | | | | | |
-| 9.8 | Pengosongan Tong | Pengajuan yang `REJECTED` → status tong tetap penuh | | | | | | | |
+| 9.1 | Pengosongan Tempat Sampah | Menu "Ajukan Pengosongan Tempat Sampah" muncul saat kapasitas Tempat Sampah >90% | | | | | | | |
+| 9.2 | Pengosongan Tempat Sampah | Warga bisa memotret kondisi Tempat Sampah sebagai bukti fisik | | | | | | | |
+| 9.3 | Pengosongan Tempat Sampah | Tombol "Ajukan Reset" berfungsi dan mengirim request ke backend | | | | | | | |
+| 9.4 | Pengosongan Tempat Sampah | Status pengajuan tercatat sebagai `PENDING` | | | | | | | |
+| 9.5 | Pengosongan Tempat Sampah | status Tempat Sampah tetap penuh di sistem selama masih `PENDING` | | | | | | | |
+| 9.6 | Pengosongan Tempat Sampah | Feedback sukses setelah pengajuan terkirim | | | | | | | |
+| 9.7 | Pengosongan Tempat Sampah | Pengajuan yang sudah `APPROVED` → kapasitas Tempat Sampah reset ke 0L | | | | | | | |
+| 9.8 | Pengosongan Tempat Sampah | Pengajuan yang `REJECTED` → status Tempat Sampah tetap penuh | | | | | | | |
 
 ---
 
@@ -340,7 +340,7 @@ Daftar bug dari dokumen QA Issues yang WAJIB diverifikasi ulang status perbaikan
 | 6. Riwayat | 13 | | | | |
 | 7. Peta & Monitoring | 14 | | | | |
 | 8. Profil & Pengaturan | 17 | | | | |
-| 9. Pengosongan Tong On-Demand | 8 | | | | |
+| 9. Pengosongan Tempat Sampah On-Demand | 8 | | | | |
 | 10. Skenario Khusus QC | 22 | | | | |
 | 11. Keamanan & Non-Fungsional | 12 | | | | |
 | 12. Known Issues Verification | 6 | | | | |

@@ -11,7 +11,7 @@ Audit menyeluruh telah dilakukan terhadap seluruh fitur dan kode pada **Role War
 | **Geofencing & Validasi Lokasi (Haversine)** | ✅ Safe & Enforced | Lokasi GPS Warga (`userLat`, `userLng`) divalidasi terhadap titik koordinat Tempat Sampah fisik ($\le 10\text{m}$). Request manipulasi lokasi di luar radius ditolak server dengan error `LOCATION_OUT_OF_RANGE`. |
 | **Proteksi QR Code & Manipulasi Transaksi** | ✅ Safe & Enforced | Transaksi `POST /bins/scan` mewajibkan `qrCode` serial asli fisik dan score `confidence` AI. Percobaan manipulasi payload langsung digagalkan oleh server dengan `BIN_TYPE_MISMATCH` / `INVALID_QR`. |
 | **Keamanan JWT & Auto-Logout** | ✅ Safe & Enforced | Token disimpan di `FlutterSecureStorage`. Saat token expired (`401 Unauthorized`), Interceptor `api_client.dart` melakukan auto-refresh token. Jika refresh gagal, token dihapus permanen dan user di-force logout ke halaman login tanpa data leak. |
-| **Sanitasi Input & Size Limit Upload** | ✅ Safe & Enforced | Upload foto bukti pada reset tong dibatasi max 5MB (`_compressedKB`). Seluruh input form dibersihkan dari whitespace berlebih dan divalidasi non-null safety. |
+| **Sanitasi Input & Size Limit Upload** | ✅ Safe & Enforced | Upload foto bukti pada Reset Tempat Sampah dibatasi max 5MB (`_compressedKB`). Seluruh input form dibersihkan dari whitespace berlebih dan divalidasi non-null safety. |
 
 ---
 
@@ -34,7 +34,7 @@ graph TD
     A["User Warga Login"] --> B["Beranda / Dashboard (Live Stats & Lokasi)"]
     B --> C["Scan & Pilah Sampah (Geofencing <= 10m & AI Confidence)"]
     B --> D["Riwayat Pemilahan (Lokasi Presisi & Filter Dropdown Waktu)"]
-    B --> E["Ajukan Pengosongan Tong (Full Pending View & Safety Button)"]
+    B --> E["Ajukan Pengosongan Tempat Sampah (Full Pending View & Safety Button)"]
     B --> F["Profil & Pengaturan (Live Avatar & Realtime Sync)"]
 ```
 

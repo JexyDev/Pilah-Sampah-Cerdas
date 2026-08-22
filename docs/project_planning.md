@@ -72,21 +72,21 @@ Sistem memisahkan akses berdasarkan peran pengguna:
 Membatasi aktivitas pembuangan sampah berdasarkan lokasi dan kategori sampah hasil klasifikasi Computer Vision AI.
 
 * **Alur Validasi Backend:**
-  1. Validasi jenis sampah antara hasil foto AI dengan peruntukan Tempat Sampah (misal: plastik tidak boleh masuk tong organik).
+  1. Validasi jenis sampah antara hasil foto AI dengan peruntukan Tempat Sampah (misal: plastik tidak boleh masuk Tempat Sampah organik).
   2. Validasi jarak (*Haversine formula*) antara koordinat GPS HP Warga dengan koordinat Tempat Sampah (harus < 10 meter).
-  3. Validasi sisa kapasitas tong (maksimal volume 25 Liter). Jika aman, update sisa volume tong dan kirim poin ke warga.
+  3. Validasi sisa kapasitas Tempat Sampah (maksimal volume 25 Liter). Jika aman, update sisa volume Tempat Sampah dan kirim poin ke warga.
 
 * **API Endpoints:**
   * `POST /api/v1/waste/detect-mock` (Mock API pendeteksi foto AI)
   * `POST /api/v1/bins/scan` (Kirim transaksi setoran sampah dan kalkulasi poin)
 
-### 4.3 Modul Pengosongan Tong (Reset Volume Workflow)
+### 4.3 Modul Pengosongan Tempat Sampah (Reset Volume Workflow)
 Mekanisme reset kapasitas Tempat Sampah secara on-demand berbasis bukti foto untuk menghindari peluberan sampah.
 
 * **API Endpoints:**
-  * `POST /api/v1/bins/reset-request` (Warga mengunggah foto bukti tong penuh)
+  * `POST /api/v1/bins/reset-request` (Warga mengunggah foto bukti Tempat Sampah Penuh)
   * `GET /api/v1/bins/reset-request/pending` (Petugas melihat daftar pengajuan pending)
-  * `PUT /api/v1/bins/reset-request/:id/approve` (Petugas menyetujui reset tong menjadi 0 Liter)
+  * `PUT /api/v1/bins/reset-request/:id/approve` (Petugas menyetujui Reset Tempat Sampah menjadi 0 Liter)
   * `PUT /api/v1/bins/reset-request/:id/reject` (Petugas menolak pengajuan reset)
 
 ---

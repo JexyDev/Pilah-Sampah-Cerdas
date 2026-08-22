@@ -41,7 +41,7 @@ Terdiri dari 3-4 Tab tergantung Role:
 
 ### 3.2. Section Saldo/Statistik
 *   **Warga:** Tampil Total Poin (dengan animasi hitung naik).
-*   **Petugas:** Tampil ringkasan tong penuh di area tugasnya.
+*   **Petugas:** Tampil ringkasan Tempat Sampah Penuh di area tugasnya.
 *   **State Offline:** Menampilkan angka terakhir dari cache (`SharedPreferences`).
 
 ### 3.3. Call-To-Action (Scan QR)
@@ -50,7 +50,7 @@ Terdiri dari 3-4 Tab tergantung Role:
 
 ### 3.4. Widget Notifikasi Cepat
 *   **UI:** List 3 notifikasi terbaru (FCM). 
-*   **Petugas:** Alert tong penuh (>90%).
+*   **Petugas:** Alert Tempat Sampah Penuh (>90%).
 
 ---
 
@@ -61,8 +61,8 @@ Terdiri dari 3-4 Tab tergantung Role:
 *   **Permission:** Prompt minta akses Kamera & Lokasi (GPS). Tolak -> Tampil error wajib izinkan.
 *   **UI:** Viewfinder kamera, garis batas scan, tombol nyalakan flash.
 *   **Proses & Validasi (QC Points):**
-    *   *Geofencing:* Hitung jarak Haversine (Lokasi HP vs Koordinat Tong dari DB). Jarak > 10m -> Alert dialog "Anda terlalu jauh dari Tempat Sampah".
-    *   *Kapasitas:* Jika API lapor tong penuh (≥25L) -> Alert dialog "Tong Penuh, cari tong lain".
+    *   *Geofencing:* Hitung jarak Haversine (Lokasi HP vs Koordinat Tempat Sampah dari DB). Jarak > 10m -> Alert dialog "Anda terlalu jauh dari Tempat Sampah".
+    *   *Kapasitas:* Jika API lapor Tempat Sampah Penuh (≥25L) -> Alert dialog "Tempat Sampah Penuh, cari Tempat Sampah lain".
     *   *Format QR:* Validasi QR invalid -> Alert "QR tidak dikenali".
 
 ### 4.2. Pengambilan Foto Sampah (AI Detection)
@@ -87,7 +87,7 @@ Terdiri dari 3-4 Tab tergantung Role:
 
 ### 5.1. Tampilan Daftar Riwayat
 *   **UI:** List view card riwayat pembuangan.
-*   **Isi Card:** Tanggal, Waktu, Lokasi Tong, Kategori (Organik/Non), Poin didapat.
+*   **Isi Card:** Tanggal, Waktu, Lokasi Tempat Sampah, Kategori (Organik/Non), Poin didapat.
 *   **Interaksi:** Pull-to-refresh untuk update data. Scroll ke bawah untuk pagination (Infinite scroll).
 *   **State:**
     *   *Loading:* Shimmer effect.
@@ -100,15 +100,15 @@ Terdiri dari 3-4 Tab tergantung Role:
 
 ### 6.1. Peta Live (Leaflet / Map)
 *   **UI:** Full screen map dengan posisi GPS user (titik biru).
-*   **Marker Tong:**
+*   **Marker Tempat Sampah:**
     *   Icon Hijau: Kapasitas aman.
     *   Icon Merah/Blinking: Kapasitas penuh (>90%).
 *   **Proses:** Auto-refresh setiap 30 detik.
 
-### 6.2. Detail Tong & Eksekusi
+### 6.2. Detail Tempat Sampah & Eksekusi
 *   **Trigger:** Tap pada marker merah.
-*   **UI:** Bottom Sheet muncul menampilkan Info Tong (ID, Alamat, Persentase Penuh).
-*   **Aksi:** Tombol "Kosongkan Tong" -> Muncul dialog konfirmasi -> Hit API Reset -> Marker berubah hijau.
+*   **UI:** Bottom Sheet muncul menampilkan Info Tempat Sampah (ID, Alamat, Persentase Penuh).
+*   **Aksi:** Tombol "Kosongkan Tempat Sampah" -> Muncul dialog konfirmasi -> Hit API Reset -> Marker berubah hijau.
 
 ---
 

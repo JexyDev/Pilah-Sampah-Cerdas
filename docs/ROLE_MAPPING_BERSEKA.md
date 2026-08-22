@@ -1555,7 +1555,7 @@ sequenceDiagram
 ### A. Catatan Teknis Penting
 
 1. **NIK DIHAPUS** — Tidak ada field NIK di seluruh sistem (sesuai kebijakan AGENTS.md)
-2. **Istilah "Tempat Sampah"** — WAJIB digunakan, DILARANG "tong", WAJIB "Tempat Sampah"
+2. **Istilah "Tempat Sampah"** — WAJIB digunakan, DILARANG "Tempat Sampah", WAJIB "Tempat Sampah"
 3. **Satuan Standar** — Kg (K besar, g kecil) di header; angka saja di isi tabel
 4. **Timestamp** — Semua dari server (Asia/Jakarta), bukan device user
 5. **Max 2 tempat sampah per rumah tangga** — 1 Organik + 1 Anorganik

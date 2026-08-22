@@ -105,7 +105,7 @@ Sistem BERSEKA mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akses 
 - [ ] **12.3 Proteksi System Default**: Kategori bawaan sistem tidak dapat dihapus dari UI.
 
 ### Modul 13: Notifikasi System & Notification Center
-- [ ] **13.1 List Alert System**: Menampilkan daftar notifikasi (contoh: Alert Tong Penuh >90%, Eskalasi Penjemputan).
+- [ ] **13.1 List Alert System**: Menampilkan daftar notifikasi (contoh: Alert Tempat Sampah Penuh >90%, Eskalasi Penjemputan).
 - [ ] **13.2 State Read/Unread**: Visualisasi pembeda jelas antara notifikasi belum dibaca (Bold/Highlight) dan sudah dibaca.
 - [ ] **13.3 Mark All as Read**: Tombol "Tandai Semua Dibaca" memperbarui state seluruh notifikasi user.
 - [ ] **13.4 Navigasi Klik Notifikasi**: Mengklik item notifikasi langsung mengarah ke halaman/detail terkait.
@@ -157,7 +157,7 @@ Sistem BERSEKA mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akses 
 - [ ] **21.3 Filter Tampilan Pemanfaatan**: Filter data pemanfaatan berbasis Realtime, Mingguan, Bulanan, dan Wilayah RW.
 
 ### Modul 22: Pengangkutan Sampah & Eskalasi Berjenjang
-- [ ] **22.1 Trigger Alert Notif Tong Penuh**: Notifikasi push ke Petugas & RW + Marker merah pada peta saat tempat sampah >90%.
+- [ ] **22.1 Trigger Alert Notif Tempat Sampah Penuh**: Notifikasi push ke Petugas & RW + Marker merah pada peta saat tempat sampah >90%.
 - [ ] **22.2 Flow Status Pengangkutan**: Transisi status penjemputan (`Menunggu` → `Diterima` → `Dalam Perjalanan` → `Selesai` / `Dibatalkan`).
 - [ ] **22.3 Eskalasi Otomatis Berjenjang**: Notifikasi eskalasi otomatis jika melebihi jam operasional (06:00-08:00 & 16:00-18:00) berjenjang: RW → Lurah → Camat → Admin DLH.
 - [ ] **22.4 Routing Petugas Pengangkut**: Auto-assign petugas pengangkut terdekat berdasarkan zona polygon.
@@ -206,7 +206,7 @@ Sistem BERSEKA mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akses 
 | W-01 | Auth WA OTP | Login menggunakan Nomor HP (+62) dan OTP WhatsApp | Berhasil masuk & menerima token JWT | [ ] |
 | W-02 | Registrasi Bin | Mendaftarkan tempat sampah miliknya (Maks 2: Organik & Anorganik) | Status Bin menjadi `PENDING_APPROVAL` | [ ] |
 | W-03 | Setor Sampah AI | Mengunggah foto sampah → AI klasifikasi → Scan QR tempat sampah | Transaksi setoran tercatat, poin dihitung otomatis | [ ] |
-| W-04 | Notif Tong Penuh | Mengunggah foto tempat sampah penuh | Push notification terkirim ke Petugas & RW | [ ] |
+| W-04 | Notif Tempat Sampah Penuh | Mengunggah foto tempat sampah penuh | Push notification terkirim ke Petugas & RW | [ ] |
 | W-05 | Histori & Poin | Melihat saldo poin dan histori mutasi setoran | Poin akurat sesuai rumus (`Kg x Confidence x 0.9`) | [ ] |
 | W-06 | Ide Daur Ulang | Mengajukan ide daur ulang baru + foto | Status pengajuan `PENDING_APPROVAL_RW` | [ ] |
 | W-07 | Leaderboard | Melihat posisi ranking warga berdasarkan poin | Nama & poin tampil di leaderboard publik | [ ] |
@@ -229,7 +229,7 @@ Sistem BERSEKA mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akses 
 ### 3.4 Role: PETUGAS PENGANGKUT
 | ID Test | Fitur / Modul | Skenario Pengujian | Ekspektasi Hasil | Status |
 |---|---|---|---|---|
-| PG-01 | Alert Notif Penuh | Menerima notifikasi tong penuh di area polygon penugasan | Marker merah tampil pada peta rute penjemputan | [ ] |
+| PG-01 | Alert Notif Penuh | Menerima notifikasi Tempat Sampah Penuh di area polygon penugasan | Marker merah tampil pada peta rute penjemputan | [ ] |
 | PG-02 | Status Penjemputan | Update status pengangkutan (`Menunggu` → `Diterima` → `Dalam Perjalanan` → `Selesai`) | Warga menerima push notif perubahan status | [ ] |
 | PG-03 | Laporan Window Waktu | Mendokumentasikan pengambilan dalam window 06-08 / 16-18 | KPI waktu lapor tercatat tinggi | [ ] |
 

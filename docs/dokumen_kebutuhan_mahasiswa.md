@@ -70,7 +70,7 @@ Pengembangan aplikasi ini memiliki beberapa tujuan utama, yaitu:
 Pada sistem yang baru, mahasiswa KKN memiliki peran sebagai **pendamping
 warga**.
 
-Mahasiswa tidak lagi bertugas untuk melakukan klaim atau aktivasi tong
+Mahasiswa tidak lagi bertugas untuk melakukan klaim atau aktivasi Tempat Sampah
 sampah menggunakan QR Code.
 
 Peran utama mahasiswa adalah:
@@ -1274,7 +1274,7 @@ Berdasarkan requirement terbaru, fitur berikut tidak lagi digunakan:
 
 2.  Claim Tempat Sampah.
 
-3.  Perubahan status tong menjadi ASSIGNED_TO_PIC.
+3.  Perubahan status Tempat Sampah menjadi ASSIGNED_TO_PIC.
 
 4.  Status PENDING_APPROVAL untuk proses claim.
 
@@ -1583,7 +1583,7 @@ backend**.
 
 Dari sisi Flutter, pengembangan paling penting yang perlu diprioritaskan
 adalah **integrasi JWT, background location, registrasi warga, dan
-dashboard monitoring**. Sementara itu, fitur **QR Scanner, Claim Tong
+dashboard monitoring**. Sementara itu, fitur **QR Scanner, Claim Tempat Sampah
 Sampah, ASSIGNED_TO_PIC, dan PENDING_APPROVAL harus dihapus dari alur
 aplikasi mahasiswa KKN**.
 
@@ -1638,7 +1638,7 @@ C. Relasi Warga Dampingan (Tabel Bin / Tempat Sampah)
 Untuk memetakan warga mana yang dibantu registrasi oleh mahasiswa mana.
 
 -   registeredByStudentId (String, nullable) - Jika form
-    registrasi/aktivasi tong di-submit melalui akun mahasiswa, ID
+    registrasi/aktivasi Tempat Sampah di-submit melalui akun mahasiswa, ID
     mahasiswa akan tercatat di field ini.
 
 2\. Daftar Endpoint API (Mobile Integration)
@@ -1681,7 +1681,7 @@ Authorization: Bearer \<TOKEN_MAHASISWA\>
 
 -   \[\
     {\
-    \"binId\": \"uuid-tong-sampah\",\
+    \"binId\": \"uuid-Tempat Sampah-sampah\",\
     \"wargaName\": \"Bapak Budi\",\
     \"address\": \"Jl. Cisitu Indah No. 12\",\
     \"recentLogs\": \[\
@@ -1721,9 +1721,9 @@ Authorization: Bearer \<TOKEN_MAHASISWA\>
 
 ⚠️ **FITUR YANG DIHAPUS DARI MOBILE:**
 
--   Hapus *flow* Mahasiswa Scan QR Code Tong Kosong.
+-   Hapus *flow* Mahasiswa Scan QR Code Tempat Sampah Kosong.
 
--   Hapus UI Status Tong \"ASSIGNED_TO_PIC\" (Pegang Tong).
+-   Hapus UI status Tempat Sampah \"ASSIGNED_TO_PIC\" (Pegang Tempat Sampah).
 
 -   Hapus Button/Approval \"PENDING_APPROVAL\".
 

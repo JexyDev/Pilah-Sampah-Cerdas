@@ -1,7 +1,7 @@
 ﻿# 📋 MASTER TASK LIST — BERSEKA (BERSEKA)
 > **1 dokumen, 4 bagian tim.** Setiap tim mengisi bagian masing-masing.
 > Status: 🔴 Belum | 🟡 Sedang | 🟢 Selesai & Terverifikasi | ⚪ Sengaja Disembunyikan
-> **Aturan 🟢:** Hanya boleh diisi jika sudah DITES SUNGGUHAN (bukan sekadar baca kode), data dari backend REAL, tidak ada kata "tong" tersisa.
+> **Aturan 🟢:** Hanya boleh diisi jika sudah DITES SUNGGUHAN (bukan sekadar baca kode), data dari backend REAL, tidak ada kata "Tempat Sampah" tersisa.
 
 ---
 ---
@@ -144,7 +144,7 @@
 | 118 | Sistem | Hapus sisa role Pengangkut (dispatch_tasks / routing / UI) | 🔴 | | Cleanup total | | |
 | 119 | Sistem | QR auto-active: audit dampak ke RW Portal approval bin | 🔴 | | — | | Poin berubah timing |
 | 120 | Sistem | Semua dashboard connect ke data REAL (bukan dummy) | 🔴 | | Semua GET /dashboard/* | | ⚠️ Prioritas tinggi |
-| 121 | Sistem | Bersihkan semua kata "tong" dari UI / API response / notifikasi | 🔴 | | — | | |
+| 121 | Sistem | Bersihkan semua kata "Tempat Sampah" dari UI / API response / notifikasi | 🔴 | | — | | |
 | 122 | Sistem | Buku Panduan per role tersedia di landing page | 🔴 | | — | | |
 | 123 | Sistem | Zero NIK — tidak ada sisa NIK di DB / API / UI | 🔴 | | — | | |
 
@@ -199,7 +199,7 @@
 | P-04 | Petugas | Submit hilir tanpa QR (hanya foto + berat) | Happy Path | Tersimpan dengan flag HILIR | | 🔴 | High | | | |
 | **LINTAS SISTEM** | | | | | | | | | | |
 | L-01 | Sistem | Tidak ada kolom NIK di API response mana pun | Security | Tidak ada field nik/NIK | | 🔴 | Critical | | | |
-| L-02 | Sistem | Tidak ada kata "tong" di UI/notifikasi | QC Text | Zero hasil pencarian "tong" | | 🔴 | Medium | | | |
+| L-02 | Sistem | Tidak ada kata "Tempat Sampah" di UI/notifikasi | QC Text | Zero hasil pencarian "Tempat Sampah" | | 🔴 | Medium | | | |
 | L-03 | Sistem | Dashboard menampilkan data REAL (bukan dummy/0) | Data | Grafik bergerak sesuai data DB | | 🔴 | Critical | | | |
 | L-04 | Sistem | Format HP: sistem menerima 08xx (bukan hanya +62) | Regression | Login/register dengan 08xx berhasil | | 🔴 | Critical | | | |
 | L-05 | Sistem | Tidak ada sisa fitur/UI Pengangkut di BERSEKA | Cleanup | Zero elemen Pengangkut di UI & route | | 🔴 | Medium | | | |
@@ -248,14 +248,14 @@
 | U-27 | RW | Tombol approve/reject: warna berbeda jelas (hijau/merah) | Web | 🔴 | | | |
 | U-28 | RW | Modal konfirmasi muncul sebelum aksi destructive (reject/broken) | Web | 🔴 | | | |
 | **NOTIFIKASI** | | | | | | | |
-| U-29 | Semua | Push notification teks: tidak ada kata "tong" | Mobile + Web | 🔴 | | | |
+| U-29 | Semua | Push notification teks: tidak ada kata "Tempat Sampah" | Mobile + Web | 🔴 | | | |
 | U-30 | Semua | Notifikasi in-app: bisa di-dismiss, badge count akurat | Mobile + Web | 🔴 | | | |
 | **AKSESIBILITAS** | | | | | | | |
 | U-31 | Semua | Ukuran font minimum 14sp (mobile) / 14px (web) — ramah lansia | Mobile + Web | 🔴 | | | |
 | U-32 | Semua | Tombol minimum touch area 44×44dp (mobile) | Mobile | 🔴 | | | |
 | U-33 | Semua | Kontras teks vs background ≥ 4.5:1 (WCAG AA) | Mobile + Web | 🔴 | | | |
 | **KONTEN & COPY** | | | | | | | |
-| U-34 | Semua | Zero kata "tong" di seluruh UI (gunakan "tempat sampah") | Web + Mobile | 🔴 | | | |
+| U-34 | Semua | Zero kata "Tempat Sampah" di seluruh UI (gunakan "tempat sampah") | Web + Mobile | 🔴 | | | |
 | U-35 | Semua | Teks error/informasi dalam Bahasa Indonesia yang mudah dipahami | Web + Mobile | 🔴 | | | |
 | U-36 | Semua | Nama label field konsisten antar halaman | Web + Mobile | 🔴 | | | |
 
@@ -290,7 +290,7 @@
 | R-04 | | Format HP migrasi | +62 → 08 di seluruh DB (43 data mahasiswa) | | Script SQL + authService | P1 | 🔴 | |
 | R-05 | | Scope notifikasi | Global → per-UserID & per-Role | | notificationService | P1 | 🟢 | |
 | R-06 | | Laporan Pemanfaatan KKN | Fitur baru: scope ketat per kelompok | | kknService + dplRoutes | P1 | 🔴 | |
-| R-07 | | Istilah "tong" | Rename ke "tempat sampah" di seluruh sistem | | UI + API response + notifikasi | P2 | 🔴 | |
+| R-07 | | Istilah "Tempat Sampah" | Rename ke "tempat sampah" di seluruh sistem | | UI + API response + notifikasi | P2 | 🔴 | |
 
 ---
 

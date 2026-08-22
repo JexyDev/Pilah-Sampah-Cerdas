@@ -135,7 +135,7 @@
 - [ ] **Ekspektasi Visual & System**:
   - Kapasitas <70% berwarna **Hijau**.
   - Kapasitas 70%-89% berwarna **Kuning**.
-  - Kapasitas >=90% berwarna **Merah (Tong Penuh)**.
+  - Kapasitas >=90% berwarna **Merah (Tempat Sampah Penuh)**.
 
 ### 5.2 Bulk Generate & Export Master QR Code
 - [ ] **Langkah Tes**:
@@ -185,7 +185,7 @@
   - Legenda menampilkan 4 warna standar:
     - **Hijau**: Organik / Kompos
     - **Biru**: Daur Ulang / Anorganik
-    - **Merah**: Residu / TPA / Tong Penuh
+    - **Merah**: Residu / TPA / Tempat Sampah Penuh
     - **Emas**: Flash Drop Challenge
 
 ---
@@ -213,10 +213,10 @@
 
 ## KATEGORI 9: PENGANGKUTAN SAMPAH & ESKALASI BERJENJANG
 
-### 9.1 Alert Tong Penuh & Flow Status Penjemputan
+### 9.1 Alert Tempat Sampah Penuh & Flow Status Penjemputan
 - [ ] **Langkah Tes**:
   1. Access `/manajemen-pengangkutan`.
-  2. Amati daftar penjemputan pemicu Notifikasi Tong Penuh (>90%).
+  2. Amati daftar penjemputan pemicu Notifikasi Tempat Sampah Penuh (>90%).
   3. Ubah status penjemputan: `Menunggu` → `Diterima` → `Dalam Perjalanan` → `Selesai`.
 - [ ] **Ekspektasi Visual & System**:
   - Status ter-update realtime.
@@ -338,7 +338,7 @@
   1. Klik ikon lonceng notifikasi di navbar.
   2. Periksa item belum dibaca (Bold) vs sudah dibaca.
   3. Klik tombol **"Tandai Semua Dibaca"**.
-  4. Klik salah satu notifikasi (misal: Notif Diskrepansi atau Tong Penuh).
+  4. Klik salah satu notifikasi (misal: Notif Diskrepansi atau Tempat Sampah Penuh).
 - [ ] **Ekspektasi Visual & System**:
   - Counter unread notification berkurang/nol.
   - Mengklik notifikasi langsung me-redirect ke halaman detail terkait.
