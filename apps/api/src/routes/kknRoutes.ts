@@ -512,6 +512,13 @@ router.post(
   kknController.createLogbookPemanfaatan
 );
 
+router.get(
+  "/pemanfaatan-sampah/unharvested",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.getUnharvestedLogbooks
+);
+
 router.post(
   "/program-kerja",
   authMiddleware,

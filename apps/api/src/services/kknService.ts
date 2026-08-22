@@ -2631,6 +2631,7 @@ export class KknService {
       },
     });
 
+<<<<<<< Updated upstream
     // Sinkronisasi otomatis ke Logbook KKN (Tabular & Approval 2-Tingkat)
     if (student.kelompokId) {
       try {
@@ -2658,6 +2659,13 @@ export class KknService {
       } catch (err) {
         console.error("[kknService.createLogbookPemanfaatan] sync logbook_kkn error:", err);
       }
+=======
+    if (programKerjaId) {
+      await prisma.programKerjaKkn.update({
+        where: { id: programKerjaId },
+        data: { statusPelaksanaan: "SEDANG_BERJALAN" }
+      }).catch(() => {});
+>>>>>>> Stashed changes
     }
 
     await prisma.pointHistory.create({
@@ -2672,6 +2680,31 @@ export class KknService {
     return report;
   }
 
+  async getUnharvestedLogbooks(userId: string) {
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId },
+      include: { assignedRw: true },
+    });
+    if (!student) throw new Error("Mahasiswa tidak ditemukan");
+    
+    // Ambil semua Pemanfaatan di RW mahasiswa yang belum dipanen (hasil == 0)
+    // dan bukan berteknologi "PANEN"
+    const logbooks = await prisma.pemanfaatan.findMany({
+      where: {
+        rwId: student.assignedRwId || 1,
+        hasil: 0,
+        NOT: { teknologi: "PANEN" }
+      },
+      orderBy: { tanggalPencatatan: 'desc' }
+    });
+    
+    return logbooks.map(l => ({
+      id: l.id,
+      judul: `${l.program} (${l.tanggalPencatatan.toISOString().split('T')[0]})`,
+      teknologi: l.teknologi
+    }));
+  }
+
   async createPanenHasil(userId: string, payload: any) {
     const student = await prisma.studentKkn.findUnique({
       where: { userId },
@@ -2680,37 +2713,27 @@ export class KknService {
     if (!student) throw new Error("Mahasiswa tidak ditemukan");
     const targetRwId = student.assignedRwId || 1;
 
-    const { programKerjaId, beratOutputKg, nilaiEkonomiRp, fotoDokumentasiUrl } = payload;
+    // Mobile akan mengirim pemanfaatanId menggunakan key programKerjaId untuk kompatibilitas form lama
+    // Kita baca dari pemanfaatanId atau programKerjaId
+    const targetId = payload.pemanfaatanId || payload.programKerjaId;
+    const { beratOutputKg, nilaiEkonomiRp, fotoDokumentasiUrl } = payload;
     
-    let programName = "PANEN_HASIL";
-    
-    if (programKerjaId) {
-      const proker = await prisma.programKerjaKkn.findUnique({ where: { id: programKerjaId } });
-      if (proker) {
-        if (proker.statusUsulan === "BELUM_DISETUJUI" || proker.statusUsulan === "DITOLAK") {
-          throw new Error("Program kerja belum disetujui atau ditolak DPL, tidak bisa mencatat hasil panen.");
-        }
-        programName = proker.deskripsi || programName;
-      }
+    if (!targetId) {
+      throw new Error("ID Logbook Pemanfaatan wajib diisi untuk mencatat panen.");
     }
     
-    const uniqueNo = `PANEN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const existing = await prisma.pemanfaatan.findUnique({ where: { id: targetId } });
+    if (!existing || existing.rwId !== targetRwId) {
+      throw new Error("Laporan pemanfaatan tidak ditemukan atau tidak valid.");
+    }
 
-    const report = await prisma.pemanfaatan.create({
+    const report = await prisma.pemanfaatan.update({
+      where: { id: targetId },
       data: {
-        rwId: targetRwId,
-        nomorCaraPemanfaatan: uniqueNo,
-        program: programName,
-        teknologi: "PANEN", // Penanda bahwa ini adalah pilar 3
-        bahanBaku: "PANEN_HASIL",
-        volumeBahanBaku: 0, // Tidak ada input, hanya output
-        unitBahanBaku: "Kg",
         hasil: Number(beratOutputKg) || 0,
-        unitHasil: "Kg",
-        // Simpan nilai ekonomi Rp ke kolom luasLahanM2 yang tidak terpakai sementara (sesuai arahan jangan ubah skema db)
         luasLahanM2: Number(nilaiEkonomiRp) || 0,
-        fotoDokumentasiUrl: fotoDokumentasiUrl || "/uploads/default-pemanfaatan.jpg",
-        tanggalPencatatan: new Date(),
+        // Update foto jika ada yang baru, jika tidak biarkan
+        fotoDokumentasiUrl: fotoDokumentasiUrl || existing.fotoDokumentasiUrl,
       },
     });
 

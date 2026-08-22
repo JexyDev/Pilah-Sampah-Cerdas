@@ -522,6 +522,16 @@ export class KknController {
     }
   }
 
+  async getUnharvestedLogbooks(req: Request, res: Response) {
+    try {
+      const data = await kknService.getUnharvestedLogbooks(req.user!.userId);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[KknController] getUnharvestedLogbooks error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
   async createPanenHasil(req: Request, res: Response) {
     try {
       const fotoDokumentasiUrl = req.file ? `/uploads/${req.file.filename}` : null;
