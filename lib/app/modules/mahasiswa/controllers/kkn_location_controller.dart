@@ -240,7 +240,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         // Menggunakan durasi dari backend sesuai permintaan terbaru
         if (activeZone['actualInZoneSeconds'] != null) {
           final serverSecs = int.tryParse(activeZone['actualInZoneSeconds'].toString()) ?? 0;
-          if (serverSecs > _accumulatedSeconds) {
+          if (serverSecs > _accumulatedSeconds || (_accumulatedSeconds - serverSecs).abs() > 60) {
             _accumulatedSeconds = serverSecs;
             _zoneEntryTime = DateTime.now();
             await _savePersistentTimer();
@@ -248,7 +248,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         } else if (activeZone['actualInZoneMinutes'] != null) {
           final actualMins = num.tryParse(activeZone['actualInZoneMinutes'].toString()) ?? 0;
           final serverSecs = (actualMins * 60).toInt();
-          if (serverSecs > _accumulatedSeconds) {
+          if (serverSecs > _accumulatedSeconds || (_accumulatedSeconds - serverSecs).abs() > 60) {
             _accumulatedSeconds = serverSecs;
             _zoneEntryTime = DateTime.now();
             await _savePersistentTimer();
@@ -799,11 +799,13 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         final lat = (data['lat'] as num?)?.toDouble();
         final lng = (data['lng'] as num?)?.toDouble();
         
-        // [BUGFIX] Update accumulated seconds dari background HANYA jika nilainya lebih besar atau masuk akal
-        // Jangan biarkan background me-reset durasi UI ke 0 jika server sudah memberikan durasi yang valid
+        // [BUGFIX] Update accumulated seconds dari background HANYA jika selisihnya masuk akal (<= 60 detik).
+        // Jangan biarkan background ngaco (misal: gagal mati dan tetap menghitung saat jeda) memaksa UI menggunakan nilai yang salah!
         if (totalSeconds > _accumulatedSeconds || _accumulatedSeconds == 0) {
-          _accumulatedSeconds = totalSeconds;
-          _zoneEntryTime = DateTime.now();
+          if ((totalSeconds - _accumulatedSeconds).abs() <= 60 || _accumulatedSeconds == 0) {
+            _accumulatedSeconds = totalSeconds;
+            _zoneEntryTime = DateTime.now();
+          }
         }
         
         state = state.copyWith(
@@ -994,7 +996,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       // Menggunakan durasi dari backend (sinkronisasi)
       if (mergedData['actualInZoneSeconds'] != null) {
         final serverSecs = int.tryParse(mergedData['actualInZoneSeconds'].toString()) ?? 0;
-        if (serverSecs > _accumulatedSeconds) {
+        if (serverSecs > _accumulatedSeconds || (_accumulatedSeconds - serverSecs).abs() > 60) {
           _accumulatedSeconds = serverSecs;
           _zoneEntryTime = DateTime.now();
           await _savePersistentTimer();
@@ -1002,7 +1004,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       } else if (mergedData['actualInZoneMinutes'] != null) {
         final actualMins = num.tryParse(mergedData['actualInZoneMinutes'].toString()) ?? 0;
         final serverSecs = (actualMins * 60).toInt();
-        if (serverSecs > _accumulatedSeconds) {
+        if (serverSecs > _accumulatedSeconds || (_accumulatedSeconds - serverSecs).abs() > 60) {
           _accumulatedSeconds = serverSecs;
           _zoneEntryTime = DateTime.now();
           await _savePersistentTimer();
