@@ -518,8 +518,19 @@ export const DplDashboardPage: React.FC = () => {
         }
       });
     }
-    if (set.size === 0) {
-      ["01", "02", "03", "04", "05"].forEach((r) => set.add(r));
+    if (set.size === 0 && groups.length > 0 && groups[0]?.name) {
+      const gName = groups[0].name.toLowerCase();
+      const numMatch = gName.match(/\d+/);
+      const n = numMatch ? parseInt(numMatch[0], 10) : 1;
+      const kel = (groups[0].kelurahan || "").toLowerCase();
+      if (kel.includes("sadang serang")) {
+        const start = (n - 1) * 2 + 1;
+        set.add(String(start).padStart(2, "0"));
+        if (start + 1 <= 21) set.add(String(start + 1).padStart(2, "0"));
+      } else {
+        set.add(String((n - 1) * 2 + 1).padStart(2, "0"));
+        set.add(String((n - 1) * 2 + 2).padStart(2, "0"));
+      }
     }
     return Array.from(set).sort((a, b) => {
       const numA = parseInt(a, 10);
@@ -530,14 +541,14 @@ export const DplDashboardPage: React.FC = () => {
   }, [groups, students]);
 
   const kelurahanBadgeLabel = useMemo(() => {
-    if (dplKelurahanList.length === 0) return "Kel. Sadang Serang";
+    if (dplKelurahanList.length === 0) return "Kelurahan Binaan";
     if (dplKelurahanList.length === 1) return `Kel. ${dplKelurahanList[0]}`;
     if (dplKelurahanList.length <= 2) return `Kel. ${dplKelurahanList.join(", ")}`;
     return `${dplKelurahanList.length} Kelurahan (${dplKelurahanList.slice(0, 2).map((k) => `Kel. ${k}`).join(", ")}...)`;
   }, [dplKelurahanList]);
 
   const rwBadgeLabel = useMemo(() => {
-    if (dplRwList.length === 0) return "RW 01, 02, 03";
+    if (dplRwList.length === 0) return "RW Binaan";
     if (dplRwList.length <= 5) return `RW ${dplRwList.join(", ")}`;
     return `${dplRwList.length} RW (${dplRwList.slice(0, 4).map((r) => `RW ${r}`).join(", ")}...)`;
   }, [dplRwList]);

@@ -305,11 +305,83 @@ export const dplService = {
         const kabupatenName = matchedKelurahan?.kecamatan?.kabupaten?.name || "Kota Bandung";
         const provinsiName = matchedKelurahan?.kecamatan?.kabupaten?.provinsi?.name || "Jawa Barat";
 
+        // Helper pemetaan master penempatan RW resmi KKN Coblong
+        const getMasterRwForGroup = (groupName: string, kelName: string): string[] => {
+          const lowerGroup = (groupName || "").toLowerCase();
+          const lowerKel = (kelName || "").toLowerCase();
+          const matchNum = lowerGroup.match(/\d+/);
+          const num = matchNum ? parseInt(matchNum[0], 10) : 1;
+
+          if (lowerKel.includes("sadang serang")) {
+            const map: Record<number, string[]> = {
+              1: ["01", "02"],
+              2: ["03", "04"],
+              3: ["05", "06"],
+              4: ["07", "08"],
+              5: ["09", "10"],
+              6: ["11", "12"],
+              7: ["13", "14"],
+              8: ["15", "16"],
+              9: ["17", "18"],
+              10: ["19", "20"],
+              11: ["21"],
+            };
+            return map[num] || ["01", "02"];
+          }
+          if (lowerKel.includes("sekeloa")) {
+            const map: Record<number, string[]> = {
+              1: ["01", "02", "03"],
+              2: ["04", "05", "06"],
+              3: ["07", "08", "09"],
+              4: ["10", "11", "12"],
+              5: ["13", "14"],
+              6: ["15", "16"],
+            };
+            return map[num] || ["01", "02", "03"];
+          }
+          if (lowerKel.includes("lebak gede") || lowerKel.includes("lebakgede")) {
+            const map: Record<number, string[]> = {
+              1: ["01", "02", "03"],
+              2: ["04", "05", "06"],
+              3: ["07", "08", "09"],
+              4: ["10", "11", "12", "13"],
+            };
+            return map[num] || ["01", "02", "03"];
+          }
+          if (lowerKel.includes("lebak siliwangi")) {
+            const map: Record<number, string[]> = {
+              1: ["01", "02"],
+              2: ["03", "04"],
+              3: ["05", "06"],
+            };
+            return map[num] || ["01", "02"];
+          }
+          if (lowerKel.includes("cipaganti")) {
+            const map: Record<number, string[]> = {
+              1: ["01", "02"],
+              2: ["03", "04"],
+              3: ["05", "06"],
+              4: ["07"],
+            };
+            return map[num] || ["01", "02"];
+          }
+          if (lowerKel.includes("dago")) {
+            const map: Record<number, string[]> = {
+              1: ["01", "02", "03"],
+              2: ["04", "05", "06"],
+              3: ["07", "08", "09"],
+              4: ["10", "11", "12", "13"],
+            };
+            return map[num] || ["01", "02", "03"];
+          }
+          return ["01", "02"];
+        };
+
         // Resolusi Cakupan RW yang sangat presisi
         let resolvedCakupanRw: string[] = [];
         if (grp.cakupanRw) {
           if (Array.isArray(grp.cakupanRw)) {
-            resolvedCakupanRw = grp.cakupanRw.map((r: any) => String(r).trim().replace(/^RW\s*/i, ""));
+            resolvedCakupanRw = grp.cakupanRw.map((r: any) => String(r).trim().replace(/^RW\s*/i, "")).filter(Boolean);
           } else if (typeof grp.cakupanRw === "string") {
             resolvedCakupanRw = grp.cakupanRw.split(/[,&/]/).map((r) => r.trim().replace(/^RW\s*/i, "")).filter(Boolean);
           }
@@ -326,11 +398,8 @@ export const dplService = {
             resolvedCakupanRw = Array.from(rwSet);
           }
         }
-        if (resolvedCakupanRw.length === 0 && matchedKelurahan?.rws && matchedKelurahan.rws.length > 0) {
-          resolvedCakupanRw = matchedKelurahan.rws.slice(0, 5).map((r) => String(r.name).replace(/^RW\s*/i, ""));
-        }
         if (resolvedCakupanRw.length === 0) {
-          resolvedCakupanRw = ["01", "02", "03", "04", "05"];
+          resolvedCakupanRw = getMasterRwForGroup(grp.name, resolvedKelurahanName);
         }
 
         // Format RW yang konsisten (contoh: "01", "02")
@@ -343,6 +412,21 @@ export const dplService = {
             if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
             return a.localeCompare(b);
           });
+
+        // Simpan hasil resolusi ke database jika sebelumnya kosong
+        if (!grp.cakupanRw || (Array.isArray(grp.cakupanRw) && grp.cakupanRw.length === 0) || !grp.kelurahan) {
+          try {
+            await prisma.kelompokKkn.update({
+              where: { id: grp.id },
+              data: {
+                cakupanRw: resolvedCakupanRw,
+                kelurahan: resolvedKelurahanName,
+              },
+            });
+          } catch (err) {
+            // Ignore background update error
+          }
+        }
 
         // Query kondisi Tempat Sampah terkait kelompok KKN (strictly berdasarkan pendaftar mahasiswa bimbingan DPL)
         const binWhere: any =
