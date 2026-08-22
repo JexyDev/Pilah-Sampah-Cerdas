@@ -660,7 +660,6 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
                   .toString()
                   .toLowerCase();
           final bool isAttended = activeZone['isAttended'] == true || attendanceStatus == 'hadir';
-          final bool isBerlangsung = attendanceStatus == 'berlangsung';
 
           final double rawTargetMins = double.tryParse(activeZone['targetDurationMinutes']?.toString() ?? '') ??
               double.tryParse(activeZone['durationMinutes']?.toString() ?? '') ??

@@ -198,7 +198,7 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     }
   } catch (_) {}
 
-    final deleteAllTimestamp = prefs.getInt('delete_all_notifs_${userId}_${role}') ?? 0;
+    final deleteAllTimestamp = prefs.getInt('delete_all_notifs_${userId}_$role') ?? 0;
   
   final List<NotificationEntity> finalResult = [];
   for (int i = 0; i < result.length; i++) {
