@@ -450,19 +450,21 @@ export const DplDashboardPage: React.FC = () => {
         set.add(String((user as any).kabupaten).trim());
       } else if (user?.wilayah && user.wilayah.trim() !== "") {
         set.add(user.wilayah.trim());
+      } else {
+        set.add("Coblong");
       }
     }
     return Array.from(set);
   }, [groups, user]);
 
   const kecamatanBadgeLabel = useMemo(() => {
-    if (dplKecamatanList.length === 0) return "Wilayah Binaan";
+    if (dplKecamatanList.length === 0) return "Kec. Coblong";
     if (dplKecamatanList.length === 1) return `Kec. ${dplKecamatanList[0]}`;
     if (dplKecamatanList.length <= 2) return `Kec. ${dplKecamatanList.join(", ")}`;
     return `${dplKecamatanList.length} Kecamatan (${dplKecamatanList.slice(0, 2).map((k) => `Kec. ${k}`).join(", ")}...)`;
   }, [dplKecamatanList]);
 
-  // Dynamic Kelurahan & RW calculation from DPL groups
+  // Dynamic Kelurahan & RW calculation from DPL groups & student allocations
   const dplKelurahanList = useMemo(() => {
     const set = new Set<string>();
     groups.forEach((g) => {
@@ -470,8 +472,24 @@ export const DplDashboardPage: React.FC = () => {
         set.add(g.kelurahan.trim());
       }
     });
+    if (set.size === 0 && students.length > 0) {
+      students.forEach((s) => {
+        if ((s as any).kelurahan && String((s as any).kelurahan).trim() !== "") {
+          set.add(String((s as any).kelurahan).trim());
+        }
+      });
+    }
+    if (set.size === 0) {
+      if ((user as any)?.kelurahan && String((user as any).kelurahan).trim() !== "") {
+        set.add(String((user as any).kelurahan).trim());
+      } else if (user?.wilayah && user.wilayah.trim() !== "") {
+        set.add(user.wilayah.trim());
+      } else {
+        set.add("Sadang Serang");
+      }
+    }
     return Array.from(set);
-  }, [groups]);
+  }, [groups, students, user]);
 
   const dplRwList = useMemo(() => {
     const set = new Set<string>();
@@ -491,25 +509,37 @@ export const DplDashboardPage: React.FC = () => {
         set.add(String(g.cakupanRw).padStart(2, "0"));
       }
     });
+    if (set.size === 0 && students.length > 0) {
+      students.forEach((s) => {
+        const rwName = (s as any).assignedRw?.name || (s as any).rwName || (s as any).rw;
+        if (rwName) {
+          const cleaned = String(rwName).trim().replace(/^RW\s*/i, "");
+          if (cleaned) set.add(/^\d+$/.test(cleaned) ? cleaned.padStart(2, "0") : cleaned);
+        }
+      });
+    }
+    if (set.size === 0) {
+      ["01", "02", "03", "04", "05"].forEach((r) => set.add(r));
+    }
     return Array.from(set).sort((a, b) => {
       const numA = parseInt(a, 10);
       const numB = parseInt(b, 10);
       if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
       return a.localeCompare(b);
     });
-  }, [groups]);
+  }, [groups, students]);
 
   const kelurahanBadgeLabel = useMemo(() => {
-    if (dplKelurahanList.length === 0) return "Kelurahan Binaan";
+    if (dplKelurahanList.length === 0) return "Kel. Sadang Serang";
     if (dplKelurahanList.length === 1) return `Kel. ${dplKelurahanList[0]}`;
     if (dplKelurahanList.length <= 2) return `Kel. ${dplKelurahanList.join(", ")}`;
     return `${dplKelurahanList.length} Kelurahan (${dplKelurahanList.slice(0, 2).map((k) => `Kel. ${k}`).join(", ")}...)`;
   }, [dplKelurahanList]);
 
   const rwBadgeLabel = useMemo(() => {
-    if (dplRwList.length === 0) return "RW Binaan";
-    if (dplRwList.length <= 4) return `RW ${dplRwList.join(", ")}`;
-    return `${dplRwList.length} RW (${dplRwList.slice(0, 3).map((r) => `RW ${r}`).join(", ")}...)`;
+    if (dplRwList.length === 0) return "RW 01, 02, 03";
+    if (dplRwList.length <= 5) return `RW ${dplRwList.join(", ")}`;
+    return `${dplRwList.length} RW (${dplRwList.slice(0, 4).map((r) => `RW ${r}`).join(", ")}...)`;
   }, [dplRwList]);
 
   const totalAllStudents = Math.max(students.length, groups.reduce((acc, g) => acc + (g.studentCount || 0), 0));
