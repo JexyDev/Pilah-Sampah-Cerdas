@@ -57,11 +57,8 @@ export const DplDashboardPage: React.FC = () => {
   const [approvalHistory, setApprovalHistory] = useState<ApprovalHistoryLog[]>([]);
 
   // Filter & Pagination States
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedGroupFilter, setSelectedGroupFilter] = useState<string>("");
   const [selectedApprovalStatus, setSelectedApprovalStatus] = useState<string>("ALL");
 
-  const [mahasiswaPage, setMahasiswaPage] = useState(1);
   const [approvalPage, setApprovalPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
 
@@ -333,12 +330,9 @@ export const DplDashboardPage: React.FC = () => {
     }
 
     let filtered = [...students];
-    if (selectedGroupFilter) {
-      filtered = filtered.filter((s) => s.kelompokName === selectedGroupFilter);
-    }
 
     if (filtered.length === 0) {
-      toast.error("Data mahasiswa tidak ditemukan untuk filter yang dipilih.");
+      toast.error("Data mahasiswa tidak ditemukan untuk diekspor.");
       return;
     }
 
@@ -394,39 +388,12 @@ export const DplDashboardPage: React.FC = () => {
     toast.success("Rekapitulasi nilai & kinerja mahasiswa berhasil diekspor!");
   };
 
-  // Filtered & Paginated Students
-  const filteredStudents = useMemo(() => {
-    return students.filter((s) => {
-      const matchesGroup = selectedGroupFilter ? s.kelompokName === selectedGroupFilter : true;
-      const query = searchQuery.toLowerCase();
-      const matchesSearch =
-        s.name.toLowerCase().includes(query) ||
-        s.jurusan.toLowerCase().includes(query) ||
-        s.nim.toLowerCase().includes(query) ||
-        s.kelompokName.toLowerCase().includes(query);
-      return matchesGroup && matchesSearch;
-    });
-  }, [students, selectedGroupFilter, searchQuery]);
-
-  const paginatedStudents = useMemo(() => {
-    const start = (mahasiswaPage - 1) * ITEMS_PER_PAGE;
-    return filteredStudents.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredStudents, mahasiswaPage]);
-
-  const totalStudentPages = Math.max(1, Math.ceil(filteredStudents.length / ITEMS_PER_PAGE));
-
   // Filtered & Paginated Approvals History
   const filteredApprovalHistory = useMemo(() => {
     return approvalHistory.filter((log) => {
-      const matchesStatus = selectedApprovalStatus === "ALL" ? true : log.status === selectedApprovalStatus;
-      const query = searchQuery.toLowerCase();
-      const matchesSearch =
-        log.studentName.toLowerCase().includes(query) ||
-        log.reason.toLowerCase().includes(query) ||
-        log.type.toLowerCase().includes(query);
-      return matchesStatus && matchesSearch;
+      return selectedApprovalStatus === "ALL" ? true : log.status === selectedApprovalStatus;
     });
-  }, [approvalHistory, selectedApprovalStatus, searchQuery]);
+  }, [approvalHistory, selectedApprovalStatus]);
 
   const paginatedApprovalHistory = useMemo(() => {
     const start = (approvalPage - 1) * ITEMS_PER_PAGE;
@@ -737,7 +704,7 @@ export const DplDashboardPage: React.FC = () => {
 
               <div className="p-6 space-y-5">
                 <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border border-emerald-200/80 dark:border-emerald-700/40 text-xs text-emerald-900 dark:text-emerald-300 font-semibold">
-                  Total Mahasiswa Dampingan: <strong className="text-emerald-950 dark:text-emerald-200">{students.length} Orang</strong> {selectedGroupFilter ? `(${selectedGroupFilter})` : "(Semua Kelompok)"}
+                  Total Mahasiswa Dampingan: <strong className="text-emerald-950 dark:text-emerald-200">{students.length} Orang</strong>
                 </div>
 
                 <div>
@@ -1874,164 +1841,6 @@ export const DplDashboardPage: React.FC = () => {
                 </div>
               );
             })}
-          </div>
-        )}
-      </div>
-
-      {/* Tabel Rekapitulasi Nilai Mahasiswa Bimbingan */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-          <div>
-            <div className="flex items-center gap-2">
-              <Award size={18} className="text-emerald-600 dark:text-emerald-400" />
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">Nilai &amp; Evaluasi Mahasiswa</h3>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Pemantauan nilai asesmen DPL, persentase kehadiran, dan huruf mutu mahasiswa bimbingan.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            {groups.length > 1 && (
-              <select
-                value={selectedGroupFilter}
-                onChange={(e) => {
-                  setSelectedGroupFilter(e.target.value);
-                  setMahasiswaPage(1);
-                }}
-                className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500 cursor-pointer"
-              >
-                <option value="">Semua Kelompok</option>
-                {groups.map((g) => (
-                  <option key={g.id} value={g.name}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
-            )}
-
-            <div className="relative">
-              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setMahasiswaPage(1);
-                }}
-                placeholder="Cari mahasiswa / NIM..."
-                className="pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 placeholder-slate-400 outline-none focus:border-emerald-500"
-              />
-            </div>
-
-            <Link
-              to="/penilaian-kkn/mahasiswa"
-              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition inline-flex items-center gap-1 shadow-xs"
-            >
-              <span>Buka Form Penilaian Lengkap</span>
-              <ChevronRight size={14} />
-            </Link>
-          </div>
-        </div>
-
-        {filteredStudents.length === 0 ? (
-          <div className="p-8 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
-            Tidak ada data mahasiswa bimbingan yang sesuai dengan filter.
-          </div>
-        ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50/90 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 font-extrabold uppercase text-[10.5px] tracking-wider border-b border-slate-200 dark:border-slate-700">
-                  <th className="py-3 px-3 text-center w-10">No</th>
-                  <th className="py-3 px-3">NIM</th>
-                  <th className="py-3 px-3">Nama Mahasiswa</th>
-                  <th className="py-3 px-3">Program Studi</th>
-                  <th className="py-3 px-3">Kelompok</th>
-                  <th className="py-3 px-3 text-center">Presensi</th>
-                  <th className="py-3 px-3 text-center">Nilai DPL</th>
-                  <th className="py-3 px-3 text-center">Huruf Mutu</th>
-                  <th className="py-3 px-3 text-center">Portofolio</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
-                {paginatedStudents.map((st, idx) => {
-                  const grade = getGradeBadge(st.assessmentScore);
-                  return (
-                    <tr key={st.id} className="hover:bg-slate-50/70 dark:bg-slate-800/70 transition">
-                      <td className="py-2.5 px-3 text-center font-bold text-slate-400">
-                        {(mahasiswaPage - 1) * ITEMS_PER_PAGE + idx + 1}
-                      </td>
-                      <td className="py-2.5 px-3 font-mono font-bold text-slate-800 dark:text-slate-200">{st.nim || "-"}</td>
-                      <td className="py-2.5 px-3">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900 dark:text-slate-100">{st.name}</span>
-                          {st.isKetua && (
-                            <span className="bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 text-[9px] px-1.5 py-0.2 rounded font-extrabold border border-amber-200 dark:border-amber-700">
-                              Ketua
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">{st.jurusan || "-"}</td>
-                      <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">{st.kelompokName || "-"}</td>
-                      <td className="py-2.5 px-3 text-center font-bold text-emerald-700 dark:text-emerald-400">
-                        {st.attendanceRate ? `${Number(st.attendanceRate).toFixed(2)}%` : "0.00%"}
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        {st.assessmentScore !== null && st.assessmentScore !== undefined && st.assessmentScore > 0 ? (
-                          <span className="font-black text-slate-900 dark:text-slate-100">
-                            {Number(st.assessmentScore).toFixed(2)}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 dark:text-slate-500 font-medium text-[11px]">Belum Dinilai</span>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border ${grade.bg}`}>
-                          {grade.letter}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <button
-                          onClick={() => handleOpenCitizensDrilldown(st)}
-                          className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1 cursor-pointer"
-                          title="Lihat Portofolio Pendampingan Warga"
-                        >
-                          <QrCode size={12} />
-                          <span>Portofolio</span>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Pagination Controls */}
-        {totalStudentPages > 1 && (
-          <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/80 px-4 py-3 border-t border-slate-200 dark:border-slate-700 text-xs rounded-b-xl">
-            <span className="text-slate-500 dark:text-slate-400 font-medium">
-              Mahasiswa {(mahasiswaPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(mahasiswaPage * ITEMS_PER_PAGE, filteredStudents.length)} dari {filteredStudents.length}
-            </span>
-            <div className="flex gap-2">
-              <button
-                disabled={mahasiswaPage === 1}
-                onClick={() => setMahasiswaPage((p) => Math.max(1, p - 1))}
-                className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-              >
-                Sebelumnya
-              </button>
-              <button
-                disabled={mahasiswaPage === totalStudentPages}
-                onClick={() => setMahasiswaPage((p) => Math.min(totalStudentPages, p + 1))}
-                className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-              >
-                Selanjutnya
-              </button>
-            </div>
           </div>
         )}
       </div>

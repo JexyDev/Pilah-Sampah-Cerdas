@@ -85,7 +85,14 @@ const checkRouteActive = (
     // Tab parameter handling
     if (targetParams.has("tab")) {
       const targetTab = (targetParams.get("tab") || "").toLowerCase();
-      const currentTab = (currentParams.get("tab") || "mahasiswa").toLowerCase();
+      let currentTab = (currentParams.get("tab") || "").toLowerCase();
+      if (!currentTab) {
+        if (["/log-aktivitas-dpl", "/dpl/log-aktivitas"].includes(pathname)) {
+          currentTab = "dpl";
+        } else {
+          currentTab = "mahasiswa";
+        }
+      }
       return targetTab === currentTab;
     }
 
@@ -461,47 +468,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         },
         {
           type: "group",
-          label: "Log Aktivitas",
-          icon: ClipboardList,
-          allowed: [
-            "DEVELOPER",
-            "SUPER_USER",
-            "ADMIN_DLH",
-            "DPL",
-            "DOSEN_PEMBIMBING",
-            "PANITIA_TASKFORCE",
-            "PEMIMPIN",
-            "MAHASISWA_KKN",
-            "LURAH",
-            "CAMAT",
-            "RW",
-          ] as UserRole[],
-          children: [
-            {
-              to: "/logbook-kkn?tab=mahasiswa",
-              label: "Log Aktivitas Mahasiswa",
-              allowed: ALL_ROLES,
-            },
-            {
-              to: "/logbook-kkn?tab=dpl",
-              label: "Log Aktivitas DPL",
-              allowed: [
-                "DEVELOPER",
-                "SUPER_USER",
-                "ADMIN_DLH",
-                "DPL",
-                "DOSEN_PEMBIMBING",
-                "PANITIA_TASKFORCE",
-                "PEMIMPIN",
-                "LURAH",
-                "CAMAT",
-                "RW",
-              ] as UserRole[],
-            },
-          ],
-        },
-        {
-          type: "group",
           label: "Penilaian KKN",
           icon: Award,
           allowed: [
@@ -641,6 +607,34 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"] as UserRole[],
             },
           ],
+        },
+      ],
+    },
+    {
+      header: "LOG AKTIVITAS",
+      items: [
+        {
+          to: "/logbook-kkn?tab=mahasiswa",
+          icon: ClipboardList,
+          label: "Log Aktivitas Mahasiswa",
+          allowed: ALL_ROLES,
+        },
+        {
+          to: "/logbook-kkn?tab=dpl",
+          icon: BookOpen,
+          label: "Log Aktivitas DPL",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "DPL",
+            "DOSEN_PEMBIMBING",
+            "PANITIA_TASKFORCE",
+            "PEMIMPIN",
+            "LURAH",
+            "CAMAT",
+            "RW",
+          ] as UserRole[],
         },
       ],
     },
