@@ -276,7 +276,6 @@ export class KknAttendanceService {
 
         // Cek apakah jadwal kegiatan ini masih "AKAN_DATANG" (belum waktunya)
         const scheduleDateWibStrPing = new Date(sch.date.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
-        let isFutureDatePing = false;
         
         let jamMulaiPing = "08:00";
         let jamSelesaiPing = "16:00";
