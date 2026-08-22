@@ -474,7 +474,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                   ? () {
                       ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Sedang mengajukan reset Tempat Sampah. Silakan tunggu hingga di-reset oleh petugas.'),
+                          content: Text('Sedang mengajukan pengosongan tempat sampah. Silakan tunggu hingga dikosongkan oleh petugas.'),
                           backgroundColor: AppColors.warningYellow,
                           behavior: SnackBarBehavior.floating,
                           duration: Duration(seconds: 3),

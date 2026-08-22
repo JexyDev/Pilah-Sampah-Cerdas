@@ -26,18 +26,18 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
 
   final List<NotificationEntity> result = [];
 
+    final prefs = await SharedPreferences.getInstance();
+  final readList = prefs.getStringList('read_notifs_${userId}_${role}') ?? [];
+  final readSet = readList.toSet();
+  final markAllTimestamp = prefs.getInt('mark_all_notifs_${userId}_${role}') ?? 0;
+
   try {
     final pointRepo = ref.read(wasteLogRepositoryProvider);
     final pointHistory = await pointRepo.getPointHistoryByUser(userId);
     
-    final prefs = await SharedPreferences.getInstance();
-    final readList = prefs.getStringList('read_notifs_${userId}_$role') ?? [];
-    final readSet = readList.toSet();
-    final markAllTimestamp = prefs.getInt('mark_all_notifs_${userId}_$role') ?? 0;
-    
-    for (final ph in pointHistory) {
-      if (ph.points < 0) {
-        final notifId = 'point_${ph.id}';
+          for (final ph in pointHistory) {
+        if (ph.points != 0) {
+          final notifId = 'point_${ph.id}';
         final isRead = readSet.contains(notifId) || 
             ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
             LocalNotificationCacheService().isRead(userId, role, notifId, ph.createdAt);
@@ -124,14 +124,38 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
     }
   } catch (_) {}
 
+    // FORCE override isRead based on persistent local cache
+  // AND hapus notifikasi yang lebih lama dari deleteAllTimestamp
+  final deleteAllTimestamp = prefs.getInt('delete_all_notifs_${userId}_${role}') ?? 0;
+  
+  final List<NotificationEntity> finalResult = [];
+  for (int i = 0; i < result.length; i++) {
+    final dt = DateTime.tryParse(result[i].time) ?? DateTime(2000);
+    
+    // Skip if deleted
+    if (dt.millisecondsSinceEpoch <= deleteAllTimestamp) {
+      continue;
+    }
+    
+    var item = result[i];
+    final isReadLocally = readSet.contains(item.id) || 
+        dt.millisecondsSinceEpoch <= markAllTimestamp || 
+        LocalNotificationCacheService().isRead(userId, role, item.id, dt);
+        
+    if (isReadLocally && !item.isRead) {
+      item = item.copyWith(isRead: true);
+    }
+    finalResult.add(item);
+  }
+
   // Urutkan: terbaru di atas
-  result.sort((a, b) {
+  finalResult.sort((a, b) {
     final ta = DateTime.tryParse(a.time) ?? DateTime(2000);
     final tb = DateTime.tryParse(b.time) ?? DateTime(2000);
     return tb.compareTo(ta);
   });
 
-  return result;
+  return finalResult;
 });
 
 /// Provider jumlah notifikasi belum dibaca untuk Warga
@@ -142,4 +166,7 @@ final wargaUnreadNotificationCountProvider = Provider<int>((ref) {
     error: (_, __) => 0,
   );
 });
+
+
+
 

@@ -19,21 +19,11 @@ bool _isMahasiswaNotification(NotificationEntity notif) {
       type.contains('JADWAL') ||
       type.contains('JEMPUT') ||
       type.contains('PENGANGKUTAN') ||
-      type.contains('KRITIS') ||
-      type.contains('KAPASITAS') ||
-      type.contains('TONG') ||
-      type.contains('BIN_FULL') ||
       type.contains('SETORAN') ||
-      type.contains('RESET_BIN') ||
       title.contains('JADWAL') ||
       title.contains('JEMPUT') ||
-      title.contains('KRITIS') ||
-      title.contains('KAPASITAS') ||
-      title.contains('TONG') ||
       title.contains('SETORAN') ||
-      desc.contains('JEMPUT') ||
-      desc.contains('KRITIS') ||
-      desc.contains('KAPASITAS TONG');
+      desc.contains('JEMPUT');
 
   if (isForbidden) return false;
 
@@ -57,17 +47,31 @@ bool _isMahasiswaNotification(NotificationEntity notif) {
       type.contains('APPROVE') ||
       type.contains('TOLAK') ||
       type.contains('REJECT') ||
+      type.contains('TEMPAT_SAMPAH_PENUH') ||
+      type.contains('PENGAJUAN_RESET_BIN') ||
+      type.contains('KRITIS') ||
+      type.contains('KAPASITAS') ||
+      type.contains('RESET_BIN') ||
       title.contains('PEMANFAATAN') ||
       title.contains('AI') ||
       title.contains('AKTIVASI') ||
       title.contains('PRESENSI') ||
       title.contains('IZIN') ||
+      title.contains('KRITIS') ||
+      title.contains('KAPASITAS') ||
+      title.contains('PENGOSONGAN') ||
       title.contains('DPL') ||
       title.contains('POIN') ||
       title.contains('KKN') ||
       title.contains('PELANGGARAN') ||
       title.contains('GEOFENCE') ||
       title.contains('PENALTI') ||
+      desc.contains('KKN') ||
+      desc.contains('PEMANFAATAN') ||
+      desc.contains('DPL') ||
+      desc.contains('POIN') ||
+      desc.contains('PENGOSONGAN') ||
+      desc.contains('KAPASITAS') ||
       desc.contains('PELANGGARAN') ||
       desc.contains('GEOFENCE');
 
@@ -104,9 +108,9 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     final pointRepo = ref.read(wasteLogRepositoryProvider);
     final pointHistory = await pointRepo.getPointHistoryByUser(userId);
     
-    for (final ph in pointHistory) {
-      if (ph.points < 0) {
-        final notifId = 'point_${ph.id}';
+          for (final ph in pointHistory) {
+        if (ph.points != 0) {
+          final notifId = 'point_${ph.id}';
         final isRead = readSet.contains(notifId) || 
             ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
             LocalNotificationCacheService().isRead(userId, role, notifId, ph.createdAt);
@@ -194,25 +198,36 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     }
   } catch (_) {}
 
-  // FORCE override isRead based on persistent local cache
+    final deleteAllTimestamp = prefs.getInt('delete_all_notifs_${userId}_${role}') ?? 0;
+  
+  final List<NotificationEntity> finalResult = [];
   for (int i = 0; i < result.length; i++) {
     final dt = DateTime.tryParse(result[i].time) ?? DateTime(2000);
-    final isReadLocally = readSet.contains(result[i].id) || 
-        dt.millisecondsSinceEpoch <= markAllTimestamp || 
-        LocalNotificationCacheService().isRead(userId, role, result[i].id, dt);
-    if (isReadLocally && !result[i].isRead) {
-      result[i] = result[i].copyWith(isRead: true);
+    
+    // Skip if deleted
+    if (dt.millisecondsSinceEpoch <= deleteAllTimestamp) {
+      continue;
     }
+    
+    var item = result[i];
+    final isReadLocally = readSet.contains(item.id) || 
+        dt.millisecondsSinceEpoch <= markAllTimestamp || 
+        LocalNotificationCacheService().isRead(userId, role, item.id, dt);
+    
+    if (isReadLocally && !item.isRead) {
+      item = item.copyWith(isRead: true);
+    }
+    finalResult.add(item);
   }
 
-  // Urutkan: terbaru di atas — parse waktu dari string lokal format "YYYY-MM-DD HH:mm"
-  result.sort((a, b) {
+  // Urutkan: terbaru di atas
+  finalResult.sort((a, b) {
     final ta = DateTime.tryParse(a.time) ?? DateTime(2000);
     final tb = DateTime.tryParse(b.time) ?? DateTime(2000);
-    return tb.compareTo(ta); // descending (terbaru di atas)
+    return tb.compareTo(ta); 
   });
 
-  return result;
+  return finalResult;
 });
 
 /// Provider jumlah notifikasi belum dibaca untuk Mahasiswa KKN
@@ -223,4 +238,7 @@ final mahasiswaUnreadNotificationCountProvider = Provider<int>((ref) {
     error: (_, __) => 0,
   );
 });
+
+
+
 

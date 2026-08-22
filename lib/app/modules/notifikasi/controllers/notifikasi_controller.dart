@@ -3,6 +3,9 @@ import '../../../data/models/notification_entity.dart';
 import '../../../data/repositories/notification_repository.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../mahasiswa/controllers/mahasiswa_notifikasi_controller.dart' as mhs_ctrl;
+import '../../petugas_pemilahan/controllers/petugas_pemilahan_notifikasi_controller.dart' as ptgs_ctrl;
+import 'warga_notifikasi_controller.dart' as warga_ctrl;
 
 import '../../../data/services/local_notification_cache_service.dart';
 import '../../mahasiswa/controllers/mahasiswa_notifikasi_controller.dart';
@@ -239,6 +242,9 @@ class MarkReadNotifier extends StateNotifier<MarkReadState> {
     } finally {
       // Invalidate seluruh provider notifikasi agar UI Warga, Mahasiswa, & Petugas langsung ter-update
       _ref.invalidate(notificationsProvider);
+      _ref.invalidate(warga_ctrl.wargaNotificationsProvider);
+      _ref.invalidate(mhs_ctrl.mahasiswaNotificationsProvider);
+      _ref.invalidate(ptgs_ctrl.petugasPemilahanNotificationsProvider);
       _ref.invalidate(mahasiswaNotificationsProvider);
       _ref.invalidate(petugasPemilahanNotificationsProvider);
       state = const MarkReadState();
@@ -264,6 +270,9 @@ class MarkReadNotifier extends StateNotifier<MarkReadState> {
     } finally {
       // Invalidate seluruh provider notifikasi agar UI Warga, Mahasiswa, & Petugas langsung ter-update
       _ref.invalidate(notificationsProvider);
+      _ref.invalidate(warga_ctrl.wargaNotificationsProvider);
+      _ref.invalidate(mhs_ctrl.mahasiswaNotificationsProvider);
+      _ref.invalidate(ptgs_ctrl.petugasPemilahanNotificationsProvider);
       _ref.invalidate(mahasiswaNotificationsProvider);
       _ref.invalidate(petugasPemilahanNotificationsProvider);
       state = const MarkReadState();
@@ -287,3 +296,36 @@ Future<void> registerFcmToken(NotificationRepository repo, String token) async {
   }
 }
 
+
+class DeleteAllNotifier extends StateNotifier<MarkReadState> {
+  DeleteAllNotifier(this._repo, this._ref) : super(const MarkReadState());
+
+  final NotificationRepository _repo;
+  final Ref _ref;
+
+  Future<void> deleteAll() async {
+    state = const MarkReadState(isLoading: true);
+    final user = _ref.read(authProvider).user;
+    if (user != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('delete_all_notifs_${user.id}_${user.role.name}', DateTime.now().millisecondsSinceEpoch);
+      LocalNotificationCacheService().clear();
+    }
+    try {
+      await _repo.deleteAllNotifications();
+    } catch (_) {
+      // Abaikan error jika backend bermasalah
+    } finally {
+      // Invalidate seluruh provider notifikasi agar UI Warga, Mahasiswa, & Petugas langsung ter-update
+      _ref.invalidate(notificationsProvider);
+      _ref.invalidate(warga_ctrl.wargaNotificationsProvider);
+      _ref.invalidate(mhs_ctrl.mahasiswaNotificationsProvider);
+      _ref.invalidate(ptgs_ctrl.petugasPemilahanNotificationsProvider);
+      state = const MarkReadState();
+    }
+  }
+}
+
+final deleteAllProvider = StateNotifierProvider<DeleteAllNotifier, MarkReadState>((ref) {
+  return DeleteAllNotifier(ref.watch(notificationRepositoryProvider), ref);
+});

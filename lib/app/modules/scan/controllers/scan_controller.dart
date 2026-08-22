@@ -398,6 +398,11 @@ class PetugasPengosonganNotifier extends StateNotifier<PetugasPengosonganState> 
     try {
       final status = await _repository.getPetugasStatus();
       state = state.copyWith(isLoading: false, statusResponse: status);
+
+      // If user has no default petugas, automatically fetch the list of available petugas in their area
+      if (status.petugas == null) {
+        await fetchPetugasWilayah();
+      }
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }

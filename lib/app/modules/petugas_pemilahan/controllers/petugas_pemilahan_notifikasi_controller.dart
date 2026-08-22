@@ -87,18 +87,18 @@ final petugasPemilahanNotificationsProvider = FutureProvider<List<NotificationEn
   }
 
   // Tambahkan riwayat poin (PointHistory) agar tampil di Notification Page sesuai instruksi user
+    final prefs = await SharedPreferences.getInstance();
+  final readList = prefs.getStringList('read_notifs_${userId}_${role}') ?? [];
+  final readSet = readList.toSet();
+  final markAllTimestamp = prefs.getInt('mark_all_notifs_${userId}_${role}') ?? 0;
+
   try {
     final pointRepo = ref.read(wasteLogRepositoryProvider);
     final pointHistory = await pointRepo.getPointHistoryByUser(userId);
     
-    final prefs = await SharedPreferences.getInstance();
-    final readList = prefs.getStringList('read_notifs_${userId}_$role') ?? [];
-    final readSet = readList.toSet();
-    final markAllTimestamp = prefs.getInt('mark_all_notifs_${userId}_$role') ?? 0;
-    
-    for (final ph in pointHistory) {
-      if (ph.points < 0) {
-        final notifId = 'point_${ph.id}';
+          for (final ph in pointHistory) {
+        if (ph.points != 0) {
+          final notifId = 'point_${ph.id}';
         final isRead = readSet.contains(notifId) || 
             ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
             LocalNotificationCacheService().isRead(userId, role, notifId, ph.createdAt);
@@ -143,29 +143,36 @@ final petugasPemilahanNotificationsProvider = FutureProvider<List<NotificationEn
     }
   } catch (_) {}
 
-  // FORCE override isRead based on persistent local cache
-  final prefs = await SharedPreferences.getInstance();
-  final readSet = (prefs.getStringList('read_notifs_${userId}_$role') ?? []).toSet();
-  final markAllTs = prefs.getInt('mark_all_notifs_${userId}_$role') ?? 0;
-
+    final deleteAllTimestamp = prefs.getInt('delete_all_notifs_${userId}_${role}') ?? 0;
+  
+  final List<NotificationEntity> finalResult = [];
   for (int i = 0; i < result.length; i++) {
     final dt = DateTime.tryParse(result[i].time) ?? DateTime(2000);
-    final isReadLocally = readSet.contains(result[i].id) || 
-        dt.millisecondsSinceEpoch <= markAllTs || 
-        LocalNotificationCacheService().isRead(userId, role, result[i].id, dt);
-    if (isReadLocally && !result[i].isRead) {
-      result[i] = result[i].copyWith(isRead: true);
+    
+    // Skip if deleted
+    if (dt.millisecondsSinceEpoch <= deleteAllTimestamp) {
+      continue;
     }
+    
+    var item = result[i];
+    final isReadLocally = readSet.contains(item.id) || 
+        dt.millisecondsSinceEpoch <= markAllTimestamp || 
+        LocalNotificationCacheService().isRead(userId, role, item.id, dt);
+    
+    if (isReadLocally && !item.isRead) {
+      item = item.copyWith(isRead: true);
+    }
+    finalResult.add(item);
   }
 
-  // Urutkan: terbaru di atas — parse waktu dari string lokal format "YYYY-MM-DD HH:mm"
-  result.sort((a, b) {
+  // Urutkan: terbaru di atas
+  finalResult.sort((a, b) {
     final ta = DateTime.tryParse(a.time) ?? DateTime(2000);
     final tb = DateTime.tryParse(b.time) ?? DateTime(2000);
-    return tb.compareTo(ta); // descending (terbaru di atas)
+    return tb.compareTo(ta); 
   });
 
-  return result;
+  return finalResult;
 });
 
 /// Provider jumlah notifikasi belum dibaca untuk Petugas Pemilahan Hilir
@@ -176,4 +183,7 @@ final petugasUnreadNotificationCountProvider = Provider<int>((ref) {
     error: (_, __) => 0,
   );
 });
+
+
+
 

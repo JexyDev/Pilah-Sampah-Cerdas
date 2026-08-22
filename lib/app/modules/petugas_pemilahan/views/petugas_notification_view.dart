@@ -19,7 +19,7 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
   final List<String> _filters = [
     'Semua',
     'Input Timbangan',
-    'Notif Pengangkutan & Punishment',
+    'Notifikasi Pengangkutan & Penalti',
   ];
 
   @override
@@ -40,6 +40,29 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
         shadowColor: Colors.black12,
         actions: [
           IconButton(
+            icon: const Icon(Icons.delete_sweep_rounded, color: AppColors.primaryGreen),
+            tooltip: 'Hapus Semua Notifikasi',
+            onPressed: markState.isLoading
+                ? null
+                : () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (c) => AlertDialog(
+                        title: const Text('Hapus Semua?'),
+                        content: const Text('Apakah Anda yakin ingin menghapus semua notifikasi?'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Batal')),
+                          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Hapus')),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      await ref.read(deleteAllProvider.notifier).deleteAll();
+                      ref.invalidate(petugasPemilahanNotificationsProvider);
+                    }
+                  },
+          ),
+          IconButton(
             icon: const Icon(Icons.done_all_rounded, color: AppColors.primaryGreen),
             tooltip: 'Tandai Semua Dibaca',
             onPressed: markState.isLoading
@@ -50,7 +73,7 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
                   },
           ),
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+            icon: const Icon(Icons.refresh_rounded, color: AppColors.primaryGreen),
             onPressed: () => ref.invalidate(petugasPemilahanNotificationsProvider),
           ),
         ],
@@ -104,7 +127,7 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
                     if (_selectedFilter == 'Input Timbangan') {
                       return typeUpper.contains('TIMBANGAN') || typeUpper.contains('PEMILAHAN') || titleLower.contains('timbangan') || titleLower.contains('pemilahan') || titleLower.contains('log') || typeUpper.contains('POIN');
                     }
-                    if (_selectedFilter == 'Notif Pengangkutan & Punishment') {
+                    if (_selectedFilter == 'Notifikasi Pengangkutan & Penalti') {
                       return typeUpper.contains('VIOLATION') ||
                           typeUpper.contains('PENGANGKUTAN') ||
                           titleLower.contains('pelanggaran') ||

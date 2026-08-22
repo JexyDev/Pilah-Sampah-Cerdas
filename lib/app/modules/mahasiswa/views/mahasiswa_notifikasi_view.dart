@@ -23,7 +23,7 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
     'Poin KKN',
     'Pengajuan Izin',
     'Ping Lokasi Posko',
-    'Aktivasi Tempat Sampah Warga',
+    'Tempat Sampah Warga',
     'Laporan Pemanfaatan & Ide Program'
   ];
 
@@ -42,6 +42,27 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
         
         actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_sweep_rounded, color: AppColors.textPrimary),
+            tooltip: 'Hapus Semua Notifikasi',
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (c) => AlertDialog(
+                  title: const Text('Hapus Semua?'),
+                  content: const Text('Apakah Anda yakin ingin menghapus semua notifikasi?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Batal')),
+                    TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Hapus')),
+                  ],
+                ),
+              );
+              if (confirm == true) {
+                await ref.read(deleteAllProvider.notifier).deleteAll();
+                ref.invalidate(mahasiswaNotificationsProvider);
+              }
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.done_all_rounded, color: AppColors.textPrimary),
             tooltip: 'Tandai Semua Dibaca',
@@ -113,8 +134,8 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
                     if (_selectedFilter == 'Ping Lokasi Posko') {
                       return typeUpper.contains('PRESENSI') || typeUpper.contains('GPS');
                     }
-                    if (_selectedFilter == 'Aktivasi Tempat Sampah Warga') {
-                      return typeUpper.contains('AKTIVASI') || typeUpper.contains('BIN') || titleLower.contains('bin') || titleLower.contains('aktivasi') || titleLower.contains('tempat sampah');
+                    if (_selectedFilter == 'Tempat Sampah Warga') {
+                      return typeUpper.contains('AKTIVASI') || typeUpper.contains('BIN') || typeUpper.contains('KAPASITAS') || typeUpper.contains('PENUH') || titleLower.contains('bin') || titleLower.contains('aktivasi') || titleLower.contains('tempat sampah') || titleLower.contains('kapasitas');
                     }
                     if (_selectedFilter == 'Laporan Pemanfaatan & Ide Program') {
                       return typeUpper.contains('LAPORAN') || typeUpper.contains('PEMANFAATAN') || titleLower.contains('laporan') || titleLower.contains('pemanfaatan') || titleLower.contains('ide program');

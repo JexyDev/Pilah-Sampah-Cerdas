@@ -57,6 +57,29 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.delete_sweep_rounded, color: Colors.white),
+            tooltip: 'Hapus Semua Notifikasi',
+            onPressed: markState.isLoading
+                ? null
+                : () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (c) => AlertDialog(
+                        title: const Text('Hapus Semua?'),
+                        content: const Text('Apakah Anda yakin ingin menghapus semua notifikasi?'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Batal')),
+                          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Hapus')),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      await ref.read(deleteAllProvider.notifier).deleteAll();
+                      ref.invalidate(wargaNotificationsProvider);
+                    }
+                  },
+          ),
+          IconButton(
             icon: const Icon(Icons.done_all_rounded, color: Colors.white),
             tooltip: 'Tandai Semua Dibaca',
             onPressed: markState.isLoading
@@ -152,7 +175,7 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                       return typeUpper.contains('RESET') || typeUpper.contains('PENGOSONGAN') || typeUpper.contains('PENGAJUAN') || titleLower.contains('pengosongan') || titleLower.contains('reset') || titleLower.contains('pengajuan');
                     }
                     if (_selectedFilter == 'Pengumuman') {
-                      return typeUpper.contains('INFO') || typeUpper.contains('ANUM') || titleLower.contains('info') || titleLower.contains('pengumuman');
+                      return typeUpper.contains('INFO') || typeUpper.contains('ANUM') || typeUpper.contains('REMINDER') || titleLower.contains('info') || titleLower.contains('pengumuman') || titleLower.contains('pengingat') || titleLower.contains('jadwal') || titleLower.contains('buang sampah');
                     }
                     return true;
                   }).toList();

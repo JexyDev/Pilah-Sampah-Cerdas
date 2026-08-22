@@ -142,6 +142,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
 
   WasteLogEntity _mapWasteLog(Map<String, dynamic> json, String userId) {
     final String rawKategori = (
+      json['jenis'] ?? 
       json['wasteType'] ?? 
       json['kategori'] ?? 
       json['type'] ?? 
