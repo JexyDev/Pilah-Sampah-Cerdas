@@ -518,6 +518,507 @@ export const DplDashboardPage: React.FC = () => {
       ? Math.round(groups.reduce((acc, g) => acc + (g.avgAttendanceRate || 0), 0) / groups.length)
       : 0;
 
+  const renderActionModals = () => {
+    return (
+      <>
+        {/* MODAL 1: DRILLDOWN DAMPAK WARGA DIBANTU */}
+        {selectedStudentForCitizens && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800">
+              <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div>
+                  <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-700/40">
+                    Dampak Pendampingan Warga
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-1">
+                    Warga Dibantu: {selectedStudentForCitizens.name}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setSelectedStudentForCitizens(null)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {loadingCitizens ? (
+                <div className="py-12 text-center text-xs text-slate-500 dark:text-slate-400 animate-pulse">
+                  Memuat data warga &amp; pola buang sampah...
+                </div>
+              ) : assistedCitizensData && assistedCitizensData.citizens.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="bg-slate-50 dark:bg-slate-800/80 p-3 rounded-lg flex items-center justify-between text-xs text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
+                    <span>Total Warga Didampingi: <strong>{assistedCitizensData.totalCitizensAssisted} Warga</strong></span>
+                  </div>
+                  {assistedCitizensData.citizens.map((c) => (
+                    <div key={c.binId} className="p-4 border border-slate-200/60 dark:border-slate-800 rounded-xl bg-slate-50/40 dark:bg-slate-800/50 space-y-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-bold text-slate-900 dark:text-slate-100 text-xs">{c.warga?.nama || "Warga Binaan"}</p>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">{c.warga?.alamat || "Alamat tercatat"}</p>
+                        </div>
+                        <span
+                          className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                            c.polaBuangSampah === "RUTIN"
+                              ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
+                              : c.polaBuangSampah === "KURANG_RUTIN"
+                              ? "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
+                              : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                          }`}
+                        >
+                          Pola: {c.polaBuangSampah}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 pt-1 text-[11px] text-slate-600 dark:text-slate-300">
+                        <div><span className="text-slate-400 block text-[10px]">Kode QR</span> <strong className="text-slate-800 dark:text-slate-200">{c.qrCode}</strong></div>
+                        <div><span className="text-slate-400 block text-[10px]">Frekuensi</span> <strong className="text-slate-800 dark:text-slate-200">{c.totalSetoranCount}x Setor</strong></div>
+                        <div><span className="text-slate-400 block text-[10px]">Total Berat</span> <strong className="text-emerald-700 dark:text-emerald-400">{c.totalKg} Kg</strong></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 italic bg-slate-50 dark:bg-slate-800 rounded-xl">
+                  Mahasiswa ini belum mengaktivasi tempat sampah warga.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 2: PENOLAKAN IZIN DENGAN CATATAN */}
+        {rejectingRequestId && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-800">
+              <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="text-base font-bold text-red-600 dark:text-rose-400 flex items-center gap-1.5">
+                  <XCircle size={18} /> Alasan Penolakan Izin
+                </h3>
+                <button onClick={() => setRejectingRequestId(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold cursor-pointer">✕</button>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300">Tuliskan Alasan Penolakan untuk Mahasiswa:</label>
+                <textarea
+                  rows={3}
+                  value={rejectionReasonInput}
+                  onChange={(e) => setRejectionReasonInput(e.target.value)}
+                  placeholder="Contoh: Bukti surat sakit tidak melampirkan keterangan dokter resmi..."
+                  className="w-full p-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-red-500"
+                />
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => setRejectingRequestId(null)}
+                    className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={() => handleDecideLeave(rejectingRequestId, "REJECTED", rejectionReasonInput)}
+                    className="flex-1 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition cursor-pointer"
+                  >
+                    Konfirmasi Penolakan
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 3: PREVIEW BUKTI DOKUMEN / SURAT SAKIT */}
+        {previewEvidence && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+              <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-800 text-white">
+                <div className="flex items-center gap-2.5">
+                  <FileCheck size={18} className="text-emerald-400" />
+                  <h3 className="font-bold text-white text-sm truncate">{previewEvidence.title}</h3>
+                </div>
+                <button
+                  onClick={() => setPreviewEvidence(null)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="p-5 flex flex-col items-center justify-center space-y-4">
+                <div className="max-h-[60vh] w-full overflow-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 p-2 flex items-center justify-center">
+                  <img
+                    src={previewEvidence.url}
+                    alt={previewEvidence.title}
+                    className="max-h-[55vh] w-auto max-w-full object-contain rounded-xl shadow-xs"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = "none";
+                      (e.currentTarget.parentElement as HTMLElement).innerHTML = `<div class="p-8 text-center text-xs text-slate-500 font-semibold">Gagal memuat pratinjau gambar bukti surat.<br><a href="${previewEvidence.url}" target="_blank" rel="noreferrer" class="text-emerald-600 underline font-bold mt-2 inline-block">Buka File di Tab Baru</a></div>`;
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between items-center w-full gap-3">
+                  <a
+                    href={previewEvidence.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition flex items-center gap-1.5"
+                  >
+                    <Eye size={14} /> Buka Tab Baru
+                  </a>
+                  <button
+                    onClick={() => setPreviewEvidence(null)}
+                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-xs"
+                  >
+                    Tutup
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 4: EKSPOR REKAPITULASI DPL CSV */}
+        {isExportModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+              <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-800 text-white">
+                <div className="flex items-center gap-2.5">
+                  <Download size={18} className="text-emerald-400" />
+                  <h3 className="font-black text-white text-base">Ekspor Rekapitulasi KKN DPL</h3>
+                </div>
+                <button
+                  onClick={() => setIsExportModalOpen(false)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-5">
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border border-emerald-200/80 dark:border-emerald-700/40 text-xs text-emerald-900 dark:text-emerald-300 font-semibold">
+                  Total Mahasiswa Dampingan: <strong className="text-emerald-950 dark:text-emerald-200">{students.length} Orang</strong> {selectedGroupFilter ? `(${selectedGroupFilter})` : "(Semua Kelompok)"}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
+                    <Calendar size={14} className="text-slate-500 dark:text-slate-400" /> Filter Periode Laporan:
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: "SEMUA", label: "Semua Data" },
+                      { id: "BULAN_INI", label: "Bulan Berjalan" },
+                      { id: "30_HARI", label: "30 Hari Terakhir" },
+                      { id: "CUSTOM", label: "Tanggal Kustom" },
+                    ].map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setExportPeriod(p.id as any)}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold transition border text-left flex items-center justify-between cursor-pointer ${
+                          exportPeriod === p.id
+                            ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                            : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+                        }`}
+                      >
+                        <span>{p.label}</span>
+                        {exportPeriod === p.id && <CheckCircle size={14} className="text-white" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {exportPeriod === "CUSTOM" && (
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 animate-in fade-in duration-200">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Tanggal Mulai:</label>
+                      <input
+                        type="date"
+                        value={exportStartDate}
+                        onChange={(e) => setExportStartDate(e.target.value)}
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Tanggal Selesai:</label>
+                      <input
+                        type="date"
+                        value={exportEndDate}
+                        onChange={(e) => setExportEndDate(e.target.value)}
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsExportModalOpen(false)}
+                    className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExportPerformanceCsv}
+                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Download size={14} />
+                    Download CSV
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 5: DETAIL KELOMPOK DAMPINGAN & DAFTAR MAHASISWA */}
+        {selectedGroupForDetail && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+              {/* Header Modal */}
+              <div className="flex justify-between items-start px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-900 text-white shrink-0">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10.5px] font-extrabold uppercase tracking-wider">
+                      Master Penempatan KKN
+                    </span>
+                    <span className="text-slate-400 text-xs">•</span>
+                    <span className="text-xs font-semibold text-slate-300">
+                      Kel. {selectedGroupForDetail.kelurahan || "-"} {selectedGroupForDetail.kecamatan ? `• Kec. ${selectedGroupForDetail.kecamatan}` : ""}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <Users size={20} className="text-emerald-400" />
+                    <span>{selectedGroupForDetail.name}</span>
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedGroupForDetail(null)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Modal Body with Scroll */}
+              <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
+                {/* Ringkasan Profil & Wilayah Kelompok */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 text-xs">
+                  <div className="space-y-1">
+                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Total Mahasiswa</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                        {modalGroupStudents.length || selectedGroupForDetail.studentCount || 0}
+                      </span>
+                      <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Orang Terdaftar</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Cakupan Wilayah RW</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block truncate">
+                      RW {Array.isArray(selectedGroupForDetail.cakupanRw) ? selectedGroupForDetail.cakupanRw.join(", ") : selectedGroupForDetail.cakupanRw || "-"}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Ketua Kelompok</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block truncate" title={selectedGroupForDetail.ketua?.name || "-"}>
+                      {selectedGroupForDetail.ketua?.name || "-"}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Posko KKN</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block truncate" title={selectedGroupForDetail.posko?.nama || selectedGroupForDetail.posko?.alamat || "-"}>
+                      {selectedGroupForDetail.posko?.nama || "-"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Filter & Pencarian Mahasiswa dalam Kelompok */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                  <div>
+                    <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <span>Daftar Anggota Mahasiswa</span>
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40">
+                        Total {modalGroupStudents.length} Mahasiswa
+                      </span>
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Gunakan fitur pencarian untuk menemukan mahasiswa berdasarkan nama, NIM, atau program studi.
+                    </p>
+                  </div>
+
+                  <div className="relative w-full sm:w-72">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={groupStudentSearchQuery}
+                      onChange={(e) => {
+                        setGroupStudentSearchQuery(e.target.value);
+                        setGroupStudentPage(1);
+                      }}
+                      placeholder="Cari nama / NIM / prodi..."
+                      className="w-full pl-8.5 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+                    />
+                    {groupStudentSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGroupStudentSearchQuery("");
+                          setGroupStudentPage(1);
+                        }}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tabel Mahasiswa Kelompok */}
+                {filteredModalGroupStudents.length === 0 ? (
+                  <div className="p-8 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
+                    {groupStudentSearchQuery
+                      ? `Tidak ada mahasiswa di kelompok ini yang cocok dengan kata kunci "${groupStudentSearchQuery}".`
+                      : "Belum ada mahasiswa yang terdaftar dalam kelompok ini."}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50/90 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 font-extrabold uppercase text-[10.5px] tracking-wider border-b border-slate-200 dark:border-slate-700">
+                          <th className="py-3 px-3 text-center w-10">No</th>
+                          <th className="py-3 px-3">NIM</th>
+                          <th className="py-3 px-3">Nama Mahasiswa</th>
+                          <th className="py-3 px-3">Program Studi</th>
+                          <th className="py-3 px-3 text-center">Presensi</th>
+                          <th className="py-3 px-3 text-center">Nilai Asesmen</th>
+                          <th className="py-3 px-3 text-center">Mutu</th>
+                          <th className="py-3 px-3 text-center">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
+                        {paginatedModalGroupStudents.map((st, idx) => {
+                          const grade = getGradeBadge(st.assessmentScore);
+                          return (
+                            <tr key={st.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition">
+                              <td className="py-2.5 px-3 text-center font-bold text-slate-400">
+                                {(groupStudentPage - 1) * MODAL_STUDENTS_PER_PAGE + idx + 1}
+                              </td>
+                              <td className="py-2.5 px-3 font-mono font-bold text-slate-800 dark:text-slate-200">
+                                {st.nim || "-"}
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-bold text-slate-900 dark:text-slate-100">{st.name}</span>
+                                  {st.isKetua && (
+                                    <span className="bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 text-[9px] px-1.5 py-0.2 rounded font-extrabold border border-amber-200 dark:border-amber-700 flex items-center gap-0.5">
+                                      <Crown size={9} />
+                                      <span>Ketua</span>
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">
+                                {st.jurusan || "-"} {st.fakultas ? `(${st.fakultas})` : ""}
+                              </td>
+                              <td className="py-2.5 px-3 text-center font-bold text-emerald-700 dark:text-emerald-400">
+                                {st.attendanceRate ? `${Number(st.attendanceRate).toFixed(1)}%` : "0%"}
+                              </td>
+                              <td className="py-2.5 px-3 text-center">
+                                {st.assessmentScore !== null && st.assessmentScore !== undefined && st.assessmentScore > 0 ? (
+                                  <span className="font-black text-slate-900 dark:text-slate-100">
+                                    {Number(st.assessmentScore).toFixed(1)}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 text-[11px]">Belum Dinilai</span>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3 text-center">
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border ${grade.bg}`}>
+                                  {grade.letter}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenCitizensDrilldown(st)}
+                                  className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1 cursor-pointer"
+                                  title="Lihat Portofolio Pendampingan Warga"
+                                >
+                                  <QrCode size={12} />
+                                  <span>Portofolio</span>
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Modal Pagination Controls */}
+                {totalModalStudentPages > 1 && (
+                  <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/80 px-4 py-2.5 border border-slate-200/80 dark:border-slate-700 rounded-xl text-xs">
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">
+                      Menampilkan {(groupStudentPage - 1) * MODAL_STUDENTS_PER_PAGE + 1} - {Math.min(groupStudentPage * MODAL_STUDENTS_PER_PAGE, filteredModalGroupStudents.length)} dari {filteredModalGroupStudents.length} Mahasiswa
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={groupStudentPage === 1}
+                        onClick={() => setGroupStudentPage((p) => Math.max(1, p - 1))}
+                        className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg disabled:opacity-50 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer flex items-center gap-1"
+                      >
+                        <ChevronLeft size={13} />
+                        <span>Sebelumnya</span>
+                      </button>
+                      <span className="px-2 font-bold text-slate-700 dark:text-slate-300">
+                        {groupStudentPage} / {totalModalStudentPages}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={groupStudentPage === totalModalStudentPages}
+                        onClick={() => setGroupStudentPage((p) => Math.min(totalModalStudentPages, p + 1))}
+                        className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg disabled:opacity-50 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer flex items-center gap-1"
+                      >
+                        <span>Selanjutnya</span>
+                        <ChevronRight size={13} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-3.5 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
+                <Link
+                  to="/manajemen-ekosistem-kkn"
+                  className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                >
+                  <span>Buka di Modul Manajemen Ekosistem KKN</span>
+                  <ChevronRight size={13} />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setSelectedGroupForDetail(null)}
+                  className="px-5 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 font-bold text-xs rounded-xl transition cursor-pointer"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -969,6 +1470,73 @@ export const DplDashboardPage: React.FC = () => {
             </span>
           </div>
         </div>
+      </div>
+
+      {/* 4 Quick Action Navigation Cards (Pintu Akses Operasional) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Link
+          to="/manajemen-ekosistem-kkn"
+          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-400 rounded-xl group-hover:bg-teal-600 group-hover:text-white transition">
+              <Users size={20} />
+            </div>
+            <div>
+              <h4 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">Kelompok KKN</h4>
+              <p className="text-[10.5px] text-slate-500 dark:text-slate-400">Data kelompok &amp; profil anggota</p>
+            </div>
+          </div>
+          <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
+        </Link>
+
+        <Link
+          to="/monitoring-absen"
+          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition">
+              <ClipboardCheck size={20} />
+            </div>
+            <div>
+              <h4 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">Presensi Lapangan</h4>
+              <p className="text-[10.5px] text-slate-500 dark:text-slate-400">Logbook &amp; presensi harian</p>
+            </div>
+          </div>
+          <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
+        </Link>
+
+        <Link
+          to="/program-kerja-kkn"
+          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl hover:border-blue-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition">
+              <FileText size={20} />
+            </div>
+            <div>
+              <h4 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">Program Kerja</h4>
+              <p className="text-[10.5px] text-slate-500 dark:text-slate-400">Usulan proker &amp; anggaran</p>
+            </div>
+          </div>
+          <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
+        </Link>
+
+        <Link
+          to="/penilaian-kkn/mahasiswa"
+          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition">
+              <Award size={20} />
+            </div>
+            <div>
+              <h4 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">Penilaian KKN</h4>
+              <p className="text-[10.5px] text-slate-500 dark:text-slate-400">Form asesmen DPL &amp; mitra</p>
+            </div>
+          </div>
+          <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
+        </Link>
       </div>
 
       {/* Metrik Agregat Presensi & Program Kerja */}
@@ -1427,579 +1995,10 @@ export const DplDashboardPage: React.FC = () => {
         )}
       </div>
 
-      {/* 4 Quick Action Navigation Cards (Pintu Akses Operasional) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link
-          to="/manajemen-ekosistem-kkn"
-          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-400 rounded-xl group-hover:bg-teal-600 group-hover:text-white transition">
-              <Users size={20} />
-            </div>
-            <div>
-              <h4 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">Kelompok KKN</h4>
-              <p className="text-[10.5px] text-slate-500 dark:text-slate-400">Data kelompok &amp; profil anggota</p>
-            </div>
-          </div>
-          <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
-        </Link>
-
-        <Link
-          to="/monitoring-absen"
-          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition">
-              <ClipboardCheck size={20} />
-            </div>
-            <div>
-              <h4 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">Presensi Lapangan</h4>
-              <p className="text-[10.5px] text-slate-500 dark:text-slate-400">Logbook &amp; presensi harian</p>
-            </div>
-          </div>
-          <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
-        </Link>
-
-        <Link
-          to="/program-kerja-kkn"
-          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl hover:border-blue-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition">
-              <FileText size={20} />
-            </div>
-            <div>
-              <h4 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">Program Kerja</h4>
-              <p className="text-[10.5px] text-slate-500 dark:text-slate-400">Usulan proker &amp; anggaran</p>
-            </div>
-          </div>
-          <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
-        </Link>
-
-        <Link
-          to="/penilaian-kkn/mahasiswa"
-          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition">
-              <Award size={20} />
-            </div>
-            <div>
-              <h4 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">Penilaian KKN</h4>
-              <p className="text-[10.5px] text-slate-500 dark:text-slate-400">Form asesmen DPL &amp; mitra</p>
-            </div>
-          </div>
-          <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition" />
-        </Link>
+        {/* Render Action Modals */}
+        {renderActionModals()}
       </div>
-
-      {/* Render Action Modals */}
-      {renderActionModals()}
-    </div>
-  );
-
-  // Helper render function for common action modals
-  function renderActionModals() {
-    return (
-      <>
-        {/* MODAL 1: DRILLDOWN DAMPAK WARGA DIBANTU */}
-        {selectedStudentForCitizens && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800">
-              <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-3">
-                <div>
-                  <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-700/40">
-                    Dampak Pendampingan Warga
-                  </span>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-1">
-                    Warga Dibantu: {selectedStudentForCitizens.name}
-                  </h3>
-                </div>
-                <button
-                  onClick={() => setSelectedStudentForCitizens(null)}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {loadingCitizens ? (
-                <div className="py-12 text-center text-xs text-slate-500 dark:text-slate-400 animate-pulse">
-                  Memuat data warga &amp; pola buang sampah...
-                </div>
-              ) : assistedCitizensData && assistedCitizensData.citizens.length > 0 ? (
-                <div className="space-y-3">
-                  <div className="bg-slate-50 dark:bg-slate-800/80 p-3 rounded-lg flex items-center justify-between text-xs text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
-                    <span>Total Warga Didampingi: <strong>{assistedCitizensData.totalCitizensAssisted} Warga</strong></span>
-                  </div>
-                  {assistedCitizensData.citizens.map((c) => (
-                    <div key={c.binId} className="p-4 border border-slate-200/60 dark:border-slate-800 rounded-xl bg-slate-50/40 dark:bg-slate-800/50 space-y-2">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-bold text-slate-900 dark:text-slate-100 text-xs">{c.warga?.nama || "Warga Binaan"}</p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400">{c.warga?.alamat || "Alamat tercatat"}</p>
-                        </div>
-                        <span
-                          className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
-                            c.polaBuangSampah === "RUTIN"
-                              ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
-                              : c.polaBuangSampah === "KURANG_RUTIN"
-                              ? "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
-                              : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                          }`}
-                        >
-                          Pola: {c.polaBuangSampah}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-2 pt-1 text-[11px] text-slate-600 dark:text-slate-300">
-                        <div><span className="text-slate-400 block text-[10px]">Kode QR</span> <strong className="text-slate-800 dark:text-slate-200">{c.qrCode}</strong></div>
-                        <div><span className="text-slate-400 block text-[10px]">Frekuensi</span> <strong className="text-slate-800 dark:text-slate-200">{c.totalSetoranCount}x Setor</strong></div>
-                        <div><span className="text-slate-400 block text-[10px]">Total Berat</span> <strong className="text-emerald-700 dark:text-emerald-400">{c.totalKg} Kg</strong></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 italic bg-slate-50 dark:bg-slate-800 rounded-xl">
-                  Mahasiswa ini belum mengaktivasi tempat sampah warga.
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* MODAL 2: PENOLAKAN IZIN DENGAN CATATAN */}
-        {rejectingRequestId && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-800">
-              <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 className="text-base font-bold text-red-600 dark:text-rose-400 flex items-center gap-1.5">
-                  <XCircle size={18} /> Alasan Penolakan Izin
-                </h3>
-                <button onClick={() => setRejectingRequestId(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold cursor-pointer">✕</button>
-              </div>
-
-              <div className="space-y-3 text-xs">
-                <label className="block font-semibold text-slate-700 dark:text-slate-300">Tuliskan Alasan Penolakan untuk Mahasiswa:</label>
-                <textarea
-                  rows={3}
-                  value={rejectionReasonInput}
-                  onChange={(e) => setRejectionReasonInput(e.target.value)}
-                  placeholder="Contoh: Bukti surat sakit tidak melampirkan keterangan dokter resmi..."
-                  className="w-full p-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-red-500"
-                />
-
-                <div className="flex gap-2 pt-2">
-                  <button
-                    onClick={() => setRejectingRequestId(null)}
-                    className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    onClick={() => handleDecideLeave(rejectingRequestId, "REJECTED", rejectionReasonInput)}
-                    className="flex-1 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition cursor-pointer"
-                  >
-                    Konfirmasi Penolakan
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* MODAL 3: PREVIEW BUKTI DOKUMEN / SURAT SAKIT */}
-        {previewEvidence && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
-              <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-800 text-white">
-                <div className="flex items-center gap-2.5">
-                  <FileCheck size={18} className="text-emerald-400" />
-                  <h3 className="font-bold text-white text-sm truncate">{previewEvidence.title}</h3>
-                </div>
-                <button
-                  onClick={() => setPreviewEvidence(null)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-              <div className="p-5 flex flex-col items-center justify-center space-y-4">
-                <div className="max-h-[60vh] w-full overflow-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 p-2 flex items-center justify-center">
-                  <img
-                    src={previewEvidence.url}
-                    alt={previewEvidence.title}
-                    className="max-h-[55vh] w-auto max-w-full object-contain rounded-xl shadow-xs"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = "none";
-                      (e.currentTarget.parentElement as HTMLElement).innerHTML = `<div class="p-8 text-center text-xs text-slate-500 font-semibold">Gagal memuat pratinjau gambar bukti surat.<br><a href="${previewEvidence.url}" target="_blank" rel="noreferrer" class="text-emerald-600 underline font-bold mt-2 inline-block">Buka File di Tab Baru</a></div>`;
-                    }}
-                  />
-                </div>
-                <div className="flex justify-between items-center w-full gap-3">
-                  <a
-                    href={previewEvidence.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition flex items-center gap-1.5"
-                  >
-                    <Eye size={14} /> Buka Tab Baru
-                  </a>
-                  <button
-                    onClick={() => setPreviewEvidence(null)}
-                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-xs"
-                  >
-                    Tutup
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* MODAL 4: EKSPOR REKAPITULASI DPL CSV */}
-        {isExportModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
-              <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-800 text-white">
-                <div className="flex items-center gap-2.5">
-                  <Download size={18} className="text-emerald-400" />
-                  <h3 className="font-black text-white text-base">Ekspor Rekapitulasi KKN DPL</h3>
-                </div>
-                <button
-                  onClick={() => setIsExportModalOpen(false)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="p-6 space-y-5">
-                <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border border-emerald-200/80 dark:border-emerald-700/40 text-xs text-emerald-900 dark:text-emerald-300 font-semibold">
-                  Total Mahasiswa Dampingan: <strong className="text-emerald-950 dark:text-emerald-200">{students.length} Orang</strong> {selectedGroupFilter ? `(${selectedGroupFilter})` : "(Semua Kelompok)"}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
-                    <Calendar size={14} className="text-slate-500 dark:text-slate-400" /> Filter Periode Laporan:
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { id: "SEMUA", label: "Semua Data" },
-                      { id: "BULAN_INI", label: "Bulan Berjalan" },
-                      { id: "30_HARI", label: "30 Hari Terakhir" },
-                      { id: "CUSTOM", label: "Tanggal Kustom" },
-                    ].map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => setExportPeriod(p.id as any)}
-                        className={`py-2 px-3 rounded-xl text-xs font-bold transition border text-left flex items-center justify-between cursor-pointer ${
-                          exportPeriod === p.id
-                            ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                            : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
-                        }`}
-                      >
-                        <span>{p.label}</span>
-                        {exportPeriod === p.id && <CheckCircle size={14} className="text-white" />}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {exportPeriod === "CUSTOM" && (
-                  <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 animate-in fade-in duration-200">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Tanggal Mulai:</label>
-                      <input
-                        type="date"
-                        value={exportStartDate}
-                        onChange={(e) => setExportStartDate(e.target.value)}
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Tanggal Selesai:</label>
-                      <input
-                        type="date"
-                        value={exportEndDate}
-                        onChange={(e) => setExportEndDate(e.target.value)}
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsExportModalOpen(false)}
-                    className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition cursor-pointer"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleExportPerformanceCsv}
-                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <Download size={14} />
-                    Download CSV
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* MODAL 5: DETAIL KELOMPOK DAMPINGAN & DAFTAR MAHASISWA (Mendukung hingga 44+ Mahasiswa) */}
-        {selectedGroupForDetail && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
-              {/* Header Modal */}
-              <div className="flex justify-between items-start px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-900 text-white shrink-0">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10.5px] font-extrabold uppercase tracking-wider">
-                      Master Penempatan KKN
-                    </span>
-                    <span className="text-slate-400 text-xs">•</span>
-                    <span className="text-xs font-semibold text-slate-300">
-                      Kel. {selectedGroupForDetail.kelurahan || "-"} {selectedGroupForDetail.kecamatan ? `• Kec. ${selectedGroupForDetail.kecamatan}` : ""}
-                    </span>
-                  </div>
-                  <h3 className="text-lg font-black text-white flex items-center gap-2">
-                    <Users size={20} className="text-emerald-400" />
-                    <span>{selectedGroupForDetail.name}</span>
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedGroupForDetail(null)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* Modal Body with Scroll */}
-              <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
-                {/* Ringkasan Profil & Wilayah Kelompok */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 text-xs">
-                  <div className="space-y-1">
-                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Total Mahasiswa</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
-                        {modalGroupStudents.length || selectedGroupForDetail.studentCount || 0}
-                      </span>
-                      <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Orang Terdaftar</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Cakupan Wilayah RW</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200 block truncate">
-                      RW {Array.isArray(selectedGroupForDetail.cakupanRw) ? selectedGroupForDetail.cakupanRw.join(", ") : selectedGroupForDetail.cakupanRw || "-"}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Ketua Kelompok</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200 block truncate" title={selectedGroupForDetail.ketua?.name || "-"}>
-                      {selectedGroupForDetail.ketua?.name || "-"}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Posko KKN</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200 block truncate" title={selectedGroupForDetail.posko?.nama || selectedGroupForDetail.posko?.alamat || "-"}>
-                      {selectedGroupForDetail.posko?.nama || "-"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Filter & Pencarian Mahasiswa dalam Kelompok */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-                  <div>
-                    <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <span>Daftar Anggota Mahasiswa</span>
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40">
-                        Total {modalGroupStudents.length} Mahasiswa
-                      </span>
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Gunakan fitur pencarian untuk menemukan mahasiswa berdasarkan nama, NIM, atau program studi.
-                    </p>
-                  </div>
-
-                  <div className="relative w-full sm:w-72">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      value={groupStudentSearchQuery}
-                      onChange={(e) => {
-                        setGroupStudentSearchQuery(e.target.value);
-                        setGroupStudentPage(1);
-                      }}
-                      placeholder="Cari nama / NIM / prodi..."
-                      className="w-full pl-8.5 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
-                    />
-                    {groupStudentSearchQuery && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setGroupStudentSearchQuery("");
-                          setGroupStudentPage(1);
-                        }}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Tabel Mahasiswa Kelompok */}
-                {filteredModalGroupStudents.length === 0 ? (
-                  <div className="p-8 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
-                    {groupStudentSearchQuery
-                      ? `Tidak ada mahasiswa di kelompok ini yang cocok dengan kata kunci "${groupStudentSearchQuery}".`
-                      : "Belum ada mahasiswa yang terdaftar dalam kelompok ini."}
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-slate-800">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50/90 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 font-extrabold uppercase text-[10.5px] tracking-wider border-b border-slate-200 dark:border-slate-700">
-                          <th className="py-3 px-3 text-center w-10">No</th>
-                          <th className="py-3 px-3">NIM</th>
-                          <th className="py-3 px-3">Nama Mahasiswa</th>
-                          <th className="py-3 px-3">Program Studi</th>
-                          <th className="py-3 px-3 text-center">Presensi</th>
-                          <th className="py-3 px-3 text-center">Nilai Asesmen</th>
-                          <th className="py-3 px-3 text-center">Mutu</th>
-                          <th className="py-3 px-3 text-center">Aksi</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
-                        {paginatedModalGroupStudents.map((st, idx) => {
-                          const grade = getGradeBadge(st.assessmentScore);
-                          return (
-                            <tr key={st.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition">
-                              <td className="py-2.5 px-3 text-center font-bold text-slate-400">
-                                {(groupStudentPage - 1) * MODAL_STUDENTS_PER_PAGE + idx + 1}
-                              </td>
-                              <td className="py-2.5 px-3 font-mono font-bold text-slate-800 dark:text-slate-200">
-                                {st.nim || "-"}
-                              </td>
-                              <td className="py-2.5 px-3">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-bold text-slate-900 dark:text-slate-100">{st.name}</span>
-                                  {st.isKetua && (
-                                    <span className="bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 text-[9px] px-1.5 py-0.2 rounded font-extrabold border border-amber-200 dark:border-amber-700 flex items-center gap-0.5">
-                                      <Crown size={9} />
-                                      <span>Ketua</span>
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">
-                                {st.jurusan || "-"} {st.fakultas ? `(${st.fakultas})` : ""}
-                              </td>
-                              <td className="py-2.5 px-3 text-center font-bold text-emerald-700 dark:text-emerald-400">
-                                {st.attendanceRate ? `${Number(st.attendanceRate).toFixed(1)}%` : "0%"}
-                              </td>
-                              <td className="py-2.5 px-3 text-center">
-                                {st.assessmentScore !== null && st.assessmentScore !== undefined && st.assessmentScore > 0 ? (
-                                  <span className="font-black text-slate-900 dark:text-slate-100">
-                                    {Number(st.assessmentScore).toFixed(1)}
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-400 text-[11px]">Belum Dinilai</span>
-                                )}
-                              </td>
-                              <td className="py-2.5 px-3 text-center">
-                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border ${grade.bg}`}>
-                                  {grade.letter}
-                                </span>
-                              </td>
-                              <td className="py-2.5 px-3 text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenCitizensDrilldown(st)}
-                                  className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1 cursor-pointer"
-                                  title="Lihat Portofolio Pendampingan Warga"
-                                >
-                                  <QrCode size={12} />
-                                  <span>Portofolio</span>
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {/* Modal Pagination Controls */}
-                {totalModalStudentPages > 1 && (
-                  <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/80 px-4 py-2.5 border border-slate-200/80 dark:border-slate-700 rounded-xl text-xs">
-                    <span className="text-slate-500 dark:text-slate-400 font-medium">
-                      Menampilkan {(groupStudentPage - 1) * MODAL_STUDENTS_PER_PAGE + 1} - {Math.min(groupStudentPage * MODAL_STUDENTS_PER_PAGE, filteredModalGroupStudents.length)} dari {filteredModalGroupStudents.length} Mahasiswa
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        disabled={groupStudentPage === 1}
-                        onClick={() => setGroupStudentPage((p) => Math.max(1, p - 1))}
-                        className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg disabled:opacity-50 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer flex items-center gap-1"
-                      >
-                        <ChevronLeft size={13} />
-                        <span>Sebelumnya</span>
-                      </button>
-                      <span className="px-2 font-bold text-slate-700 dark:text-slate-300">
-                        {groupStudentPage} / {totalModalStudentPages}
-                      </span>
-                      <button
-                        type="button"
-                        disabled={groupStudentPage === totalModalStudentPages}
-                        onClick={() => setGroupStudentPage((p) => Math.min(totalModalStudentPages, p + 1))}
-                        className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg disabled:opacity-50 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer flex items-center gap-1"
-                      >
-                        <span>Selanjutnya</span>
-                        <ChevronRight size={13} />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Modal Footer */}
-              <div className="px-6 py-3.5 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
-                <Link
-                  to="/manajemen-ekosistem-kkn"
-                  className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
-                >
-                  <span>Buka di Modul Manajemen Ekosistem KKN</span>
-                  <ChevronRight size={13} />
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => setSelectedGroupForDetail(null)}
-                  className="px-5 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 font-bold text-xs rounded-xl transition cursor-pointer"
-                >
-                  Tutup
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </>
     );
-  }
-};
+  };
 
-export default DplDashboardPage;
+  export default DplDashboardPage;
