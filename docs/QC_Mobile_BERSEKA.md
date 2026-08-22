@@ -123,7 +123,7 @@
 | 5.11 | Scan QR | Geofencing: Jarak ≤10m dari tong → scan diterima | | | | | | | |
 | 5.12 | Scan QR | Geofencing: Jarak >10m dari tong → Alert "Anda terlalu jauh dari Tempat Sampah" (Haversine) | | | | | | | |
 | 5.13 | Scan QR | Kapasitas tong aman (<25L) → proses lanjut normal | | | | | | | |
-| 5.14 | Scan QR | Kapasitas tong penuh (≥25L) → Alert "Tong Penuh, cari tong lain" | | | | | | | |
+| 5.14 | Scan QR | Kapasitas tong penuh (≥25L) → Alert "Tempat Sampah Penuh, cari Tempat Sampah lain" | | | | | | | |
 
 ### 5B. Foto Sampah & Deteksi AI
 
@@ -309,7 +309,7 @@
 | 11.9 | Non-Fungsional | Memory usage stabil (tidak memory leak setelah navigasi berulang) | | | | | | | |
 | 11.10 | Non-Fungsional | Notifikasi FCM diterima saat app di foreground | | | | | | | |
 | 11.11 | Non-Fungsional | Notifikasi FCM diterima saat app di background | | | | | | | |
-| 11.12 | Non-Fungsional | Notifikasi "Tong Penuh" masuk ke petugas saat kapasitas >90% (SRS FR-04) — ref: BUG-004 | | | | | | | |
+| 11.12 | Non-Fungsional | Notifikasi "Tempat Sampah Penuh" masuk ke petugas saat kapasitas >90% (SRS FR-04) — ref: BUG-004 | | | | | | | |
 
 ---
 
@@ -322,7 +322,7 @@ Daftar bug dari dokumen QA Issues yang WAJIB diverifikasi ulang status perbaikan
 | 12.1 | BUG-001 | 🔴 Critical | Backend tidak validasi geofencing (jarak Haversine) | Open | | |
 | 12.2 | BUG-002 | 🟡 High | Mobile masih pakai mock lokal AI, bukan endpoint backend live | Open | | |
 | 12.3 | BUG-003 | 🟡 High | Kalkulasi poin statis (bukan formula kg/L × 100 per SRS FR-03) | Open | | |
-| 12.4 | BUG-004 | 🟡 High | Notifikasi "Tong Penuh" tidak di-trigger ke FCM/DB | Open | | |
+| 12.4 | BUG-004 | 🟡 High | Notifikasi "Tempat Sampah Penuh" tidak di-trigger ke FCM/DB | Open | | |
 | 12.5 | BUG-005 | 🟢 Medium | Endpoint `/monitoring/live` belum diimplementasi | Open | | |
 | 12.6 | BUG-006 | 🔴 Critical | Endpoint transaksi tanpa JWT middleware & login tanpa rate limit | Open | | |
 

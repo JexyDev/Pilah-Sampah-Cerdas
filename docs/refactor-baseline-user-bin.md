@@ -543,7 +543,7 @@ Jumlah Skenario: 22
 ```json
 {
   "error": "RESOURCE_NOT_FOUND",
-  "message": "Tong sampah tidak ditemukan"
+  "message": "Tempat Sampah tidak ditemukan"
 }
 ```
 
@@ -553,7 +553,7 @@ Jumlah Skenario: 22
 ```json
 {
   "error": "RESOURCE_NOT_FOUND",
-  "message": "Tong sampah tidak ditemukan"
+  "message": "Tempat Sampah tidak ditemukan"
 }
 ```
 
