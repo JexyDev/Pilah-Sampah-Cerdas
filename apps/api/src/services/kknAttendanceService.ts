@@ -267,15 +267,19 @@ export class KknAttendanceService {
         if (scheduleDateWibStrPing > todayWibStrPing) {
           isFutureDatePing = true;
         } else if (scheduleDateWibStrPing === todayWibStrPing) {
-          const startParts = sch.startTime ? sch.startTime.split(":") : [];
-          if (startParts.length >= 2) {
-            const startHours = parseInt(startParts[0], 10);
-            const startMinutes = parseInt(startParts[1], 10);
-            const startMinutesTotal = startHours * 60 + startMinutes;
-            const currentMinutesTotal = nowWibPing.getUTCHours() * 60 + nowWibPing.getUTCMinutes();
-            if (currentMinutesTotal < startMinutesTotal) {
-              isFutureDatePing = true;
-            }
+          let jamMulaiPing = "08:00";
+          const normalizedTimePing = (sch.time || "").replace(/\s*(WIB|WITA|WIT)\s*/gi, "").replace(/[\u2013\u2014~]|s\/d|sd/gi, "-").trim();
+          if (normalizedTimePing.includes("-")) {
+            jamMulaiPing = normalizedTimePing.split("-")[0].trim();
+          }
+          const [startHPing, startMPing] = jamMulaiPing.replace(".", ":").split(":").map(Number);
+          const cleanStartHPing = !isNaN(startHPing) ? (startHPing === 24 ? 0 : startHPing) : 8;
+          const cleanStartMPing = !isNaN(startMPing) ? startMPing : 0;
+          const startMinutesTotal = cleanStartHPing * 60 + cleanStartMPing;
+          const currentMinutesTotal = nowWibPing.getUTCHours() * 60 + nowWibPing.getUTCMinutes();
+          
+          if (currentMinutesTotal < startMinutesTotal) {
+            isFutureDatePing = true;
           }
         }
 
