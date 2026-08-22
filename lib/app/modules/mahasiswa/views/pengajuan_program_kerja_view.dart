@@ -116,12 +116,13 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
                 decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'YYYY-MM-DD', suffixIcon: Icon(Icons.calendar_today)),
                 validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
                 onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime(2030),
-                  );
+                    final minDate = DateTime.now().add(const Duration(days: 3));
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: minDate,
+                      firstDate: minDate,
+                      lastDate: DateTime(2030),
+                    );
                   if (picked != null) {
                     _tanggalCtrl.text = picked.toIso8601String().split('T').first;
                   }
