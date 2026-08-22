@@ -188,7 +188,10 @@ export class KknService {
     }
 
     const bins = await prisma.bin.findMany({
-      where: whereBin,
+      where: {
+        ...whereBin,
+        status: { in: ["ACTIVE_BOUND", "PENDING_APPROVAL"] }
+      },
       include: {
         category: true,
         rw: { include: { kelurahan: true } },
@@ -200,25 +203,38 @@ export class KknService {
             pointHistory: true,
             wargaViolations: true,
             setoranOtomatis: { orderBy: { createdAt: "desc" } },
+            binOwnerships: { include: { bin: { include: { category: true } } } }
           },
         },
       },
     });
 
-    let list = bins.map((b) => {
-      const u = b.user;
-      if (!u) return null;
+    const uniqueUsers = new Map<string, any>();
+    
+    bins.forEach((b) => {
+      if (!b.user) return;
+      if (!uniqueUsers.has(b.user.id)) {
+        uniqueUsers.set(b.user.id, {
+          u: b.user,
+          bins: [b]
+        });
+      } else {
+        uniqueUsers.get(b.user.id).bins.push(b);
+      }
+    });
 
+    let list = Array.from(uniqueUsers.values()).map(({ u, bins: userBins }) => {
       const household = u.households?.[0];
-      const lat = b.latitude
-        ? Number(b.latitude)
+      const primaryBin = userBins[0];
+      const lat = primaryBin.latitude
+        ? Number(primaryBin.latitude)
         : household?.latitude
           ? Number(household.latitude)
           : u.rw?.latitude
             ? Number(u.rw.latitude)
             : -6.891234;
-      const lng = b.longitude
-        ? Number(b.longitude)
+      const lng = primaryBin.longitude
+        ? Number(primaryBin.longitude)
         : household?.longitude
           ? Number(household.longitude)
           : u.rw?.longitude
@@ -226,20 +242,30 @@ export class KknService {
             : 107.610123;
 
       const setoranLogs = u.setoranOtomatis || [];
-      const totalKg = setoranLogs.reduce((acc, curr) => acc + Number(curr.berat || 0), 0);
-      const totalPoin = u.pointHistory?.reduce((acc, curr) => acc + Number(curr.points || 0), 0) || Math.round(totalKg * 10);
+      const totalKg = setoranLogs.reduce((acc: number, curr: any) => acc + Number(curr.berat || 0), 0);
+      const totalPoin = u.pointHistory?.reduce((acc: number, curr: any) => acc + Number(curr.points || 0), 0) || Math.round(totalKg * 10);
 
       const recentLogs = setoranLogs.slice(0, 5).map((log: any) => ({
         weightKg: Number(log.berat || 0),
-        category: log.hasilKlasifikasiAi === "organik" ? "Organik" : b.category?.name || "Anorganik",
+        category: log.hasilKlasifikasiAi === "organik" ? "Organik" : primaryBin.category?.name || "Anorganik",
         isCorrect: true,
       }));
+      
+      const binOrganik = userBins.find((b: any) => b.category?.name === "ORGANIC" || b.qrCode?.toLowerCase().includes("org") || b.qrCode?.toLowerCase().includes("1"));
+      const binAnorganik = userBins.find((b: any) => b.category?.name === "NON_ORGANIC" || b.qrCode?.toLowerCase().includes("anorg") || b.qrCode?.toLowerCase().includes("2"));
 
       return {
         id: u.id,
         wargaId: u.id,
-        binId: b.qrCode,
-        binCode: b.qrCode,
+        binId: primaryBin.qrCode,
+        binCode: primaryBin.qrCode,
+        bin: {
+          qrCode: primaryBin.qrCode,
+          category: primaryBin.category?.name || "UMUM",
+          capacity: `${primaryBin.currentVolumeLiter || 0}L / ${primaryBin.maxCapacityLiter || 25}L`
+        },
+        binOrganikId: binOrganik?.qrCode || null,
+        binAnorganikId: binAnorganik?.qrCode || null,
         wargaName: u.name,
         name: u.name,
         phone: u.phone,
@@ -248,14 +274,14 @@ export class KknService {
         longitude: lng,
         lat: lat,
         lng: lng,
-        category: b.category?.name || "Organik",
+        category: primaryBin.category?.name || "Organik",
         totalKg: Math.round(totalKg * 10) / 10,
         totalPoin,
         totalPoints: totalPoin,
         isActivated: true,
         recentLogs,
         rwId: u.rwId,
-        registeredByStudent: b.registeredByStudent?.name || "Mahasiswa KKN",
+        registeredByStudent: primaryBin.registeredByStudent?.name || "Mahasiswa KKN",
       };
     });
 
@@ -568,6 +594,13 @@ export class KknService {
         binAnorganikId:
           binAnorganik?.qrCode ||
           (primaryBin?.category?.name === "NON_ORGANIC" ? primaryBin.qrCode : null),
+        binId: primaryBin?.qrCode || binOrganik?.qrCode || binAnorganik?.qrCode || "",
+        binCode: primaryBin?.qrCode || binOrganik?.qrCode || binAnorganik?.qrCode || "",
+        bin: primaryBin ? {
+          qrCode: primaryBin.qrCode,
+          category: primaryBin.category?.name || "UMUM",
+          capacity: `${primaryBin.currentVolumeLiter}L / ${primaryBin.maxCapacityLiter}L`
+        } : null,
         needsReeducation: false,
         recentLogs,
       };

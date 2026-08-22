@@ -154,11 +154,16 @@ export class ResiduController {
         if (f) evidencePhotoUrl = `/uploads/${f.filename}`;
       }
 
+      if (!evidencePhotoUrl) {
+        res.status(400).json({ success: false, message: "Foto bukti pelanggaran wajib diunggah" });
+        return;
+      }
+
       const result = await residuService.recordViolation(petugasUserId, {
         binQrCode: req.body.binQrCode,
         type: req.body.type,
         severity: req.body.severity,
-        evidencePhotoUrl: evidencePhotoUrl || "/uploads/default-violation.jpg",
+        evidencePhotoUrl,
         notes: req.body.notes,
       });
 
@@ -205,10 +210,15 @@ export class ResiduController {
         if (f) imagePhotoUrl = `/uploads/${f.filename}`;
       }
 
+      if (!imagePhotoUrl) {
+        res.status(400).json({ success: false, message: "Foto bukti residu wajib diunggah" });
+        return;
+      }
+
       const data = await residuService.submitLog(petugasUserId, {
         actualWeightKg: req.body.actualWeightKg || req.body.weight,
         classification: req.body.classification || req.body.kategori,
-        imagePhotoUrl: imagePhotoUrl || "/uploads/default-residu.jpg",
+        imagePhotoUrl,
         rw: req.body.rw,
         kelurahan: req.body.kelurahan,
         notes: req.body.notes,
