@@ -367,8 +367,16 @@ export class KknAttendanceService {
     }
 
     let currentScheduleId = activeSchedules.length > 0 ? activeSchedules[0].id : null;
-    if (!currentScheduleId && existingAtt && existingAtt.status === "BERLANGSUNG") {
-      currentScheduleId = existingAtt.scheduleId;
+    if (!currentScheduleId) {
+      const activeAtt = await prisma.activityAttendance.findFirst({
+        where: {
+          studentId: userId,
+          status: "BERLANGSUNG",
+        },
+      });
+      if (activeAtt) {
+        currentScheduleId = activeAtt.scheduleId;
+      }
     }
 
     return {
@@ -382,7 +390,7 @@ export class KknAttendanceService {
         actualInZoneSeconds: inZoneMinutes * 60,
         actualInZoneMinutes: inZoneMinutes,
         autoAttendanceTriggered,
-        poskoArea: activeArea?.name ?? null,
+        poskoArea: null,
       },
     };
   }
