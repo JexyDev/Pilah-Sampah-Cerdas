@@ -361,6 +361,8 @@ export class KknAttendanceService {
               attendedAt: existingAtt.attendedAt.toISOString(),
               actualInZoneMinutes: durationInZone,
             });
+          }
+        }
       }
     }
 
