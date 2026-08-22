@@ -695,7 +695,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                   icon: Icons.assignment_rounded,
                   iconAsset: 'assets/icons/activity.png',
                   title: 'Program & Aksi KKN',
-                  subtitle: 'Proker, Logbook, Panen',
+                  subtitle: 'Proker, Logbook, Hasil',
                 gradientColors: const [
                   AppColors.primaryBlueLight,
                     AppColors.primaryBlue,
@@ -737,7 +737,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                           ),
                           ListTile(
                             leading: const Icon(Icons.eco_rounded, color: AppColors.primaryGreen),
-                            title: const Text('Catat Hasil Panen'),
+                            title: const Text('Catat Hasil'),
                             onTap: () {
                               Navigator.pop(context);
                               Navigator.pushNamed(context, AppRoutes.catatPanen);

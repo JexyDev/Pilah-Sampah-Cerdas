@@ -50,7 +50,7 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
       }, imagePath: _selectedImage?.path);
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Berhasil mencatat panen!')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Berhasil mencatat hasil!')));
         ref.invalidate(unharvestedLogbooksProvider);
         Navigator.pop(context);
       }
@@ -72,7 +72,7 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Catat Panen / Hasil', style: TextStyle(fontSize: 18)),
+        title: const Text('Catat Hasil', style: TextStyle(fontSize: 18)),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
@@ -96,7 +96,7 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
                 error: (e, _) => Text(e.toString()),
                 data: (list) {
                   if (list.isEmpty) {
-                    return const Text('Tidak ada laporan kegiatan yang belum dipanen.', style: TextStyle(color: AppColors.dangerRed));
+                    return const Text('Tidak ada laporan kegiatan yang belum dicatat hasilnya.', style: TextStyle(color: AppColors.dangerRed));
                   }
                   return DropdownButtonFormField<String>(
                     isExpanded: true,
@@ -133,7 +133,7 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
               ),
               const SizedBox(height: 16),
               
-              const Text('Foto Hasil / Panen', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Foto Hasil', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               InkWell(
                 onTap: _pickImage,
