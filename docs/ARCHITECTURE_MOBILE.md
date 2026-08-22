@@ -1,7 +1,10 @@
-# ARCHITECTURE_MOBILE.md — apps/mobile
+# ARCHITECTURE_MOBILE.md — Repo Mobile (Branch `mobile`)
 
-> Tech stack: Flutter (sesuaikan jika React Native)
-> Pola: Clean Architecture + Feature-first, selaras dengan pola backend supaya tim mudah paham lintas layer.
+> ⚠️ **ISOLASI REPO:** Kode mobile dikelola di repositori/branch `mobile` yang **terpisah** dari repo `main` ini.
+> AI Agent yang bekerja di `main` **DILARANG** menyentuh, membuat, atau mengubah folder/file mobile.
+>
+> Tech stack: Flutter (Habil — Mobile Dev)
+> Pola: Clean Architecture + Feature-first, selaras dengan pola backend.
 
 ---
 

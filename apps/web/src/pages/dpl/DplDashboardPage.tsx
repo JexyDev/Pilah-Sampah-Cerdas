@@ -1754,6 +1754,248 @@ export const DplDashboardPage: React.FC = () => {
               </div>
             </div>
           </div>
+        {/* MODAL 5: DETAIL KELOMPOK DAMPINGAN & DAFTAR MAHASISWA (Mendukung hingga 44+ Mahasiswa) */}
+        {selectedGroupForDetail && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+              {/* Header Modal */}
+              <div className="flex justify-between items-start px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-900 text-white shrink-0">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10.5px] font-extrabold uppercase tracking-wider">
+                      Master Penempatan KKN
+                    </span>
+                    <span className="text-slate-400 text-xs">•</span>
+                    <span className="text-xs font-semibold text-slate-300">
+                      Kel. {selectedGroupForDetail.kelurahan || "-"} {selectedGroupForDetail.kecamatan ? `• Kec. ${selectedGroupForDetail.kecamatan}` : ""}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <Users size={20} className="text-emerald-400" />
+                    <span>{selectedGroupForDetail.name}</span>
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedGroupForDetail(null)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Modal Body with Scroll */}
+              <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
+                {/* Ringkasan Profil & Wilayah Kelompok */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 text-xs">
+                  <div className="space-y-1">
+                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Total Mahasiswa</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                        {modalGroupStudents.length || selectedGroupForDetail.studentCount || 0}
+                      </span>
+                      <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Orang Terdaftar</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Cakupan Wilayah RW</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block truncate">
+                      RW {Array.isArray(selectedGroupForDetail.cakupanRw) ? selectedGroupForDetail.cakupanRw.join(", ") : selectedGroupForDetail.cakupanRw || "-"}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Ketua Kelompok</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block truncate" title={selectedGroupForDetail.ketua?.name || "-"}>
+                      {selectedGroupForDetail.ketua?.name || "-"}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Posko KKN</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block truncate" title={selectedGroupForDetail.posko?.nama || selectedGroupForDetail.posko?.alamat || "-"}>
+                      {selectedGroupForDetail.posko?.nama || "-"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Filter & Pencarian Mahasiswa dalam Kelompok */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                  <div>
+                    <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <span>Daftar Anggota Mahasiswa</span>
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40">
+                        Total {modalGroupStudents.length} Mahasiswa
+                      </span>
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Gunakan fitur pencarian untuk menemukan mahasiswa berdasarkan nama, NIM, atau program studi.
+                    </p>
+                  </div>
+
+                  <div className="relative w-full sm:w-72">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={groupStudentSearchQuery}
+                      onChange={(e) => {
+                        setGroupStudentSearchQuery(e.target.value);
+                        setGroupStudentPage(1);
+                      }}
+                      placeholder="Cari nama / NIM / prodi..."
+                      className="w-full pl-8.5 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+                    />
+                    {groupStudentSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGroupStudentSearchQuery("");
+                          setGroupStudentPage(1);
+                        }}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tabel Mahasiswa Kelompok */}
+                {filteredModalGroupStudents.length === 0 ? (
+                  <div className="p-8 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
+                    {groupStudentSearchQuery
+                      ? `Tidak ada mahasiswa di kelompok ini yang cocok dengan kata kunci "${groupStudentSearchQuery}".`
+                      : "Belum ada mahasiswa yang terdaftar dalam kelompok ini."}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50/90 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 font-extrabold uppercase text-[10.5px] tracking-wider border-b border-slate-200 dark:border-slate-700">
+                          <th className="py-3 px-3 text-center w-10">No</th>
+                          <th className="py-3 px-3">NIM</th>
+                          <th className="py-3 px-3">Nama Mahasiswa</th>
+                          <th className="py-3 px-3">Program Studi</th>
+                          <th className="py-3 px-3 text-center">Presensi</th>
+                          <th className="py-3 px-3 text-center">Nilai Asesmen</th>
+                          <th className="py-3 px-3 text-center">Mutu</th>
+                          <th className="py-3 px-3 text-center">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
+                        {paginatedModalGroupStudents.map((st, idx) => {
+                          const grade = getGradeBadge(st.assessmentScore);
+                          return (
+                            <tr key={st.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition">
+                              <td className="py-2.5 px-3 text-center font-bold text-slate-400">
+                                {(groupStudentPage - 1) * MODAL_STUDENTS_PER_PAGE + idx + 1}
+                              </td>
+                              <td className="py-2.5 px-3 font-mono font-bold text-slate-800 dark:text-slate-200">
+                                {st.nim || "-"}
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-bold text-slate-900 dark:text-slate-100">{st.name}</span>
+                                  {st.isKetua && (
+                                    <span className="bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 text-[9px] px-1.5 py-0.2 rounded font-extrabold border border-amber-200 dark:border-amber-700 flex items-center gap-0.5">
+                                      <Crown size={9} />
+                                      <span>Ketua</span>
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">
+                                {st.jurusan || "-"} {st.fakultas ? `(${st.fakultas})` : ""}
+                              </td>
+                              <td className="py-2.5 px-3 text-center font-bold text-emerald-700 dark:text-emerald-400">
+                                {st.attendanceRate ? `${Number(st.attendanceRate).toFixed(1)}%` : "0%"}
+                              </td>
+                              <td className="py-2.5 px-3 text-center">
+                                {st.assessmentScore !== null && st.assessmentScore !== undefined && st.assessmentScore > 0 ? (
+                                  <span className="font-black text-slate-900 dark:text-slate-100">
+                                    {Number(st.assessmentScore).toFixed(1)}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 text-[11px]">Belum Dinilai</span>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3 text-center">
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border ${grade.bg}`}>
+                                  {grade.letter}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenCitizensDrilldown(st)}
+                                  className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1 cursor-pointer"
+                                  title="Lihat Portofolio Pendampingan Warga"
+                                >
+                                  <QrCode size={12} />
+                                  <span>Portofolio</span>
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Modal Pagination Controls */}
+                {totalModalStudentPages > 1 && (
+                  <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/80 px-4 py-2.5 border border-slate-200/80 dark:border-slate-700 rounded-xl text-xs">
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">
+                      Menampilkan {(groupStudentPage - 1) * MODAL_STUDENTS_PER_PAGE + 1} - {Math.min(groupStudentPage * MODAL_STUDENTS_PER_PAGE, filteredModalGroupStudents.length)} dari {filteredModalGroupStudents.length} Mahasiswa
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={groupStudentPage === 1}
+                        onClick={() => setGroupStudentPage((p) => Math.max(1, p - 1))}
+                        className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg disabled:opacity-50 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer flex items-center gap-1"
+                      >
+                        <ChevronLeft size={13} />
+                        <span>Sebelumnya</span>
+                      </button>
+                      <span className="px-2 font-bold text-slate-700 dark:text-slate-300">
+                        {groupStudentPage} / {totalModalStudentPages}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={groupStudentPage === totalModalStudentPages}
+                        onClick={() => setGroupStudentPage((p) => Math.min(totalModalStudentPages, p + 1))}
+                        className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg disabled:opacity-50 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer flex items-center gap-1"
+                      >
+                        <span>Selanjutnya</span>
+                        <ChevronRight size={13} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-3.5 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
+                <Link
+                  to="/manajemen-ekosistem-kkn"
+                  className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                >
+                  <span>Buka di Modul Manajemen Ekosistem KKN</span>
+                  <ChevronRight size={13} />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setSelectedGroupForDetail(null)}
+                  className="px-5 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 font-bold text-xs rounded-xl transition cursor-pointer"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </>
     );
