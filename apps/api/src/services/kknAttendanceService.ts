@@ -352,23 +352,6 @@ export class KknAttendanceService {
               data: { actualInZoneMinutes: durationInZone },
             });
           }
-        } else if (isInsideZone && !isFutureDatePing && !isExpiredDatePing) {
-          try {
-            await prisma.activityAttendance.create({
-              data: {
-                studentId: userId,
-                scheduleId: sch.id,
-                status: "DI_ZONA",
-                method: "GPS_ACTIVITY",
-                latitude,
-                longitude,
-                actualInZoneMinutes: 0,
-              },
-            });
-            autoAttendanceTriggered = true;
-          } catch (_createErr) {
-            // Continue if concurrent request created record
-          }
         }
       }
     }
