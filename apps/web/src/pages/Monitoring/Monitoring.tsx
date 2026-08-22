@@ -169,15 +169,15 @@ const Monitoring: React.FC = () => {
   const isRwLocked = isRw;
 
   const apiFilterWilayah = useMemo(() => {
-    if (isRw) return user?.wilayah || "RW 06 Dago";
-    if (isLurah) return userKelurahan || "Cipaganti";
+    if (isRw) return user?.wilayah || (user as any)?.rw?.name || user?.address || undefined;
+    if (isLurah) return userKelurahan || undefined;
     if (selectedMapKelurahan && selectedMapKelurahan !== "Semua Kelurahan" && selectedMapKelurahan !== "Semua Kelurahan Binaan" && selectedMapKelurahan !== "Semua") {
       return selectedMapKelurahan;
     }
     if (isDpl) {
-      return dplKelurahans.length > 0 ? dplKelurahans.join(",") : user?.kelurahan || "Dago";
+      return dplKelurahans.length > 0 ? dplKelurahans.join(",") : user?.kelurahan || undefined;
     }
-    if (isCamat) return user?.wilayah || "Kecamatan";
+    if (isCamat) return user?.wilayah || "Kecamatan Coblong";
     return undefined;
   }, [user, isLurah, isDpl, isRw, isCamat, userKelurahan, selectedMapKelurahan, dplKelurahans]);
 
@@ -502,16 +502,13 @@ const Monitoring: React.FC = () => {
       .slice(0, 5);
   }, [verifiedMapBins, mapSearchInput]);
 
-  // Unique Rukun Warga list
+  // Unique Rukun Warga list directly from real database bins
   const uniqueRwOptions = useMemo(() => {
     const set = new Set<string>();
     verifiedMapBins.forEach((b) => {
       const rwName = b.rtRw || (b as any).rw?.name;
       if (rwName) set.add(rwName);
     });
-    if (set.size === 0) {
-      ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06"].forEach((r) => set.add(r));
-    }
     return Array.from(set).sort((a, b) => {
       const numA = parseInt(a.replace(/\D/g, "") || "0", 10);
       const numB = parseInt(b.replace(/\D/g, "") || "0", 10);
@@ -781,7 +778,9 @@ const Monitoring: React.FC = () => {
                     }`}
                   >
                     {isRwLocked ? (
-                      <option value={user?.wilayah || "RW 06"}>{user?.wilayah || "RW 06"} (Terkunci - Wilayah Tugas)</option>
+                      <option value={user?.wilayah || (user as any)?.rw?.name || user?.address || "Wilayah RW"}>
+                        {user?.wilayah || (user as any)?.rw?.name || user?.address || "Wilayah RW"} (Terkunci - Wilayah Tugas)
+                      </option>
                     ) : (
                       <>
                         <option value="Semua Rukun Warga">Semua Rukun Warga</option>

@@ -86,7 +86,7 @@ export const RwDashboard: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="font-bold text-slate-800 dark:text-slate-200">Wilayah Tugas:</span>
             <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700">
-              {user?.address || "RW 00"} • Kecamatan Coblong
+              {(user as any)?.rw?.name || user?.address || user?.wilayah || "Wilayah RW"} • Kecamatan Coblong
             </span>
           </div>
 
@@ -304,16 +304,20 @@ export const RwDashboard: React.FC = () => {
                 </span>
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
               </div>
-              <h4 className="text-base font-bold text-slate-100">Bpk. Agus Supriatna</h4>
-              <p className="text-xs text-slate-400 mt-0.5">NIP/ID: RESIDU-CB-004</p>
+              <h4 className="text-base font-bold text-slate-100">
+                {rwSummary?.petugasResidu?.name || "Petugas Residu Lapangan"}
+              </h4>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {rwSummary?.petugasResidu?.phone ? `Kontak: ${rwSummary.petugasResidu.phone}` : "Sektor Operasional Coblong"}
+              </p>
               <div className="mt-4 pt-3 border-t border-slate-800 space-y-2 text-xs text-slate-300">
                 <div className="flex justify-between">
                   <span className="text-slate-400">Wilayah Tugas:</span>
-                  <strong className="text-emerald-400">{user?.address || "RW 01"}</strong>
+                  <strong className="text-emerald-400">{(user as any)?.rw?.name || user?.address || user?.wilayah || "Wilayah RW"}</strong>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Kelurahan:</span>
-                  <strong className="text-slate-200">Dago</strong>
+                  <strong className="text-slate-200">{(user as any)?.rw?.kelurahan?.name || user?.wilayah || "Kecamatan Coblong"}</strong>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Window Tugas:</span>
