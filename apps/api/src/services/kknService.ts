@@ -1965,16 +1965,30 @@ export class KknService {
     const pendingSchedules = activeSchedules.filter((sch) => !completedScheduleIds.has(sch.id));
     const targetScheduleList = pendingSchedules;
 
+    // Prioritaskan sesi yang sedang berjalan (jika mahasiswa sudah menekan Mulai)
+    const runningSession = await prisma.activityAttendance.findFirst({
+      where: {
+        studentId: { in: studentUserIds },
+        status: "BERLANGSUNG",
+        checkOutAt: null,
+      },
+    });
+
     let activeSchedule: any = null;
+    if (runningSession) {
+      activeSchedule = targetScheduleList.find((sch) => sch.id === runningSession.scheduleId);
+    }
+
     const now = new Date();
     // WIB (UTC+7) konsisten
     const nowWibAz = new Date(now.getTime() + 7 * 60 * 60 * 1000);
     const currentWibMinutes = nowWibAz.getUTCHours() * 60 + nowWibAz.getUTCMinutes();
     const todayStr = nowWibAz.toISOString().substring(0, 10);
 
-    // 1. Time Window Matching: Pick schedule matching current time e.g. "08:00 - 10:00" vs "13:00 - 15:00"
-    for (const sch of targetScheduleList) {
-      let startMins = 0;
+    if (!activeSchedule) {
+      // 1. Time Window Matching: Pick schedule matching current time e.g. "08:00 - 10:00" vs "13:00 - 15:00"
+      for (const sch of targetScheduleList) {
+        let startMins = 0;
       let endMins = 24 * 60;
       // Strip suffix WIB/WITA/WIT dan normalize separator ke "-"
       const normalizedTime = (sch.time || "")
@@ -2023,6 +2037,7 @@ export class KknService {
         activeSchedule = sch;
         break;
       }
+    }
     }
 
     // 2. Smart Multi-Schedule Matching by Geofence if no exact time match

@@ -474,7 +474,10 @@ export class KknAttendanceService {
           polygon: sch.polygon,
         };
 
-        let durationInZone = calculateInZoneDurationMinutes(todayLogs, geofence, bufferMeters);
+        const sessionLogs = (existingAtt && existingAtt.attendedAt) 
+          ? todayLogs.filter(log => log.recordedAt >= existingAtt.attendedAt!)
+          : todayLogs;
+        let durationInZone = calculateInZoneDurationMinutes(sessionLogs, geofence, bufferMeters);
         inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
 
         // Cek posisi saat ini menggunakan buffer dinamis
@@ -955,12 +958,11 @@ export class KknAttendanceService {
     const rawDurationMinutes = Math.max(0, Math.floor((checkOutTime.getTime() - attendedTime.getTime()) / (1000 * 60)));
 
     // Calculate actual in-zone duration from GPS logs (not simple time diff)
-    const dayStart = attendance.attendedAt ? new Date(attendance.attendedAt) : new Date(checkOutTime);
-    dayStart.setHours(0, 0, 0, 0);
+    const sessionStart = attendance.attendedAt ? new Date(attendance.attendedAt) : new Date(checkOutTime);
     const todayLogsForCheckout = await prisma.studentLocation.findMany({
       where: {
         studentId,
-        recordedAt: { gte: dayStart },
+        recordedAt: { gte: sessionStart },
       },
       orderBy: { recordedAt: "asc" },
     });
