@@ -97,7 +97,7 @@ export const transactionController = {
 
         return {
           id: d.id,
-          jenis: d.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
+          jenis: (d.hasilKlasifikasiAi || "").toLowerCase() === "organik" ? "Organik" : "Anorganik",
           berat: Number(d.berat || 0),
           volume: Number(d.volumeEstimate || 0),
           poin: poinVal,
