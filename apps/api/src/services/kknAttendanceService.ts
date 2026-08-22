@@ -260,6 +260,25 @@ export class KknAttendanceService {
           polygon: sch.polygon,
         };
 
+        // Cek apakah jadwal kegiatan ini masih "AKAN_DATANG" (belum waktunya)
+        const scheduleDateWibStrPing = new Date(sch.date.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        let isFutureDatePing = false;
+        
+        if (scheduleDateWibStrPing > todayWibStrPing) {
+          isFutureDatePing = true;
+        } else if (scheduleDateWibStrPing === todayWibStrPing) {
+          const startParts = sch.startTime ? sch.startTime.split(":") : [];
+          if (startParts.length >= 2) {
+            const startHours = parseInt(startParts[0], 10);
+            const startMinutes = parseInt(startParts[1], 10);
+            const startMinutesTotal = startHours * 60 + startMinutes;
+            const currentMinutesTotal = nowWibPing.getUTCHours() * 60 + nowWibPing.getUTCMinutes();
+            if (currentMinutesTotal < startMinutesTotal) {
+              isFutureDatePing = true;
+            }
+          }
+        }
+
         const scheduleLogs = existingAtt?.attendedAt
           ? todayLogs.filter((l) => new Date(l.recordedAt) >= new Date(existingAtt.attendedAt))
           : [];
@@ -289,7 +308,7 @@ export class KknAttendanceService {
               data: { actualInZoneMinutes: durationInZone },
             });
           }
-        } else if (isInsideZone) {
+        } else if (isInsideZone && !isFutureDatePing) {
           try {
             await prisma.activityAttendance.create({
               data: {
