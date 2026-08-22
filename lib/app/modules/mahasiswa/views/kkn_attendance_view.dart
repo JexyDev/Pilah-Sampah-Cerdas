@@ -507,7 +507,8 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                   return;
                 }
 
-                if (state.isTracking || state.activeActivity != null) {
+                final isAlreadyActive = (state.isTracking || state.activeActivity != null) && !state.isSuccessAttendance;
+                if (isAlreadyActive) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                       content: Text('Anda masih memiliki kegiatan KKN aktif. Silakan keluar dari kegiatan sebelumnya terlebih dahulu!'),
