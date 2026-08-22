@@ -116,7 +116,7 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
       try {
         final lat = (item['lat'] as num).toDouble();
         final lng = (item['lng'] as num).toDouble();
-        final accumulated = _ref.read(kknLocationProvider).inZoneDurationSeconds ?? 0;
+        final accumulated = _ref.read(kknLocationProvider).inZoneDurationSeconds;
         await repo.sendLocationPing(lat, lng, inZoneSeconds: accumulated);
       } catch (e) {
         // Jika jaringan gagal lagi saat flushing, kembalikan item yang tersisa ke antrean
@@ -200,7 +200,7 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
       lng = position.longitude;
 
       final repo = _ref.read(kknRepositoryProvider);
-      final accumulated = _ref.read(kknLocationProvider).inZoneDurationSeconds ?? 0;
+      final accumulated = _ref.read(kknLocationProvider).inZoneDurationSeconds;
       final pingResponse = await repo.sendLocationPing(lat, lng, inZoneSeconds: accumulated);
       final data = pingResponse['data'] as Map<String, dynamic>?;
       final poskoArea = data?['poskoArea']?.toString() ?? data?['kelurahan']?.toString();

@@ -88,9 +88,9 @@ final petugasPemilahanNotificationsProvider = FutureProvider<List<NotificationEn
 
   // Tambahkan riwayat poin (PointHistory) agar tampil di Notification Page sesuai instruksi user
     final prefs = await SharedPreferences.getInstance();
-  final readList = prefs.getStringList('read_notifs_${userId}_${role}') ?? [];
+  final readList = prefs.getStringList('read_notifs_${userId}_$role') ?? [];
   final readSet = readList.toSet();
-  final markAllTimestamp = prefs.getInt('mark_all_notifs_${userId}_${role}') ?? 0;
+  final markAllTimestamp = prefs.getInt('mark_all_notifs_${userId}_$role') ?? 0;
 
   try {
     final pointRepo = ref.read(wasteLogRepositoryProvider);
@@ -143,7 +143,7 @@ final petugasPemilahanNotificationsProvider = FutureProvider<List<NotificationEn
     }
   } catch (_) {}
 
-    final deleteAllTimestamp = prefs.getInt('delete_all_notifs_${userId}_${role}') ?? 0;
+    final deleteAllTimestamp = prefs.getInt('delete_all_notifs_${userId}_$role') ?? 0;
   
   final List<NotificationEntity> finalResult = [];
   for (int i = 0; i < result.length; i++) {
