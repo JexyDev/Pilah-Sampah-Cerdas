@@ -1841,6 +1841,8 @@ export class KknAttendanceService {
       if (isOvernight) {
         if (isSchedDateToday) {
           scheduleStatus = currentMinutesTotal >= startMinutesTotal ? "AKTIF" : "BELUM_MULAI";
+        } else if (isFutureDate) {
+          scheduleStatus = "BELUM_MULAI";
         } else {
           scheduleStatus = currentMinutesTotal <= endMinutesTotal ? "AKTIF" : "SELESAI";
         }
