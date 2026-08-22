@@ -1030,59 +1030,112 @@ export const DplDashboardPage: React.FC = () => {
                 Belum ada program kerja yang diusulkan oleh mahasiswa di kelompok dampingan.
               </div>
             ) : (
-              groups.flatMap((g: any) => g.programKerja || []).slice(0, 4).map((p: any) => (
-                <div
-                  key={p.id}
-                  className="p-3 bg-slate-50/80 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700 flex items-center justify-between gap-3 text-xs"
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{p.deskripsi}</p>
-                      {p.kategori && (
-                        <span className="px-1.5 py-0.5 rounded text-[9.5px] font-extrabold border bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600">
-                          {p.kategori}
+              groups.flatMap((g: any) => g.programKerja || []).slice(0, 4).map((p: any) => {
+                const normU = normalizeStatusUsulan(p.statusUsulan, p.status);
+                const normP = normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status);
+                return (
+                  <div
+                    key={p.id}
+                    className="p-3 bg-slate-50/80 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{p.deskripsi}</p>
+                        {p.kategori && (
+                          <span className="px-1.5 py-0.5 rounded text-[9.5px] font-extrabold border bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600">
+                            {p.kategori}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        Kebutuhan: Rp {Number(p.kebutuhanBiaya || 0).toLocaleString("id-ID")}
+                      </p>
+                    </div>
+
+                    {/* Dual Status Badges: Usulan & Pelaksanaan */}
+                    <div className="shrink-0 flex items-center gap-1.5 flex-wrap">
+                      {/* 1. Status Usulan */}
+                      {normU === "DISETUJUI" && (
+                        <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 rounded-full font-bold text-[10px] inline-flex items-center gap-1">
+                          <CheckCircle2 size={11} className="text-emerald-600 dark:text-emerald-400" />
+                          <span>Disetujui</span>
+                        </span>
+                      )}
+                      {normU === "DITOLAK" && (
+                        <span className="px-2 py-0.5 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-700/40 rounded-full font-bold text-[10px] inline-flex items-center gap-1">
+                          <XCircle size={11} className="text-rose-600 dark:text-rose-400" />
+                          <span>Ditolak</span>
+                        </span>
+                      )}
+                      {normU === "BELUM_DISETUJUI" && (
+                        <span className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40 rounded-full font-bold text-[10px] inline-flex items-center gap-1">
+                          <Clock size={11} className="text-amber-600 dark:text-amber-400" />
+                          <span>Menunggu</span>
+                        </span>
+                      )}
+
+                      {/* 2. Status Pelaksanaan (Indikator Hijau UI/UX Friendly untuk Sedang Berjalan) */}
+                      {normP === "SEDANG_BERJALAN" && (
+                        <span className="px-2.5 py-0.5 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 dark:border-emerald-500/50 rounded-full font-black text-[10px] inline-flex items-center gap-1.5 shadow-2xs">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                          </span>
+                          <span>Sedang Berjalan</span>
+                        </span>
+                      )}
+                      {normP === "SELESAI" && (
+                        <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-full font-bold text-[10px] inline-flex items-center gap-1">
+                          <CheckCircle2 size={11} className="text-blue-600 dark:text-blue-400" />
+                          <span>Selesai</span>
+                        </span>
+                      )}
+                      {normP === "BELUM_MULAI" && (
+                        <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-full font-bold text-[10px]">
+                          Belum Mulai
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                      Kebutuhan: Rp {Number(p.kebutuhanBiaya || 0).toLocaleString("id-ID")}
-                    </p>
                   </div>
-                  <div className="shrink-0 flex items-center gap-1.5">
-                    {(p.status === "DITERIMA" || p.status === "DISETUJUI" || p.status === "SEDANG_BERJALAN" || p.status === "SELESAI") && (
-                      <span className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 rounded-full font-bold text-[10px]">
-                        Disetujui
-                      </span>
-                    )}
-                    {(p.status === "DITOLAK" || p.status === "TIDAK_DISETUJUI") && (
-                      <span className="px-2.5 py-1 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-700/40 rounded-full font-bold text-[10px]">
-                        Ditolak
-                      </span>
-                    )}
-                    {(p.status === "BELUM_DISETUJUI" || (!["DITERIMA", "DISETUJUI", "SEDANG_BERJALAN", "SELESAI", "DITOLAK", "TIDAK_DISETUJUI"].includes(p.status))) && (
-                      <span className="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40 rounded-full font-bold text-[10px]">
-                        Menunggu Persetujuan
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
           <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
             <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 flex-wrap gap-2">
-              <span>Total Proker: <strong className="text-slate-800 dark:text-slate-200">{groups.flatMap((g: any) => g.programKerja || []).length} Kegiatan</strong></span>
-              <div className="flex items-center gap-1.5 flex-wrap text-[10.5px]">
-                <span className="px-2.5 py-0.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40 rounded-md font-bold">
-                  Menunggu: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "BELUM_DISETUJUI" || (!["DITERIMA", "DISETUJUI", "SEDANG_BERJALAN", "SELESAI", "DITOLAK", "TIDAK_DISETUJUI"].includes(p.status))).length}
-                </span>
-                <span className="px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 rounded-md font-bold">
-                  Disetujui: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "DITERIMA" || p.status === "DISETUJUI" || p.status === "SEDANG_BERJALAN" || p.status === "SELESAI").length}
-                </span>
-                <span className="px-2.5 py-0.5 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-700/40 rounded-md font-bold">
-                  Ditolak: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => p.status === "DITOLAK" || p.status === "TIDAK_DISETUJUI").length}
-                </span>
+              <span className="font-semibold">Total Proker: <strong className="text-slate-800 dark:text-slate-200">{groups.flatMap((g: any) => g.programKerja || []).length} Kegiatan</strong></span>
+              
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-[10.5px]">
+                {/* Rekap Status Usulan */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase">Usulan:</span>
+                  <span className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40 rounded-md font-bold">
+                    Menunggu: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "BELUM_DISETUJUI").length}
+                  </span>
+                  <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 rounded-md font-bold">
+                    Disetujui: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI").length}
+                  </span>
+                  <span className="px-2 py-0.5 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-700/40 rounded-md font-bold">
+                    Ditolak: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DITOLAK").length}
+                  </span>
+                </div>
+
+                <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
+
+                {/* Rekap Status Pelaksanaan */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase">Pelaksanaan:</span>
+                  <span className="px-2 py-0.5 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 dark:border-emerald-500/50 rounded-md font-black">
+                    Berjalan: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status) === "SEDANG_BERJALAN").length}
+                  </span>
+                  <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-md font-bold">
+                    Selesai: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status) === "SELESAI").length}
+                  </span>
+                  <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-md font-bold">
+                    Belum Mulai: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status) === "BELUM_MULAI").length}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
