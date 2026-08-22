@@ -183,6 +183,19 @@ export class LogbookService {
             name: true,
             kelurahan: true,
             dpl: { select: { id: true, name: true, phone: true } },
+            students: {
+              select: {
+                id: true,
+                isKetua: true,
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    phone: true,
+                  },
+                },
+              },
+            },
           },
         },
         programKerja: {
@@ -232,8 +245,14 @@ export class LogbookService {
       statusApproval: item.statusApproval,
       programKerjaId: item.programKerjaId,
       programKerjaDeskripsi: item.programKerja?.deskripsi || null,
+      programKerjaKategori: item.programKerja?.kategori || null,
       fasilitasId: item.fasilitasId,
       fasilitasNama: item.fasilitas?.nama || null,
+      anggotaKelompok: item.kelompok.students?.map((s) => ({
+        id: s.id,
+        name: s.user.name,
+        isKetua: s.isKetua,
+      })) || [],
       disetujuiKetuaOleh: item.disetujuiKetuaOleh?.name || null,
       disetujuiKetuaPada: item.disetujuiKetuaPada,
       catatanKetua: item.catatanKetua,

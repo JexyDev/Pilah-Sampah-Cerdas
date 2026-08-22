@@ -141,13 +141,25 @@ const NavGroup: React.FC<{
       if (subRole === "mahasiswa" && ["mahasiswa", "mahasiswa-kkn", "mahasiswa_kkn"].includes(currentRole)) return true;
       if (subRole === "taskforce" && ["taskforce", "task-force", "panitia_taskforce"].includes(currentRole)) return true;
     }
+    if (
+      ["/logbook-kkn", "/dpl/logbook", "/logbook", "/log-aktivitas-dpl", "/dpl/log-aktivitas"].includes(location.pathname)
+    ) {
+      if (location.pathname === "/log-aktivitas-dpl" || location.pathname === "/dpl/log-aktivitas") {
+        return subTo.includes("tab=dpl") || subTo.includes("log-aktivitas-dpl");
+      }
+      const subTab = new URLSearchParams(subTo.split("?")[1] || "").get("tab") || "mahasiswa";
+      const currentTab = new URLSearchParams(location.search).get("tab") || "mahasiswa";
+      return subTab === currentTab;
+    }
     return false;
   };
 
   const isAnySubActive = items.some(
     (item, idx) =>
       isSubActive(item.to, idx) ||
-      (location.pathname === "/master-pengguna" && item.to.startsWith("/master-pengguna"))
+      (location.pathname === "/master-pengguna" && item.to.startsWith("/master-pengguna")) ||
+      (["/logbook-kkn", "/dpl/logbook", "/logbook", "/log-aktivitas-dpl", "/dpl/log-aktivitas"].includes(location.pathname) &&
+        (item.to.includes("/logbook-kkn") || item.to.includes("/log-aktivitas-dpl")))
   );
 
   React.useEffect(() => {
@@ -421,8 +433,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
-              to: "/logbook-kkn",
-              label: "Logbook Aktivitas",
+              to: "/logbook-kkn?tab=mahasiswa",
+              label: "Log Aktivitas Mahasiswa",
+              allowed: ALL_ROLES,
+            },
+            {
+              to: "/logbook-kkn?tab=dpl",
+              label: "Log Aktivitas DPL",
               allowed: ALL_ROLES,
             },
           ],

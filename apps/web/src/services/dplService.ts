@@ -250,7 +250,8 @@ export const dplService = {
         return res.data.data;
       }
       return [];
-    } catch {
+    } catch (err) {
+      console.error("[dplService.getGroupSummary] failed:", err);
       return [];
     }
   },
@@ -262,7 +263,8 @@ export const dplService = {
         return res.data.data;
       }
       return [];
-    } catch {
+    } catch (err) {
+      console.error("[dplService.getStudents] failed:", err);
       return [];
     }
   },
@@ -271,7 +273,9 @@ export const dplService = {
     try {
       const res = await api.get(`/dpl/students/${studentId}/citizens`);
       if (res.data.success && res.data.data) return res.data.data;
-    } catch {}
+    } catch (err) {
+      console.error("[dplService.getAssistedCitizens] failed:", err);
+    }
     return {
       student: { id: studentId, name: "-", jurusan: "-" },
       totalCitizensAssisted: 0,
@@ -283,7 +287,9 @@ export const dplService = {
     try {
       const res = await api.get("/dpl/map-coverage");
       if (res.data.success && res.data.data) return res.data.data;
-    } catch {}
+    } catch (err) {
+      console.error("[dplService.getMapCoverage] failed:", err);
+    }
     return {
       groups: [],
       rwAreas: [],
@@ -295,7 +301,9 @@ export const dplService = {
     try {
       const res = await api.get("/dpl/alerts");
       if (res.data.success && res.data.data) return res.data.data;
-    } catch {}
+    } catch (err) {
+      console.error("[dplService.getAlerts] failed:", err);
+    }
     return {
       pendingApprovalsCount: 0,
       pendingRequests: [],
@@ -306,7 +314,9 @@ export const dplService = {
     try {
       const res = await api.get("/dpl/approvals/history");
       if (res.data.success && Array.isArray(res.data.data)) return res.data.data;
-    } catch {}
+    } catch (err) {
+      console.error("[dplService.getApprovalHistory] failed:", err);
+    }
     return [];
   },
 
@@ -352,7 +362,8 @@ export const dplService = {
       });
       if (res.data.success && Array.isArray(res.data.data)) return res.data.data;
       return [];
-    } catch {
+    } catch (err) {
+      console.error("[dplService.getProgramKerja] failed:", err);
       return [];
     }
   },

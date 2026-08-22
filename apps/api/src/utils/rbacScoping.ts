@@ -48,7 +48,15 @@ export async function getScopingFilters(user: {
   // 1b. DPL (Dosen Pembimbing Lapangan) is strictly scoped to their assigned Kelompok KKN Kelurahan
   if (role === "DPL" || role === "DOSEN_PEMBIMBING") {
     const dplGroups = await prisma.kelompokKkn.findMany({
-      where: { dplId: dbUser.id },
+      where: {
+        OR: [
+          { dplId: dbUser.id },
+          { dpl: { id: dbUser.id } },
+          ...(dbUser.name ? [{ dplNamaMentah: { equals: dbUser.name.trim(), mode: "insensitive" } }] : []),
+          ...(dbUser.nip ? [{ dpl: { nip: dbUser.nip } }] : []),
+          ...(dbUser.phone ? [{ dpl: { phone: dbUser.phone } }] : []),
+        ],
+      },
       select: { kelurahan: true },
     });
     const dplKelurahans = Array.from(

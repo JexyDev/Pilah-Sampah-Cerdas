@@ -412,4 +412,157 @@ export const dplController = {
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   },
+
+  // ─────────────────────────────────────────────
+  // 12. LOG AKTIVITAS DPL (WEB ENTRY & MONITORING)
+  // ─────────────────────────────────────────────
+  getDplActivityLogs: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const dplUserId = getUserId(req);
+      const userRole = (req.user as any)?.role;
+      const { search, groupId, kategori, status, page, limit } = req.query;
+
+      const data = await dplService.getDplActivityLogs(dplUserId, userRole, {
+        search: search as string,
+        groupId: groupId as string,
+        kategori: kategori as string,
+        status: status as string,
+        page: page ? parseInt(page as string, 10) : undefined,
+        limit: limit ? parseInt(limit as string, 10) : undefined,
+      });
+
+      res.json({ success: true, data });
+    } catch (error: any) {
+      console.error("[dplController.getDplActivityLogs] error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  },
+
+  createDplActivityLog: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const dplUserId = getUserId(req);
+      const userRole = (req.user as any)?.role;
+
+      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl;
+      if (req.file) {
+        fotoBuktiUrl = `/uploads/${req.file.filename}`;
+      } else if (req.files) {
+        const filesObj = req.files as any;
+        const f = filesObj.fotoBukti?.[0] || filesObj.image?.[0] || filesObj.foto?.[0] || filesObj.file?.[0];
+        if (f) fotoBuktiUrl = `/uploads/${f.filename}`;
+      }
+
+      const {
+        kelompokId,
+        tanggal,
+        waktuMulai,
+        waktuSelesai,
+        kategori,
+        tempat,
+        lokasi,
+        programKerjaId,
+        deskripsi,
+        hasilTindakLanjut,
+        arahanEvaluasi,
+        simpanLokasi,
+        status,
+      } = req.body;
+
+      const data = await dplService.createDplActivityLog(dplUserId, userRole, {
+        kelompokId,
+        tanggal: tanggal || new Date().toISOString().split("T")[0],
+        waktuMulai,
+        waktuSelesai,
+        kategori,
+        tempat,
+        lokasi,
+        programKerjaId,
+        deskripsi,
+        hasilTindakLanjut,
+        arahanEvaluasi,
+        fotoBuktiUrl,
+        simpanLokasi: simpanLokasi === undefined ? true : String(simpanLokasi) === "true" || simpanLokasi === true,
+        status,
+      });
+
+      res.status(201).json({
+        success: true,
+        message: status === "DRAF" ? "Draf aktivitas DPL berhasil disimpan" : "Aktivitas DPL berhasil dikirim",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[dplController.createDplActivityLog] error:", error);
+      res.status(400).json({ error: "BAD_REQUEST", message: error.message || "Gagal menyimpan aktivitas DPL" });
+    }
+  },
+
+  updateDplActivityLog: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const dplUserId = getUserId(req);
+      const userRole = (req.user as any)?.role;
+
+      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl;
+      if (req.file) {
+        fotoBuktiUrl = `/uploads/${req.file.filename}`;
+      }
+
+      const {
+        kelompokId,
+        tanggal,
+        waktuMulai,
+        waktuSelesai,
+        kategori,
+        tempat,
+        lokasi,
+        programKerjaId,
+        deskripsi,
+        hasilTindakLanjut,
+        arahanEvaluasi,
+        simpanLokasi,
+        status,
+      } = req.body;
+
+      const data = await dplService.updateDplActivityLog(id, dplUserId, userRole, {
+        kelompokId,
+        tanggal,
+        waktuMulai,
+        waktuSelesai,
+        kategori,
+        tempat,
+        lokasi,
+        programKerjaId,
+        deskripsi,
+        hasilTindakLanjut,
+        arahanEvaluasi,
+        fotoBuktiUrl,
+        simpanLokasi: simpanLokasi === undefined ? undefined : String(simpanLokasi) === "true" || simpanLokasi === true,
+        status,
+      });
+
+      res.json({
+        success: true,
+        message: "Aktivitas DPL berhasil diperbarui",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[dplController.updateDplActivityLog] error:", error);
+      res.status(400).json({ error: "BAD_REQUEST", message: error.message || "Gagal memperbarui aktivitas DPL" });
+    }
+  },
+
+  deleteDplActivityLog: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const dplUserId = getUserId(req);
+      const userRole = (req.user as any)?.role;
+
+      const data = await dplService.deleteDplActivityLog(id, dplUserId, userRole);
+      res.json({ success: true, data });
+    } catch (error: any) {
+      console.error("[dplController.deleteDplActivityLog] error:", error);
+      res.status(400).json({ error: "BAD_REQUEST", message: error.message || "Gagal menghapus aktivitas DPL" });
+    }
+  },
 };
+

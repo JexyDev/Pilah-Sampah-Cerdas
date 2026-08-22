@@ -30,8 +30,10 @@ export interface LogbookMahasiswaItem {
   statusApproval: "MENUNGGU_PERSETUJUAN_KETUA" | "DITOLAK_KETUA" | "MENUNGGU_VERIFIKASI_DPL" | "DISETUJUI_DPL" | "PERLU_REVISI_DPL";
   programKerjaId?: string | null;
   programKerjaDeskripsi?: string | null;
+  programKerjaKategori?: string | null;
   fasilitasId?: string | null;
   fasilitasNama?: string | null;
+  anggotaKelompok?: Array<{ id: string; name: string; isKetua: boolean }>;
   disetujuiKetuaOleh?: string | null;
   disetujuiKetuaPada?: string | null;
   catatanKetua?: string | null;

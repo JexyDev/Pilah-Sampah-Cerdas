@@ -83,6 +83,7 @@ import PenilaianLaporanAkhirPage from "../pages/PenilaianKkn/PenilaianLaporanAkh
 import MasterPanduanPage from "../pages/MasterData/MasterPanduanPage";
 import MasterKegiatanSampahPage from "../pages/MasterData/MasterKegiatanSampahPage";
 import { LogbookKknPage } from "../pages/dpl/LogbookKknPage";
+import LogAktivitasDpl from "../pages/dpl/LogAktivitasDpl";
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
@@ -562,6 +563,22 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "LURAH", "CAMAT", "RW"]}>
               <LogbookKknPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/log-aktivitas-dpl"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER"]}>
+              <LogAktivitasDpl />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dpl/log-aktivitas"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER"]}>
+              <LogAktivitasDpl />
             </ProtectedRoute>
           }
         />

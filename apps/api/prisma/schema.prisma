@@ -422,6 +422,7 @@ model ProgramKerjaKkn {
   kelompok         KelompokKkn  @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
   reviewedBy       User?        @relation("DplReviewedProker", fields: [reviewedById], references: [id])
   logbooks         LogbookKkn[]
+  dplLogbooks      LogbookDpl[]
 
   @@map("program_kerja_kkn")
 }
@@ -1377,23 +1378,35 @@ model LogbookKkn {
 }
 
 model LogbookDpl {
-  id              String         @id @default(uuid())
-  dplId           String         @map("id_dpl")
-  kelompokId      String         @map("id_kelompok")
-  tanggal         DateTime       @map("tanggal") @db.Date
-  pekanKe         Int            @map("pekan_ke")
-  tempat          String         @map("tempat")
-  deskripsi       String         @map("deskripsi")
-  arahanEvaluasi  String?        @map("arahan_evaluasi")
-  fotoBuktiUrl    String?        @map("foto_bukti_url")
-  createdAt       DateTime       @default(now()) @map("dibuat_pada")
-  updatedAt       DateTime       @updatedAt @map("diperbarui_pada")
+  id                String           @id @default(uuid())
+  dplId             String           @map("id_dpl")
+  kelompokId        String           @map("id_kelompok")
+  tanggal           DateTime         @map("tanggal") @db.Date
+  pekanKe           Int              @default(1) @map("pekan_ke")
+  waktuMulai        String?          @map("waktu_mulai")
+  waktuSelesai      String?          @map("waktu_selesai")
+  kategori          String?          @default("Kunjungan Lapangan") @map("kategori")
+  tempat            String           @map("tempat")
+  lokasi            String?          @map("lokasi")
+  programKerjaId    String?          @map("id_program_kerja")
+  deskripsi         String           @map("deskripsi")
+  hasilTindakLanjut String?          @map("hasil_tindak_lanjut")
+  arahanEvaluasi    String?          @map("arahan_evaluasi")
+  durasiMenit       Int?             @map("durasi_menit")
+  durasiLabel       String?          @map("durasi_label")
+  fotoBuktiUrl      String?          @map("foto_bukti_url")
+  simpanLokasi      Boolean          @default(true) @map("simpan_lokasi")
+  status            String           @default("TERKIRIM") @map("status")
+  createdAt         DateTime         @default(now()) @map("dibuat_pada")
+  updatedAt         DateTime         @updatedAt @map("diperbarui_pada")
 
-  dpl             User           @relation("DplLogbooks", fields: [dplId], references: [id], onDelete: Cascade)
-  kelompok        KelompokKkn    @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
+  dpl               User             @relation("DplLogbooks", fields: [dplId], references: [id], onDelete: Cascade)
+  kelompok          KelompokKkn      @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
+  programKerja      ProgramKerjaKkn? @relation(fields: [programKerjaId], references: [id], onDelete: SetNull)
 
   @@index([dplId, pekanKe])
   @@index([kelompokId])
+  @@index([status])
   @@map("logbook_dpl")
 }
 

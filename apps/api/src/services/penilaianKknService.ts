@@ -73,7 +73,22 @@ export const penilaianKknService = {
 
     // Strict Scope: Jika evaluator DPL, pastikan mahasiswa berada di bawah kelompok bimbingannya
     if (evaluatorRole && ["DPL", "DOSEN_PEMBIMBING"].includes(evaluatorRole.toUpperCase()) && evaluatorId) {
-      const isSupervised = dpl?.id === evaluatorId || kelompok?.dplId === evaluatorId;
+      let isSupervised = dpl?.id === evaluatorId || kelompok?.dplId === evaluatorId;
+      if (!isSupervised) {
+        const evalUser = await prisma.user.findUnique({
+          where: { id: evaluatorId },
+          select: { name: true, phone: true, nip: true },
+        });
+        if (evalUser) {
+          if (kelompok?.dplNamaMentah && evalUser.name && kelompok.dplNamaMentah.toLowerCase().trim() === evalUser.name.toLowerCase().trim()) {
+            isSupervised = true;
+          } else if (dpl?.phone && evalUser.phone && dpl.phone === evalUser.phone) {
+            isSupervised = true;
+          } else if (dpl?.nip && evalUser.nip && dpl.nip === evalUser.nip) {
+            isSupervised = true;
+          }
+        }
+      }
       if (!isSupervised) {
         throw new Error("Akses ditolak: Mahasiswa ini bukan bagian dari kelompok bimbingan DPL Anda");
       }
@@ -495,13 +510,25 @@ export const penilaianKknService = {
     };
 
     if (evaluatorRole && ["DPL", "DOSEN_PEMBIMBING"].includes(evaluatorRole.toUpperCase()) && evaluatorId) {
+      const evalUser = await prisma.user.findUnique({
+        where: { id: evaluatorId },
+        select: { id: true, name: true, phone: true, nip: true },
+      });
+      const dplOr: any[] = [
+        { dplId: evaluatorId },
+        { dpl: { id: evaluatorId } },
+      ];
+      if (evalUser?.name) {
+        dplOr.push({ dplNamaMentah: { equals: evalUser.name.trim(), mode: "insensitive" } });
+        dplOr.push({ dpl: { name: { equals: evalUser.name.trim(), mode: "insensitive" } } });
+      }
+      if (evalUser?.phone) dplOr.push({ dpl: { phone: evalUser.phone } });
+      if (evalUser?.nip) dplOr.push({ dpl: { nip: evalUser.nip } });
+
       whereCondition.studentProfile = {
         kelompok: {
           id: groupId || undefined,
-          OR: [
-            { dplId: evaluatorId },
-            { dpl: { id: evaluatorId } },
-          ],
+          OR: dplOr,
         },
       };
     } else if (groupId) {
@@ -519,9 +546,13 @@ export const penilaianKknService = {
         where: { id: evaluatorId },
         include: { rw: true },
       });
-      if (userLurah?.rw?.kelurahanId) {
+      const userRw = userLurah?.rw as any;
+      const kelurahanId = userRw?.kelurahanId || userRw?.kelurahan?.id;
+      if (kelurahanId) {
         whereCondition.studentProfile = {
-          assignedRw: { kelurahanId: userLurah.rw.kelurahanId },
+          assignedRw: {
+            kelurahanId: kelurahanId,
+          },
         };
       }
     }
@@ -537,7 +568,9 @@ export const penilaianKknService = {
               },
             },
             assignedRw: {
-              include: { kelurahan: true },
+              include: {
+                kelurahan: true,
+              },
             },
           },
         },
@@ -621,17 +654,28 @@ export const penilaianKknService = {
   },
 
   /**
-  /**
    * Mengambil Data List Laporan Akhir Kelompok KKN (Role-Scoped untuk DPL & Koordinator)
    */
   getLaporanAkhirList: async (groupId?: string, evaluatorId?: string, evaluatorRole?: string) => {
     const kelompokWhere: any = {};
 
     if (evaluatorRole && ["DPL", "DOSEN_PEMBIMBING"].includes(evaluatorRole.toUpperCase()) && evaluatorId) {
-      kelompokWhere.OR = [
+      const evalUser = await prisma.user.findUnique({
+        where: { id: evaluatorId },
+        select: { id: true, name: true, phone: true, nip: true },
+      });
+      const dplOr: any[] = [
         { dplId: evaluatorId },
         { dpl: { id: evaluatorId } },
       ];
+      if (evalUser?.name) {
+        dplOr.push({ dplNamaMentah: { equals: evalUser.name.trim(), mode: "insensitive" } });
+        dplOr.push({ dpl: { name: { equals: evalUser.name.trim(), mode: "insensitive" } } });
+      }
+      if (evalUser?.phone) dplOr.push({ dpl: { phone: evalUser.phone } });
+      if (evalUser?.nip) dplOr.push({ dpl: { nip: evalUser.nip } });
+
+      kelompokWhere.OR = dplOr;
       if (groupId && groupId !== "ALL") {
         kelompokWhere.id = groupId;
       }

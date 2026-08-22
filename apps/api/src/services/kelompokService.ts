@@ -6,7 +6,47 @@ export const kelompokService = {
     const whereClause: any = {};
 
     if (dplUserId) {
-      whereClause.OR = [{ dplId: dplUserId }, { dpl: { id: dplUserId } }];
+      const dplOr: any[] = [{ dplId: dplUserId }, { dpl: { id: dplUserId } }];
+      try {
+        const dplUser = await prisma.user.findUnique({
+          where: { id: dplUserId },
+          select: { id: true, name: true, phone: true, nip: true },
+        });
+
+        if (dplUser) {
+          if (dplUser.name && dplUser.name.trim()) {
+            dplOr.push({ dplNamaMentah: { equals: dplUser.name.trim(), mode: "insensitive" } });
+            dplOr.push({ dpl: { name: { equals: dplUser.name.trim(), mode: "insensitive" } } });
+          }
+          if (dplUser.phone) dplOr.push({ dpl: { phone: dplUser.phone } });
+          if (dplUser.nip) dplOr.push({ dpl: { nip: dplUser.nip } });
+
+          // Auto-heal
+          const unlinkedOr: any[] = [];
+          if (dplUser.name) unlinkedOr.push({ dplNamaMentah: { equals: dplUser.name.trim(), mode: "insensitive" } });
+          if (dplUser.nip) unlinkedOr.push({ dpl: { nip: dplUser.nip } });
+          if (dplUser.phone) unlinkedOr.push({ dpl: { phone: dplUser.phone } });
+
+          const unlinkedGroups = unlinkedOr.length > 0 ? await prisma.kelompokKkn.findMany({
+            where: {
+              OR: unlinkedOr,
+              NOT: { dplId: dplUserId },
+            },
+            select: { id: true },
+          }) : [];
+
+          if (unlinkedGroups.length > 0) {
+            await prisma.kelompokKkn.updateMany({
+              where: { id: { in: unlinkedGroups.map((g) => g.id) } },
+              data: { dplId: dplUserId, dplNamaMentah: dplUser.name },
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("[kelompokService] Error resolving DPL fallback:", err);
+      }
+
+      whereClause.OR = dplOr;
     }
 
     if (search) {
@@ -62,10 +102,20 @@ export const kelompokService = {
     kelurahan?: string;
     cakupanRw?: any;
   }) => {
+    let dplNamaMentah: string | null = null;
+    if (data.dplId) {
+      const dplUser = await prisma.user.findUnique({
+        where: { id: data.dplId },
+        select: { name: true },
+      });
+      dplNamaMentah = dplUser?.name || null;
+    }
+
     return prisma.kelompokKkn.create({
       data: {
         name: data.name,
         dplId: data.dplId || null,
+        dplNamaMentah,
         kelurahan: data.kelurahan || null,
         cakupanRw: data.cakupanRw || null,
       },
@@ -76,14 +126,31 @@ export const kelompokService = {
     id: string,
     data: { name?: string; dplId?: string | null; kelurahan?: string | null; cakupanRw?: any }
   ) => {
+    const updatePayload: any = {
+      name: data.name,
+      kelurahan: data.kelurahan,
+      cakupanRw: data.cakupanRw,
+    };
+
+    if (data.dplId !== undefined) {
+      if (data.dplId === "" || data.dplId === null) {
+        updatePayload.dplId = null;
+        updatePayload.dplNamaMentah = null;
+      } else {
+        updatePayload.dplId = data.dplId;
+        const dplUser = await prisma.user.findUnique({
+          where: { id: data.dplId },
+          select: { name: true },
+        });
+        if (dplUser?.name) {
+          updatePayload.dplNamaMentah = dplUser.name;
+        }
+      }
+    }
+
     return prisma.kelompokKkn.update({
       where: { id },
-      data: {
-        name: data.name,
-        dplId: data.dplId === "" ? null : data.dplId,
-        kelurahan: data.kelurahan,
-        cakupanRw: data.cakupanRw,
-      },
+      data: updatePayload,
     });
   },
 
@@ -125,17 +192,22 @@ export const kelompokService = {
    * @param dplId ID user DPL. Null untuk melepas DPL.
    */
   assignDpl: async (kelompokId: string, dplId: string | null) => {
+    let dplNamaMentah: string | null = null;
     if (dplId) {
       const dplUser = await prisma.user.findFirst({
         where: { id: dplId, role: { name: { in: ["DPL", "DOSEN_PEMBIMBING"] } } },
         select: { id: true, name: true },
       });
       if (!dplUser) throw new Error("DPL_NOT_FOUND");
+      dplNamaMentah = dplUser.name;
     }
 
     return prisma.kelompokKkn.update({
       where: { id: kelompokId },
-      data: { dplId: dplId || null },
+      data: {
+        dplId: dplId || null,
+        dplNamaMentah,
+      },
       include: {
         dpl: { select: { id: true, name: true, phone: true } },
         students: { include: { user: { select: { id: true, name: true } } } },

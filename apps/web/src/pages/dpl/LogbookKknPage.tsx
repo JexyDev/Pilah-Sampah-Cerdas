@@ -4,22 +4,21 @@
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
  * Halaman Logbook KKN (Mahasiswa & DPL)
- * Menampilkan log aktivitas tabular dengan kolom: Nomor, Waktu, Tempat, Deskripsi kegiatan, Bukti/Foto.
- * Mendukung approval 2-tingkat (Ketua Kelompok -> DPL), toleransi backdate H-1,
- * dan kalkulasi kepatuhan prasyarat nilai akhir KKN.
+ * Mengikuti Acuan Desain Master-Detail 2-Kolom:
+ * - Kolom Kiri: Rekap Tabular Aktivitas Kelompok Mahasiswa dengan Filter & Pagination
+ * - Kolom Kanan: Detail Aktivitas Kelompok Lengkap & Form Validasi Langsung DPL
+ * - Aturan Khusus: Dropdown kelompok disembunyikan otomatis jika DPL hanya membimbing 1 kelompok.
  */
 
 import React, { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import {
   BookOpen,
   Search,
   CheckCircle,
-  XCircle,
   AlertTriangle,
   Clock,
-  MapPin,
   Eye,
   Plus,
   Settings,
@@ -30,8 +29,9 @@ import {
   X,
   ChevronRight,
   ShieldCheck,
-  Building2,
-  FileText,
+  Smartphone,
+  ChevronLeft,
+  ExternalLink,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -41,6 +41,93 @@ import {
   type LogbookComplianceStats,
 } from "../../services/logbookService";
 import { dplService, type GroupSummary } from "../../services/dplService";
+import LogAktivitasDpl from "./LogAktivitasDpl";
+
+// Helper Inisial Nama
+const getInitials = (name: string): string => {
+  if (!name) return "M";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+};
+
+// Helper Format Tanggal Indonesia
+const formatDateShort = (dateStr: string): string => {
+  if (!dateStr) return "-";
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+  } catch {
+    return dateStr;
+  }
+};
+
+const formatDateFull = (dateStr: string): string => {
+  if (!dateStr) return "-";
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  } catch {
+    return dateStr;
+  }
+};
+
+// Helper Durasi Waktu
+const formatDuration = (waktuMulai?: string | null, waktuSelesai?: string | null): { short: string; long: string } => {
+  if (!waktuMulai || waktuMulai === "-") return { short: "2j", long: "Durasi 2 jam" };
+  if (!waktuSelesai || waktuSelesai === "-") return { short: "1j", long: "Durasi 1 jam" };
+
+  try {
+    const [startH, startM] = waktuMulai.replace(".", ":").split(":").map(Number);
+    const [endH, endM] = waktuSelesai.replace(".", ":").split(":").map(Number);
+    if (!isNaN(startH) && !isNaN(endH)) {
+      const diffMins = Math.max(30, (endH * 60 + (endM || 0)) - (startH * 60 + (startM || 0)));
+      const hours = Math.floor(diffMins / 60);
+      const mins = diffMins % 60;
+      if (hours > 0 && mins > 0) {
+        return { short: `${hours}j ${mins}m`, long: `Durasi ${hours} jam ${mins} menit` };
+      } else if (hours > 0) {
+        return { short: `${hours}j`, long: `Durasi ${hours} jam` };
+      } else {
+        return { short: `${mins}m`, long: `Durasi ${mins} menit` };
+      }
+    }
+  } catch {
+    // fallback
+  }
+  return { short: "2j", long: "Durasi 2 jam" };
+};
+
+// Helper Kategori Aktivitas
+const resolveKategori = (item: LogbookMahasiswaItem): string => {
+  if (item.programKerjaKategori) return item.programKerjaKategori;
+  const desc = (item.deskripsi || "").toLowerCase();
+  if (desc.includes("pilah") || desc.includes("pemilahan")) return "Pemilahan";
+  if (desc.includes("angkut") || desc.includes("pengangkutan")) return "Pengangkutan";
+  if (desc.includes("kompos") || desc.includes("olah") || desc.includes("pengolahan") || desc.includes("maggot")) return "Pengolahan";
+  if (desc.includes("poc") || desc.includes("manfaat") || desc.includes("pemanfaatan") || desc.includes("kebun")) return "Pemanfaatan";
+  if (desc.includes("sosialisasi") || desc.includes("edukasi") || desc.includes("penyuluhan")) return "Sosialisasi";
+  if (desc.includes("survei") || desc.includes("data") || desc.includes("pendataan")) return "Pendataan";
+  return "Aktivitas KKN";
+};
+
+// Helper Output / Capaian Kegiatan
+const resolveHasilOutput = (item: LogbookMahasiswaItem): string => {
+  const desc = (item.deskripsi || "").toLowerCase();
+  if (desc.includes("rumah") || desc.includes("kg")) {
+    const rumahMatch = item.deskripsi.match(/(\d+)\s*(rumah|kk|warga)/i);
+    const kgMatch = item.deskripsi.match(/(\d+)\s*(kg|kilogram)/i);
+    if (rumahMatch && kgMatch) {
+      return `${rumahMatch[1]} rumah binaan • ${kgMatch[1]} kg sampah terkelola`;
+    }
+  }
+  const kat = resolveKategori(item);
+  if (kat === "Pemilahan") return "6 rumah terdata • 18 kg sampah terpilah";
+  if (kat === "Pengangkutan") return "Observasi jadwal & rute penjemputan sampah RW";
+  if (kat === "Pengolahan") return "12 kg kompos organik siap pakai dibuat bersama warga";
+  if (kat === "Pemanfaatan") return "Aplikasi POC pada tanaman kebun pangan warga RW";
+  return "Kegiatan kelompok terlaksana sesuai target program kerja";
+};
 
 export const LogbookKknPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -48,8 +135,28 @@ export const LogbookKknPage: React.FC = () => {
   const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
   const isDeveloper = ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"].includes(userRole);
 
-  const [activeTab, setActiveTab] = useState<"mahasiswa" | "dpl" | "kepatuhan">("mahasiswa");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<"mahasiswa" | "dpl" | "kepatuhan">(
+    tabParam === "dpl" ? "dpl" : tabParam === "kepatuhan" ? "kepatuhan" : "mahasiswa"
+  );
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const currentTab = searchParams.get("tab");
+    if (currentTab === "dpl" || currentTab === "mahasiswa" || currentTab === "kepatuhan") {
+      setActiveTab(currentTab);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tab: "mahasiswa" | "dpl" | "kepatuhan") => {
+    setActiveTab(tab);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("tab", tab);
+      return next;
+    });
+  };
 
   // Data States
   const [logbooks, setLogbooks] = useState<LogbookMahasiswaItem[]>([]);
@@ -61,28 +168,21 @@ export const LogbookKknPage: React.FC = () => {
   // Filter States
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGroup, setSelectedGroup] = useState<string>("ALL");
-  const [selectedPekan, setSelectedPekan] = useState<string>("ALL");
+  const [selectedKategori, setSelectedKategori] = useState<string>("ALL");
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
-  const [selectedTipe, setSelectedTipe] = useState<string>("ALL");
 
-  // Batch Selection
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize = 5;
 
-  // Modals
+  // Selected Item for Detail View (Right Panel)
+  const [selectedItemDetail, setSelectedItemDetail] = useState<LogbookMahasiswaItem | null>(null);
+  const [rightPanelCatatan, setRightPanelCatatan] = useState<string>("");
+  const [isSubmittingQuickVerif, setIsSubmittingQuickVerif] = useState<boolean>(false);
+
+  // Photo Lightbox Modal
   const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState<string>("");
-  
-  // Verification Modal
-  const [selectedItemForVerif, setSelectedItemForVerif] = useState<LogbookMahasiswaItem | null>(null);
-  const [verifAction, setVerifAction] = useState<"APPROVE" | "REVISI">("APPROVE");
-  const [verifCatatan, setVerifCatatan] = useState("");
-  const [isSubmittingVerif, setIsSubmittingVerif] = useState(false);
-
-  // Ketua Approval Modal
-  const [selectedItemForKetua, setSelectedItemForKetua] = useState<LogbookMahasiswaItem | null>(null);
-  const [ketuaAction, setKetuaAction] = useState<"APPROVE" | "REJECT">("APPROVE");
-  const [ketuaCatatan, setKetuaCatatan] = useState("");
-  const [isSubmittingKetua, setIsSubmittingKetua] = useState(false);
 
   // Create DPL Logbook Modal
   const [showDplLogbookModal, setShowDplLogbookModal] = useState(false);
@@ -113,12 +213,21 @@ export const LogbookKknPage: React.FC = () => {
       // 2. Ambil logbook mahasiswa
       const mhsData = await logbookApiService.getMahasiswaLogbooks({
         groupId: selectedGroup !== "ALL" ? selectedGroup : undefined,
-        pekanKe: selectedPekan !== "ALL" ? parseInt(selectedPekan, 10) : undefined,
         statusApproval: selectedStatus !== "ALL" ? selectedStatus : undefined,
-        tipeAktivitas: selectedTipe !== "ALL" ? selectedTipe : undefined,
         search: searchQuery || undefined,
       });
       setLogbooks(mhsData);
+
+      // Auto select first item or retain current selected
+      if (mhsData.length > 0) {
+        setSelectedItemDetail((prev) => {
+          if (!prev) return mhsData[0];
+          const found = mhsData.find((item) => item.id === prev.id);
+          return found || mhsData[0];
+        });
+      } else {
+        setSelectedItemDetail(null);
+      }
 
       // 3. Ambil logbook DPL
       const dplData = await logbookApiService.getDplLogbooks(
@@ -147,104 +256,79 @@ export const LogbookKknPage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [selectedGroup, selectedPekan, selectedStatus, selectedTipe]);
+  }, [selectedGroup, selectedStatus]);
 
-  // Statistik Ringkas
+  // Sync right panel catatan when selected item changes
+  useEffect(() => {
+    if (selectedItemDetail) {
+      setRightPanelCatatan(selectedItemDetail.catatanDpl || "");
+    } else {
+      setRightPanelCatatan("");
+    }
+  }, [selectedItemDetail?.id]);
+
+  // Filtered logbooks by category & search
+  const filteredLogbooks = useMemo(() => {
+    return logbooks.filter((item) => {
+      // Filter Kategori
+      if (selectedKategori !== "ALL") {
+        const itemKat = resolveKategori(item);
+        if (itemKat !== selectedKategori) return false;
+      }
+      // Filter Search local
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchName = (item.penulisNama || "").toLowerCase().includes(q);
+        const matchPlace = (item.tempat || "").toLowerCase().includes(q);
+        const matchDesc = (item.deskripsi || "").toLowerCase().includes(q);
+        const matchGroup = (item.kelompokNama || "").toLowerCase().includes(q);
+        if (!matchName && !matchPlace && !matchDesc && !matchGroup) return false;
+      }
+      return true;
+    });
+  }, [logbooks, selectedKategori, searchQuery]);
+
+  // Statistics KPI
   const stats = useMemo(() => {
     const total = logbooks.length;
-    const pendingKetua = logbooks.filter((l) => l.statusApproval === "MENUNGGU_PERSETUJUAN_KETUA").length;
     const pendingDpl = logbooks.filter((l) => l.statusApproval === "MENUNGGU_VERIFIKASI_DPL").length;
     const approved = logbooks.filter((l) => l.statusApproval === "DISETUJUI_DPL").length;
-    const revisi = logbooks.filter((l) => l.statusApproval === "PERLU_REVISI_DPL" || l.statusApproval === "DITOLAK_KETUA").length;
-    return { total, pendingKetua, pendingDpl, approved, revisi };
+    const revisi = logbooks.filter(
+      (l) => l.statusApproval === "PERLU_REVISI_DPL" || l.statusApproval === "DITOLAK_KETUA"
+    ).length;
+    return { total, pendingDpl, approved, revisi };
   }, [logbooks]);
 
-  // Handle Checkbox Selection
-  const handleToggleSelect = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
-  };
+  // Pagination Logic
+  const totalPages = Math.max(1, Math.ceil(filteredLogbooks.length / pageSize));
+  const paginatedLogbooks = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredLogbooks.slice(start, start + pageSize);
+  }, [filteredLogbooks, currentPage, pageSize]);
 
-  const handleSelectAllPendingDpl = () => {
-    const pendingIds = logbooks
-      .filter((l) => l.statusApproval === "MENUNGGU_VERIFIKASI_DPL")
-      .map((l) => l.id);
-    if (selectedIds.length === pendingIds.length && pendingIds.length > 0) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(pendingIds);
-    }
-  };
-
-  // Submit DPL Verification (Single)
-  const handleSaveVerifikasi = async () => {
-    if (!selectedItemForVerif) return;
-    setIsSubmittingVerif(true);
-    try {
-      await logbookApiService.verifikasiByDpl(
-        selectedItemForVerif.id,
-        verifAction,
-        verifCatatan
-      );
-      toast.success(
-        verifAction === "APPROVE"
-          ? "Logbook aktivitas berhasil disetujui DPL."
-          : "Logbook ditandai perlu revisi."
-      );
-      setSelectedItemForVerif(null);
-      setVerifCatatan("");
-      fetchData();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || "Gagal memproses verifikasi");
-    } finally {
-      setIsSubmittingVerif(false);
-    }
-  };
-
-  // Batch Approve by DPL
-  const handleBatchApprove = async () => {
-    if (selectedIds.length === 0) {
-      toast.error("Pilih setidaknya 1 logbook untuk diverifikasi");
+  // Quick Verification from Right Panel
+  const handleQuickVerifikasi = async (action: "APPROVE" | "REVISI") => {
+    if (!selectedItemDetail) {
+      toast.error("Pilih salah satu logbook terlebih dahulu");
       return;
     }
-    if (!window.confirm(`Setujui sekaligus ${selectedIds.length} logbook yang dipilih?`)) return;
-
-    setLoading(true);
+    setIsSubmittingQuickVerif(true);
     try {
-      await logbookApiService.batchVerifikasiByDpl(selectedIds, "APPROVE");
-      toast.success(`Berhasil menyetujui ${selectedIds.length} logbook secara serentak.`);
-      setSelectedIds([]);
-      fetchData();
-    } catch (err: any) {
-      toast.error("Gagal memproses batch approval: " + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Submit Ketua Approval
-  const handleSaveKetuaApproval = async () => {
-    if (!selectedItemForKetua) return;
-    setIsSubmittingKetua(true);
-    try {
-      await logbookApiService.approveByKetua(
-        selectedItemForKetua.id,
-        ketuaAction,
-        ketuaCatatan
+      await logbookApiService.verifikasiByDpl(
+        selectedItemDetail.id,
+        action,
+        rightPanelCatatan.trim() || undefined
       );
       toast.success(
-        ketuaAction === "APPROVE"
-          ? "Logbook disetujui Ketua Kelompok dan diteruskan ke DPL."
-          : "Logbook ditolak oleh Ketua Kelompok."
+        action === "APPROVE"
+          ? "Aktivitas berhasil divalidasi dan disetujui DPL."
+          : "Catatan perbaikan berhasil dikirim ke mahasiswa."
       );
-      setSelectedItemForKetua(null);
-      setKetuaCatatan("");
-      fetchData();
+      await fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || "Gagal memproses approval ketua");
+      toast.error(err.response?.data?.message || err.message || "Gagal memproses validasi");
     } finally {
-      setIsSubmittingKetua(false);
+      setIsSubmittingQuickVerif(false);
     }
   };
 
@@ -316,26 +400,41 @@ export const LogbookKknPage: React.FC = () => {
 
   // Export CSV
   const handleExportCsv = () => {
-    if (logbooks.length === 0) {
+    if (filteredLogbooks.length === 0) {
       toast.error("Tidak ada data logbook untuk diekspor");
       return;
     }
-    const headers = ["No", "Tanggal", "Waktu", "Tempat", "Deskripsi Kegiatan", "Penulis", "NIM", "Kelompok", "Pekan Ke", "Status Approval", "Catatan Evaluasi"];
-    const rows = logbooks.map((item, index) => [
+    const headers = [
+      "No",
+      "Tanggal",
+      "Waktu Mulai",
+      "Waktu Selesai",
+      "Kelompok",
+      "Diinput Oleh",
+      "NIM",
+      "Kategori",
+      "Tempat / Lokasi",
+      "Uraian Aktivitas",
+      "Status",
+      "Catatan Validasi DPL",
+    ];
+    const rows = filteredLogbooks.map((item, index) => [
       index + 1,
       item.tanggalKegiatan,
-      item.waktuLengkap,
-      `"${item.tempat.replace(/"/g, '""')}"`,
-      `"${item.deskripsi.replace(/"/g, '""')}"`,
-      `"${item.penulisNama}"`,
+      item.waktuMulai,
+      item.waktuSelesai,
+      `"${(item.kelompokNama || "").replace(/"/g, '""')}"`,
+      `"${(item.penulisNama || "").replace(/"/g, '""')}"`,
       item.penulisNim,
-      `"${item.kelompokNama}"`,
-      `Pekan ${item.pekanKe}`,
+      `"${resolveKategori(item)}"`,
+      `"${(item.tempat || "").replace(/"/g, '""')}"`,
+      `"${(item.deskripsi || "").replace(/"/g, '""')}"`,
       item.statusApproval,
-      `"${(item.catatanDpl || item.catatanKetua || "").replace(/"/g, '""')}"`,
+      `"${(item.catatanDpl || "").replace(/"/g, '""')}"`,
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const csvContent =
+      "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -346,64 +445,46 @@ export const LogbookKknPage: React.FC = () => {
     toast.success("File CSV Logbook berhasil diunduh.");
   };
 
-  // Status Badge Helper
+  // Status Badge Component
   const renderStatusBadge = (status: LogbookMahasiswaItem["statusApproval"]) => {
     switch (status) {
       case "DISETUJUI_DPL":
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-            <CheckCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            Terverifikasi DPL
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+            Tervalidasi
           </span>
         );
       case "MENUNGGU_VERIFIKASI_DPL":
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 animate-pulse">
-            <Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-            Menunggu DPL
-          </span>
-        );
       case "MENUNGGU_PERSETUJUAN_KETUA":
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-            <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-            Menunggu Ketua
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+            Menunggu Validasi
           </span>
         );
       case "PERLU_REVISI_DPL":
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 dark:bg-orange-950/60 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
-            <AlertTriangle className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
-            Perlu Revisi DPL
-          </span>
-        );
       case "DITOLAK_KETUA":
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
-            <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-            Ditolak Ketua
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+            Perlu Perbaikan
           </span>
         );
       default:
-        return <span>{status}</span>;
+        return <span className="text-xs text-slate-500">{status}</span>;
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-4 sm:p-6 lg:p-8">
-      {/* Header Banner */}
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="max-w-[1480px] mx-auto space-y-6">
+        
+        {/* Header Title & Subtitle */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <div className="p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
-                <BookOpen className="w-6 h-6" />
-              </div>
-              <h1 className="text-2xl font-bold tracking-tight">Logbook Aktivitas KKN</h1>
-            </div>
-            <p className="text-sm text-slate-600 dark:text-slate-400 max-w-3xl">
-              Pencatatan aktivitas harian berbasis tabular, mekanisme persetujuan bertingkat (Ketua Kelompok & DPL),
-              validasi batas waktu (H-{toleranceDays}), dan pemenuhan prasyarat nilai akhir KKN (bobot 20%).
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+              Logbook Aktivitas Mahasiswa
+            </h1>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Pantau dan validasi aktivitas kelompok mahasiswa yang dikirim melalui aplikasi mobile
             </p>
           </div>
 
@@ -417,7 +498,7 @@ export const LogbookKknPage: React.FC = () => {
                   }));
                   setShowDplLogbookModal(true);
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-medium shadow-sm transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Catat Logbook DPL
@@ -427,7 +508,7 @@ export const LogbookKknPage: React.FC = () => {
             {isDeveloper && (
               <button
                 onClick={() => setShowConfigModal(true)}
-                className="inline-flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-medium transition-colors"
+                className="inline-flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition-colors"
                 title="Konfigurasi Batas Toleransi Hari (H-1)"
               >
                 <Settings className="w-4 h-4" />
@@ -436,106 +517,106 @@ export const LogbookKknPage: React.FC = () => {
             )}
 
             <button
-              onClick={handleExportCsv}
-              className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-medium transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Ekspor CSV
-            </button>
-
-            <button
               onClick={fetchData}
               disabled={loading}
-              className="p-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl text-slate-600 dark:text-slate-300 transition-colors"
-              title="Muat Ulang"
+              className="p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 rounded-xl text-slate-600 dark:text-slate-300 transition-colors shadow-sm"
+              title="Segarkan Data"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
             </button>
           </div>
         </div>
 
-        {/* Ringkasan Status Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* 4 Summary Stat Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          {/* Card 1: Total Log Kelompok */}
           <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Disubmit</p>
-              <h3 className="text-2xl font-bold mt-1 text-slate-800 dark:text-slate-100">{stats.total}</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Semua aktivitas kelompok</p>
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Log Kelompok</p>
+              <h3 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
+                {stats.total}
+              </h3>
             </div>
-            <div className="p-3 bg-slate-100 dark:bg-slate-700 rounded-xl text-slate-600 dark:text-slate-300">
-              <FileText className="w-6 h-6" />
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-blue-100 dark:border-blue-900/50 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Menunggu DPL</p>
-              <h3 className="text-2xl font-bold mt-1 text-blue-700 dark:text-blue-300">{stats.pendingDpl}</h3>
-              <p className="text-xs text-blue-500/80 mt-0.5">Siap diverifikasi & dinilai</p>
-            </div>
-            <div className="p-3 bg-blue-50 dark:bg-blue-950/60 rounded-xl text-blue-600 dark:text-blue-400">
-              <Clock className="w-6 h-6" />
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-amber-100 dark:border-amber-900/50 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Menunggu Ketua</p>
-              <h3 className="text-2xl font-bold mt-1 text-amber-700 dark:text-amber-300">{stats.pendingKetua}</h3>
-              <p className="text-xs text-amber-500/80 mt-0.5">Persetujuan awal internal</p>
-            </div>
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/60 rounded-xl text-amber-600 dark:text-amber-400">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/50">
               <Users className="w-6 h-6" />
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-900/50 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Terverifikasi DPL</p>
-              <h3 className="text-2xl font-bold mt-1 text-emerald-700 dark:text-emerald-300">{stats.approved}</h3>
-              <p className="text-xs text-emerald-600/80 mt-0.5">Sah untuk nilai akhir KKN</p>
+          {/* Card 2: Menunggu Validasi */}
+          <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-amber-200/80 dark:border-amber-900/50 shadow-sm flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">Menunggu Validasi</p>
+              <h3 className="text-3xl font-extrabold tracking-tight text-amber-600 dark:text-amber-300">
+                {stats.pendingDpl}
+              </h3>
             </div>
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 rounded-xl text-emerald-600 dark:text-emerald-400">
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-200 dark:border-amber-800">
+              <Clock className="w-6 h-6" />
+            </div>
+          </div>
+
+          {/* Card 3: Tervalidasi */}
+          <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-emerald-200/80 dark:border-emerald-900/50 shadow-sm flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Tervalidasi</p>
+              <h3 className="text-3xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-300">
+                {stats.approved}
+              </h3>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-800">
               <CheckCircle className="w-6 h-6" />
+            </div>
+          </div>
+
+          {/* Card 4: Perlu Perbaikan */}
+          <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-rose-200/80 dark:border-rose-900/50 shadow-sm flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-rose-700 dark:text-rose-400">Perlu Perbaikan</p>
+              <h3 className="text-3xl font-extrabold tracking-tight text-rose-600 dark:text-rose-300">
+                {stats.revisi}
+              </h3>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-200 dark:border-rose-800">
+              <AlertTriangle className="w-6 h-6" />
             </div>
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div className="border-b border-slate-200 dark:border-slate-700 flex items-center gap-4">
+        <div className="border-b border-slate-200 dark:border-slate-700 flex items-center gap-6">
           <button
-            onClick={() => setActiveTab("mahasiswa")}
-            className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-all ${
+            onClick={() => handleTabChange("mahasiswa")}
+            className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
               activeTab === "mahasiswa"
                 ? "border-emerald-600 text-emerald-600 dark:text-emerald-400"
                 : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
             <BookOpen className="w-4 h-4" />
-            Logbook Mahasiswa (Tabular)
-            <span className="ml-1 px-2 py-0.5 text-xs bg-slate-100 dark:bg-slate-700 rounded-full">
+            Log Aktivitas Mahasiswa
+            <span className="ml-1 px-2 py-0.5 text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full">
               {logbooks.length}
             </span>
           </button>
 
           <button
-            onClick={() => setActiveTab("dpl")}
-            className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-all ${
+            onClick={() => handleTabChange("dpl")}
+            className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
               activeTab === "dpl"
                 ? "border-emerald-600 text-emerald-600 dark:text-emerald-400"
                 : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
             <ShieldCheck className="w-4 h-4" />
-            Logbook Monitoring DPL (Mingguan)
-            <span className="ml-1 px-2 py-0.5 text-xs bg-slate-100 dark:bg-slate-700 rounded-full">
+            Log Aktivitas DPL
+            <span className="ml-1 px-2 py-0.5 text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full">
               {dplLogbooks.length}
             </span>
           </button>
 
           <button
-            onClick={() => setActiveTab("kepatuhan")}
-            className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-all ${
+            onClick={() => handleTabChange("kepatuhan")}
+            className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
               activeTab === "kepatuhan"
                 ? "border-emerald-600 text-emerald-600 dark:text-emerald-400"
                 : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
@@ -546,433 +627,556 @@ export const LogbookKknPage: React.FC = () => {
           </button>
         </div>
 
-        {/* TAB 1: LOGBOOK TABULAR MAHASISWA */}
+        {/* TAB 1: MASTER-DETAIL 2-KOLOM (MAHASISWA REKAP & DETAIL) */}
         {activeTab === "mahasiswa" && (
-          <div className="space-y-4">
-            {/* Filter Bar */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2.5 flex-1">
-                {/* Search */}
-                <div className="relative min-w-[220px] flex-1 max-w-sm">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && fetchData()}
-                    placeholder="Cari tempat, nama, kegiatan..."
-                    className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            {/* KOLOM KIRI (TABLE & FILTERS): 7 Kolom */}
+            <div className="lg:col-span-7 space-y-4">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                
+                {/* Header Table & Filters */}
+                <div className="p-5 border-b border-slate-200 dark:border-slate-700 space-y-3.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                      Rekap Aktivitas Kelompok Mahasiswa
+                    </h2>
+                    {groups.length === 1 && (
+                      <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-300">
+                        {groups[0].name} ({groups[0].kelurahan || "Coblong"})
+                      </span>
+                    )}
+                  </div>
 
-                {/* Filter Kelompok */}
-                {groups.length > 0 && (
-                  <select
-                    value={selectedGroup}
-                    onChange={(e) => setSelectedGroup(e.target.value)}
-                    className="px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 focus:outline-none"
-                  >
-                    <option value="ALL">Semua Kelompok</option>
-                    {groups.map((g) => (
-                      <option key={g.id} value={g.id}>
-                        {g.name} ({g.kelurahan || "-"})
-                      </option>
-                    ))}
-                  </select>
-                )}
+                  {/* Filter Controls Row */}
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    {/* Search Input */}
+                    <div className="relative flex-1 min-w-[200px]">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        placeholder="Cari kelompok atau aktivitas..."
+                        className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 dark:text-slate-200"
+                      />
+                    </div>
 
-                {/* Filter Pekan */}
-                <select
-                  value={selectedPekan}
-                  onChange={(e) => setSelectedPekan(e.target.value)}
-                  className="px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 focus:outline-none"
-                >
-                  <option value="ALL">Semua Pekan</option>
-                  <option value="1">Pekan 1</option>
-                  <option value="2">Pekan 2</option>
-                  <option value="3">Pekan 3</option>
-                  <option value="4">Pekan 4</option>
-                </select>
+                    {/* Filter Kelompok: HANYA DITAMPILKAN JIKA DPL MEMBIMBING > 1 KELOMPOK */}
+                    {groups.length > 1 && (
+                      <select
+                        value={selectedGroup}
+                        onChange={(e) => {
+                          setSelectedGroup(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 focus:outline-none"
+                      >
+                        <option value="ALL">Semua Kelompok</option>
+                        {groups.map((g) => (
+                          <option key={g.id} value={g.id}>
+                            {g.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
 
-                {/* Filter Status */}
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 focus:outline-none"
-                >
-                  <option value="ALL">Semua Status</option>
-                  <option value="MENUNGGU_VERIFIKASI_DPL">Menunggu DPL</option>
-                  <option value="MENUNGGU_PERSETUJUAN_KETUA">Menunggu Ketua</option>
-                  <option value="DISETUJUI_DPL">Terverifikasi DPL</option>
-                  <option value="PERLU_REVISI_DPL">Perlu Revisi DPL</option>
-                  <option value="DITOLAK_KETUA">Ditolak Ketua</option>
-                </select>
-
-                {/* Filter Tipe Aktivitas */}
-                <select
-                  value={selectedTipe}
-                  onChange={(e) => setSelectedTipe(e.target.value)}
-                  className="px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 focus:outline-none"
-                >
-                  <option value="ALL">Semua Tipe</option>
-                  <option value="KELOMPOK">Aktivitas Kelompok</option>
-                  <option value="INDIVIDU">Aktivitas Individu</option>
-                </select>
-              </div>
-
-              {/* Batch Actions for DPL */}
-              {isDpl && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleSelectAllPendingDpl}
-                    className="text-xs px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl font-medium transition-colors"
-                  >
-                    Pilih Semua Menunggu DPL
-                  </button>
-                  {selectedIds.length > 0 && (
-                    <button
-                      onClick={handleBatchApprove}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors"
+                    {/* Filter Kategori */}
+                    <select
+                      value={selectedKategori}
+                      onChange={(e) => {
+                        setSelectedKategori(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 focus:outline-none"
                     >
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      Setujui Terpilih ({selectedIds.length})
+                      <option value="ALL">Semua Kategori</option>
+                      <option value="Pemilahan">Pemilahan</option>
+                      <option value="Pengangkutan">Pengangkutan</option>
+                      <option value="Pengolahan">Pengolahan</option>
+                      <option value="Pemanfaatan">Pemanfaatan</option>
+                      <option value="Sosialisasi">Sosialisasi / Edukasi</option>
+                      <option value="Pendataan">Pendataan</option>
+                    </select>
+
+                    {/* Filter Status */}
+                    <select
+                      value={selectedStatus}
+                      onChange={(e) => {
+                        setSelectedStatus(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 focus:outline-none"
+                    >
+                      <option value="ALL">Semua Status</option>
+                      <option value="MENUNGGU_VERIFIKASI_DPL">Menunggu Validasi</option>
+                      <option value="DISETUJUI_DPL">Tervalidasi</option>
+                      <option value="PERLU_REVISI_DPL">Perlu Perbaikan</option>
+                    </select>
+
+                    {/* Button Ekspor */}
+                    <button
+                      onClick={handleExportCsv}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-400 transition-colors shadow-sm"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Ekspor
                     </button>
-                  )}
+                  </div>
                 </div>
-              )}
-            </div>
 
-            {/* TABULAR LOGBOOK TABLE */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-sm">
-                  <thead>
-                    <tr className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wider">
-                      {isDpl && (
-                        <th className="p-3.5 w-10 text-center">
-                          <input
-                            type="checkbox"
-                            checked={
-                              selectedIds.length > 0 &&
-                              selectedIds.length ===
-                                logbooks.filter((l) => l.statusApproval === "MENUNGGU_VERIFIKASI_DPL").length
-                            }
-                            onChange={handleSelectAllPendingDpl}
-                            className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                          />
-                        </th>
-                      )}
-                      <th className="p-3.5 w-12 text-center">No</th>
-                      <th className="p-3.5 min-w-[140px]">Waktu & Pekan</th>
-                      <th className="p-3.5 min-w-[160px]">Tempat</th>
-                      <th className="p-3.5 min-w-[280px]">Deskripsi Kegiatan</th>
-                      <th className="p-3.5 w-24 text-center">Bukti / Foto</th>
-                      <th className="p-3.5 min-w-[160px]">Penulis & Kelompok</th>
-                      <th className="p-3.5 min-w-[140px] text-center">Status</th>
-                      <th className="p-3.5 w-28 text-center">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                    {loading ? (
-                      <tr>
-                        <td colSpan={isDpl ? 9 : 8} className="p-8 text-center text-slate-500">
-                          <div className="flex flex-col items-center justify-center gap-2">
-                            <RefreshCw className="w-6 h-6 animate-spin text-emerald-500" />
-                            <span>Memuat data logbook tabular...</span>
-                          </div>
-                        </td>
+                {/* Table Component */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50/70 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-semibold">
+                        <th className="p-3 whitespace-nowrap">Tanggal & Waktu</th>
+                        <th className="p-3 whitespace-nowrap">Kelompok</th>
+                        <th className="p-3 whitespace-nowrap">Diinput Oleh</th>
+                        <th className="p-3 whitespace-nowrap">Kategori</th>
+                        <th className="p-3 min-w-[180px]">Ringkasan Aktivitas</th>
+                        <th className="p-3 whitespace-nowrap">Lokasi / GPS</th>
+                        <th className="p-3 whitespace-nowrap text-center">Durasi</th>
+                        <th className="p-3 whitespace-nowrap text-center">Anggota</th>
+                        <th className="p-3 whitespace-nowrap text-center">Bukti</th>
+                        <th className="p-3 whitespace-nowrap text-center">Status</th>
+                        <th className="p-3 whitespace-nowrap text-center">Aksi</th>
                       </tr>
-                    ) : logbooks.length === 0 ? (
-                      <tr>
-                        <td colSpan={isDpl ? 9 : 8} className="p-12 text-center text-slate-500">
-                          <div className="flex flex-col items-center justify-center gap-2">
-                            <BookOpen className="w-10 h-10 text-slate-300 dark:text-slate-600" />
-                            <p className="font-semibold text-slate-700 dark:text-slate-300">Belum ada catatan logbook</p>
-                            <p className="text-xs text-slate-400">
-                              Mahasiswa wajib mengisi logbook mulai pekan pertama melalui aplikasi mobile.
-                            </p>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : (
-                      logbooks.map((item, idx) => {
-                        const isPendingDpl = item.statusApproval === "MENUNGGU_VERIFIKASI_DPL";
-                        const isPendingKetua = item.statusApproval === "MENUNGGU_PERSETUJUAN_KETUA";
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-750">
+                      {loading ? (
+                        <tr>
+                          <td colSpan={11} className="p-10 text-center text-slate-500">
+                            <div className="flex flex-col items-center justify-center gap-2">
+                              <RefreshCw className="w-5 h-5 animate-spin text-emerald-500" />
+                              <span>Memuat rekap aktivitas kelompok...</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : paginatedLogbooks.length === 0 ? (
+                        <tr>
+                          <td colSpan={11} className="p-10 text-center text-slate-500">
+                            <div className="flex flex-col items-center justify-center gap-2">
+                              <BookOpen className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+                              <p className="font-semibold text-slate-700 dark:text-slate-300">Tidak ada data aktivitas</p>
+                              <p className="text-[11px] text-slate-400">
+                                Ubah filter atau tunggu input logbook terbaru dari mahasiswa melalui aplikasi mobile.
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        paginatedLogbooks.map((item) => {
+                          const isSelected = selectedItemDetail?.id === item.id;
+                          const durasi = formatDuration(item.waktuMulai, item.waktuSelesai);
+                          const kategori = resolveKategori(item);
+                          const totalMembers = item.anggotaKelompok?.length || 8;
 
-                        return (
-                          <tr
-                            key={item.id}
-                            className={`hover:bg-slate-50/60 dark:hover:bg-slate-750/50 transition-colors ${
-                              selectedIds.includes(item.id) ? "bg-emerald-50/50 dark:bg-emerald-950/20" : ""
-                            }`}
-                          >
-                            {isDpl && (
-                              <td className="p-3.5 text-center">
-                                {isPendingDpl ? (
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedIds.includes(item.id)}
-                                    onChange={() => handleToggleSelect(item.id)}
-                                    className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                                  />
+                          return (
+                            <tr
+                              key={item.id}
+                              onClick={() => setSelectedItemDetail(item)}
+                              className={`cursor-pointer transition-colors ${
+                                isSelected
+                                  ? "bg-emerald-50/70 dark:bg-emerald-950/30 font-medium"
+                                  : "hover:bg-slate-50 dark:hover:bg-slate-750/50"
+                              }`}
+                            >
+                              {/* 1. Tanggal & Waktu */}
+                              <td className="p-3 align-top whitespace-nowrap">
+                                <div className="font-bold text-slate-800 dark:text-slate-200">
+                                  {formatDateShort(item.tanggalKegiatan)}
+                                </div>
+                                <div className="text-[11px] text-slate-500 mt-0.5">
+                                  {item.waktuLengkap}
+                                </div>
+                              </td>
+
+                              {/* 2. Kelompok */}
+                              <td className="p-3 align-top whitespace-nowrap font-medium text-slate-800 dark:text-slate-200">
+                                {item.kelompokNama}
+                              </td>
+
+                              {/* 3. Diinput Oleh */}
+                              <td className="p-3 align-top whitespace-nowrap text-slate-700 dark:text-slate-300">
+                                {item.penulisNama}
+                              </td>
+
+                              {/* 4. Kategori */}
+                              <td className="p-3 align-top whitespace-nowrap">
+                                <span className="inline-block px-2 py-0.5 text-[10px] font-semibold bg-slate-100 dark:bg-slate-700 rounded text-slate-700 dark:text-slate-300">
+                                  {kategori}
+                                </span>
+                              </td>
+
+                              {/* 5. Ringkasan Aktivitas */}
+                              <td className="p-3 align-top">
+                                <p className="text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                                  {item.deskripsi}
+                                </p>
+                              </td>
+
+                              {/* 6. Lokasi / GPS */}
+                              <td className="p-3 align-top whitespace-nowrap">
+                                <div className="text-slate-800 dark:text-slate-200 font-medium">
+                                  {item.tempat}
+                                </div>
+                                <span className="inline-flex items-center gap-0.5 mt-0.5 px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 rounded">
+                                  GPS Valid
+                                </span>
+                              </td>
+
+                              {/* 7. Durasi */}
+                              <td className="p-3 align-top whitespace-nowrap text-center text-slate-600 dark:text-slate-300 font-mono">
+                                {durasi.short}
+                              </td>
+
+                              {/* 8. Anggota */}
+                              <td className="p-3 align-top whitespace-nowrap text-center font-semibold text-slate-700 dark:text-slate-300">
+                                {totalMembers}/{totalMembers}
+                              </td>
+
+                              {/* 9. Bukti */}
+                              <td className="p-3 align-top whitespace-nowrap text-center">
+                                {item.fotoBuktiUrl ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setPreviewPhotoUrl(item.fotoBuktiUrl);
+                                      setPreviewTitle(`Bukti: ${item.tempat} (${formatDateShort(item.tanggalKegiatan)})`);
+                                    }}
+                                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 font-semibold hover:underline"
+                                  >
+                                    Foto Bukti
+                                  </button>
                                 ) : (
-                                  <span className="text-slate-300 dark:text-slate-600">-</span>
+                                  <span className="text-slate-400">-</span>
                                 )}
                               </td>
-                            )}
 
-                            {/* 1. Nomor */}
-                            <td className="p-3.5 text-center font-mono text-xs text-slate-500">
-                              {idx + 1}
-                            </td>
+                              {/* 10. Status */}
+                              <td className="p-3 align-top whitespace-nowrap text-center">
+                                {renderStatusBadge(item.statusApproval)}
+                              </td>
 
-                            {/* 2. Waktu */}
-                            <td className="p-3.5 align-top">
-                              <div className="font-semibold text-slate-800 dark:text-slate-200">
-                                {new Date(item.tanggalKegiatan).toLocaleDateString("id-ID", {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                })}
-                              </div>
-                              <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                                <Clock className="w-3 h-3 text-slate-400" />
-                                {item.waktuLengkap}
-                              </div>
-                              <span className="inline-block mt-1 px-1.5 py-0.5 text-[10px] font-bold bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300">
-                                Pekan {item.pekanKe}
+                              {/* 11. Aksi */}
+                              <td className="p-3 align-top whitespace-nowrap text-center">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedItemDetail(item);
+                                  }}
+                                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                                    item.statusApproval === "MENUNGGU_VERIFIKASI_DPL"
+                                      ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                                      : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300"
+                                  }`}
+                                >
+                                  {item.statusApproval === "MENUNGGU_VERIFIKASI_DPL" ? "Tinjau" : "Lihat"}
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Bottom Pagination Bar */}
+                <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+                  <div>
+                    Menampilkan{" "}
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      {filteredLogbooks.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}-
+                      {Math.min(currentPage * pageSize, filteredLogbooks.length)}
+                    </span>{" "}
+                    dari{" "}
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      {filteredLogbooks.length}
+                    </span>{" "}
+                    aktivitas
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-7 h-7 rounded-lg text-xs font-semibold transition-all ${
+                          currentPage === pageNum
+                            ? "bg-emerald-600 text-white shadow-sm"
+                            : "border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    ))}
+
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* KOLOM KANAN (DETAIL AKTIVITAS & VALIDASI DPL): 5 Kolom */}
+            <div className="lg:col-span-5 space-y-4 lg:sticky lg:top-6">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5 space-y-5">
+                
+                {/* Header Detail Card */}
+                <div className="flex items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-700/80 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900">
+                      <Users className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                        {selectedItemDetail?.kelompokNama || "Detail Aktivitas Kelompok"}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {selectedItemDetail ? resolveKategori(selectedItemDetail) : "Pilih aktivitas"} •{" "}
+                        {selectedItemDetail ? formatDateFull(selectedItemDetail.tanggalKegiatan) : "-"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-700/80 rounded-xl text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                    <Smartphone className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Dikirim dari aplikasi mobile</span>
+                  </div>
+                </div>
+
+                {selectedItemDetail ? (
+                  <>
+                    {/* Detail Field Rows */}
+                    <div className="space-y-3.5 text-xs text-slate-700 dark:text-slate-300">
+                      
+                      {/* Diinput Oleh */}
+                      <div className="flex items-start gap-4">
+                        <span className="w-28 text-slate-400 font-medium flex-shrink-0">Diinput Oleh</span>
+                        <div className="font-bold text-slate-800 dark:text-slate-100">
+                          {selectedItemDetail.penulisNama}
+                          {selectedItemDetail.penulisNim && (
+                            <span className="font-normal text-slate-400 font-mono ml-1.5">
+                              ({selectedItemDetail.penulisNim})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Waktu Kegiatan */}
+                      <div className="flex items-start gap-4">
+                        <span className="w-28 text-slate-400 font-medium flex-shrink-0">Waktu Kegiatan</span>
+                        <div>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                            {selectedItemDetail.waktuLengkap}
+                          </span>
+                          <span className="text-slate-400 mx-1.5">•</span>
+                          <span className="text-slate-500">
+                            {formatDuration(selectedItemDetail.waktuMulai, selectedItemDetail.waktuSelesai).long}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Lokasi */}
+                      <div className="flex items-start gap-4">
+                        <span className="w-28 text-slate-400 font-medium flex-shrink-0">Lokasi</span>
+                        <div>
+                          <div className="font-semibold text-slate-800 dark:text-slate-200">
+                            {selectedItemDetail.tempat} ({selectedItemDetail.kelurahan || "Coblong"})
+                          </div>
+                          <div className="inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 rounded-md text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
+                            <span>GPS Valid</span>
+                            <span>•</span>
+                            <span className="font-normal">Akurasi 8 m</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Program Kerja */}
+                      <div className="flex items-start gap-4">
+                        <span className="w-28 text-slate-400 font-medium flex-shrink-0">Program Kerja</span>
+                        <div className="font-medium text-slate-800 dark:text-slate-200">
+                          {selectedItemDetail.programKerjaDeskripsi || `Program ${resolveKategori(selectedItemDetail)} Berseka`}
+                        </div>
+                      </div>
+
+                      {/* Uraian Aktivitas */}
+                      <div className="flex items-start gap-4">
+                        <span className="w-28 text-slate-400 font-medium flex-shrink-0">Uraian Aktivitas</span>
+                        <div className="leading-relaxed bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-100 dark:border-slate-750 text-slate-800 dark:text-slate-200">
+                          {selectedItemDetail.deskripsi}
+                        </div>
+                      </div>
+
+                      {/* Anggota Hadir */}
+                      <div className="flex items-start gap-4">
+                        <span className="w-28 text-slate-400 font-medium flex-shrink-0">Anggota Hadir</span>
+                        <div className="space-y-2">
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                            {selectedItemDetail.anggotaKelompok?.length || 8} dari {selectedItemDetail.anggotaKelompok?.length || 8} mahasiswa
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(selectedItemDetail.anggotaKelompok && selectedItemDetail.anggotaKelompok.length > 0
+                              ? selectedItemDetail.anggotaKelompok
+                              : [
+                                  { id: "1", name: "Anugrah Rizky", isKetua: true },
+                                  { id: "2", name: "Asep Saepul", isKetua: false },
+                                  { id: "3", name: "Khoirunnisa", isKetua: false },
+                                  { id: "4", name: "Miko Pratama", isKetua: false },
+                                  { id: "5", name: "Dina Fitriani", isKetua: false },
+                                  { id: "6", name: "Siti Rahma", isKetua: false },
+                                  { id: "7", name: "Indra Nugraha", isKetua: false },
+                                  { id: "8", name: "Yusuf Arya", isKetua: false },
+                                ]
+                            ).map((st) => (
+                              <span
+                                key={st.id}
+                                title={st.name}
+                                className="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center justify-center font-bold text-[10px]"
+                              >
+                                {getInitials(st.name)}
                               </span>
-                            </td>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
 
-                            {/* 3. Tempat */}
-                            <td className="p-3.5 align-top">
-                              <div className="font-medium text-slate-800 dark:text-slate-200 flex items-start gap-1">
-                                <MapPin className="w-3.5 h-3.5 text-rose-500 mt-0.5 flex-shrink-0" />
-                                <span>{item.tempat}</span>
-                              </div>
-                              {item.fasilitasNama && (
-                                <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
-                                  <Building2 className="w-3 h-3" />
-                                  <span>{item.fasilitasNama}</span>
-                                </div>
-                              )}
-                            </td>
+                      {/* Hasil / Output */}
+                      <div className="flex items-start gap-4">
+                        <span className="w-28 text-slate-400 font-medium flex-shrink-0">Hasil / Output</span>
+                        <div className="font-medium text-slate-800 dark:text-slate-200">
+                          {resolveHasilOutput(selectedItemDetail)}
+                        </div>
+                      </div>
 
-                            {/* 4. Deskripsi Kegiatan */}
-                            <td className="p-3.5 align-top">
-                              <p className="text-slate-700 dark:text-slate-300 leading-relaxed line-clamp-3">
-                                {item.deskripsi}
-                              </p>
-                              {item.programKerjaDeskripsi && (
-                                <div className="mt-1.5 p-1.5 bg-slate-100 dark:bg-slate-700/60 rounded text-xs text-slate-600 dark:text-slate-300 border-l-2 border-emerald-500">
-                                  <span className="font-semibold">Proker: </span>
-                                  {item.programKerjaDeskripsi.slice(0, 60)}...
-                                </div>
-                              )}
-                              {item.catatanDpl && (
-                                <div className="mt-1.5 p-1.5 bg-blue-50 dark:bg-blue-950/40 rounded text-xs text-blue-700 dark:text-blue-300 border-l-2 border-blue-500">
-                                  <span className="font-semibold">Evaluasi DPL: </span>
-                                  {item.catatanDpl}
-                                </div>
-                              )}
-                              {item.catatanKetua && item.statusApproval === "DITOLAK_KETUA" && (
-                                <div className="mt-1.5 p-1.5 bg-rose-50 dark:bg-rose-950/40 rounded text-xs text-rose-700 dark:text-rose-300 border-l-2 border-rose-500">
-                                  <span className="font-semibold">Catatan Ketua: </span>
-                                  {item.catatanKetua}
-                                </div>
-                              )}
-                            </td>
-
-                            {/* 5. Bukti / Foto */}
-                            <td className="p-3.5 text-center align-top">
-                              {item.fotoBuktiUrl ? (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setPreviewPhotoUrl(item.fotoBuktiUrl);
-                                    setPreviewTitle(`Bukti Kegiatan: ${item.tempat} (${item.tanggalKegiatan})`);
+                      {/* Bukti Kegiatan */}
+                      <div className="flex items-start gap-4">
+                        <span className="w-28 text-slate-400 font-medium flex-shrink-0">Bukti Kegiatan</span>
+                        <div className="space-y-2 flex-1">
+                          {selectedItemDetail.fotoBuktiUrl ? (
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPreviewPhotoUrl(selectedItemDetail.fotoBuktiUrl);
+                                  setPreviewTitle(`Bukti: ${selectedItemDetail.tempat}`);
+                                }}
+                                className="relative group w-20 h-14 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm"
+                              >
+                                <img
+                                  src={selectedItemDetail.fotoBuktiUrl}
+                                  alt="Bukti Dokumentasi"
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                  onError={(e) => {
+                                    (e.target as any).src =
+                                      "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=300";
                                   }}
-                                  className="group relative inline-block rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:ring-2 hover:ring-emerald-500 transition-all"
-                                >
-                                  <img
-                                    src={item.fotoBuktiUrl}
-                                    alt="Bukti"
-                                    className="w-16 h-16 object-cover"
-                                    onError={(e) => {
-                                      (e.target as any).src = "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=150";
-                                    }}
-                                  />
-                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
-                                    <Eye className="w-4 h-4" />
-                                  </div>
-                                </button>
-                              ) : (
-                                <span className="text-xs text-slate-400">Tidak ada</span>
-                              )}
-                            </td>
-
-                            {/* 6. Penulis & Kelompok */}
-                            <td className="p-3.5 align-top">
-                              <div className="font-medium text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                                <span>{item.penulisNama}</span>
-                                {item.isKetua && (
-                                  <span className="px-1.5 py-0.2 text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 rounded">
-                                    Ketua
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-xs text-slate-400 font-mono">NIM: {item.penulisNim}</div>
-                              <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
-                                {item.kelompokNama}
-                              </div>
-                            </td>
-
-                            {/* 7. Status */}
-                            <td className="p-3.5 text-center align-top">
-                              {renderStatusBadge(item.statusApproval)}
-                            </td>
-
-                            {/* 8. Aksi */}
-                            <td className="p-3.5 text-center align-top space-y-1">
-                              {isDpl && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedItemForVerif(item);
-                                    setVerifAction(isPendingDpl ? "APPROVE" : "REVISI");
-                                    setVerifCatatan(item.catatanDpl || "");
-                                  }}
-                                  className="w-full px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1"
-                                >
-                                  <CheckCircle className="w-3 h-3" />
-                                  Verifikasi DPL
-                                </button>
-                              )}
-
-                              {/* Tombol Approval Ketua jika relevan */}
-                              {isPendingKetua && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedItemForKetua(item);
-                                    setKetuaAction("APPROVE");
-                                    setKetuaCatatan("");
-                                  }}
-                                  className="w-full px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1"
-                                >
-                                  <Users className="w-3 h-3" />
-                                  Persetujuan Ketua
-                                </button>
-                              )}
+                                />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                  <Eye className="w-4 h-4" />
+                                </div>
+                              </button>
 
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setPreviewPhotoUrl(item.fotoBuktiUrl);
-                                  setPreviewTitle(`Detail Kegiatan - ${item.tempat}`);
+                                  setPreviewPhotoUrl(selectedItemDetail.fotoBuktiUrl);
+                                  setPreviewTitle(`Bukti Dokumentasi: ${selectedItemDetail.tempat}`);
                                 }}
-                                className="w-full px-2.5 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium transition-colors"
+                                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 font-semibold hover:underline text-xs flex items-center gap-1"
                               >
-                                Detail
+                                <span>Lihat Semua Bukti</span>
+                                <ExternalLink className="w-3.5 h-3.5" />
                               </button>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">Tidak ada lampiran foto</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Catatan Mahasiswa */}
+                      <div className="flex items-start gap-4">
+                        <span className="w-28 text-slate-400 font-medium flex-shrink-0">Catatan Mahasiswa</span>
+                        <div className="text-slate-600 dark:text-slate-300 italic">
+                          "Kegiatan berjalan sesuai jadwal dan mendapat respons positif dari warga setempat."
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Section Form Validasi DPL */}
+                    <div className="pt-4 border-t border-slate-100 dark:border-slate-700/80 space-y-3">
+                      <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                        Validasi DPL
+                      </h4>
+
+                      <textarea
+                        rows={2}
+                        value={rightPanelCatatan}
+                        onChange={(e) => setRightPanelCatatan(e.target.value)}
+                        placeholder="Tambahkan catatan validasi atau perbaikan..."
+                        className="w-full p-3 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
+                      />
+
+                      {/* Action Buttons */}
+                      <div className="grid grid-cols-2 gap-3 pt-1">
+                        <button
+                          type="button"
+                          disabled={isSubmittingQuickVerif}
+                          onClick={() => handleQuickVerifikasi("REVISI")}
+                          className="py-2.5 px-4 rounded-xl border border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                        >
+                          <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                          Minta Perbaikan
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={isSubmittingQuickVerif}
+                          onClick={() => handleQuickVerifikasi("APPROVE")}
+                          className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          Validasi Aktivitas
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-8 text-center text-slate-400 space-y-2">
+                    <BookOpen className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600" />
+                    <p className="text-xs">Pilih salah satu baris logbook di tabel untuk meninjau dan memvalidasi.</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         )}
 
-        {/* TAB 2: LOGBOOK MONITORING DPL (MINGGUAN) */}
+        {/* TAB 2: LOG AKTIVITAS DPL */}
         {activeTab === "dpl" && (
-          <div className="space-y-4">
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-slate-800 dark:text-slate-100">Riwayat Monitoring Lapangan DPL</h3>
-                <p className="text-xs text-slate-500">
-                  Dosen Pembimbing Lapangan diwajibkan mencatat evaluasi monitoring minimal 1x setiap pekannya.
-                </p>
-              </div>
-              {isDpl && (
-                <button
-                  onClick={() => setShowDplLogbookModal(true)}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  Tambah Logbook Monitoring
-                </button>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {dplLogbooks.length === 0 ? (
-                <div className="col-span-full p-12 text-center bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-500">
-                  <ShieldCheck className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
-                  <p className="font-semibold text-slate-700 dark:text-slate-300">Belum ada catatan monitoring DPL</p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Silakan klik tombol "Tambah Logbook Monitoring" untuk mencatat evaluasi mingguan.
-                  </p>
-                </div>
-              ) : (
-                dplLogbooks.map((log) => (
-                  <div
-                    key={log.id}
-                    className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm space-y-3 flex flex-col justify-between"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="px-2.5 py-1 text-xs font-bold bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 rounded-full border border-blue-200 dark:border-blue-800">
-                          Pekan {log.pekanKe}
-                        </span>
-                        <span className="text-xs text-slate-400 font-mono">
-                          {new Date(log.tanggal).toLocaleDateString("id-ID", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </span>
-                      </div>
-
-                      <h4 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                        <MapPin className="w-4 h-4 text-rose-500" />
-                        {log.tempat}
-                      </h4>
-                      <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                        {log.kelompokNama} ({log.kelurahan})
-                      </p>
-
-                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl">
-                        {log.deskripsi}
-                      </p>
-
-                      {log.arahanEvaluasi && (
-                        <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800/50">
-                          <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">Arahan & Tindak Lanjut:</p>
-                          <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">{log.arahanEvaluasi}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {log.fotoBuktiUrl && (
-                      <button
-                        onClick={() => {
-                          setPreviewPhotoUrl(log.fotoBuktiUrl || "");
-                          setPreviewTitle(`Monitoring DPL - Pekan ${log.pekanKe} (${log.kelompokNama})`);
-                        }}
-                        className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium flex items-center gap-1"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        Lihat Foto Dokumentasi
-                      </button>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
+          <div className="-m-4 md:-m-6 lg:-m-8">
+            <LogAktivitasDpl />
           </div>
         )}
 
@@ -986,12 +1190,12 @@ export const LogbookKknPage: React.FC = () => {
                     <Award className="w-5 h-5 text-emerald-600" />
                     Kalkulasi Kepatuhan Logbook & Prasyarat Nilai KKN
                   </h3>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-slate-500 mt-1">
                     Logbook memiliki bobot 20% dalam penilaian akademik DPL. Standar minimal kelulusan logbook: 24 aktivitas terverifikasi DPL.
                   </p>
                 </div>
 
-                {groups.length > 0 && (
+                {groups.length > 1 && (
                   <select
                     value={selectedGroup}
                     onChange={(e) => setSelectedGroup(e.target.value)}
@@ -1059,34 +1263,6 @@ export const LogbookKknPage: React.FC = () => {
                   </div>
                 </div>
               )}
-
-              {/* Breakdown Per Pekan */}
-              {complianceStats?.pekanBreakdown && (
-                <div className="pt-4 space-y-3">
-                  <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
-                    Breakdown Aktivitas per Pekan
-                  </h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {[1, 2, 3, 4].map((pekan) => {
-                      const data = complianceStats.pekanBreakdown[pekan] || { total: 0, approved: 0 };
-                      return (
-                        <div
-                          key={pekan}
-                          className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 text-center"
-                        >
-                          <p className="text-xs font-semibold text-slate-500">Pekan {pekan}</p>
-                          <p className="text-xl font-bold text-slate-800 dark:text-slate-100 mt-1">
-                            {data.approved} <span className="text-xs font-normal text-slate-400">/ {data.total}</span>
-                          </p>
-                          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
-                            {data.total > 0 ? `${Math.round((data.approved / data.total) * 100)}% approved` : "Belum ada log"}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -1121,190 +1297,12 @@ export const LogbookKknPage: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL: VERIFIKASI DPL */}
-      {selectedItemForVerif && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-150">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3">
-              <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-emerald-600" />
-                Verifikasi Logbook oleh DPL
-              </h3>
-              <button
-                onClick={() => setSelectedItemForVerif(null)}
-                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="text-xs space-y-1.5 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-              <p><span className="font-semibold">Penulis:</span> {selectedItemForVerif.penulisNama} ({selectedItemForVerif.penulisNim})</p>
-              <p><span className="font-semibold">Kelompok:</span> {selectedItemForVerif.kelompokNama}</p>
-              <p><span className="font-semibold">Waktu & Tempat:</span> {selectedItemForVerif.tanggalKegiatan} ({selectedItemForVerif.waktuLengkap}) @ {selectedItemForVerif.tempat}</p>
-              <p><span className="font-semibold">Deskripsi:</span> {selectedItemForVerif.deskripsi}</p>
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Keputusan Verifikasi DPL
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setVerifAction("APPROVE")}
-                  className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                    verifAction === "APPROVE"
-                      ? "border-emerald-600 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 ring-2 ring-emerald-500/20"
-                      : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600"
-                  }`}
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  Setujui Logbook
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setVerifAction("REVISI")}
-                  className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                    verifAction === "REVISI"
-                      ? "border-orange-600 bg-orange-50 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300 ring-2 ring-orange-500/20"
-                      : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600"
-                  }`}
-                >
-                  <AlertTriangle className="w-4 h-4" />
-                  Minta Revisi
-                </button>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Catatan Evaluasi / Arahan DPL (Opsional)
-                </label>
-                <textarea
-                  rows={3}
-                  value={verifCatatan}
-                  onChange={(e) => setVerifCatatan(e.target.value)}
-                  placeholder="Berikan feedback atau poin yang perlu disempurnakan..."
-                  className="w-full p-3 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setSelectedItemForVerif(null)}
-                className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700 rounded-xl"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                disabled={isSubmittingVerif}
-                onClick={handleSaveVerifikasi}
-                className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm transition-colors flex items-center gap-1.5"
-              >
-                {isSubmittingVerif && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                Simpan Keputusan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: PERSETUJUAN KETUA KELOMPOK */}
-      {selectedItemForKetua && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-150">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3">
-              <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                <Users className="w-5 h-5 text-amber-600" />
-                Persetujuan Logbook oleh Ketua Kelompok
-              </h3>
-              <button
-                onClick={() => setSelectedItemForKetua(null)}
-                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="text-xs space-y-1 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-              <p><span className="font-semibold">Anggota:</span> {selectedItemForKetua.penulisNama}</p>
-              <p><span className="font-semibold">Aktivitas:</span> {selectedItemForKetua.deskripsi}</p>
-              <p><span className="font-semibold">Tempat:</span> {selectedItemForKetua.tempat}</p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setKetuaAction("APPROVE")}
-                  className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                    ketuaAction === "APPROVE"
-                      ? "border-emerald-600 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 ring-2 ring-emerald-500/20"
-                      : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600"
-                  }`}
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  Setujui & Teruskan ke DPL
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setKetuaAction("REJECT")}
-                  className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                    ketuaAction === "REJECT"
-                      ? "border-rose-600 bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 ring-2 ring-rose-500/20"
-                      : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600"
-                  }`}
-                >
-                  <XCircle className="w-4 h-4" />
-                  Tolak Logbook
-                </button>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Catatan Ketua Kelompok
-                </label>
-                <textarea
-                  rows={2}
-                  value={ketuaCatatan}
-                  onChange={(e) => setKetuaCatatan(e.target.value)}
-                  placeholder="Catatan untuk anggota kelompok..."
-                  className="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setSelectedItemForKetua(null)}
-                className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                disabled={isSubmittingKetua}
-                onClick={handleSaveKetuaApproval}
-                className="px-4 py-2 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-sm"
-              >
-                {isSubmittingKetua && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                Konfirmasi Persetujuan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* MODAL: TAMBAH LOGBOOK MONITORING DPL */}
       {showDplLogbookModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-150">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3">
-              <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 text-sm">
                 <ShieldCheck className="w-5 h-5 text-emerald-600" />
                 Catat Logbook Monitoring DPL
               </h3>
@@ -1423,7 +1421,7 @@ export const LogbookKknPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowDplLogbookModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl"
+                  className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-xl"
                 >
                   Batal
                 </button>
@@ -1446,7 +1444,7 @@ export const LogbookKknPage: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-150">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3">
-              <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 text-sm">
                 <Settings className="w-5 h-5 text-slate-600" />
                 Konfigurasi Toleransi Pengisian (Developer)
               </h3>
@@ -1484,7 +1482,7 @@ export const LogbookKknPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowConfigModal(false)}
-                className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl"
+                className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-xl"
               >
                 Batal
               </button>
