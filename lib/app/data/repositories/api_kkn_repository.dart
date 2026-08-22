@@ -157,7 +157,7 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<Map<String, dynamic>> sendLocationPing(double latitude, double longitude, {int? inZoneSeconds}) async {
     try {
-      final body = {
+      final Map<String, dynamic> body = {
         'latitude': latitude,
         'longitude': longitude,
       };
