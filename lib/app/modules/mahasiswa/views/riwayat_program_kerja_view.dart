@@ -30,7 +30,7 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
 
     if (u == 'DISETUJUI' || u == 'DITERIMA') {
       color = AppColors.primaryGreen;
-      label = 'Disetujui';
+      label = 'Disetujui Oleh DPL';
       icon = Icons.check_circle;
     } else if (u == 'DITOLAK' || u == 'TIDAK_DISETUJUI') {
       color = AppColors.dangerRed;
@@ -63,7 +63,7 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
     );
   }
 
-  Widget _buildPelaksanaanBadge(String? statusPelaksanaan, String? legacyStatus) {
+  Widget _buildPelaksanaanBadge(String? statusPelaksanaan, String? legacyStatus, String? waktuPelaksanaan) {
     String p = (statusPelaksanaan ?? '').toUpperCase();
     final leg = (legacyStatus ?? '').toUpperCase();
     if (p.isEmpty) {
@@ -76,18 +76,39 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
       }
     }
 
+    bool isExpired = false;
+    if (waktuPelaksanaan != null && waktuPelaksanaan.isNotEmpty) {
+      // Coba parse tanggal terakhir (misal YYYY-MM-DD dari string '2026-08-08 s/d 2026-08-20')
+      final yyyyMmDd = RegExp(r'(\d{4})-(\d{2})-(\d{2})');
+      final matches = yyyyMmDd.allMatches(waktuPelaksanaan);
+      if (matches.isNotEmpty) {
+        final lastMatch = matches.last.group(0)!;
+        final endDate = DateTime.tryParse(lastMatch);
+        if (endDate != null && DateTime.now().isAfter(endDate.add(const Duration(days: 1)))) {
+          isExpired = true;
+        }
+      }
+    }
+
+    if (isExpired && p != 'SELESAI') {
+      p = 'BERAKHIR';
+    }
+
     Color color;
     String label;
 
     if (p == 'SELESAI') {
       color = AppColors.primaryGreen;
       label = 'Selesai';
+    } else if (p == 'BERAKHIR') {
+      color = AppColors.dangerRed;
+      label = 'Berakhir';
     } else if (p == 'SEDANG_BERJALAN' || p == 'SEDANG_DILAKSANAKAN' || p == 'BERJALAN') {
       color = AppColors.primaryBlue;
-      label = 'Sedang Berjalan';
+      label = 'Sedang Berlangsung';
     } else {
       color = AppColors.textSecondary;
-      label = 'Belum Mulai';
+      label = p.replaceAll('_', ' ');
     }
 
     return Container(
@@ -102,6 +123,15 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
         style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
       ),
     );
+  }
+
+  String _formatDate(String isoString) {
+    try {
+      final date = DateTime.parse(isoString);
+      return "${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}";
+    } catch (_) {
+      return isoString.split('T').first;
+    }
   }
 
   @override
@@ -139,6 +169,8 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                 final statusPelaksanaan = item['statusPelaksanaan'] ?? item['status_pelaksanaan'];
                 final legacyStatus = item['status']?.toString();
                 final catatanDpl = item['catatanDpl'] ?? item['catatan_dpl'];
+                final waktuPelaksanaanStr = item['waktuPelaksanaan']?.toString() ?? item['tanggal']?.toString() ?? '-';
+                final createdAtStr = item['createdAt']?.toString() ?? item['dibuat_pada']?.toString();
 
                 return Card(
                   elevation: 1.5,
@@ -165,7 +197,7 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                           runSpacing: 6,
                           children: [
                             _buildUsulanBadge(statusUsulan, legacyStatus),
-                            _buildPelaksanaanBadge(statusPelaksanaan, legacyStatus),
+                            _buildPelaksanaanBadge(statusPelaksanaan, legacyStatus, waktuPelaksanaanStr),
                           ],
                         ),
                         const SizedBox(height: 10),
@@ -173,10 +205,19 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                           'Kategori: ${item['kategori'] ?? 'Pemilahan'}',
                           style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                         ),
-                        if (item['waktuPelaksanaan'] != null || item['tanggal'] != null)
+                        const SizedBox(height: 6),
+                        if (createdAtStr != null)
                           Text(
-                            'Waktu: ${item['waktuPelaksanaan'] ?? item['tanggal']?.toString().split('T').first}',
+                            '📅 Diajukan: ${_formatDate(createdAtStr)}',
                             style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          ),
+                        if (waktuPelaksanaanStr != '-')
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2.0),
+                            child: Text(
+                              '🕒 Jadwal: $waktuPelaksanaanStr',
+                              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                            ),
                           ),
                         if (catatanDpl != null && catatanDpl.toString().trim().isNotEmpty) ...[
                           const SizedBox(height: 10),
