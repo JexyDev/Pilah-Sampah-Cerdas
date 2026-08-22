@@ -1306,6 +1306,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         final pingResponse = await repo.sendLocationPing(
           pos.latitude,
           pos.longitude,
+          inZoneSeconds: _accumulatedSeconds,
         );
 
         // Jika backend me-trigger auto attendance (karena durasi cukup dll)
