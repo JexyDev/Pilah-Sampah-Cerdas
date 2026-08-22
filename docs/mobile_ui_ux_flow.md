@@ -1,4 +1,4 @@
-# Alur UI/UX & Referensi QC Mobile - Pilah Sampah Cerdas
+﻿# Alur UI/UX & Referensi QC Mobile - BERSEKA
 
 Dokumen ini memetakan alur antarmuka dan pengalaman pengguna (UI/UX) dari ujung ke ujung pada aplikasi mobile. Gunakan dokumen ini sebagai acuan pembuatan Form Quality Control (QC).
 
@@ -61,7 +61,7 @@ Terdiri dari 3-4 Tab tergantung Role:
 *   **Permission:** Prompt minta akses Kamera & Lokasi (GPS). Tolak -> Tampil error wajib izinkan.
 *   **UI:** Viewfinder kamera, garis batas scan, tombol nyalakan flash.
 *   **Proses & Validasi (QC Points):**
-    *   *Geofencing:* Hitung jarak Haversine (Lokasi HP vs Koordinat Tong dari DB). Jarak > 10m -> Alert dialog "Anda terlalu jauh dari tong sampah".
+    *   *Geofencing:* Hitung jarak Haversine (Lokasi HP vs Koordinat Tong dari DB). Jarak > 10m -> Alert dialog "Anda terlalu jauh dari Tempat Sampah".
     *   *Kapasitas:* Jika API lapor tong penuh (≥25L) -> Alert dialog "Tong Penuh, cari tong lain".
     *   *Format QR:* Validasi QR invalid -> Alert "QR tidak dikenali".
 

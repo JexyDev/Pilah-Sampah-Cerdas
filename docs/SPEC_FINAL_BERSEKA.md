@@ -1,4 +1,4 @@
-# SPEC FINAL � Trashcare (Hasil Klarifikasi Meeting 27 Juli 2026)
+﻿# SPEC FINAL � BERSEKA (Hasil Klarifikasi Meeting 27 Juli 2026)
 
 > Dokumen ini adalah **keputusan final** dari semua pertanyaan kritis di MEETING_BREAKDOWN_27JULI2026.md. Statusnya sudah **disetujui**, bukan lagi opsi/pertanyaan. AI agent atau developer manapun yang lanjut development **wajib ikut spesifikasi ini**, tidak boleh berasumsi lain.
 

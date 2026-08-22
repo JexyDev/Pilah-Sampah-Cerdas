@@ -1,8 +1,8 @@
-# Product Requirement Document (PRD) — Pilah Sampah Cerdas
+﻿# Product Requirement Document (PRD) — BERSEKA
 
 ## 1. Pendahuluan
 ### 1.1 Deskripsi Produk
-**Pilah Sampah Cerdas (TrashCare)** adalah sistem pemilahan sampah cerdas terintegrasi untuk Kecamatan Coblong, Kota Bandung. Platform ini mengotomatisasi pendataan, pemilahan dengan AI, pemantauan kapasitas tempat sampah, serta penimbangan residu secara akurat. Produk ini menghubungkan Warga, Mahasiswa KKN, DPL, Petugas Residu, RW, Lurah, Camat, Admin DLH, dan SUPER USER dalam satu ekosistem terpadu.
+**BERSEKA (BERSEKA)** adalah sistem pemilahan sampah cerdas terintegrasi untuk Kecamatan Coblong, Kota Bandung. Platform ini mengotomatisasi pendataan, pemilahan dengan AI, pemantauan kapasitas tempat sampah, serta penimbangan residu secara akurat. Produk ini menghubungkan Warga, Mahasiswa KKN, DPL, Petugas Residu, RW, Lurah, Camat, Admin DLH, dan SUPER USER dalam satu ekosistem terpadu.
 
 ### 1.2 Platform & Arsitektur Akses Role
 - **Aplikasi Mobile (Thin Client - Flutter):** Digunakan secara terbatas oleh role **Warga**, **Mahasiswa KKN**, dan **Petugas Residu**. Berfokus pada aksi lapangan cepat (Scan QR tempat sampah, Deteksi AI, Foto Bukti, Location Ping KKN, & Input Setoran/Residu).

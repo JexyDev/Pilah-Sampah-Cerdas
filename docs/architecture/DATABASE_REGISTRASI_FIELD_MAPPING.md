@@ -1,4 +1,4 @@
-# 📋 Dokumentasi Field Registrasi & Relasi Tabel Database TrashCare
+﻿# 📋 Dokumentasi Field Registrasi & Relasi Tabel Database BERSEKA
 
 Dokumen ini menunjukkan **secara detail** semua field yang dikumpulkan saat pendaftaran pengguna, tipe data, validasi, dan relasi tabel di database PostgreSQL untuk memastikan **integritas data dan konsistensi skema**.
 
@@ -173,4 +173,4 @@ Sebelum pengguna didaftarkan, sistem harus memvalidasi:
 
 ---
 
-**Dokumen ini berlaku untuk versi TrashCare Production dan harus diperbarui jika ada perubahan schema database.**
+**Dokumen ini berlaku untuk versi BERSEKA Production dan harus diperbarui jika ada perubahan schema database.**

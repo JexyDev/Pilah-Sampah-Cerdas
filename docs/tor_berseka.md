@@ -1,8 +1,8 @@
-KKN Berdampak Coblong | TrashCare 
+﻿KKN Berdampak Coblong | BERSEKA 
 
 # **TERM OF REFERENCE (TOR)** 
 
-## **PENGEMBANGAN SISTEM INFORMASI BERBASIS WEB TRASHCARE - KKN BERDAMPAK COBLONG** 
+## **PENGEMBANGAN SISTEM INFORMASI BERBASIS WEB BERSEKA - KKN BERDAMPAK COBLONG** 
 
 _Platform Tata Kelola Sampah Rumah Tangga, Perubahan Perilaku, Gamifikasi, Monitoring, dan Dampak_ 
 
@@ -14,24 +14,24 @@ Mendukung alur Pilah - Scan - Setor - Dapat Poin - Lihat Dampak melalui QR House
 |---|---|
 |Lokasi Implementasi|Kecamatan Coblong, Kota Bandung|
 |Program|KKNBerdampakUNIKOM|
-|Platform|TrashCare|
+|Platform|BERSEKA|
 |Jenis Sistem|WebResponsive /Progressive WebApp (PWA)|
 |Pengguna|Super Admin, Pimpinan, DPL, Mahasiswa, RT/RW,<br>Kelurahan/Kecamatan,Petugas/Kader, Warga|
 |Tahun Akademik|2025-2026|
 
 
 
-**KKN BERDAMPAK UNIKOM x TRASHCARE Dari Rumah - Menjadi Data - Menjadi Kebiasaan - Menjadi Dampak** 
+**KKN BERDAMPAK UNIKOM x BERSEKA Dari Rumah - Menjadi Data - Menjadi Kebiasaan - Menjadi Dampak** 
 
-TOR Pengembangan Sistem Informasi Berbasis Web TrashCare 
+TOR Pengembangan Sistem Informasi Berbasis Web BERSEKA 
 
-KKN Berdampak Coblong | TrashCare 
+KKN Berdampak Coblong | BERSEKA 
 
 ### **I. LATAR BELAKANG** 
 
 Program KKN Berdampak di Kecamatan Coblong menempatkan perubahan perilaku pemilahan sampah rumah tangga sebagai fokus utama. Sistem informasi dibutuhkan bukan hanya untuk administrasi kegiatan, tetapi sebagai instrumen operasional yang menghubungkan rumah tangga, mahasiswa, RT/RW, petugas sampah, DPL, pemerintah wilayah, dan pengelola program dalam satu alur data yang terukur. 
 
-Sistem TrashCare dirancang untuk menerjemahkan TOR program ke dalam proses digital: registrasi rumah, baseline, QR House ID, pencatatan pemilahan, pengumpulan terpisah, validasi, gamifikasi, monitoring indikator, feedback, challenge, reward, evaluasi endline, hingga pelaporan dampak. 
+Sistem BERSEKA dirancang untuk menerjemahkan TOR program ke dalam proses digital: registrasi rumah, baseline, QR House ID, pencatatan pemilahan, pengumpulan terpisah, validasi, gamifikasi, monitoring indikator, feedback, challenge, reward, evaluasi endline, hingga pelaporan dampak. 
 
 #### **Prinsip UX Utama** 
 
@@ -79,9 +79,9 @@ Teknologi boleh kompleks di belakang sistem, tetapi pengalaman pengguna lapangan
 
 
 
-TOR Pengembangan Sistem Informasi Berbasis Web TrashCare 
+TOR Pengembangan Sistem Informasi Berbasis Web BERSEKA 
 
-|||KKN Berdampak Coblong |TrashCare|
+|||KKN Berdampak Coblong |BERSEKA|
 |---|---|---|
 ||laporan.||
 |Petugas/Kader|Scan QR, verifikasi, timbang, jadwal,<br>kendala.|Mobile web sederhana.|
@@ -142,9 +142,9 @@ House ID menggunakan format anonim, misalnya CBL-RW05-RT03-0027. QR tidak menamp
 
 
 
-TOR Pengembangan Sistem Informasi Berbasis Web TrashCare 
+TOR Pengembangan Sistem Informasi Berbasis Web BERSEKA 
 
-KKN Berdampak Coblong <u>| TrashCare</u> 
+KKN Berdampak Coblong <u>| BERSEKA</u> 
 
 Privasi 
 
@@ -209,9 +209,9 @@ Gamifikasi dipakai untuk memperkuat perilaku benar, konsistensi, identitas posit
 
 
 
-TOR Pengembangan Sistem Informasi Berbasis Web TrashCare 
+TOR Pengembangan Sistem Informasi Berbasis Web BERSEKA 
 
-|||KKN Berdampak Coblong |TrashCare|
+|||KKN Berdampak Coblong |BERSEKA|
 |---|---|---|
 |Residu tidaktercampur|+5|Kualitas|
 |Konsisten mingguan|+10|Histori sistem|
@@ -281,9 +281,9 @@ Reward dapat berbentuk badge digital, sertifikat, bibit/tanaman, produk daur ula
 
 
 
-TOR Pengembangan Sistem Informasi Berbasis Web TrashCare 
+TOR Pengembangan Sistem Informasi Berbasis Web BERSEKA 
 
-|||KKN Berdampak Coblong |TrashCare|
+|||KKN Berdampak Coblong |BERSEKA|
 |---|---|---|
 |90-100|Sangat Baik|Penghargaan/rolemodel|
 |75-89|Baik|Pertahankan dan tingkatkan|
@@ -338,11 +338,11 @@ TOR Pengembangan Sistem Informasi Berbasis Web TrashCare
 
 ### **XVIII. ALUR SISTEM END-TO-END** 
 
-Rumah Tangga -> Pemilahan 3 Kategori -> QR House ID -> Scan -> Verifikasi -> Penimbangan -> Pengumpulan Terpisah -> TrashCare Database -> Green Point/Streak/Badge/WSCS/KPI -> Dashboard Dampak -> Feedback/Challenge/Reward -> Perilaku Berulang -> Kebiasaan. 
+Rumah Tangga -> Pemilahan 3 Kategori -> QR House ID -> Scan -> Verifikasi -> Penimbangan -> Pengumpulan Terpisah -> BERSEKA Database -> Green Point/Streak/Badge/WSCS/KPI -> Dashboard Dampak -> Feedback/Challenge/Reward -> Perilaku Berulang -> Kebiasaan. 
 
-TOR Pengembangan Sistem Informasi Berbasis Web TrashCare 
+TOR Pengembangan Sistem Informasi Berbasis Web BERSEKA 
 
-KKN Berdampak Coblong | TrashCare 
+KKN Berdampak Coblong | BERSEKA 
 
 Alur hilir dipisahkan menjadi: organik ke pengolahan; anorganik ke bank sampah/recycler; residu ke TPS/TPA sesuai sistem setempat. 
 
@@ -400,9 +400,9 @@ Alur hilir dipisahkan menjadi: organik ke pengolahan; anorganik ke bank sampah/r
 
 - Green Point, streak, badge, level, challenge, dan leaderboard dihitung sesuai aturan. 
 
-TOR Pengembangan Sistem Informasi Berbasis Web TrashCare 
+TOR Pengembangan Sistem Informasi Berbasis Web BERSEKA 
 
-KKN Berdampak Coblong | TrashCare 
+KKN Berdampak Coblong | BERSEKA 
 
 - KPI utama dan WSCS dapat dihitung dari data yang valid. 
 
@@ -423,7 +423,7 @@ KKN Berdampak Coblong | TrashCare
 |1|Dokumen kebutuhan sistem / SRS.|
 |2|Desain informationarchitecture dan rolematrix.|
 |3|UI/UX design system dan prototype.|
-|4|Webresponsive/PWA TrashCare.|
+|4|Webresponsive/PWA BERSEKA.|
 |5|Database dan API/backend.|
 |6|QR HouseID.|
 |7|Modul gamifikasi.|
@@ -450,11 +450,11 @@ KKN Berdampak Coblong | TrashCare
 
 ### **XXV. PENUTUP** 
 
-TrashCare dirancang sebagai sistem operasional KKN Berdampak yang menghubungkan aktivitas rumah tangga dengan data, pendampingan, gamifikasi, pengumpulan, evaluasi, dan dampak. Nilai utama sistem bukan pada banyaknya fitur, tetapi pada kemampuannya membuat perilaku pemilahan lebih mudah, terukur, konsisten, memperoleh umpan balik, dan dapat dipertahankan setelah periode KKN selesai. 
+BERSEKA dirancang sebagai sistem operasional KKN Berdampak yang menghubungkan aktivitas rumah tangga dengan data, pendampingan, gamifikasi, pengumpulan, evaluasi, dan dampak. Nilai utama sistem bukan pada banyaknya fitur, tetapi pada kemampuannya membuat perilaku pemilahan lebih mudah, terukur, konsisten, memperoleh umpan balik, dan dapat dipertahankan setelah periode KKN selesai. 
 
 #### **Arah Akhir Sistem** 
 
 <u>KKN -> Rumah -> Perilaku -> Sampah -> Data -> Gamifikasi -> Intervensi -> Dampak -> Kebijakan.</u> 
 
-TOR Pengembangan Sistem Informasi Berbasis Web TrashCare 
+TOR Pengembangan Sistem Informasi Berbasis Web BERSEKA 
 

@@ -1,4 +1,4 @@
-# LAPORAN QC & TESTING DEMO TRASHCARE — 2026-07-29
+﻿# LAPORAN QC & TESTING DEMO BERSEKA — 2026-07-29
 
 ## Environment Testing
 - **Database yang dipakai**: Local (Docker - `psc-postgres`), data hasil pengujian langsung di-dump ke `demo_data_bandung.sql` untuk di-push ke VPS demo. **BUKAN** database produksi aktif.

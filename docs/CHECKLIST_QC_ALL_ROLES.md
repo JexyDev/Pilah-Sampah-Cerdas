@@ -1,15 +1,15 @@
-# DOKUMEN CHECKLIST & SPESIFIKASI TESTING QC TRASHCARE (SEMUA ROLE & FITUR)
+﻿# DOKUMEN CHECKLIST & SPESIFIKASI TESTING QC BERSEKA (SEMUA ROLE & FITUR)
 
 > **Versi Dokumen:** 2.0 (Final Comprehensive QC Checklist)  
 > **Tanggal Pembaruan:** 31 Juli 2026  
-> **Target Aplikasi:** Trashcare (Web App & Mobile App Monorepo)  
-> **Standar Bahasa:** Bahasa Indonesia Baku (Sesuai KBBI & Spec Final Trashcare)  
+> **Target Aplikasi:** BERSEKA (Web App & Mobile App Monorepo)  
+> **Standar Bahasa:** Bahasa Indonesia Baku (Sesuai KBBI & Spec Final BERSEKA)  
 
 ---
 
 ## 1. Matriks Hak Akses & Role (RBAC Matrix)
 
-Sistem Trashcare mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akses data yang terisolasi secara ketat:
+Sistem BERSEKA mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akses data yang terisolasi secara ketat:
 
 | No | Peran / Role | Metode Login (Saat Ini) | Scope Data | Batasan Operasi (Read/Write) |
 |---|---|---|---|---|

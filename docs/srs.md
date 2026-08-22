@@ -1,4 +1,4 @@
-# Software Requirement Specification (SRS) — Pilah Sampah Cerdas
+﻿# Software Requirement Specification (SRS) — BERSEKA
 
 ## 1. Spesifikasi Autentikasi & Identifikasi Pengguna (No NIK & Universal Phone Auth)
 * **FR-AUTH-01 (Identifikasi Tanpa NIK & No HP Universal):** 

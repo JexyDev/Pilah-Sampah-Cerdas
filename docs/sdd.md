@@ -1,4 +1,4 @@
-# Software Design Document (SDD) — Pilah Sampah Cerdas
+﻿# Software Design Document (SDD) — BERSEKA
 
 ## 1. Arsitektur Sistem
 

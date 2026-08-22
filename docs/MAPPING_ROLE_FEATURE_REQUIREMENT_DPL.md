@@ -1,6 +1,6 @@
-# Mapping Role Feature Requirement TrashCare — DPL (Dosen Pembimbing Lapangan)
+﻿# Mapping Role Feature Requirement BERSEKA — DPL (Dosen Pembimbing Lapangan)
 
-> Dokumen ini adalah **turunan khusus role DPL**, diekstrak dari dokumen induk **Mapping Role Feature Requirement TrashCare**. Auth, hierarki, dan hak akses di sini mengikuti versi terbaru dokumen induk (pasca-rekonsiliasi Web vs Mobile). Jika ada revisi hierarki/role lain di masa depan, dokumen ini perlu disinkronkan ulang dari sana.
+> Dokumen ini adalah **turunan khusus role DPL**, diekstrak dari dokumen induk **Mapping Role Feature Requirement BERSEKA**. Auth, hierarki, dan hak akses di sini mengikuti versi terbaru dokumen induk (pasca-rekonsiliasi Web vs Mobile). Jika ada revisi hierarki/role lain di masa depan, dokumen ini perlu disinkronkan ulang dari sana.
 
 ---
 
@@ -65,11 +65,11 @@ Mahasiswa KKN → DPL → Panitia Taskforce (Admin Kegiatan KKN) → Pimpinan (=
 
 > **Wajib diikuti oleh tim pengembang (frontend/UI) saat membangun atau merevisi halaman DPL:**
 
-- **Gunakan komponen, layout, dan pola UI yang sudah ada** di aplikasi Web TrashCare (Sidebar, Dashboard card, tabel data, form approval, dsb.) — **jangan membuat komponen baru dari nol** kecuali fitur tersebut memang belum punya padanan di role lain.
+- **Gunakan komponen, layout, dan pola UI yang sudah ada** di aplikasi Web BERSEKA (Sidebar, Dashboard card, tabel data, form approval, dsb.) — **jangan membuat komponen baru dari nol** kecuali fitur tersebut memang belum punya padanan di role lain.
 - **Jaga konsistensi visual** dengan role Web sejenis yang sudah dibangun lebih dulu (RW, Lurah, Camat, Admin DLH, Panitia Taskforce) — meliputi: warna, tipografi, ukuran tombol, ikon, penempatan filter/search, dan struktur navigasi (sidebar/menu).
 - **Pola tabel & approval mengikuti standar yang sudah berjalan** — contoh: tabel "Approval Izin/Sakit" DPL harus punya struktur kolom, badge status (Pending/Approved/Rejected), dan tombol aksi yang identik gayanya dengan tabel approval di role lain (mis. Approval Ide Daur Ulang milik RW), supaya pengguna lintas-role tidak perlu belajar pola baru.
 - **Chart & visualisasi** (jika ada, mis. saat menampilkan data Baseline/Endline kelompok bimbingan) mengikuti jenis chart & styling yang sudah ditetapkan di menu KKN & Evaluasi Dampak untuk role lain (RW/Lurah/Camat/Admin DLH), bukan membuat gaya visualisasi baru.
-- Jika ada kebutuhan elemen UI yang benar-benar belum ada di role manapun, **konsultasikan dulu ke tim desain/UI lead** sebelum membangun komponen baru, agar tetap sejalan dengan design system TrashCare secara keseluruhan.
+- Jika ada kebutuhan elemen UI yang benar-benar belum ada di role manapun, **konsultasikan dulu ke tim desain/UI lead** sebelum membangun komponen baru, agar tetap sejalan dengan design system BERSEKA secara keseluruhan.
 
 ---
 

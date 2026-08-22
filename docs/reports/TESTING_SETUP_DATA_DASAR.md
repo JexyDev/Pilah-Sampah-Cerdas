@@ -1,6 +1,6 @@
-# SETUP DATA DASAR DEMO - KOTA BANDUNG (KECAMATAN COBLONG)
+﻿# SETUP DATA DASAR DEMO - KOTA BANDUNG (KECAMATAN COBLONG)
 
-Data dasar telah berhasil disiapkan dan dimasukkan ke dalam database. Data ini merepresentasikan wilayah nyata di Kecamatan Coblong, Kota Bandung, beserta entitas yang mendukung seluruh alur sistem Trashcare.
+Data dasar telah berhasil disiapkan dan dimasukkan ke dalam database. Data ini merepresentasikan wilayah nyata di Kecamatan Coblong, Kota Bandung, beserta entitas yang mendukung seluruh alur sistem BERSEKA.
 
 ## 1. Wilayah Administratif
 - **Kelurahan yang tersedia**: Dago, Sekeloa, Lebak Gede, Lebak Siliwangi, Sadang Serang, Cipaganti

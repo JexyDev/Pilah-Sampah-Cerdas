@@ -1,4 +1,4 @@
-# Refactor Baseline Snapshot - userController & binController
+﻿# Refactor Baseline Snapshot - userController & binController
 
 File ini berisi baseline snapshot untuk semua endpoint di `userController.ts` dan `binController.ts`. Nilai dinamis seperti UUID, Token, dan Tanggal telah disensor (`MASKED_*`) agar perbandingan diff setelah refactor konsisten.
 
@@ -533,7 +533,7 @@ Jumlah Skenario: 22
 ```json
 {
   "error": "INTERNAL_SERVER_ERROR",
-  "message": "Gagal membuat tong sampah"
+  "message": "Gagal membuat Tempat Sampah"
 }
 ```
 

@@ -1,4 +1,4 @@
-# 📋 MASTER TASK LIST — TrashCare (Pilah Sampah Cerdas)
+﻿# 📋 MASTER TASK LIST — BERSEKA (BERSEKA)
 > **1 dokumen, 4 bagian tim.** Setiap tim mengisi bagian masing-masing.
 > Status: 🔴 Belum | 🟡 Sedang | 🟢 Selesai & Terverifikasi | ⚪ Sengaja Disembunyikan
 > **Aturan 🟢:** Hanya boleh diisi jika sudah DITES SUNGGUHAN (bukan sekadar baca kode), data dari backend REAL, tidak ada kata "tong" tersisa.
@@ -202,7 +202,7 @@
 | L-02 | Sistem | Tidak ada kata "tong" di UI/notifikasi | QC Text | Zero hasil pencarian "tong" | | 🔴 | Medium | | | |
 | L-03 | Sistem | Dashboard menampilkan data REAL (bukan dummy/0) | Data | Grafik bergerak sesuai data DB | | 🔴 | Critical | | | |
 | L-04 | Sistem | Format HP: sistem menerima 08xx (bukan hanya +62) | Regression | Login/register dengan 08xx berhasil | | 🔴 | Critical | | | |
-| L-05 | Sistem | Tidak ada sisa fitur/UI Pengangkut di Trashcare | Cleanup | Zero elemen Pengangkut di UI & route | | 🔴 | Medium | | | |
+| L-05 | Sistem | Tidak ada sisa fitur/UI Pengangkut di BERSEKA | Cleanup | Zero elemen Pengangkut di UI & route | | 🔴 | Medium | | | |
 
 ---
 ---
@@ -274,7 +274,7 @@
 | D-03 | | Format HP login | Sistem menerima +62 dan 08 | | authService normalisasi | 🔴 | |
 | D-04 | | Peta Sebaran DPL | DI-HIDE sementara (bukan bug) | | Frontend hide component | 🔴 | |
 | D-05 | | Fitur Penilaian Formal DPL | DI-HIDE sementara (bukan bug) | | Frontend hide component | 🔴 | |
-| D-06 | | Role Pengangkut | Dihapus total dari Trashcare (punya app sendiri) | | Cleanup seluruh sistem | 🔴 | |
+| D-06 | | Role Pengangkut | Dihapus total dari BERSEKA (punya app sendiri) | | Cleanup seluruh sistem | 🔴 | |
 | D-07 | | Scope Taskforce | Belum terdefinisi — perlu keputusan tim | | — | ⚠️ Open | |
 | D-08 | | Approval bin oleh RW | Jadi obsolete karena auto-active — repurpose atau hapus? | | rwRoutes + frontend | 🔴 | |
 

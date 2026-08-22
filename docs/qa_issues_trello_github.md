@@ -1,4 +1,4 @@
-# QA Issues & Trello Board Sync Log — Pilah Sampah Cerdas
+﻿# QA Issues & Trello Board Sync Log — BERSEKA
 
 Dokumen ini mencatat seluruh temuan bug dan ketidaksesuaian spesifikasi yang ditemukan selama proses Quality Control (QC) yang dilakukan oleh QA Lead.
 

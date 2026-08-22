@@ -1,7 +1,7 @@
-# 📋 ROLE MAPPING TRASHCARE — Dokumentasi Komprehensif
+﻿# 📋 ROLE MAPPING BERSEKA — Dokumentasi Komprehensif
 
 > **Versi:** 1.0 — 10 Agustus 2026  
-> **Proyek:** Trashcare — Sistem Pemilahan Sampah Cerdas Terintegrasi  
+> **Proyek:** BERSEKA — Sistem Pemilahan Sampah Cerdas Terintegrasi  
 > **Wilayah:** Kecamatan Coblong, Kota Bandung  
 > **Maintainer:** Tim Full-Stack PT Makerindo  
 
@@ -1555,7 +1555,7 @@ sequenceDiagram
 ### A. Catatan Teknis Penting
 
 1. **NIK DIHAPUS** — Tidak ada field NIK di seluruh sistem (sesuai kebijakan AGENTS.md)
-2. **Istilah "Tempat Sampah"** — WAJIB digunakan, DILARANG "tong" atau "tong sampah"
+2. **Istilah "Tempat Sampah"** — WAJIB digunakan, DILARANG "tong" atau "Tempat Sampah"
 3. **Satuan Standar** — Kg (K besar, g kecil) di header; angka saja di isi tabel
 4. **Timestamp** — Semua dari server (Asia/Jakarta), bukan device user
 5. **Max 2 tempat sampah per rumah tangga** — 1 Organik + 1 Anorganik
@@ -1574,10 +1574,10 @@ sequenceDiagram
 | App Routes | `apps/web/src/routes/AppRoutes.tsx` | 40+ routes |
 | Sidebar | `apps/web/src/components/layout/Sidebar/Sidebar.tsx` | Menu filtering |
 | Entry Point | `apps/api/src/index.ts` | 30 route mounts |
-| Spec Final | `docs/SPEC_FINAL_TRASHCARE.md` | Keputusan meeting |
+| Spec Final | `docs/SPEC_FINAL_BERSEKA.md` | Keputusan meeting |
 | AGENTS.md | `AGENTS.md` (root) | Master rules |
 
 ---
 
-> **Dokumen ini di-generate dari analisis lengkap codebase Trashcare pada 10 Agustus 2026.**  
+> **Dokumen ini di-generate dari analisis lengkap codebase BERSEKA pada 10 Agustus 2026.**  
 > **Setiap perubahan role, fitur, atau struktur data WAJIB di-update di dokumen ini.**

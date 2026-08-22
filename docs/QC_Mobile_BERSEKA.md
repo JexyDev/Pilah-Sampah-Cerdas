@@ -1,4 +1,4 @@
-# Form Quality Control (QC) — Mobile Pilah Sampah Cerdas
+﻿# Form Quality Control (QC) — Mobile BERSEKA
 
 **Versi Dokumen:** 1.0  
 **Tanggal Pengujian:** ___/___/______  
@@ -121,7 +121,7 @@
 | 5.9 | Scan QR | QR Code valid berhasil di-scan dan diproses | | | | | | | |
 | 5.10 | Scan QR | QR Code invalid → Alert dialog "QR tidak dikenali" muncul | | | | | | | |
 | 5.11 | Scan QR | Geofencing: Jarak ≤10m dari tong → scan diterima | | | | | | | |
-| 5.12 | Scan QR | Geofencing: Jarak >10m dari tong → Alert "Anda terlalu jauh dari tong sampah" (Haversine) | | | | | | | |
+| 5.12 | Scan QR | Geofencing: Jarak >10m dari tong → Alert "Anda terlalu jauh dari Tempat Sampah" (Haversine) | | | | | | | |
 | 5.13 | Scan QR | Kapasitas tong aman (<25L) → proses lanjut normal | | | | | | | |
 | 5.14 | Scan QR | Kapasitas tong penuh (≥25L) → Alert "Tong Penuh, cari tong lain" | | | | | | | |
 

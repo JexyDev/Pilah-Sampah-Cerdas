@@ -1,6 +1,6 @@
-# Dokumentasi Flow Activity Mobile (Branch: local-dev)
+﻿# Dokumentasi Flow Activity Mobile (Branch: local-dev)
 
-Dokumen ini menjelaskan alur aktivitas (*activity flow*) aplikasi mobile **Pilah Sampah Cerdas** pada branch `local-dev`. Penulisan flow ini mengikuti kaidah teknis Clean Architecture (Widget/UI → ViewModel/Notifier → Repository → DataSource), Riverpod State Management, Dio HTTP client, dan hardware API integration.
+Dokumen ini menjelaskan alur aktivitas (*activity flow*) aplikasi mobile **BERSEKA** pada branch `local-dev`. Penulisan flow ini mengikuti kaidah teknis Clean Architecture (Widget/UI → ViewModel/Notifier → Repository → DataSource), Riverpod State Management, Dio HTTP client, dan hardware API integration.
 
 ---
 
@@ -169,7 +169,7 @@ Seluruh unggahan foto pada Modul Warga dikompresi secara otomatis sebelum dikiri
    * Memanggil `FirebaseMessaging.instance.deleteToken()` untuk reset token lokal SDK Firebase.
 # Dokumentasi Flow Activity Mobile (Branch: local-dev)
 
-Dokumen ini menjelaskan alur aktivitas (*activity flow*) aplikasi mobile **Pilah Sampah Cerdas** pada branch `local-dev`. Penulisan flow ini mengikuti kaidah teknis Clean Architecture (Widget/UI → ViewModel/Notifier → Repository → DataSource), Riverpod State Management, Dio HTTP client, dan hardware API integration.
+Dokumen ini menjelaskan alur aktivitas (*activity flow*) aplikasi mobile **BERSEKA** pada branch `local-dev`. Penulisan flow ini mengikuti kaidah teknis Clean Architecture (Widget/UI → ViewModel/Notifier → Repository → DataSource), Riverpod State Management, Dio HTTP client, dan hardware API integration.
 
 ---
 

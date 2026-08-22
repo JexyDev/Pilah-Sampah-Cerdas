@@ -1,6 +1,6 @@
-# DOKUMENTASI RESMI FLOW ALUR & INTEGRASI API MODUL PETUGAS RESIDU TRASHCARE
+﻿# DOKUMENTASI RESMI FLOW ALUR & INTEGRASI API MODUL PETUGAS RESIDU BERSEKA
 
-Dokumen ini disusun sebagai panduan teknis resmi untuk pengembang yang melanjutkan/mengembangkan **Modul Petugas Residu** pada aplikasi mobile **TrashCare** (Flutter Dart).
+Dokumen ini disusun sebagai panduan teknis resmi untuk pengembang yang melanjutkan/mengembangkan **Modul Petugas Residu** pada aplikasi mobile **BERSEKA** (Flutter Dart).
 
 > [!IMPORTANT]
 > **SPESIFIKASI KETAT FITUR & ALUR PETUGAS RESIDU:**

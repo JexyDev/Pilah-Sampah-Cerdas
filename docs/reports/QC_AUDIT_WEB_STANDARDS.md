@@ -1,4 +1,4 @@
-# 🔍 QC AUDIT REPORT: TrashCare Web Application
+﻿# 🔍 QC AUDIT REPORT: BERSEKA Web Application
 ## International Web Standards & ISO Compliance Audit
 
 **Audit Date**: 2026-08-09  
@@ -30,11 +30,11 @@
 - **Impact**: ⬆️ CRITICAL - Page not indexed by search engines, poor SEO ranking
 - **Fix**: Add to `public/index.html`:
   ```html
-  <title>TrashCare - Aplikasi Manajemen Sampah Cerdas Bandung</title>
+  <title>BERSEKA - Aplikasi Manajemen Sampah Cerdas Bandung</title>
   <meta name="description" content="Platform partisipasi warga untuk pemilahan sampah, daur ulang, dan keberlanjutan lingkungan di Bandung.">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta charset="UTF-8">
-  <link rel="canonical" href="https://trashcare.id">
+  <link rel="canonical" href="https://BERSEKA.id">
   ```
 
 ### 2. **Heading Hierarchy Broken (H1 Missing)**
@@ -49,7 +49,7 @@
 
 ### 3. **Image Alt Text Missing (A11y & SEO)**
 - ❌ **Issue**: Many `<img>` tags lack `alt` attribute:
-  - `/image/trashcare-icon.png` ✅ Has alt="TrashCare Icon"
+  - `/image/BERSEKA-icon.png` ✅ Has alt="BERSEKA Icon"
   - `/image/sdg/SDG-*.svg` ✅ Has alt text
   - Hero background images ❌ **No alt**
   - Partner logos (DLH, Unikom) ❌ **No alt**

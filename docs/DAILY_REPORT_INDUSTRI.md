@@ -1,4 +1,4 @@
-# Laporan Harian Projek Trashcare (2 Agustus 2026 - 14 Agustus 2026)
+﻿# Laporan Harian Projek BERSEKA (2 Agustus 2026 - 14 Agustus 2026)
 
 Dokumen ini berisi pencatatan laporan harian (daily report) untuk pihak industri/pembimbing projek dengan pasangan **Task** dan **Note/Problem** per item pekerjaan.
 

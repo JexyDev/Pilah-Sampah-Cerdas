@@ -1,4 +1,4 @@
-# UI/UX Specification & Flow — Pilah Sampah Cerdas
+﻿# UI/UX Specification & Flow — BERSEKA
 
 ## 1. Panduan Visual & Desain System
 *   **Tema:** Light Mode Only. Tidak ada toggle dark/light mode.
@@ -22,7 +22,7 @@
 
 ### 2.1 Sidebar & Topbar (Navigasi Global per Role)
 *   **Sidebar (Kiri):**
-    *   Logo hijau daun `Pilah Sampah Cerdas`.
+    *   Logo hijau daun `BERSEKA`.
     *   Menu navigasi (ikon Lucide):
         *   **Dashboard Monitoring Warga** (Tampilan khusus Warga: Status 2 Tempat Sampah, Grafik Setoran, Leaderboard, Status Reset).
         *   **Management Reset Tempat Sampah** *(Halaman Khusus RT & RW)*: Review foto bukti & approval/rejection reset tempat sampah warga wilayahnya.

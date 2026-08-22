@@ -1,16 +1,16 @@
-# 📋 MAPPING ROLE FEATURE REQUIREMENT TRASHCARE (KKN & JALUR AKADEMIK)
+﻿# 📋 MAPPING ROLE FEATURE REQUIREMENT BERSEKA (KKN & JALUR AKADEMIK)
 
 > **Versi:** 1.0 — 13 Agustus 2026  
-> **Proyek:** Trashcare — Sistem Pemilahan Sampah Cerdas Terintegrasi  
+> **Proyek:** BERSEKA — Sistem Pemilahan Sampah Cerdas Terintegrasi  
 > **Wilayah:** Kecamatan Coblong, Kota Bandung — Program KKN UNIKOM  
 > **Scope:** Khusus Jalur Akademik (Pimpinan, Panitia Taskforce, DPL, Mahasiswa KKN)  
-> **Acuan Rekan Tim:** `ROLE_MAPPING_TRASHCARE.md` (Konteks Tata Kelola Sampah & Master Data)  
+> **Acuan Rekan Tim:** `ROLE_MAPPING_BERSEKA.md` (Konteks Tata Kelola Sampah & Master Data)  
 
 ---
 
 ## 📌 Catatan Acuan Dokumen
 
-Dokumen ini melengkapi `ROLE_MAPPING_TRASHCARE.md` dengan pendalaman khusus pada **Jalur Akademik (KKN)**.
+Dokumen ini melengkapi `ROLE_MAPPING_BERSEKA.md` dengan pendalaman khusus pada **Jalur Akademik (KKN)**.
 
 ### Hasil Verifikasi Nyata Database & Proyek:
 1. **Pemisahan Role di DB**:
@@ -317,4 +317,4 @@ erDiagram
 - [ ] Tidak ada penggunaan kata terlarang "tong" di UI dan dokumentasi.
 
 ---
-*Dokumen resmi spesifikasi teknis modul KKN TrashCare. PT Makerindo — 2026.*
+*Dokumen resmi spesifikasi teknis modul KKN BERSEKA. PT Makerindo — 2026.*

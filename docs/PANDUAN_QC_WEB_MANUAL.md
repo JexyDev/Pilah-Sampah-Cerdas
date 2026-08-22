@@ -1,8 +1,8 @@
-# PANDUAN & CHECKLIST TESTING QC WEB MANUAL (TRASHCARE)
+﻿# PANDUAN & CHECKLIST TESTING QC WEB MANUAL (BERSEKA)
 
 > **Versi Dokumen:** 1.0 (Manual Web QA Checklist)  
 > **Lokasi File:** `docs/PANDUAN_QC_WEB_MANUAL.md`  
-> **Target Aplikasi:** Frontend Web Trashcare (`apps/web`)  
+> **Target Aplikasi:** Frontend Web BERSEKA (`apps/web`)  
 > **Metode Pengujian:** Pengujian Manual UI/UX, Alur Bisnis, & Respon API  
 
 ---

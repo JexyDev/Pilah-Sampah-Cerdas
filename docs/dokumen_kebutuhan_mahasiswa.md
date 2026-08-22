@@ -1,4 +1,4 @@
-# **DOKUMEN KEBUTUHAN PENGEMBANGAN APLIKASI MOBILE MAHASISWA KKN**
+﻿# **DOKUMEN KEBUTUHAN PENGEMBANGAN APLIKASI MOBILE MAHASISWA KKN**
 
 ## **1. Pendahuluan**
 
@@ -14,7 +14,7 @@ berkala sebagai pengganti mekanisme absensi manual.
 
 Berdasarkan requirement terbaru dari backend, terdapat perubahan pada
 alur sistem. Fitur yang sebelumnya menggunakan mekanisme pemindaian QR
-Code untuk melakukan klaim atau aktivasi tong sampah dihapus dan tidak
+Code untuk melakukan klaim atau aktivasi Tempat Sampah dihapus dan tidak
 lagi digunakan.
 
 Fokus utama aplikasi mobile Mahasiswa KKN adalah:
@@ -1270,23 +1270,23 @@ dikembangkan.
 
 Berdasarkan requirement terbaru, fitur berikut tidak lagi digunakan:
 
-1.  Scan QR Code tong sampah.
+1.  Scan QR Code Tempat Sampah.
 
-2.  Claim tong sampah.
+2.  Claim Tempat Sampah.
 
 3.  Perubahan status tong menjadi ASSIGNED_TO_PIC.
 
 4.  Status PENDING_APPROVAL untuk proses claim.
 
-5.  Aktivasi tong sampah melalui QR Code.
+5.  Aktivasi Tempat Sampah melalui QR Code.
 
-6.  Flow approval tong sampah.
+6.  Flow approval Tempat Sampah.
 
 7.  UI Scanner QR Code.
 
-8.  API Claim Tong Sampah.
+8.  API Claim Tempat Sampah.
 
-9.  Logika PIC terhadap kepemilikan tong sampah.
+9.  Logika PIC terhadap kepemilikan Tempat Sampah.
 
 Fitur tersebut harus dihapus atau tidak digunakan lagi dalam flow
 aplikasi mahasiswa KKN.
@@ -1485,7 +1485,7 @@ ke backend.
 # **20. Kesimpulan**
 
 Berdasarkan requirement terbaru, aplikasi mobile Modul Mahasiswa KKN
-mengalami perubahan fokus dari sistem klaim atau aktivasi tong sampah
+mengalami perubahan fokus dari sistem klaim atau aktivasi Tempat Sampah
 menjadi sistem pendampingan warga.
 
 Mahasiswa KKN memiliki tiga fungsi utama dalam aplikasi, yaitu:
@@ -1576,7 +1576,7 @@ PERFORMA BAIK PERLU EDUKASI
 MONITORING EDUKASI ULANG
 
 Dengan demikian, **aktivasi dalam konteks requirement terbaru bukan lagi
-aktivasi atau klaim tong sampah**. Mahasiswa KKN berfungsi sebagai
+aktivasi atau klaim Tempat Sampah**. Mahasiswa KKN berfungsi sebagai
 **pendamping warga**, sedangkan hubungan antara mahasiswa dan warga
 dibentuk melalui proses **registrasi warga dan binding otomatis oleh
 backend**.
@@ -1633,7 +1633,7 @@ Untuk menampung hasil ping dari Background Service Mobile.
 
 -   recordedAt (DateTime) - Waktu titik ini ditangkap
 
-C. Relasi Warga Dampingan (Tabel Bin / Tong Sampah)
+C. Relasi Warga Dampingan (Tabel Bin / Tempat Sampah)
 
 Untuk memetakan warga mana yang dibantu registrasi oleh mahasiswa mana.
 

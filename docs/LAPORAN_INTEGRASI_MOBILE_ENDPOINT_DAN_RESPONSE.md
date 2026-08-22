@@ -1,4 +1,4 @@
-# 📄 LAPORAN RESMI INTEGRASI ENDPOINT & RESPONSE API MOBILE
+﻿# 📄 LAPORAN RESMI INTEGRASI ENDPOINT & RESPONSE API MOBILE
 ## Sistem Pemilahan Sampah Terintegrasi — BERSEKA (Kecamatan Coblong & Kota Bandung)
 
 ---
@@ -9,7 +9,7 @@
 | **Penerima** | Tim Pengembang Mobile App (Flutter / Riverpod) |
 | **Status API** | 🟢 Aktif & Terverifikasi (100% Real Database, Anti-Dummy) |
 | **Base URL Development** | `http://localhost:5000/api/v1` / `http://10.0.2.2:5000/api/v1` (Android Emulator) |
-| **Base URL Production** | `https://trashcare.makerindo.tech/api/v1` |
+| **Base URL Production** | `https://BERSEKA.makerindo.tech/api/v1` |
 | **Format Komunikasi** | JSON over RESTful HTTP / Multipart Form-Data (Upload) |
 | **Standar Autentikasi** | Header `Authorization: Bearer <jwt_token>` |
 
@@ -144,7 +144,7 @@ Authorization: Bearer <token_jwt>
     "kelurahan": "Sadang Serang",
     "rw": "03",
     "rt": "01",
-    "avatar": "https://trashcare.makerindo.tech/uploads/avatar-mhs-1.jpg",
+    "avatar": "https://BERSEKA.makerindo.tech/uploads/avatar-mhs-1.jpg",
     "points": 125,
     "assignedRw": {
       "id": 3,
@@ -363,7 +363,7 @@ Authorization: Bearer <token_jwt>
     "id": "pmf_101",
     "jenis": "POC",
     "jumlahKg": 15.0,
-    "fotoUrl": "https://trashcare.makerindo.tech/uploads/pemanfaatan-101.jpg",
+    "fotoUrl": "https://BERSEKA.makerindo.tech/uploads/pemanfaatan-101.jpg",
     "createdAt": "2026-08-20T08:40:00.000Z"
   }
 }
@@ -403,7 +403,7 @@ Authorization: Bearer <token_jwt>
       "alamat": "Jl. Sadang Serang No. 45 RT 03 RW 03",
       "latitude": -6.890350,
       "longitude": 107.612500,
-      "foto": "https://trashcare.makerindo.tech/uploads/posko-01.jpg"
+      "foto": "https://BERSEKA.makerindo.tech/uploads/posko-01.jpg"
     },
     "isUserLeader": true,
     "kelompokId": "klp_01"
@@ -430,14 +430,14 @@ Authorization: Bearer <token_jwt>
 {
   "success": true,
   "data": [
-    { "id": 1, "key": "rumah_maggot", "nama": "Rumah Maggot", "deskripsi": "Fasilitas budidaya maggot BSF untuk reduksi sampah organik dapur", "iconUrl": "https://trashcare.makerindo.tech/icons/rumah_maggot.png", "isActive": true },
-    { "id": 2, "key": "loseda", "nama": "Loseda", "deskripsi": "Lodong Sesa Dapur: pipa vertikal komposter sisa makanan", "iconUrl": "https://trashcare.makerindo.tech/icons/loseda.png", "isActive": true },
-    { "id": 3, "key": "bata_terawang", "nama": "Bata Terawang", "deskripsi": "Komposter bata berpori rongga udara untuk dedaunan dan organik", "iconUrl": "https://trashcare.makerindo.tech/icons/bata_terawang.png", "isActive": true },
-    { "id": 4, "key": "bank_sampah", "nama": "Bank Sampah", "deskripsi": "Pusat penimbangan dan tabungan sampah anorganik bernilai ekonomi", "iconUrl": "https://trashcare.makerindo.tech/icons/bank_sampah.png", "isActive": true },
-    { "id": 5, "key": "buruan_sae", "nama": "Buruan Sae", "deskripsi": "Program pekarangan pangan mandiri pemanfaat kompos", "iconUrl": "https://trashcare.makerindo.tech/icons/buruan_sae.png", "isActive": true },
-    { "id": 6, "key": "poc", "nama": "Pupuk Organik Cair (POC)", "deskripsi": "Instalasi fermentasi pupuk cair dari air lindi sampah organik", "iconUrl": "https://trashcare.makerindo.tech/icons/poc.png", "isActive": true },
-    { "id": 7, "key": "tps", "nama": "TPS", "deskripsi": "Tempat Penampungan Sampah Sementara tingkat kelurahan", "iconUrl": "https://trashcare.makerindo.tech/icons/tps.png", "isActive": true },
-    { "id": 8, "key": "posko_kkn", "nama": "Posko KKN", "deskripsi": "Pusat koordinasi lapangan mahasiswa KKN", "iconUrl": "https://trashcare.makerindo.tech/icons/posko_kkn.png", "isActive": true }
+    { "id": 1, "key": "rumah_maggot", "nama": "Rumah Maggot", "deskripsi": "Fasilitas budidaya maggot BSF untuk reduksi sampah organik dapur", "iconUrl": "https://BERSEKA.makerindo.tech/icons/rumah_maggot.png", "isActive": true },
+    { "id": 2, "key": "loseda", "nama": "Loseda", "deskripsi": "Lodong Sesa Dapur: pipa vertikal komposter sisa makanan", "iconUrl": "https://BERSEKA.makerindo.tech/icons/loseda.png", "isActive": true },
+    { "id": 3, "key": "bata_terawang", "nama": "Bata Terawang", "deskripsi": "Komposter bata berpori rongga udara untuk dedaunan dan organik", "iconUrl": "https://BERSEKA.makerindo.tech/icons/bata_terawang.png", "isActive": true },
+    { "id": 4, "key": "bank_sampah", "nama": "Bank Sampah", "deskripsi": "Pusat penimbangan dan tabungan sampah anorganik bernilai ekonomi", "iconUrl": "https://BERSEKA.makerindo.tech/icons/bank_sampah.png", "isActive": true },
+    { "id": 5, "key": "buruan_sae", "nama": "Buruan Sae", "deskripsi": "Program pekarangan pangan mandiri pemanfaat kompos", "iconUrl": "https://BERSEKA.makerindo.tech/icons/buruan_sae.png", "isActive": true },
+    { "id": 6, "key": "poc", "nama": "Pupuk Organik Cair (POC)", "deskripsi": "Instalasi fermentasi pupuk cair dari air lindi sampah organik", "iconUrl": "https://BERSEKA.makerindo.tech/icons/poc.png", "isActive": true },
+    { "id": 7, "key": "tps", "nama": "TPS", "deskripsi": "Tempat Penampungan Sampah Sementara tingkat kelurahan", "iconUrl": "https://BERSEKA.makerindo.tech/icons/tps.png", "isActive": true },
+    { "id": 8, "key": "posko_kkn", "nama": "Posko KKN", "deskripsi": "Pusat koordinasi lapangan mahasiswa KKN", "iconUrl": "https://BERSEKA.makerindo.tech/icons/posko_kkn.png", "isActive": true }
   ]
 }
 ```
@@ -454,7 +454,7 @@ Authorization: Bearer <token_jwt>
     "id": "fac_01",
     "nama": "Rumah Maggot Berkah Mandiri RT 03",
     "jenis": "rumah_maggot",
-    "foto": "https://trashcare.makerindo.tech/uploads/fac-101.jpg",
+    "foto": "https://BERSEKA.makerindo.tech/uploads/fac-101.jpg",
     "status": "ACTIVE",
     "registeredBy": {
       "id": "usr_mhs_01",
@@ -479,8 +479,8 @@ Authorization: Bearer <token_jwt>
       "phone": "+62812345678"
     },
     "anggota": [
-      { "id": "usr_mhs_01", "name": "Acef Kiki", "nim": "10121001", "isLeader": true, "points": 125, "avatar": "https://trashcare.makerindo.tech/uploads/avatar-mhs-1.jpg" },
-      { "id": "usr_mhs_02", "name": "Muhamad Habil", "nim": "10121002", "isLeader": false, "points": 110, "avatar": "https://trashcare.makerindo.tech/uploads/avatar-mhs-2.jpg" }
+      { "id": "usr_mhs_01", "name": "Acef Kiki", "nim": "10121001", "isLeader": true, "points": 125, "avatar": "https://BERSEKA.makerindo.tech/uploads/avatar-mhs-1.jpg" },
+      { "id": "usr_mhs_02", "name": "Muhamad Habil", "nim": "10121002", "isLeader": false, "points": 110, "avatar": "https://BERSEKA.makerindo.tech/uploads/avatar-mhs-2.jpg" }
     ]
   }
 }
@@ -541,7 +541,7 @@ Authorization: Bearer <token_jwt>
       "rt": "02",
       "beratKg": 3.8,
       "jenisSampah": "RESIDU",
-      "fotoBukti": "https://trashcare.makerindo.tech/uploads/timbangan-1092.jpg",
+      "fotoBukti": "https://BERSEKA.makerindo.tech/uploads/timbangan-1092.jpg",
       "createdAt": "2026-08-20T09:10:00.000Z"
     }
   ]
@@ -592,7 +592,7 @@ Authorization: Bearer <token_jwt>
 ```json
 {
   "binId": "bin_01",
-  "foto": "https://trashcare.makerindo.tech/uploads/bukti-penuh-01.jpg",
+  "foto": "https://BERSEKA.makerindo.tech/uploads/bukti-penuh-01.jpg",
   "keterangan": "Tempat sampah organik sudah melebihi 90% penuh"
 }
 ```
@@ -653,7 +653,7 @@ Authorization: Bearer <token_jwt>
       "jenis": "rumah_maggot",
       "latitude": -6.890120,
       "longitude": 107.612340,
-      "foto": "https://trashcare.makerindo.tech/uploads/fac-101.jpg",
+      "foto": "https://BERSEKA.makerindo.tech/uploads/fac-101.jpg",
       "pic": "Budi Santoso",
       "kontak": "+6281234567890",
       "kapasitas": 50,

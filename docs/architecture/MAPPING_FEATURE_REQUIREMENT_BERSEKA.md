@@ -1,10 +1,10 @@
-# Mapping Feature Requirement Aplikasi TrashCare
+﻿# Mapping Feature Requirement Aplikasi BERSEKA
 
 ---
 
 ## 📌 Catatan Acuan Dokumen
 
-Dokumen ini disusun ulang dari **Dokumentasi Hierarki Role TrashCare** sebelumnya. Beberapa penyesuaian struktural:
+Dokumen ini disusun ulang dari **Dokumentasi Hierarki Role BERSEKA** sebelumnya. Beberapa penyesuaian struktural:
 
 - **Hierarki role (5 role wilayah: Warga–RW–Lurah–Camat–Admin DLH) dan role pendukung (Super User, DPL, Pimpinan, Panitia Taskforce, Petugas Residu, Mahasiswa KKN)** yang sebelumnya disebut "Bagian I" dan "Bagian II" **bukan modul aplikasi** — keduanya adalah **acuan dasar** (baseline definisi identitas, auth, scope, dan relasi antar-role) yang menjadi fondasi seluruh feature requirement di dokumen ini. Diintegrasikan langsung ke tabel fitur tiap role di bawah, tidak ditulis ulang sebagai unit terpisah.
 - **3 grup menu/fitur baru** (sebelumnya disebut "Modul A/B/C") **tidak lagi dinamai "Modul"** — ditulis langsung dengan judul menunya:

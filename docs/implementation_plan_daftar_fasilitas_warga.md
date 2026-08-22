@@ -1,6 +1,6 @@
-# 📋 Dokumentasi Kebutuhan Backend: Fitur Fasilitas Warga KKN
+﻿# 📋 Dokumentasi Kebutuhan Backend: Fitur Fasilitas Warga KKN
 
-> **Dokumen ini ditujukan untuk Tim Backend** sebagai panduan implementasi endpoint terkait fitur **Daftar Fasilitas Warga** pada aplikasi mobile Pilah Sampah Cerdas.
+> **Dokumen ini ditujukan untuk Tim Backend** sebagai panduan implementasi endpoint terkait fitur **Daftar Fasilitas Warga** pada aplikasi mobile BERSEKA.
 >
 > **Tanggal**: 20 Agustus 2026 | **Branch**: `acef-branch`
 

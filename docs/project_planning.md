@@ -1,7 +1,7 @@
-# Project Planning: Geo-Vision Waste Bandung (G-VIST Bandung)
-## Pilah Sampah Cerdas Berbasis Computer Vision AI & Geospasial
+﻿# Project Planning: Geo-Vision Waste Bandung (G-VIST Bandung)
+## BERSEKA Berbasis Computer Vision AI & Geospasial
 
-Dokumen ini berisi rencana kerja, spesifikasi detail, dan arsitektur pengembangan untuk bagian **Fullstack (Backend & Frontend)** pada sistem Pilah Sampah Cerdas Kota Bandung.
+Dokumen ini berisi rencana kerja, spesifikasi detail, dan arsitektur pengembangan untuk bagian **Fullstack (Backend & Frontend)** pada sistem BERSEKA Kota Bandung.
 
 ---
 
@@ -25,7 +25,7 @@ Dokumen ini berisi rencana kerja, spesifikasi detail, dan arsitektur pengembanga
 ### 2.2 Frontend (FE)
 * **Framework:** React.js dengan bundler **Vite** (TypeScript).
 * **Styling:** Vanilla CSS & Tailwind CSS (desain responsif).
-* **Peta Geospasial (GIS):** Leaflet.js / React-Leaflet untuk plotting peta sebaran tong sampah.
+* **Peta Geospasial (GIS):** Leaflet.js / React-Leaflet untuk plotting peta sebaran Tempat Sampah.
 * **State Management & Routing:** React Context API & React Router DOM.
 * **API Client:** Axios / Fetch API.
 
@@ -59,8 +59,8 @@ erDiagram
 ### 4.1 Modul Autentikasi & RBAC (Role-Based Access Control)
 Sistem memisahkan akses berdasarkan peran pengguna:
 1. **Admin Kecamatan:** Akses CRUD penuh ke semua Kelurahan.
-2. **Petugas Kelurahan:** Mengelola warga dan tong sampah di kelurahannya.
-3. **Petugas RW / RT:** Memantau kapasitas dan menyetujui pengosongan (*reset*) tong sampah warga di wilayahnya.
+2. **Petugas Kelurahan:** Mengelola warga dan Tempat Sampah di kelurahannya.
+3. **Petugas RW / RT:** Memantau kapasitas dan menyetujui pengosongan (*reset*) Tempat Sampah warga di wilayahnya.
 4. **Warga:** Menyetor sampah via Mobile App.
 
 * **API Endpoints:**
@@ -72,8 +72,8 @@ Sistem memisahkan akses berdasarkan peran pengguna:
 Membatasi aktivitas pembuangan sampah berdasarkan lokasi dan kategori sampah hasil klasifikasi Computer Vision AI.
 
 * **Alur Validasi Backend:**
-  1. Validasi jenis sampah antara hasil foto AI dengan peruntukan Tong Sampah (misal: plastik tidak boleh masuk tong organik).
-  2. Validasi jarak (*Haversine formula*) antara koordinat GPS HP Warga dengan koordinat Tong Sampah (harus < 10 meter).
+  1. Validasi jenis sampah antara hasil foto AI dengan peruntukan Tempat Sampah (misal: plastik tidak boleh masuk tong organik).
+  2. Validasi jarak (*Haversine formula*) antara koordinat GPS HP Warga dengan koordinat Tempat Sampah (harus < 10 meter).
   3. Validasi sisa kapasitas tong (maksimal volume 25 Liter). Jika aman, update sisa volume tong dan kirim poin ke warga.
 
 * **API Endpoints:**
@@ -81,7 +81,7 @@ Membatasi aktivitas pembuangan sampah berdasarkan lokasi dan kategori sampah has
   * `POST /api/v1/bins/scan` (Kirim transaksi setoran sampah dan kalkulasi poin)
 
 ### 4.3 Modul Pengosongan Tong (Reset Volume Workflow)
-Mekanisme reset kapasitas tong sampah secara on-demand berbasis bukti foto untuk menghindari peluberan sampah.
+Mekanisme reset kapasitas Tempat Sampah secara on-demand berbasis bukti foto untuk menghindari peluberan sampah.
 
 * **API Endpoints:**
   * `POST /api/v1/bins/reset-request` (Warga mengunggah foto bukti tong penuh)
@@ -97,15 +97,15 @@ Frontend Web Dashboard dirancang khusus untuk Petugas (Kecamatan, Kelurahan, RW,
 
 ### 5.1 Struktur Navigasi & Halaman
 1. **Halaman Dashboard Utama:**
-   * Ringkasan statistik (Total sampah terkumpul, jumlah poin beredar, persentase tong sampah kritis/penuh).
+   * Ringkasan statistik (Total sampah terkumpul, jumlah poin beredar, persentase Tempat Sampah kritis/penuh).
    * Grafik tren volume setoran sampah (harian/mingguan).
 2. **Halaman Master Data (Admin & Kelurahan):**
-   * CRUD Warga (User), CRUD RT/RW, dan CRUD Tong Sampah.
+   * CRUD Warga (User), CRUD RT/RW, dan CRUD Tempat Sampah.
    * **Fitur Bulk Actions:** Tombol *Bulk Generate Bins* untuk mengunduh daftar QR Code baru dalam format CSV/Excel.
 3. **Halaman Persetujuan Reset (RT/RW Approval):**
    * Antarmuka perbandingan foto bukti pengajuan warga. Tombol Aksi cepat **Setujui (Approve)** atau **Tolak (Reject)**.
 4. **Halaman Live Monitoring GIS:**
-   * Menggunakan peta interaktif (*Leaflet.js*) untuk memetakan koordinat latitude/longitude seluruh tong sampah.
+   * Menggunakan peta interaktif (*Leaflet.js*) untuk memetakan koordinat latitude/longitude seluruh Tempat Sampah.
    * **Skema Warna Marker Peta:**
      * **Hijau:** Kapasitas < 50%
      * **Kuning:** Kapasitas 50% - 89%
