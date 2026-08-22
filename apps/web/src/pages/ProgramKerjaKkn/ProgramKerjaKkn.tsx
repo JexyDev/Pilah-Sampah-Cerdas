@@ -718,12 +718,12 @@ export const ProgramKerjaKkn: React.FC = () => {
           </div>
           <div className="mt-3 flex items-baseline gap-3">
             <div>
-              <span className="text-lg font-black text-blue-600 dark:text-blue-400">{sedangBerjalanCount}</span>
-              <span className="text-[10px] text-slate-500 ml-1 font-semibold">Berjalan</span>
+              <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">{sedangBerjalanCount}</span>
+              <span className="text-[10px] text-slate-500 ml-1 font-semibold">Sedang Berjalan</span>
             </div>
             <span className="text-slate-300">•</span>
             <div>
-              <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">{selesaiCount}</span>
+              <span className="text-lg font-black text-blue-600 dark:text-blue-400">{selesaiCount}</span>
               <span className="text-[10px] text-slate-500 ml-1 font-semibold">Selesai</span>
             </div>
           </div>
