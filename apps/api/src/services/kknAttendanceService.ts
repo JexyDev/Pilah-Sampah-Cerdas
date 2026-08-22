@@ -2091,6 +2091,20 @@ export class KknAttendanceService {
       throw new Error("FORBIDDEN: Kegiatan ini sudah selesai.");
     }
 
+    // Pengecekan apakah user SUDAH menyelesaikan kegiatan ini (untuk mencegah overwrite status HADIR)
+    const existingSession = await prisma.activityAttendance.findUnique({
+      where: {
+        studentId_scheduleId: {
+          studentId: studentUserId,
+          scheduleId,
+        },
+      },
+    });
+
+    if (existingSession && (existingSession.status === "HADIR" || existingSession.status === "SELESAI" || existingSession.status === "SELESAI_TELAT" || existingSession.checkOutAt !== null)) {
+      throw new Error("FORBIDDEN: Anda sudah menyelesaikan kegiatan ini (Hadir). Anda tidak dapat memulainya kembali.");
+    }
+
     // Concurrency check: Pastikan tidak ada kegiatan lain yang sedang BERLANGSUNG
     // Pengecekan mencakup semua hari (tidak dibatasi startOfDay) untuk mencegah sesi menggantung
     const activeOtherSession = await prisma.activityAttendance.findFirst({
