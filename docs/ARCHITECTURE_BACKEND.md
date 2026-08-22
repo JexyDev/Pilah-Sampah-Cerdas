@@ -1,4 +1,4 @@
-# Backend Architecture — Trashcare API (`apps/api`)
+# Backend Architecture — BERSEKA API (`apps/api`)
 
 ## 1. Ikhtisar Arsitektur
 Aplikasi backend `apps/api` dikembangkan menggunakan **Node.js**, **Express.js**, **TypeScript**, dan **Prisma ORM** (MySQL/PostgreSQL) dengan mengimplementasikan **Clean Architecture**.

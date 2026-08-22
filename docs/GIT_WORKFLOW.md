@@ -1,4 +1,4 @@
-# 🔀 Git Workflow & Branching Strategy — Trashcare
+# 🔀 Git Workflow & Branching Strategy — BERSEKA
 
 ## Aturan Utama
 

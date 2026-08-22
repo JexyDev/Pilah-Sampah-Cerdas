@@ -1,4 +1,4 @@
-# ARCHITECTURE_FRONTEND.md — apps/frontend
+# ARCHITECTURE_FRONTEND.md — apps/web
 
 > Tech stack: React + Vite (sesuaikan jika beda, misal Next.js) + TypeScript
 > Pola: Feature-based architecture + separation of concerns (UI, state, API terpisah jelas)
@@ -8,7 +8,7 @@
 ## 1. Struktur Folder (WAJIB)
 
 ```
-apps/frontend/
+apps/web/
 ├── src/
 │   ├── app/                        # Setup aplikasi: routing, providers global
 │   │   ├── routes/

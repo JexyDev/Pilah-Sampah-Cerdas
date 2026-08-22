@@ -1243,12 +1243,27 @@ export const DplDashboardPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <Link
-                    to="/manajemen-ekosistem-kkn"
-                    className="w-full text-center py-2 bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 dark:hover:bg-slate-700 rounded-lg text-xs font-bold transition block cursor-pointer"
-                  >
-                    Lihat Anggota &amp; Logbook
-                  </Link>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedGroupForDetail(g);
+                        setGroupStudentSearchQuery("");
+                        setGroupStudentPage(1);
+                      }}
+                      className="flex-1 py-2 px-3 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/60 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <Users size={14} className="text-emerald-600 dark:text-emerald-400" />
+                      <span>Detail Anggota ({g.studentCount || 0})</span>
+                    </button>
+                    <Link
+                      to="/manajemen-ekosistem-kkn"
+                      className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl text-xs transition flex items-center justify-center cursor-pointer"
+                      title="Kelola Struktur & Logbook di Manajemen Ekosistem"
+                    >
+                      <ChevronRight size={15} />
+                    </Link>
+                  </div>
                 </div>
               );
             })}

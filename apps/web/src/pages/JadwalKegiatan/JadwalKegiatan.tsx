@@ -874,28 +874,28 @@ const JadwalKegiatan: React.FC = () => {
                       {total} Tahapan
                     </span>
                     <span className="text-[10.5px] text-slate-400 font-medium">
-                      Sesuai filter & scope aktif
+                      Sesuai filter & cakupan aktif
                     </span>
                   </div>
-                  <div className="bg-slate-50/80 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">
+                  <div className="bg-blue-50/70 dark:bg-blue-950/40 p-4 rounded-2xl border border-blue-200/80 dark:border-blue-800/60">
+                    <span className="text-[11px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider block">
                       Selesai Dilaksanakan
                     </span>
-                    <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400 mt-1 block">
+                    <span className="text-2xl font-black text-blue-700 dark:text-blue-300 mt-1 block">
                       {selesai} ({pctSelesai}%)
                     </span>
-                    <span className="text-[10.5px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                    <span className="text-[10.5px] text-blue-600/80 dark:text-blue-400 font-semibold">
                       Tahapan rampung
                     </span>
                   </div>
-                  <div className="bg-slate-50/80 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">
+                  <div className="bg-emerald-50/80 dark:bg-emerald-950/40 p-4 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60">
+                    <span className="text-[11px] text-emerald-700 dark:text-emerald-300 font-bold uppercase tracking-wider block">
                       Sedang Berjalan
                     </span>
-                    <span className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1 block">
+                    <span className="text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-1 block">
                       {berjalan} Agenda
                     </span>
-                    <span className="text-[10.5px] text-amber-600 dark:text-amber-400 font-semibold">
+                    <span className="text-[10.5px] text-emerald-700/80 dark:text-emerald-400 font-semibold">
                       Fokus kegiatan saat ini
                     </span>
                   </div>
@@ -915,11 +915,11 @@ const JadwalKegiatan: React.FC = () => {
             })()}
           </div>
 
-          {/* Multi-Filter Bar */}
+          {/* Multi-Filter Bar (6 Filter Lengkap: Search, Kelurahan, Kelompok, Bidang, Fase, Status) */}
           <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col gap-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
               {/* Search Bar */}
-              <div className="relative sm:col-span-2 lg:col-span-2">
+              <div className="relative sm:col-span-2 md:col-span-3 lg:col-span-2">
                 <input
                   type="text"
                   placeholder="Cari kegiatan, output, PIC, atau tanggal..."
@@ -942,18 +942,50 @@ const JadwalKegiatan: React.FC = () => {
                 )}
               </div>
 
-              {/* Scope Filter */}
+              {/* Kelurahan Filter */}
+              <div>
+                <select
+                  value={selectedKelurahan}
+                  onChange={(e) => setSelectedKelurahan(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+                >
+                  <option value="ALL">📍 Semua Kelurahan</option>
+                  {KELURAHAN_FILTER_OPTIONS.filter((k) => k !== "ALL").map((k) => (
+                    <option key={k} value={k}>
+                      📍 Kel. {k}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Scope / Kelompok Filter */}
               <div>
                 <select
                   value={selectedScope}
                   onChange={(e) => setSelectedScope(e.target.value)}
                   className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
                 >
-                  <option value="ALL">🌐 Semua Scope (Global & Kelompok)</option>
-                  <option value="GLOBAL">🏛️ Hanya Acuan Global</option>
+                  <option value="ALL">🌐 Semua Kelompok / Global</option>
+                  <option value="GLOBAL">🏛️ Acuan Global KKN</option>
                   {groups.map((g) => (
                     <option key={g.id} value={g.id}>
-                      👥 Kelompok: {g.name} {g.kelurahan ? `(${g.kelurahan})` : ""}
+                      👥 {g.name} {g.kelurahan ? `(${g.kelurahan})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Bidang Kegiatan Filter */}
+              <div>
+                <select
+                  value={selectedBidang}
+                  onChange={(e) => setSelectedBidang(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+                >
+                  <option value="ALL">🏷️ Semua Bidang Kegiatan</option>
+                  {BIDANG_FILTER_OPTIONS.filter((b) => b !== "ALL").map((b) => (
+                    <option key={b} value={b}>
+                      {b}
                     </option>
                   ))}
                 </select>
@@ -976,7 +1008,7 @@ const JadwalKegiatan: React.FC = () => {
               </div>
 
               {/* Status Filter */}
-              <div>
+              <div className="sm:col-span-2 md:col-span-1 lg:col-span-1">
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
@@ -984,7 +1016,7 @@ const JadwalKegiatan: React.FC = () => {
                 >
                   <option value="ALL">Semua Status</option>
                   <option value="BELUM_DIMULAI">Belum Dimulai</option>
-                  <option value="SEDANG_BERJALAN">Sedang Berjalan</option>
+                  <option value="SEDANG_BERJALAN">Sedang Berjalan (Hijau)</option>
                   <option value="SELESAI">Selesai</option>
                 </select>
               </div>
@@ -1010,6 +1042,8 @@ const JadwalKegiatan: React.FC = () => {
                   className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 cursor-pointer"
                 />
                 {(timelineSearch ||
+                  selectedKelurahan !== "ALL" ||
+                  selectedBidang !== "ALL" ||
                   selectedFase !== "ALL" ||
                   selectedScope !== "ALL" ||
                   selectedStatus !== "ALL" ||
@@ -1018,6 +1052,8 @@ const JadwalKegiatan: React.FC = () => {
                   <button
                     onClick={() => {
                       setTimelineSearch("");
+                      setSelectedKelurahan("ALL");
+                      setSelectedBidang("ALL");
                       setSelectedFase("ALL");
                       setSelectedScope("ALL");
                       setSelectedStatus("ALL");
@@ -1037,7 +1073,7 @@ const JadwalKegiatan: React.FC = () => {
             </div>
           </div>
 
-          {/* Banner Status Pekan KKN Aktif Saat Ini */}
+          {/* Banner Status Pekan KKN Aktif Saat Ini (Indikator Hijau Konsisten) */}
           {(() => {
             const activeItem =
               timelineList.find((t) => t.statusPelaksanaan === "SEDANG_BERJALAN") ||
@@ -1046,14 +1082,14 @@ const JadwalKegiatan: React.FC = () => {
             if (!activeItem) return null;
 
             return (
-              <div className="bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-teal-500/10 dark:from-amber-950/40 dark:via-emerald-950/40 dark:to-teal-950/40 border border-amber-300/80 dark:border-amber-700/60 rounded-3xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/10 dark:from-emerald-950/40 dark:via-teal-950/40 dark:to-emerald-950/40 border border-emerald-300/80 dark:border-emerald-700/60 rounded-3xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-start sm:items-center gap-3.5">
-                  <div className="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                  <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
                     <Clock size={22} className="animate-pulse" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
                         ⚡ Pekan Sedang Berjalan (Hari Ini: 21 Agustus 2026)
                       </span>
                       <span className="text-xs font-black text-slate-900 dark:text-slate-100">
@@ -1069,7 +1105,7 @@ const JadwalKegiatan: React.FC = () => {
                   </div>
                 </div>
                 <div className="shrink-0 flex items-center gap-2">
-                  <span className="px-3.5 py-1.5 bg-amber-500 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-xs">
+                  <span className="px-3.5 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-xs">
                     <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
                     SEDANG BERJALAN
                   </span>
@@ -1078,7 +1114,7 @@ const JadwalKegiatan: React.FC = () => {
             );
           })()}
 
-          {/* Dynamic Tabular Table */}
+          {/* Dynamic Tabular Table (10 Kolom Lengkap: No, Kelurahan, Kelompok, Tahap, Tanggal, Bidang & Kegiatan, Output, URL GDrive, Status, Aksi) */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
             {timelineLoading ? (
               <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
@@ -1095,7 +1131,7 @@ const JadwalKegiatan: React.FC = () => {
                     Tidak ada kegiatan ditemukan
                   </h4>
                   <p className="text-xs text-slate-500 mt-1">
-                    Coba sesuaikan kata kunci pencarian atau ubah filter scope/fase.
+                    Coba sesuaikan kata kunci pencarian atau ubah filter kelurahan/bidang/scope.
                   </p>
                 </div>
                 {canManageTimeline && (
@@ -1116,15 +1152,15 @@ const JadwalKegiatan: React.FC = () => {
                   <thead>
                     <tr className="bg-slate-50/90 dark:bg-slate-800/90 text-slate-500 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
                       <th className="py-3.5 px-4 w-12 text-center">No</th>
+                      <th className="py-3.5 px-4 w-32">Kelurahan</th>
+                      <th className="py-3.5 px-4 w-32">Kelompok</th>
                       <th className="py-3.5 px-4 w-32">Tahap / Minggu</th>
                       <th className="py-3.5 px-4 w-36">Tanggal</th>
-                      <th className="py-3.5 px-4 w-36">Fase</th>
-                      <th className="py-3.5 px-4 min-w-[260px]">Kegiatan Utama</th>
-                      <th className="py-3.5 px-4 min-w-[240px]">Output / Target</th>
-                      <th className="py-3.5 px-4 w-44">PIC / Keterangan</th>
-                      <th className="py-3.5 px-4 w-36">Lingkup Scope</th>
+                      <th className="py-3.5 px-4 min-w-[280px]">Cakupan & Kegiatan Utama</th>
+                      <th className="py-3.5 px-4 min-w-[220px]">Output / Target</th>
+                      <th className="py-3.5 px-4 w-36 text-center">URL Google Drive</th>
                       <th className="py-3.5 px-4 w-36 text-center">Status</th>
-                      {canManageTimeline && <th className="py-3.5 px-4 w-24 text-center">Aksi</th>}
+                      {canManageTimeline && <th className="py-3.5 px-4 w-20 text-center">Aksi</th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
@@ -1133,7 +1169,7 @@ const JadwalKegiatan: React.FC = () => {
                         key={item.id || idx}
                         className={`transition-colors group ${
                           item.statusPelaksanaan === "SEDANG_BERJALAN"
-                            ? "bg-amber-50/70 dark:bg-amber-950/20 font-semibold ring-1 ring-amber-300/40 dark:ring-amber-800/30"
+                            ? "bg-emerald-50/60 dark:bg-emerald-950/20 font-semibold ring-1 ring-emerald-300/50 dark:ring-emerald-800/40"
                             : "hover:bg-slate-50/80 dark:hover:bg-slate-800/80"
                         }`}
                       >
@@ -1141,27 +1177,12 @@ const JadwalKegiatan: React.FC = () => {
                           {idx + 1}
                         </td>
                         <td className="py-3.5 px-4">
-                          <span className="font-extrabold text-slate-900 dark:text-slate-100 block">
-                            {item.tahapMinggu}
+                          <span
+                            className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-[10.5px] font-bold block truncate max-w-[130px]"
+                            title={item.kelurahan || item.kelompok?.kelurahan || "Coblong"}
+                          >
+                            📍 {item.kelurahan || item.kelompok?.kelurahan || "Coblong"}
                           </span>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                            <Calendar size={13} className="text-emerald-600 shrink-0" />
-                            {item.tanggal}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          {renderFaseBadge(item.fase || "Fase 1: Persiapan")}
-                        </td>
-                        <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100 leading-relaxed">
-                          {item.kegiatanUtama}
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 leading-relaxed">
-                          {item.outputTarget}
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-semibold text-[11px] leading-relaxed">
-                          {item.picKeterangan}
                         </td>
                         <td className="py-3.5 px-4">
                           {item.kelompok ? (
@@ -1174,17 +1195,68 @@ const JadwalKegiatan: React.FC = () => {
                             </span>
                           )}
                         </td>
+                        <td className="py-3.5 px-4">
+                          <span className="font-extrabold text-slate-900 dark:text-slate-100 block">
+                            {item.tahapMinggu}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-semibold">
+                            {item.fase}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 whitespace-nowrap">
+                            <Calendar size={13} className="text-emerald-600 shrink-0" />
+                            {item.tanggal}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="space-y-1">
+                            {item.bidangKegiatan && (
+                              <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-md text-[10px] font-extrabold inline-block">
+                                {item.bidangKegiatan}
+                              </span>
+                            )}
+                            <div className="font-bold text-slate-900 dark:text-slate-100 leading-snug">
+                              {item.kegiatanUtama}
+                            </div>
+                            <div className="text-[10.5px] text-slate-500 font-medium">
+                              PIC: {item.picKeterangan || "-"}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 leading-relaxed text-[11.5px]">
+                          {item.outputTarget}
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          {item.linkGoogleDrive ? (
+                            <a
+                              href={item.linkGoogleDrive}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-xl text-[10.5px] font-extrabold inline-flex items-center gap-1.5 transition shadow-2xs group-hover:border-emerald-400"
+                              title="Buka folder dokumentasi di Google Drive"
+                            >
+                              <GoogleDriveIcon />
+                              <span>Drive</span>
+                              <ExternalLink size={11} className="opacity-70" />
+                            </a>
+                          ) : (
+                            <span className="text-slate-400 text-[10.5px] italic">
+                              Belum Disematkan
+                            </span>
+                          )}
+                        </td>
                         <td className="py-3.5 px-4 text-center">
                           {canManageTimeline && item.id ? (
                             <select
                               value={item.statusPelaksanaan || "BELUM_DIMULAI"}
                               onChange={(e) => handleQuickStatusChange(item.id, e.target.value)}
                               className={`px-2.5 py-1 rounded-full text-[10.5px] font-extrabold border outline-none cursor-pointer transition ${
-                                item.statusPelaksanaan === "SELESAI"
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300"
-                                  : item.statusPelaksanaan === "SEDANG_BERJALAN"
-                                  ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300"
-                                  : "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                                item.statusPelaksanaan === "SEDANG_BERJALAN"
+                                  ? "bg-emerald-500 text-white border-emerald-600 shadow-2xs font-extrabold"
+                                  : item.statusPelaksanaan === "SELESAI"
+                                  ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800"
+                                  : "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
                               }`}
                             >
                               <option value="BELUM_DIMULAI">Belum Dimulai</option>
