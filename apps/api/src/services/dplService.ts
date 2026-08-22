@@ -274,7 +274,55 @@ export const dplService = {
         const prokerList = await prisma.programKerjaKkn.findMany({
           where: { kelompokId: grp.id },
           orderBy: { createdAt: "desc" },
-          take: 5,
+        });
+
+        let prokerBelumMulaiCount = 0;
+        let prokerSedangBerjalanCount = 0;
+        let prokerSelesaiCount = 0;
+
+        const mappedProker = prokerList.map((p, pIdx) => {
+          let judul = p.deskripsi;
+          let deskripsiDetail = p.deskripsi;
+          const descSplit = p.deskripsi.split("\n\n");
+          if (descSplit.length > 1 && p.deskripsi.startsWith("**")) {
+            judul = descSplit[0].replace(/\*\*/g, "");
+            deskripsiDetail = descSplit.slice(1).join("\n\n");
+          }
+          const legacySt = String(p.status || "").toUpperCase();
+          let u = (p as any).statusUsulan;
+          if (!u) {
+            if (legacySt === "DITERIMA" || legacySt === "DISETUJUI" || legacySt === "SEDANG_BERJALAN" || legacySt === "SELESAI") u = "DISETUJUI";
+            else if (legacySt === "DITOLAK" || legacySt === "TIDAK_DISETUJUI") u = "DITOLAK";
+            else u = "BELUM_DISETUJUI";
+          }
+          let pl = (p as any).statusPelaksanaan;
+          if (!pl) {
+            if (legacySt === "SELESAI") pl = "SELESAI";
+            else if (legacySt === "SEDANG_BERJALAN" || legacySt === "SEDANG_DILAKSANAKAN" || legacySt === "BERJALAN") pl = "SEDANG_BERJALAN";
+            else pl = "BELUM_MULAI";
+          }
+
+          if (pl === "SELESAI") prokerSelesaiCount++;
+          else if (pl === "SEDANG_BERJALAN") prokerSedangBerjalanCount++;
+          else prokerBelumMulaiCount++;
+
+          return {
+            id: p.id,
+            nomor: p.nomor || pIdx + 1,
+            judul,
+            deskripsi: deskripsiDetail,
+            kategori: p.kategori,
+            sumber: p.sumber,
+            waktuPelaksanaan: p.waktuPelaksanaan || null,
+            urlGoogleDrive: p.linkGoogleDrive || null,
+            linkGoogleDrive: p.linkGoogleDrive || null,
+            kebutuhanBiaya: Number(p.kebutuhanBiaya || 0),
+            status: p.status,
+            statusUsulan: u,
+            statusPelaksanaan: pl,
+            skorPenilaian: p.skorPenilaian !== null ? Number(p.skorPenilaian) : null,
+            createdAt: p.createdAt.toISOString(),
+          };
         });
 
         return {
@@ -324,31 +372,11 @@ export const dplService = {
           totalWasteWeight,
           avgAttendanceRate,
           totalGroupPoints: pointSum._sum.points || 0,
-          programKerja: prokerList.map((p) => {
-            const legacySt = String(p.status || "").toUpperCase();
-            let u = (p as any).statusUsulan;
-            if (!u) {
-              if (legacySt === "DITERIMA" || legacySt === "DISETUJUI" || legacySt === "SEDANG_BERJALAN" || legacySt === "SELESAI") u = "DISETUJUI";
-              else if (legacySt === "DITOLAK" || legacySt === "TIDAK_DISETUJUI") u = "DITOLAK";
-              else u = "BELUM_DISETUJUI";
-            }
-            let pl = (p as any).statusPelaksanaan;
-            if (!pl) {
-              if (legacySt === "SELESAI") pl = "SELESAI";
-              else if (legacySt === "SEDANG_BERJALAN" || legacySt === "SEDANG_DILAKSANAKAN") pl = "SEDANG_BERJALAN";
-              else pl = "BELUM_MULAI";
-            }
-            return {
-              id: p.id,
-              nomor: p.nomor || 1,
-              deskripsi: p.deskripsi,
-              kebutuhanBiaya: Number(p.kebutuhanBiaya || 0),
-              status: p.status,
-              statusUsulan: u,
-              statusPelaksanaan: pl,
-              skorPenilaian: p.skorPenilaian !== null ? Number(p.skorPenilaian) : null,
-            };
-          }),
+          prokerBelumMulaiCount,
+          prokerSedangBerjalanCount,
+          prokerSelesaiCount,
+          totalProkerCount: prokerList.length,
+          programKerja: mappedProker,
         };
       })
     );
@@ -359,7 +387,7 @@ export const dplService = {
   /**
    * 2. Detail per Mahasiswa Bimbingan DPL
    */
-  getStudentDetails: async (dplUserId: string, groupId?: string, role?: string) => {
+  getStudentDetails: async (dplUserId: string, groupId?: string, role?: string, search?: string) => {
     const whereGroup: any = getKelompokWhere(dplUserId, role);
     if (groupId) whereGroup.id = groupId;
 
@@ -374,8 +402,18 @@ export const dplService = {
 
     const myGroupIds = myGroups.map((g) => g.id);
 
+    const studentWhere: any = { kelompokId: { in: myGroupIds } };
+    if (search && search.trim() !== "") {
+      const q = search.trim();
+      studentWhere.OR = [
+        { nim: { contains: q, mode: "insensitive" } },
+        { user: { name: { contains: q, mode: "insensitive" } } },
+        { jurusan: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
     const students = await prisma.studentKkn.findMany({
-      where: { kelompokId: { in: myGroupIds } },
+      where: studentWhere,
       include: {
         user: {
           select: {

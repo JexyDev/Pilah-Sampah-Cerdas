@@ -1126,7 +1126,7 @@ export class KknAttendanceService {
 
     return {
       success: true,
-      message: "Check-out presensi berhasil dicatat.",
+      message: "Check-out presensi berhasil dicatat. GPS dinonaktifkan.",
       data: {
         attendanceId: updated.id,
         scheduleId: updated.scheduleId,
@@ -1135,6 +1135,8 @@ export class KknAttendanceService {
         durationMinutes,
         durationFormatted: `${Math.floor(durationMinutes / 60)} Jam ${durationMinutes % 60} Menit`,
         status: updated.status,
+        gpsActive: false,
+        statusGps: "INACTIVE",
       },
     };
   }
@@ -2250,6 +2252,8 @@ export class KknAttendanceService {
       attendanceId: attendance.id,
       actualInZoneSeconds: 0,
       actualInZoneMinutes: 0,
+      gpsActive: true,
+      statusGps: "ACTIVE",
     };
   }
 
@@ -2262,10 +2266,15 @@ export class KknAttendanceService {
     scheduleId: string,
     payload?: { sessionId?: string; totalDurasiDalamZonaMenit?: number; alasan?: string }
   ) {
-    return this.checkOutAttendance({
+    const result = await this.checkOutAttendance({
       studentId: studentUserId,
       scheduleId,
     });
+    return {
+      ...result,
+      gpsActive: false,
+      statusGps: "INACTIVE",
+    };
   }
 
   /**

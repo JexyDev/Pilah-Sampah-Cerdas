@@ -347,7 +347,7 @@ export const kknAttendanceController = {
 
       res.status(200).json({
         success: true,
-        message: "Kegiatan berhasil dimulai. GPS tracking aktif.",
+        message: "Presensi kegiatan KKN berhasil dicatat. GPS tracking aktif.",
         data: result,
       });
     } catch (error: any) {
@@ -391,7 +391,7 @@ export const kknAttendanceController = {
 
       res.status(200).json({
         success: true,
-        message: "Sesi kegiatan berhasil diakhiri.",
+        message: "Sesi kegiatan berhasil diakhiri. GPS telah dinonaktifkan.",
         data: result,
       });
     } catch (error: any) {

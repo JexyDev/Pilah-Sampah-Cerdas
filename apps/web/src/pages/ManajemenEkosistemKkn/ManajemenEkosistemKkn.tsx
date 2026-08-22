@@ -52,6 +52,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   // Detail Kelompok Modal State
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedDetailKelompok, setSelectedDetailKelompok] = useState<any>(null);
+  const [detailStudentSearch, setDetailStudentSearch] = useState("");
 
   // DPL Leader Assignment State
   const [isLeaderModalOpen, setIsLeaderModalOpen] = useState(false);
@@ -286,6 +287,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   // Kelompok Submit Handlers
   const handleOpenDetailKelompok = (k: any) => {
     setSelectedDetailKelompok(k);
+    setDetailStudentSearch("");
     setIsDetailModalOpen(true);
   };
 
@@ -1481,54 +1483,100 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               </div>
 
               {/* Tabel Anggota Mahasiswa Lengkap */}
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                   <h4 className="font-black text-slate-900 dark:text-slate-100 text-sm flex items-center gap-2">
                     <Users size={16} className="text-emerald-600" />
                     <span>Daftar Anggota Mahasiswa ({selectedDetailKelompok.students?.length || 0})</span>
                   </h4>
+
+                  {/* Input Search Mahasiswa */}
+                  <div className="relative w-full sm:w-64">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={detailStudentSearch}
+                      onChange={(e) => setDetailStudentSearch(e.target.value)}
+                      placeholder="Cari nama / NIM / prodi..."
+                      className="w-full pl-8.5 pr-3 py-1.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 focus:outline-none focus:border-emerald-500"
+                    />
+                    {detailStudentSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setDetailStudentSearch("")}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                {(!selectedDetailKelompok.students || selectedDetailKelompok.students.length === 0) ? (
-                  <div className="text-center py-8 text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-800/50">
-                    Belum ada mahasiswa yang dialokasikan ke kelompok ini.
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 font-extrabold uppercase text-[10.5px] border-b border-slate-200 dark:border-slate-800">
-                          <th className="py-2.5 px-3 text-center w-8">No</th>
-                          <th className="py-2.5 px-3">NIM</th>
-                          <th className="py-2.5 px-3">Nama Mahasiswa</th>
-                          <th className="py-2.5 px-3">Jenjang</th>
-                          <th className="py-2.5 px-3">Program Studi</th>
-                          <th className="py-2.5 px-3 text-center">Peran</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
-                        {selectedDetailKelompok.students.map((st: any, idx: number) => (
-                          <tr key={st.id} className="hover:bg-slate-50/70 dark:bg-slate-800/70 dark:hover:bg-slate-800/70 transition">
-                            <td className="py-2 px-3 text-center text-slate-400 font-bold">{idx + 1}</td>
-                            <td className="py-2 px-3 font-mono font-bold text-slate-800 dark:text-slate-100">{st.nim || "-"}</td>
-                            <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">{st.user?.name || `Mahasiswa ${st.id.substring(0, 6)}`}</td>
-                            <td className="py-2 px-3 font-semibold text-slate-600 dark:text-slate-400">{st.jenjangPendidikan || "S1"}</td>
-                            <td className="py-2 px-3 text-slate-600 dark:text-slate-400">{st.jurusan || "-"}</td>
-                            <td className="py-2 px-3 text-center">
-                              {st.isKetua ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-black text-[10px] border border-amber-300">
-                                  <Crown size={11} className="text-amber-600" /> KETUA
-                                </span>
-                              ) : (
-                                <span className="text-slate-400 text-[11px]">Anggota</span>
-                              )}
-                            </td>
+                {(() => {
+                  const rawStudents = selectedDetailKelompok.students || [];
+                  const filtered = detailStudentSearch.trim()
+                    ? rawStudents.filter((st: any) => {
+                        const q = detailStudentSearch.toLowerCase();
+                        const name = (st.user?.name || "").toLowerCase();
+                        const nim = (st.nim || "").toLowerCase();
+                        const jur = (st.jurusan || "").toLowerCase();
+                        return name.includes(q) || nim.includes(q) || jur.includes(q);
+                      })
+                    : rawStudents;
+
+                  if (rawStudents.length === 0) {
+                    return (
+                      <div className="text-center py-8 text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-800/50">
+                        Belum ada mahasiswa yang dialokasikan ke kelompok ini.
+                      </div>
+                    );
+                  }
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="text-center py-6 text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-800/50 text-xs">
+                        Tidak ada mahasiswa yang cocok dengan pencarian "{detailStudentSearch}".
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 font-extrabold uppercase text-[10.5px] border-b border-slate-200 dark:border-slate-800">
+                            <th className="py-2.5 px-3 text-center w-8">No</th>
+                            <th className="py-2.5 px-3">NIM</th>
+                            <th className="py-2.5 px-3">Nama Mahasiswa</th>
+                            <th className="py-2.5 px-3">Jenjang</th>
+                            <th className="py-2.5 px-3">Program Studi</th>
+                            <th className="py-2.5 px-3 text-center">Peran</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
+                          {filtered.map((st: any, idx: number) => (
+                            <tr key={st.id} className="hover:bg-slate-50/70 dark:bg-slate-800/70 dark:hover:bg-slate-800/70 transition">
+                              <td className="py-2 px-3 text-center text-slate-400 font-bold">{idx + 1}</td>
+                              <td className="py-2 px-3 font-mono font-bold text-slate-800 dark:text-slate-100">{st.nim || "-"}</td>
+                              <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">{st.user?.name || `Mahasiswa ${st.id.substring(0, 6)}`}</td>
+                              <td className="py-2 px-3 font-semibold text-slate-600 dark:text-slate-400">{st.jenjangPendidikan || "S1"}</td>
+                              <td className="py-2 px-3 text-slate-600 dark:text-slate-400">{st.jurusan || "-"}</td>
+                              <td className="py-2 px-3 text-center">
+                                {st.isKetua ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-black text-[10px] border border-amber-300">
+                                    <Crown size={11} className="text-amber-600" /> KETUA
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 text-[11px]">Anggota</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 

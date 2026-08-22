@@ -48,6 +48,38 @@ import {
 import { TimelineKknModal } from "./components/TimelineKknModal";
 import { TimelineImportModal } from "./components/TimelineImportModal";
 
+// Google Drive Official Logo Icon Component
+const GoogleDriveIcon = () => (
+  <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 87.3 78" fill="none">
+    <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066da" />
+    <path d="M43.65 25 29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47" />
+    <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 10.1z" fill="#ea4335" />
+    <path d="M43.65 25 57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.4-4.5 1.2z" fill="#00832d" />
+    <path d="M59.8 53H87.3c0-1.55-.4-3.1-1.2-4.5l-19.9-34.5c-.8-1.4-1.95-2.5-3.3-3.3z" fill="#2684fc" />
+    <path d="m73.55 76.8-13.75-23.8H27.5l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.4 4.5-1.2z" fill="#ffba00" />
+  </svg>
+);
+
+const KELURAHAN_FILTER_OPTIONS = [
+  "ALL",
+  "Dago",
+  "Lebak Gede",
+  "Lebak Siliwangi",
+  "Sadang Serang",
+  "Sekeloa",
+  "Cipaganti",
+];
+
+const BIDANG_FILTER_OPTIONS = [
+  "ALL",
+  "Tata Kelola & Koordinasi",
+  "Pemilahan Sampah",
+  "Edukasi Warga & Sosialisasi",
+  "Pengangkutan & Logistik",
+  "Pengolahan & Bank Sampah",
+  "Evaluasi & Pelaporan",
+];
+
 // Fix default Leaflet icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -144,10 +176,12 @@ const JadwalKegiatan: React.FC = () => {
   // Main Tab: Tabel Timeline (Excel View) vs Kalender & Agenda Interaktif
   const [activeMainTab, setActiveMainTab] = useState<"TABEL_TIMELINE" | "KALENDER_AGENDA">("TABEL_TIMELINE");
 
-  // Dynamic Timeline State & Filters
+  // Dynamic Timeline State & Filters (Termasuk Kelurahan, Bidang, Status)
   const [timelineList, setTimelineList] = useState<any[]>(TIMELINE_KKN_DATA);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [timelineSearch, setTimelineSearch] = useState("");
+  const [selectedKelurahan, setSelectedKelurahan] = useState<string>("ALL");
+  const [selectedBidang, setSelectedBidang] = useState<string>("ALL");
   const [selectedFase, setSelectedFase] = useState<string>("ALL");
   const [selectedScope, setSelectedScope] = useState<string>("ALL");
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
@@ -184,6 +218,17 @@ const JadwalKegiatan: React.FC = () => {
       ),
     }));
 
+    if (selectedKelurahan !== "ALL") {
+      list = list.filter((item) =>
+        (item.kelurahan || "Semua Kelurahan").toLowerCase().includes(selectedKelurahan.toLowerCase()) ||
+        (item.kelurahan || "").includes("Semua")
+      );
+    }
+    if (selectedBidang !== "ALL") {
+      list = list.filter((item) =>
+        (item.bidangKegiatan || "Tata Kelola & Koordinasi").toLowerCase().includes(selectedBidang.toLowerCase())
+      );
+    }
     if (selectedFase !== "ALL") {
       list = list.filter((item) => item.fase.toLowerCase().includes(selectedFase.toLowerCase()));
     }
@@ -195,6 +240,8 @@ const JadwalKegiatan: React.FC = () => {
       list = list.filter(
         (item) =>
           item.tahapMinggu.toLowerCase().includes(q) ||
+          (item.kelurahan && item.kelurahan.toLowerCase().includes(q)) ||
+          (item.bidangKegiatan && item.bidangKegiatan.toLowerCase().includes(q)) ||
           item.kegiatanUtama.toLowerCase().includes(q) ||
           item.outputTarget.toLowerCase().includes(q) ||
           item.picKeterangan.toLowerCase().includes(q) ||
@@ -203,7 +250,7 @@ const JadwalKegiatan: React.FC = () => {
       );
     }
     if (selectedScope !== "ALL" && selectedScope !== "GLOBAL") {
-      list = [];
+      list = list.filter((item) => item.kelompokId === selectedScope);
     }
     setTimelineList(list);
   };
@@ -213,6 +260,8 @@ const JadwalKegiatan: React.FC = () => {
     try {
       const params: any = {};
       if (selectedScope !== "ALL") params.kelompokId = selectedScope;
+      if (selectedKelurahan !== "ALL") params.kelurahan = selectedKelurahan;
+      if (selectedBidang !== "ALL") params.bidangKegiatan = selectedBidang;
       if (selectedFase !== "ALL") params.fase = selectedFase;
       if (selectedStatus !== "ALL") params.statusPelaksanaan = selectedStatus;
       if (timelineSearch.trim()) params.search = timelineSearch.trim();
@@ -236,8 +285,7 @@ const JadwalKegiatan: React.FC = () => {
       } else if (
         Array.isArray(rawData) &&
         rawData.length === 0 &&
-        selectedScope !== "ALL" &&
-        selectedScope !== "GLOBAL"
+        (selectedScope !== "ALL" || selectedKelurahan !== "ALL" || selectedBidang !== "ALL")
       ) {
         setTimelineList([]);
       } else {
@@ -276,7 +324,16 @@ const JadwalKegiatan: React.FC = () => {
 
   useEffect(() => {
     fetchTimelineList();
-  }, [selectedScope, selectedFase, selectedStatus, timelineSearch, startDateFilter, endDateFilter]);
+  }, [
+    selectedScope,
+    selectedKelurahan,
+    selectedBidang,
+    selectedFase,
+    selectedStatus,
+    timelineSearch,
+    startDateFilter,
+    endDateFilter,
+  ]);
 
   const handleQuickStatusChange = async (id: string, newStatus: string) => {
     try {
@@ -1196,12 +1253,10 @@ const JadwalKegiatan: React.FC = () => {
                           )}
                         </td>
                         <td className="py-3.5 px-4">
-                          <span className="font-extrabold text-slate-900 dark:text-slate-100 block">
+                          <span className="font-extrabold text-slate-900 dark:text-slate-100 block mb-1">
                             {item.tahapMinggu}
                           </span>
-                          <span className="text-[10px] text-slate-400 font-semibold">
-                            {item.fase}
-                          </span>
+                          {renderFaseBadge(item.fase || "Fase 1: Persiapan")}
                         </td>
                         <td className="py-3.5 px-4">
                           <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 whitespace-nowrap">

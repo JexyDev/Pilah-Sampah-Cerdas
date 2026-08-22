@@ -2394,33 +2394,80 @@ export class KknService {
       throw new Error("User belum terdaftar di kelompok KKN");
     }
 
-    const { judul, kategori, rencanaAnggaran, targetTanggal, deskripsi } = payload;
-    const combinedDeskripsi = `**${judul}**\n\n${deskripsi}`;
+    const { judul, kategori, rencanaAnggaran, targetTanggal, deskripsi, waktuPelaksanaan, urlGoogleDrive, linkGoogleDrive } = payload;
+    
+    if (!judul || judul.trim() === "") {
+      throw new Error("Judul program kerja wajib diisi");
+    }
+
+    // Validasi waktu pelaksanaan tidak boleh masa lampau
+    const executionDateRaw = targetTanggal || waktuPelaksanaan;
+    if (executionDateRaw) {
+      const execDate = new Date(executionDateRaw);
+      if (!isNaN(execDate.getTime())) {
+        const todayMidnight = new Date();
+        todayMidnight.setHours(0, 0, 0, 0);
+        const checkDateMidnight = new Date(execDate.getFullYear(), execDate.getMonth(), execDate.getDate());
+        if (checkDateMidnight.getTime() < todayMidnight.getTime()) {
+          throw new Error("Waktu pelaksanaan program kerja tidak boleh menggunakan waktu lampau. Pilih tanggal hari ini atau setelahnya.");
+        }
+      }
+    }
+
+    const finalGoogleDriveUrl = urlGoogleDrive || linkGoogleDrive || null;
+    const finalWaktuPelaksanaan = executionDateRaw ? String(executionDateRaw) : null;
+    const combinedDeskripsi = `**${judul.trim()}**\n\n${(deskripsi || "").trim()}`;
+
+    // Hitung nomor urut proker dalam kelompok
+    const existingCount = await prisma.programKerjaKkn.count({
+      where: { kelompokId: student.kelompok.id },
+    }).catch(() => 0);
+
+    const proker = await prisma.programKerjaKkn.create({
+      data: {
+        kelompokId: student.kelompok.id,
+        nomor: existingCount + 1,
+        kategori: kategori?.toUpperCase() || "LAINNYA",
+        deskripsi: combinedDeskripsi,
+        waktuPelaksanaan: finalWaktuPelaksanaan,
+        linkGoogleDrive: finalGoogleDriveUrl,
+        kebutuhanBiaya: Number(rencanaAnggaran) || 0,
+        status: "BELUM_DISETUJUI",
+        statusUsulan: "BELUM_DISETUJUI",
+        statusPelaksanaan: "BELUM_MULAI",
+        sumber: "MAHASISWA",
+      },
+    });
 
     // Notify DPL
     if (student.kelompok?.dplId) {
       await prisma.notification.create({
         data: {
           userId: student.kelompok.dplId,
-          title: "Program Kerja Baru",
-          message: `Mahasiswa ${student.user.name} mengajukan ide program kerja: ${judul}. Silakan ditinjau.`,
+          title: "Pengajuan Program Kerja Baru",
+          message: `Mahasiswa ${student.user.name} mengajukan ide program kerja: "${judul.trim()}". Silakan ditinjau.`,
           isRead: false,
         },
       }).catch(() => {});
     }
 
-    const proker = await prisma.programKerjaKkn.create({
-      data: {
-        kelompokId: student.kelompok.id,
-        kategori: kategori?.toUpperCase() || "LAINNYA",
-        deskripsi: combinedDeskripsi,
-        kebutuhanBiaya: Number(rencanaAnggaran) || 0,
-        status: "BELUM_DISETUJUI",
-        sumber: "MAHASISWA",
-      },
-    });
-
-    return proker;
+    return {
+      id: proker.id,
+      submittedAt: proker.createdAt.toISOString(),
+      nomor: proker.nomor,
+      judul: judul.trim(),
+      deskripsi: (deskripsi || "").trim(),
+      kategori: proker.kategori,
+      waktuPelaksanaan: proker.waktuPelaksanaan,
+      urlGoogleDrive: proker.linkGoogleDrive,
+      linkGoogleDrive: proker.linkGoogleDrive,
+      rencanaAnggaran: Number(proker.kebutuhanBiaya) || 0,
+      status: "PENDING",
+      statusUsulan: proker.statusUsulan || "BELUM_DISETUJUI",
+      statusPelaksanaan: proker.statusPelaksanaan || "BELUM_MULAI",
+      catatanDpl: null,
+      createdAt: proker.createdAt.toISOString(),
+    };
   }
 
   async getProgramKerja(userId: string) {
@@ -2441,7 +2488,34 @@ export class KknService {
     if (!kelompokId) {
       // Jika bukan DPL atau Mahasiswa terkait, kembalikan semua atau kosong.
       if (user.role?.name === "SUPER_USER") {
-        return prisma.programKerjaKkn.findMany({ orderBy: { createdAt: "desc" } });
+        const superList = await prisma.programKerjaKkn.findMany({ orderBy: { createdAt: "desc" } });
+        return superList.map((item, index) => {
+          let judul = item.deskripsi;
+          let deskripsiDetail = item.deskripsi;
+          const descSplit = item.deskripsi.split("\n\n");
+          if (descSplit.length > 1 && item.deskripsi.startsWith("**")) {
+            judul = descSplit[0].replace(/\*\*/g, "");
+            deskripsiDetail = descSplit.slice(1).join("\n\n");
+          }
+          return {
+            id: item.id,
+            submittedAt: item.createdAt.toISOString(),
+            nomor: item.nomor || index + 1,
+            judul,
+            deskripsi: deskripsiDetail,
+            kategori: item.kategori,
+            waktuPelaksanaan: item.waktuPelaksanaan || null,
+            urlGoogleDrive: item.linkGoogleDrive || null,
+            linkGoogleDrive: item.linkGoogleDrive || null,
+            rencanaAnggaran: Number(item.kebutuhanBiaya) || 0,
+            status: item.status,
+            statusUsulan: item.statusUsulan || "BELUM_DISETUJUI",
+            statusPelaksanaan: item.statusPelaksanaan || "BELUM_MULAI",
+            catatanDpl: item.catatanDpl,
+            tanggal: item.createdAt.toISOString(),
+            createdAt: item.createdAt.toISOString(),
+          };
+        });
       }
       return [];
     }
@@ -2451,12 +2525,14 @@ export class KknService {
       orderBy: { createdAt: "desc" },
     });
 
-    return list.map((item) => {
+    return list.map((item, index) => {
       let judul = item.deskripsi;
+      let deskripsiDetail = item.deskripsi;
       let catatan = item.catatanDpl;
       const descSplit = item.deskripsi.split("\n\n");
       if (descSplit.length > 1 && item.deskripsi.startsWith("**")) {
         judul = descSplit[0].replace(/\*\*/g, "");
+        deskripsiDetail = descSplit.slice(1).join("\n\n");
       }
       const st = String(item.status);
       let u = (item as any).statusUsulan;
@@ -2473,14 +2549,21 @@ export class KknService {
       }
       return {
         id: item.id,
+        submittedAt: item.createdAt.toISOString(),
+        nomor: item.nomor || index + 1,
         judul,
+        deskripsi: deskripsiDetail,
         kategori: item.kategori,
+        waktuPelaksanaan: item.waktuPelaksanaan || null,
+        urlGoogleDrive: item.linkGoogleDrive || null,
+        linkGoogleDrive: item.linkGoogleDrive || null,
         rencanaAnggaran: Number(item.kebutuhanBiaya) || 0,
         status: (st === "DITERIMA" || st === "SEDANG_BERJALAN" || st === "SELESAI" || st === "APPROVED" || st === "DISETUJUI") ? "APPROVED" : (st === "DITOLAK" ? "REJECTED" : "PENDING"),
         statusUsulan: u,
         statusPelaksanaan: pl,
         catatanDpl: catatan,
         tanggal: item.createdAt.toISOString(),
+        createdAt: item.createdAt.toISOString(),
       };
     });
   }

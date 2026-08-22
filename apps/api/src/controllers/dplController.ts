@@ -23,8 +23,9 @@ export const dplController = {
       const dplUserId = getUserId(req);
       const userRole = (req.user as any)?.role;
       const groupId = req.query.groupId as string | undefined;
-      const data = await dplService.getStudentDetails(dplUserId, groupId, userRole);
-      res.json({ success: true, data });
+      const search = req.query.search as string | undefined;
+      const data = await dplService.getStudentDetails(dplUserId, groupId, userRole, search);
+      res.json({ success: true, total: Array.isArray(data) ? data.length : 0, data });
     } catch (error: any) {
       console.error("[dplController.getStudentDetails] error:", error);
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
