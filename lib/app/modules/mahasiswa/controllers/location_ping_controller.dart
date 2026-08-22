@@ -206,11 +206,24 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
       final poskoArea = data?['poskoArea']?.toString() ?? data?['kelurahan']?.toString();
 
       if (mounted) {
-        // Jika backend merespons tapi activeScheduleId null, berarti jadwal sudah di-checkout / habis
-        if (data == null || !data.containsKey('activeScheduleId') || data['activeScheduleId'] == null) {
-          stopTracking();
-          _ref.read(kknLocationProvider.notifier).stopTracking();
+        // [FIX B1] Jangan agresif matikan tracker.
+        // Jika data null (server error), biarkan ping berikutnya mencoba lagi.
+        if (data == null) {
           return;
+        }
+        
+        // Hanya matikan jika server bilang tidak ada jadwal DAN state lokal juga BUKAN berlangsung
+        if (!data.containsKey('activeScheduleId') || data['activeScheduleId'] == null) {
+          final localStatus = _ref.read(kknLocationProvider).activeActivity?['attendanceStatus']
+              ?.toString().toLowerCase() ?? '';
+          final localStatusKh = _ref.read(kknLocationProvider).activeActivity?['statusKehadiran']
+              ?.toString().toLowerCase() ?? '';
+          if (localStatus != 'berlangsung' && localStatusKh != 'berlangsung') {
+            stopTracking();
+            _ref.read(kknLocationProvider.notifier).stopTracking();
+            return;
+          }
+          // Jika lokal masih berlangsung, jangan matikan — biarkan ping berikutnya
         }
 
         state = state.copyWith(

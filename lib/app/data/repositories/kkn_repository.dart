@@ -123,6 +123,10 @@ abstract class KknRepository {
   /// POST /api/v1/kkn/out-of-zone-violation
   Future<Map<String, dynamic>> recordOutOfZoneViolation({required String scheduleId, required double outOfZoneMinutes});
 
+  /// Ambil riwayat presensi (jam masuk, jam pulang, durasi aktual/target) — untuk tampilan historis setelah GPS mati
+  /// GET /api/v1/kkn/kegiatan/{id}/presensi-history
+  Future<Map<String, dynamic>?> getPresensiHistory(String scheduleId);
+
   // ──────────────────────────────────────────────────────────
   // 3 Pilar KKN (Perencanaan, Aksi, Panen)
   // ──────────────────────────────────────────────────────────

@@ -347,8 +347,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     }
 
     try {
-      // Hentikan tracking dan background service yang mungkin masih berjalan dari sesi sebelumnya
-      await stopTracking();
+      // [FIX A2] Hentikan HANYA background service & timer, TANPA clear state
+      // agar attendanceTime yang diset di bawah ini tidak hilang
+      _trackingTimer?.cancel();
+      _trackingTimer = null;
+      _stopZoneTimer(resetCompletely: false);
+      await _stopBackgroundService();
       
       state = state.copyWith(isLoadingKegiatan: true, clearError: true);
       
@@ -425,6 +429,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         return k;
       }).toList();
 
+      // [FIX A4] Set state SEBELUM startTracking() agar attendanceTime & activeActivity tersedia
       state = state.copyWith(
         selectedKegiatan: response,
         kegiatanList: updatedKegiatanList,
@@ -434,12 +439,14 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         isAutoStarted: isAuto,
         outOfZoneSeconds: 0,
         isLoadingKegiatan: false,
+        isTracking: false, // Reset agar startTracking() tidak skip
         clearError: true,
         attendanceTime: response['attendedAt']?.toString() ?? DateTime.now().toLocal().toString().split('.')[0],
       );
 
-      // Start GPS tracking (kedua lapisan GPS aktif bersamaan)
-      await startTracking();
+      // [FIX A2] Start GPS tracking dengan flag forceBackgroundStart
+      // Karena state sudah berisi attendanceStatus=BERLANGSUNG, semua gate akan terbuka
+      await startTracking(null, true);
       ref.read(locationPingControllerProvider.notifier).startTracking();
       return null;
     } catch (e) {
@@ -602,7 +609,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   }
 
   /// Start tracking GPS locations and sync with backend
-  Future<void> startTracking([BuildContext? context]) async {
+  /// [forceBackgroundStart] — jika true, background service PASTI dijalankan
+  /// tanpa mengecek status dari state (digunakan oleh mulaiKegiatan)
+  Future<void> startTracking([BuildContext? context, bool forceBackgroundStart = false]) async {
     if (state.isTracking) return;
 
     LocationPermission permission;
@@ -712,8 +721,14 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
               }
             }
 
+            // FIX: Merge activeZone dengan activeActivity yang ada agar tidak kehilangan data penting seperti statusKehadiran
+            final mergedData = {
+              ...state.activeActivity ?? {},
+              ...activeZone,
+            };
+
             state = state.copyWith(
-              activeActivity: activeZone,
+              activeActivity: mergedData,
               targetDurationMinutes: targetMins,
               inZoneDurationSeconds: _accumulatedSeconds,
               attendanceTime: activeZone['attendedAt']?.toString() ?? state.attendanceTime,
@@ -721,7 +736,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           }
         }
       } catch (_) {}
-    } else {
+    } else if (state.activeActivity == null || state.activeActivity!['latitude'] == null) {
       await fetchTargetLocation();
     }
 
@@ -742,7 +757,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     final currentStatus = state.activeActivity?['attendanceStatus']?.toString().toLowerCase() ?? 
                          state.activeActivity?['statusKehadiran']?.toString().toLowerCase() ?? '';
                          
-    if (currentStatus == 'berlangsung') {
+    // [FIX A2] forceBackgroundStart dari mulaiKegiatan() membypass pengecekan status
+    if (forceBackgroundStart || currentStatus == 'berlangsung') {
       _startBackgroundService();
       ref.read(locationPingControllerProvider.notifier).startTracking();
     } else {
@@ -1347,20 +1363,17 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           inZoneSeconds: _accumulatedSeconds,
         );
 
+        // [FIX A3] Backend mengembalikan { success, data: { ... } }
+        // Parse dari level 'data' terlebih dahulu, fallback ke top-level
+        final pingData = (pingResponse['data'] as Map<String, dynamic>?) ?? pingResponse;
+
         // Jika backend me-trigger auto attendance (karena durasi cukup dll)
-        if (pingResponse.containsKey('autoAttendanceTriggered') &&
-            pingResponse['autoAttendanceTriggered'] != null) {
-          final autoAtt = pingResponse['autoAttendanceTriggered'] as List;
-          if (autoAtt.isNotEmpty) {
-            final attData = autoAtt.first;
-            state = state.copyWith(
-              isSuccessAttendance: true,
-              attendanceTime:
-                  attData['attendedAt']?.toString() ??
-                  DateTime.now().toLocal().toString().split('.')[0],
-              attendanceId: attData['id']?.toString(),
-            );
-          }
+        if (pingData.containsKey('autoAttendanceTriggered') &&
+            pingData['autoAttendanceTriggered'] == true) {
+          state = state.copyWith(
+            isSuccessAttendance: true,
+            attendanceTime: DateTime.now().toLocal().toString().split('.')[0],
+          );
         }
       } on DioException catch (e) {
         // Ekstrak errorCode spesifik dari backend
@@ -1507,9 +1520,18 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     state = state.copyWith(
       distanceToTarget: distance,
       isInsideRadius: nowInside,
+      // Jika masuk radius, bersihkan warning sisa background
+      clearWarning: nowInside ? true : false,
     );
 
-    if (nowInside && state.attendanceTime != null && !state.isSuccessAttendance) {
+    // [FIX A1] Gate timer: cek STATUS BERLANGSUNG, bukan attendanceTime
+    // Sebelumnya attendanceTime selalu null karena stopTracking() clear state
+    final isSesiBerlangsung = 
+        (state.activeActivity?['attendanceStatus']?.toString().toLowerCase() == 'berlangsung')
+        || (state.activeActivity?['statusKehadiran']?.toString().toLowerCase() == 'berlangsung')
+        || (state.attendanceTime != null); // Fallback ke cek lama
+
+    if (nowInside && isSesiBerlangsung && !state.isSuccessAttendance) {
       _startZoneTimer();
       // Reset out-of-zone counter saat kembali ke zona
       if (state.outOfZoneSeconds > 0) {
@@ -1520,8 +1542,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         isExitingZone: _accumulatedSeconds > 0 || _zoneEntryTime != null,
       );
       
-      // Jika statusnya belum masuk (attendanceTime null), reset accumulatedSeconds agar waktu di UI = 0
-      if (state.attendanceTime == null && _accumulatedSeconds > 0) {
+      // Jika statusnya belum masuk (bukan berlangsung), reset accumulatedSeconds agar waktu di UI = 0
+      if (!isSesiBerlangsung && _accumulatedSeconds > 0) {
         _accumulatedSeconds = 0;
         _zoneEntryTime = null;
       }

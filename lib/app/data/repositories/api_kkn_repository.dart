@@ -707,6 +707,22 @@ class ApiKknRepository implements KknRepository {
     }
   }
 
+  @override
+  Future<Map<String, dynamic>?> getPresensiHistory(String scheduleId) async {
+    try {
+      final response = await apiClient.dio.get(
+        ApiEndpoints.kknPresensiHistory(scheduleId),
+      );
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data'] as Map<String, dynamic>?;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('[KKN] getPresensiHistory error: $e');
+      return null;
+    }
+  }
+
   // ──────────────────────────────────────────────────────────
   // 3 Pilar KKN (Perencanaan, Aksi, Panen)
   // [Belum Terhubung API] - Akan mengembalikan error / mock data sampai backend siap
