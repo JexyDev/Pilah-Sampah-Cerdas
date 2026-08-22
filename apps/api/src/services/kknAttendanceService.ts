@@ -94,11 +94,9 @@ export function calculateInZoneDurationMinutes(
     }
   }
 
-  const overallSpan = Math.max(0, tLast - tFirst);
-
-  if (totalMs > 0 && totalMs < 60000 && overallSpan >= 15000) {
-    return 1;
-  }
+  // const overallSpan = Math.max(0, tLast - tFirst);
+  // Pembulatan paksa ke 1 menit untuk durasi < 1 menit Dihapus 
+  // agar sinkron persis dengan detik di mobile (menghindari bug web lebih cepat 30-45 detik)
 
   return Math.floor(totalMs / (60 * 1000));
 }
