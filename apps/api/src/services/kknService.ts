@@ -2643,7 +2643,7 @@ export class KknService {
   async createLogbookPemanfaatan(userId: string, payload: any) {
     const student = await prisma.studentKkn.findUnique({
       where: { userId },
-      include: { assignedRw: true, kelompok: true },
+      include: { assignedRw: true, kelompok: true, user: { select: { name: true } } },
     });
     if (!student) throw new Error("Mahasiswa tidak ditemukan");
     const targetRwId = student.assignedRwId || 1;
@@ -2736,6 +2736,23 @@ export class KknService {
       },
     }).catch(() => {});
 
+    // Notifikasi ke RW
+    try {
+      const rwUsers = await prisma.user.findMany({
+        where: { rwId: targetRwId, role: { name: "RW" } }
+      });
+      if (rwUsers.length > 0) {
+        const rwNotifs = rwUsers.map(rw => ({
+          userId: rw.id,
+          title: "Laporan Pemanfaatan Sampah",
+          message: `Mahasiswa KKN (${student.user?.name || 'Mahasiswa'}) mencatat aksi pemanfaatan sampah: ${teknologiString}.`,
+        }));
+        await prisma.notification.createMany({ data: rwNotifs });
+      }
+    } catch (err) {
+      console.error("[kknService] Error notif RW:", err);
+    }
+
     return report;
   }
 
@@ -2767,7 +2784,7 @@ export class KknService {
   async createPanenHasil(userId: string, payload: any) {
     const student = await prisma.studentKkn.findUnique({
       where: { userId },
-      include: { assignedRw: true },
+      include: { assignedRw: true, user: { select: { name: true } } },
     });
     if (!student) throw new Error("Mahasiswa tidak ditemukan");
     const targetRwId = student.assignedRwId || 1;
@@ -2816,6 +2833,23 @@ export class KknService {
         kategori: "REDUKSI_TONASE",
       },
     }).catch(() => {});
+
+    // Notifikasi ke RW
+    try {
+      const rwUsers = await prisma.user.findMany({
+        where: { rwId: targetRwId, role: { name: "RW" } }
+      });
+      if (rwUsers.length > 0) {
+        const rwNotifs = rwUsers.map(rw => ({
+          userId: rw.id,
+          title: "Catat Hasil Panen",
+          message: `Mahasiswa KKN (${student.user?.name || 'Mahasiswa'}) mencatat hasil panen dari aksi pemanfaatan sampah.`,
+        }));
+        await prisma.notification.createMany({ data: rwNotifs });
+      }
+    } catch (err) {
+      console.error("[kknService] Error notif RW:", err);
+    }
 
     return report;
   }
