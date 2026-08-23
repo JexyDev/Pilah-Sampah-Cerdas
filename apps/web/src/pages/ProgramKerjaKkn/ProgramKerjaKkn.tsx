@@ -175,6 +175,15 @@ export const ProgramKerjaKkn: React.FC = () => {
     return `${year}-${month}-${day}`;
   };
 
+  const getTomorrowDateString = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const year = tomorrow.getFullYear();
+    const month = String(tomorrow.getMonth() + 1).padStart(2, "0");
+    const day = String(tomorrow.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const formatIndonesianTimestamp = (dateStr?: string | Date | null) => {
     if (!dateStr) return { date: "-", time: "-", full: "-" };
     const d = new Date(dateStr);
@@ -226,11 +235,12 @@ export const ProgramKerjaKkn: React.FC = () => {
 
   const handleDateChange = (start: string, end: string) => {
     const today = getTodayDateString();
+    const tomorrow = getTomorrowDateString();
 
-    // Validasi pencegahan tanggal masa lampau pada mode tambah baru
-    if (formMode === "add" && start && start < today) {
-      toast.error("Tanggal rencana kegiatan tidak boleh di masa lampau");
-      start = today;
+    // Validasi H+1: Rencana kegiatan baru minimal besok (tidak boleh hari ini atau masa lampau)
+    if (formMode === "add" && start && start <= today) {
+      toast.error("Waktu pelaksanaan rencana kegiatan baru minimal H+1 (mulai esok hari)");
+      start = tomorrow;
     }
 
     // Validasi tanggal selesai tidak boleh mendahului tanggal mulai
@@ -334,10 +344,10 @@ export const ProgramKerjaKkn: React.FC = () => {
   const handleOpenAddModal = () => {
     setFormMode("add");
     setEditingId(null);
-    const today = getTodayDateString();
-    setFormStartDate(today);
-    setFormEndDate(today);
-    const initialRange = formatIndonesianDateRange(today, today);
+    const tomorrow = getTomorrowDateString();
+    setFormStartDate(tomorrow);
+    setFormEndDate(tomorrow);
+    const initialRange = formatIndonesianDateRange(tomorrow, tomorrow);
 
     let defaultKelompokId = "";
     if (selectedKelompokId && selectedKelompokId !== "ALL") {
@@ -404,8 +414,8 @@ export const ProgramKerjaKkn: React.FC = () => {
     }
 
     const today = getTodayDateString();
-    if (formMode === "add" && formStartDate && formStartDate < today) {
-      toast.error("Tanggal rencana kegiatan tidak boleh di masa lampau");
+    if (formMode === "add" && formStartDate && formStartDate <= today) {
+      toast.error("Tanggal rencana kegiatan baru minimal H+1 (mulai esok hari)");
       return;
     }
 
@@ -1295,7 +1305,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                     <span className="text-[10px] text-slate-500 font-bold block mb-0.5">Tanggal Mulai</span>
                     <input
                       type="date"
-                      min={formMode === "add" ? getTodayDateString() : undefined}
+                      min={formMode === "add" ? getTomorrowDateString() : undefined}
                       value={formStartDate}
                       onChange={(e) => handleDateChange(e.target.value, formEndDate)}
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
@@ -1305,15 +1315,15 @@ export const ProgramKerjaKkn: React.FC = () => {
                     <span className="text-[10px] text-slate-500 font-bold block mb-0.5">Tanggal Selesai</span>
                     <input
                       type="date"
-                      min={formStartDate || (formMode === "add" ? getTodayDateString() : undefined)}
+                      min={formStartDate || (formMode === "add" ? getTomorrowDateString() : undefined)}
                       value={formEndDate}
                       onChange={(e) => handleDateChange(formStartDate, e.target.value)}
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                     />
                   </div>
                 </div>
-                <p className="text-[10.5px] text-slate-400 dark:text-slate-500 mb-1.5">
-                  *Rencana kegiatan baru tidak dapat memilih tanggal di masa lampau.
+                <p className="text-[10.5px] text-amber-600 dark:text-amber-400 font-medium mb-1.5">
+                  *Rencana kegiatan baru wajib H+1 (mulai esok hari, tidak dapat memilih hari ini atau masa lampau).
                 </p>
                 <input
                   type="text"
