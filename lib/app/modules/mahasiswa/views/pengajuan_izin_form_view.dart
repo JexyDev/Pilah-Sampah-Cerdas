@@ -33,6 +33,44 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
   String? _photoPath;
   bool _isSubmitting = false;
   bool _isSuccess = false;
+  bool _isLoadingHistory = true;
+  List<dynamic> _izinHistory = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchHistory();
+  }
+
+  Future<void> _fetchHistory() async {
+    try {
+      final repo = ref.read(kknRepositoryProvider);
+      final history = await repo.getPengajuanIzin();
+      if (mounted) {
+        setState(() {
+          _izinHistory = history;
+          _isLoadingHistory = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingHistory = false);
+    }
+  }
+
+  bool get _isDateBlocked {
+    if (_isLoadingHistory) return false;
+    final selectedStr = DateFormat('yyyy-MM-dd').format(_tanggalKegiatan);
+    for (final item in _izinHistory) {
+      final tglStr = item['startDate']?.toString() ?? item['createdAt']?.toString() ?? '';
+      if (tglStr.startsWith(selectedStr)) {
+        final status = item['status']?.toString().toUpperCase();
+        if (status == 'PENDING' || status == 'APPROVED' || status == 'CANCEL_REQUESTED') {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 
   @override
   void dispose() {
@@ -356,9 +394,9 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[400]!),
+                  border: Border.all(color: _isDateBlocked ? AppColors.warningOrange : Colors.grey[400]!),
                   borderRadius: BorderRadius.circular(10),
-                  color: Colors.white,
+                  color: _isDateBlocked ? AppColors.warningOrange.withValues(alpha: 0.1) : Colors.white,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -372,6 +410,22 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                 ),
               ),
             ),
+            if (_isDateBlocked)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: AppColors.warningOrange, size: 16),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Anda sudah memiliki pengajuan untuk tanggal ini (Menunggu/Disetujui).',
+                        style: TextStyle(color: AppColors.warningOrange.withValues(alpha: 0.9), fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             const SizedBox(height: 20),
 
             // Deskripsi
@@ -469,7 +523,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: _isSubmitting ? null : _submit,
+                onPressed: (_isSubmitting || _isDateBlocked) ? null : _submit,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
                   disabledBackgroundColor: Colors.grey.shade300,
