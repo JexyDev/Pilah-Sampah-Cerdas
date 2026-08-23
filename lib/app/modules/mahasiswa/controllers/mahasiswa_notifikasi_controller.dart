@@ -125,6 +125,7 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
           isRead: isRead,
           time: ph.createdAt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
           icon: isPunishment ? 'warning' : 'star',
+          createdAt: ph.createdAt,
         ));
       }
     }
@@ -155,6 +156,7 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
           isRead: isRead,
           time: dt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
           icon: isApproved ? 'check_circle' : 'cancel',
+          createdAt: dt,
         ));
       }
     }

@@ -132,6 +132,7 @@ final notificationsProvider =
           isRead: isRead,
           time: ph.createdAt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
           icon: 'star',
+          createdAt: ph.createdAt,
         ));
       }
     }
