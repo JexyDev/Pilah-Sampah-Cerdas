@@ -2478,14 +2478,18 @@ export class KknService {
 
     const finalGoogleDriveUrl = urlGoogleDrive || linkGoogleDrive || null;
     const finalWaktuPelaksanaan = executionDateRaw ? String(executionDateRaw) : null;
-    const combinedDeskripsi = `**${judul.trim()}**\n\n${(deskripsi || "").trim()}`;
+    const finalKategori = normalizeProkerKategori(kategori);
+
+    let finalJudul = judul.trim();
+    if (finalKategori === "LAPORAN_AKHIR") {
+      finalJudul = `[${student.user?.name || "Mahasiswa"}] ${finalJudul}`;
+    }
+    const combinedDeskripsi = `**${finalJudul}**\n\n${(deskripsi || "").trim()}`;
 
     // Hitung nomor urut proker dalam kelompok
     const existingCount = await prisma.programKerjaKkn.count({
       where: { kelompokId: student.kelompok.id },
     }).catch(() => 0);
-
-    const finalKategori = normalizeProkerKategori(kategori);
 
     const proker = await prisma.programKerjaKkn.create({
       data: {
