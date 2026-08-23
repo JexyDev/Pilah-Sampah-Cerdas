@@ -17,6 +17,7 @@ import '../../../core/utils/network_exception_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../services/kkn_background_task_handler.dart';
+import '../../../core/values/app_config.dart';
 
 
 class KknLocationState {
@@ -790,10 +791,17 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     if (target == null) return;
     
     try {
-      // Ambil API config dari environment
-      final prefs = await SharedPreferences.getInstance();
-      final apiBaseUrl = prefs.getString('api_base_url');
-      final authToken = prefs.getString('auth_token');
+      // [BUGFIX] Ambil API config dari sumber yang benar — sebelumnya membaca
+      // key SharedPreferences 'api_base_url'/'auth_token' yang TIDAK PERNAH
+      // ditulis di manapun, sehingga selalu null dan background service
+      // langsung auto-stop (dikira user logout) tanpa pernah ping backend.
+      final apiBaseUrl = AppConfig.apiBaseUrl;
+      final authToken = await ref.read(secureStorageProvider).read(key: AppConfig.accessTokenKey);
+
+      if (authToken == null || authToken.isEmpty) {
+        debugPrint('[KKN-Controller] Gagal start background service: token kosong');
+        return;
+      }
       
       // Sesuaikan radius fallback dengan _performLocationUpdate (default 150.0, fallback 500.0)
       final rawRadius = target['radius']?.toString() ?? '150.0';
