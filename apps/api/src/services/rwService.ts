@@ -387,20 +387,38 @@ export const rwService = {
       data: { statusApproval: action },
     });
 
+    const isApproved = action === "APPROVED";
+    const notifiedUserIds = new Set<string>();
+
     // Jika fasilitas adalah posko_kkn, kirim notifikasi ke mahasiswa kelompok terkait
     if (facilityCheck.jenis === "posko_kkn" && facilityCheck.kelompok?.students) {
-      const isApproved = action === "APPROVED";
       for (const student of facilityCheck.kelompok.students) {
-        await prisma.notification.create({
-          data: {
-            userId: student.userId,
-            title: isApproved ? "Posko KKN Disetujui! 📍" : "Pengajuan Posko KKN Ditolak",
-            message: isApproved
-              ? `Lokasi Posko KKN kelompok Anda telah disetujui oleh RW ${rwId} dan kini aktif sebagai titik geofence presensi.`
-              : `Pengajuan lokasi Posko KKN kelompok Anda ditolak oleh RW ${rwId}. Silakan koordinasi dan daftarkan kembali.`,
-          },
-        });
+        if (student.userId) {
+          notifiedUserIds.add(student.userId);
+          await prisma.notification.create({
+            data: {
+              userId: student.userId,
+              title: isApproved ? "Posko KKN Disetujui! 📍" : "Pengajuan Posko KKN Ditolak",
+              message: isApproved
+                ? `Lokasi Posko KKN kelompok Anda telah disetujui oleh RW ${rwId} dan kini aktif sebagai titik geofence presensi.`
+                : `Pengajuan lokasi Posko KKN kelompok Anda ditolak oleh RW ${rwId}. Silakan koordinasi dan daftarkan kembali.`,
+            },
+          });
+        }
       }
+    }
+
+    // Kirim notifikasi ke pendaftar fasilitas jika belum ternotifikasi
+    if (facilityCheck.registeredByUserId && !notifiedUserIds.has(facilityCheck.registeredByUserId)) {
+      await prisma.notification.create({
+        data: {
+          userId: facilityCheck.registeredByUserId,
+          title: isApproved ? `Fasilitas Disetujui: ${facilityCheck.nama}` : `Fasilitas Ditolak: ${facilityCheck.nama}`,
+          message: isApproved
+            ? `Fasilitas ${facilityCheck.nama} (${facilityCheck.jenis}) telah disetujui oleh Ketua RW.`
+            : `Pengajuan fasilitas ${facilityCheck.nama} (${facilityCheck.jenis}) telah ditolak oleh Ketua RW.`,
+        },
+      });
     }
 
     return updated;

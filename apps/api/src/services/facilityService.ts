@@ -22,9 +22,12 @@ export const facilityService = {
     latitude?: number,
     longitude?: number,
     registeredByUserId?: string,
-    kelompokId?: string
+    kelompokId?: string,
+    alamat?: string,
+    rwId?: number,
+    statusApproval?: "APPROVED" | "PENDING" | "REJECTED"
   ) => {
-    // Validate facility type — posko_kkn hanya didaftarkan via endpoint /posko-kkn
+    // Validate facility type
     const validTypes = [
       "loseda",
       "bata_terawang",
@@ -33,6 +36,7 @@ export const facilityService = {
       "tps",
       "buruan_sae",
       "poc",
+      "posko_kkn",
     ];
     if (!validTypes.includes(jenis)) {
       throw new Error("INVALID_FACILITY_TYPE");
@@ -45,11 +49,14 @@ export const facilityService = {
         pic,
         foto,
         kontak,
+        alamat: alamat || null,
+        rwId: rwId !== undefined && !isNaN(Number(rwId)) ? Number(rwId) : null,
         kapasitas: kapasitas !== undefined ? Number(kapasitas) : null,
         latitude: latitude !== undefined ? Number(latitude) : 0.0,
         longitude: longitude !== undefined ? Number(longitude) : 0.0,
         registeredByUserId: registeredByUserId ?? undefined,
         kelompokId: kelompokId ?? undefined,
+        statusApproval: statusApproval || "APPROVED",
       },
     });
   },

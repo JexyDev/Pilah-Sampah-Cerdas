@@ -263,7 +263,7 @@ export class KknAttendanceService {
         });
 
         // Skip HANYA jika kegiatan sudah checkout / selesai sepenuhnya
-        if (existingAtt && (existingAtt.status === "SELESAI" || existingAtt.status === "SELESAI_TELAT" || existingAtt.checkOutAt !== null)) {
+        if (existingAtt && (existingAtt.status === "SELESAI" || existingAtt.status === "SELESAI_TELAT" || Boolean(existingAtt.checkOutAt))) {
           continue;
         }
 
@@ -596,7 +596,7 @@ export class KknAttendanceService {
         }
 
         // Skip jika sudah selesai / hadir / sudah checkout
-        if (existingAtt && (existingAtt.status === "HADIR" || existingAtt.status === "SELESAI" || existingAtt.status === "SELESAI_TELAT" || existingAtt.checkOutAt !== null)) {
+        if (existingAtt && (existingAtt.status === "HADIR" || existingAtt.status === "SELESAI" || existingAtt.status === "SELESAI_TELAT" || Boolean(existingAtt.checkOutAt))) {
           continue;
         }
 
@@ -743,7 +743,7 @@ export class KknAttendanceService {
       if (attendance) {
         // Bug #1 fix: SELESAI_TELAT juga dianggap finished; BERLANGSUNG bukan "LAPANGAN"
         const isFinished =
-          attendance.checkOutAt !== null ||
+          Boolean(attendance.checkOutAt) ||
           attendance.status === "HADIR" ||
           attendance.status === "SELESAI" ||
           attendance.status === "SELESAI_TELAT";
@@ -898,8 +898,8 @@ export class KknAttendanceService {
       });
 
       if (existing) {
-        // If already completed as HADIR or SELESAI, return existing
-        if (existing.status === "HADIR" || existing.status === "SELESAI" || existing.checkOutAt !== null) {
+        // If already completed as HADIR or SELESAI or checked out, return existing
+        if (existing.status === "HADIR" || existing.status === "SELESAI" || Boolean(existing.checkOutAt)) {
           return existing;
         }
 
@@ -1475,7 +1475,7 @@ export class KknAttendanceService {
       const latestLoc = locMap.get(att.studentId);
       const leave = leaveMap.get(att.studentId);
 
-      const isFinished = att.checkOutAt !== null || att.status === "SELESAI" || att.status === "SELESAI_TELAT" || att.status === "HADIR";
+      const isFinished = Boolean(att.checkOutAt) || att.status === "SELESAI" || att.status === "SELESAI_TELAT" || att.status === "HADIR";
 
       let currentStatus = "TERCATAT_ABSEN";
       let status = att.status;
@@ -2208,7 +2208,7 @@ export class KknAttendanceService {
       },
     });
 
-    if (existingSession && (existingSession.status === "HADIR" || existingSession.status === "SELESAI" || existingSession.status === "SELESAI_TELAT" || existingSession.checkOutAt !== null)) {
+    if (existingSession && (existingSession.status === "HADIR" || existingSession.status === "SELESAI" || existingSession.status === "SELESAI_TELAT" || Boolean(existingSession.checkOutAt))) {
       throw new Error("FORBIDDEN: Anda sudah menyelesaikan kegiatan ini (Hadir). Anda tidak dapat memulainya kembali.");
     }
 

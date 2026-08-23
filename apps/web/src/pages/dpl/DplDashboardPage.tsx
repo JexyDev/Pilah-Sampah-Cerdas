@@ -784,7 +784,7 @@ export const DplDashboardPage: React.FC = () => {
                                 {st.attendanceRate ? `${Number(st.attendanceRate).toFixed(1)}%` : "0%"}
                               </td>
                               <td className="py-2.5 px-3 text-center">
-                                {st.assessmentScore !== null && st.assessmentScore !== undefined && st.assessmentScore > 0 ? (
+                                {st.isAssessed === true ? (
                                   <span className="font-black text-slate-900 dark:text-slate-100">
                                     {Number(st.assessmentScore).toFixed(1)}
                                   </span>

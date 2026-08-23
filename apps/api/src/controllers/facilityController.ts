@@ -15,7 +15,7 @@ export class FacilityController {
    */
   async createFacility(req: Request, res: Response): Promise<void> {
     try {
-      const { jenis, nama, pic, foto, kontak, kapasitas, latitude, longitude } = req.body;
+      const { jenis, nama, pic, foto, kontak, kapasitas, latitude, longitude, alamat, rwId } = req.body;
       const userId = (req as any).user?.userId;
       const peran = (req as any).user?.role;
 
@@ -38,6 +38,14 @@ export class FacilityController {
         kelompokId = student?.kelompokId ?? undefined;
       }
 
+      let targetRwId: number | undefined = rwId !== undefined && !isNaN(Number(rwId)) ? Number(rwId) : undefined;
+      if (!targetRwId && (req as any).user?.rwId) {
+        targetRwId = Number((req as any).user.rwId);
+      }
+
+      const isPrivileged = ["RW", "SUPER_USER", "ADMIN_DLH", "DEVELOPER"].includes(peran);
+      const statusApproval = isPrivileged ? "APPROVED" : "PENDING";
+
       const facility = await facilityService.createFacility(
         jenis,
         nama,
@@ -48,7 +56,10 @@ export class FacilityController {
         latitude,
         longitude,
         userId,
-        kelompokId
+        kelompokId,
+        alamat,
+        targetRwId,
+        statusApproval
       );
       res.status(201).json({ success: true, message: "Fasilitas berhasil dibuat", data: facility });
     } catch (error: any) {

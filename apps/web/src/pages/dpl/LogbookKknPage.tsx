@@ -111,21 +111,27 @@ const resolveKategori = (item: LogbookMahasiswaItem): string => {
   return "Aktivitas KKN";
 };
 
-// Helper Output / Capaian Kegiatan
+// Helper Output / Capaian Kegiatan — hanya parsing data nyata dari deskripsi, tanpa fallback hardcode
 const resolveHasilOutput = (item: LogbookMahasiswaItem): string => {
+  // Jika ada field hasilOutput/ringkasanImpak dari backend, prioritaskan itu
+  if ((item as any).hasilOutput) return (item as any).hasilOutput;
+  if ((item as any).ringkasanImpak) return (item as any).ringkasanImpak;
+
   const desc = (item.deskripsi || "").toLowerCase();
+  // Ekstrak angka rumah/KK dan kg dari deskripsi nyata
   if (desc.includes("rumah") || desc.includes("kg")) {
     const rumahMatch = item.deskripsi.match(/(\d+)\s*(rumah|kk|warga)/i);
     const kgMatch = item.deskripsi.match(/(\d+)\s*(kg|kilogram)/i);
     if (rumahMatch && kgMatch) {
       return `${rumahMatch[1]} rumah binaan • ${kgMatch[1]} kg sampah terkelola`;
     }
+    if (rumahMatch) return `${rumahMatch[1]} rumah binaan`;
+    if (kgMatch) return `${kgMatch[1]} kg sampah terkelola`;
   }
+
+  // Fallback: gunakan kategori kegiatan saja, tanpa angka fiktif
   const kat = resolveKategori(item);
-  if (kat === "Pemilahan") return "6 rumah terdata • 18 kg sampah terpilah";
-  if (kat === "Pengangkutan") return "Observasi jadwal & rute penjemputan sampah RW";
-  if (kat === "Pengolahan") return "12 kg kompos organik siap pakai dibuat bersama warga";
-  if (kat === "Pemanfaatan") return "Aplikasi POC pada tanaman kebun pangan warga RW";
+  if (kat !== "Aktivitas KKN") return `Kegiatan ${kat} telah dilaksanakan`;
   return "Kegiatan kelompok terlaksana sesuai target program kerja";
 };
 

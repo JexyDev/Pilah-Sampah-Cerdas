@@ -820,6 +820,7 @@ export const dplService = {
           kelompokName: st.kelompok?.name || "-",
           assessmentScore: finalCalculatedScore,
           baseAssessmentScore: baseScore,
+          isAssessed: Boolean(st.isAssessed),
           individualPoints: netPoints,
           attendanceRate:
             totalSchedules === 0 || attendedCount === 0
@@ -1251,6 +1252,7 @@ export const dplService = {
       where: { id: student.id },
       data: {
         assessmentScore: score,
+        isAssessed: true,
       },
       include: { user: { select: { name: true } } },
     });
@@ -1260,6 +1262,7 @@ export const dplService = {
       studentId: updated.id,
       studentName: updated.user?.name || "Mahasiswa",
       assessmentScore: Number(updated.assessmentScore),
+      isAssessed: updated.isAssessed,
       note: note || "Penilaian berhasil disimpan",
     };
   },
@@ -2175,8 +2178,8 @@ export const dplService = {
         const pRecord = st.user?.penilaianKkn;
         
         // DPL Individu Score (Murni dari input DPL, tanpa skor fiktif)
-        const dplIndivRaw = pRecord?.subtotalDpl ? Number(pRecord.subtotalDpl) : (st.assessmentScore ? Number(st.assessmentScore) : null);
-        const dplIndiv = dplIndivRaw !== null && dplIndivRaw > 0 ? dplIndivRaw : null;
+        const dplIndivRaw = pRecord?.subtotalDpl ? Number(pRecord.subtotalDpl) : (st.isAssessed ? Number(st.assessmentScore ?? 0) : null);
+        const dplIndiv = dplIndivRaw !== null ? dplIndivRaw : null;
 
         // MPL Individu Score (Murni dari input MPL, tanpa skor fiktif)
         const mplIndivRaw = pRecord?.subtotalMitra ? Number(pRecord.subtotalMitra) : null;
@@ -2805,6 +2808,12 @@ export const dplService = {
     if (!data.tanggal) throw new Error("Tanggal kegiatan wajib diisi");
     if (!data.deskripsi || data.deskripsi.trim() === "") throw new Error("Uraian aktivitas wajib diisi");
 
+    const requestedStatus = data.status || "TERKIRIM";
+    const arahanVal = (data.arahanEvaluasi?.trim() || data.hasilTindakLanjut?.trim() || "");
+    if (requestedStatus !== "DRAF" && !arahanVal) {
+      throw new Error("Arahan evaluasi wajib diisi untuk log aktivitas yang dikirim (bukan draf)");
+    }
+
     const isSuper = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH", "PEMIMPIN", "PANITIA_TASKFORCE"].includes(getRoleString(role));
     const kelompok = await prisma.kelompokKkn.findUnique({
       where: { id: data.kelompokId },
@@ -2865,7 +2874,7 @@ export const dplService = {
         deskripsi: data.deskripsi.trim(),
         arahanEvaluasi: data.arahanEvaluasi?.trim() || data.hasilTindakLanjut?.trim() || null,
         fotoBuktiUrl: data.fotoBuktiUrl || null,
-        status: data.status || "TERKIRIM",
+        status: requestedStatus,
         durasiMenit,
         simpanLokasi: data.simpanLokasi ?? true,
       },
@@ -2907,6 +2916,15 @@ export const dplService = {
     if (!existing) throw new Error("Aktivitas DPL tidak ditemukan");
     if (!isSuper && existing.dplId !== dplUserId) {
       throw new Error("Akses ditolak: Anda tidak memiliki izin mengedit aktivitas ini.");
+    }
+
+    // Validasi arahanEvaluasi wajib jika status berubah ke bukan DRAF
+    const targetStatus = data.status ?? existing.status;
+    if (targetStatus !== "DRAF") {
+      const arahanFinal = data.arahanEvaluasi?.trim() || data.hasilTindakLanjut?.trim() || existing.arahanEvaluasi || "";
+      if (!arahanFinal) {
+        throw new Error("Arahan evaluasi wajib diisi untuk log aktivitas yang dikirim (bukan draf)");
+      }
     }
 
     const updateData: any = {};

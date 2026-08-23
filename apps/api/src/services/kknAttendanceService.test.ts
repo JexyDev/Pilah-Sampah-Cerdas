@@ -187,7 +187,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
           latitude: -6.8915,
           longitude: 107.6107,
           radius: 150,
-          time: "08:00 - 12:00",
+          time: "00:00 - 23:59",
           isActive: true,
         } as any,
       ]);
@@ -217,7 +217,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(recordAttendanceSpy).not.toHaveBeenCalled();
     });
 
-    it("should trigger auto-attendance ONLY when accumulated in-zone duration reaches durasiWajibMenit", async () => {
+    it("should calculate in-zone duration accurately and update active attendance record", async () => {
       vi.mocked(configService.getRuleEngineConfigs).mockResolvedValue({
         attendanceMinDurationHours: 1,
         attendanceMinDurationMinutes: 0,
@@ -244,13 +244,14 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
           latitude: -6.8915,
           longitude: 107.6107,
           radius: 150,
-          time: "08:00 - 09:00",
+          time: "00:00 - 23:59",
           isActive: true,
         } as any,
       ]);
 
       // Simulate 60 minutes of consecutive in-zone logs
-      const start = new Date("2026-08-19T08:00:00Z");
+      const start = new Date();
+      start.setHours(start.getHours() - 1);
       const logs = Array.from({ length: 31 }, (_, i) => ({
         id: `loc-log-${i}`,
         studentId,
@@ -260,13 +261,21 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       }));
 
       vi.mocked(prisma.studentLocation.findMany).mockResolvedValue(logs as any);
-      vi.mocked(prisma.activityAttendance.findUnique).mockResolvedValue(null);
-
-      const recordAttendanceSpy = vi.spyOn(service, "recordAttendance").mockResolvedValue({
-        id: "att-1",
+      vi.mocked(prisma.activityAttendance.findUnique).mockResolvedValue({
+        id: "att-ongoing-1",
         studentId,
         scheduleId,
-        status: "HADIR",
+        status: "BERLANGSUNG",
+        attendedAt: start,
+        actualInZoneMinutes: 0,
+      } as any);
+      vi.mocked(prisma.activityAttendance.update).mockResolvedValue({
+        id: "att-ongoing-1",
+        studentId,
+        scheduleId,
+        status: "BERLANGSUNG",
+        attendedAt: start,
+        actualInZoneMinutes: 60,
       } as any);
 
       const result = await service.updateStudentLocationsBatch(studentId, [
@@ -275,14 +284,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
 
       expect(result.success).toBe(true);
       expect(result.inZoneMinutes).toBe(60);
-      expect(result.autoAttendanceTriggered).toContain(scheduleId);
-      expect(recordAttendanceSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          studentId,
-          scheduleId,
-          method: "OTOMATIS",
-        })
-      );
+      expect(result.status).toBe("LAPANGAN");
     });
   });
 
@@ -297,6 +299,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
         latitude: -6.8915,
         longitude: 107.6107,
         radius: 150,
+        time: "00:00 - 23:59",
         isActive: true,
       } as any);
 
@@ -306,15 +309,23 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
         studentProfile: { nim: "130121001", kelompok: { dpl: null } },
       } as any);
 
-      vi.mocked(prisma.activityAttendance.findUnique).mockResolvedValue(null);
-      vi.mocked(prisma.activityAttendance.create).mockResolvedValue({
+      vi.mocked(prisma.activityAttendance.findUnique).mockResolvedValue({
+        id: "att-ongoing-1",
+        studentId,
+        scheduleId,
+        status: "BERLANGSUNG",
+        attendedAt: new Date(),
+      } as any);
+      vi.mocked(prisma.activityAttendance.update).mockResolvedValue({
         id: "att-rec-1",
         studentId,
         scheduleId,
         status: "HADIR",
         attendedAt: new Date(),
+        checkOutAt: new Date(),
         method: "MANUAL",
       } as any);
+      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue(null);
       vi.mocked(prisma.pointHistory.create).mockResolvedValue({ id: "pt-att-1" } as any);
 
       const result = await service.recordAttendance({

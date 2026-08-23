@@ -345,6 +345,7 @@ model StudentKkn {
   kelompokId        String?           @map("id_kelompok")
   assessmentScore   Decimal?          @default(0.0) @map("skor_penilaian_dpl") @db.Decimal(5, 2)
   assessmentNote    String?           @map("catatan_penilaian_dpl")
+  isAssessed        Boolean           @default(false) @map("sudah_dinilai")
   isKetua           Boolean           @default(false) @map("is_ketua")
   jenjangPendidikan String?           @map("jenjang_pendidikan")
   kelompok          KelompokKkn?      @relation(fields: [kelompokId], references: [id])

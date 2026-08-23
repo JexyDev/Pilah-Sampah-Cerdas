@@ -41,6 +41,17 @@ vi.mock("../repositories/binRepository.js", () => {
   };
 });
 
+// Mock Prisma client
+vi.mock("../lib/prisma.js", () => {
+  return {
+    prisma: {
+      wasteCategory: {
+        findFirst: vi.fn().mockResolvedValue({ id: "cat-1", name: "ORGANIC" }),
+      },
+    },
+  };
+});
+
 describe("BinService", () => {
   beforeEach(() => {
     vi.clearAllMocks();

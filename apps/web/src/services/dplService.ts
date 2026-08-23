@@ -56,6 +56,8 @@ export interface StudentDetail {
   isKetua: boolean;
   kelompokName: string;
   assessmentScore: number;
+  baseAssessmentScore?: number;
+  isAssessed?: boolean;
   individualPoints: number;
   attendanceRate: number;
   attendedCount: number;
