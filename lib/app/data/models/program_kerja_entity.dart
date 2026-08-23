@@ -1,6 +1,7 @@
 class ProgramKerjaEntity {
   final String id;
   final String kelompokId;
+  final String? judul;
   final String deskripsi;
   final String kategori;
   final String waktuPelaksanaan;
@@ -14,6 +15,7 @@ class ProgramKerjaEntity {
   ProgramKerjaEntity({
     required this.id,
     required this.kelompokId,
+    this.judul,
     required this.deskripsi,
     required this.kategori,
     required this.waktuPelaksanaan,
@@ -57,6 +59,7 @@ class ProgramKerjaEntity {
     return ProgramKerjaEntity(
       id: json['id']?.toString() ?? '',
       kelompokId: json['kelompokId']?.toString() ?? json['id_kelompok']?.toString() ?? '',
+      judul: json['judul']?.toString(),
       deskripsi: json['deskripsi']?.toString() ?? '',
       kategori: json['kategori']?.toString() ?? 'LAINNYA',
       waktuPelaksanaan: json['waktuPelaksanaan']?.toString() ?? json['waktu_pelaksanaan']?.toString() ?? '-',

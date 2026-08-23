@@ -15,6 +15,7 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
   final _anggaranCtrl = TextEditingController();
   final _tanggalMulaiCtrl = TextEditingController();
   final _tanggalSelesaiCtrl = TextEditingController();
+  final _judulCtrl = TextEditingController();
   final _deskripsiCtrl = TextEditingController();
   final _linkDriveCtrl = TextEditingController();
   
@@ -26,9 +27,9 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
     
     setState(() => _isLoading = true);
     try {
-      final repo = ref.read(kknRepositoryProvider);
-      await repo.submitProgramKerja({
-        'judul': _kategori, // fallback for any legacy backend requirement
+      final kknRepo = ref.read(apiKknRepositoryProvider);
+      final response = await kknRepo.registerProker({
+        'judul': _judulCtrl.text.trim(),
         'kategori': _kategori,
         'rencanaAnggaran': double.tryParse(_anggaranCtrl.text.trim()) ?? 0,
         'targetTanggal': '${_tanggalMulaiCtrl.text.trim()} s/d ${_tanggalSelesaiCtrl.text.trim()}', 
@@ -43,7 +44,7 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(e.toString()),
-          backgroundColor: AppColors.dangerRed,
+          backgroundColor: Colors.red,
         ));
       }
     } finally {
@@ -56,6 +57,7 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
     _anggaranCtrl.dispose();
     _tanggalMulaiCtrl.dispose();
     _tanggalSelesaiCtrl.dispose();
+    _judulCtrl.dispose();
     _deskripsiCtrl.dispose();
     _linkDriveCtrl.dispose();
     super.dispose();
@@ -173,13 +175,21 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
                 ],
               ),
               const SizedBox(height: 16),
+              const Text('Judul Program', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _judulCtrl,
+                decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Contoh: Sosialisasi Maggot BSF'),
+                validator: (val) => val == null || val.isEmpty ? 'Judul wajib diisi' : null,
+              ),
+              const SizedBox(height: 16),
               const Text('Deskripsi Singkat', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _deskripsiCtrl,
                 maxLines: 4,
                 decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Jelaskan tujuan dan mekanisme pelaksanaan...'),
-                validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
+                validator: (val) => val == null || val.isEmpty ? 'Deskripsi wajib diisi' : null,
               ),
               const SizedBox(height: 16),
               const Text('Tautan Bukti Google Drive (URL)', style: TextStyle(fontWeight: FontWeight.bold)),

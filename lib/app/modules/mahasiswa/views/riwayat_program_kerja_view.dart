@@ -203,7 +203,8 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final item = list[index];
-                final deskripsi = item['deskripsi'] ?? item['judul'] ?? '-';
+                final judulStr = item['judul']?.toString() ?? '-';
+                final deskripsi = item['deskripsi']?.toString() ?? '-';
                 final statusUsulan = item['statusUsulan'] ?? item['status_usulan'];
                 final statusPelaksanaan = item['statusPelaksanaan'] ?? item['status_pelaksanaan'];
                 final legacyStatus = item['status']?.toString();
@@ -223,9 +224,19 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
-                              child: Text(
-                                deskripsi,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    judulStr,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    deskripsi,
+                                    style: const TextStyle(fontSize: 13, color: Colors.black87),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
