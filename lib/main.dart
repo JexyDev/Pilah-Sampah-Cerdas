@@ -12,7 +12,7 @@ import 'app/core/theme/app_theme.dart';
 import 'app/routes/app_routes.dart';
 import 'app/routes/app_pages.dart';
 import 'app/core/values/app_strings.dart';
-import 'app/core/values/app_colors.dart';
+
 import 'app/core/utils/platform_utils.dart';
 import 'app/modules/scan/controllers/scan_controller.dart';
 import 'app/modules/notifikasi/controllers/notifikasi_controller.dart';
@@ -107,35 +107,9 @@ void main() async {
 
   PlatformDispatcher.instance.onError = (error, stack) {
     debugPrint('Async Error: $error');
-    
-    final errorString = error.toString().toLowerCase();
-    final isIgnoredError = errorString.contains('networkimage') || 
-                           errorString.contains('timeout') ||
-                           errorString.contains('connection closed') ||
-                           errorString.contains('cannot use "ref"') ||
-                           errorString.contains('bad state') ||
-                           errorString.contains('disposed') ||
-                           errorString.contains('host lookup');
-
-    if (!isIgnoredError) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final context = navigatorKey.currentContext;
-        if (context != null && ScaffoldMessenger.maybeOf(context) != null) {
-          String errMsg = error.toString().replaceAll('Exception:', '').trim();
-          if (errMsg.length > 40) errMsg = '${errMsg.substring(0, 40)}...';
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: Text('Kendala sistem: $errMsg'),
-                behavior: SnackBarBehavior.floating,
-                backgroundColor: AppColors.dangerRed,
-                duration: const Duration(seconds: 2),
-              ),
-            );
-        }
-      });
-    }
+    // We intentionally removed the global snackbar here because it causes 
+    // false-positive "Kendala sistem" errors to appear when background futures 
+    // or non-fatal widget errors occur, confusing users when the feature actually succeeds.
     return true;
   };
 
