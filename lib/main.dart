@@ -199,11 +199,11 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
             ref.invalidate(dailyPointsProvider);
             ref.invalidate(binsProvider);
             debugPrint('-> Warga providers invalidated in background.');
-          } else if (event == 'REFRESH_IZIN_MAHASISWA' || event == 'REFRESH_POIN_MAHASISWA') {
+          } else if (event == 'REFRESH_IZIN_MAHASISWA' || event == 'REFRESH_POIN_MAHASISWA' || event == 'REFRESH_KEGIATAN_MAHASISWA' || event == 'REFRESH_PRESENSI_MAHASISWA') {
             // Import untuk ini belum tentu ada di main.dart, jadi lebih baik 
             // biarkan mahasiswa controller merefresh via rute jika perlu,
             // atau tambahkan import-nya (saya pakai fallback aman tanpa import tambahan)
-            debugPrint('-> Mahasiswa providers refresh event received.');
+            debugPrint('-> Mahasiswa providers refresh event received: $event');
           }
           return;
         }
