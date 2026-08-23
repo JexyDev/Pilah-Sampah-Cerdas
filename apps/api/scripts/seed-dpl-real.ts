@@ -69,11 +69,12 @@ async function main() {
   let upsertedCount = 0;
 
   for (const dpl of REAL_DPL_LIST) {
-    // Check if user already exists by phone, NIP, or name
+    // Check if user already exists by phone, rawPhone, NIP, or name
     let user = await prisma.user.findFirst({
       where: {
         OR: [
           { phone: dpl.phone },
+          { phone: dpl.rawPhone },
           { nip: dpl.nip },
           { name: { contains: dpl.name.split(',')[0].trim(), mode: 'insensitive' } },
         ],
@@ -81,42 +82,76 @@ async function main() {
     });
 
     if (user) {
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          name: dpl.name,
-          phone: dpl.phone,
-          nip: dpl.nip,
-          address: dpl.prodi,
-          roleId: dplRole.id,
-          status: 'Aktif',
-        },
-      });
+      try {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            name: dpl.name,
+            phone: dpl.phone,
+            nip: dpl.nip,
+            address: dpl.prodi,
+            roleId: dplRole.id,
+            status: 'Aktif',
+          },
+        });
+      } catch (err) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            name: dpl.name,
+            nip: dpl.nip,
+            address: dpl.prodi,
+            roleId: dplRole.id,
+            status: 'Aktif',
+          },
+        });
+      }
     } else {
-      user = await prisma.user.create({
+      try {
+        user = await prisma.user.create({
+          data: {
+            name: dpl.name,
+            phone: dpl.phone,
+            nip: dpl.nip,
+            address: dpl.prodi,
+            roleId: dplRole.id,
+            password: defaultPassword,
+            status: 'Aktif',
+          },
+        });
+      } catch (err) {
+        const existingByPhone = await prisma.user.findFirst({
+          where: { OR: [{ phone: dpl.phone }, { phone: dpl.rawPhone }] },
+        });
+        if (existingByPhone) {
+          user = await prisma.user.update({
+            where: { id: existingByPhone.id },
+            data: {
+              name: dpl.name,
+              nip: dpl.nip,
+              address: dpl.prodi,
+              roleId: dplRole.id,
+              status: 'Aktif',
+            },
+          });
+        }
+      }
+    }
+
+    if (user) {
+      upsertedCount++;
+
+      // Link DPL user to KelompokKkn if dplNamaMentah matches
+      const nameKey = dpl.name.split(',')[0].trim();
+      await prisma.kelompokKkn.updateMany({
+        where: {
+          dplNamaMentah: { contains: nameKey, mode: 'insensitive' },
+        },
         data: {
-          name: dpl.name,
-          phone: dpl.phone,
-          nip: dpl.nip,
-          address: dpl.prodi,
-          roleId: dplRole.id,
-          password: defaultPassword,
-          status: 'Aktif',
+          dplId: user.id,
         },
       });
     }
-    upsertedCount++;
-
-    // Link DPL user to KelompokKkn if dplNamaMentah matches
-    const nameKey = dpl.name.split(',')[0].trim();
-    await prisma.kelompokKkn.updateMany({
-      where: {
-        dplNamaMentah: { contains: nameKey, mode: 'insensitive' },
-      },
-      data: {
-        dplId: user.id,
-      },
-    });
   }
 
   console.log(`✅ Successfully upserted ${upsertedCount} real DPL accounts in DB!`);
