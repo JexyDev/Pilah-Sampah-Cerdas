@@ -1,13 +1,14 @@
 import { prisma } from "../src/lib/prisma.js";
 
 async function main() {
-  console.log("🔎 Mencari data riwayat izin/sakit mahasiswa 'Habiltrush'...");
+  const query = process.argv[2] || "Yosan";
+  console.log(`🔎 Mencari data riwayat izin/sakit mahasiswa mengandung kata kunci: '${query}'...`);
 
   const records = await prisma.studentLeaveRequest.findMany({
     where: {
       OR: [
-        { student: { name: { contains: "Habiltrush", mode: "insensitive" } } },
-        { reason: { contains: "acara keluarga", mode: "insensitive" } },
+        { student: { name: { contains: query, mode: "insensitive" } } },
+        { reason: { contains: query, mode: "insensitive" } },
       ],
     },
     include: {
@@ -16,7 +17,7 @@ async function main() {
   });
 
   if (records.length === 0) {
-    console.log("⚠️ Tidak ditemukan data pengajuan izin/sakit untuk Habiltrush.");
+    console.log(`⚠️ Tidak ditemukan data pengajuan izin/sakit untuk keyword: ${query}.`);
     return;
   }
 
@@ -31,7 +32,7 @@ async function main() {
     },
   });
 
-  console.log(`✅ Berhasil menghapus ${deleted.count} data riwayat izin/sakit Habiltrush dari database.`);
+  console.log(`✅ Berhasil menghapus ${deleted.count} data riwayat izin/sakit dari database.`);
 }
 
 main()
