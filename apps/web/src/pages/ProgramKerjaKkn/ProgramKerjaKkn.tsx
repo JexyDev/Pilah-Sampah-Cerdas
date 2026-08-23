@@ -191,7 +191,7 @@ export const ProgramKerjaKkn: React.FC = () => {
 
     const dateFormatted = d.toLocaleDateString("id-ID", {
       day: "numeric",
-      month: "short",
+      month: "long",
       year: "numeric",
     });
     const timeFormatted = d.toLocaleTimeString("id-ID", {
@@ -205,6 +205,33 @@ export const ProgramKerjaKkn: React.FC = () => {
       time: `${timeFormatted} WIB`,
       full: `${dateFormatted}, ${timeFormatted} WIB`,
     };
+  };
+
+  const formatWaktuPelaksanaanDisplay = (rawStr?: string | null) => {
+    if (!rawStr || !rawStr.trim() || rawStr === "-") return "-";
+    const trimmed = rawStr.trim();
+    
+    const parts = trimmed.split(/\s+(?:-|s\/d|sampai)\s+/i);
+    if (parts.length === 2) {
+      const d1 = new Date(parts[0]);
+      const d2 = new Date(parts[1]);
+      if (!isNaN(d1.getTime()) && !isNaN(d2.getTime())) {
+        const f1 = d1.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+        const f2 = d2.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+        return f1 === f2 ? f1 : `${f1} - ${f2}`;
+      }
+    }
+
+    const singleDate = new Date(trimmed);
+    if (!isNaN(singleDate.getTime()) && /^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+      return singleDate.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    }
+
+    return trimmed;
   };
 
   const formatIndonesianDateRange = (startStr: string, endStr: string) => {
@@ -1001,12 +1028,12 @@ export const ProgramKerjaKkn: React.FC = () => {
               <thead>
                 <tr className="bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
                   <th className="py-3.5 px-3 w-12 text-center">No</th>
+                  <th className="py-3.5 px-3 w-36 text-center">Waktu Dibuat</th>
                   <th className="py-3.5 px-3 w-28 text-center">Kategori</th>
                   <th className="py-3.5 px-3 w-24 text-center">Sumber</th>
                   <th className="py-3.5 px-4 min-w-[200px]">Judul Program</th>
                   <th className="py-3.5 px-4 min-w-[240px]">Deskripsi Kegiatan</th>
-                  <th className="py-3.5 px-3 w-36 text-center">Waktu Dibuat</th>
-                  <th className="py-3.5 px-3 w-36">Waktu Pelaksanaan</th>
+                  <th className="py-3.5 px-3 w-40">Waktu Pelaksanaan</th>
                   <th className="py-3.5 px-3 w-32 font-bold">Biaya</th>
                   <th className="py-3.5 px-3 w-36 text-center">Status Usulan</th>
                   <th className="py-3.5 px-3 w-36 text-center">Status Pelaksanaan</th>
@@ -1026,6 +1053,18 @@ export const ProgramKerjaKkn: React.FC = () => {
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
                       <td className="py-3.5 px-3 text-center">
+                        <div className="inline-flex flex-col items-center justify-center">
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1">
+                            <Calendar size={11} className="text-slate-400 shrink-0" />
+                            {timestampInfo.date}
+                          </span>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5 flex items-center gap-1">
+                            <Clock size={10} className="text-slate-400 shrink-0" />
+                            {timestampInfo.time}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-3 text-center">
                         {renderKategoriBadge(p.kategori)}
                       </td>
                       <td className="py-3.5 px-3 text-center">
@@ -1041,20 +1080,8 @@ export const ProgramKerjaKkn: React.FC = () => {
                           {p.deskripsi}
                         </p>
                       </td>
-                      <td className="py-3.5 px-3 text-center">
-                        <div className="inline-flex flex-col items-center justify-center">
-                          <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1">
-                            <Calendar size={11} className="text-slate-400 shrink-0" />
-                            {timestampInfo.date}
-                          </span>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5 flex items-center gap-1">
-                            <Clock size={10} className="text-slate-400 shrink-0" />
-                            {timestampInfo.time}
-                          </span>
-                        </div>
-                      </td>
                       <td className="py-3.5 px-3 text-slate-600 dark:text-slate-400 font-medium">
-                        {p.waktuPelaksanaan || "-"}
+                        {formatWaktuPelaksanaanDisplay(p.waktuPelaksanaan)}
                       </td>
                       <td className="py-3.5 px-3 font-bold text-slate-900 dark:text-slate-100">
                         Rp {Number(p.kebutuhanBiaya || 0).toLocaleString("id-ID")}
