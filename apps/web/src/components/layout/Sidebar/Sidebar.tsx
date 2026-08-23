@@ -627,7 +627,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         {
           to: "/logbook-kkn?tab=dpl",
           icon: BookOpen,
-          label: "Catat Kegiatan DPL",
+          label: "Log Aktivitas DPL",
           allowed: [
             "DEVELOPER",
             "SUPER_USER",

@@ -296,7 +296,7 @@ export const LogAktivitasDpl: React.FC = () => {
 
   // Delete Click Handler
   const handleDeleteLog = async (id: string) => {
-    if (!window.confirm("Apakah Anda yakin ingin menghapus catatan kegiatan DPL ini?")) return;
+    if (!window.confirm("Apakah Anda yakin ingin menghapus log aktivitas DPL ini?")) return;
     try {
       await dplActivityLogService.deleteActivityLog(id);
       toast.success("Kegiatan DPL berhasil dihapus");
@@ -332,7 +332,7 @@ export const LogAktivitasDpl: React.FC = () => {
       "Status",
     ];
 
-    const rows = logs.map((l) => [
+    const rows = logs.map((l: any) => [
       `"${l.tanggalFormatted}"`,
       `"${l.waktuMulai}"`,
       `"${l.waktuSelesai}"`,
@@ -345,11 +345,11 @@ export const LogAktivitasDpl: React.FC = () => {
       `"${l.status}"`,
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e: any) => e.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Catat_Kegiatan_DPL_${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute("download", `Log_Aktivitas_DPL_${new Date().toISOString().split("T")[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -365,7 +365,7 @@ export const LogAktivitasDpl: React.FC = () => {
           ───────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Catat Kegiatan DPL</h1>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Log Aktivitas DPL</h1>
           <p className="text-sm text-slate-500 mt-0.5">
             Catat, dokumentasikan, dan pantau kegiatan pendampingan DPL melalui web
           </p>

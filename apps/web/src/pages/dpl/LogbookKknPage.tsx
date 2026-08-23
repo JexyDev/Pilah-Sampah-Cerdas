@@ -614,7 +614,7 @@ export const LogbookKknPage: React.FC = () => {
             }`}
           >
             <ShieldCheck className="w-4 h-4" />
-            Catat Kegiatan DPL
+            Log Aktivitas DPL
             <span className="ml-1 px-2 py-0.5 text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full">
               {dplLogbooks.length}
             </span>

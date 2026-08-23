@@ -633,15 +633,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const [formTotalJam, setFormTotalJam] = useState<number>(200);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
 
-  const calculateAutoDailyDuration = (totalJam: number, totalHari: number) => {
-    const totalMins = totalHari > 0 ? Math.round((totalJam * 60) / totalHari) : 0;
-    return {
-      jam: Math.floor(totalMins / 60),
-      menit: totalMins % 60,
-      totalMins,
-    };
-  };
-
   const calculatePreciseTargetJam = (totalHari: number, jam: number, menit: number): number => {
     const totalMins = totalHari * (jam * 60 + menit);
     const totalHours = totalMins / 60;
@@ -654,22 +645,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     const pekan = configTargets.targetPekan || 10;
     const daysCount = parsedDays.length || 5;
     const totalHari = configTargets.targetTotalHari || (pekan * daysCount);
-    const totalJam = (configTargets.targetTotalJam !== undefined && configTargets.targetTotalJam > 0)
-      ? configTargets.targetTotalJam
-      : 200;
 
-    // Hitung otomatis durasi harian dari targetTotalJam / totalHari
-    const autoDaily = calculateAutoDailyDuration(totalJam, totalHari);
-    const configuredDailyMins = (Number(configTargets.attendanceMinDurationHours || 0) * 60) + Number(configTargets.attendanceMinDurationMinutes || 0);
-    // Jika durasi harian di config sudah selaras dengan akumulasi target total jam, gunakan itu; jika tidak atau data lama (seperti 1 menit), gunakan autoDaily
-    const isConfiguredDurationSynced = configuredDailyMins > 0 && Math.abs((configuredDailyMins * totalHari) - (totalJam * 60)) <= 30;
-
-    const durJam = isConfiguredDurationSynced
-      ? Number(configTargets.attendanceMinDurationHours || 0)
-      : autoDaily.jam;
-    const durMenit = isConfiguredDurationSynced
-      ? Number(configTargets.attendanceMinDurationMinutes || 0)
-      : autoDaily.menit;
+    const durJam = Number(configTargets.attendanceMinDurationHours !== undefined ? configTargets.attendanceMinDurationHours : 4);
+    const durMenit = Number(configTargets.attendanceMinDurationMinutes !== undefined ? configTargets.attendanceMinDurationMinutes : 0);
+    const computedTotalJam = calculatePreciseTargetJam(totalHari, durJam, durMenit);
 
     setFormDays(parsedDays);
     setFormStartTime(parsedTimes.start);
@@ -678,7 +657,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     setFormDurasiMenit(durMenit);
     setFormTargetPekan(pekan);
     setFormTotalHari(totalHari);
-    setFormTotalJam(totalJam);
+    setFormTotalJam(computedTotalJam);
     setIsConfigModalOpen(true);
   };
 
@@ -691,10 +670,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     setFormDays(nextDays);
     const newTotalHari = formTargetPekan * nextDays.length;
     setFormTotalHari(newTotalHari);
-    // Otomatisasi: Hitung minimal durasi harian dari target total jam / total hari baru
-    const autoDaily = calculateAutoDailyDuration(formTotalJam, newTotalHari);
-    setFormDurasiJam(autoDaily.jam);
-    setFormDurasiMenit(autoDaily.menit);
+    const newTotalJam = calculatePreciseTargetJam(newTotalHari, formDurasiJam, formDurasiMenit);
+    setFormTotalJam(newTotalJam);
   };
 
   const handleToggleDay = (day: string) => {
@@ -711,10 +688,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     setFormDays(nextDays);
     const newTotalHari = formTargetPekan * nextDays.length;
     setFormTotalHari(newTotalHari);
-    // Otomatisasi: Hitung minimal durasi harian dari target total jam / total hari baru
-    const autoDaily = calculateAutoDailyDuration(formTotalJam, newTotalHari);
-    setFormDurasiJam(autoDaily.jam);
-    setFormDurasiMenit(autoDaily.menit);
+    const newTotalJam = calculatePreciseTargetJam(newTotalHari, formDurasiJam, formDurasiMenit);
+    setFormTotalJam(newTotalJam);
   };
 
   const handlePekanChange = (pekan: number) => {
@@ -722,34 +697,21 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     const daysCount = formDays.length || 1;
     const newTotalHari = pekan * daysCount;
     setFormTotalHari(newTotalHari);
-    // Otomatisasi: Hitung minimal durasi harian dari target total jam / total hari baru
-    const autoDaily = calculateAutoDailyDuration(formTotalJam, newTotalHari);
-    setFormDurasiJam(autoDaily.jam);
-    setFormDurasiMenit(autoDaily.menit);
+    const newTotalJam = calculatePreciseTargetJam(newTotalHari, formDurasiJam, formDurasiMenit);
+    setFormTotalJam(newTotalJam);
   };
 
   const handleDurasiChange = (jam: number, menit: number) => {
     setFormDurasiJam(jam);
     setFormDurasiMenit(menit);
-    // Otomatisasi: Akumulasikan ke total jam kumulatif
     const newTotalJam = calculatePreciseTargetJam(formTotalHari, jam, menit);
     setFormTotalJam(newTotalJam);
   };
 
   const handleTotalHariChange = (hari: number) => {
     setFormTotalHari(hari);
-    // Otomatisasi: Hitung minimal durasi harian dari target total jam / total hari baru
-    const autoDaily = calculateAutoDailyDuration(formTotalJam, hari);
-    setFormDurasiJam(autoDaily.jam);
-    setFormDurasiMenit(autoDaily.menit);
-  };
-
-  const handleTotalJamChange = (totalJam: number) => {
-    setFormTotalJam(totalJam);
-    // Otomatisasi: Hitung minimal durasi harian dari total jam / total hari
-    const autoDaily = calculateAutoDailyDuration(totalJam, formTotalHari);
-    setFormDurasiJam(autoDaily.jam);
-    setFormDurasiMenit(autoDaily.menit);
+    const newTotalJam = calculatePreciseTargetJam(hari, formDurasiJam, formDurasiMenit);
+    setFormTotalJam(newTotalJam);
   };
 
   const fetchConfigTargets = async () => {
@@ -4019,30 +3981,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   </div>
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-black text-slate-800 dark:text-slate-100">
-                      Minimal Target Jam Kumulatif (Jam)
-                    </label>
-                    <span className="text-[10px] text-slate-400 font-medium">Bisa disesuaikan manual</span>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min={0.01}
-                      step="any"
-                      required
-                      value={formTotalJam}
-                      onChange={(e) => handleTotalJamChange(Math.max(0.01, Number(e.target.value) || 0))}
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-black text-emerald-800 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500 outline-none"
-                    />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
-                      Jam ({formatHoursToUnits(formTotalJam)})
-                    </div>
-                  </div>
-                </div>
-
-                {/* Live Formula & Calculation Breakdown Preview */}
+                {/* Live Formula & Calculation Breakdown Preview (Akumulasi Otomatis) */}
                 {(() => {
                   const dailyMins = formDurasiJam * 60 + formDurasiMenit;
                   const totalMins = formTotalHari * dailyMins;
@@ -4056,29 +3995,29 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     : `${kumulatifMenit} Menit`;
 
                   return (
-                    <div className="p-3 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/80 space-y-1.5 text-xs">
+                    <div className="p-3.5 rounded-2xl bg-emerald-50/90 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800/80 space-y-2 text-xs">
                       <div className="flex items-center justify-between font-black text-emerald-950 dark:text-emerald-200">
                         <span className="flex items-center gap-1.5">
-                          <Target size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                          Rincian & Relasi Kalkulasi Target
+                          <Target size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          Akumulasi Minimal Target Kumulatif
                         </span>
-                        <span className="text-emerald-700 dark:text-emerald-300 font-extrabold">
-                          {kumulatifFormatted} ({totalMins.toLocaleString('id-ID')} Menit)
+                        <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-extrabold bg-emerald-100/90 dark:bg-emerald-900/60 px-2 py-0.5 rounded-md">
+                          Otomatis
                         </span>
                       </div>
                       <div className="text-[11px] text-emerald-800/90 dark:text-emerald-300/90 font-semibold space-y-1 pt-0.5">
                         <div className="flex items-center justify-between">
-                          <span>Durasi Harian:</span>
+                          <span>Target Durasi Harian:</span>
                           <span className="font-bold">{dailyFormatted} ({dailyMins} Menit / {(dailyMins / 60).toFixed(2)} Jam)</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span>Total Hari:</span>
-                          <span className="font-bold">{formTargetPekan} Pekan × {formDays.length} Hari Kerja = {formTotalHari} Hari</span>
+                          <span>Total Hari Operasional:</span>
+                          <span className="font-bold">{formTargetPekan} Pekan × {formDays.length} Hari = {formTotalHari} Hari</span>
                         </div>
-                        <div className="flex items-center justify-between pt-0.5 border-t border-emerald-200/50 dark:border-emerald-800/50">
-                          <span>Kalkulasi Kumulatif:</span>
-                          <span className="font-black text-emerald-900 dark:text-emerald-200">
-                            {formTotalHari} Hari × {dailyFormatted} = {kumulatifFormatted} ({totalMins.toLocaleString('id-ID')} Menit)
+                        <div className="flex items-center justify-between pt-1.5 border-t border-emerald-200/60 dark:border-emerald-800/60">
+                          <span className="font-bold">Total Target Kumulatif:</span>
+                          <span className="font-black text-emerald-950 dark:text-emerald-100 text-sm">
+                            {kumulatifFormatted} ({totalMins.toLocaleString('id-ID')} Menit / {formTotalJam} Jam)
                           </span>
                         </div>
                       </div>
