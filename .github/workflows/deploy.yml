@@ -102,6 +102,14 @@ jobs:
               echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/* /var/www/pilah-sampah-cerdas/frontend/dist/*
               echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/html/
               echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/pilah-sampah-cerdas/frontend/dist/
+              
+              # Restore downloads directory & APK from persistent API uploads folder
+              echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html/downloads /var/www/pilah-sampah-cerdas/frontend/dist/downloads
+              if [ -f "$REPO_DIR/apps/api/uploads/berseka-release-arm64-v8a.apk" ]; then
+                echo "Restoring arm64 APK to static downloads..."
+                echo "$VPS_PASS" | sudo -S cp "$REPO_DIR/apps/api/uploads/berseka-release-arm64-v8a.apk" /var/www/html/downloads/berseka-release-arm64-v8a.apk
+                echo "$VPS_PASS" | sudo -S cp "$REPO_DIR/apps/api/uploads/berseka-release-arm64-v8a.apk" /var/www/pilah-sampah-cerdas/frontend/dist/downloads/berseka-release-arm64-v8a.apk
+              fi
               rm -f /tmp/frontend-dist.tar.gz
             fi
 

@@ -6,6 +6,8 @@
  */
 
 import { Request, Response } from "express";
+import path from "path";
+import fs from "fs";
 import { systemService } from "../services/systemService.js";
 
 export class SystemController {
@@ -168,10 +170,28 @@ export class SystemController {
   async downloadApk(req: Request, res: Response): Promise<void> {
     try {
       const release = await systemService.getLatestRelease();
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="BERSEKA-v${release.version}.apk"`
-      );
+      const filename = `BERSEKA-v${release.version}.apk`;
+      
+      const possiblePaths = [
+        path.join(process.cwd(), "uploads", "berseka-release-arm64-v8a.apk"),
+        path.join(process.cwd(), "uploads", "app-release.apk"),
+        "/var/www/html/downloads/berseka-release-arm64-v8a.apk",
+      ];
+
+      let foundPath = "";
+      for (const p of possiblePaths) {
+        if (fs.existsSync(p)) {
+          foundPath = p;
+          break;
+        }
+      }
+
+      if (foundPath) {
+        res.download(foundPath, filename);
+        return;
+      }
+
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
       res.setHeader("Content-Type", "application/vnd.android.package-archive");
       res.send(Buffer.from("PK\x03\x04BERSEKA-Android-Release-Package"));
     } catch (error: any) {
