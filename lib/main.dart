@@ -25,6 +25,8 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'app/data/models/user_entity.dart';
 import 'app/modules/mahasiswa/controllers/location_ping_controller.dart';
 import 'app/modules/mahasiswa/controllers/kkn_location_controller.dart';
+import 'app/modules/mahasiswa/controllers/mahasiswa_controller.dart';
+import 'app/modules/mahasiswa/controllers/riwayat_kkn_controller.dart';
 import 'app/modules/notifikasi/controllers/warga_notifikasi_controller.dart';
 import 'app/modules/mahasiswa/controllers/mahasiswa_notifikasi_controller.dart';
 import 'app/modules/petugas_pemilahan/controllers/petugas_pemilahan_notifikasi_controller.dart';
@@ -340,6 +342,17 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
       } else if (previous?.user?.role == UserRole.mahasiswaKkn && next.user == null) {
         ref.read(locationPingControllerProvider.notifier).stopTracking();
         ref.read(kknLocationProvider.notifier).stopTracking();
+      }
+
+      // Wajib bersihkan cache data penting jika pengguna log out
+      if (previous?.user != null && next.user == null) {
+        ref.invalidate(mahasiswaControllerProvider);
+        ref.invalidate(riwayatKknControllerProvider);
+        ref.invalidate(totalPointsProvider);
+        ref.invalidate(pointHistoryProvider);
+        ref.invalidate(dailyPointsProvider);
+        ref.invalidate(wasteLogsProvider);
+        ref.invalidate(binsProvider);
       }
     });
 
