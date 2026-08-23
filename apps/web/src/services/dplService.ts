@@ -379,6 +379,7 @@ export const dplService = {
   createProgramKerja: async (data: {
     kelompokId: string;
     nomor?: number;
+    judul?: string;
     deskripsi: string;
     kategori?: string;
     sumber?: string;
@@ -397,6 +398,7 @@ export const dplService = {
     id: string,
     data: {
       nomor?: number;
+      judul?: string;
       deskripsi?: string;
       kategori?: string;
       sumber?: string;

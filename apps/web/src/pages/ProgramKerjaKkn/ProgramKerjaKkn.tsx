@@ -349,6 +349,7 @@ export const ProgramKerjaKkn: React.FC = () => {
     setFormData({
       kelompokId: defaultKelompokId,
       nomor: prokerList.length + 1,
+      judul: "",
       deskripsi: "",
       kategori: "Pemilahan",
       sumber: isDpl ? "DPL" : "Mahasiswa",
@@ -375,6 +376,7 @@ export const ProgramKerjaKkn: React.FC = () => {
     setFormData({
       kelompokId: item.kelompokId || (kelompokList.length > 0 ? kelompokList[0].id : ""),
       nomor: item.nomor || 1,
+      judul: item.judul || "",
       deskripsi: item.deskripsi,
       kategori: item.kategori || "Pemilahan",
       sumber: item.sumber || "Mahasiswa",
@@ -446,7 +448,7 @@ export const ProgramKerjaKkn: React.FC = () => {
           toast.success("Rencana program kerja berhasil diperbarui");
         }
 
-        fetchProkers();
+        fetchData();
         setIsFormModalOpen(false);
       } catch (err: any) {
         toast.error(err.message || "Terjadi kesalahan saat menyimpan");
