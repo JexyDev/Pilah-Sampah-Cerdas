@@ -2249,13 +2249,13 @@ export class KknAttendanceService {
           },
         },
         update: {
-          attendedAt: new Date(),
+          attendedAt: existingSession?.attendedAt || new Date(),
           status: "BERLANGSUNG",
           latitude,
           longitude,
           method: "GPS_ACTIVITY",
           checkOutAt: null,
-          actualInZoneMinutes: 0,
+          actualInZoneMinutes: existingSession?.actualInZoneMinutes || 0,
         },
         create: {
           studentId: studentUserId,
