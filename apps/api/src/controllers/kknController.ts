@@ -492,6 +492,31 @@ export class KknController {
   async createProgramKerja(req: Request, res: Response) {
     try {
       const data = await kknService.createProgramKerja(req.user!.userId, req.body);
+      
+      try {
+        const { PrismaClient } = require("@prisma/client");
+        const prisma = new PrismaClient();
+        const { notificationIntegrationService } = require("../services/notificationIntegrationService");
+        
+        const title = "Pengajuan Program Kerja âœ…";
+        const message = `Program ${data.judul} berhasil diajukan dan sedang direview.`;
+        
+        await prisma.notification.create({
+          data: {
+            userId: req.user!.userId,
+            title,
+            message,
+            isRead: false,
+          }
+        });
+        const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+        if (user?.fcmToken) {
+          await notificationIntegrationService.sendPushNotification(user.fcmToken, title, message);
+        }
+      } catch (e) {
+        console.error("Failed to send notification for program kerja", e);
+      }
+
       res.status(201).json({ success: true, message: "Program Kerja berhasil diajukan.", data });
     } catch (error: any) {
       console.error("[KknController] createProgramKerja error:", error);
