@@ -901,9 +901,8 @@ export class KknAttendanceService {
             method: isAutoAlpa ? "ALPA_AUTO" : method,
             latitude,
             longitude,
-            status: isAutoAlpa ? "ALPA" : "HADIR",
+            status: isAutoAlpa ? "ALPA" : "BERLANGSUNG",
             attendedAt: existing.attendedAt || new Date(),
-            checkOutAt: new Date(),
           },
         });
 
@@ -951,8 +950,7 @@ export class KknAttendanceService {
           method: isAutoAlpa ? "ALPA_AUTO" : method,
           latitude,
           longitude,
-          status: isAutoAlpa ? "ALPA" : "HADIR",
-          checkOutAt: new Date(),
+          status: isAutoAlpa ? "ALPA" : "BERLANGSUNG",
         },
       });
 
