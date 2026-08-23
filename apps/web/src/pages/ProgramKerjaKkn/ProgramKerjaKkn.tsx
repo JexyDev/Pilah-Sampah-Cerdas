@@ -109,6 +109,7 @@ export const ProgramKerjaKkn: React.FC = () => {
   const [formData, setFormData] = useState<{
     kelompokId: string;
     nomor: number;
+    judul: string;
     deskripsi: string;
     kategori: string;
     sumber: string;
@@ -122,6 +123,7 @@ export const ProgramKerjaKkn: React.FC = () => {
   }>({
     kelompokId: "",
     nomor: 1,
+    judul: "",
     deskripsi: "",
     kategori: "Pemilahan",
     sumber: "Mahasiswa",
@@ -409,48 +411,49 @@ export const ProgramKerjaKkn: React.FC = () => {
       toast.error("Tanggal selesai tidak boleh lebih awal dari tanggal mulai");
       return;
     }
+      setIsSubmitting(true);
+      try {
+        if (formMode === "add") {
+          await dplService.createProgramKerja({
+            kelompokId: effectiveKelompokId,
+            nomor: Number(formData.nomor),
+            judul: formData.judul.trim(),
+            deskripsi: formData.deskripsi.trim(),
+            kategori: formData.kategori,
+            sumber: formData.sumber,
+            waktuPelaksanaan: formData.waktuPelaksanaan,
+            linkGoogleDrive: formData.linkGoogleDrive,
+            kebutuhanBiaya: Number(formData.kebutuhanBiaya) || 0,
+            statusUsulan: formData.statusUsulan,
+            statusPelaksanaan: formData.statusPelaksanaan,
+          });
+          toast.success("Rencana program kerja berhasil ditambahkan");
+        } else if (editingId) {
+          await dplService.updateProgramKerja(editingId, {
+            nomor: Number(formData.nomor),
+            judul: formData.judul.trim(),
+            deskripsi: formData.deskripsi.trim(),
+            kategori: formData.kategori,
+            sumber: formData.sumber,
+            waktuPelaksanaan: formData.waktuPelaksanaan,
+            linkGoogleDrive: formData.linkGoogleDrive,
+            kebutuhanBiaya: Number(formData.kebutuhanBiaya) || 0,
+            status: formData.status,
+            statusUsulan: formData.statusUsulan,
+            statusPelaksanaan: formData.statusPelaksanaan,
+            catatanDpl: formData.catatanDpl,
+          });
+          toast.success("Rencana program kerja berhasil diperbarui");
+        }
 
-    setIsSubmitting(true);
-    try {
-      if (formMode === "add") {
-        await dplService.createProgramKerja({
-          kelompokId: effectiveKelompokId,
-          nomor: Number(formData.nomor),
-          deskripsi: formData.deskripsi.trim(),
-          kategori: formData.kategori,
-          sumber: formData.sumber,
-          waktuPelaksanaan: formData.waktuPelaksanaan,
-          linkGoogleDrive: formData.linkGoogleDrive,
-          kebutuhanBiaya: Number(formData.kebutuhanBiaya) || 0,
-          statusUsulan: formData.statusUsulan,
-          statusPelaksanaan: formData.statusPelaksanaan,
-        });
-        toast.success("Rencana program kerja berhasil ditambahkan");
-      } else if (editingId) {
-        await dplService.updateProgramKerja(editingId, {
-          nomor: Number(formData.nomor),
-          deskripsi: formData.deskripsi.trim(),
-          kategori: formData.kategori,
-          sumber: formData.sumber,
-          waktuPelaksanaan: formData.waktuPelaksanaan,
-          linkGoogleDrive: formData.linkGoogleDrive,
-          kebutuhanBiaya: Number(formData.kebutuhanBiaya) || 0,
-          status: formData.status,
-          statusUsulan: formData.statusUsulan,
-          statusPelaksanaan: formData.statusPelaksanaan,
-          catatanDpl: formData.catatanDpl,
-        });
-        toast.success("Program kerja berhasil diperbarui");
+        fetchProkers();
+        setIsFormModalOpen(false);
+      } catch (err: any) {
+        toast.error(err.message || "Terjadi kesalahan saat menyimpan");
+      } finally {
+        setIsSubmitting(false);
       }
-      setIsFormModalOpen(false);
-      fetchData();
-    } catch (err: any) {
-      console.error("Gagal menyimpan program kerja:", err);
-      toast.error(err.response?.data?.message || "Gagal menyimpan program kerja");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    };
 
   // Quick Action: Approve (ACC) Proker
   const handleApproveProker = async (proker: ProgramKerjaItem) => {
@@ -988,6 +991,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                   <th className="py-3.5 px-3 w-12 text-center">No</th>
                   <th className="py-3.5 px-3 w-28 text-center">Kategori</th>
                   <th className="py-3.5 px-3 w-24 text-center">Sumber</th>
+                  <th className="py-3.5 px-4 min-w-[200px]">Judul Program</th>
                   <th className="py-3.5 px-4 min-w-[240px]">Deskripsi Kegiatan</th>
                   <th className="py-3.5 px-3 w-36 text-center">Waktu Dibuat</th>
                   <th className="py-3.5 px-3 w-36">Waktu Pelaksanaan</th>
@@ -1014,6 +1018,11 @@ export const ProgramKerjaKkn: React.FC = () => {
                       </td>
                       <td className="py-3.5 px-3 text-center">
                         {renderSumberBadge(p.sumber)}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <p className="text-slate-900 dark:text-slate-100 font-bold">
+                          {p.judul || "-"}
+                        </p>
                       </td>
                       <td className="py-3.5 px-4">
                         <p className="text-slate-900 dark:text-slate-100 leading-relaxed font-normal">
@@ -1245,6 +1254,20 @@ export const ProgramKerjaKkn: React.FC = () => {
                     <option value="DPL">DPL</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Judul Program <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Sosialisasi Maggot BSF"
+                  value={formData.judul}
+                  onChange={(e) => setFormData({ ...formData, judul: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 outline-none mb-3"
+                />
               </div>
 
               <div>

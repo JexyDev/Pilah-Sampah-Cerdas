@@ -724,6 +724,7 @@ export const PenilaianProkerPage: React.FC = () => {
                     <th className="py-3.5 px-3 w-12 text-center">No.</th>
                     <th className="py-3.5 px-4 min-w-[160px]">Nama Kelompok & Wilayah</th>
                     <th className="py-3.5 px-3.5 min-w-[120px]">Kategori</th>
+                    <th className="py-3.5 px-4 min-w-[200px]">Judul Program</th>
                     <th className="py-3.5 px-4 min-w-[260px]">Deskripsi Program Kerja</th>
                     <th className="py-3.5 px-3.5 text-center min-w-[130px]">Status Usulan</th>
                     <th className="py-3.5 px-3.5 text-center min-w-[130px]">Status Pelaksanaan</th>
@@ -760,6 +761,13 @@ export const PenilaianProkerPage: React.FC = () => {
                         {/* Kategori */}
                         <td className="py-3.5 px-3.5">
                           {renderKategoriBadge(p.kategori)}
+                        </td>
+
+                        {/* Judul Program */}
+                        <td className="py-3.5 px-4">
+                          <p className="text-slate-900 dark:text-slate-100 font-bold text-xs">
+                            {p.judul || "-"}
+                          </p>
                         </td>
 
                         {/* Deskripsi */}

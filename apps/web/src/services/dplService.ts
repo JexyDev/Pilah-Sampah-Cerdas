@@ -160,6 +160,7 @@ export interface ProgramKerjaItem {
   kelompokName: string;
   kelurahan: string;
   nomor: number;
+  judul?: string;
   deskripsi: string;
   kategori?: string;
   sumber?: string;
