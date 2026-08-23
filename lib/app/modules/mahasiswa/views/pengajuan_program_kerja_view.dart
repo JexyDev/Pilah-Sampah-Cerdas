@@ -27,8 +27,8 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
     
     setState(() => _isLoading = true);
     try {
-      final kknRepo = ref.read(apiKknRepositoryProvider);
-      final response = await kknRepo.registerProker({
+      final repo = ref.read(kknRepositoryProvider);
+      await repo.submitProgramKerja({
         'judul': _judulCtrl.text.trim(),
         'kategori': _kategori,
         'rencanaAnggaran': double.tryParse(_anggaranCtrl.text.trim()) ?? 0,
