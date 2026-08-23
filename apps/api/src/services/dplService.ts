@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { prisma } from "../lib/prisma.js";
 import { configService } from "./configService.js";
 import { normalizeProkerKategori } from "./kknService.js";

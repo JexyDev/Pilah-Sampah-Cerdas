@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo

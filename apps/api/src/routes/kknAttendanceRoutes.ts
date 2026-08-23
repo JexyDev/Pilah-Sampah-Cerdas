@@ -359,9 +359,7 @@ router.get(
         const geofenceLng = firstSchedule.longitude ? Number(firstSchedule.longitude) : 107.6107;
         const geofenceRadius = firstSchedule.radius ? Number(firstSchedule.radius) : 100;
 
-        const distance = calculateDistance(
-          latestLocation.latitude,
-          latestLocation.longitude,
+        const distance = calculateDistance(Number(latestLocation.latitude), Number(latestLocation.longitude),
           geofenceLat,
           geofenceLng
         );
