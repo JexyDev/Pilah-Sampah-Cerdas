@@ -146,10 +146,25 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
         for (final data in kegiatanAktif) {
           if (data['status'] == 'SELESAI' || data['attendanceStatus'] == 'HADIR' || data['attendanceStatus'] == 'SELESAI') {
             final title = data['nama']?.toString() ?? data['namaKegiatan']?.toString() ?? 'Riwayat Kegiatan';
+            var dateStr = data['tanggal']?.toString() ?? data['tanggalKegiatan']?.toString() ?? '';
+            var timeStr = data['time']?.toString() ?? data['jamKegiatan']?.toString() ?? '';
+            
+            DateTime parsedDate = DateTime.tryParse(dateStr) ?? DateTime.now();
+            if (timeStr.isNotEmpty) {
+               var startTime = timeStr.split('-').first.trim();
+               var parts = startTime.split(':');
+               if (parts.length == 2) {
+                 var h = int.tryParse(parts[0]) ?? 0;
+                 var m = int.tryParse(parts[1]) ?? 0;
+                 parsedDate = DateTime(parsedDate.year, parsedDate.month, parsedDate.day, h, m);
+               }
+            }
+            final timestamp = parsedDate.toLocal();
+
             parsedLogs.add(KknHistoryLog(
               title: title,
               subtitle: 'Kegiatan Selesai',
-              timestamp: (DateTime.tryParse(data['tanggal']?.toString() ?? data['tanggalKegiatan']?.toString() ?? '') ?? DateTime.now()).toLocal(),
+              timestamp: timestamp,
               type: KknHistoryType.gps,
               points: null,
               isGpsActive: true,
@@ -162,6 +177,26 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
       } catch (e) {
         debugPrint('[RiwayatKknNotifier] getKegiatanAktif error: $e');
       }
+
+      // 5. Ambil data Pengajuan Program Kerja
+      try {
+        final programList = await kknRepo.getProgramKerja();
+        for (final program in programList) {
+          final title = 'Program: ${program['judul']?.toString() ?? 'Kerja'}';
+          final status = program['status']?.toString().toUpperCase();
+          final isGpsActive = status == 'APPROVED' ? true : (status == 'REJECTED' ? false : null);
+          final subtitle = status == 'APPROVED' ? 'Disetujui DPL' : (status == 'REJECTED' ? 'Ditolak DPL' : 'Menunggu Review');
+          parsedLogs.add(KknHistoryLog(
+            title: title,
+            subtitle: subtitle,
+            timestamp: (DateTime.tryParse(program['createdAt']?.toString() ?? '') ?? DateTime.now()).toLocal(),
+            type: KknHistoryType.izin,
+            points: null,
+            isGpsActive: isGpsActive,
+            statusKehadiran: status,
+          ));
+        }
+      } catch (_) {}
 
       // Sort by descending timestamp
       parsedLogs.sort((a, b) => b.timestamp.compareTo(a.timestamp));

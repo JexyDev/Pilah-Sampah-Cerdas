@@ -54,6 +54,9 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
   Future<void> fetchAll() async {
     final repo = _ref.read(kknRepositoryProvider);
     
+    // Sinkronisasi data user (misal perubahan status role Ketua) saat refresh
+    _ref.read(authProvider.notifier).fetchProfile();
+
     // 1. Tampilkan cache jika ada
     final cachedDashboard = await repo.getCachedDashboard();
     final cachedWarga = await repo.getCachedWargaDampingan();

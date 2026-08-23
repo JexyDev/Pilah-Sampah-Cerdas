@@ -215,11 +215,12 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
         if (dt.year != now.year || dt.month != now.month) return false;
       }
 
-      // 2. Filter Type (Timbangan only, if SETORAN)
-      if (type == 'SETORAN') {
-        final title = item['title']?.toString().toUpperCase() ?? '';
-        final classification = item['classification']?.toString().toUpperCase() ?? '';
-        if (!title.contains('TIMBANGAN') && !title.contains('SETORAN') && !classification.contains('TIMBANGAN')) return false;
+      // 2. Filter Type
+      final points = (item['points'] ?? item['pointsEarned'] ?? 0).toInt();
+      if (type == 'NON_POIN') {
+        return points == 0;
+      } else if (type == 'POIN') {
+        return points > 0;
       }
       return true;
     }).toList();

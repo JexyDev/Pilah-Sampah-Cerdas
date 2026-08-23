@@ -54,16 +54,12 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
   }
 
   List<KknHistoryLog> _getFilteredLogs(List<KknHistoryLog> logs) {
-    if (_filterIndex == 1) {
-      return logs.where((l) => l.type == KknHistoryType.aktivasi).toList();
-    } else if (_filterIndex == 2) {
-      return logs.where((l) => l.type == KknHistoryType.gps).toList();
-    } else if (_filterIndex == 3) {
-      return logs.where((l) => l.type == KknHistoryType.izin).toList();
-    } else if (_filterIndex == 4) {
-      return logs.where((l) => l.type == KknHistoryType.laporan).toList();
-    }
-    return logs;
+    return logs.where((log) {
+      if (_filterIndex == 0) return true; // Semua
+      if (_filterIndex == 1) return log.points == null || log.points == 0; // Non Poin
+      if (_filterIndex == 2) return log.points != null && log.points! > 0; // Poin
+      return true;
+    }).toList();
   }
 
   @override
@@ -112,24 +108,22 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
               children: [
                 _filterTab('Semua', 0),
                 const SizedBox(width: 8),
-                _filterTab('Aktivasi Warga', 1),
+                _filterTab('Riwayat Non Poin', 1),
                 const SizedBox(width: 8),
-                _filterTab('Laporan Pemanfaatan', 4),
-                const SizedBox(width: 8),
-                _filterTab('Riwayat Kegiatan', 2),
-                const SizedBox(width: 8),
-                _filterTab('Pengajuan Izin', 3),
+                _filterTab('Riwayat Poin', 2),
               ],
             ),
           ),
+          const Divider(height: 1),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  padding: const EdgeInsets.all(16.0),
                   child: Text(
-                    _filterIndex == 0 ? 'Semua Aktivitas' : _filterIndex == 1 ? 'Aktivasi Warga' : _filterIndex == 2 ? 'Kegiatan KKN' : 'Pengajuan Izin',
+                    _filterIndex == 0 ? 'Semua Aktivitas' : _filterIndex == 1 ? 'Riwayat Aktivitas (Non Poin)' : 'Riwayat Perolehan Poin',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

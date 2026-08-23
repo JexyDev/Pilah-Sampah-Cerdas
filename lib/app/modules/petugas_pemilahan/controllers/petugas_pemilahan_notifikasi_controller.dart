@@ -148,7 +148,7 @@ final petugasPemilahanNotificationsProvider = FutureProvider<List<NotificationEn
   
   final List<NotificationEntity> finalResult = [];
   for (int i = 0; i < result.length; i++) {
-    final dt = DateTime.tryParse(result[i].time) ?? DateTime(2000);
+    final dt = result[i].createdAt.toLocal();
     
     // Skip if deleted
     if (dt.millisecondsSinceEpoch <= deleteAllTimestamp) {

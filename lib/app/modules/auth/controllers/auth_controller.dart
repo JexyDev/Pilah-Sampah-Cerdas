@@ -243,6 +243,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     await NotificationEngine().cancelAll();
     clearNotificationCache();
+    
+    // Clear user-specific SharedPreferences caches
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys();
+      for (final key in keys) {
+        if (key.startsWith('read_notifs_') || 
+            key.startsWith('fcm_notifs_') || 
+            key.startsWith('mark_all_notifs_')) {
+          await prefs.remove(key);
+        }
+      }
+    } catch (_) {}
+
     await _authRepository.logout();
     state = const AuthState();
   }

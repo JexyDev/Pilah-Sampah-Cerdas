@@ -556,12 +556,7 @@ class _NotificationHistoryItem extends StatelessWidget {
     final isPengajuan = notif.type.toUpperCase().contains('PENGAJUAN') || notif.type.toUpperCase().contains('RESET');
     final color = isPengajuan ? Colors.blue : AppColors.textSecondary;
     final icon = isPengajuan ? Icons.mark_email_unread_rounded : Icons.info_rounded;
-    DateTime dt;
-    try {
-      dt = DateTime.parse(notif.time).toLocal();
-    } catch(_) {
-      dt = DateTime.now();
-    }
+    DateTime dt = notif.createdAt.toLocal();
 
     return Container(
       padding: const EdgeInsets.all(12),

@@ -266,7 +266,7 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                _formatDateTime(notif.time),
+                                '${DateFormat('d MMMM yyyy, HH:mm', 'id_ID').format(notif.createdAt.toLocal())} WIB',
                                 style: TextStyle(fontSize: 10, color: AppColors.textSecondary.withValues(alpha: 0.7)),
                               ),
                             ],
@@ -288,15 +288,4 @@ class _PetugasNotificationViewState extends ConsumerState<PetugasNotificationVie
 ),
     );
   }
-
-  String _formatDateTime(String? rawStr) {
-    if (rawStr == null || rawStr.isEmpty || rawStr == '-') return '';
-    try {
-      final dt = DateTime.parse(rawStr).toLocal();
-      return '${DateFormat('d MMMM yyyy, HH:mm', 'id_ID').format(dt)} WIB';
-    } catch (_) {
-      return rawStr;
-    }
-  }
 }
-

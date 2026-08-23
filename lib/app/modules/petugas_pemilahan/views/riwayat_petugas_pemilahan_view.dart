@@ -13,7 +13,33 @@ class RiwayatPetugasPemilahanView extends ConsumerStatefulWidget {
 
 class _RiwayatPetugasPemilahanViewState extends ConsumerState<RiwayatPetugasPemilahanView> {
   String _dateRange = 'HARI_INI';
-  final String _typeFilter = 'SETORAN';
+  String _typeFilter = 'SEMUA';
+
+  Widget _buildFilterTab(String label, String value) {
+    final isSelected = _typeFilter == value;
+    return GestureDetector(
+      onTap: () {
+        setState(() => _typeFilter = value);
+        ref.read(petugasPemilahanControllerProvider.notifier).setHistoryFilters(dateRange: _dateRange, type: value);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryGreen : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: isSelected ? null : Border.all(color: AppColors.primaryGreen),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : AppColors.primaryGreen,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
 
   String _formatDateTime(String? rawStr) {
     if (rawStr == null || rawStr.isEmpty || rawStr == '-') return '-';
@@ -161,9 +187,24 @@ class _RiwayatPetugasPemilahanViewState extends ConsumerState<RiwayatPetugasPemi
         color: AppColors.primaryGreen,
         child: Column(
           children: [
-            // Filter Bar
+            // Filter Tabs (Semua, Non Poin, Poin)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Row(
+                children: [
+                  _buildFilterTab('Semua Aktivitas', 'SEMUA'),
+                  const SizedBox(width: 8),
+                  _buildFilterTab('Riwayat Non Poin', 'NON_POIN'),
+                  const SizedBox(width: 8),
+                  _buildFilterTab('Riwayat Perolehan Poin', 'POIN'),
+                ],
+              ),
+            ),
+            
+            // Filter Bar Waktu
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -295,6 +336,26 @@ class _RiwayatPetugasPemilahanViewState extends ConsumerState<RiwayatPetugasPemi
                                                 ],
                                               ),
                                               const SizedBox(height: 6),
+                                              if (item['points'] != null && item['points'] > 0)
+                                                Container(
+                                                  margin: const EdgeInsets.only(bottom: 6),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.warningOrange.withValues(alpha: 0.1),
+                                                    borderRadius: BorderRadius.circular(12),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      const Icon(Icons.stars_rounded, color: AppColors.warningOrange, size: 14),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        '+${item['points']}',
+                                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.warningOrange),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
                                               if (subtitle.isNotEmpty && subtitle != '-')
                                                 Row(
                                                   children: [
