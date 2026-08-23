@@ -215,7 +215,7 @@ export const RekapNilaiKknPage: React.FC = () => {
 
           if (dplIndiv !== null && mplIndiv !== null && indivGab !== null && prokGab !== null && kelGab !== null) {
             const rawScore =
-              0.25 * (keh > 0 ? keh : 90) + 0.15 * (poin > 0 ? poin : 85) + 0.2 * indivGab + 0.2 * prokGab + 0.2 * kelGab;
+              0.25 * keh + 0.15 * poin + 0.2 * indivGab + 0.2 * prokGab + 0.2 * kelGab;
             nAkhir = Math.round(rawScore * 10) / 10;
             pred =
               nAkhir >= 85
@@ -280,6 +280,19 @@ export const RekapNilaiKknPage: React.FC = () => {
     return Array.from(setGroups).sort();
   }, [students]);
 
+  // Helper for sorting by score
+  const getStudentScore = (s: RekapNilaiStudent): number => {
+    if (typeof s.nilaiAkhir === "number" && !isNaN(s.nilaiAkhir)) {
+      return s.nilaiAkhir;
+    }
+    const keh = s.kehadiran ?? s.tingkatKehadiran ?? 0;
+    const poin = s.poinDampingan ?? 0;
+    const indiv = s.individuGabungan ?? s.individuDpl ?? s.individuMpl ?? 0;
+    const proker = s.prokerGabungan ?? s.prokerDpl ?? s.prokerMpl ?? 0;
+    const kelompok = s.kelompokGabungan ?? s.kelompokDpl ?? s.kelompokMpl ?? 0;
+    return 0.25 * keh + 0.15 * poin + 0.2 * indiv + 0.2 * proker + 0.2 * kelompok;
+  };
+
   // Filtered & Sorted Students
   const filteredStudents = useMemo(() => {
     return students
@@ -309,8 +322,14 @@ export const RekapNilaiKknPage: React.FC = () => {
         if (sortBy === "NIM_DESC") return b.nim.localeCompare(a.nim, undefined, { numeric: true });
         if (sortBy === "NAME_ASC") return a.name.localeCompare(b.name);
         if (sortBy === "NAME_DESC") return b.name.localeCompare(a.name);
-        if (sortBy === "SCORE_DESC") return (b.nilaiAkhir ?? -1) - (a.nilaiAkhir ?? -1);
-        if (sortBy === "SCORE_ASC") return (a.nilaiAkhir ?? 999) - (b.nilaiAkhir ?? 999);
+        if (sortBy === "SCORE_DESC") {
+          const diff = getStudentScore(b) - getStudentScore(a);
+          return diff !== 0 ? diff : a.name.localeCompare(b.name);
+        }
+        if (sortBy === "SCORE_ASC") {
+          const diff = getStudentScore(a) - getStudentScore(b);
+          return diff !== 0 ? diff : a.name.localeCompare(b.name);
+        }
         return 0;
       });
   }, [students, searchTerm, filterKelompok, filterStatus, sortBy]);

@@ -657,7 +657,7 @@ export class UserService {
         if (Array.isArray(targetKelompokIds) && targetKelompokIds.length > 0) {
           await tx.kelompokKkn.updateMany({
             where: { id: { in: targetKelompokIds } },
-            data: { dplId: u.id },
+            data: { dplId: u.id, dplNamaMentah: u.name },
           });
         }
       }

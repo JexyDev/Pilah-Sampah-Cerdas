@@ -38,6 +38,7 @@ import {
   type AssistedCitizensResponse,
   type DplAlerts,
   type ApprovalHistoryLog,
+  type ProgramKerjaItem,
 } from "../../services/dplService";
 
 export const DplDashboardPage: React.FC = () => {
@@ -53,6 +54,7 @@ export const DplDashboardPage: React.FC = () => {
   const [students, setStudents] = useState<StudentDetail[]>([]);
   const [alerts, setAlerts] = useState<DplAlerts | null>(null);
   const [approvalHistory, setApprovalHistory] = useState<ApprovalHistoryLog[]>([]);
+  const [prokers, setProkers] = useState<ProgramKerjaItem[]>([]);
 
   // Filter & Pagination States
   const [selectedApprovalStatus, setSelectedApprovalStatus] = useState<string>("ALL");
@@ -84,17 +86,19 @@ export const DplDashboardPage: React.FC = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [groupsData, studentsData, alertsData, historyData] = await Promise.all([
+      const [groupsData, studentsData, alertsData, historyData, prokersData] = await Promise.all([
         dplService.getGroupSummary(),
         dplService.getStudents(),
         dplService.getAlerts(),
         dplService.getApprovalHistory(),
+        dplService.getProgramKerja(),
       ]);
 
       setGroups(groupsData || []);
       setStudents(studentsData || []);
       setAlerts(alertsData || null);
       setApprovalHistory(historyData || []);
+      setProkers(prokersData || []);
     } catch (err: any) {
       console.error("Failed loading DPL dashboard data:", err);
       toast.error("Gagal memuat data Dashboard DPL");
@@ -102,6 +106,13 @@ export const DplDashboardPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const effectiveProkers = useMemo(() => {
+    if (prokers && prokers.length > 0) return prokers;
+    return groups.flatMap((g: any) => g.programKerja || []);
+  }, [prokers, groups]);
+
+
 
   const handleOpenCitizensDrilldown = async (student: StudentDetail) => {
     setSelectedStudentForCitizens(student);
@@ -1464,38 +1475,49 @@ export const DplDashboardPage: React.FC = () => {
             </div>
             <Link
               to="/program-kerja-kkn"
-              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1"
+              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1 group"
+              title="Buka Halaman Manajemen Program Kerja KKN"
             >
               <span>Semua Proker</span>
-              <ChevronRight size={14} />
+              <ChevronRight size={14} className="group-hover:translate-x-0.5 transition" />
             </Link>
           </div>
 
           <div className="space-y-2.5">
-            {groups.flatMap((g: any) => g.programKerja || []).length === 0 ? (
+            {effectiveProkers.length === 0 ? (
               <div className="p-6 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
                 Belum ada program kerja yang diusulkan oleh mahasiswa di kelompok dampingan.
               </div>
             ) : (
-              groups.flatMap((g: any) => g.programKerja || []).slice(0, 4).map((p: any) => {
+              effectiveProkers.slice(0, 4).map((p: any) => {
                 const normU = normalizeStatusUsulan(p.statusUsulan, p.status);
                 const normP = normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status);
                 return (
-                  <div
+                  <Link
                     key={p.id}
-                    className="p-3 bg-slate-50/80 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
+                    to={`/program-kerja-kkn?search=${encodeURIComponent(p.deskripsi || p.judul || "")}`}
+                    className="p-3 bg-slate-50/80 dark:bg-slate-800/80 hover:bg-emerald-50/60 dark:hover:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700/60 transition flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs group cursor-pointer"
+                    title="Klik untuk membuka detail program kerja di Halaman Program Kerja KKN"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{p.deskripsi}</p>
+                        <p className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition truncate">
+                          {p.deskripsi || p.judul}
+                        </p>
                         {p.kategori && (
                           <span className="px-1.5 py-0.5 rounded text-[9.5px] font-extrabold border bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600">
                             {p.kategori}
                           </span>
                         )}
+                        {p.kelompokName && (
+                          <span className="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40">
+                            {p.kelompokName}
+                          </span>
+                        )}
                       </div>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                         Kebutuhan: Rp {Number(p.kebutuhanBiaya || 0).toLocaleString("id-ID")}
+                        {p.waktuPelaksanaan && <span className="ml-2">• {p.waktuPelaksanaan}</span>}
                       </p>
                     </div>
 
@@ -1542,8 +1564,10 @@ export const DplDashboardPage: React.FC = () => {
                           Belum Mulai
                         </span>
                       )}
+
+                      <ChevronRight size={14} className="text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition shrink-0 ml-0.5" />
                     </div>
-                  </div>
+                  </Link>
                 );
               })
             )}
@@ -1551,21 +1575,35 @@ export const DplDashboardPage: React.FC = () => {
 
           <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
             <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 flex-wrap gap-2">
-              <span className="font-semibold">Total Proker: <strong className="text-slate-800 dark:text-slate-200">{groups.flatMap((g: any) => g.programKerja || []).length} Kegiatan</strong></span>
+              <span className="font-semibold">
+                Total Proker: <strong className="text-slate-800 dark:text-slate-200">{effectiveProkers.length} Kegiatan</strong>
+              </span>
               
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-[10.5px]">
                 {/* Rekap Status Usulan */}
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-[10px] text-slate-400 font-bold uppercase">Usulan:</span>
-                  <span className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40 rounded-md font-bold">
-                    Menunggu: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "BELUM_DISETUJUI").length}
-                  </span>
-                  <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 rounded-md font-bold">
-                    Disetujui: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI").length}
-                  </span>
-                  <span className="px-2 py-0.5 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-700/40 rounded-md font-bold">
-                    Ditolak: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DITOLAK").length}
-                  </span>
+                  <Link
+                    to="/program-kerja-kkn?statusUsulan=BELUM_DISETUJUI"
+                    className="px-2 py-0.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40 rounded-md font-bold transition cursor-pointer"
+                    title="Filter Program Kerja Menunggu Persetujuan"
+                  >
+                    Menunggu: {effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "BELUM_DISETUJUI").length}
+                  </Link>
+                  <Link
+                    to="/program-kerja-kkn?statusUsulan=DISETUJUI"
+                    className="px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 rounded-md font-bold transition cursor-pointer"
+                    title="Filter Program Kerja Disetujui"
+                  >
+                    Disetujui: {effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI").length}
+                  </Link>
+                  <Link
+                    to="/program-kerja-kkn?statusUsulan=DITOLAK"
+                    className="px-2 py-0.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-700/40 rounded-md font-bold transition cursor-pointer"
+                    title="Filter Program Kerja Ditolak"
+                  >
+                    Ditolak: {effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DITOLAK").length}
+                  </Link>
                 </div>
 
                 <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
@@ -1573,15 +1611,27 @@ export const DplDashboardPage: React.FC = () => {
                 {/* Rekap Status Pelaksanaan */}
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-[10px] text-slate-400 font-bold uppercase">Pelaksanaan:</span>
-                  <span className="px-2 py-0.5 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 dark:border-emerald-500/50 rounded-md font-black">
-                    Berjalan: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status) === "SEDANG_BERJALAN").length}
-                  </span>
-                  <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-md font-bold">
-                    Selesai: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status) === "SELESAI").length}
-                  </span>
-                  <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-md font-bold">
-                    Belum Mulai: {groups.flatMap((g: any) => g.programKerja || []).filter((p: any) => normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status) === "BELUM_MULAI").length}
-                  </span>
+                  <Link
+                    to="/program-kerja-kkn?statusPelaksanaan=SEDANG_BERJALAN"
+                    className="px-2 py-0.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 dark:border-emerald-500/50 rounded-md font-black transition cursor-pointer"
+                    title="Filter Program Kerja Sedang Berjalan"
+                  >
+                    Berjalan: {effectiveProkers.filter((p: any) => normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status) === "SEDANG_BERJALAN").length}
+                  </Link>
+                  <Link
+                    to="/program-kerja-kkn?statusPelaksanaan=SELESAI"
+                    className="px-2 py-0.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-md font-bold transition cursor-pointer"
+                    title="Filter Program Kerja Selesai"
+                  >
+                    Selesai: {effectiveProkers.filter((p: any) => normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status) === "SELESAI").length}
+                  </Link>
+                  <Link
+                    to="/program-kerja-kkn?statusPelaksanaan=BELUM_MULAI"
+                    className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-md font-bold transition cursor-pointer"
+                    title="Filter Program Kerja Belum Mulai"
+                  >
+                    Belum Mulai: {effectiveProkers.filter((p: any) => normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status) === "BELUM_MULAI").length}
+                  </Link>
                 </div>
               </div>
             </div>

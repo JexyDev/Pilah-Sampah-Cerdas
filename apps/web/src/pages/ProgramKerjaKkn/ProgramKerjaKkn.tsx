@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   FileSpreadsheet,
   Plus,
@@ -50,17 +51,52 @@ export const ProgramKerjaKkn: React.FC = () => {
   const isManagement = ["SUPER_USER", "PANITIA_TASKFORCE", "DEVELOPER"].includes(userRole);
   const canModifyProker = isManagement || isDpl;
 
+  const [searchParams] = useSearchParams();
+
   const [loading, setLoading] = useState(true);
   const [prokerList, setProkerList] = useState<ProgramKerjaItem[]>([]);
   const [kelompokList, setKelompokList] = useState<any[]>([]);
 
   // 5 Filter States (Termasuk Status Usulan & Status Pelaksanaan)
-  const [selectedKelompokId, setSelectedKelompokId] = useState<string>("ALL");
-  const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+  const [selectedKelompokId, setSelectedKelompokId] = useState<string>(
+    searchParams.get("kelompokId") || searchParams.get("groupId") || "ALL"
+  );
+  const [categoryFilter, setCategoryFilter] = useState<string>(
+    searchParams.get("kategori") || searchParams.get("category") || "ALL"
+  );
   const [sourceFilter, setSourceFilter] = useState<string>("ALL");
-  const [statusUsulanFilter, setStatusUsulanFilter] = useState<string>("ALL");
-  const [statusPelaksanaanFilter, setStatusPelaksanaanFilter] = useState<string>("ALL");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [statusUsulanFilter, setStatusUsulanFilter] = useState<string>(
+    searchParams.get("statusUsulan") || "ALL"
+  );
+  const [statusPelaksanaanFilter, setStatusPelaksanaanFilter] = useState<string>(
+    searchParams.get("statusPelaksanaan") || "ALL"
+  );
+  const [searchQuery, setSearchQuery] = useState<string>(
+    searchParams.get("search") || searchParams.get("q") || ""
+  );
+
+  useEffect(() => {
+    const q = searchParams.get("search") || searchParams.get("q");
+    if (q !== null && q !== undefined) {
+      setSearchQuery(q);
+    }
+    const kId = searchParams.get("kelompokId") || searchParams.get("groupId");
+    if (kId) {
+      setSelectedKelompokId(kId);
+    }
+    const su = searchParams.get("statusUsulan");
+    if (su) {
+      setStatusUsulanFilter(su);
+    }
+    const sp = searchParams.get("statusPelaksanaan");
+    if (sp) {
+      setStatusPelaksanaanFilter(sp);
+    }
+    const cat = searchParams.get("kategori") || searchParams.get("category");
+    if (cat) {
+      setCategoryFilter(cat);
+    }
+  }, [searchParams]);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState<number>(1);

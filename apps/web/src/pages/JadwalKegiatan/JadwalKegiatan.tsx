@@ -44,6 +44,7 @@ import {
   TIMELINE_KKN_HEADER,
   TIMELINE_KKN_DATA,
   computeTimelineStatus,
+  parseIndonesianDateRange,
 } from "../../data/timelineKknData";
 import { TimelineKknModal } from "./components/TimelineKknModal";
 import { TimelineImportModal } from "./components/TimelineImportModal";
@@ -60,15 +61,6 @@ const GoogleDriveIcon = () => (
   </svg>
 );
 
-const KELURAHAN_FILTER_OPTIONS = [
-  "ALL",
-  "Dago",
-  "Lebak Gede",
-  "Lebak Siliwangi",
-  "Sadang Serang",
-  "Sekeloa",
-  "Cipaganti",
-];
 
 const BIDANG_FILTER_OPTIONS = [
   "ALL",
@@ -196,62 +188,146 @@ const JadwalKegiatan: React.FC = () => {
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   const [groups, setGroups] = useState<any[]>([]);
+  const [kelurahanOptions, setKelurahanOptions] = useState<string[]>([
+    "Dago",
+    "Lebak Gede",
+    "Lebak Siliwangi",
+    "Sadang Serang",
+    "Sekeloa",
+    "Cipaganti",
+  ]);
+  const [rawTimelineData, setRawTimelineData] = useState<any[]>(TIMELINE_KKN_DATA);
+
+  const fetchKelurahans = async () => {
+    try {
+      const res = await api.get("/areas/kelurahan");
+      const list = res.data?.data || res.data || [];
+      if (Array.isArray(list) && list.length > 0) {
+        const names = list
+          .map((k: any) => (typeof k === "string" ? k : k.name || k.nama))
+          .filter(Boolean);
+        if (names.length > 0) {
+          setKelurahanOptions(Array.from(new Set(names)));
+        }
+      }
+    } catch {
+      // keep fallback
+    }
+  };
 
   const fetchGroups = async () => {
     try {
       const res = await api.get("/kelompok?limit=0");
       const list = res.data?.groups || res.data?.data || (Array.isArray(res.data) ? res.data : []);
       setGroups(list);
+
+      const groupKelurahans = list
+        .map((g: any) => g.kelurahan)
+        .filter((k: any) => Boolean(k) && typeof k === "string");
+      if (groupKelurahans.length > 0) {
+        setKelurahanOptions((prev) => Array.from(new Set([...prev, ...groupKelurahans])));
+      }
     } catch {
       // ignore
     }
   };
 
-  const filterLocalDefaultData = () => {
-    let list = TIMELINE_KKN_DATA.map((item) => ({
+
+
+  const applyTimelineFilters = (sourceList: any[]) => {
+    let list = sourceList.map((item) => ({
       ...item,
       statusPelaksanaan: computeTimelineStatus(
-        (item as any).startDate,
-        (item as any).endDate,
+        item.startDate,
+        item.endDate,
         item.tanggal,
         item.statusPelaksanaan
       ),
     }));
 
     if (selectedKelurahan !== "ALL") {
-      list = list.filter((item) =>
-        (item.kelurahan || "Semua Kelurahan").toLowerCase().includes(selectedKelurahan.toLowerCase()) ||
-        (item.kelurahan || "").includes("Semua")
-      );
+      const qKel = selectedKelurahan.toLowerCase();
+      list = list.filter((item) => {
+        const kel = (item.kelurahan || item.kelompok?.kelurahan || "").toLowerCase();
+        const keg = (item.kegiatanUtama || "").toLowerCase();
+        return (
+          kel.includes(qKel) ||
+          keg.includes(qKel) ||
+          kel.includes("semua") ||
+          kel.includes("coblong")
+        );
+      });
     }
+
     if (selectedBidang !== "ALL") {
-      list = list.filter((item) =>
-        (item.bidangKegiatan || "Tata Kelola & Koordinasi").toLowerCase().includes(selectedBidang.toLowerCase())
-      );
+      const qBid = selectedBidang.toLowerCase();
+      list = list.filter((item) => {
+        const bid = (item.bidangKegiatan || "").toLowerCase();
+        const keg = (item.kegiatanUtama || "").toLowerCase();
+        return bid.includes(qBid) || keg.includes(qBid);
+      });
     }
+
     if (selectedFase !== "ALL") {
-      list = list.filter((item) => item.fase.toLowerCase().includes(selectedFase.toLowerCase()));
+      list = list.filter((item) => (item.fase || "").toLowerCase().includes(selectedFase.toLowerCase()));
     }
+
     if (selectedStatus !== "ALL") {
       list = list.filter((item) => (item.statusPelaksanaan || "BELUM_DIMULAI") === selectedStatus);
     }
+
     if (timelineSearch.trim()) {
       const q = timelineSearch.trim().toLowerCase();
       list = list.filter(
         (item) =>
-          item.tahapMinggu.toLowerCase().includes(q) ||
+          (item.tahapMinggu || "").toLowerCase().includes(q) ||
           (item.kelurahan && item.kelurahan.toLowerCase().includes(q)) ||
+          (item.kelompok?.name && item.kelompok.name.toLowerCase().includes(q)) ||
           (item.bidangKegiatan && item.bidangKegiatan.toLowerCase().includes(q)) ||
-          item.kegiatanUtama.toLowerCase().includes(q) ||
-          item.outputTarget.toLowerCase().includes(q) ||
-          item.picKeterangan.toLowerCase().includes(q) ||
-          item.fase.toLowerCase().includes(q) ||
-          item.tanggal.toLowerCase().includes(q)
+          (item.kegiatanUtama || "").toLowerCase().includes(q) ||
+          (item.outputTarget || "").toLowerCase().includes(q) ||
+          (item.picKeterangan || "").toLowerCase().includes(q) ||
+          (item.fase || "").toLowerCase().includes(q) ||
+          (item.tanggal || "").toLowerCase().includes(q)
       );
     }
-    if (selectedScope !== "ALL" && selectedScope !== "GLOBAL") {
-      list = list.filter((item) => item.kelompokId === selectedScope);
+
+    if (selectedScope !== "ALL") {
+      if (selectedScope === "GLOBAL") {
+        list = list.filter((item) => !item.kelompokId || item.kelompokId === "GLOBAL");
+      } else {
+        list = list.filter((item) => item.kelompokId === selectedScope);
+      }
     }
+
+    if (startDateFilter) {
+      const startF = new Date(startDateFilter);
+      if (!isNaN(startF.getTime())) {
+        list = list.filter((item) => {
+          if (item.endDate) {
+            const e = new Date(item.endDate);
+            return !isNaN(e.getTime()) ? e >= startF : true;
+          }
+          const parsed = parseIndonesianDateRange(item.tanggal);
+          return parsed.end ? parsed.end >= startF : true;
+        });
+      }
+    }
+
+    if (endDateFilter) {
+      const endF = new Date(endDateFilter);
+      if (!isNaN(endF.getTime())) {
+        list = list.filter((item) => {
+          if (item.startDate) {
+            const s = new Date(item.startDate);
+            return !isNaN(s.getTime()) ? s <= endF : true;
+          }
+          const parsed = parseIndonesianDateRange(item.tanggal);
+          return parsed.start ? parsed.start <= endF : true;
+        });
+      }
+    }
+
     setTimelineList(list);
   };
 
@@ -271,29 +347,22 @@ const JadwalKegiatan: React.FC = () => {
       const res = await api.get("/timeline-kkn", { params });
       const rawData = res.data?.data;
       if (Array.isArray(rawData) && rawData.length > 0) {
-        // Dinamisasi status real-time mengikuti kalender hari ini
-        const resolved = rawData.map((item: any) => ({
-          ...item,
-          statusPelaksanaan: computeTimelineStatus(
-            item.startDate,
-            item.endDate,
-            item.tanggal,
-            item.statusPelaksanaan
-          ),
-        }));
-        setTimelineList(resolved);
+        setRawTimelineData(rawData);
+        applyTimelineFilters(rawData);
       } else if (
         Array.isArray(rawData) &&
         rawData.length === 0 &&
-        (selectedScope !== "ALL" || selectedKelurahan !== "ALL" || selectedBidang !== "ALL")
+        (selectedScope !== "ALL" || selectedKelurahan !== "ALL" || selectedBidang !== "ALL" || selectedStatus !== "ALL" || timelineSearch.trim() || selectedFase !== "ALL")
       ) {
         setTimelineList([]);
       } else {
-        filterLocalDefaultData();
+        setRawTimelineData(TIMELINE_KKN_DATA);
+        applyTimelineFilters(TIMELINE_KKN_DATA);
       }
     } catch (err: any) {
       console.warn("[fetchTimelineList] API unavailable, using local default reference data:", err?.message || err);
-      filterLocalDefaultData();
+      setRawTimelineData(TIMELINE_KKN_DATA);
+      applyTimelineFilters(TIMELINE_KKN_DATA);
     } finally {
       setTimelineLoading(false);
     }
@@ -320,6 +389,7 @@ const JadwalKegiatan: React.FC = () => {
   useEffect(() => {
     fetchSchedules();
     fetchGroups();
+    fetchKelurahans();
   }, []);
 
   useEffect(() => {
@@ -467,11 +537,6 @@ const JadwalKegiatan: React.FC = () => {
     document.body.removeChild(link);
     toast.success("Tabel Timeline KKN berhasil diunduh (CSV)");
   };
-
-  useEffect(() => {
-    fetchSchedules();
-    fetchGroups();
-  }, []);
 
 
   const [geofenceMode, setGeofenceMode] = useState<"CIRCLE" | "POLYGON">("CIRCLE");
@@ -1007,7 +1072,7 @@ const JadwalKegiatan: React.FC = () => {
                   className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
                 >
                   <option value="ALL">📍 Semua Kelurahan</option>
-                  {KELURAHAN_FILTER_OPTIONS.filter((k) => k !== "ALL").map((k) => (
+                  {kelurahanOptions.map((k) => (
                     <option key={k} value={k}>
                       📍 Kel. {k}
                     </option>
@@ -1132,9 +1197,18 @@ const JadwalKegiatan: React.FC = () => {
 
           {/* Banner Status Pekan KKN Aktif Saat Ini (Indikator Hijau Konsisten) */}
           {(() => {
+            const todayDate = new Date();
+            const todayFormatted = new Intl.DateTimeFormat("id-ID", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            }).format(todayDate);
+
             const activeItem =
               timelineList.find((t) => t.statusPelaksanaan === "SEDANG_BERJALAN") ||
-              timelineList.find((t) => t.tahapMinggu?.includes("Minggu 2"));
+              rawTimelineData.find((t) => t.statusPelaksanaan === "SEDANG_BERJALAN") ||
+              timelineList[0];
 
             if (!activeItem) return null;
 
@@ -1147,7 +1221,7 @@ const JadwalKegiatan: React.FC = () => {
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
-                        ⚡ Pekan Sedang Berjalan (Hari Ini: 21 Agustus 2026)
+                        ⚡ Pekan Sedang Berjalan (Hari Ini: {todayFormatted})
                       </span>
                       <span className="text-xs font-black text-slate-900 dark:text-slate-100">
                         {activeItem.tahapMinggu} • {activeItem.tanggal}
@@ -2354,6 +2428,7 @@ const JadwalKegiatan: React.FC = () => {
         onSuccess={fetchTimelineList}
         editItem={timelineEditItem}
         groups={groups}
+        kelurahanList={kelurahanOptions}
         defaultKelompokId={selectedScope !== "ALL" ? selectedScope : "GLOBAL"}
       />
 

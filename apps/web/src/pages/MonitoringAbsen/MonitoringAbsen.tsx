@@ -44,6 +44,7 @@ import {
   Settings,
   Users,
   ExternalLink,
+  FileCheck,
 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
@@ -178,22 +179,24 @@ const formatHoursToUnits = (hoursDecimal: number): string => {
 };
 
 const formatTargetDuration = (config: ConfigTargets): string => {
-  if (
-    config.attendanceMinDurationHours !== undefined ||
-    config.attendanceMinDurationMinutes !== undefined ||
-    config.attendanceMinDurationSeconds !== undefined
-  ) {
-    const h = Number(config.attendanceMinDurationHours || 0);
-    const m = Number(config.attendanceMinDurationMinutes || 0);
-    const s = Number(config.attendanceMinDurationSeconds || 0);
+  const h = Number(config.attendanceMinDurationHours || 0);
+  const m = Number(config.attendanceMinDurationMinutes || 0);
+  const s = Number(config.attendanceMinDurationSeconds || 0);
+  const totalMins = h * 60 + m + s / 60;
+
+  if (totalMins > 0) {
     const parts: string[] = [];
     if (h > 0) parts.push(`${h} Jam`);
     if (m > 0) parts.push(`${m} Menit`);
-    if (s > 0) parts.push(`${s} Detik`);
+    if (s > 0 && h === 0 && m === 0) parts.push(`${s} Detik`);
     if (parts.length > 0) return parts.join(" ");
   }
-  if (config.targetHarianJam) {
+  if (config.targetHarianJam && config.targetHarianJam > 0) {
     return formatHoursToUnits(config.targetHarianJam);
+  }
+  if (config.targetTotalJam && config.targetTotalHari && config.targetTotalHari > 0) {
+    const autoDailyHours = config.targetTotalJam / config.targetTotalHari;
+    return formatHoursToUnits(autoDailyHours);
   }
   return "0 Menit";
 };
@@ -630,6 +633,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const [formTotalJam, setFormTotalJam] = useState<number>(200);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
 
+  const calculateAutoDailyDuration = (totalJam: number, totalHari: number) => {
+    const totalMins = totalHari > 0 ? Math.round((totalJam * 60) / totalHari) : 0;
+    return {
+      jam: Math.floor(totalMins / 60),
+      menit: totalMins % 60,
+      totalMins,
+    };
+  };
+
   const calculatePreciseTargetJam = (totalHari: number, jam: number, menit: number): number => {
     const totalMins = totalHari * (jam * 60 + menit);
     const totalHours = totalMins / 60;
@@ -639,22 +651,25 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const openConfigModal = () => {
     const parsedDays = parseDaysFromString(configTargets.hariKerja);
     const parsedTimes = parseTimeRange(configTargets.jamKerja);
-    const hasExplicitMinDuration =
-      configTargets.attendanceMinDurationHours !== undefined ||
-      configTargets.attendanceMinDurationMinutes !== undefined;
-    const durJam = hasExplicitMinDuration
-      ? Number(configTargets.attendanceMinDurationHours || 0)
-      : (configTargets.targetHarianJam ? Math.floor(configTargets.targetHarianJam) : 4);
-    const durMenit = hasExplicitMinDuration
-      ? Number(configTargets.attendanceMinDurationMinutes || 0)
-      : (configTargets.targetHarianJam ? Math.round(((configTargets.targetHarianJam * 60) % 60)) : 0);
     const pekan = configTargets.targetPekan || 10;
     const daysCount = parsedDays.length || 5;
     const totalHari = configTargets.targetTotalHari || (pekan * daysCount);
-    const calcAutoJam = calculatePreciseTargetJam(totalHari, durJam, durMenit);
     const totalJam = (configTargets.targetTotalJam !== undefined && configTargets.targetTotalJam > 0)
       ? configTargets.targetTotalJam
-      : calcAutoJam;
+      : 200;
+
+    // Hitung otomatis durasi harian dari targetTotalJam / totalHari
+    const autoDaily = calculateAutoDailyDuration(totalJam, totalHari);
+    const configuredDailyMins = (Number(configTargets.attendanceMinDurationHours || 0) * 60) + Number(configTargets.attendanceMinDurationMinutes || 0);
+    // Jika durasi harian di config sudah selaras dengan akumulasi target total jam, gunakan itu; jika tidak atau data lama (seperti 1 menit), gunakan autoDaily
+    const isConfiguredDurationSynced = configuredDailyMins > 0 && Math.abs((configuredDailyMins * totalHari) - (totalJam * 60)) <= 30;
+
+    const durJam = isConfiguredDurationSynced
+      ? Number(configTargets.attendanceMinDurationHours || 0)
+      : autoDaily.jam;
+    const durMenit = isConfiguredDurationSynced
+      ? Number(configTargets.attendanceMinDurationMinutes || 0)
+      : autoDaily.menit;
 
     setFormDays(parsedDays);
     setFormStartTime(parsedTimes.start);
@@ -675,9 +690,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
     setFormDays(nextDays);
     const newTotalHari = formTargetPekan * nextDays.length;
-    const newTotalJam = calculatePreciseTargetJam(newTotalHari, formDurasiJam, formDurasiMenit);
     setFormTotalHari(newTotalHari);
-    setFormTotalJam(newTotalJam);
+    // Otomatisasi: Hitung minimal durasi harian dari target total jam / total hari baru
+    const autoDaily = calculateAutoDailyDuration(formTotalJam, newTotalHari);
+    setFormDurasiJam(autoDaily.jam);
+    setFormDurasiMenit(autoDaily.menit);
   };
 
   const handleToggleDay = (day: string) => {
@@ -693,31 +710,46 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     }
     setFormDays(nextDays);
     const newTotalHari = formTargetPekan * nextDays.length;
-    const newTotalJam = calculatePreciseTargetJam(newTotalHari, formDurasiJam, formDurasiMenit);
     setFormTotalHari(newTotalHari);
-    setFormTotalJam(newTotalJam);
+    // Otomatisasi: Hitung minimal durasi harian dari target total jam / total hari baru
+    const autoDaily = calculateAutoDailyDuration(formTotalJam, newTotalHari);
+    setFormDurasiJam(autoDaily.jam);
+    setFormDurasiMenit(autoDaily.menit);
   };
 
   const handlePekanChange = (pekan: number) => {
     setFormTargetPekan(pekan);
     const daysCount = formDays.length || 1;
     const newTotalHari = pekan * daysCount;
-    const newTotalJam = calculatePreciseTargetJam(newTotalHari, formDurasiJam, formDurasiMenit);
     setFormTotalHari(newTotalHari);
-    setFormTotalJam(newTotalJam);
+    // Otomatisasi: Hitung minimal durasi harian dari target total jam / total hari baru
+    const autoDaily = calculateAutoDailyDuration(formTotalJam, newTotalHari);
+    setFormDurasiJam(autoDaily.jam);
+    setFormDurasiMenit(autoDaily.menit);
   };
 
   const handleDurasiChange = (jam: number, menit: number) => {
     setFormDurasiJam(jam);
     setFormDurasiMenit(menit);
+    // Otomatisasi: Akumulasikan ke total jam kumulatif
     const newTotalJam = calculatePreciseTargetJam(formTotalHari, jam, menit);
     setFormTotalJam(newTotalJam);
   };
 
   const handleTotalHariChange = (hari: number) => {
     setFormTotalHari(hari);
-    const newTotalJam = calculatePreciseTargetJam(hari, formDurasiJam, formDurasiMenit);
-    setFormTotalJam(newTotalJam);
+    // Otomatisasi: Hitung minimal durasi harian dari target total jam / total hari baru
+    const autoDaily = calculateAutoDailyDuration(formTotalJam, hari);
+    setFormDurasiJam(autoDaily.jam);
+    setFormDurasiMenit(autoDaily.menit);
+  };
+
+  const handleTotalJamChange = (totalJam: number) => {
+    setFormTotalJam(totalJam);
+    // Otomatisasi: Hitung minimal durasi harian dari total jam / total hari
+    const autoDaily = calculateAutoDailyDuration(totalJam, formTotalHari);
+    setFormDurasiJam(autoDaily.jam);
+    setFormDurasiMenit(autoDaily.menit);
   };
 
   const fetchConfigTargets = async () => {
@@ -795,24 +827,27 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   }, [visibleSchedules, selectedScheduleId]);
 
   const scheduleTargetHours = useMemo(() => {
-    if (
-      configTargets.attendanceMinDurationHours !== undefined ||
-      configTargets.attendanceMinDurationMinutes !== undefined ||
-      configTargets.attendanceMinDurationSeconds !== undefined
-    ) {
-      const h = Number(configTargets.attendanceMinDurationHours || 0);
-      const m = Number(configTargets.attendanceMinDurationMinutes || 0);
-      const s = Number(configTargets.attendanceMinDurationSeconds || 0);
-      const totalH = (h * 3600 + m * 60 + s) / 3600;
-      if (totalH > 0) return totalH;
-    }
+    const h = Number(configTargets.attendanceMinDurationHours || 0);
+    const m = Number(configTargets.attendanceMinDurationMinutes || 0);
+    const s = Number(configTargets.attendanceMinDurationSeconds || 0);
+    const totalH = (h * 3600 + m * 60 + s) / 3600;
+    if (totalH > 0) return totalH;
+
     const harian = Number(configTargets.targetHarianJam);
-    return !isNaN(harian) && harian > 0 ? harian : 2;
+    if (!isNaN(harian) && harian > 0) return harian;
+
+    if (configTargets.targetTotalJam && configTargets.targetTotalHari && configTargets.targetTotalHari > 0) {
+      return configTargets.targetTotalJam / configTargets.targetTotalHari;
+    }
+
+    return 4;
   }, [
     configTargets.attendanceMinDurationHours,
     configTargets.attendanceMinDurationMinutes,
     configTargets.attendanceMinDurationSeconds,
     configTargets.targetHarianJam,
+    configTargets.targetTotalJam,
+    configTargets.targetTotalHari,
   ]);
 
   // Attendance metrics counts
@@ -2014,6 +2049,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             <MapIcon size={14} className={showMap ? "text-emerald-600" : "text-slate-500"} />
             <span>{showMap ? "Sembunyikan Peta" : "Buka Peta GPS"}</span>
           </button>
+
+          <Link
+            to="/ajuan-absensi"
+            className="px-3 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            title="Buka Halaman Verifikasi Ajuan Izin & Sakit"
+          >
+            <FileCheck size={14} className="text-amber-600 dark:text-amber-400" />
+            <span>Pengajuan Izin/Sakit</span>
+          </Link>
 
           <button
             type="button"
@@ -3894,10 +3938,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
                 {/* Minimal Durasi / Hari */}
                 <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
-                  <label className="block text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                    <Hourglass size={14} className="text-emerald-600" />
-                    Target Minimal Durasi / Hari
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                      <Hourglass size={14} className="text-emerald-600" />
+                      Target Minimal Durasi / Hari
+                    </label>
+                    <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-100/80 dark:bg-emerald-900/50 px-2 py-0.5 rounded-md">
+                      Otomatis
+                    </span>
+                  </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <span className="block text-[10px] font-bold text-slate-400 mb-0.5">Jam</span>
@@ -3926,7 +3975,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     </div>
                   </div>
                   <span className="block text-[10px] text-slate-500 font-medium">
-                    Total Durasi: <strong>{formDurasiJam} Jam {formDurasiMenit > 0 ? `${formDurasiMenit} Menit` : ''}</strong> / Hari
+                    Total Durasi: <strong>{formDurasiJam} Jam {formDurasiMenit > 0 ? `${formDurasiMenit} Menit` : ''}</strong> / Hari ({formTotalJam} Jam ÷ {formTotalHari} Hari)
                   </span>
                 </div>
               </div>
@@ -3984,7 +4033,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       step="any"
                       required
                       value={formTotalJam}
-                      onChange={(e) => setFormTotalJam(Math.max(0.01, Number(e.target.value) || 0))}
+                      onChange={(e) => handleTotalJamChange(Math.max(0.01, Number(e.target.value) || 0))}
                       className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-black text-emerald-800 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
@@ -4015,7 +4064,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           Rincian & Relasi Kalkulasi Target
                         </span>
                         <span className="text-emerald-700 dark:text-emerald-300 font-extrabold">
-                          {kumulatifFormatted} ({autoHours} Jam)
+                          {kumulatifFormatted} ({totalMins.toLocaleString('id-ID')} Menit)
                         </span>
                       </div>
                       <div className="text-[11px] text-emerald-800/90 dark:text-emerald-300/90 font-semibold space-y-1 pt-0.5">
@@ -4030,7 +4079,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         <div className="flex items-center justify-between pt-0.5 border-t border-emerald-200/50 dark:border-emerald-800/50">
                           <span>Kalkulasi Kumulatif:</span>
                           <span className="font-black text-emerald-900 dark:text-emerald-200">
-                            {formTotalHari} Hari × {dailyFormatted} = {totalMins.toLocaleString('id-ID')} Menit ({kumulatifFormatted})
+                            {formTotalHari} Hari × {dailyFormatted} = {kumulatifFormatted} ({totalMins.toLocaleString('id-ID')} Menit)
                           </span>
                         </div>
                       </div>

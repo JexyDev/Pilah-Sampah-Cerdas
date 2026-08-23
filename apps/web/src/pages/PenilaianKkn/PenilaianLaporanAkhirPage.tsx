@@ -27,6 +27,9 @@ import {
   Save,
   Printer,
   Award,
+  ExternalLink,
+  AlertCircle,
+  FileCheck,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -50,6 +53,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
   const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState<boolean>(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState<boolean>(false);
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const [pdfTab, setPdfTab] = useState<"viewer" | "details">("viewer");
 
   // Form State for Assessment
   const [scoreInput, setScoreInput] = useState<number>(100);
@@ -234,6 +238,44 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
     }
   };
 
+  // Clean Markdown/Asterisks from Title
+  const getCleanTitle = (title?: string | null) => {
+    if (!title) return "Laporan Akhir KKN Tematik Coblong";
+    return title.replace(/\*\*/g, "").trim();
+  };
+
+  // Convert Google Drive or standard document URLs to Embeddable Preview URL
+  const getEmbedUrl = (url?: string | null) => {
+    if (!url) return null;
+    const trimmed = url.trim();
+
+    // Google Drive File ID
+    const driveFileMatch = trimmed.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (driveFileMatch && driveFileMatch[1]) {
+      return `https://drive.google.com/file/d/${driveFileMatch[1]}/preview`;
+    }
+
+    // Google Drive open?id=ID
+    const driveIdMatch = trimmed.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+    if (driveIdMatch && driveIdMatch[1]) {
+      return `https://drive.google.com/file/d/${driveIdMatch[1]}/preview`;
+    }
+
+    // Google Drive Folder URL
+    const driveFolderMatch = trimmed.match(/drive\.google\.com\/drive\/folders\/([a-zA-Z0-9_-]+)/);
+    if (driveFolderMatch && driveFolderMatch[1]) {
+      return `https://drive.google.com/embeddedfolderview?id=${driveFolderMatch[1]}#grid`;
+    }
+
+    // Google Docs / Sheets / Slides
+    const docsMatch = trimmed.match(/docs\.google\.com\/(document|presentation|spreadsheets)\/d\/([a-zA-Z0-9_-]+)/);
+    if (docsMatch && docsMatch[1] && docsMatch[2]) {
+      return `https://docs.google.com/${docsMatch[1]}/d/${docsMatch[2]}/preview`;
+    }
+
+    return trimmed;
+  };
+
   // Print PDF Lembar Evaluasi
   const handlePrintEvaluation = () => {
     if (!selectedStudent) return;
@@ -275,7 +317,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
           <tr><td class="label">Nama Mahasiswa</td><td><strong>${selectedStudent.nama}</strong></td></tr>
           <tr><td class="label">NIM</td><td>${selectedStudent.nim}</td></tr>
           <tr><td class="label">Kelompok KKN</td><td>${selectedStudent.kelompok}</td></tr>
-          <tr><td class="label">Judul Laporan</td><td><strong>${selectedStudent.judulLaporan || "-"}</strong></td></tr>
+          <tr><td class="label">Judul Laporan</td><td><strong>${getCleanTitle(selectedStudent.judulLaporan)}</strong></td></tr>
           <tr><td class="label">Dosen Pembimbing (DPL)</td><td>${selectedStudent.dplNama || "Dosen Pendamping Lapangan"}</td></tr>
         </table>
         <table class="score-table">
@@ -312,6 +354,97 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
             <div class="sig-space"></div>
             <p style="font-weight: bold; text-decoration: underline; margin: 0;">${selectedStudent.dplNama || "Dosen Pembimbing Lapangan"}</p>
             <p style="font-size: 8pt; color: #64748b; margin: 0;">DPL KKN Tematik</p>
+          </div>
+        </div>
+        <script>window.onload = function() { window.print(); }</script>
+      </body>
+      </html>
+    `;
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
+  // Print PDF Dokumen Lengkap Lembar Pengesahan Laporan Akhir
+  const handlePrintLaporanDocument = (student: LaporanAkhirItem) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("Gagal membuka jendela cetak. Mohon izinkan pop-up.");
+      return;
+    }
+
+    const cleanTitle = getCleanTitle(student.judulLaporan);
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Laporan Akhir KKN - ${student.nama}</title>
+        <style>
+          @page { size: A4 portrait; margin: 20mm; }
+          body { font-family: 'Times New Roman', Times, serif; color: #111827; font-size: 12pt; line-height: 1.6; margin: 0; padding: 0; }
+          .kop { text-align: center; border-bottom: 3px double #111827; padding-bottom: 12px; margin-bottom: 24px; }
+          .kop h3 { margin: 0; font-size: 13pt; text-transform: uppercase; font-weight: normal; }
+          .kop h2 { margin: 4px 0; font-size: 15pt; font-weight: bold; }
+          .kop p { margin: 0; font-size: 10pt; color: #374151; }
+          .doc-title { text-align: center; margin: 30px 0 20px 0; }
+          .doc-title h1 { margin: 0; font-size: 15pt; font-weight: bold; text-transform: uppercase; }
+          .doc-title p { margin: 8px 0 0 0; font-size: 11.5pt; font-style: italic; font-weight: bold; }
+          .meta-box { margin: 24px auto; max-width: 100%; border: 1px solid #cbd5e1; border-collapse: collapse; width: 100%; }
+          .meta-box td { padding: 8px 12px; font-size: 10.5pt; border: 1px solid #cbd5e1; }
+          .meta-box td.label { width: 32%; font-weight: bold; background: #f8fafc; }
+          .section-heading { font-weight: bold; font-size: 11.5pt; text-transform: uppercase; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #94a3b8; padding-bottom: 4px; }
+          .content-text { text-align: justify; margin-bottom: 14px; text-indent: 30px; font-size: 11pt; }
+          .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 50px; text-align: center; page-break-inside: avoid; }
+          .sig-name { font-weight: bold; text-decoration: underline; margin-top: 60px; margin-bottom: 2px; }
+          .sig-sub { font-size: 10pt; color: #4b5563; margin: 0; }
+        </style>
+      </head>
+      <body>
+        <div class="kop">
+          <h3>Pemerintah Kota Bandung &bull; Lembaga Penelitian & Pengabdian Masyarakat</h3>
+          <h2>KULIAH KERJA NYATA (KKN) TEMATIK BERSEKA</h2>
+          <p>Wilayah Kecamatan Coblong - Sistem Pengelolaan Sampah Cerdas & Berkelanjutan</p>
+        </div>
+
+        <div class="doc-title">
+          <h1>LEMBAR PENGESAHAN LAPORAN AKHIR KKN</h1>
+          <p>"${cleanTitle}"</p>
+        </div>
+
+        <table class="meta-box">
+          <tr><td class="label">Penyusun</td><td><strong>${student.nama}</strong> (NIM: ${student.nim})</td></tr>
+          <tr><td class="label">Program Studi / Fakultas</td><td>${student.jurusan || "Teknik Informatika"} / ${student.fakultas || "Teknik & Ilmu Komputer"}</td></tr>
+          <tr><td class="label">Kelompok Binaan</td><td>${student.kelompok}</td></tr>
+          <tr><td class="label">DPL Pembimbing</td><td>${student.dplNama || "Dosen Pendamping Lapangan"} (NIP: ${student.dplNip || "-"})</td></tr>
+          <tr><td class="label">Status Evaluasi</td><td>${student.statusTelaah || student.status || "Terverifikasi Resmi"}</td></tr>
+          <tr><td class="label">Tautan Dokumen Sumber</td><td>${student.fileUrl || "-"}</td></tr>
+        </table>
+
+        <div class="section-heading">I. Ruang Lingkup &amp; Latar Belakang Program</div>
+        <p class="content-text">
+          Program Kuliah Kerja Nyata (KKN) Tematik BERSEKA di wilayah ${student.kelompok} difokuskan pada optimalisasi pengelolaan dan pemilahan sampah organik dan anorganik berbasis partisipasi masyarakat di tingkat RW wilayah Kecamatan Coblong.
+        </p>
+
+        <div class="section-heading">II. Capaian &amp; Rekapitulasi Pelaksanaan</div>
+        <p class="content-text">
+          Seluruh rangkaian kegiatan pendampingan masyarakat, sosialisasi pemilahan sampah dari sumber rumah tangga, pendataan warga binaan, serta pencatatan timbulan residu telah dilaksanakan dan dilaporkan secara berkala sesuai ketentuan kurikulum KKN Tematik 2026.
+        </p>
+
+        <div class="section-heading">III. Evaluasi &amp; Catatan Dosen Pembimbing</div>
+        <p class="content-text">
+          ${student.catatan || "Laporan akhir telah ditelaah dan memenuhi standar kelayakan laporan program KKN Tematik BERSEKA Kota Bandung."}
+        </p>
+
+        <div class="signature-grid">
+          <div>
+            <p class="sig-sub">Mahasiswa Penyusun,</p>
+            <div class="sig-name">${student.nama}</div>
+            <p class="sig-sub">NIM. ${student.nim}</p>
+          </div>
+          <div>
+            <p class="sig-sub">Dosen Pembimbing Lapangan,</p>
+            <div class="sig-name">${student.dplNama || "Dosen Pembimbing Lapangan"}</div>
+            <p class="sig-sub">NIP. ${student.dplNip || "DPL KKN"}</p>
           </div>
         </div>
         <script>window.onload = function() { window.print(); }</script>
@@ -647,22 +780,35 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                         : "italic text-slate-400"
                     }
                   >
-                    {selectedStudent.judulLaporan || "Belum ada judul laporan yang diajukan"}
+                    {getCleanTitle(selectedStudent.judulLaporan) || "Belum ada judul laporan yang diajukan"}
                   </span>
                 </div>
 
                 <div className="pt-2.5 border-t border-slate-200/80 dark:border-slate-700 flex justify-between items-center">
                   <span className="text-slate-500 font-semibold">Berkas Laporan:</span>
                   {selectedStudent.fileUrl ? (
-                    <a
-                      href={selectedStudent.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-semibold text-[#009966] hover:underline flex items-center gap-1"
-                    >
-                      <FileText size={13} />
-                      <span>Lihat Berkas Laporan</span>
-                    </a>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAssessmentModalOpen(false);
+                          setIsPdfModalOpen(true);
+                        }}
+                        className="font-semibold text-[#009966] hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <FileText size={13} />
+                        <span>Pratinjau PDF</span>
+                      </button>
+                      <a
+                        href={selectedStudent.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1 text-slate-400 hover:text-blue-600 transition"
+                        title="Buka di Tab Baru"
+                      >
+                        <ExternalLink size={13} />
+                      </a>
+                    </div>
                   ) : (
                     <span className="font-medium text-amber-600 dark:text-amber-400">
                       Belum diunggah oleh mahasiswa
@@ -849,93 +995,278 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
       {isPdfModalOpen && selectedStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
           <div
-            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden text-slate-800 dark:text-slate-100 animate-in zoom-in-95 duration-150"
+            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-5xl w-full max-h-[94vh] flex flex-col overflow-hidden text-slate-800 dark:text-slate-100 animate-in zoom-in-95 duration-150"
             role="dialog"
             aria-modal="true"
           >
             {/* Header Modal */}
-            <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-base shadow-sm">
+            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-base shadow-sm shrink-0">
                   <FileText size={20} />
                 </div>
-                <div>
-                  <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 truncate">
                     Dokumen Laporan Akhir KKN
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5 truncate">
                     {selectedStudent.nama} &bull; NIM: {selectedStudent.nim} &bull; {selectedStudent.kelompok}
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsPdfModalOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
 
-            {/* Document Body / Viewer Simulation */}
-            <div className="p-6 sm:p-8 overflow-y-auto space-y-6 bg-slate-100/50 dark:bg-slate-950/40">
-              <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm max-w-2xl mx-auto space-y-6 text-slate-800 dark:text-slate-200">
-                {/* Cover Title */}
-                <div className="text-center pb-6 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#009966] block mb-1">
-                    LAPORAN AKHIR KKN TEMATIK
-                  </span>
-                  <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100">
-                    {selectedStudent.judulLaporan || `Laporan Akhir KKN Tematik Coblong - ${selectedStudent.kelompok}`}
-                  </h2>
-                  <p className="text-xs text-slate-500 mt-2">
-                    Disusun oleh: <strong>{selectedStudent.nama}</strong> ({selectedStudent.nim})
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    Program Studi {selectedStudent.jurusan || "S1"} &bull; Kecamatan Coblong &bull; Periode 2026
-                  </p>
-                </div>
-
-                {/* Ringkasan Eksekutif */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-black uppercase text-slate-900 dark:text-slate-100 tracking-wider">
-                    I. Ringkasan Eksekutif
-                  </h4>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed text-justify">
-                    Program KKN Tematik ini difokuskan pada penguatan pemilahan sampah organik dan anorganik di tingkat rumah tangga, implementasi digitalisasi pencatatan timbulan residu, serta edukasi komposting mandiri di Kecamatan Coblong. Selama periode kegiatan, tercatat partisipasi aktif warga dengan capaian tingkat kepatuhan pemilahan yang meningkat secara signifikan.
-                  </p>
-                </div>
-
-                {/* Metodologi & Capaian */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-black uppercase text-slate-900 dark:text-slate-100 tracking-wider">
-                    II. Capaian Program & Hasil Kegiatan
-                  </h4>
-                  <ul className="list-disc list-inside text-xs text-slate-600 dark:text-slate-300 space-y-1">
-                    <li>Pemasangan dan aktivasi QR Code tempat sampah terintegrasi pada rumah tangga binaan.</li>
-                    <li>Sosialisasi langsung metode pemilahan sampah organik untuk pakan maggot BSF dan kompos komunal.</li>
-                    <li>Pencatatan data penimbangan berkala bersama petugas residu di TPS3R wilayah Coblong.</li>
-                  </ul>
-                </div>
-
-                {/* Kesimpulan */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-black uppercase text-slate-900 dark:text-slate-100 tracking-wider">
-                    III. Kesimpulan & Rekomendasi
-                  </h4>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed text-justify">
-                    Digitalisasi pemilahan sampah terbukti meningkatkan kesadaran dan akuntabilitas pemilahan sampah warga. Disarankan agar kemitraan antara pengurus RW, warga, dan dinas terkait terus diperkuat pasca-KKN.
-                  </p>
-                </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {selectedStudent.fileUrl && (
+                  <a
+                    href={selectedStudent.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition cursor-pointer"
+                    title="Buka Dokumen di Tab Baru"
+                  >
+                    <ExternalLink size={14} />
+                    <span>Buka Berkas</span>
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handlePrintLaporanDocument(selectedStudent)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+                  title="Cetak Lembar Resmi Laporan"
+                >
+                  <Printer size={14} />
+                  <span className="hidden sm:inline">Cetak Dokumen</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsPdfModalOpen(false)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
               </div>
             </div>
 
-            {/* Footer Modal */}
-            <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
-              <span className="text-xs text-slate-500">
-                Format: Dokumen PDF Resmi &bull; Status: Terverifikasi
-              </span>
+            {/* Subheader Tab Navigation */}
+            <div className="px-5 py-2.5 bg-slate-100/60 dark:bg-slate-800/40 border-b border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPdfTab("viewer")}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                    pdfTab === "viewer"
+                      ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs border border-slate-200/80 dark:border-slate-700"
+                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  }`}
+                >
+                  <FileText size={13} />
+                  <span>Pratinjau Berkas Dokumen</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPdfTab("details")}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                    pdfTab === "details"
+                      ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-2xs border border-slate-200/80 dark:border-slate-700"
+                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  }`}
+                >
+                  <FileCheck size={13} />
+                  <span>Lembar Pengesahan &amp; Rincian</span>
+                </button>
+              </div>
+
+              <div className="hidden md:flex items-center gap-2 text-slate-500 text-[11.5px]">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  {selectedStudent.kelompok}
+                </span>
+                <span>&bull;</span>
+                <span>DPL: {selectedStudent.dplNama || "DPL KKN"}</span>
+              </div>
+            </div>
+
+            {/* Document Body / Viewer */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-100/50 dark:bg-slate-950/40">
+              {pdfTab === "viewer" ? (
+                selectedStudent.fileUrl ? (
+                  <div className="flex flex-col h-full space-y-3">
+                    {/* Top Link Banner */}
+                    <div className="p-3 bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2 text-blue-900 dark:text-blue-200 font-medium min-w-0">
+                        <ExternalLink size={15} className="text-blue-600 shrink-0" />
+                        <span className="truncate">
+                          Tautan Berkas Laporan:{" "}
+                          <a
+                            href={selectedStudent.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-bold underline hover:text-blue-700"
+                          >
+                            {selectedStudent.fileName || selectedStudent.fileUrl}
+                          </a>
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <a
+                          href={selectedStudent.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition flex items-center gap-1.5 shadow-2xs text-[11.5px]"
+                        >
+                          <span>Buka Dokumen Penuh</span>
+                          <ExternalLink size={12} />
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* IFrame Viewer */}
+                    <div className="flex-1 min-h-[520px] sm:min-h-[600px] w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs relative">
+                      <iframe
+                        src={getEmbedUrl(selectedStudent.fileUrl) || selectedStudent.fileUrl}
+                        title={`Dokumen Laporan Akhir - ${selectedStudent.nama}`}
+                        className="w-full h-full min-h-[520px] sm:min-h-[600px] border-0"
+                        allow="autoplay"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-16 px-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4 max-w-lg mx-auto shadow-xs">
+                    <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
+                      <AlertCircle size={28} />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                        Berkas Dokumen Belum Diunggah
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        Mahasiswa atau kelompok belum menyertakan tautan Google Drive / file PDF dokumen laporan akhir.
+                      </p>
+                    </div>
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setPdfTab("details")}
+                        className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition"
+                      >
+                        Lihat Rincian Laporan
+                      </button>
+                    </div>
+                  </div>
+                )
+              ) : (
+                /* Lembar Rincian & Pengesahan Resmi */
+                <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs max-w-3xl mx-auto space-y-6 text-slate-800 dark:text-slate-200">
+                  {/* Official Header */}
+                  <div className="text-center pb-6 border-b border-slate-200 dark:border-slate-800">
+                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#009966] block mb-1">
+                      LEMBAR PENGESAHAN LAPORAN AKHIR KKN
+                    </span>
+                    <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100">
+                      {getCleanTitle(selectedStudent.judulLaporan)}
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-2">
+                      Wilayah Dampingan: <strong>{selectedStudent.kelompok}</strong> &bull; Kecamatan Coblong &bull; Periode 2026
+                    </p>
+                  </div>
+
+                  {/* Metadata Table Card */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                      <span className="text-slate-500 font-semibold block text-[11px]">Mahasiswa Penyusun</span>
+                      <span className="font-bold text-slate-900 dark:text-slate-100 text-sm block">
+                        {selectedStudent.nama}
+                      </span>
+                      <span className="font-mono text-slate-500 block">NIM: {selectedStudent.nim}</span>
+                    </div>
+
+                    <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                      <span className="text-slate-500 font-semibold block text-[11px]">Program Studi &amp; Fakultas</span>
+                      <span className="font-bold text-slate-900 dark:text-slate-100 block">
+                        {selectedStudent.jurusan || "Teknik Informatika"}
+                      </span>
+                      <span className="text-slate-500 block">{selectedStudent.fakultas || "Teknik & Ilmu Komputer"}</span>
+                    </div>
+
+                    <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                      <span className="text-slate-500 font-semibold block text-[11px]">Dosen Pembimbing Lapangan</span>
+                      <span className="font-bold text-slate-900 dark:text-slate-100 block">
+                        {selectedStudent.dplNama || "Dosen Pendamping Lapangan"}
+                      </span>
+                      <span className="font-mono text-slate-500 block">NIP: {selectedStudent.dplNip || "-"}</span>
+                    </div>
+
+                    <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                      <span className="text-slate-500 font-semibold block text-[11px]">Status &amp; Nilai Laporan</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-[#009966] text-sm">
+                          {selectedStudent.status === "Sudah Dinilai"
+                            ? `Nilai: ${selectedStudent.nilai ?? "-"}`
+                            : "Belum Dinilai"}
+                        </span>
+                        {selectedStudent.predikat && (
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-[10.5px]">
+                            {selectedStudent.predikat}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-slate-400 block text-[10.5px]">
+                        Status Telaah: {selectedStudent.statusTelaah || "MENUNGGU_TELAAH"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Summary & Scope */}
+                  <div className="space-y-2 text-xs">
+                    <h4 className="font-black uppercase text-slate-900 dark:text-slate-100 tracking-wider">
+                      Ringkasan Ruang Lingkup Laporan
+                    </h4>
+                    <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-justify">
+                      Laporan akhir ini memuat dokumentasi menyeluruh implementasi sistem pemilahan sampah cerdas BERSEKA, pencatatan residu sampah, pembinaan warga di {selectedStudent.kelompok}, serta evaluasi capaian indikator keberlanjutan program KKN Tematik 2026.
+                    </p>
+                  </div>
+
+                  {/* Tautan Berkas */}
+                  {selectedStudent.fileUrl && (
+                    <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 text-xs">
+                      <div>
+                        <span className="text-slate-500 block text-[11px]">Tautan Berkas Laporan:</span>
+                        <span className="font-mono text-blue-600 dark:text-blue-400 font-semibold truncate block max-w-md">
+                          {selectedStudent.fileUrl}
+                        </span>
+                      </div>
+                      <a
+                        href={selectedStudent.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition flex items-center gap-1 shrink-0"
+                      >
+                        <span>Buka</span>
+                        <ExternalLink size={12} />
+                      </a>
+                    </div>
+                  )}
+
+                  {/* Action Print */}
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handlePrintLaporanDocument(selectedStudent)}
+                      className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <Printer size={14} />
+                      <span>Cetak Lembar Dokumen Resmi (PDF)</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Modal */}
+            <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between gap-3">
+              <span className="text-xs text-slate-500 hidden sm:inline">
+                Format: Dokumen Laporan KKN Resmi &bull; Status: {selectedStudent.statusTelaah || selectedStudent.status}
+              </span>
+              <div className="flex items-center gap-2 ml-auto">
                 <button
                   type="button"
                   onClick={() => {

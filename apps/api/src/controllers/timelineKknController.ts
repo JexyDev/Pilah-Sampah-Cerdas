@@ -14,11 +14,13 @@ export const timelineKknController = {
       const userRole = String(req.user?.role || "").toUpperCase();
       const userId = req.user?.userId || (req.user as any)?.id;
 
-      const { kelompokId, fase, statusPelaksanaan, search, startDate, endDate } = req.query;
+      const { kelompokId, kelurahan, bidangKegiatan, fase, statusPelaksanaan, search, startDate, endDate } = req.query;
 
       const items = await timelineKknService.getAll(
         {
           kelompokId: kelompokId ? String(kelompokId) : undefined,
+          kelurahan: kelurahan ? String(kelurahan) : undefined,
+          bidangKegiatan: bidangKegiatan ? String(bidangKegiatan) : undefined,
           fase: fase ? String(fase) : undefined,
           statusPelaksanaan: statusPelaksanaan ? String(statusPelaksanaan) : undefined,
           search: search ? String(search) : undefined,

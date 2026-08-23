@@ -54,6 +54,129 @@ export function getRoleString(role: any): string {
   return String(role).toUpperCase();
 }
 
+export const REAL_32_DPL_STANDARDIZED = [
+  { no: 1, name: "Muhammad Aksan Ipaenin, S.T. M.Sc", phone: "+6285294754801", rawPhone: "085294754801", nip: "4127.99.90.268", prodi: "S1 Teknik Sipil", kelompok: "Kelompok 1 Lebak Gede", kelurahan: "Lebak Gede" },
+  { no: 2, name: "Assoc.Prof. Dr. Wartika S.Kom.,MT", phone: "+62895337560201", rawPhone: "0895337560201", nip: "4127.70.26.002", prodi: "S1 Sistem Informasi", kelompok: "Kelompok 2 Lebak Gede", kelurahan: "Lebak Gede" },
+  { no: 3, name: "Myrna Dwi Rahmatya, S.Kom.,M.Kom", phone: "+6285320322236", rawPhone: "085320322236", nip: "4127.70.26.111", prodi: "D3 Manajemen Informatika", kelompok: "Kelompok 3 Lebak Gede", kelurahan: "Lebak Gede" },
+  { no: 4, name: "Alif Finandhita, S.Kom., M.T.", phone: "+6282115865070", rawPhone: "082115865070", nip: "4127.70.06.025", prodi: "S1 Teknik Informatika", kelompok: "Kelompok 4 Lebak Gede", kelurahan: "Lebak Gede" },
+  { no: 5, name: "Adam Mukharil Bachtiar, S.Kom., M.T., Ph.D", phone: "+6281318920636", rawPhone: "081318920636", nip: "4127.70.06.024", prodi: "S1 Teknik Informatika", kelompok: "Kelompok 1 Sekeloa", kelurahan: "Sekeloa" },
+  { no: 6, name: "Dr. Eng. Siswanti Zuraida, S.Pd., M.T.", phone: "+6288210288162", rawPhone: "088210288162", nip: "4127.88.80.717", prodi: "S1 Teknik Arsitektur", kelompok: "Kelompok 2 Sekeloa", kelurahan: "Sekeloa" },
+  { no: 7, name: "Dr. Olih Solihin, S.Sos., M.I.Kom.", phone: "+6289656618667", rawPhone: "089656618667", nip: "4127.35.30.016", prodi: "S1 Ilmu Komunikasi", kelompok: "Kelompok 3 Sekeloa", kelurahan: "Sekeloa" },
+  { no: 8, name: "Hery Dwi Yulianto, S.T., M.Kom.", phone: "+628382821127", rawPhone: "08382821127", nip: "4127.70.67.004", prodi: "D3 Komputerisasi Akuntansi", kelompok: "Kelompok 4 Sekeloa", kelurahan: "Sekeloa" },
+  { no: 9, name: "John Adler, S.Si., M.Si.", phone: "+6282130536915", rawPhone: "082130536915", nip: "4127.70.05.007", prodi: "D3 Teknik Komputer", kelompok: "Kelompok 5 Sekeloa", kelurahan: "Sekeloa" },
+  { no: 10, name: "Dr. Henike Primawati, S.IP., M.I.Pol.", phone: "+628118748686", rawPhone: "08118748686", nip: "4127.35.32.011", prodi: "S1 Hubungan Internasional", kelompok: "Kelompok 6 Sekeloa", kelurahan: "Sekeloa" },
+  { no: 11, name: "Fenny Febrianti, S.S., M.Hum", phone: "+6282121822503", rawPhone: "082121822503", nip: "4127.20.04.004", prodi: "S1 Sastra Jepang", kelompok: "Kelompok 1 Lebak Siliwangi", kelurahan: "Lebak Siliwangi" },
+  { no: 12, name: "Dr. Tatik Fidowaty, S.IP., M.Si", phone: "+62817616930", rawPhone: "0817616930", nip: "4127.35.31.009", prodi: "S1 Ilmu Pemerintahan", kelompok: "Kelompok 2 Lebak Siliwangi", kelurahan: "Lebak Siliwangi" },
+  { no: 13, name: "Dr. Nungki Heriyati, S.S.S.,I.Kom.,M.A.", phone: "+6281322752828", rawPhone: "081322752828", nip: "4127.20.03.020", prodi: "S1 Sastra Inggris", kelompok: "Kelompok 3 Lebak Siliwangi", kelurahan: "Lebak Siliwangi" },
+  { no: 14, name: "Dr. Agus Mulyana, S.Kom, M.T.", phone: "+6282116871007", rawPhone: "82116871007", nip: "4127.70.05.017", prodi: "D3 Teknik Komputer", kelompok: "Kelompok 1 Sadang Serang", kelurahan: "Sadang Serang" },
+  { no: 15, name: "Amilia Widya, S.Pd., M.T.", phone: "+6281344706038", rawPhone: "081344706038", nip: "4127.70.17.015", prodi: "S1 Teknik Perencanaan Wilayah dan Kota", kelompok: "Kelompok 2 Sadang Serang", kelurahan: "Sadang Serang" },
+  { no: 16, name: "Wahyudi, S.H., M.H.", phone: "+6281321920848", rawPhone: "081321920848", nip: "4127.33.00.019", prodi: "S1 Ilmu Hukum", kelompok: "Kelompok 3 Sadang Serang", kelurahan: "Sadang Serang" },
+  { no: 17, name: "Richi Dwi Agustia, S.Kom., M.Kom.", phone: "+6285780084003", rawPhone: "085780084003", nip: "4127.70.06.132", prodi: "S1 Teknik Informatika", kelompok: "Kelompok 4 Sadang Serang", kelurahan: "Sadang Serang" },
+  { no: 18, name: "Assoc. Prof., Dr. Manap Solihat, Drs., M.Si.", phone: "+6281321911449", rawPhone: "081321911449", nip: "4127.35.30.007", prodi: "S1 Ilmu Komunikasi", kelompok: "Kelompok 5 Sadang Serang", kelurahan: "Sadang Serang" },
+  { no: 19, name: "Cherry Dharmawan, S.Sn., M.Sn.", phone: "+6282118047608", rawPhone: "082118047608", nip: "4127.32.04.002", prodi: "S1 Desain Interior", kelompok: "Kelompok 6 Sadang Serang", kelurahan: "Sadang Serang" },
+  { no: 20, name: "Assoc. Prof. Dr. Sri Dewi Anggadini, S.E., M.Si., Ak., CA", phone: "+628122421004", rawPhone: "08122421004", nip: "4127.34.03.003", prodi: "S1 Akuntansi", kelompok: "Kelompok 7 Sadang Serang", kelurahan: "Sadang Serang" },
+  { no: 21, name: "Dr.H.Tatang Supriyadi,S.E.,M.M", phone: "+6281222927778", rawPhone: "081222927778", nip: "4127.34.02.075", prodi: "D3 Manajemen Pemasaran", kelompok: "Kelompok 8 Sadang Serang", kelurahan: "Sadang Serang" },
+  { no: 22, name: "Dr. Wendi Zarman, M.Si", phone: "+628157131405", rawPhone: "08157131405", nip: "4127.70.05.010", prodi: "S1 Sistem Komputer", kelompok: "Kelompok 9 Sadang Serang", kelurahan: "Sadang Serang" },
+  { no: 23, name: "Arif Try Cahyadi, S.Ds., M.Ds.", phone: "+6282298522354", rawPhone: "082298522354", nip: "4127.32.06.087", prodi: "S1 Desain Komunikasi Visual", kelompok: "Kelompok 10 Sadang Serang", kelurahan: "Sadang Serang" },
+  { no: 24, name: "Ayub Subandi, S.Si., M.T., Ph.D.", phone: "+6289612270264", rawPhone: "089612270264", nip: "4127.70.05.030", prodi: "S1 Teknik Elektro", kelompok: "Kelompok 11 Sadang Serang", kelurahan: "Sadang Serang" },
+  { no: 25, name: "Iyan Andriana, S.T., M.T.", phone: "+628112334224", rawPhone: "08112334224", nip: "4127.70.03.009", prodi: "S1 Teknik Industri", kelompok: "Kelompok 1 Cipaganti", kelurahan: "Cipaganti" },
+  { no: 26, name: "Hanhan Maulana, M.Kom., Ph.D.", phone: "+6285222267759", rawPhone: "085222267759", nip: "4127.70.06.134", prodi: "S1 Teknik Informatika", kelompok: "Kelompok 2 Cipaganti", kelurahan: "Cipaganti" },
+  { no: 27, name: "Assoc. Prof. Dr. Rini Maulina, S.Sn., M.Sn.", phone: "+6289670059709", rawPhone: "089670059709", nip: "4127.32.06.011", prodi: "D3 Desain Grafis", kelompok: "Kelompok 3 Cipaganti", kelurahan: "Cipaganti" },
+  { no: 28, name: "Rangga Sidik, S.Kom., M.Kom., M.Eng", phone: "+6285624088878", rawPhone: "085624088878", nip: "4127.70.26.113", prodi: "S1 Sistem Informasi", kelompok: "Kelompok 4 Cipaganti", kelurahan: "Cipaganti" },
+  { no: 29, name: "Prof Umi Narimawati,dra, S.E. M.Si.,M.pd", phone: "+6281213143636", rawPhone: "081213143636", nip: "4127.34.02.015", prodi: "S1 Manajemen", kelompok: "Kelompok 1 Dago", kelurahan: "Dago" },
+  { no: 30, name: "Assoc Prof. Dr. Agus Riyanto S.E., M.S.i", phone: "+6285759996154", rawPhone: "085759996154", nip: "4127.70.03.007", prodi: "S1 Manajemen", kelompok: "Kelompok 2 Dago", kelurahan: "Dago" },
+  { no: 31, name: "Assoc. Prof. Dr. Raeni Dwi Santy, S.E., M.Si., CIMA, CDMP", phone: "+6281223216029", rawPhone: "81223216029", nip: "4127.34.02.006", prodi: "S1 Manajemen", kelompok: "Kelompok 3 Dago", kelurahan: "Dago" },
+  { no: 32, name: "Dr. Linna Ismawati, S.E., M.Si.", phone: "+6281221471617", rawPhone: "81221471617", nip: "4127.34.02.008", prodi: "S1 Manajemen", kelompok: "Kelompok 4 Dago", kelurahan: "Dago" },
+];
+
+export async function ensureDplKelompokRelation(dplUserId: string) {
+  try {
+    if (!dplUserId) return;
+
+    // 1. Cek apakah DPL sudah memiliki relasi kelompok strict by dplId di database
+    const linkedGroupCount = await prisma.kelompokKkn.count({
+      where: { dplId: dplUserId },
+    });
+    if (linkedGroupCount > 0) return;
+
+    // 2. Ambil data profil DPL
+    const dplUser = await prisma.user.findUnique({
+      where: { id: dplUserId },
+      select: { id: true, name: true, phone: true, nip: true },
+    });
+    if (!dplUser) return;
+
+    const cleanPhone = (dplUser.phone || "").replace(/[^0-9]/g, "");
+    const cleanNip = (dplUser.nip || "").trim();
+    const cleanName = (dplUser.name || "").toLowerCase().replace(/[^a-z]/g, "");
+
+    // 3. Cocokkan dengan 32 Standar DPL Resmi
+    const matchedStandard = REAL_32_DPL_STANDARDIZED.find((item) => {
+      const itemCleanPhone = item.phone.replace(/[^0-9]/g, "");
+      const itemCleanRawPhone = item.rawPhone.replace(/[^0-9]/g, "");
+      const itemCleanNip = item.nip.trim();
+      const itemCleanName = item.name.toLowerCase().replace(/[^a-z]/g, "");
+
+      if (cleanNip && itemCleanNip && cleanNip === itemCleanNip) return true;
+      if (cleanPhone && (cleanPhone.endsWith(itemCleanPhone.slice(-8)) || cleanPhone.endsWith(itemCleanRawPhone.slice(-8)))) return true;
+      if (cleanName && itemCleanName && (cleanName.includes(itemCleanName) || itemCleanName.includes(cleanName))) return true;
+      return false;
+    });
+
+    if (matchedStandard) {
+      const existingGroup = await prisma.kelompokKkn.findFirst({
+        where: {
+          name: { equals: matchedStandard.kelompok, mode: "insensitive" },
+        },
+      });
+
+      if (existingGroup) {
+        await prisma.kelompokKkn.update({
+          where: { id: existingGroup.id },
+          data: {
+            dplId: dplUserId,
+            dplNamaMentah: dplUser.name,
+            kelurahan: existingGroup.kelurahan || matchedStandard.kelurahan,
+          },
+        });
+        console.log(`[ensureDplKelompokRelation] Relasi strict by ID terbentuk: ${existingGroup.name} -> DPL ${dplUser.name} (${dplUserId})`);
+        return;
+      } else {
+        await prisma.kelompokKkn.create({
+          data: {
+            name: matchedStandard.kelompok,
+            dplId: dplUserId,
+            dplNamaMentah: dplUser.name,
+            kelurahan: matchedStandard.kelurahan,
+          },
+        });
+        console.log(`[ensureDplKelompokRelation] Kelompok baru dibuat & direlasikan strict: ${matchedStandard.kelompok} -> DPL ${dplUser.name} (${dplUserId})`);
+        return;
+      }
+    }
+
+    // 4. Jika belum cocok standar, coba cocokkan kelompok yang memiliki dplNamaMentah sama tapi belum terikat dplId
+    if (dplUser.name && dplUser.name.trim()) {
+      const rawNameGroup = await prisma.kelompokKkn.findFirst({
+        where: {
+          dplNamaMentah: { equals: dplUser.name.trim(), mode: "insensitive" },
+          dplId: null,
+        },
+      });
+      if (rawNameGroup) {
+        await prisma.kelompokKkn.update({
+          where: { id: rawNameGroup.id },
+          data: { dplId: dplUserId, dplNamaMentah: dplUser.name },
+        });
+        console.log(`[ensureDplKelompokRelation] Relasi strict via dplNamaMentah terbentuk: ${rawNameGroup.name} -> DPL ${dplUser.name} (${dplUserId})`);
+        return;
+      }
+    }
+  } catch (err) {
+    console.warn("[ensureDplKelompokRelation] Error linking DPL to Kelompok:", err);
+  }
+}
+
 export async function getKelompokWhere(dplUserId: string, role?: any) {
   const normalizedRole = getRoleString(role);
   const isAdmin = [
@@ -77,88 +200,15 @@ export async function getKelompokWhere(dplUserId: string, role?: any) {
     };
   }
 
-  // 1. Base matching conditions for DPL
-  const orConditions: any[] = [
-    { dplId: dplUserId },
-    { dpl: { id: dplUserId } },
-  ];
+  // Pastikan relasi database strict by dplId tersinkronisasi
+  await ensureDplKelompokRelation(dplUserId);
 
-  try {
-    // 2. Fetch DPL user data to enable robust fallback matching & auto-healing
-    const dplUser = await prisma.user.findUnique({
-      where: { id: dplUserId },
-      select: { id: true, name: true, phone: true, nip: true },
-    });
-
-    if (dplUser) {
-      if (dplUser.name && dplUser.name.trim() !== "") {
-        const cleanName = dplUser.name.trim();
-        orConditions.push({
-          dplNamaMentah: { equals: cleanName, mode: "insensitive" },
-        });
-        orConditions.push({
-          dpl: { name: { equals: cleanName, mode: "insensitive" } },
-        });
-      }
-      if (dplUser.phone) {
-        orConditions.push({
-          dpl: { phone: dplUser.phone },
-        });
-      }
-      if (dplUser.nip) {
-        orConditions.push({
-          dpl: { nip: dplUser.nip },
-        });
-      }
-
-      // Auto-heal: Link any unlinked kelompok that matches this DPL by name/nip/phone
-      const unlinkedOr: any[] = [];
-      if (dplUser.name) unlinkedOr.push({ dplNamaMentah: { equals: dplUser.name.trim(), mode: "insensitive" } });
-      if (dplUser.nip) unlinkedOr.push({ dpl: { nip: dplUser.nip } });
-      if (dplUser.phone) unlinkedOr.push({ dpl: { phone: dplUser.phone } });
-
-      const unlinkedGroups = unlinkedOr.length > 0 ? await prisma.kelompokKkn.findMany({
-        where: {
-          OR: unlinkedOr,
-          NOT: { dplId: dplUserId },
-        },
-        select: { id: true },
-      }) : [];
-
-      if (unlinkedGroups.length > 0) {
-        const unlinkedIds = unlinkedGroups.map((g) => g.id);
-        await prisma.kelompokKkn.updateMany({
-          where: { id: { in: unlinkedIds } },
-          data: { dplId: dplUserId, dplNamaMentah: dplUser.name },
-        });
-        console.log(`[dplService] Auto-healed and linked ${unlinkedIds.length} kelompok to DPL ${dplUser.name} (${dplUserId})`);
-      }
-
-      // Fallback: If still no group matches and there is at least one group in DB, link the first unlinked or first available group
-      const existingMatched = await prisma.kelompokKkn.count({
-        where: { OR: orConditions },
-      });
-      if (existingMatched === 0) {
-        const availableGroup = (await prisma.kelompokKkn.findFirst({
-          where: { dplId: null },
-        })) || (await prisma.kelompokKkn.findFirst());
-
-        if (availableGroup) {
-          await prisma.kelompokKkn.update({
-            where: { id: availableGroup.id },
-            data: { dplId: dplUserId, dplNamaMentah: dplUser.name },
-          });
-          orConditions.push({ id: availableGroup.id });
-          console.log(`[dplService] Fallback-linked kelompok ${availableGroup.name} to DPL ${dplUser.name} (${dplUserId})`);
-        }
-      }
-    }
-  } catch (err) {
-    console.warn("[dplService] Error resolving DPL fallback matching:", err);
-  }
-
+  // Relasi strict by ID: kelompok milik DPL ini
   return {
-    OR: orConditions,
+    OR: [
+      { dplId: dplUserId },
+      { dpl: { id: dplUserId } },
+    ],
   };
 }
 
@@ -253,26 +303,6 @@ export const dplService = {
       },
       orderBy: { name: "asc" },
     });
-
-    // Fallback: Jika DPL belum terikat kelompok, ambil kelompok pertama yang tersedia atau cocok
-    if (groups.length === 0) {
-      const fallbackGroups = await prisma.kelompokKkn.findMany({
-        take: 1,
-        include: {
-          dpl: true,
-          poskoKkn: true,
-          students: {
-            include: {
-              assignedRw: { include: { kelurahan: { include: { kecamatan: true } } } },
-              user: { include: { rw: { include: { kelurahan: { include: { kecamatan: true } } } } } },
-            },
-          },
-        },
-      });
-      if (fallbackGroups.length > 0) {
-        groups = fallbackGroups as any;
-      }
-    }
 
     if (groups.length === 0) {
       return [];
@@ -2095,8 +2125,8 @@ export const dplService = {
 
         if (dplIndiv !== null && mplIndiv !== null && indivGabungan !== null && prokerGabungan !== null && kelompokGabungan !== null) {
           const calcScore =
-            0.25 * (effectiveKehadiran > 0 ? effectiveKehadiran : 90) +
-            0.15 * (effectivePoin > 0 ? effectivePoin : 85) +
+            0.25 * effectiveKehadiran +
+            0.15 * effectivePoin +
             0.20 * indivGabungan +
             0.20 * prokerGabungan +
             0.20 * kelompokGabungan;
@@ -2258,18 +2288,29 @@ export const dplService = {
 
     const configMap = new Map(configs.map((c) => [c.key, c.value]));
 
-    const minHours = Number(configMap.get("attendance_min_duration_hours") ?? 2);
-    const minMinutes = Number(configMap.get("attendance_min_duration_minutes") ?? 0);
-    const minSeconds = Number(configMap.get("attendance_min_duration_seconds") ?? 0);
-
-    const minTotalHours = (minHours * 3600 + minMinutes * 60 + minSeconds) / 3600;
-    const targetHarianRaw = Number(configMap.get("kkn_target_harian_jam"));
-    const targetHarian = !isNaN(targetHarianRaw) && targetHarianRaw > 0
-      ? (minTotalHours > 0 && Math.abs(targetHarianRaw - minTotalHours) <= 0.005 ? minTotalHours : targetHarianRaw)
-      : (minTotalHours > 0 ? minTotalHours : 2);
     const targetHariTotal = Number(configMap.get("kkn_target_total_hari") || 50);
     const targetJamRaw = Number(configMap.get("kkn_target_total_jam"));
-    const targetJamTotal = !isNaN(targetJamRaw) && targetJamRaw > 0 ? targetJamRaw : Math.round(targetHariTotal * targetHarian);
+    const targetJamTotal = !isNaN(targetJamRaw) && targetJamRaw > 0 ? targetJamRaw : 200;
+
+    let minHours = Number(configMap.get("attendance_min_duration_hours") ?? 0);
+    let minMinutes = Number(configMap.get("attendance_min_duration_minutes") ?? 0);
+    let minSeconds = Number(configMap.get("attendance_min_duration_seconds") ?? 0);
+
+    let minTotalHours = (minHours * 3600 + minMinutes * 60 + minSeconds) / 3600;
+
+    // Otomatisasi: Jika durasi minimal harian belum diatur atau nilai uji coba lama (< 0.05 jam saat target kumulatif >= 10 jam)
+    const autoDailyMins = targetHariTotal > 0 ? Math.round((targetJamTotal * 60) / targetHariTotal) : 240;
+    if (minTotalHours <= 0 || (minTotalHours < 0.05 && targetJamTotal >= 10)) {
+      minHours = Math.floor(autoDailyMins / 60);
+      minMinutes = autoDailyMins % 60;
+      minSeconds = 0;
+      minTotalHours = (minHours * 60 + minMinutes) / 60;
+    }
+
+    const targetHarianRaw = Number(configMap.get("kkn_target_harian_jam"));
+    const targetHarian = !isNaN(targetHarianRaw) && targetHarianRaw > 0 && targetHarianRaw >= 0.05
+      ? targetHarianRaw
+      : minTotalHours;
 
     return {
       targetTotalKegiatan: Number(configMap.get("kkn_target_total_kegiatan") || 2000),
@@ -2302,6 +2343,20 @@ export const dplService = {
     catatanDpl?: string;
     updatedBy?: string;
   }) => {
+    const targetHari = data.targetTotalHari !== undefined ? Number(data.targetTotalHari) : undefined;
+    const targetJam = data.targetTotalJam !== undefined ? Number(data.targetTotalJam) : undefined;
+
+    // Jika durasi harian tidak dioper secara eksplisit namun total jam dan total hari ada, hitung otomatis
+    if (targetJam !== undefined && targetHari !== undefined && targetHari > 0) {
+      if (data.attendanceMinDurationHours === undefined && data.attendanceMinDurationMinutes === undefined) {
+        const dailyMins = Math.round((targetJam * 60) / targetHari);
+        data.attendanceMinDurationHours = Math.floor(dailyMins / 60);
+        data.attendanceMinDurationMinutes = dailyMins % 60;
+        data.attendanceMinDurationSeconds = 0;
+        data.targetHarianJam = dailyMins / 60;
+      }
+    }
+
     const updates: { key: string; value: string; desc: string; tipe: string }[] = [];
     if (data.targetTotalKegiatan !== undefined) {
       updates.push({
@@ -2401,20 +2456,7 @@ export const dplService = {
     }
 
     for (const u of updates) {
-      await prisma.systemConfig.upsert({
-        where: { key: u.key },
-        create: {
-          key: u.key,
-          value: u.value,
-          tipe: u.tipe,
-          deskripsi: u.desc,
-          updatedBy: data.updatedBy || "SYSTEM",
-        },
-        update: {
-          value: u.value,
-          updatedBy: data.updatedBy || "SYSTEM",
-        },
-      });
+      await configService.updateConfig(u.key, u.value);
     }
 
     return await dplService.getConfigTargets();

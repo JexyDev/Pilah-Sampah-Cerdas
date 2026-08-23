@@ -335,8 +335,30 @@ export const computeTimelineStatus = (
   return "BELUM_DIMULAI";
 };
 
+export const inferBidangKegiatan = (kegiatanUtama: string = "", tahapMinggu: string = "", fase: string = ""): string => {
+  const text = `${kegiatanUtama} ${tahapMinggu} ${fase}`.toLowerCase();
+  if (text.includes("sosialisasi") || text.includes("edukasi") || text.includes("door-to-door") || text.includes("uji coba aplikasi")) {
+    return "Edukasi Warga & Sosialisasi";
+  }
+  if (text.includes("bank sampah") || text.includes("maggot") || text.includes("poc") || text.includes("biopori") || text.includes("kompos") || text.includes("pengolahan")) {
+    return "Pengolahan & Bank Sampah";
+  }
+  if (text.includes("pengangkutan") || text.includes("rute") || text.includes("logistik") || text.includes("tps")) {
+    return "Pengangkutan & Logistik";
+  }
+  if (text.includes("pemilahan") || text.includes("sarana") || text.includes("pilot") || text.includes("tempat sampah") || text.includes("observasi")) {
+    return "Pemilahan Sampah";
+  }
+  if (text.includes("evaluasi") || text.includes("laporan") || text.includes("seminar") || text.includes("penarikan") || text.includes("indikator")) {
+    return "Evaluasi & Pelaporan";
+  }
+  return "Tata Kelola & Koordinasi";
+};
+
 export interface TimelineQueryParams {
   kelompokId?: string;
+  kelurahan?: string;
+  bidangKegiatan?: string;
   fase?: string;
   statusPelaksanaan?: string;
   search?: string;
@@ -479,13 +501,37 @@ export const timelineKknService = {
       return item;
     });
 
-    return resolvedItems.map((item, idx) => ({
-      ...item,
-      nomor: idx + 1,
-      kelurahan: item.kelompok?.kelurahan || "Coblong (Semua Wilayah)",
-      kelompokNama: item.kelompok?.name || "Seluruh Kelompok KKN",
-      urlGoogleDrive: (item as any).urlGoogleDrive || (item as any).linkGoogleDrive || "https://drive.google.com/drive/folders/kkn-coblong-2026",
-    }));
+    let mapped = resolvedItems.map((item, idx) => {
+      const bidang = (item as any).bidangKegiatan || inferBidangKegiatan(item.kegiatanUtama, item.tahapMinggu, item.fase);
+      const kelurahan = item.kelompok?.kelurahan || (item as any).kelurahan || "Coblong (Semua Wilayah)";
+      return {
+        ...item,
+        nomor: idx + 1,
+        kelurahan,
+        bidangKegiatan: bidang,
+        kelompokNama: item.kelompok?.name || "Seluruh Kelompok KKN",
+        urlGoogleDrive: (item as any).urlGoogleDrive || (item as any).linkGoogleDrive || "https://drive.google.com/drive/folders/kkn-coblong-2026",
+      };
+    });
+
+    // Filter tambahan untuk kelurahan
+    if (params.kelurahan && params.kelurahan !== "ALL") {
+      const qKel = params.kelurahan.toLowerCase();
+      mapped = mapped.filter((item) =>
+        item.kelurahan.toLowerCase().includes(qKel) ||
+        item.kegiatanUtama.toLowerCase().includes(qKel) ||
+        item.kelurahan.toLowerCase().includes("semua") ||
+        item.kelurahan.toLowerCase().includes("coblong")
+      );
+    }
+
+    // Filter tambahan untuk bidang kegiatan
+    if (params.bidangKegiatan && params.bidangKegiatan !== "ALL") {
+      const qBid = params.bidangKegiatan.toLowerCase();
+      mapped = mapped.filter((item) => item.bidangKegiatan.toLowerCase().includes(qBid));
+    }
+
+    return mapped;
   },
 
   /**
