@@ -15,6 +15,15 @@ export interface GroupSummary {
     latitude?: number | null;
     longitude?: number | null;
   } | null;
+  facilities?: Array<{
+    id: string;
+    nama: string;
+    jenis: string;
+    alamat: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    statusApproval: string;
+  }>;
   ketua?: {
     id: string;
     userId: string;
@@ -116,6 +125,8 @@ export interface MapCoverage {
   groups: Array<{ id: string; name: string; kelurahan: string; cakupanRw: number[] }>;
   rwAreas: Array<{ id: number; name: string; kelurahan: string; latitude: number; longitude: number }>;
   bins: Array<{ id: string; qrCode: string; status: string; latitude: number; longitude: number; wargaNama: string }>;
+  poskos?: Array<{ id: string; kelompokId: string; nama: string; alamat: string; latitude: number; longitude: number }>;
+  facilities?: Array<{ id: string; nama: string; jenis: string; latitude: number; longitude: number; kelompokId: string | null; statusApproval: string }>;
 }
 
 export interface DplAlerts {

@@ -268,6 +268,7 @@ export const dplService = {
             longitude: true,
           },
         },
+        facilities: true,
         students: {
           include: {
             assignedRw: {
@@ -654,6 +655,15 @@ export const dplService = {
                 longitude: grp.poskoKkn.longitude ? Number(grp.poskoKkn.longitude) : null,
               }
             : null,
+          facilities: grp.facilities.map((f: any) => ({
+            id: f.id,
+            nama: f.nama,
+            jenis: f.jenis,
+            alamat: f.alamat,
+            latitude: f.latitude ? Number(f.latitude) : null,
+            longitude: f.longitude ? Number(f.longitude) : null,
+            statusApproval: f.statusApproval,
+          })),
           ketua: ketuaStudent
             ? {
                 id: ketuaStudent.id,
@@ -1084,6 +1094,16 @@ export const dplService = {
       include: { kelurahan: true },
     });
 
+    const poskos = await prisma.poskoKkn.findMany({
+      where: { kelompokId: { in: groups.map(g => g.id) } },
+      select: { id: true, kelompokId: true, nama: true, alamat: true, latitude: true, longitude: true }
+    });
+
+    const facilities = await prisma.facility.findMany({
+      where: { kelompokId: { in: groups.map(g => g.id) } },
+      select: { id: true, nama: true, jenis: true, latitude: true, longitude: true, kelompokId: true, statusApproval: true }
+    });
+
     return {
       groups: groups.map((g) => ({
         id: g.id,
@@ -1102,10 +1122,27 @@ export const dplService = {
         id: b.id,
         qrCode: b.qrCode,
         status: b.status,
-        latitude: b.latitude ? Number(b.latitude) : null,
-        longitude: b.longitude ? Number(b.longitude) : null,
+        latitude: b.latitude ? Number(b.latitude) : 0,
+        longitude: b.longitude ? Number(b.longitude) : 0,
         wargaNama: b.user?.name || "Warga",
       })),
+      poskos: poskos.map(p => ({
+        id: p.id,
+        kelompokId: p.kelompokId,
+        nama: p.nama,
+        alamat: p.alamat,
+        latitude: p.latitude ? Number(p.latitude) : 0,
+        longitude: p.longitude ? Number(p.longitude) : 0,
+      })),
+      facilities: facilities.map(f => ({
+        id: f.id,
+        nama: f.nama,
+        jenis: f.jenis,
+        latitude: f.latitude ? Number(f.latitude) : 0,
+        longitude: f.longitude ? Number(f.longitude) : 0,
+        kelompokId: f.kelompokId,
+        statusApproval: f.statusApproval
+      }))
     };
   },
 

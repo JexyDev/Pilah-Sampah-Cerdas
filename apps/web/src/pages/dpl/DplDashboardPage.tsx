@@ -689,8 +689,32 @@ export const DplDashboardPage: React.FC = () => {
                     <span className="font-bold text-slate-800 dark:text-slate-200 block truncate" title={selectedGroupForDetail.posko?.nama || selectedGroupForDetail.posko?.alamat || "-"}>
                       {selectedGroupForDetail.posko?.nama || "-"}
                     </span>
+                    {selectedGroupForDetail.posko?.latitude && selectedGroupForDetail.posko?.longitude && (
+                      <a href={`https://www.google.com/maps?q=${selectedGroupForDetail.posko.latitude},${selectedGroupForDetail.posko.longitude}`} target="_blank" rel="noreferrer" className="text-[10px] flex items-center gap-1 text-blue-500 hover:underline">
+                        <MapPin size={10} /> Buka Peta
+                      </a>
+                    )}
                   </div>
                 </div>
+
+                {selectedGroupForDetail.facilities && selectedGroupForDetail.facilities.length > 0 && (
+                  <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                    <h4 className="text-[10.5px] font-bold text-slate-400 uppercase mb-2">Fasilitas Kelompok (Bata Terawang, Loseda, Dll)</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {selectedGroupForDetail.facilities.map((f, i) => (
+                        <div key={i} className="bg-slate-50 dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs">
+                          <span className="block font-bold text-slate-700 dark:text-slate-300">{f.nama}</span>
+                          <span className="block text-[10px] text-slate-500 dark:text-slate-400">{f.jenis.replace(/_/g, " ")} • {f.statusApproval}</span>
+                          {f.latitude && f.longitude && (
+                            <a href={`https://www.google.com/maps?q=${f.latitude},${f.longitude}`} target="_blank" rel="noreferrer" className="mt-1 inline-flex text-[10px] items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:underline">
+                              <MapPin size={10} /> Lokasi Map
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Filter & Pencarian Mahasiswa dalam Kelompok */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
@@ -1719,8 +1743,13 @@ export const DplDashboardPage: React.FC = () => {
                       </p>
                     )}
                     {g.posko && (
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate" title={g.posko.alamat}>
-                        <span className="font-semibold text-slate-600 dark:text-slate-300">Posko:</span> {g.posko.nama}
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center justify-between" title={g.posko.alamat}>
+                        <span><span className="font-semibold text-slate-600 dark:text-slate-300">Posko:</span> {g.posko.nama}</span>
+                        {g.posko.latitude && g.posko.longitude && (
+                          <a href={`https://www.google.com/maps?q=${g.posko.latitude},${g.posko.longitude}`} target="_blank" rel="noreferrer" className="text-[10px] flex items-center gap-1 text-blue-500 hover:underline">
+                            <MapPin size={10} /> Lokasi
+                          </a>
+                        )}
                       </p>
                     )}
                   </div>
