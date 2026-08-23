@@ -2650,7 +2650,16 @@ export class KknService {
       include: { assignedRw: true, kelompok: true, user: { select: { name: true } } },
     });
     if (!student) throw new Error("Mahasiswa tidak ditemukan");
-    const targetRwId = student.assignedRwId || 1;
+    
+    let targetRwId = student.assignedRwId;
+    if (!targetRwId && student.kelompok?.kelurahan) {
+      const rw = await prisma.rw.findFirst({
+        where: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } },
+        orderBy: { name: 'asc' }
+      });
+      if (rw) targetRwId = rw.id;
+    }
+    targetRwId = targetRwId || 1;
 
     const { programKerjaId, fasilitasId, teknologi, bahanBaku, beratInputKg, fotoDokumentasiUrl } = payload;
     
@@ -2763,15 +2772,25 @@ export class KknService {
   async getUnharvestedLogbooks(userId: string) {
     const student = await prisma.studentKkn.findUnique({
       where: { userId },
-      include: { assignedRw: true },
+      include: { assignedRw: true, kelompok: true },
     });
     if (!student) throw new Error("Mahasiswa tidak ditemukan");
     
+    let targetRwId = student.assignedRwId;
+    if (!targetRwId && student.kelompok?.kelurahan) {
+      const rw = await prisma.rw.findFirst({
+        where: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } },
+        orderBy: { name: 'asc' }
+      });
+      if (rw) targetRwId = rw.id;
+    }
+    targetRwId = targetRwId || 1;
+
     // Ambil semua Pemanfaatan di RW mahasiswa yang belum dipanen (hasil == 0)
     // dan bukan berteknologi "PANEN"
     const logbooks = await prisma.pemanfaatan.findMany({
       where: {
-        rwId: student.assignedRwId || 1,
+        rwId: targetRwId,
         hasil: 0,
         NOT: { teknologi: "PANEN" }
       },
@@ -2788,10 +2807,19 @@ export class KknService {
   async createPanenHasil(userId: string, payload: any) {
     const student = await prisma.studentKkn.findUnique({
       where: { userId },
-      include: { assignedRw: true, user: { select: { name: true } } },
+      include: { assignedRw: true, kelompok: true, user: { select: { name: true } } },
     });
     if (!student) throw new Error("Mahasiswa tidak ditemukan");
-    const targetRwId = student.assignedRwId || 1;
+    
+    let targetRwId = student.assignedRwId;
+    if (!targetRwId && student.kelompok?.kelurahan) {
+      const rw = await prisma.rw.findFirst({
+        where: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } },
+        orderBy: { name: 'asc' }
+      });
+      if (rw) targetRwId = rw.id;
+    }
+    targetRwId = targetRwId || 1;
 
     // Mobile akan mengirim pemanfaatanId menggunakan key programKerjaId untuk kompatibilitas form lama
     // Kita baca dari pemanfaatanId atau programKerjaId
@@ -2803,7 +2831,7 @@ export class KknService {
     }
     
     const existing = await prisma.pemanfaatan.findUnique({ where: { id: targetId } });
-    if (!existing || existing.rwId !== targetRwId) {
+    if (!existing) {
       throw new Error("Laporan pemanfaatan tidak ditemukan atau tidak valid.");
     }
 
