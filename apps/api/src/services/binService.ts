@@ -1208,14 +1208,16 @@ export class BinService {
       select: { id: true, name: true, rwId: true, status: true },
     });
 
-    const rwList = await prisma.rw.findMany({
-      select: { id: true, name: true, kelurahan: { select: { name: true } } }
+    const wargaList = await prisma.user.findMany({
+      where: { role: { name: "WARGA" } },
+      select: { id: true, name: true, rwId: true },
+      take: 20
     });
 
     return {
       warga,
+      wargaList,
       petugas: petugasList,
-      rws: rwList
     };
   }
 
