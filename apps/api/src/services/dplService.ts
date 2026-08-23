@@ -2247,6 +2247,22 @@ export const dplService = {
       // Abaikan error
     }
 
+    // Filter bukti agar hanya sesuai dengan Program Kerja ini (berdasarkan Kategori & Keyword)
+    const prokerKeywords = proker.deskripsi.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+    const isPemanfaatanTerkait = ["Pemanfaatan", "Pengolahan", "Pemilahan"].includes(proker.kategori || "");
+
+    const filteredFeedbackPhotos = feedbackPhotos.filter((f: any) => {
+      if (isPemanfaatanTerkait) return true; // jika proker memang kategori pemanfaatan, masukkan semua
+      const text = `${f.activityTitle} ${f.description}`.toLowerCase();
+      return prokerKeywords.some(kw => text.includes(kw));
+    });
+
+    const filteredPemanfaatanPhotos = pemanfaatanPhotos.filter((p: any) => {
+      if (isPemanfaatanTerkait) return true;
+      const text = `${p.activityTitle} ${p.description}`.toLowerCase();
+      return prokerKeywords.some(kw => text.includes(kw));
+    });
+
     const attendancesMapped = attendances.map((a) => ({
       id: a.id,
       activityTitle: a.schedule?.title || "Kegiatan Lapangan",
@@ -2256,7 +2272,7 @@ export const dplService = {
       user: { name: a.student?.name || "Mahasiswa" },
     }));
 
-    const allBukti = [...attendancesMapped, ...feedbackPhotos, ...pemanfaatanPhotos]
+    const allBukti = [...attendancesMapped, ...filteredFeedbackPhotos, ...filteredPemanfaatanPhotos]
       .sort((a, b) => new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime());
 
     return {
