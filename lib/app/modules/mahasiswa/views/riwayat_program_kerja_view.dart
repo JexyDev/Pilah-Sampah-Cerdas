@@ -258,7 +258,7 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                               const Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
                               const SizedBox(width: 4),
                               Text(
-                                'Diajukan Pada: ${_formatDate(createdAtStr!)}',
+                                'Diajukan Pada: ${_formatDate(createdAtStr)}',
                                 style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                               ),
                             ],
