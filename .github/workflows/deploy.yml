@@ -66,6 +66,16 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
+      - name: Install CMake 3.22.1 via Android SDK Manager
+        run: |
+          SDK_MANAGER=$(find $ANDROID_HOME -name "sdkmanager" | grep "latest" | head -n 1)
+          if [ -z "$SDK_MANAGER" ]; then
+            SDK_MANAGER=$(find $ANDROID_HOME -name "sdkmanager" | head -n 1)
+          fi
+          echo "Found sdkmanager at: $SDK_MANAGER"
+          yes | $SDK_MANAGER --licenses || true
+          $SDK_MANAGER "cmake;3.22.1"
+
       - name: Build Android Release APK (arm64-v8a)
         run: |
           flutter build apk --release --target-platform android-arm64
