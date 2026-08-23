@@ -953,14 +953,18 @@ export class KknAttendanceService {
         return updated;
       }
 
+      if (!isAutoAlpa) {
+        throw new Error("FORBIDDEN: Anda belum menekan tombol Mulai Kegiatan (Presensi Masuk). Selesaikan check-in terlebih dahulu sebelum melakukan check-out (Presensi Hadir).");
+      }
+
       const record = await tx.activityAttendance.create({
         data: {
           studentId,
           scheduleId,
-          method: isAutoAlpa ? "ALPA_AUTO" : method,
+          method: "ALPA_AUTO",
           latitude,
           longitude,
-          status: isAutoAlpa ? "ALPA" : "HADIR",
+          status: "ALPA",
           checkOutAt: new Date(),
         },
       });
