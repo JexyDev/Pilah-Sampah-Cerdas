@@ -299,4 +299,126 @@ router.get(
     }
   }
 );
+
+/**
+ * FEATURE 5: Debug endpoint for troubleshooting GPS tracking issues
+ * Returns current active schedules, latest location, geofence status, and attendance records
+ */
+router.get(
+  ["/location-ping/debug", "/kkn/location-ping/debug"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  async (req, res) => {
+    try {
+      const { prisma } = await import("../lib/prisma.js");
+      const userId = req.user!.userId;
+
+      // Get latest location
+      const latestLocation = await prisma.studentLocation.findFirst({
+        where: { studentId: userId },
+        orderBy: { recordedAt: "desc" },
+        take: 1,
+      });
+
+      // Get active schedules
+      const nowForDebug = new Date();
+      const nowWibDebug = new Date(nowForDebug.getTime() + 7 * 60 * 60 * 1000);
+      const todayWibStrDebug = nowWibDebug.toISOString().slice(0, 10);
+      const todayStartDebug = new Date(`${todayWibStrDebug}T00:00:00+07:00`);
+      const todayEndDebug = new Date(`${todayWibStrDebug}T23:59:59.999+07:00`);
+      const yesterdayWibStrDebug = new Date(todayStartDebug.getTime() - 24 * 60 * 60 * 1000 + 7 * 60 * 60 * 1000)
+        .toISOString().slice(0, 10);
+      const yesterdayStartDebug = new Date(`${yesterdayWibStrDebug}T00:00:00+07:00`);
+
+      const student = await prisma.studentKkn.findUnique({
+        where: { userId },
+      });
+
+      const activeSchedules = await prisma.schedule.findMany({
+        where: {
+          date: { gte: yesterdayStartDebug, lte: todayEndDebug },
+          isActive: true,
+          ...(student?.kelompokId ? { OR: [{ kelompokId: student.kelompokId }, { kelompokId: null }] } : {}),
+        },
+      });
+
+      // Get current attendance status
+      const activeAttendance = await prisma.activityAttendance.findFirst({
+        where: {
+          studentId: userId,
+          status: "BERLANGSUNG",
+        },
+      });
+
+      // Calculate geofence status if we have location
+      let geofenceStatus = null;
+      if (latestLocation && activeSchedules.length > 0) {
+        const { calculateDistance } = await import("../services/kknAttendanceService.js");
+        const firstSchedule = activeSchedules[0];
+        const geofenceLat = firstSchedule.latitude ? Number(firstSchedule.latitude) : -6.8915;
+        const geofenceLng = firstSchedule.longitude ? Number(firstSchedule.longitude) : 107.6107;
+        const geofenceRadius = firstSchedule.radius ? Number(firstSchedule.radius) : 100;
+
+        const distance = calculateDistance(
+          latestLocation.latitude,
+          latestLocation.longitude,
+          geofenceLat,
+          geofenceLng
+        );
+
+        geofenceStatus = {
+          insideZone: distance <= geofenceRadius + 15,
+          distance: Math.round(distance),
+          bufferMeters: 15,
+          geofenceRadius,
+          geofenceLat,
+          geofenceLng,
+        };
+      }
+
+      res.json({
+        success: true,
+        data: {
+          userId,
+          latestLocation: latestLocation
+            ? {
+                lat: latestLocation.latitude,
+                lng: latestLocation.longitude,
+                recordedAt: latestLocation.recordedAt.toISOString(),
+              }
+            : null,
+          activeSchedules: activeSchedules.map((s) => ({
+            id: s.id,
+            title: s.title,
+            time: s.time,
+            date: s.date.toISOString(),
+            latitude: s.latitude,
+            longitude: s.longitude,
+            radius: s.radius,
+            isActive: s.isActive,
+          })),
+          geofenceStatus,
+          attendance: activeAttendance
+            ? {
+                id: activeAttendance.id,
+                scheduleId: activeAttendance.scheduleId,
+                status: activeAttendance.status,
+                attendedAt: activeAttendance.attendedAt.toISOString(),
+                checkOutAt: activeAttendance.checkOutAt?.toISOString() || null,
+                inZoneMinutes: activeAttendance.actualInZoneMinutes,
+              }
+            : null,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        error: "DEBUG_ENDPOINT_ERROR",
+        message: error.message,
+      });
+    }
+  }
+);
+
 export default router;

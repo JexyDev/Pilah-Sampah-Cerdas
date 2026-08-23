@@ -13,6 +13,27 @@ import { websocketService } from "./websocketService.js";
 import { validateCoordinate } from "../utils/geoValidation.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 
+/**
+ * Helper: Build unified geofence object with fallback to system defaults.
+ * FEATURE 2: Ensures consistent geofence configuration across all location tracking methods.
+ */
+async function buildGeofence(schedule: any): Promise<{ latitude: number; longitude: number; radius: number; polygon?: any }> {
+  // Load system defaults from config
+  const configLatStr = await configService.getConfig("default_activity_latitude");
+  const configLngStr = await configService.getConfig("default_activity_longitude");
+  const configRadiusStr = await configService.getConfig("default_activity_radius");
+
+  const defaultLat = configLatStr ? parseFloat(configLatStr) : -6.8915; // Bandung / Coblong
+  const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.6107;
+  const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 100;
+
+  return {
+    latitude: schedule.latitude ? Number(schedule.latitude) : defaultLat,
+    longitude: schedule.longitude ? Number(schedule.longitude) : defaultLng,
+    radius: schedule.radius ? Number(schedule.radius) : defaultRadius,
+    polygon: schedule.polygon,
+  };
+}
 
 // Helper: Haversine Formula (meters)
 export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -267,12 +288,7 @@ export class KknAttendanceService {
           continue;
         }
 
-        const geofence = {
-          latitude: sch.latitude ? Number(sch.latitude) : -6.8915,
-          longitude: sch.longitude ? Number(sch.longitude) : 107.6107,
-          radius: sch.radius ? Number(sch.radius) : 150,
-          polygon: sch.polygon,
-        };
+        const geofence = await buildGeofence(sch);
 
         // Cek apakah jadwal kegiatan ini masih "AKAN_DATANG" (belum waktunya)
         const scheduleDateWibStrPing = new Date(sch.date.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -600,12 +616,7 @@ export class KknAttendanceService {
           continue;
         }
 
-        const geofence = {
-          latitude: sch.latitude ? Number(sch.latitude) : -6.8915,
-          longitude: sch.longitude ? Number(sch.longitude) : 107.6107,
-          radius: sch.radius ? Number(sch.radius) : 150,
-          polygon: sch.polygon,
-        };
+        const geofence = await buildGeofence(sch);
 
         const sessionLogs = (existingAtt && existingAtt.attendedAt) 
           ? todayLogs.filter(log => log.recordedAt >= existingAtt.attendedAt!)
@@ -670,17 +681,28 @@ export class KknAttendanceService {
       }
     }
 
+    // Determine attendance status
+    const attendanceStatus = activeScheduleId ? "BERLANGSUNG" : "TIDAK_ADA_KEGIATAN";
+
     return {
       success: true,
-      locations: savedLocations,
-      status: isInsideZone ? "LAPANGAN" : "DI_LUAR_ZONA",
-      currentStatus: isInsideZone ? "LAPANGAN" : "DI_LUAR_ZONA",
-      inZoneMinutes,
-      autoAttendanceTriggered,
-      scheduleId: activeScheduleId,
-      jam_masuk: activeJamMasuk,
-      actualInZoneSeconds: activeActualInZoneSeconds,
-      targetDurationMinutes: activeTargetDurationMinutes,
+      data: {
+        locations: savedLocations,
+        scheduleId: activeScheduleId || null,
+        activeScheduleId: activeScheduleId || null,
+        status: isInsideZone ? "LAPANGAN" : "DI_LUAR_ZONA",
+        currentStatus: isInsideZone ? "LAPANGAN" : "DI_LUAR_ZONA",
+        attendanceStatus: attendanceStatus,
+        inZoneMinutes,
+        actualInZoneSeconds: activeActualInZoneSeconds,
+        actualInZoneMinutes: inZoneMinutes,
+        autoAttendanceTriggered,
+        jam_masuk: activeJamMasuk,
+        targetDurationMinutes: activeTargetDurationMinutes,
+        poskoArea: null,
+        kelurahan: null,
+        message: activeScheduleId ? "Tracking active" : "No active schedule, but tracking continues",
+      },
     };
   }
 
