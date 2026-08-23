@@ -218,13 +218,13 @@ export const RekapNilaiKknPage: React.FC = () => {
               0.25 * keh + 0.15 * poin + 0.2 * indivGab + 0.2 * prokGab + 0.2 * kelGab;
             nAkhir = Math.round(rawScore * 10) / 10;
             pred =
-              nAkhir >= 85
+              nAkhir >= 80
                 ? "A"
-                : nAkhir >= 75
+                : nAkhir >= 70
                 ? "B"
-                : nAkhir >= 65
+                : nAkhir >= 60
                 ? "C"
-                : nAkhir >= 55
+                : nAkhir >= 50
                 ? "D"
                 : "E";
             stat = "Lengkap";

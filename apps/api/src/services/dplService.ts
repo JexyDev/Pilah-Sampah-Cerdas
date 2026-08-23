@@ -2301,10 +2301,10 @@ export const dplService = {
             0.20 * prokerGabungan +
             0.20 * kelompokGabungan;
           finalScore = Math.round(calcScore * 10) / 10;
-          if (finalScore >= 85) gradeLetter = "A";
-          else if (finalScore >= 75) gradeLetter = "B";
-          else if (finalScore >= 65) gradeLetter = "C";
-          else if (finalScore >= 55) gradeLetter = "D";
+          if (finalScore >= 80) gradeLetter = "A";
+          else if (finalScore >= 70) gradeLetter = "B";
+          else if (finalScore >= 60) gradeLetter = "C";
+          else if (finalScore >= 50) gradeLetter = "D";
           else gradeLetter = "E";
           statusStr = "Lengkap";
         }
