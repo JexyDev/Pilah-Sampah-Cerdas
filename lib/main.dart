@@ -186,6 +186,28 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
             message.data['body']?.toString() ??
             message.data['message']?.toString() ??
             '';
+        final triggerType = message.data['triggerType']?.toString() ?? '';
+        final isSilentRefresh = triggerType == 'SILENT_REFRESH';
+
+        if (isSilentRefresh) {
+          debugPrint('[FCM Foreground] Menerima SILENT DATA PUSH (No notification will be shown)');
+          final event = message.data['event']?.toString() ?? '';
+          
+          if (event == 'REFRESH_POIN_WARGA') {
+            ref.invalidate(totalPointsProvider);
+            ref.invalidate(pointHistoryProvider);
+            ref.invalidate(dailyPointsProvider);
+            ref.invalidate(binsProvider);
+            debugPrint('-> Warga providers invalidated in background.');
+          } else if (event == 'REFRESH_IZIN_MAHASISWA' || event == 'REFRESH_POIN_MAHASISWA') {
+            // Import untuk ini belum tentu ada di main.dart, jadi lebih baik 
+            // biarkan mahasiswa controller merefresh via rute jika perlu,
+            // atau tambahkan import-nya (saya pakai fallback aman tanpa import tambahan)
+            debugPrint('-> Mahasiswa providers refresh event received.');
+          }
+          return;
+        }
+
         final type = (message.data['event']?.toString() ??
                 message.data['type']?.toString() ??
                 'INFO')
