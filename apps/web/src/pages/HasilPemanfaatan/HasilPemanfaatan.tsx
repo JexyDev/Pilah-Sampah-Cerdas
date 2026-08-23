@@ -121,7 +121,6 @@ export const HasilPemanfaatan: React.FC = () => {
       const q = (searchQuery || "").toLowerCase().trim();
       const rwName = item?.rw?.name || (item?.rwId ? `RW ${item.rwId}` : "");
       const kelName = item?.rw?.kelurahan?.name || "";
-      const rwNumberMatch = rwName.toLowerCase().replace(/^rw\s*/i, "").trim();
 
       const matchesSearch =
         !q ||
@@ -138,15 +137,11 @@ export const HasilPemanfaatan: React.FC = () => {
       const matchesKategori =
         kategoriFilter === "ALL" ? true : (item?.kategori || "").toLowerCase() === (kategoriFilter || "").toLowerCase();
 
-      const matchesDplKelurahan =
-        !isDpl || !dplKelurahan || kelName.toLowerCase().includes((dplKelurahan || "").toLowerCase());
-
-      const matchesDplRw =
-        !isDpl || dplCakupanRwNumbers.length === 0 || dplCakupanRwNumbers.includes(rwNumberMatch);
-
-      return matchesSearch && matchesStatus && matchesKategori && matchesDplKelurahan && matchesDplRw;
+      // ponytail: client-side DPL/RW filter removed — backend rbacScoping handles scoping
+      return matchesSearch && matchesStatus && matchesKategori;
     });
-  }, [items, searchQuery, statusFilter, kategoriFilter, isDpl, dplKelurahan, dplCakupanRwNumbers]);
+  }, [items, searchQuery, statusFilter, kategoriFilter]);
+
 
   // Filtered programs calculation
   const filteredPrograms = useMemo(() => {
@@ -154,7 +149,6 @@ export const HasilPemanfaatan: React.FC = () => {
       const q = (searchQuery || "").toLowerCase().trim();
       const rwName = p?.rw?.name || (p?.rwId ? `RW ${p.rwId}` : "");
       const kelName = p?.rw?.kelurahan?.name || "";
-      const rwNumberMatch = rwName.toLowerCase().replace(/^rw\s*/i, "").trim();
       const matchesSearch =
         !q ||
         (p?.namaProgram || "").toLowerCase().includes(q) ||
@@ -167,15 +161,11 @@ export const HasilPemanfaatan: React.FC = () => {
       const matchesKategori =
         kategoriFilter === "ALL" ? true : (p?.jenisProgram || "").toLowerCase().includes((kategoriFilter || "").toLowerCase());
 
-      const matchesDplKelurahan =
-        !isDpl || !dplKelurahan || kelName.toLowerCase().includes((dplKelurahan || "").toLowerCase());
-
-      const matchesDplRw =
-        !isDpl || dplCakupanRwNumbers.length === 0 || dplCakupanRwNumbers.includes(rwNumberMatch);
-
-      return matchesSearch && matchesKategori && matchesDplKelurahan && matchesDplRw;
+      // ponytail: client-side DPL/RW filter removed — backend rbacScoping handles scoping
+      return matchesSearch && matchesKategori;
     });
-  }, [programs, searchQuery, kategoriFilter, isDpl, dplKelurahan, dplCakupanRwNumbers]);
+  }, [programs, searchQuery, kategoriFilter]);
+
 
   // Reset pagination when filters change
   useEffect(() => {
