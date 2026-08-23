@@ -125,6 +125,45 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
     );
   }
 
+  Widget _buildKategoriBadge(String? kategori) {
+    final raw = (kategori ?? 'Pemilahan').toLowerCase();
+    Color color;
+    String label;
+
+    if (raw.contains('pemilahan') || raw.contains('pilah')) {
+      color = AppColors.primaryGreen;
+      label = 'Pemilahan';
+    } else if (raw.contains('pengangkutan') || raw.contains('angkut')) {
+      color = AppColors.primaryBlue;
+      label = 'Pengangkutan';
+    } else if (raw.contains('pengolahan') || raw.contains('olah')) {
+      color = const Color(0xFF7C3AED); // Purple
+      label = 'Pengolahan';
+    } else if (raw.contains('pemanfaatan') || raw.contains('manfaat') || raw == 'fisik') {
+      color = const Color(0xFF0D9488); // Teal
+      label = 'Pemanfaatan';
+    } else if (raw.contains('edukasi') || raw.contains('sosialisasi') || raw == 'non-fisik') {
+      color = const Color(0xFFD97706); // Amber
+      label = 'Edukasi & Sosialisasi';
+    } else {
+      color = AppColors.textSecondary;
+      label = kategori ?? 'Lainnya';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
+      ),
+    );
+  }
+
   String _formatDate(String isoString) {
     try {
       final date = DateTime.parse(isoString);
@@ -196,14 +235,10 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                           spacing: 8,
                           runSpacing: 6,
                           children: [
+                            _buildKategoriBadge(item['kategori']),
                             _buildUsulanBadge(statusUsulan, legacyStatus),
                             _buildPelaksanaanBadge(statusPelaksanaan, legacyStatus, waktuPelaksanaanStr),
                           ],
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Kategori: ${item['kategori'] ?? 'Pemilahan'}',
-                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                         ),
                         const SizedBox(height: 6),
                         if (createdAtStr != null)

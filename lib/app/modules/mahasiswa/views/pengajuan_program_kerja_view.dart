@@ -17,7 +17,7 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
   final _tanggalCtrl = TextEditingController();
   final _deskripsiCtrl = TextEditingController();
   
-  String _kategori = 'Fisik';
+  String _kategori = 'Pemilahan';
   bool _isLoading = false;
 
   Future<void> _submit() async {
@@ -93,8 +93,12 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
                 initialValue: _kategori,
                 decoration: const InputDecoration(border: OutlineInputBorder()),
                 items: const [
-                  DropdownMenuItem(value: 'Fisik', child: Text('Fisik (Infrastruktur/Alat)')),
-                  DropdownMenuItem(value: 'Non-Fisik', child: Text('Non-Fisik (Edukasi/Sosialisasi)')),
+                  DropdownMenuItem(value: 'Pemilahan', child: Text('Pemilahan (Pilah Organik/Anorganik/Residu)')),
+                  DropdownMenuItem(value: 'Pengangkutan', child: Text('Pengangkutan (Jadwal & Armada)')),
+                  DropdownMenuItem(value: 'Pengolahan', child: Text('Pengolahan (Kompos/TPS3R/Biokonversi)')),
+                  DropdownMenuItem(value: 'Pemanfaatan', child: Text('Pemanfaatan (Budidaya Maggot/Daur Ulang)')),
+                  DropdownMenuItem(value: 'Edukasi & Sosialisasi', child: Text('Edukasi & Sosialisasi (Penyuluhan/Workshop)')),
+                  DropdownMenuItem(value: 'Lainnya', child: Text('Lainnya (Kegiatan Pendukung)')),
                 ],
                 onChanged: (val) => setState(() => _kategori = val!),
               ),
