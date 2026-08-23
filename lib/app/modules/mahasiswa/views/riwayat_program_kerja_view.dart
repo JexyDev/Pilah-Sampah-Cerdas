@@ -242,9 +242,15 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                         ),
                         const SizedBox(height: 6),
                         if (createdAtStr != null)
-                          Text(
-                            '📅 Diajukan Pada: ${_formatDate(createdAtStr)}',
-                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          Row(
+                            children: [
+                              const Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Diajukan Pada: ${_formatDate(createdAtStr!)}',
+                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                              ),
+                            ],
                           ),
                         if (waktuPelaksanaanStr != '-')
                           Builder(
@@ -266,15 +272,52 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      '🚀 Mulai: $mulai',
-                                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Diajukan Pada: ${_formatDate(createdAtStr)}',
+                                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '🛑 Berakhir: $berakhir',
-                                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                                    ),
+                                    const SizedBox(height: 8),
+                                    
+                                    // Waktu Pelaksanaan (jika ada)
+                                    if (mulai != '-' || berakhir != '-')
+                                      Container(
+                                        padding: const EdgeInsets.only(top: 8),
+                                        decoration: BoxDecoration(
+                                          border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.play_circle_outline, size: 14, color: AppColors.primaryGreen),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  'Mulai: $mulai',
+                                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.stop_circle_outlined, size: 14, color: AppColors.maroonRed),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  'Berakhir: $berakhir',
+                                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                   ],
                                 ),
                               );
