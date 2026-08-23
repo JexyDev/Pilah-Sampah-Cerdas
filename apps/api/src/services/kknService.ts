@@ -1537,12 +1537,19 @@ export class KknService {
       }
     }
 
-    const startDate = new Date(targetDate);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(targetDate);
-    endDate.setHours(23, 59, 59, 999);
+      const startDate = new Date(targetDate);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(targetDate);
+      endDate.setHours(23, 59, 59, 999);
+  
+      // VALIDASI H-1: Tidak boleh izin pada hari H atau hari yang sudah lewat
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (startDate.getTime() <= today.getTime()) {
+        throw new Error("Pengajuan izin harus dilakukan minimal H-1. Anda tidak dapat mengajukan izin untuk hari ini atau hari yang sudah lewat.");
+      }
 
-    // ÃƒÂ°Ã…Â¸Ã…Â½Ã‚Â¯ VALIDASI ANTI-TUMPUK (1 Hari/Pertemuan = 1 Status Pengajuan)
+      // VALIDASI ANTI-TUMPUK (1 Hari/Pertemuan = 1 Status Pengajuan)
     const studentProfile = await prisma.studentKkn.findFirst({
       where: { OR: [{ userId: studentId }, { id: studentId }] },
       include: { kelompok: { include: { dpl: true } }, user: true },
