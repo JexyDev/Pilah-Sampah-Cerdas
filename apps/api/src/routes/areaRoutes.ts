@@ -392,9 +392,57 @@ router.put("/kecamatan/:id", async (req, res) => {
 router.delete("/kecamatan/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.kecamatan.delete({
-      where: { id: Number(id) },
+    const kId = Number(id);
+
+    const kelurahans = await prisma.kelurahan.findMany({
+      where: { kecamatanId: kId },
+      select: { id: true },
     });
+    const kelIds = kelurahans.map((k) => k.id);
+
+    await prisma.$transaction(async (tx) => {
+      if (kelIds.length > 0) {
+        const rws = await tx.rw.findMany({
+          where: { kelurahanId: { in: kelIds } },
+          select: { id: true },
+        });
+        const rwIds = rws.map((r) => r.id);
+
+        await tx.bin.updateMany({
+          where: { kelurahanId: { in: kelIds } },
+          data: { kelurahanId: null },
+        });
+
+        if (rwIds.length > 0) {
+          await tx.bin.updateMany({
+            where: { rwId: { in: rwIds } },
+            data: { rwId: null },
+          });
+
+          await tx.user.updateMany({
+            where: { rwId: { in: rwIds } },
+            data: { rwId: null },
+          });
+
+          await tx.rt.deleteMany({
+            where: { rwId: { in: rwIds } },
+          });
+
+          await tx.rw.deleteMany({
+            where: { kelurahanId: { in: kelIds } },
+          });
+        }
+
+        await tx.kelurahan.deleteMany({
+          where: { kecamatanId: kId },
+        });
+      }
+
+      await tx.kecamatan.delete({
+        where: { id: kId },
+      });
+    });
+
     res.json({ success: true, message: "Kecamatan berhasil dihapus" });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
@@ -596,9 +644,45 @@ router.put("/kelurahan/:id", async (req, res) => {
 router.delete("/kelurahan/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.kelurahan.delete({
-      where: { id: String(id) },
+    const kelId = String(id);
+
+    const rws = await prisma.rw.findMany({
+      where: { kelurahanId: kelId },
+      select: { id: true },
     });
+    const rwIds = rws.map((r) => r.id);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.bin.updateMany({
+        where: { kelurahanId: kelId },
+        data: { kelurahanId: null },
+      });
+
+      if (rwIds.length > 0) {
+        await tx.bin.updateMany({
+          where: { rwId: { in: rwIds } },
+          data: { rwId: null },
+        });
+
+        await tx.user.updateMany({
+          where: { rwId: { in: rwIds } },
+          data: { rwId: null },
+        });
+
+        await tx.rt.deleteMany({
+          where: { rwId: { in: rwIds } },
+        });
+
+        await tx.rw.deleteMany({
+          where: { kelurahanId: kelId },
+        });
+      }
+
+      await tx.kelurahan.delete({
+        where: { id: kelId },
+      });
+    });
+
     res.json({ success: true, message: "Kelurahan berhasil dihapus" });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
@@ -773,9 +857,28 @@ router.put("/rw/:id", async (req, res) => {
 router.delete("/rw/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.rw.delete({
-      where: { id: Number(id) },
+    const rwId = Number(id);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.bin.updateMany({
+        where: { rwId },
+        data: { rwId: null },
+      });
+
+      await tx.user.updateMany({
+        where: { rwId },
+        data: { rwId: null },
+      });
+
+      await tx.rt.deleteMany({
+        where: { rwId },
+      });
+
+      await tx.rw.delete({
+        where: { id: rwId },
+      });
     });
+
     res.json({ success: true, message: "Berhasil menghapus data RW" });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
