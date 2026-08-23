@@ -603,18 +603,9 @@ export class KknAttendanceService {
           : todayLogs;
         let durationInZone = calculateInZoneDurationMinutes(sessionLogs, geofence, bufferMeters, (existingAtt?.jedaLogs as any[]) || []);
         
-        // --- LOGIKA SINKRONISASI 2-ARAH ---
-        // Jika mobile mengirimkan durasi (inZoneSeconds), gunakan nilai terbesarnya (Highest Wins)
-        let maxInZoneSeconds = 0;
-        for (const loc of locations) {
-          if (loc.inZoneSeconds && loc.inZoneSeconds > maxInZoneSeconds) {
-            maxInZoneSeconds = loc.inZoneSeconds;
-          }
-        }
-        if (maxInZoneSeconds > 0) {
-          const mobileMinutes = Math.floor(maxInZoneSeconds / 60);
-          durationInZone = Math.max(durationInZone, mobileMinutes);
-        }
+        // --- LOGIKA SINKRONISASI 2-ARAH (FIX: WEB MENJADI SOURCE OF TRUTH) ---
+        // Backend menghitung murni berdasarkan log GPS di database (calculateInZoneDurationMinutes)
+        // Mobile dipaksa untuk mengikuti hasil kalkulasi durasi dari backend.
 
         inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
 
