@@ -137,13 +137,15 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     final izinList = await kknRepo.getPengajuanIzin();
     for (final izin in izinList) {
       final status = izin['status']?.toString().toUpperCase();
-      if (status == 'APPROVED' || status == 'REJECTED') {
+      if (status == 'APPROVED' || status == 'REJECTED' || status == 'PENDING') {
         final isApproved = status == 'APPROVED';
+        final isPending = status == 'PENDING';
         final kategori = izin['kategori']?.toString() ?? 'Izin';
         final timestamp = izin['reviewedAt']?.toString() ?? izin['createdAt']?.toString() ?? DateTime.now().toIso8601String();
         final dt = DateTime.tryParse(timestamp) ?? DateTime.now();
         
-        final notifId = 'izin_${izin['id']}';
+        // Bedakan ID notif agar ketika status berubah jadi APPROVED/REJECTED, jadi notif baru
+        final notifId = isPending ? 'izin_pending_${izin['id']}' : 'izin_${izin['id']}';
         final isRead = readSet.contains(notifId) || 
             dt.millisecondsSinceEpoch <= markAllTimestamp ||
             LocalNotificationCacheService().isRead(userId, role, notifId, dt);
@@ -151,11 +153,11 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
         list.add(NotificationEntity(
           id: notifId,
           type: 'IZIN',
-          title: isApproved ? 'Pengajuan Izin Disetujui' : 'Pengajuan Izin Ditolak',
-          desc: isApproved ? 'DPL telah menyetujui pengajuan $kategori Anda.' : 'DPL menolak pengajuan $kategori Anda. ${izin['rejectionReason'] ?? ''}',
+          title: isPending ? 'Pengajuan Izin Dikirim' : (isApproved ? 'Pengajuan Izin Disetujui' : 'Pengajuan Izin Ditolak'),
+          desc: isPending ? 'Pengajuan $kategori Anda telah terkirim dan menunggu verifikasi DPL.' : (isApproved ? 'DPL telah menyetujui pengajuan $kategori Anda.' : 'DPL menolak pengajuan $kategori Anda. ${izin['rejectionReason'] ?? ''}'),
           isRead: isRead,
           time: dt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
-          icon: isApproved ? 'check_circle' : 'cancel',
+          icon: isPending ? 'access_time' : (isApproved ? 'check_circle' : 'cancel'),
           createdAt: dt,
         ));
       }
