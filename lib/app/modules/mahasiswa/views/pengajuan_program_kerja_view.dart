@@ -58,6 +58,8 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
     super.dispose();
   }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pengajuan Program Kerja', style: TextStyle(fontSize: 18)),
