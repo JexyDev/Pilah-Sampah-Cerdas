@@ -309,10 +309,9 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         ref.invalidate(mahasiswaNotificationsProvider);
         ref.read(mahasiswaControllerProvider.notifier).fetchAll();
         ref.read(aktivasiWargaProvider.notifier).refresh();
-
         // Tampilkan Full Dialog Modal Berhasil Aktivasi
         if (mounted) {
-          await showDialog(
+          showDialog(
             context: context,
             barrierDismissible: false,
             builder: (modalCtx) => AlertDialog(
@@ -351,37 +350,10 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                       color: AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(modalCtx);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryGreen,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text(
-                        'Selesai',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
           );
-
-          // Langsung keluar dari halaman aktivasi setelah dialog ditutup
-          if (mounted) Navigator.pop(context);
 
           // Rating dialog di background (tidak blocking)
           if (mounted) {
@@ -392,6 +364,13 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
               featureSubtitle: 'Bagaimana pengalaman Anda saat pertama kali membantu proses aktivasi tempat sampah warga binaan?',
               roleTag: 'Mahasiswa KKN',
             );
+          }
+
+          // Otomatis kembali setelah 2 detik
+          await Future.delayed(const Duration(seconds: 2));
+          if (mounted) {
+            Navigator.of(context).pop(); // Tutup dialog modal
+            Navigator.of(context).pop(); // Kembali ke halaman sebelumnya
           }
         }
       } else if (mounted) {
