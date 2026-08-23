@@ -49,6 +49,20 @@ router.get("/students", dplScopeMiddleware, dplController.getStudentDetails);
 
 /**
  * @swagger
+ * /api/v1/dpl/students-cumulative-summary:
+ *   get:
+ *     summary: Mendapatkan summary kumulatif jam aktual mahasiswa KKN terhadap minimal target
+ *     tags: [DPL]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan summary mahasiswa
+ */
+router.get("/students-cumulative-summary", dplScopeMiddleware, dplController.getStudentCumulativeSummary);
+
+/**
+ * @swagger
  * /api/v1/dpl/students/{studentId}/citizens:
  *   get:
  *     summary: Mendapatkan daftar warga dampingan per mahasiswa

@@ -32,6 +32,20 @@ export const dplController = {
     }
   },
 
+  getStudentCumulativeSummary: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const dplUserId = getUserId(req);
+      const userRole = (req.user as any)?.role;
+      const groupId = req.query.groupId as string | undefined;
+      const search = req.query.search as string | undefined;
+      const data = await dplService.getStudentCumulativeSummary(dplUserId, groupId, userRole, search);
+      res.json({ success: true, total: Array.isArray(data) ? data.length : 0, data });
+    } catch (error: any) {
+      console.error("[dplController.getStudentCumulativeSummary] error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  },
+
   getAssistedCitizens: async (req: Request, res: Response): Promise<void> => {
     try {
       const dplUserId = getUserId(req);

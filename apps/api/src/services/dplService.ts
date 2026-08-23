@@ -825,6 +825,99 @@ export const dplService = {
   },
 
   /**
+   * Mendapatkan summary kumulatif jam aktual mahasiswa KKN terhadap minimal target
+   */
+  getStudentCumulativeSummary: async (dplUserId: string, groupId?: string, role?: string, search?: string) => {
+    const whereGroup: any = await getKelompokWhere(dplUserId, role);
+    if (groupId) whereGroup.id = groupId;
+
+    const myGroups = await prisma.kelompokKkn.findMany({
+      where: whereGroup,
+      select: { id: true },
+    });
+
+    if (myGroups.length === 0) {
+      return [];
+    }
+
+    const myGroupIds = myGroups.map((g) => g.id);
+
+    const studentWhere: any = { kelompokId: { in: myGroupIds } };
+    if (search && search.trim() !== "") {
+      const q = search.trim();
+      studentWhere.OR = [
+        { nim: { contains: q, mode: "insensitive" } },
+        { user: { name: { contains: q, mode: "insensitive" } } },
+        { jurusan: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    const students = await prisma.studentKkn.findMany({
+      where: studentWhere,
+      include: {
+        user: { select: { id: true, name: true, fotoProfil: true } },
+        kelompok: { select: { name: true } },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    const configTargets = await dplService.getConfigTargets();
+    const targetHours = configTargets.targetTotalJam || 200;
+    const targetTotalMinutes = targetHours * 60;
+
+    const summaryList = await Promise.all(
+      students.map(async (st) => {
+        const attendances = await prisma.activityAttendance.findMany({
+          where: { studentId: st.userId },
+          select: { attendedAt: true, checkOutAt: true },
+        });
+
+        let totalMinutes = 0;
+        for (const a of attendances) {
+          if (a.checkOutAt && a.attendedAt) {
+            const diffMs = Math.max(0, new Date(a.checkOutAt).getTime() - new Date(a.attendedAt).getTime());
+            const mins = Math.min(480, Math.round(diffMs / (1000 * 60)));
+            totalMinutes += mins;
+          } else if (a.attendedAt) {
+            const isToday = new Date(a.attendedAt).toDateString() === new Date().toDateString();
+            if (isToday) {
+              const diffMs = Math.max(0, Date.now() - new Date(a.attendedAt).getTime());
+              totalMinutes += Math.min(480, Math.round(diffMs / (1000 * 60)));
+            } else {
+              totalMinutes += Math.round((configTargets.targetHarianJam || 2) * 60);
+            }
+          }
+        }
+
+        const totalHoursActual = Math.floor(totalMinutes / 60);
+        const remainingMinsActual = totalMinutes % 60;
+        
+        const progressPercentage = Math.round((totalMinutes / (targetTotalMinutes || 1)) * 100);
+        const isTargetAchieved = totalMinutes >= targetTotalMinutes;
+
+        return {
+          id: st.id,
+          userId: st.userId,
+          name: st.user?.name || "Mahasiswa KKN",
+          nim: st.nim || "-",
+          kelompokName: st.kelompok?.name || "-",
+          fotoProfil: st.user?.fotoProfil || null,
+          cumulativeStats: {
+            totalActualMinutes: totalMinutes,
+            totalActualFormatted: `${totalHoursActual} Jam ${remainingMinsActual} Menit`,
+            targetTotalMinutes: targetTotalMinutes,
+            targetTotalFormatted: `${targetHours} Jam`,
+            progressPercentage: Math.min(100, progressPercentage),
+            isTargetAchieved,
+          },
+        };
+      })
+    );
+
+    return summaryList;
+  },
+
+  /**
    * 3. Detail Warga yang Dibantu (w/ Waste Pattern)
    */
   getAssistedCitizens: async (dplUserId: string, studentId: string) => {
