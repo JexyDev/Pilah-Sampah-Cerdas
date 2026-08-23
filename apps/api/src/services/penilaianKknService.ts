@@ -201,14 +201,14 @@ export const penilaianKknService = {
       calculateAspectScore(assessment.skorMitraDampak, 10) +
       calculateAspectScore(assessment.skorMitraInisiatif, 7);
 
-    // DPL academic 6 aspects (Total 100%: Perencanaan Kelompok 20%, Kontribusi Individu 10%, Logbook 15%, Analisis/Kehadiran 20%, Output 15%, Laporan Akhir 20%)
+    // DPL academic 6 aspects (Total 100%: Perencanaan Kelompok 20%, Kontribusi Individu 10%, Logbook 20%, Analisis 20%, Output 20%, Laporan Akhir 10%)
     const subDpl =
       calculateAspectScore(assessment.skorDplPerencanaan, 20) +
       calculateAspectScore(assessment.skorDplKontribusi, 10) +
-      calculateAspectScore(assessment.skorDplLogbook, 15) +
+      calculateAspectScore(assessment.skorDplLogbook, 20) +
       calculateAspectScore(assessment.skorDplAnalisis, 20) +
-      calculateAspectScore(assessment.skorDplOutput, 15) +
-      calculateAspectScore(assessment.skorDplLaporanAkhir, 20);
+      calculateAspectScore(assessment.skorDplOutput, 20) +
+      calculateAspectScore(assessment.skorDplLaporanAkhir, 10);
 
     const totalNilai = Number((subDpl > 0 ? subDpl : (subMitra + subDpl)).toFixed(2));
     const kategori = totalNilai === 0 && !existing ? "Belum Dinilai" : calculateGradeCategory(totalNilai);
@@ -390,14 +390,14 @@ export const penilaianKknService = {
       calculateAspectScore(skorMitraInisiatif, 7)
     ).toFixed(2));
 
-    // 3. Kalkulasi Subtotal DPL (Bobot total 100%: Perencanaan Kelompok 20%, Kontribusi Individu 10%, Logbook 15%, Analisis/Kehadiran 20%, Output 15%, Laporan Akhir 20%)
+    // 3. Kalkulasi Subtotal DPL (Bobot total 100%: Perencanaan 20%, Kontribusi 10%, Logbook 20%, Analisis 20%, Output 20%, Laporan Akhir 10%)
     const subtotalDpl = Number((
       calculateAspectScore(skorDplPerencanaan, 20) +
       calculateAspectScore(skorDplKontribusi, 10) +
-      calculateAspectScore(skorDplLogbook, 15) +
+      calculateAspectScore(skorDplLogbook, 20) +
       calculateAspectScore(skorDplAnalisis, 20) +
-      calculateAspectScore(skorDplOutput, 15) +
-      calculateAspectScore(skorDplLaporanAkhir, 20)
+      calculateAspectScore(skorDplOutput, 20) +
+      calculateAspectScore(skorDplLaporanAkhir, 10)
     ).toFixed(2));
 
     // 4. Kalkulasi Nilai Akhir & Kategori
@@ -594,10 +594,10 @@ export const penilaianKknService = {
         : Number((
             calculateAspectScore(skorDplPerencanaan, 20) +
             calculateAspectScore(skorDplKontribusi, 10) +
-            calculateAspectScore(skorDplLogbook, 15) +
+            calculateAspectScore(skorDplLogbook, 20) +
             calculateAspectScore(skorDplAnalisis, 20) +
-            calculateAspectScore(skorDplOutput, 15) +
-            calculateAspectScore(skorDplLaporanAkhir, 20)
+            calculateAspectScore(skorDplOutput, 20) +
+            calculateAspectScore(skorDplLaporanAkhir, 10)
           ).toFixed(2)) || (directScore > 0 ? directScore : 0);
 
       const hasAnyScore =
@@ -1080,10 +1080,10 @@ export const penilaianKknService = {
         const subtotalDpl = Number((
           calculateAspectScore(currentSkorDplPerencanaan, 20) +
           calculateAspectScore(currentSkorDplKontribusi, 10) +
-          calculateAspectScore(currentSkorDplLogbook, 15) +
+          calculateAspectScore(currentSkorDplLogbook, 20) +
           calculateAspectScore(currentSkorDplAnalisis, 20) +
-          calculateAspectScore(currentSkorDplOutput, 15) +
-          calculateAspectScore(currentSkorDplLaporanAkhir, 20)
+          calculateAspectScore(currentSkorDplOutput, 20) +
+          calculateAspectScore(currentSkorDplLaporanAkhir, 10)
         ).toFixed(2));
 
         const nilaiAkhir = Number((subtotalMitra + subtotalDpl).toFixed(2));
@@ -1190,10 +1190,10 @@ export const penilaianKknService = {
     const subtotalDpl = Number((
       calculateAspectScore(currentSkorDplPerencanaan, 20) +
       calculateAspectScore(currentSkorDplKontribusi, 10) +
-      calculateAspectScore(currentSkorDplLogbook, 15) +
+      calculateAspectScore(currentSkorDplLogbook, 20) +
       calculateAspectScore(currentSkorDplAnalisis, 20) +
-      calculateAspectScore(currentSkorDplOutput, 15) +
-      calculateAspectScore(currentSkorDplLaporanAkhir, 20)
+      calculateAspectScore(currentSkorDplOutput, 20) +
+      calculateAspectScore(currentSkorDplLaporanAkhir, 10)
     ).toFixed(2));
 
     const nilaiAkhir = Number((subtotalMitra + subtotalDpl).toFixed(2));

@@ -42,7 +42,7 @@ const ASPEK_DPL_CONFIG = [
     key: "skorDplKontribusi" as const,
     no: 2,
     title: "Kontribusi Individu",
-    bobot: 20,
+    bobot: 10,
     deskripsi: "Keaktifan, dedikasi, dan kerja nyata dalam tim KKN",
   },
   {
@@ -56,14 +56,14 @@ const ASPEK_DPL_CONFIG = [
     key: "skorDplAnalisis" as const,
     no: 4,
     title: "Analisis Masalah & Solusi",
-    bobot: 15,
+    bobot: 20,
     deskripsi: "Kemampuan identifikasi persoalan sampah dan rumusan solusi",
   },
   {
     key: "skorDplOutput" as const,
     no: 5,
     title: "Output, Outcome, & Dampak",
-    bobot: 15,
+    bobot: 20,
     deskripsi: "Realisasi target fisik/edukasi dan dampak bagi warga binaan",
   },
   {
@@ -270,10 +270,10 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     const s6 = parseNum(formScores.skorDplLaporanAkhir);
 
     const score1 = Number(((s1 * 20) / 100).toFixed(2));
-    const score2 = Number(((s2 * 20) / 100).toFixed(2));
+    const score2 = Number(((s2 * 10) / 100).toFixed(2));
     const score3 = Number(((s3 * 20) / 100).toFixed(2));
-    const score4 = Number(((s4 * 15) / 100).toFixed(2));
-    const score5 = Number(((s5 * 15) / 100).toFixed(2));
+    const score4 = Number(((s4 * 20) / 100).toFixed(2));
+    const score5 = Number(((s5 * 20) / 100).toFixed(2));
     const score6 = Number(((s6 * 10) / 100).toFixed(2));
 
     const total = Number((score1 + score2 + score3 + score4 + score5 + score6).toFixed(2));
