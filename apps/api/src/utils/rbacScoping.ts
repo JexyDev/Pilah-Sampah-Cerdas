@@ -123,7 +123,12 @@ export async function getScopingFilters(user: {
           { warga: { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } } },
         ],
       },
-      pemanfaatanFilter: { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } },
+      pemanfaatanFilter: {
+        OR: [
+          { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } },
+          { rw: { kelurahanId: { in: kelurahanIds } } },
+        ],
+      },
       facilityFilter: { 
         OR: [
           { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } },
