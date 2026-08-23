@@ -41,8 +41,6 @@ class RiwayatKknView extends ConsumerStatefulWidget {
 }
 
 class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
-  int _filterIndex = 0; // 0=Semua, 1=Aktivasi, 2=GPS
-
   @override
   void initState() {
     super.initState();
@@ -54,12 +52,7 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
   }
 
   List<KknHistoryLog> _getFilteredLogs(List<KknHistoryLog> logs) {
-    return logs.where((log) {
-      if (_filterIndex == 0) return true; // Semua
-      if (_filterIndex == 1) return log.points == null || log.points == 0; // Non Poin
-      if (_filterIndex == 2) return log.points != null && log.points! > 0; // Poin
-      return true;
-    }).toList();
+    return logs.where((log) => log.points == null || log.points == 0).toList();
   }
 
   @override
@@ -101,30 +94,17 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
               ],
             ),
           ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                _filterTab('Semua', 0),
-                const SizedBox(width: 8),
-                _filterTab('Riwayat Non Poin', 1),
-                const SizedBox(width: 8),
-                _filterTab('Riwayat Poin', 2),
-              ],
-            ),
-          ),
           const Divider(height: 1),
 
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
                   child: Text(
-                    _filterIndex == 0 ? 'Semua Aktivitas' : _filterIndex == 1 ? 'Riwayat Aktivitas (Non Poin)' : 'Riwayat Perolehan Poin',
-                    style: const TextStyle(
+                    'Riwayat Aktivitas (Non Poin)',
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
@@ -156,29 +136,6 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _filterTab(String label, int index) {
-    final bool active = _filterIndex == index;
-    return GestureDetector(
-      onTap: () => setState(() => _filterIndex = index),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: active ? AppColors.primaryGreen : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: active ? null : Border.all(color: AppColors.border),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: active ? Colors.white : AppColors.textSecondary,
-          ),
-        ),
       ),
     );
   }
