@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../views/riwayat_kkn_view.dart'; // Import models from view
@@ -104,14 +105,79 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
             isGpsActive: data['isGpsActive'] as bool?,
             statusKehadiran: data['statusKehadiran']?.toString() ?? data['status']?.toString(),
             durationFormatted: data['durationFormatted']?.toString() ?? data['durasiFormatted']?.toString(),
+            scheduleId: data['scheduleId']?.toString() ?? data['kegiatanId']?.toString(),
           ));
         }
       } catch (_) {}
 
+      // 3. Ambil data Riwayat Kegiatan
+      try {
+        final historyData = await kknRepo.getKknHistory();
+        for (final e in historyData) {
+          final Map<String, dynamic> data = e as Map<String, dynamic>;
+          
+          final typeStr = data['type']?.toString().toLowerCase() ?? '';
+          final type = (typeStr == 'aktivasi') ? KknHistoryType.aktivasi : KknHistoryType.gps;
+          
+          String title = data['title']?.toString() ?? 'Riwayat Kegiatan';
+          if (data['kegiatan'] != null && data['kegiatan'] is Map) {
+              title = data['kegiatan']['name']?.toString() ?? title;
+          }
+          
+          parsedLogs.add(KknHistoryLog(
+            title: title,
+            subtitle: data['subtitle']?.toString() ?? data['statusKehadiran']?.toString() ?? 'Presensi KKN',
+            timestamp: DateTime.tryParse(data['timestamp']?.toString() ?? data['createdAt']?.toString() ?? '') ?? DateTime.now(),
+            type: type,
+            points: data['points'] as int?,
+            isGpsActive: data['isGpsActive'] as bool?,
+            statusKehadiran: data['statusKehadiran']?.toString() ?? data['status']?.toString(),
+            durationFormatted: data['durationFormatted']?.toString() ?? data['durasiFormatted']?.toString(),
+            scheduleId: data['scheduleId']?.toString() ?? data['kegiatanId']?.toString() ?? data['id']?.toString(),
+          ));
+        }
+      } catch (e) {
+        // Abaikan jika error / endpoint belum siap
+      }
+
+      // 4. Ambil data Kegiatan Aktif (karena kegiatan selesai masih direturn di sini)
+      try {
+        final kegiatanAktif = await kknRepo.getKegiatanAktif();
+        for (final data in kegiatanAktif) {
+          if (data['status'] == 'SELESAI' || data['attendanceStatus'] == 'HADIR' || data['attendanceStatus'] == 'SELESAI') {
+            final title = data['nama']?.toString() ?? data['namaKegiatan']?.toString() ?? 'Riwayat Kegiatan';
+            parsedLogs.add(KknHistoryLog(
+              title: title,
+              subtitle: 'Kegiatan Selesai',
+              timestamp: DateTime.tryParse(data['tanggal']?.toString() ?? data['tanggalKegiatan']?.toString() ?? '') ?? DateTime.now(),
+              type: KknHistoryType.gps,
+              points: null,
+              isGpsActive: true,
+              statusKehadiran: data['attendanceStatus']?.toString(),
+              durationFormatted: null,
+              scheduleId: data['id']?.toString(),
+            ));
+          }
+        }
+      } catch (e) {
+        debugPrint('[RiwayatKknNotifier] getKegiatanAktif error: $e');
+      }
+
       // Sort by descending timestamp
       parsedLogs.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-      state = state.copyWith(isLoading: false, logs: parsedLogs);
+      // Remove duplicates (same type and scheduleId/timestamp)
+      final List<KknHistoryLog> uniqueLogs = [];
+      final Set<String> seen = {};
+      for (final log in parsedLogs) {
+        final key = '${log.type}_${log.scheduleId}_${log.title}_${log.timestamp.toIso8601String()}';
+        if (!seen.contains(key)) {
+          seen.add(key);
+          uniqueLogs.add(log);
+        }
+      }
+
+      state = state.copyWith(isLoading: false, logs: uniqueLogs);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,

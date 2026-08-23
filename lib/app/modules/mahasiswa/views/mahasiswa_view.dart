@@ -205,7 +205,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     final fotoUrl = user?.fotoProfil;
 
     return SliverAppBar(
-      expandedHeight: 195,
+      expandedHeight: 175,
       pinned: true,
       backgroundColor: Colors.white,
       foregroundColor: AppColors.textPrimary,
@@ -309,7 +309,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           color: Colors.white,
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 52, 16, 12),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -658,8 +658,8 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.groups_rounded,
-                  iconAsset: 'assets/icons/employees.png',
-                  title: 'Kelompok KKN',
+                iconAsset: 'assets/icons/employees.png',
+                title: 'Kelompok KKN',
                 subtitle: 'Lihat tim & DPL',
                 gradientColors: const [
                   AppColors.primaryBlueLight,
@@ -692,55 +692,81 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           children: [
             Expanded(
               child: _MenuTileCard(
-                  icon: Icons.assignment_rounded,
-                  iconAsset: 'assets/icons/activity.png',
-                  title: 'Program & Aksi KKN',
-                  subtitle: 'Proker, Logbook, Hasil',
+                icon: Icons.assignment_rounded,
+                iconAsset: 'assets/icons/activity.png',
+                title: 'Program & Aksi KKN',
+                subtitle: 'Proker, Logbook, Hasil',
                 gradientColors: const [
                   AppColors.primaryBlueLight,
-                    AppColors.primaryBlue,
+                  AppColors.primaryBlue,
                 ],
                 onTap: () {
                   // Show bottom sheet to choose between Add or History
                   showModalBottomSheet(
                     context: context,
                     shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
                     ),
                     builder: (context) => SafeArea(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           ListTile(
-                            leading: const Icon(Icons.add, color: AppColors.primaryGreen),
+                            leading: const Icon(
+                              Icons.add,
+                              color: AppColors.primaryGreen,
+                            ),
                             title: const Text('Ajukan Program Kerja'),
                             onTap: () {
                               Navigator.pop(context);
-                              Navigator.pushNamed(context, AppRoutes.pengajuanProgramKerja);
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.pengajuanProgramKerja,
+                              );
                             },
                           ),
                           ListTile(
-                            leading: const Icon(Icons.history, color: AppColors.primaryBlue),
+                            leading: const Icon(
+                              Icons.history,
+                              color: AppColors.primaryBlue,
+                            ),
                             title: const Text('Riwayat & Status Program'),
                             onTap: () {
                               Navigator.pop(context);
-                              Navigator.pushNamed(context, AppRoutes.riwayatProgramKerja);
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.riwayatProgramKerja,
+                              );
                             },
                           ),
                           ListTile(
-                            leading: const Icon(Icons.recycling_rounded, color: AppColors.primaryBlue),
+                            leading: const Icon(
+                              Icons.recycling_rounded,
+                              color: AppColors.primaryBlue,
+                            ),
                             title: const Text('Lapor Pemanfaatan Sampah'),
                             onTap: () {
                               Navigator.pop(context);
-                              Navigator.pushNamed(context, AppRoutes.logbookPemanfaatan);
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.logbookPemanfaatan,
+                              );
                             },
                           ),
                           ListTile(
-                            leading: const Icon(Icons.eco_rounded, color: AppColors.primaryGreen),
+                            leading: const Icon(
+                              Icons.eco_rounded,
+                              color: AppColors.primaryGreen,
+                            ),
                             title: const Text('Catat Hasil'),
                             onTap: () {
                               Navigator.pop(context);
-                              Navigator.pushNamed(context, AppRoutes.catatPanen);
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.catatPanen,
+                              );
                             },
                           ),
                         ],
@@ -773,12 +799,12 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.analytics_rounded,
-                  iconAsset: 'assets/icons/view.png',
-                  title: 'Monitoring Warga',
+                iconAsset: 'assets/icons/view.png',
+                title: 'Monitoring Warga',
                 subtitle: 'Pantau poin & aktivitas',
                 gradientColors: const [
                   AppColors.primaryBlueLight,
-                    AppColors.primaryBlue,
+                  AppColors.primaryBlue,
                 ],
                 onTap: () => Navigator.pushNamed(
                   context,
@@ -791,12 +817,12 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.add_business_rounded,
-                  iconAsset: 'assets/icons/recycle-bin.png',
-                  title: 'Fasilitas Warga',
+                iconAsset: 'assets/icons/recycle-bin.png',
+                title: 'Fasilitas Warga',
                 subtitle: 'Daftar fasilitas baru',
                 gradientColors: const [
                   AppColors.primaryBlueLight,
-                    AppColors.primaryBlue,
+                  AppColors.primaryBlue,
                 ],
                 onTap: () =>
                     Navigator.pushNamed(context, AppRoutes.registerFasilitas),
@@ -1352,4 +1378,3 @@ class _WargaCard extends StatelessWidget {
     );
   }
 }
-

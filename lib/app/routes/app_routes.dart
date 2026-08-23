@@ -20,6 +20,7 @@ class AppRoutes {
   static const String timbanganPemilahan = '/timbangan-pemilahan';
   static const String tentang = '/tentang';
   static const String kknAttendance = '/kkn-attendance';
+  static const String kknAttendanceHistory = '/kkn-attendance/history';
   static const String monitoringWarga = '/monitoring-warga';
   static const String mahasiswa = '/mahasiswa';
   static const String kelompokKkn = '/kelompok-kkn';

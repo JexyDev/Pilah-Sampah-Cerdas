@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../routes/app_routes.dart';
 import '../controllers/riwayat_kkn_controller.dart';
 
 // Model
@@ -17,6 +18,7 @@ class KknHistoryLog {
   final bool? isGpsActive; // For gps
   final String? statusKehadiran;
   final String? durationFormatted;
+  final String? scheduleId;
 
   KknHistoryLog({
     required this.title,
@@ -27,6 +29,7 @@ class KknHistoryLog {
     this.isGpsActive,
     this.statusKehadiran,
     this.durationFormatted,
+    this.scheduleId,
   });
 }
 
@@ -111,34 +114,56 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
                 const SizedBox(width: 8),
                 _filterTab('Aktivasi Warga', 1),
                 const SizedBox(width: 8),
+<<<<<<< Updated upstream
                 _filterTab('Laporan Pemanfaatan', 4),
                 const SizedBox(width: 8),
                 _filterTab('Ping Lokasi Posko', 2),
+=======
+                _filterTab('Riwayat Kegiatan', 2),
+>>>>>>> Stashed changes
                 const SizedBox(width: 8),
                 _filterTab('Pengajuan Izin', 3),
               ],
             ),
           ),
           Expanded(
-            child: state.isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen))
-                : state.errorMessage != null
-                    ? Center(child: Text(state.errorMessage!, style: const TextStyle(color: AppColors.dangerRed)))
-                    : filteredLogs.isEmpty
-                        ? _buildEmpty()
-                        : RefreshIndicator(
-                            color: AppColors.primaryGreen,
-                            onRefresh: () => ref.read(riwayatKknControllerProvider.notifier).refresh(),
-                            child: ListView.separated(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: filteredLogs.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 12),
-                              itemBuilder: (context, index) {
-                                final log = filteredLogs[index];
-                                return _buildLogCard(log);
-                              },
-                            ),
-                          ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Text(
+                    _filterIndex == 0 ? 'Semua Aktivitas' : _filterIndex == 1 ? 'Aktivasi Warga' : _filterIndex == 2 ? 'Kegiatan KKN' : 'Pengajuan Izin',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: state.isLoading
+                      ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen))
+                      : state.errorMessage != null
+                          ? Center(child: Text(state.errorMessage!, style: const TextStyle(color: AppColors.dangerRed)))
+                          : filteredLogs.isEmpty
+                              ? _buildEmpty()
+                              : RefreshIndicator(
+                                  color: AppColors.primaryGreen,
+                                  onRefresh: () => ref.read(riwayatKknControllerProvider.notifier).refresh(),
+                                  child: ListView.separated(
+                                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                                    itemCount: filteredLogs.length,
+                                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                    itemBuilder: (context, index) {
+                                      final log = filteredLogs[index];
+                                      return _buildLogCard(log);
+                                    },
+                                  ),
+                                ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -209,20 +234,30 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
       }
     }
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
+    return GestureDetector(
+      onTap: () {
+        if (log.type == KknHistoryType.gps && log.scheduleId != null) {
+          Navigator.pushNamed(
+            context,
+            AppRoutes.kknAttendanceHistory,
+            arguments: {'scheduleId': log.scheduleId},
+          );
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
@@ -303,6 +338,7 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
               ),
             ),
         ],
+      ),
       ),
     );
   }

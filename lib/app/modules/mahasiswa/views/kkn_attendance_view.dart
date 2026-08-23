@@ -1354,7 +1354,7 @@ class KegiatanKknCard extends StatelessWidget {
       statusText = '✅ HADIR';
       badgeColor = AppColors.primaryGreen.withValues(alpha: 0.1);
       textColor = AppColors.primaryGreen;
-      buttonText = 'Sudah Presensi (HADIR)';
+      buttonText = 'Sudah Hadir';
     } else if (statusKehadiran == 'BERLANGSUNG') {
       statusText = '⏱️ BERLANGSUNG';
       badgeColor = Colors.orange.withValues(alpha: 0.1);
@@ -1369,12 +1369,12 @@ class KegiatanKknCard extends StatelessWidget {
       statusText = '🏁 SELESAI';
       badgeColor = Colors.blue.withValues(alpha: 0.1);
       textColor = Colors.blue;
-      buttonText = 'Sesi Berakhir (Hadir)';
+      buttonText = 'Sesi Selesai';
     } else if (statusKehadiran == 'SELESAI_TELAT') {
       statusText = '⚠️ SELESAI (DURASI KURANG)';
       badgeColor = Colors.deepOrange.withValues(alpha: 0.1);
       textColor = Colors.deepOrange;
-      buttonText = 'Sesi Berakhir';
+      buttonText = 'Selesai Lebih Cepat';
     } else if (statusKehadiran == 'LEPAS_RADIUS') {
       statusText = '❌ LEPAS RADIUS';
       badgeColor = AppColors.dangerRed.withValues(alpha: 0.1);
@@ -1389,7 +1389,7 @@ class KegiatanKknCard extends StatelessWidget {
       statusText = '⚠️ TANPA KETERANGAN';
       badgeColor = AppColors.dangerRed.withValues(alpha: 0.1);
       textColor = AppColors.dangerRed;
-      buttonText = 'Tanpa Keterangan (Tidak Hadir)';
+      buttonText = 'Alpa (Tanpa Keterangan)';
     } else {
       statusText = isAktif ? '🟢 AKTIF' : '🔵 AKAN DATANG';
       badgeColor = isAktif
@@ -1453,11 +1453,27 @@ class KegiatanKknCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ElevatedButton(
-                    onPressed: canStart
-                        ? () => onMulai(kegiatan['id'].toString())
-                        : null,
+                    onPressed: () {
+                      if (statusKehadiran == 'HADIR' ||
+                          statusKehadiran == 'SELESAI' ||
+                          statusKehadiran == 'SELESAI_TELAT' ||
+                          statusKehadiran == 'ALPA' ||
+                          statusKehadiran == 'TANPA_KETERANGAN') {
+                        // Fitur Lihat Riwayat telah dipindah ke halaman History
+                        return;
+                      } else {
+                        onMulai(kegiatan['id'].toString());
+                      }
+                    },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGreen,
+                      backgroundColor: (canStart &&
+                              statusKehadiran != 'HADIR' &&
+                              statusKehadiran != 'SELESAI' &&
+                              statusKehadiran != 'SELESAI_TELAT' &&
+                              statusKehadiran != 'ALPA' &&
+                              statusKehadiran != 'TANPA_KETERANGAN')
+                          ? AppColors.primaryGreen
+                          : Colors.grey.shade400,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),

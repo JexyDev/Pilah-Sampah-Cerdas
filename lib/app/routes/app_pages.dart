@@ -22,6 +22,7 @@ import '../modules/notifikasi/views/notifikasi_view.dart';
 import '../modules/petugas_pemilahan/timbangan_pemilahan_view.dart';
 import '../modules/tentang/tentang_aplikasi_view.dart';
 import '../modules/mahasiswa/views/kkn_attendance_view.dart';
+import '../modules/mahasiswa/views/kkn_attendance_history_view.dart';
 import '../modules/mahasiswa/views/monitoring_warga_view.dart';
 import '../modules/mahasiswa/views/mahasiswa_view.dart';
 import '../modules/mahasiswa/views/kelompok_kkn_view.dart';
@@ -98,6 +99,10 @@ class AppPages {
         return _buildRoute(const TentangAplikasiView(), settings);
       case AppRoutes.kknAttendance:
         return _buildRoute(const KknAttendanceView(), settings);
+      case AppRoutes.kknAttendanceHistory:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final scheduleId = args?['scheduleId'] as String? ?? '';
+        return _buildRoute(KknAttendanceHistoryView(scheduleId: scheduleId), settings);
       case AppRoutes.monitoringWarga:
         return _buildRoute(const MonitoringWargaView(), settings);
       case AppRoutes.mahasiswa:
