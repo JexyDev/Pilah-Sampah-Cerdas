@@ -86,7 +86,14 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
           final Map<String, dynamic> data = e as Map<String, dynamic>;
           
           final typeStr = data['type']?.toString().toLowerCase() ?? '';
-          final type = typeStr == 'gps' || typeStr == 'location' ? KknHistoryType.gps : KknHistoryType.aktivasi;
+          KknHistoryType type;
+          if (typeStr == 'gps' || typeStr == 'location') {
+            type = KknHistoryType.gps;
+          } else if (typeStr == 'laporan') {
+            type = KknHistoryType.laporan;
+          } else {
+            type = KknHistoryType.aktivasi;
+          }
           
           parsedLogs.add(KknHistoryLog(
             title: data['title']?.toString() ?? 'Riwayat Aktivitas',

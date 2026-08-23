@@ -6,7 +6,7 @@ import '../../../core/values/app_colors.dart';
 import '../controllers/riwayat_kkn_controller.dart';
 
 // Model
-enum KknHistoryType { aktivasi, gps, izin }
+enum KknHistoryType { aktivasi, gps, izin, laporan }
 
 class KknHistoryLog {
   final String title;
@@ -57,6 +57,8 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
       return logs.where((l) => l.type == KknHistoryType.gps).toList();
     } else if (_filterIndex == 3) {
       return logs.where((l) => l.type == KknHistoryType.izin).toList();
+    } else if (_filterIndex == 4) {
+      return logs.where((l) => l.type == KknHistoryType.laporan).toList();
     }
     return logs;
   }
@@ -108,6 +110,8 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
                 _filterTab('Semua', 0),
                 const SizedBox(width: 8),
                 _filterTab('Aktivasi Warga', 1),
+                const SizedBox(width: 8),
+                _filterTab('Laporan Pemanfaatan', 4),
                 const SizedBox(width: 8),
                 _filterTab('Ping Lokasi Posko', 2),
                 const SizedBox(width: 8),
@@ -165,16 +169,20 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
   }
 
   Widget _buildLogCard(KknHistoryLog log) {
-    final isAktivasi = log.type == KknHistoryType.aktivasi;
+    final hasPoints = log.points != null;
     
     IconData iconData;
     Color iconColor;
     Color bgColor;
     
     if (log.type == KknHistoryType.aktivasi) {
-      iconData = Icons.qr_code_scanner_rounded;
+      iconData = Icons.person_add_alt_1_rounded;
       iconColor = AppColors.success;
       bgColor = AppColors.success.withValues(alpha: 0.1);
+    } else if (log.type == KknHistoryType.laporan) {
+      iconData = Icons.assignment_turned_in_rounded;
+      iconColor = AppColors.primaryGreen;
+      bgColor = AppColors.primaryGreen.withValues(alpha: 0.1);
     } else if (log.type == KknHistoryType.gps) {
       iconData = Icons.location_on_rounded;
       if (log.statusKehadiran == 'SELESAI_TELAT') {
@@ -271,7 +279,7 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
               ],
             ),
           ),
-          if (isAktivasi && log.points != null)
+          if (hasPoints)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
