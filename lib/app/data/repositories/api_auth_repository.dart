@@ -505,7 +505,7 @@ class ApiAuthRepository implements AuthRepository {
           // Selalu update cache lokal setiap kali fetchProfile berhasil
           await secureStorage.write(
             key: AppConfig.userDataKey,
-            value: jsonEncode(mappedUser.toJson()),
+            value: jsonEncode(data),
           );
           
           return mappedUser;

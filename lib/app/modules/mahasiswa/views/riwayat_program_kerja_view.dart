@@ -272,19 +272,7 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'Diajukan Pada: ${_formatDate(createdAtStr)}',
-                                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    
-                                    // Waktu Pelaksanaan (jika ada)
+                                    // Waktu Pelaksanaan
                                     if (mulai != '-' || berakhir != '-')
                                       Container(
                                         padding: const EdgeInsets.only(top: 8),
