@@ -75,27 +75,36 @@ const ASPEK_DPL_CONFIG = [
   },
 ];
 
-// Helper Predikat Nilai
+// Helper Predikat Nilai (A, B, C, D, E)
 const getPredikat = (score: number): string => {
-  if (score >= 85) return "Sangat Baik";
-  if (score >= 75) return "Baik";
-  if (score >= 65) return "Cukup";
-  if (score >= 55) return "Kurang";
-  if (score > 0) return "Sangat Kurang";
+  if (score >= 80) return "A";
+  if (score >= 70) return "B";
+  if (score >= 60) return "C";
+  if (score >= 50) return "D";
+  if (score > 0) return "E";
   return "Belum Dinilai";
+};
+
+// Helper to normalize any existing category (verbal or letter) to A/B/C/D/E
+const normalizeCategoryToLetter = (kat?: string | null, score: number = 0): string => {
+  if (!kat || kat === "Belum Dinilai") return score > 0 ? getPredikat(score) : "Belum Dinilai";
+  const upper = kat.trim().toUpperCase();
+  if (["A", "B", "C", "D", "E"].includes(upper)) return upper;
+  return getPredikat(score);
 };
 
 // Helper Predikat Badge Color
 const getPredikatBadgeClass = (predikat: string): string => {
   switch (predikat) {
-    case "Sangat Baik":
+    case "A":
       return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60";
-    case "Baik":
+    case "B":
       return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/60";
-    case "Cukup":
+    case "C":
       return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/60";
-    case "Kurang":
-    case "Sangat Kurang":
+    case "D":
+      return "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800/60";
+    case "E":
       return "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/60";
     default:
       return "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
@@ -502,7 +511,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                 {paginatedStudents.map((s, idx) => {
                   const rowNumber = (currentPage - 1) * itemsPerPage + idx + 1;
-                  const predikatText = s.kategori || (s.subtotalDpl > 0 ? getPredikat(s.subtotalDpl) : "Belum Dinilai");
+                  const predikatText = normalizeCategoryToLetter(s.kategori, s.subtotalDpl);
 
                   return (
                     <tr
