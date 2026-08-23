@@ -1719,8 +1719,8 @@ export const dplService = {
       return {
         id: p.id,
         kelompokId: p.kelompokId,
-        kelompokName: groupMap.get(p.kelompokId)?.name || "-",
-        kelurahan: groupMap.get(p.kelompokId)?.kelurahan || "-",
+        kelompokName: (groupMap.get(p.kelompokId) as any)?.name || "-",
+        kelurahan: (groupMap.get(p.kelompokId) as any)?.kelurahan || "-",
         nomor: p.nomor || 1,
         judul: parsedDesc.judul,
         deskripsi: parsedDesc.deskripsi,

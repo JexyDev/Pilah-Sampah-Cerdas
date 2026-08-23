@@ -1099,9 +1099,6 @@ export const DplDashboardPage: React.FC = () => {
                 <option value="ALL">Semua Keputusan</option>
                 <option value="APPROVED">Disetujui</option>
                 <option value="REJECTED">Ditolak</option>
-                <option value="ESCALATED">Dieskalasi ke Taskforce</option>
-                <option value="CANCELLED">Dibatalkan Mahasiswa</option>
-                <option value="OVERRIDDEN_HADIR">Batal Izin (Hadir)</option>
               </select>
             </div>
           </div>

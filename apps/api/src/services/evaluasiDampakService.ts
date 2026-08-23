@@ -204,7 +204,7 @@ export const evaluasiDampakService = {
     };
 
     const komparasi = baselineData.map((baseline) => {
-      const endline = endlineMap.get(baseline.kelurahanId) || null;
+      const endline: any = endlineMap.get(baseline.kelurahanId) || null;
 
       const baselinePemilahan = baseline.pemilahanSampah?.persentasePemilahan
         ? Number(baseline.pemilahanSampah.persentasePemilahan)
