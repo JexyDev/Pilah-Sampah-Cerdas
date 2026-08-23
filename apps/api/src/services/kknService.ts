@@ -13,6 +13,18 @@ import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
 import { calculateDistance } from "./kknAttendanceService.js";
 import { pointService } from "./pointService.js";
 
+export function normalizeProkerKategori(kategori?: string | null): string {
+  if (!kategori) return "Lainnya";
+  const raw = kategori.trim().toUpperCase();
+  if (raw.includes("PEMILAHAN") || raw.includes("PILAH")) return "Pemilahan";
+  if (raw.includes("PENGANGKUTAN") || raw.includes("ANGKUT")) return "Pengangkutan";
+  if (raw.includes("PENGOLAHAN") || raw.includes("OLAH")) return "Pengolahan";
+  if (raw.includes("PEMANFAATAN") || raw.includes("MANFAAT") || raw === "FISIK") return "Pemanfaatan";
+  if (raw.includes("EDUKASI") || raw.includes("SOSIALISASI") || raw === "NON-FISIK" || raw === "NON_FISIK") return "Edukasi & Sosialisasi";
+  if (raw === "LAINNYA" || raw === "OTHER") return "Lainnya";
+  return kategori.trim();
+}
+
 export class KknService {
   async getDashboardStats(userId: string) {
     const user = await prisma.user.findUnique({
@@ -2465,11 +2477,13 @@ export class KknService {
       where: { kelompokId: student.kelompok.id },
     }).catch(() => 0);
 
+    const finalKategori = normalizeProkerKategori(kategori);
+
     const proker = await prisma.programKerjaKkn.create({
       data: {
         kelompokId: student.kelompok.id,
         nomor: existingCount + 1,
-        kategori: kategori?.toUpperCase() || "LAINNYA",
+        kategori: finalKategori,
         deskripsi: combinedDeskripsi,
         waktuPelaksanaan: finalWaktuPelaksanaan,
         linkGoogleDrive: finalGoogleDriveUrl,
@@ -2499,7 +2513,7 @@ export class KknService {
       nomor: proker.nomor,
       judul: judul.trim(),
       deskripsi: (deskripsi || "").trim(),
-      kategori: proker.kategori,
+      kategori: normalizeProkerKategori(proker.kategori),
       waktuPelaksanaan: proker.waktuPelaksanaan,
       urlGoogleDrive: proker.linkGoogleDrive,
       linkGoogleDrive: proker.linkGoogleDrive,
@@ -2607,7 +2621,7 @@ export class KknService {
         nomor: item.nomor || index + 1,
         judul,
         deskripsi: deskripsiDetail,
-        kategori: item.kategori,
+        kategori: normalizeProkerKategori(item.kategori),
         waktuPelaksanaan: item.waktuPelaksanaan || null,
         urlGoogleDrive: item.linkGoogleDrive || null,
         linkGoogleDrive: item.linkGoogleDrive || null,

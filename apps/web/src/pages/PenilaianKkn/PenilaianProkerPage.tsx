@@ -134,7 +134,21 @@ export const PenilaianProkerPage: React.FC = () => {
       }
       // Kategori
       if (kategoriFilter !== "ALL") {
-        if (p.kategori?.toLowerCase() !== kategoriFilter.toLowerCase()) return false;
+        const pKat = (p.kategori || "Lainnya").toLowerCase();
+        const filterKat = kategoriFilter.toLowerCase();
+        if (filterKat.includes("edukasi") || filterKat.includes("sosialisasi")) {
+          if (!pKat.includes("edukasi") && !pKat.includes("sosialisasi") && pKat !== "non-fisik") return false;
+        } else if (filterKat.includes("pemanfaatan")) {
+          if (!pKat.includes("pemanfaatan") && !pKat.includes("manfaat") && pKat !== "fisik") return false;
+        } else if (filterKat.includes("pengolahan")) {
+          if (!pKat.includes("pengolahan") && !pKat.includes("olah")) return false;
+        } else if (filterKat.includes("pengangkutan")) {
+          if (!pKat.includes("pengangkutan") && !pKat.includes("angkut")) return false;
+        } else if (filterKat.includes("pemilahan")) {
+          if (!pKat.includes("pemilahan") && !pKat.includes("pilah")) return false;
+        } else {
+          if (pKat !== filterKat) return false;
+        }
       }
       // Status Usulan
       if (statusUsulanFilter !== "ALL") {
@@ -497,10 +511,45 @@ export const PenilaianProkerPage: React.FC = () => {
 
   // Helper Kategori Badge
   const renderKategoriBadge = (kategori?: string) => {
-    const k = kategori || "Pemilahan";
+    const raw = (kategori || "Pemilahan").toLowerCase();
+    if (raw.includes("pemilahan") || raw.includes("pilah")) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40">
+          Pemilahan
+        </span>
+      );
+    }
+    if (raw.includes("pengangkutan") || raw.includes("angkut")) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40">
+          Pengangkutan
+        </span>
+      );
+    }
+    if (raw.includes("pengolahan") || raw.includes("olah")) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/40">
+          Pengolahan
+        </span>
+      );
+    }
+    if (raw.includes("pemanfaatan") || raw.includes("manfaat") || raw === "fisik") {
+      return (
+        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-teal-50 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300 border border-teal-200/60 dark:border-teal-800/40">
+          Pemanfaatan
+        </span>
+      );
+    }
+    if (raw.includes("edukasi") || raw.includes("sosialisasi") || raw === "non-fisik") {
+      return (
+        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40">
+          Edukasi &amp; Sosialisasi
+        </span>
+      );
+    }
     return (
-      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40">
-        {k}
+      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/40">
+        {kategori || "Lainnya"}
       </span>
     );
   };
@@ -572,7 +621,7 @@ export const PenilaianProkerPage: React.FC = () => {
             <option value="Pengangkutan">Pengangkutan</option>
             <option value="Pengolahan">Pengolahan</option>
             <option value="Pemanfaatan">Pemanfaatan</option>
-            <option value="Edukasi">Edukasi</option>
+            <option value="Edukasi & Sosialisasi">Edukasi &amp; Sosialisasi</option>
             <option value="Lainnya">Lainnya</option>
           </select>
           <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">

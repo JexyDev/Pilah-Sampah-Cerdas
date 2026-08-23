@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import { configService } from "./configService.js";
+import { normalizeProkerKategori } from "./kknService.js";
 
 
 async function getEligiblePastSchedulesCount(groupId?: string): Promise<number> {
@@ -1659,7 +1660,7 @@ export const dplService = {
         kelurahan: groupMap.get(p.kelompokId)?.kelurahan || "-",
         nomor: p.nomor || 1,
         deskripsi: p.deskripsi,
-        kategori: p.kategori || "LAINNYA",
+        kategori: normalizeProkerKategori(p.kategori),
         sumber: p.sumber || "MAHASISWA",
         waktuPelaksanaan: p.waktuPelaksanaan || null,
         linkGoogleDrive: p.linkGoogleDrive || null,
@@ -1752,7 +1753,7 @@ export const dplService = {
       kelompokId: targetKelompokId,
       nomor: data.nomor || 1,
       deskripsi: data.deskripsi,
-      kategori: data.kategori || "LAINNYA",
+      kategori: normalizeProkerKategori(data.kategori),
       sumber: data.sumber || "MAHASISWA",
       waktuPelaksanaan: data.waktuPelaksanaan || null,
       linkGoogleDrive: data.linkGoogleDrive || null,
@@ -1813,7 +1814,7 @@ export const dplService = {
     const updateData: any = {};
     if (data.nomor !== undefined) updateData.nomor = data.nomor;
     if (data.deskripsi !== undefined) updateData.deskripsi = data.deskripsi;
-    if (data.kategori !== undefined) updateData.kategori = data.kategori;
+    if (data.kategori !== undefined) updateData.kategori = normalizeProkerKategori(data.kategori);
     if (data.sumber !== undefined) updateData.sumber = data.sumber;
     if (data.waktuPelaksanaan !== undefined) updateData.waktuPelaksanaan = data.waktuPelaksanaan;
     if (data.linkGoogleDrive !== undefined) updateData.linkGoogleDrive = data.linkGoogleDrive;

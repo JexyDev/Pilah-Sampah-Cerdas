@@ -653,14 +653,14 @@ export const ProgramKerjaKkn: React.FC = () => {
         </span>
       );
     }
-    if (k.includes("pemanfaatan")) {
+    if (k.includes("pemanfaatan") || k === "fisik") {
       return (
         <span className="px-2.5 py-1 bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800/50 rounded-full font-bold text-[11px]">
           Pemanfaatan
         </span>
       );
     }
-    if (k.includes("edukasi") || k.includes("sosialisasi")) {
+    if (k.includes("edukasi") || k.includes("sosialisasi") || k === "non-fisik") {
       return (
         <span className="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50 rounded-full font-bold text-[11px]">
           Edukasi & Sosialisasi
