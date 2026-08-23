@@ -144,9 +144,9 @@ class _UpdateDialogState extends State<_UpdateDialog> {
 
   void _fallbackToBrowser() async {
     final uri = Uri.parse(widget.downloadUrl);
-    if (await canLaunchUrl(uri)) {
+    try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Gagal mengunduh atau membuka file instalasi.')),
