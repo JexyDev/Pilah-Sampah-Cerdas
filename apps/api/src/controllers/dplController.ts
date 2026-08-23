@@ -344,6 +344,10 @@ export const dplController = {
         res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda" });
         return;
       }
+      if (error.message === "PROKER_REJECTED") {
+        res.status(400).json({ error: "BAD_REQUEST", message: "Program kerja yang ditolak tidak dapat dinilai" });
+        return;
+      }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   },

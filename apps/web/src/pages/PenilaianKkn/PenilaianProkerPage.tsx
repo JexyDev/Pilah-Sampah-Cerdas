@@ -300,6 +300,17 @@ export const PenilaianProkerPage: React.FC = () => {
 
   // Handler Buka Modal Penilaian
   const handleOpenAssessModal = (proker: ProgramKerjaItem) => {
+    let u = proker.statusUsulan;
+    const leg = String(proker.status || "").toUpperCase();
+    if (!u) {
+      if (leg === "DITERIMA" || leg === "DISETUJUI" || leg === "SEDANG_BERJALAN" || leg === "SELESAI") u = "DISETUJUI";
+      else if (leg === "DITOLAK" || leg === "TIDAK_DISETUJUI") u = "DITOLAK";
+      else u = "BELUM_DISETUJUI";
+    }
+    if (u === "DITOLAK" || u === "TIDAK_DISETUJUI") {
+      toast.error("Program kerja dengan status Ditolak tidak dapat dinilai");
+      return;
+    }
     setSelectedProkerId(proker.id);
     setIsAssessModalOpen(true);
   };
@@ -374,6 +385,18 @@ export const PenilaianProkerPage: React.FC = () => {
   const handleOpenBukti = async (proker?: ProgramKerjaItem) => {
     const targetProker = proker || selectedProker;
     if (!targetProker) return;
+
+    let u = targetProker.statusUsulan;
+    const leg = String(targetProker.status || "").toUpperCase();
+    if (!u) {
+      if (leg === "DITERIMA" || leg === "DISETUJUI" || leg === "SEDANG_BERJALAN" || leg === "SELESAI") u = "DISETUJUI";
+      else if (leg === "DITOLAK" || leg === "TIDAK_DISETUJUI") u = "DITOLAK";
+      else u = "BELUM_DISETUJUI";
+    }
+    if (u === "DITOLAK" || u === "TIDAK_DISETUJUI") {
+      toast.error("Program kerja dengan status Ditolak tidak memiliki bukti kegiatan");
+      return;
+    }
 
     if (!selectedProkerId || selectedProkerId !== targetProker.id) {
       setSelectedProkerId(targetProker.id);
@@ -795,43 +818,82 @@ export const PenilaianProkerPage: React.FC = () => {
                         {/* Aksi Buttons */}
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                            {statusPenilaian === "SEDANG_DINILAI" ? (
-                              <button
-                                onClick={() => handleOpenAssessModal(p)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
-                                title="Lanjutkan Pengisian Nilai"
-                              >
-                                <Edit3 size={12} />
-                                <span>Lanjutkan</span>
-                              </button>
-                            ) : statusPenilaian === "SUDAH_DINILAI" ? (
-                              <button
-                                onClick={() => handleOpenAssessModal(p)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 border border-emerald-600 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg font-semibold text-xs transition-colors cursor-pointer"
-                                title="Lihat / Edit Nilai"
-                              >
-                                <Eye size={12} />
-                                <span>Lihat / Edit Nilai</span>
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleOpenAssessModal(p)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
-                                title="Beri Penilaian Baru"
-                              >
-                                <PlusCircle size={12} />
-                                <span>Beri Nilai</span>
-                              </button>
-                            )}
+                            {(() => {
+                              let u = p.statusUsulan;
+                              const leg = String(p.status || "").toUpperCase();
+                              if (!u) {
+                                if (leg === "DITERIMA" || leg === "DISETUJUI" || leg === "SEDANG_BERJALAN" || leg === "SELESAI") u = "DISETUJUI";
+                                else if (leg === "DITOLAK" || leg === "TIDAK_DISETUJUI") u = "DITOLAK";
+                                else u = "BELUM_DISETUJUI";
+                              }
+                              const isDitolak = u === "DITOLAK" || u === "TIDAK_DISETUJUI";
 
-                            <button
-                              onClick={() => handleOpenBukti(p)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-                              title="Lihat Dokumentasi Kegiatan"
-                            >
-                              <FileText size={12} />
-                              <span className="hidden xl:inline">Bukti</span>
-                            </button>
+                              if (isDitolak) {
+                                return (
+                                  <>
+                                    <button
+                                      disabled
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-800/40 text-slate-400 dark:text-slate-500 rounded-lg font-semibold text-xs cursor-not-allowed border border-slate-200 dark:border-slate-800"
+                                      title="Program kerja ditolak, tidak dapat dinilai"
+                                    >
+                                      <XCircle size={12} />
+                                      <span>Tidak Bisa Dinilai</span>
+                                    </button>
+
+                                    <button
+                                      disabled
+                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800/40 text-slate-400 dark:text-slate-500 rounded-lg font-semibold text-xs cursor-not-allowed border border-slate-200 dark:border-slate-800"
+                                      title="Program kerja ditolak, bukti tidak tersedia"
+                                    >
+                                      <FileText size={12} />
+                                      <span className="hidden xl:inline">Bukti N/A</span>
+                                    </button>
+                                  </>
+                                );
+                              }
+
+                              return (
+                                <>
+                                  {statusPenilaian === "SEDANG_DINILAI" ? (
+                                    <button
+                                      onClick={() => handleOpenAssessModal(p)}
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
+                                      title="Lanjutkan Pengisian Nilai"
+                                    >
+                                      <Edit3 size={12} />
+                                      <span>Lanjutkan</span>
+                                    </button>
+                                  ) : statusPenilaian === "SUDAH_DINILAI" ? (
+                                    <button
+                                      onClick={() => handleOpenAssessModal(p)}
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 border border-emerald-600 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg font-semibold text-xs transition-colors cursor-pointer"
+                                      title="Lihat / Edit Nilai"
+                                    >
+                                      <Eye size={12} />
+                                      <span>Lihat / Edit Nilai</span>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleOpenAssessModal(p)}
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
+                                      title="Beri Penilaian Baru"
+                                    >
+                                      <PlusCircle size={12} />
+                                      <span>Beri Nilai</span>
+                                    </button>
+                                  )}
+
+                                  <button
+                                    onClick={() => handleOpenBukti(p)}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                                    title="Lihat Dokumentasi Kegiatan"
+                                  >
+                                    <FileText size={12} />
+                                    <span className="hidden xl:inline">Bukti</span>
+                                  </button>
+                                </>
+                              );
+                            })()}
                           </div>
                         </td>
                       </tr>

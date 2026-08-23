@@ -2069,6 +2069,11 @@ export const dplService = {
     const prokerExisting = await prisma.programKerjaKkn.findUnique({ where: { id } });
     if (!prokerExisting) throw new Error("Program kerja tidak ditemukan");
 
+    const statusUsulanStr = String(prokerExisting.statusUsulan || prokerExisting.status || "").toUpperCase();
+    if (statusUsulanStr === "DITOLAK" || statusUsulanStr === "TIDAK_DISETUJUI") {
+      throw new Error("PROKER_REJECTED");
+    }
+
     const groups = await prisma.kelompokKkn.findMany({
       where: await getKelompokWhere(dplUserId, role),
       select: { id: true },
