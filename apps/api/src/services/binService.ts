@@ -1182,17 +1182,19 @@ export class BinService {
       select: { rwId: true },
     });
     console.log(`[getPetugasByRw] warga ${userId} → rwId: ${warga?.rwId}`);
-    if (!warga?.rwId) return [];
-
-    const result = await prisma.user.findMany({
-      where: {
-        rwId: warga.rwId,
-        role: { name: "PETUGAS_RESIDU" },
-        status: "Aktif",
-      },
-      select: { id: true, name: true, fotoProfil: true },
-    });
-    console.log(`[getPetugasByRw] found ${result.length} petugas for rwId ${warga.rwId}:`, result.map(r => r.name));
+    
+    let result: any[] = [];
+    if (warga?.rwId) {
+      result = await prisma.user.findMany({
+        where: {
+          rwId: warga.rwId,
+          role: { name: "PETUGAS_RESIDU" },
+          status: "Aktif",
+        },
+        select: { id: true, name: true, fotoProfil: true },
+      });
+      console.log(`[getPetugasByRw] found ${result.length} petugas for rwId ${warga.rwId}:`, result.map(r => r.name));
+    }
 
     // Fallback: jika tidak ada petugas di RW, coba cari semua petugas aktif tanpa filter RW
     if (result.length === 0) {
