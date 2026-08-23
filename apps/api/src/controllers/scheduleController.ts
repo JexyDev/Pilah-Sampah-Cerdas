@@ -49,6 +49,35 @@ export const scheduleController = {
         return;
       }
 
+      // Validasi waktu mulai tidak boleh di masa lalu (kurang dari hari ini / jam saat ini)
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const activityDate = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
+
+      if (activityDate < today) {
+        res.status(400).json({
+          success: false,
+          error: "VALIDATION_ERROR",
+          message: "Waktu/tanggal mulai kegiatan tidak boleh pada hari sebelumnya (masa lalu)",
+        });
+        return;
+      }
+
+      if (time && activityDate.getTime() === today.getTime()) {
+        const [h, m] = String(time).split(":").map(Number);
+        if (!isNaN(h) && !isNaN(m)) {
+          const activityDateTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
+          if (activityDateTime < now) {
+            res.status(400).json({
+              success: false,
+              error: "VALIDATION_ERROR",
+              message: "Waktu mulai kegiatan tidak boleh kurang dari jam saat ini",
+            });
+            return;
+          }
+        }
+      }
+
       let resolvedKelompokId = kelompokId || undefined;
       const userRole = String(req.user?.role || "").toUpperCase();
       const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
@@ -202,6 +231,34 @@ export const scheduleController = {
             message: "Format tanggal tidak valid (harus ISO 8601 atau YYYY-MM-DD)",
           });
           return;
+        }
+
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const activityDate = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
+
+        if (activityDate < today) {
+          res.status(400).json({
+            success: false,
+            error: "VALIDATION_ERROR",
+            message: "Waktu/tanggal mulai kegiatan tidak boleh pada hari sebelumnya (masa lalu)",
+          });
+          return;
+        }
+
+        if (time && activityDate.getTime() === today.getTime()) {
+          const [h, m] = String(time).split(":").map(Number);
+          if (!isNaN(h) && !isNaN(m)) {
+            const activityDateTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
+            if (activityDateTime < now) {
+              res.status(400).json({
+                success: false,
+                error: "VALIDATION_ERROR",
+                message: "Waktu mulai kegiatan tidak boleh kurang dari jam saat ini",
+              });
+              return;
+            }
+          }
         }
       }
 

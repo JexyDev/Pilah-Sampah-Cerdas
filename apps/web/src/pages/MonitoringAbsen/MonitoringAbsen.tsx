@@ -1618,18 +1618,32 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     if (isCustomCategory && !customCategoryText.trim()) {
       errors.category = "Nama kategori kustom wajib diisi";
     }
+
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
     if (!startDate) {
       errors.startDate = "Tanggal mulai pelaksanaan wajib diisi";
+    } else if (startDate < todayStr) {
+      errors.startDate = "Tanggal mulai kegiatan tidak boleh pada hari sebelumnya (masa lalu)";
     }
+
     if (!endDate) {
       errors.endDate = "Tanggal selesai pelaksanaan wajib diisi";
     } else if (startDate && endDate < startDate) {
       errors.endDate =
         "Tanggal selesai tidak boleh lebih awal dari tanggal mulai";
     }
+
     if (!startTime) {
       errors.startTime = "Jam mulai wajib diisi";
+    } else if (startDate === todayStr) {
+      const nowTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+      if (startTime < nowTimeStr) {
+        errors.startTime = "Waktu/jam mulai kegiatan tidak boleh kurang dari jam saat ini";
+      }
     }
+
     if (!endTime) {
       errors.endTime = "Jam selesai wajib diisi";
     } else if (startDate && endDate && startTime && endTime) {
@@ -3425,6 +3439,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       </label>
                       <input
                         type="date"
+                        min={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`}
                         value={startDate}
                         onChange={(e) => {
                           setStartDate(e.target.value);
@@ -3441,7 +3456,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       <input
                         type="date"
                         value={endDate}
-                        min={startDate}
+                        min={startDate || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`}
                         onChange={(e) => setEndDate(e.target.value)}
                         className="w-full h-10 px-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none"
                       />
@@ -3457,6 +3472,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         <input
                           type="time"
                           lang="id"
+                          min={
+                            startDate === `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`
+                              ? `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`
+                              : undefined
+                          }
                           value={startTime}
                           onChange={(e) => setStartTime(e.target.value)}
                           className="w-full h-10 px-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none"
