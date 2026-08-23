@@ -1181,9 +1181,10 @@ export class BinService {
       where: { id: userId },
       select: { rwId: true },
     });
+    console.log(`[getPetugasByRw] warga ${userId} → rwId: ${warga?.rwId}`);
     if (!warga?.rwId) return [];
 
-    return prisma.user.findMany({
+    const result = await prisma.user.findMany({
       where: {
         rwId: warga.rwId,
         role: { name: "PETUGAS_RESIDU" },
@@ -1191,6 +1192,19 @@ export class BinService {
       },
       select: { id: true, name: true, fotoProfil: true },
     });
+    console.log(`[getPetugasByRw] found ${result.length} petugas for rwId ${warga.rwId}:`, result.map(r => r.name));
+
+    // Fallback: jika tidak ada petugas di RW, coba cari semua petugas aktif tanpa filter RW
+    if (result.length === 0) {
+      console.log(`[getPetugasByRw] no petugas found for rwId ${warga.rwId}, checking all petugas...`);
+      const allPetugas = await prisma.user.findMany({
+        where: { role: { name: "PETUGAS_RESIDU" }, status: "Aktif" },
+        select: { id: true, name: true, fotoProfil: true, rwId: true },
+      });
+      console.log(`[getPetugasByRw] all petugas:`, allPetugas.map(p => `${p.name} rwId=${p.rwId}`));
+    }
+
+    return result;
   }
 
   /**
