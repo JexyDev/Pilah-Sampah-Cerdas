@@ -38,10 +38,20 @@ function formatPemanfaatanRecord(item: any) {
 
   const rwName = item.rw?.name || (item.rwId ? `RW ${item.rwId}` : "RW 01");
 
+  const rawProgram = item.program || "Program Pengolahan Mandiri";
+  let cleanProgramName = rawProgram.split("\n")[0].trim();
+  if (cleanProgramName.includes(" - ")) {
+    cleanProgramName = cleanProgramName.split(" - ")[0].trim();
+  } else if (cleanProgramName.includes(" : ")) {
+    cleanProgramName = cleanProgramName.split(" : ")[0].trim();
+  } else if (cleanProgramName.includes(" – ")) {
+    cleanProgramName = cleanProgramName.split(" – ")[0].trim();
+  }
+
   return {
     ...item,
     // Standard UI / Mobile mapped keys
-    namaProgram: item.program || "Program Pengolahan Mandiri",
+    namaProgram: cleanProgramName || "Program Pengolahan Mandiri",
     jenisProgram: item.teknologi || "Kompos Organik",
     kategoriBahan: (item.bahanBaku || "").toLowerCase().includes("anorganik") ? "ANORGANIK" : "ORGANIK",
     jumlahBahanMasukKg: bahanMasuk,

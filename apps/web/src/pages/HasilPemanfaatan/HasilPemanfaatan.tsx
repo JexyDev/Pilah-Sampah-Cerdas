@@ -534,7 +534,16 @@ export const HasilPemanfaatan: React.FC = () => {
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className="font-extrabold text-slate-900 dark:text-slate-100 block text-sm">{p.namaProgram}</span>
+                        <span className="font-extrabold text-slate-900 dark:text-slate-100 block text-sm">
+                          {(() => {
+                            const raw = p.namaProgram || "Program Pengolahan Mandiri";
+                            let clean = raw.split("\n")[0].trim();
+                            if (clean.includes(" - ")) clean = clean.split(" - ")[0].trim();
+                            else if (clean.includes(" : ")) clean = clean.split(" : ")[0].trim();
+                            else if (clean.includes(" – ")) clean = clean.split(" – ")[0].trim();
+                            return clean;
+                          })()}
+                        </span>
                         <span className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5 font-medium">
                           <MapPin size={12} /> {p.lokasiFasilitas || "Fasilitas Komunal"}
                         </span>
