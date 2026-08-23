@@ -12,9 +12,9 @@ class PengajuanProgramKerjaView extends ConsumerStatefulWidget {
 
 class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerjaView> {
   final _formKey = GlobalKey<FormState>();
-  final _judulCtrl = TextEditingController();
   final _anggaranCtrl = TextEditingController();
-  final _tanggalCtrl = TextEditingController();
+  final _tanggalMulaiCtrl = TextEditingController();
+  final _tanggalSelesaiCtrl = TextEditingController();
   final _deskripsiCtrl = TextEditingController();
   
   String _kategori = 'Pemilahan';
@@ -27,10 +27,10 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
     try {
       final repo = ref.read(kknRepositoryProvider);
       await repo.submitProgramKerja({
-        'judul': _judulCtrl.text.trim(),
+        'judul': _kategori, // fallback for any legacy backend requirement
         'kategori': _kategori,
         'rencanaAnggaran': double.tryParse(_anggaranCtrl.text.trim()) ?? 0,
-        'targetTanggal': _tanggalCtrl.text.trim(), 
+        'targetTanggal': '${_tanggalMulaiCtrl.text.trim()} s/d ${_tanggalSelesaiCtrl.text.trim()}', 
         'deskripsi': _deskripsiCtrl.text.trim(),
       });
       if (mounted) {
@@ -51,15 +51,13 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
 
   @override
   void dispose() {
-    _judulCtrl.dispose();
     _anggaranCtrl.dispose();
-    _tanggalCtrl.dispose();
+    _tanggalMulaiCtrl.dispose();
+    _tanggalSelesaiCtrl.dispose();
     _deskripsiCtrl.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pengajuan Program Kerja', style: TextStyle(fontSize: 18)),
@@ -78,27 +76,18 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              
-              const Text('Judul Program Kerja', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _judulCtrl,
-                decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Contoh: Budidaya Maggot'),
-                validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
-              ),
-              const SizedBox(height: 16),
               const Text('Kategori', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 initialValue: _kategori,
                 decoration: const InputDecoration(border: OutlineInputBorder()),
                 items: const [
-                  DropdownMenuItem(value: 'Pemilahan', child: Text('Pemilahan (Pilah Organik/Anorganik/Residu)')),
-                  DropdownMenuItem(value: 'Pengangkutan', child: Text('Pengangkutan (Jadwal & Armada)')),
-                  DropdownMenuItem(value: 'Pengolahan', child: Text('Pengolahan (Kompos/TPS3R/Biokonversi)')),
-                  DropdownMenuItem(value: 'Pemanfaatan', child: Text('Pemanfaatan (Budidaya Maggot/Daur Ulang)')),
-                  DropdownMenuItem(value: 'Edukasi & Sosialisasi', child: Text('Edukasi & Sosialisasi (Penyuluhan/Workshop)')),
-                  DropdownMenuItem(value: 'Lainnya', child: Text('Lainnya (Kegiatan Pendukung)')),
+                  DropdownMenuItem(value: 'Pemilahan', child: Text('Pemilahan')),
+                  DropdownMenuItem(value: 'Pengangkutan', child: Text('Pengangkutan')),
+                  DropdownMenuItem(value: 'Pengolahan', child: Text('Pengolahan')),
+                  DropdownMenuItem(value: 'Pemanfaatan', child: Text('Pemanfaatan')),
+                  DropdownMenuItem(value: 'Edukasi & Sosialisasi', child: Text('Edukasi & Sosialisasi')),
+                  DropdownMenuItem(value: 'Lainnya', child: Text('Lainnya')),
                 ],
                 onChanged: (val) => setState(() => _kategori = val!),
               ),
@@ -112,25 +101,71 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
                 validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 16),
-              const Text('Target Tanggal Selesai', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _tanggalCtrl,
-                readOnly: true,
-                decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'YYYY-MM-DD', suffixIcon: Icon(Icons.calendar_today)),
-                validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
-                onTap: () async {
-                    final minDate = DateTime.now().add(const Duration(days: 3));
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: minDate,
-                      firstDate: minDate,
-                      lastDate: DateTime(2030),
-                    );
-                  if (picked != null) {
-                    _tanggalCtrl.text = picked.toIso8601String().split('T').first;
-                  }
-                },
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text('Tanggal Mulai', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _tanggalMulaiCtrl,
+                          readOnly: true,
+                          decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'YYYY-MM-DD', suffixIcon: Icon(Icons.calendar_today)),
+                          validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
+                          onTap: () async {
+                              final minDate = DateTime.now().add(const Duration(days: 3));
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: minDate,
+                                firstDate: minDate,
+                                lastDate: DateTime(2030),
+                              );
+                            if (picked != null) {
+                              _tanggalMulaiCtrl.text = picked.toIso8601String().split('T').first;
+                              // Auto-update selesai if it's before mulai
+                              if (_tanggalSelesaiCtrl.text.isNotEmpty) {
+                                final sDate = DateTime.parse(_tanggalSelesaiCtrl.text);
+                                if (sDate.isBefore(picked)) {
+                                  _tanggalSelesaiCtrl.text = picked.toIso8601String().split('T').first;
+                                }
+                              }
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text('Tanggal Selesai', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _tanggalSelesaiCtrl,
+                          readOnly: true,
+                          decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'YYYY-MM-DD', suffixIcon: Icon(Icons.calendar_today)),
+                          validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
+                          onTap: () async {
+                              final minDate = _tanggalMulaiCtrl.text.isNotEmpty ? DateTime.parse(_tanggalMulaiCtrl.text) : DateTime.now().add(const Duration(days: 3));
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: minDate,
+                                firstDate: minDate,
+                                lastDate: DateTime(2030),
+                              );
+                            if (picked != null) {
+                              _tanggalSelesaiCtrl.text = picked.toIso8601String().split('T').first;
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               const Text('Deskripsi Singkat', style: TextStyle(fontWeight: FontWeight.bold)),

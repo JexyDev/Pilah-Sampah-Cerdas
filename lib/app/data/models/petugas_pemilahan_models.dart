@@ -180,7 +180,7 @@ class PemilahanSubmitLog extends Equatable {
       actualWeightKg: (json['actualWeightKg'] as num?)?.toDouble() ?? 0.0,
       classification: json['classification']?.toString() ?? 'Pemilahan Non-B3',
       photoUrl: json['photoUrl']?.toString() ?? '',
-      submittedAt: DateTime.tryParse(json['submittedAt']?.toString() ?? '') ?? DateTime.now(),
+      submittedAt: (DateTime.tryParse(json['submittedAt']?.toString() ?? '') ?? DateTime.now()).toLocal(),
     );
   }
 

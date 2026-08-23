@@ -188,7 +188,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
     try {
       final raw =
           json['createdAt']?.toString() ?? json['tanggal']?.toString() ?? '';
-      createdAt = raw.contains('T') ? DateTime.parse(raw) : _parseIdDate(raw);
+      createdAt = raw.contains('T') ? DateTime.parse(raw).toLocal() : _parseIdDate(raw);
     } catch (_) {
       createdAt = DateTime.now();
     }
@@ -238,7 +238,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
 
     DateTime createdAt;
     try {
-      createdAt = DateTime.parse(json['createdAt']?.toString() ?? '');
+      createdAt = DateTime.parse(json['createdAt']?.toString() ?? '').toLocal();
     } catch (_) {
       createdAt = DateTime.now();
     }

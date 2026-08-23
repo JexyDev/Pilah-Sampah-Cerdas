@@ -49,7 +49,7 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
           final kategori = izin['kategori']?.toString() ?? 'Izin';
           final status = izin['status']?.toString().toUpperCase();
           final timestampStr = izin['createdAt']?.toString() ?? DateTime.now().toIso8601String();
-          final timestamp = DateTime.tryParse(timestampStr) ?? DateTime.now();
+          final timestamp = (DateTime.tryParse(timestampStr) ?? DateTime.now()).toLocal();
 
           String title = 'Pengajuan Izin';
           String subtitle = 'Mengajukan $kategori';
@@ -99,7 +99,7 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
           parsedLogs.add(KknHistoryLog(
             title: data['title']?.toString() ?? 'Riwayat Aktivitas',
             subtitle: data['subtitle']?.toString() ?? '',
-            timestamp: DateTime.tryParse(data['timestamp']?.toString() ?? '') ?? DateTime.now(),
+            timestamp: (DateTime.tryParse(data['timestamp']?.toString() ?? '') ?? DateTime.now()).toLocal(),
             type: type,
             points: null,
             isGpsActive: data['isGpsActive'] as bool?,
@@ -127,7 +127,7 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
           parsedLogs.add(KknHistoryLog(
             title: title,
             subtitle: data['subtitle']?.toString() ?? data['statusKehadiran']?.toString() ?? 'Presensi KKN',
-            timestamp: DateTime.tryParse(data['timestamp']?.toString() ?? data['createdAt']?.toString() ?? '') ?? DateTime.now(),
+            timestamp: (DateTime.tryParse(data['timestamp']?.toString() ?? data['createdAt']?.toString() ?? '') ?? DateTime.now()).toLocal(),
             type: type,
             points: data['points'] as int?,
             isGpsActive: data['isGpsActive'] as bool?,
@@ -149,7 +149,7 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
             parsedLogs.add(KknHistoryLog(
               title: title,
               subtitle: 'Kegiatan Selesai',
-              timestamp: DateTime.tryParse(data['tanggal']?.toString() ?? data['tanggalKegiatan']?.toString() ?? '') ?? DateTime.now(),
+              timestamp: (DateTime.tryParse(data['tanggal']?.toString() ?? data['tanggalKegiatan']?.toString() ?? '') ?? DateTime.now()).toLocal(),
               type: KknHistoryType.gps,
               points: null,
               isGpsActive: true,

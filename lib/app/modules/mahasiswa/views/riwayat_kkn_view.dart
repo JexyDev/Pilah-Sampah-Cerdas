@@ -114,13 +114,9 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
                 const SizedBox(width: 8),
                 _filterTab('Aktivasi Warga', 1),
                 const SizedBox(width: 8),
-<<<<<<< Updated upstream
                 _filterTab('Laporan Pemanfaatan', 4),
                 const SizedBox(width: 8),
-                _filterTab('Ping Lokasi Posko', 2),
-=======
                 _filterTab('Riwayat Kegiatan', 2),
->>>>>>> Stashed changes
                 const SizedBox(width: 8),
                 _filterTab('Pengajuan Izin', 3),
               ],

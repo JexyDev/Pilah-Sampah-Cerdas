@@ -91,13 +91,6 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
     final formKey = isPemanfaatan ? _formKey1 : _formKey2;
     if (!formKey.currentState!.validate()) return;
 
-    if (isPemanfaatan && _selectedImage1 == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Foto dokumentasi wajib dilampirkan!'), backgroundColor: AppColors.maroonRed),
-      );
-      return;
-    }
-
     final notifier = ref.read(pemanfaatanSampahProvider.notifier);
     final authState = ref.read(authProvider);
     final user = authState.user;
@@ -372,10 +365,6 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
             ),
           ),
           const SizedBox(height: 24),
-          
-          const Text('Foto Dokumentasi (Wajib)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
-          const SizedBox(height: 8),
-          _buildImagePicker(true),
         ],
       ),
     );
