@@ -769,6 +769,20 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                               );
                             },
                           ),
+                          ListTile(
+                            leading: const Icon(
+                              Icons.menu_book_rounded,
+                              color: AppColors.primaryBlue,
+                            ),
+                            title: const Text('Laporan Akhir KKN'),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.inputLaporanAkhir,
+                              );
+                            },
+                          ),
                         ],
                       ),
                     ),

@@ -1,7 +1,7 @@
 name: mobile_app_sampah
 description: Aplikasi Mobile Warga - BERSEKA
 publish_to: 'none'
-version: 1.0.8+108
+version: 1.0.9+109
 
 environment:
   # sdd.md §12 menetapkan Dart 3.12.2 — dilonggarkan ke >=3.12.1 untuk kompatibilitas
