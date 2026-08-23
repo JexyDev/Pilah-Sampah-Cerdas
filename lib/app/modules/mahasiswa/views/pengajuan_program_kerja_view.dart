@@ -16,6 +16,7 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
   final _tanggalMulaiCtrl = TextEditingController();
   final _tanggalSelesaiCtrl = TextEditingController();
   final _deskripsiCtrl = TextEditingController();
+  final _linkDriveCtrl = TextEditingController();
   
   String _kategori = 'Pemilahan';
   bool _isLoading = false;
@@ -32,6 +33,7 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
         'rencanaAnggaran': double.tryParse(_anggaranCtrl.text.trim()) ?? 0,
         'targetTanggal': '${_tanggalMulaiCtrl.text.trim()} s/d ${_tanggalSelesaiCtrl.text.trim()}', 
         'deskripsi': _deskripsiCtrl.text.trim(),
+        'linkGoogleDrive': _linkDriveCtrl.text.trim(),
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Berhasil diajukan!')));
@@ -55,6 +57,7 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
     _tanggalMulaiCtrl.dispose();
     _tanggalSelesaiCtrl.dispose();
     _deskripsiCtrl.dispose();
+    _linkDriveCtrl.dispose();
     super.dispose();
   }
 
@@ -177,6 +180,14 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
                 maxLines: 4,
                 decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Jelaskan tujuan dan mekanisme pelaksanaan...'),
                 validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
+              ),
+              const SizedBox(height: 16),
+              const Text('Tautan Bukti Google Drive (URL)', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _linkDriveCtrl,
+                keyboardType: TextInputType.url,
+                decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'https://drive.google.com/...'),
               ),
               const SizedBox(height: 32),
               ElevatedButton(
