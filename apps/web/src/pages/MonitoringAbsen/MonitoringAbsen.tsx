@@ -4046,7 +4046,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 {(() => {
                   const dailyMins = formDurasiJam * 60 + formDurasiMenit;
                   const totalMins = formTotalHari * dailyMins;
-                  const autoHours = calculatePreciseTargetJam(formTotalHari, formDurasiJam, formDurasiMenit);
                   const kumulatifJam = Math.floor(totalMins / 60);
                   const kumulatifMenit = totalMins % 60;
                   const dailyFormatted = formDurasiJam > 0

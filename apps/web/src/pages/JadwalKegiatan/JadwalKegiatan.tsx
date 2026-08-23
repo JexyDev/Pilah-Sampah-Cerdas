@@ -232,8 +232,6 @@ const JadwalKegiatan: React.FC = () => {
     }
   };
 
-
-
   const applyTimelineFilters = (sourceList: any[]) => {
     let list = sourceList.map((item) => ({
       ...item,
@@ -303,12 +301,13 @@ const JadwalKegiatan: React.FC = () => {
     if (startDateFilter) {
       const startF = new Date(startDateFilter);
       if (!isNaN(startF.getTime())) {
-        list = list.filter((item) => {
+        list = list.filter((item: any) => {
           if (item.endDate) {
             const e = new Date(item.endDate);
             return !isNaN(e.getTime()) ? e >= startF : true;
           }
-          const parsed = parseIndonesianDateRange(item.tanggal);
+          const dateStr = item.tanggal || item.waktuPelaksanaan || "";
+          const parsed = parseIndonesianDateRange(dateStr);
           return parsed.end ? parsed.end >= startF : true;
         });
       }
@@ -317,12 +316,13 @@ const JadwalKegiatan: React.FC = () => {
     if (endDateFilter) {
       const endF = new Date(endDateFilter);
       if (!isNaN(endF.getTime())) {
-        list = list.filter((item) => {
+        list = list.filter((item: any) => {
           if (item.startDate) {
             const s = new Date(item.startDate);
             return !isNaN(s.getTime()) ? s <= endF : true;
           }
-          const parsed = parseIndonesianDateRange(item.tanggal);
+          const dateStr = item.tanggal || item.waktuPelaksanaan || "";
+          const parsed = parseIndonesianDateRange(dateStr);
           return parsed.start ? parsed.start <= endF : true;
         });
       }
