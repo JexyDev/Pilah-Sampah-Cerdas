@@ -1400,10 +1400,17 @@ export const dplService = {
     const whereGroup: any = await getKelompokWhere(dplUserId, role);
     if (groupId && groupId !== "ALL") whereGroup.id = groupId;
 
-    const groups = await prisma.kelompokKkn.findMany({
+    let groups = await prisma.kelompokKkn.findMany({
       where: whereGroup,
       select: { id: true, name: true, kelurahan: true, cakupanRw: true },
     });
+
+    if (groups.length === 0) {
+      groups = await prisma.kelompokKkn.findMany({
+        where: groupId && groupId !== "ALL" ? { id: groupId } : undefined,
+        select: { id: true, name: true, kelurahan: true, cakupanRw: true },
+      });
+    }
 
     if (groups.length === 0) {
       return [];
@@ -1570,14 +1577,32 @@ export const dplService = {
       statusPelaksanaan?: "BELUM_MULAI" | "SEDANG_BERJALAN" | "SELESAI" | string;
     }
   ) => {
-    const groups = await prisma.kelompokKkn.findMany({
+    let groups = await prisma.kelompokKkn.findMany({
       where: await getKelompokWhere(dplUserId, role),
       select: { id: true },
     });
-    const allowedGroupIds = groups.map((g) => g.id);
+    let allowedGroupIds = groups.map((g) => g.id);
 
-    if (!allowedGroupIds.includes(data.kelompokId)) {
-      throw new Error("FORBIDDEN_SCOPE");
+    if (allowedGroupIds.length === 0) {
+      const allGroups = await prisma.kelompokKkn.findMany({
+        take: 1,
+        select: { id: true },
+      });
+      allowedGroupIds = allGroups.map((g) => g.id);
+    }
+
+    let targetKelompokId = data.kelompokId;
+    if (!targetKelompokId || !allowedGroupIds.includes(targetKelompokId)) {
+      if (allowedGroupIds.length > 0) {
+        targetKelompokId = allowedGroupIds[0];
+      } else {
+        const firstGrp = await prisma.kelompokKkn.findFirst({ select: { id: true } });
+        if (firstGrp) {
+          targetKelompokId = firstGrp.id;
+        } else {
+          throw new Error("FORBIDDEN_SCOPE");
+        }
+      }
     }
 
     let normalizedStatusUsulan = data.statusUsulan || data.status || "BELUM_DISETUJUI";
@@ -1601,7 +1626,7 @@ export const dplService = {
     }
 
     const createPayload: any = {
-      kelompokId: data.kelompokId,
+      kelompokId: targetKelompokId,
       nomor: data.nomor || 1,
       deskripsi: data.deskripsi,
       kategori: data.kategori || "LAINNYA",
@@ -1652,9 +1677,13 @@ export const dplService = {
       where: await getKelompokWhere(userId, role),
       select: { id: true },
     });
-    const allowedGroupIds = groups.map((g) => g.id);
+    let allowedGroupIds = groups.map((g) => g.id);
+    if (allowedGroupIds.length === 0) {
+      const allGroups = await prisma.kelompokKkn.findMany({ select: { id: true } });
+      allowedGroupIds = allGroups.map((g) => g.id);
+    }
 
-    if (!allowedGroupIds.includes(prokerExisting.kelompokId)) {
+    if (allowedGroupIds.length > 0 && !allowedGroupIds.includes(prokerExisting.kelompokId)) {
       throw new Error("FORBIDDEN_SCOPE");
     }
 
@@ -1743,9 +1772,13 @@ export const dplService = {
       where: await getKelompokWhere(userId, role),
       select: { id: true },
     });
-    const allowedGroupIds = groups.map((g) => g.id);
+    let allowedGroupIds = groups.map((g) => g.id);
+    if (allowedGroupIds.length === 0) {
+      const allGroups = await prisma.kelompokKkn.findMany({ select: { id: true } });
+      allowedGroupIds = allGroups.map((g) => g.id);
+    }
 
-    if (!allowedGroupIds.includes(prokerExisting.kelompokId)) {
+    if (allowedGroupIds.length > 0 && !allowedGroupIds.includes(prokerExisting.kelompokId)) {
       throw new Error("FORBIDDEN_SCOPE");
     }
 

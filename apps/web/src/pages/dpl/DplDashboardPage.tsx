@@ -20,9 +20,7 @@ import {
   ChevronRight,
   ChevronLeft,
   Users,
-  Download,
   GraduationCap,
-  Calendar,
   X,
   ClipboardCheck,
   FileText,
@@ -62,11 +60,6 @@ export const DplDashboardPage: React.FC = () => {
   const [approvalPage, setApprovalPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
 
-  // Export Modal State
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [exportPeriod, setExportPeriod] = useState<"SEMUA" | "BULAN_INI" | "30_HARI" | "CUSTOM">("SEMUA");
-  const [exportStartDate, setExportStartDate] = useState("");
-  const [exportEndDate, setExportEndDate] = useState("");
 
   // Drill-down & Action Modals
   const [selectedStudentForCitizens, setSelectedStudentForCitizens] = useState<StudentDetail | null>(null);
@@ -323,70 +316,6 @@ export const DplDashboardPage: React.FC = () => {
     return filteredModalGroupStudents.slice(start, start + MODAL_STUDENTS_PER_PAGE);
   }, [filteredModalGroupStudents, groupStudentPage]);
 
-  const handleExportPerformanceCsv = () => {
-    if (!students || students.length === 0) {
-      toast.error("Tidak ada data mahasiswa bimbingan untuk diekspor.");
-      return;
-    }
-
-    let filtered = [...students];
-
-    if (filtered.length === 0) {
-      toast.error("Data mahasiswa tidak ditemukan untuk diekspor.");
-      return;
-    }
-
-    const headers = [
-      "No",
-      "NIM",
-      "Nama Mahasiswa",
-      "Peran Kepengurusan",
-      "Program Studi / Fakultas",
-      "Kelompok KKN",
-      "Total Hadir (Kegiatan)",
-      "Sakit (Hari)",
-      "Izin (Hari)",
-      "Tanpa Keterangan (Hari)",
-      "Tingkat Presensi (%)",
-      "Poin Individu",
-      "Nilai Asesmen DPL",
-      "Huruf Mutu",
-      "Status Evaluasi",
-    ];
-
-    const rows = filtered.map((s, idx) => {
-      const grade = getGradeBadge(s.assessmentScore);
-      return [
-        idx + 1,
-        `"${s.nim || "-"}"`,
-        `"${(s.name || "").replace(/"/g, '""')}"`,
-        s.isKetua ? '"Ketua Kelompok"' : '"Anggota"',
-        `"${((s.jurusan || "") + (s.fakultas ? ` / ${s.fakultas}` : "")).replace(/"/g, '""')}"`,
-        `"${(s.kelompokName || "").replace(/"/g, '""')}"`,
-        s.attendedCount || 0,
-        s.sickCount || 0,
-        s.izinCount || 0,
-        s.alphaCount || 0,
-        s.attendanceRate ? `${s.attendanceRate}%` : "0%",
-        s.individualPoints || 0,
-        s.assessmentScore !== undefined && s.assessmentScore !== null ? s.assessmentScore : "Belum Dinilai",
-        `"${grade.letter}"`,
-        s.assessmentScore !== undefined && s.assessmentScore !== null ? '"SUDAH_DINILAI"' : '"BELUM_DINILAI"',
-      ];
-    });
-
-    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Rekapitulasi_Evaluasi_KKN_DPL_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    setIsExportModalOpen(false);
-    toast.success("Rekapitulasi nilai & kinerja mahasiswa berhasil diekspor!");
-  };
 
   // Filtered & Paginated Approvals History
   const filteredApprovalHistory = useMemo(() => {
@@ -685,100 +614,6 @@ export const DplDashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* MODAL 4: EKSPOR REKAPITULASI DPL CSV */}
-        {isExportModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
-              <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-800 text-white">
-                <div className="flex items-center gap-2.5">
-                  <Download size={18} className="text-emerald-400" />
-                  <h3 className="font-black text-white text-base">Ekspor Rekapitulasi KKN DPL</h3>
-                </div>
-                <button
-                  onClick={() => setIsExportModalOpen(false)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="p-6 space-y-5">
-                <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border border-emerald-200/80 dark:border-emerald-700/40 text-xs text-emerald-900 dark:text-emerald-300 font-semibold">
-                  Total Mahasiswa Dampingan: <strong className="text-emerald-950 dark:text-emerald-200">{students.length} Orang</strong>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
-                    <Calendar size={14} className="text-slate-500 dark:text-slate-400" /> Filter Periode Laporan:
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { id: "SEMUA", label: "Semua Data" },
-                      { id: "BULAN_INI", label: "Bulan Berjalan" },
-                      { id: "30_HARI", label: "30 Hari Terakhir" },
-                      { id: "CUSTOM", label: "Tanggal Kustom" },
-                    ].map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => setExportPeriod(p.id as any)}
-                        className={`py-2 px-3 rounded-xl text-xs font-bold transition border text-left flex items-center justify-between cursor-pointer ${
-                          exportPeriod === p.id
-                            ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                            : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
-                        }`}
-                      >
-                        <span>{p.label}</span>
-                        {exportPeriod === p.id && <CheckCircle size={14} className="text-white" />}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {exportPeriod === "CUSTOM" && (
-                  <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 animate-in fade-in duration-200">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Tanggal Mulai:</label>
-                      <input
-                        type="date"
-                        value={exportStartDate}
-                        onChange={(e) => setExportStartDate(e.target.value)}
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">Tanggal Selesai:</label>
-                      <input
-                        type="date"
-                        value={exportEndDate}
-                        onChange={(e) => setExportEndDate(e.target.value)}
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsExportModalOpen(false)}
-                    className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition cursor-pointer"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleExportPerformanceCsv}
-                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <Download size={14} />
-                    Download CSV
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* MODAL 5: DETAIL KELOMPOK DAMPINGAN & DAFTAR MAHASISWA */}
         {selectedGroupForDetail && (
@@ -1060,6 +895,14 @@ export const DplDashboardPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <Link
+              to="/monitoring-absen"
+              className="bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border border-emerald-200 dark:border-emerald-700/40 shadow-xs"
+              title="Buka Halaman Presensi Mahasiswa"
+            >
+              <ClipboardCheck size={14} className="text-emerald-600 dark:text-emerald-400" />
+              <span>Lihat Presensi Mahasiswa</span>
+            </Link>
             <Link
               to="/dasbor"
               className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border border-slate-200 dark:border-slate-700 shadow-xs"
@@ -1374,8 +1217,8 @@ export const DplDashboardPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {alerts && alerts.pendingApprovalsCount > 0 && (
+        {alerts && alerts.pendingApprovalsCount > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
             <Link
               to="/ajuan-absensi"
               className="bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/40 text-amber-800 dark:text-amber-300 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition cursor-pointer shadow-xs animate-pulse"
@@ -1383,16 +1226,8 @@ export const DplDashboardPage: React.FC = () => {
               <AlertTriangle size={14} className="text-amber-600 shrink-0" />
               <span>{alerts.pendingApprovalsCount} Ajuan Izin/Sakit</span>
             </Link>
-          )}
-
-          <button
-            onClick={() => setIsExportModalOpen(true)}
-            className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border border-slate-200 dark:border-slate-700 shadow-xs"
-          >
-            <Download size={14} className="text-slate-500 dark:text-slate-400" />
-            <span>Ekspor CSV</span>
-          </button>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Card Terpadu: Hierarki Wilayah 3-Tingkat */}
@@ -1551,30 +1386,68 @@ export const DplDashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left: Metrik Presensi Mahasiswa */}
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
-          <div>
-            <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Presensi Lapangan</h4>
-            <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">Tingkat Presensi Mahasiswa</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Persentase rerata presensi mahasiswa pada kelompok bimbingan Anda.</p>
-          </div>
-
-          <div className="flex items-center gap-4 bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-700/40 p-4 rounded-xl">
-            <div className="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-extrabold shadow-sm shrink-0">
-              <CalendarCheck size={24} />
-            </div>
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <div>
-              <span className="text-2xl font-black text-emerald-900 dark:text-emerald-300">
-                {groups.length > 0 ? avgOverallAttendance : 0}%
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                Presensi Lapangan
               </span>
-              <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold">Rerata Presensi Kelompok</p>
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 mt-0.5">
+                Tingkat Presensi Mahasiswa
+              </h3>
             </div>
+            <Link
+              to="/monitoring-absen"
+              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1 group"
+              title="Buka Halaman Presensi"
+            >
+              <span>Presensi</span>
+              <ChevronRight size={14} className="group-hover:translate-x-0.5 transition" />
+            </Link>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700 flex flex-wrap items-center justify-around gap-1 text-xs font-medium">
-            <span className="text-blue-700 dark:text-blue-400 font-bold">{gradeDistribution.totalSakit} Sakit</span>
+          <Link
+            to="/monitoring-absen"
+            className="flex items-center justify-between gap-4 bg-emerald-50/70 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-700/40 p-4 rounded-xl transition group cursor-pointer"
+            title="Lihat Detail Presensi Lapangan"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-emerald-600 group-hover:bg-emerald-700 text-white flex items-center justify-center font-extrabold shadow-sm shrink-0 transition">
+                <CalendarCheck size={24} />
+              </div>
+              <div>
+                <span className="text-2xl font-black text-emerald-900 dark:text-emerald-300">
+                  {groups.length > 0 ? avgOverallAttendance : 0}%
+                </span>
+                <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold">Rerata Presensi Kelompok</p>
+              </div>
+            </div>
+            <ChevronRight size={18} className="text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition shrink-0" />
+          </Link>
+
+          <div className="bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700 flex flex-wrap items-center justify-around gap-1 text-xs font-medium">
+            <Link
+              to="/ajuan-absensi"
+              className="text-blue-700 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/50 transition cursor-pointer flex items-center gap-1"
+              title="Buka Halaman Pengajuan Izin/Sakit (Filter Sakit)"
+            >
+              <span>{gradeDistribution.totalSakit} Sakit</span>
+            </Link>
             <span className="text-slate-300 dark:text-slate-600">•</span>
-            <span className="text-purple-700 dark:text-purple-400 font-bold">{gradeDistribution.totalIzin} Izin</span>
+            <Link
+              to="/ajuan-absensi"
+              className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/50 transition cursor-pointer flex items-center gap-1"
+              title="Buka Halaman Pengajuan Izin/Sakit (Filter Izin)"
+            >
+              <span>{gradeDistribution.totalIzin} Izin</span>
+            </Link>
             <span className="text-slate-300 dark:text-slate-600">•</span>
-            <span className="text-rose-700 dark:text-rose-400 font-bold">{gradeDistribution.totalAlpha} Tanpa Keterangan</span>
+            <Link
+              to="/monitoring-absen"
+              className="text-rose-700 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer flex items-center gap-1"
+              title="Buka Halaman Presensi (Tanpa Keterangan)"
+            >
+              <span>{gradeDistribution.totalAlpha} Tanpa Keterangan</span>
+            </Link>
           </div>
         </div>
 

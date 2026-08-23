@@ -224,6 +224,24 @@ export const ProgramKerjaKkn: React.FC = () => {
             kelurahan: g.kelurahan,
             cakupanRw: g.cakupanRw,
           }));
+        } else {
+          // Fallback if DPL getGroupSummary returned empty:
+          try {
+            const kelRes = await api.get("/kelompok");
+            const list =
+              kelRes.data?.data?.kelompok ||
+              (Array.isArray(kelRes.data?.data) ? kelRes.data?.data : []);
+            if (Array.isArray(list) && list.length > 0) {
+              groups = list.map((g: any) => ({
+                id: g.id,
+                name: g.name,
+                kelurahan: g.kelurahan,
+                cakupanRw: g.cakupanRw,
+              }));
+            }
+          } catch (e) {
+            console.error("Gagal memuat fallback kelompok:", e);
+          }
         }
       } else {
         // Management / Super User gets all groups
@@ -283,12 +301,12 @@ export const ProgramKerjaKkn: React.FC = () => {
     setFormEndDate(today);
     const initialRange = formatIndonesianDateRange(today, today);
 
-    const defaultKelompokId =
-      selectedKelompokId !== "ALL"
-        ? selectedKelompokId
-        : kelompokList.length > 0
-        ? kelompokList[0].id
-        : "";
+    let defaultKelompokId = "";
+    if (selectedKelompokId && selectedKelompokId !== "ALL") {
+      defaultKelompokId = selectedKelompokId;
+    } else if (kelompokList.length > 0) {
+      defaultKelompokId = kelompokList[0].id;
+    }
 
     setFormData({
       kelompokId: defaultKelompokId,
@@ -317,7 +335,7 @@ export const ProgramKerjaKkn: React.FC = () => {
     const normP = normalizeStatusPelaksanaan(item.statusPelaksanaan, item.status);
 
     setFormData({
-      kelompokId: item.kelompokId,
+      kelompokId: item.kelompokId || (kelompokList.length > 0 ? kelompokList[0].id : ""),
       nomor: item.nomor || 1,
       deskripsi: item.deskripsi,
       kategori: item.kategori || "Pemilahan",
@@ -335,7 +353,12 @@ export const ProgramKerjaKkn: React.FC = () => {
 
   const handleSaveForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.kelompokId || !formData.deskripsi.trim()) {
+    const effectiveKelompokId =
+      formData.kelompokId ||
+      (selectedKelompokId !== "ALL" ? selectedKelompokId : "") ||
+      (kelompokList.length > 0 ? kelompokList[0].id : "");
+
+    if (!effectiveKelompokId || !formData.deskripsi.trim()) {
       toast.error("Kelompok dan deskripsi kegiatan wajib diisi");
       return;
     }
@@ -355,7 +378,7 @@ export const ProgramKerjaKkn: React.FC = () => {
     try {
       if (formMode === "add") {
         await dplService.createProgramKerja({
-          kelompokId: formData.kelompokId,
+          kelompokId: effectiveKelompokId,
           nomor: Number(formData.nomor),
           deskripsi: formData.deskripsi.trim(),
           kategori: formData.kategori,
