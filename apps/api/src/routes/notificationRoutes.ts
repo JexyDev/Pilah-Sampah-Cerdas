@@ -80,6 +80,7 @@ const mapNotification = (n: any) => {
     desc: n.message,
     isRead: n.isRead,
     time,
+    createdAt: n.createdAt,
     icon,
     iconBg,
     iconColor,
