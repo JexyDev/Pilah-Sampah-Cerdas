@@ -467,6 +467,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DPL",
                 "RW",
                 "PEMIMPIN",
+                "PANITIA_TASKFORCE",
               ] as UserRole[],
             },
           ],
@@ -718,6 +719,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "PANITIA_TASKFORCE",
             "PETUGAS_RESIDU",
             "WARGA",
+            "DPL",
           ] as UserRole[],
           children: [
             {
@@ -746,6 +748,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "LURAH",
                 "RW",
                 "WARGA",
+                "DPL",
+                "PANITIA_TASKFORCE",
               ] as UserRole[],
             },
             {
@@ -759,6 +763,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "LURAH",
                 "RW",
                 "WARGA",
+                "DPL",
+                "PANITIA_TASKFORCE",
               ] as UserRole[],
             },
           ],

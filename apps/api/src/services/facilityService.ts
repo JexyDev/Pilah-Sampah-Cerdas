@@ -163,19 +163,42 @@ export const facilityService = {
       whereClause.jenis = jenis as any;
     }
 
-    if (user && user.role !== "SUPER_USER" && user.role !== "ADMIN_DLH") {
+    const roleName = String(user?.role || "").toUpperCase();
+    if (user && !["SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "DEVELOPER"].includes(roleName)) {
       let allowedRwIds: number[] = [];
-      if (user.role === "MAHASISWA_KKN") {
+      if (roleName === "MAHASISWA_KKN") {
         const student = await prisma.studentKkn.findUnique({ where: { userId: user.userId }, include: { kelompok: true, user: true } });
         if (student?.assignedRwId) allowedRwIds.push(student.assignedRwId);
         if (student?.user?.rwId) allowedRwIds.push(student.user.rwId);
+      } else if (roleName === "DPL" || roleName === "DOSEN_PEMBIMBING") {
+        const userId = user.userId || user.id;
+        const kelompoks = await prisma.kelompokKkn.findMany({ where: { dplId: userId } });
+        if (kelompoks.length > 0) {
+          const kelurahanNames = kelompoks.map((k) => k.kelurahan).filter((k): k is string => Boolean(k));
+          const allCakupanRw: string[] = [];
+          kelompoks.forEach((k) => {
+            if (Array.isArray(k.cakupanRw)) {
+              (k.cakupanRw as any[]).forEach((r) => {
+                const s = String(r).trim();
+                if (/^\d+$/.test(s)) allCakupanRw.push(`RW ${s.length === 1 ? `0${s}` : s}`);
+                else allCakupanRw.push(s);
+              });
+            }
+          });
+          if (kelurahanNames.length > 0) {
+            whereClause.rw = {
+              kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } },
+              ...(allCakupanRw.length > 0 ? { name: { in: allCakupanRw } } : {}),
+            };
+          }
+        }
       } else if (user.rwId) {
         allowedRwIds.push(user.rwId);
       }
       
       if (allowedRwIds.length > 0) {
         whereClause.rwId = { in: allowedRwIds };
-      } else if (user.role === "MAHASISWA_KKN") {
+      } else if (roleName === "MAHASISWA_KKN") {
         // If student has no assigned RW, maybe they can only see what they registered
         whereClause.registeredByUserId = user.userId;
       }

@@ -847,7 +847,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/rw/fasilitas"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "RW", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "RW", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]}>
               <RwFacilityInput />
             </ProtectedRoute>
           }
