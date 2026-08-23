@@ -60,6 +60,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Daftarkan FCM token jika sesi sudah ada (app restart)
       _registerFcmToken();
       NotificationEngine().scheduleRoleBasedNotifications(user.role.apiValue);
+      
+      // Sinkronisasi data terbaru di background agar state & cache lokal selalu update
+      // tanpa pengguna harus manual pull-to-refresh.
+      fetchProfile();
     }
   }
 
