@@ -171,27 +171,26 @@ class _LoginViewState extends ConsumerState<LoginView> {
                             fit: BoxFit.contain,
                           ),
                           const SizedBox(height: 16),
-                          RichText(
-                            textAlign: TextAlign.center,
-                            text: TextSpan(
-                              style: GoogleFonts.poppins(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
-                                height: 1.3,
-                              ),
-                              children: const [
-                                TextSpan(text: 'Sampah '),
-                                TextSpan(
-                                  text: 'Terdata',
-                                  style: TextStyle(color: AppColors.primaryBlue),
-                                ),
-                                TextSpan(text: ',\nKampung '),
-                                TextSpan(
-                                  text: 'Berseka',
-                                  style: TextStyle(color: AppColors.primaryGreen),
-                                ),
-                              ],
+                          const Text(
+                            'BERSEKA',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 34,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF005841),
+                              letterSpacing: 1.2,
+                              height: 1.1,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Bersih, Sehat, Kampung Asri',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF5CA432),
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ],
