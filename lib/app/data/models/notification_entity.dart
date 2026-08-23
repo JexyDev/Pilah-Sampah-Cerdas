@@ -10,6 +10,7 @@ class NotificationEntity extends Equatable {
     required this.isRead,
     required this.time,
     required this.icon,
+    required this.createdAt,
   });
 
   final String id;
@@ -28,7 +29,10 @@ class NotificationEntity extends Equatable {
   /// Nama icon Material (star, warning, delete_sweep, check_circle, info).
   final String icon;
 
-  NotificationEntity copyWith({bool? isRead, String? time}) {
+  /// Raw sortable timestamp.
+  final DateTime createdAt;
+
+  NotificationEntity copyWith({bool? isRead, String? time, DateTime? createdAt}) {
     return NotificationEntity(
       id: id,
       type: type,
@@ -37,6 +41,7 @@ class NotificationEntity extends Equatable {
       isRead: isRead ?? this.isRead,
       time: time ?? this.time,
       icon: icon,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 

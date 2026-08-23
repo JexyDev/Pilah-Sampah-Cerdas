@@ -44,8 +44,9 @@ class LocalNotificationCacheService {
       title: title,
       desc: desc,
       isRead: false,
-      time: DateTime.now().toUtc().toIso8601String(),
+      time: 'Baru saja',
       icon: icon ?? _resolveDefaultIcon(type),
+      createdAt: DateTime.now(),
     );
 
     // Cek agar tidak terduplikasi berdasarkan ID
@@ -102,7 +103,7 @@ class LocalNotificationCacheService {
     // Cek juga list utamanya jika ada
     final list = _cache[key];
     if (list != null) {
-      final item = list.firstWhere((n) => n.id == notifId, orElse: () => const NotificationEntity(id: '', type: '', title: '', desc: '', time: '', isRead: false, icon: ''));
+      final item = list.firstWhere((n) => n.id == notifId, orElse: () => NotificationEntity(id: '', type: '', title: '', desc: '', time: '', isRead: false, icon: '', createdAt: DateTime(2000)));
       if (item.id.isNotEmpty && item.isRead) return true;
     }
     return false;

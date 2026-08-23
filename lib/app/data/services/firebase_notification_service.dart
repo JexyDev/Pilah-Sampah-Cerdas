@@ -94,14 +94,16 @@ class FirebaseNotificationService {
       for (final item in rawList) {
         try {
           final map = jsonDecode(item) as Map<String, dynamic>;
+          final rawTime = map['time']?.toString() ?? DateTime.now().toUtc().toIso8601String();
           result.add(NotificationEntity(
             id: map['id']?.toString() ?? '',
             type: map['type']?.toString() ?? 'INFO',
             title: map['title']?.toString() ?? 'Notifikasi',
             desc: map['desc']?.toString() ?? '',
             isRead: map['isRead'] as bool? ?? false,
-            time: map['time']?.toString() ?? DateTime.now().toUtc().toIso8601String(),
+            time: rawTime,
             icon: map['icon']?.toString() ?? 'info',
+            createdAt: DateTime.tryParse(map['createdAt']?.toString() ?? rawTime) ?? DateTime.now(),
           ));
         } catch (e) { debugPrint('Silenced error: $e'); }
       }

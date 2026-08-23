@@ -220,12 +220,8 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     finalResult.add(item);
   }
 
-  // Urutkan: terbaru di atas
-  finalResult.sort((a, b) {
-    final ta = DateTime.tryParse(a.time) ?? DateTime(2000);
-    final tb = DateTime.tryParse(b.time) ?? DateTime(2000);
-    return tb.compareTo(ta); 
-  });
+    // Urutkan: terbaru di atas
+    finalResult.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
   return finalResult;
 });

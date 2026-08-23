@@ -135,9 +135,11 @@ class ApiNotificationRepository implements NotificationRepository {
         json['category']?.toString() ??
         'INFO';
 
-    // Kita prioritaskan createdAt/timestamp yang biasanya berupa format ISO 8601 yang valid,
-    // ketimbang 'time' yang mungkin dikirim backend dalam format '1 jam lalu'.
-    final rawTime = json['createdAt']?.toString() ?? json['timestamp']?.toString() ?? json['time']?.toString() ?? DateTime.now().toUtc().toIso8601String();
+    // Kita prioritaskan createdAt/timestamp yang biasanya berupa format ISO 8601 yang valid
+    final rawCreatedAt = json['createdAt']?.toString() ?? json['timestamp']?.toString() ?? DateTime.now().toUtc().toIso8601String();
+    final dt = DateTime.tryParse(rawCreatedAt) ?? DateTime.now();
+
+    final displayTime = json['time']?.toString() ?? 'Baru saja';
 
     return NotificationEntity(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? json['notificationId']?.toString() ?? '',
@@ -145,8 +147,9 @@ class ApiNotificationRepository implements NotificationRepository {
       title: rawTitle,
       desc: rawDesc,
       isRead: json['isRead'] as bool? ?? json['read'] as bool? ?? json['is_read'] as bool? ?? false,
-      time: rawTime,
+      time: displayTime,
       icon: json['icon']?.toString() ?? 'info',
+      createdAt: dt,
     );
   }
 }
