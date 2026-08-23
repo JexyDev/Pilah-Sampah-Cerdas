@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import { websocketService } from "./websocketService.js";
+import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { v4 as uuidv4 } from "uuid";
 
 export class TransactionService {
@@ -274,6 +275,14 @@ export class TransactionService {
                 isRead: false,
               },
             });
+
+            // FIRE SILENT PUSH UNTUK REFRESH POIN SECARA REAL-TIME DI BACKGROUND
+            if (setoranOtomatis.warga?.fcmToken) {
+              await notificationIntegrationService.sendSilentDataPush(
+                setoranOtomatis.warga.fcmToken,
+                { event: 'REFRESH_POIN_WARGA', poinTambahan: pointsEarned.toString() }
+              );
+            }
           }
         } else if (formattedStatus === "REJECTED" && oldStatus !== "REJECTED") {
           // Real-Time Notification Trigger for Rejection

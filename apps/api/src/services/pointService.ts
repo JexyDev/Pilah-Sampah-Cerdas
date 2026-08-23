@@ -7,6 +7,7 @@ import { prisma } from "../lib/prisma.js";
  */
 
 import { pointRepository } from "../repositories/pointRepository.js";
+import { notificationIntegrationService } from "./notificationIntegrationService.js";
 
 
 export class PointService {
@@ -79,6 +80,20 @@ export class PointService {
           message: `Poin Anda telah disesuaikan sebesar ${points >= 0 ? "+" : ""}${points} poin: ${description}`,
         },
       });
+
+      // Coba kirim silent push jika user punya fcmToken
+      const user = await tx.user.findUnique({ where: { id: userId }, select: { fcmToken: true, role: { select: { name: true } } } });
+      if (user?.fcmToken) {
+        const eventType = user.role.name === "WARGA" ? 'REFRESH_POIN_WARGA' : 'REFRESH_POIN_MAHASISWA';
+        try {
+          await notificationIntegrationService.sendSilentDataPush(
+            user.fcmToken,
+            { event: eventType, poinTambahan: points.toString() }
+          );
+        } catch (e) {
+          console.warn("[adjustPoints] FCM failed", e);
+        }
+      }
 
       return history;
     });

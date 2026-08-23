@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma.js";
 import { configService } from "./configService.js";
 import { normalizeProkerKategori } from "./kknService.js";
+import { notificationIntegrationService } from "./notificationIntegrationService.js";
 
 export function parseProkerDeskripsi(rawDeskripsi?: string | null): { judul: string; deskripsi: string } {
   if (!rawDeskripsi || !rawDeskripsi.trim()) {

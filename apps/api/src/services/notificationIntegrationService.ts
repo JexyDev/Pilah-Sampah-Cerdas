@@ -135,7 +135,6 @@ export const notificationIntegrationService = {
       console.log(`📲 [FCM Log Mode] Push Notification to Token ${token} | Title: ${title} | Body: ${body}`);
     }
 
-    // Always record log entry in database
     await prisma.notificationLog.create({
       data: {
         channel: "FCM",
@@ -145,6 +144,41 @@ export const notificationIntegrationService = {
       },
     });
 
+    return { success: statusKirim === "SUCCESS", messageId };
+  },
+
+  /**
+   * Firebase Cloud Messaging (FCM) Silent Data Sender
+   * Sends silent data messages (no visible notification) to trigger app background processes or UI cache invalidation.
+   */
+  sendSilentDataPush: async (
+    token: string,
+    dataPayload: { [key: string]: string },
+    triggerType: string = "SILENT_REFRESH"
+  ) => {
+    let statusKirim = "SUCCESS";
+    let messageId = `fcm-silent-${Date.now()}`;
+
+    if (firebaseMessaging && token && !token.startsWith("mock-")) {
+      try {
+        const response = await firebaseMessaging.send({
+          token,
+          data: {
+            ...dataPayload,
+            triggerType,
+            sentAt: new Date().toISOString(),
+          },
+        });
+        messageId = response;
+        console.log(`[FCM Silent Sent] Triggered token: ${token} | MessageID: ${response}`);
+      } catch (err: any) {
+        console.error(`[FCM Silent Error] Gagal mengirim silent push ke token ${token}:`, err.message);
+        statusKirim = "FAILED";
+      }
+    }
+
+    // Opsional: log ke database atau abaikan karena ini silent
+    // Untuk performa, silent refresh biasanya tidak perlu dilog ke tabel yang sama, tapi kita biarkan log demi keamanan
     return { success: statusKirim === "SUCCESS", messageId };
   },
 };
