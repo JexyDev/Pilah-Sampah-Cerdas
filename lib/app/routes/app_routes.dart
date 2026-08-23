@@ -45,5 +45,6 @@ class AppRoutes {
   static const String riwayatProgramKerja = '/mahasiswa/program-kerja/riwayat';
   static const String logbookPemanfaatan = '/mahasiswa/pemanfaatan/logbook';
   static const String catatPanen = '/mahasiswa/pemanfaatan/panen';
+  static const String inputLaporanAkhir = '/mahasiswa/laporan-akhir/input';
 }
 

@@ -33,6 +33,7 @@ import '../modules/mahasiswa/views/register_fasilitas_view.dart';
 import '../modules/mahasiswa/views/pemanfaatan_sampah_view.dart';
 import '../modules/mahasiswa/views/edit_profil_mahasiswa_view.dart';
 import '../modules/mahasiswa/views/pengajuan_izin_form_view.dart';
+import '../modules/mahasiswa/views/input_laporan_akhir_view.dart';
 import '../modules/mahasiswa/views/monitoring_dampak_kelurahan_view.dart';
 import '../modules/mahasiswa/views/riwayat_kkn_view.dart';
 import '../modules/petugas_pemilahan/views/riwayat_petugas_pemilahan_view.dart';
@@ -140,6 +141,8 @@ class AppPages {
         return _buildRoute(const RegisterPoskoView(), settings);
       case AppRoutes.registerFasilitas:
         return _buildRoute(const RegisterFasilitasView(), settings);
+      case AppRoutes.inputLaporanAkhir:
+        return _buildRoute(const InputLaporanAkhirView(), settings);
       case AppRoutes.riwayatKkn:
         return _buildRoute(const RiwayatKknView(), settings);
       case AppRoutes.poin:
