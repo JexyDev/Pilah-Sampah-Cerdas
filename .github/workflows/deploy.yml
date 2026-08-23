@@ -117,6 +117,7 @@ jobs:
             
             curl -s -X POST "http://localhost:3000/api/v1/system/publish-release" \
               -H "Content-Type: application/json" \
+              -H "x-ci-secret: berseka-ci-secret" \
               -d "{
                 \"latestVersion\": \"1.0.7\",
                 \"version\": \"1.0.7\",
