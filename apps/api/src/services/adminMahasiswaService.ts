@@ -1,22 +1,36 @@
 import { prisma } from "../lib/prisma.js";
+import { Prisma } from "@prisma/client";
+import { getScopingFilters } from "../utils/rbacScoping.js";
 import bcrypt from "bcryptjs";
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
 
 
 export const adminMahasiswaService = {
-  getAllMahasiswa: async (page = 1, limit = 10, search = "") => {
+  getAllMahasiswa: async (page = 1, limit = 10, search = "", user?: any) => {
     const skip = (page - 1) * limit;
 
-    const whereClause: any = {
+    let whereClause: any = {
       role: { name: "MAHASISWA_KKN" },
       status: "Aktif",
     };
 
+    if (user) {
+      const scopes = await getScopingFilters(user);
+      if (scopes.userFilter && Object.keys(scopes.userFilter).length > 0) {
+        whereClause = { AND: [whereClause, scopes.userFilter] };
+      }
+    }
+
     if (search) {
-      whereClause.OR = [
+      const searchOr = [
         { name: { contains: search, mode: "insensitive" } },
         { studentProfile: { nim: { contains: search, mode: "insensitive" } } },
       ];
+      if (whereClause.AND) {
+        whereClause.AND.push({ OR: searchOr });
+      } else {
+        whereClause.AND = [{ OR: searchOr }];
+      }
     }
 
     const [users, total] = await Promise.all([

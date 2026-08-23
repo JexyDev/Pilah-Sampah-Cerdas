@@ -22,7 +22,8 @@ export const kelompokController = {
         limit,
         search,
         kelurahan,
-        dplUserId
+        dplUserId,
+        (req as any).user
       );
       res.status(200).json({ success: true, ...result });
     } catch (error) {

@@ -1,21 +1,37 @@
 import { prisma } from "../lib/prisma.js";
 import { ensureDplKelompokRelation } from "./dplService.js";
+import { getScopingFilters } from "../utils/rbacScoping.js";
 
 export const kelompokService = {
-  getAllKelompok: async (page = 1, limit = 0, search = "", kelurahan = "", dplUserId = "") => {
-    const whereClause: any = {};
+  getAllKelompok: async (page = 1, limit = 0, search = "", kelurahan = "", dplUserId = "", user?: any) => {
+    let whereClause: any = {};
 
-    if (dplUserId) {
+    if (user) {
+      const scopes = await getScopingFilters(user);
+      whereClause = scopes.kelompokKknFilter || {};
+    }
+
+    if (dplUserId && !user) {
       await ensureDplKelompokRelation(dplUserId);
-      whereClause.OR = [{ dplId: dplUserId }, { dpl: { id: dplUserId } }];
+      if (Object.keys(whereClause).length > 0) {
+        whereClause.AND = [{ OR: [{ dplId: dplUserId }, { dpl: { id: dplUserId } }] }];
+      } else {
+        whereClause.OR = [{ dplId: dplUserId }, { dpl: { id: dplUserId } }];
+      }
     }
 
     if (search) {
-      whereClause.OR = [
+      const searchOr = [
         { name: { contains: search, mode: "insensitive" } },
         { kelurahan: { contains: search, mode: "insensitive" } },
         { dpl: { name: { contains: search, mode: "insensitive" } } },
       ];
+      if (whereClause.OR) {
+        whereClause = { AND: [ { OR: whereClause.OR }, { OR: searchOr } ], ...whereClause };
+        delete whereClause.OR;
+      } else {
+        whereClause.OR = searchOr;
+      }
     }
 
     if (kelurahan && kelurahan !== "ALL") {

@@ -8,7 +8,7 @@ export const adminMahasiswaController = {
       const limit = parseInt(req.query.limit as string) || 10;
       const search = (req.query.search as string) || "";
 
-      const result = await adminMahasiswaService.getAllMahasiswa(page, limit, search);
+      const result = await adminMahasiswaService.getAllMahasiswa(page, limit, search, (req as any).user);
       res.status(200).json({ success: true, ...result });
     } catch (error) {
       console.error("[AdminMahasiswa] getAll error:", error);

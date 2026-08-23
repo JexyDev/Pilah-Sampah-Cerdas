@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import { websocketService } from "./websocketService.js";
+import { getScopingFilters } from "../utils/rbacScoping.js";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -122,58 +123,8 @@ export class PemanfaatanService {
     let whereClause: any = undefined;
 
     if (user) {
-      const roleName = String(user.role || "").toUpperCase();
-
-      if (roleName === "DPL" || roleName === "DOSEN_PEMBIMBING") {
-        const userId = user.userId || user.id;
-        const kelompoks = await prisma.kelompokKkn.findMany({
-          where: { dplId: userId },
-        });
-
-        if (kelompoks.length > 0) {
-          const kelurahanNames = kelompoks
-            .map((k) => k.kelurahan)
-            .filter((k): k is string => Boolean(k));
-
-          const allCakupanRw: string[] = [];
-          kelompoks.forEach((k) => {
-            if (Array.isArray(k.cakupanRw)) {
-              (k.cakupanRw as any[]).forEach((r) => {
-                const s = String(r).trim();
-                if (/^\d+$/.test(s)) {
-                  allCakupanRw.push(`RW ${s.length === 1 ? `0${s}` : s}`);
-                } else {
-                  allCakupanRw.push(s);
-                }
-              });
-            }
-          });
-
-          if (kelurahanNames.length > 0) {
-            whereClause = {
-              rw: {
-                kelurahan: {
-                  name: { in: kelurahanNames, mode: "insensitive" },
-                },
-                ...(allCakupanRw.length > 0 ? { name: { in: allCakupanRw } } : {}),
-              },
-            };
-          }
-        }
-      } else if (roleName === "RW") {
-        const rwId = user.rwId || user.rtRwId;
-        if (rwId) {
-          whereClause = { rwId: Number(rwId) };
-        }
-      } else if (roleName === "LURAH" && user.kelurahan) {
-        whereClause = {
-          rw: {
-            kelurahan: {
-              name: { equals: user.kelurahan, mode: "insensitive" },
-            },
-          },
-        };
-      }
+      const scopes = await getScopingFilters(user);
+      whereClause = scopes.pemanfaatanFilter;
     }
 
     const items = await prisma.pemanfaatan.findMany({

@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js";
+import { getScopingFilters } from "../utils/rbacScoping.js";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -170,56 +171,20 @@ export const facilityService = {
       whereClause.jenis = jenis as any;
     }
 
-    const roleName = String(user?.role || "").toUpperCase();
-    if (user && !["SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "DEVELOPER"].includes(roleName)) {
-      let allowedRwIds: number[] = [];
-      let kelompokIdStr: string | undefined;
-
-      if (roleName === "MAHASISWA_KKN") {
-        const student = await prisma.studentKkn.findUnique({ where: { userId: user.userId }, include: { kelompok: true, user: true } });
-        if (student?.assignedRwId) allowedRwIds.push(student.assignedRwId);
-        if (student?.user?.rwId) allowedRwIds.push(student.user.rwId);
-        if (student?.kelompokId) kelompokIdStr = student.kelompokId;
-      } else if (roleName === "DPL" || roleName === "DOSEN_PEMBIMBING") {
-        const userId = user.userId || user.id;
-        const kelompoks = await prisma.kelompokKkn.findMany({ where: { dplId: userId } });
-        if (kelompoks.length > 0) {
-          const kelurahanNames = kelompoks.map((k) => k.kelurahan).filter((k): k is string => Boolean(k));
-          const allCakupanRw: string[] = [];
-          kelompoks.forEach((k) => {
-            if (Array.isArray(k.cakupanRw)) {
-              (k.cakupanRw as any[]).forEach((r) => {
-                const s = String(r).trim();
-                if (/^\d+$/.test(s)) allCakupanRw.push(`RW ${s.length === 1 ? `0${s}` : s}`);
-                else allCakupanRw.push(s);
-              });
-            }
-          });
-          if (kelurahanNames.length > 0) {
-            whereClause.rw = {
-              kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } },
-              ...(allCakupanRw.length > 0 ? { name: { in: allCakupanRw } } : {}),
-            };
-          }
-        }
-      } else if (user.rwId) {
-        allowedRwIds.push(user.rwId);
-      }
+    if (user) {
+      const scopes = await getScopingFilters(user);
       
-      const orConditions: any[] = [];
-      if (allowedRwIds.length > 0) {
-        orConditions.push({ rwId: { in: allowedRwIds } });
-      }
-      if (kelompokIdStr) {
-        orConditions.push({ kelompokId: kelompokIdStr });
-      }
-      if (roleName === "MAHASISWA_KKN") {
-        orConditions.push({ registeredByUserId: user.userId });
-      }
-      
-      if (orConditions.length > 0) {
-        // If there are other OR conditions, we merge them, but currently there are none.
-        whereClause.OR = orConditions;
+      // Merge the scope filters into whereClause
+      // If whereClause already has a 'jenis', we use AND
+      if (Object.keys(whereClause).length > 0) {
+        whereClause = {
+          AND: [
+            whereClause,
+            scopes.facilityFilter || {}
+          ]
+        };
+      } else {
+        whereClause = scopes.facilityFilter || {};
       }
     }
 
