@@ -710,6 +710,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
   const handleTotalHariChange = (hari: number) => {
     setFormTotalHari(hari);
+    const daysCount = formDays.length || 1;
+    const computedPekan = Math.max(1, Math.ceil(hari / daysCount));
+    setFormTargetPekan(computedPekan);
     const newTotalJam = calculatePreciseTargetJam(hari, formDurasiJam, formDurasiMenit);
     setFormTotalJam(newTotalJam);
   };
