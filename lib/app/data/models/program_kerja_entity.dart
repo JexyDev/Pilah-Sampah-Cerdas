@@ -12,6 +12,11 @@ class ProgramKerjaEntity {
   final String? catatanDpl;
   final DateTime createdAt;
 
+  // Deteksi Usulan DPL dari pola JSON backend:
+  // Proker buatan mahasiswa selalu diprefix '**Judul**\n\n' oleh backend KKN service.
+  // Jika tidak ada prefix itu, judul & deskripsi yang dikembalikan API akan sama persis (buatan DPL).
+  bool get isUsulanDpl => judul != null && deskripsi.isNotEmpty && judul == deskripsi;
+
   ProgramKerjaEntity({
     required this.id,
     required this.kelompokId,

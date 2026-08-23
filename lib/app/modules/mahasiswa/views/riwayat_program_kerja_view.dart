@@ -227,6 +227,21 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  if (judulStr.isNotEmpty && deskripsi.isNotEmpty && judulStr == deskripsi) ...[
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      margin: const EdgeInsets.only(bottom: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                                      ),
+                                      child: const Text(
+                                        'Usulan DPL',
+                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blue),
+                                      ),
+                                    ),
+                                  ],
                                   Text(
                                     judulStr,
                                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),

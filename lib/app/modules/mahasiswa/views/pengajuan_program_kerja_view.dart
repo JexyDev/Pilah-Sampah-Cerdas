@@ -122,7 +122,7 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
                           decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'YYYY-MM-DD', suffixIcon: Icon(Icons.calendar_today)),
                           validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
                           onTap: () async {
-                              final minDate = DateTime.now().add(const Duration(days: 3));
+                              final minDate = DateTime.now().add(const Duration(days: 1));
                               final picked = await showDatePicker(
                                 context: context,
                                 initialDate: minDate,
@@ -157,7 +157,7 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
                           decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'YYYY-MM-DD', suffixIcon: Icon(Icons.calendar_today)),
                           validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
                           onTap: () async {
-                              final minDate = _tanggalMulaiCtrl.text.isNotEmpty ? DateTime.parse(_tanggalMulaiCtrl.text) : DateTime.now().add(const Duration(days: 3));
+                              final minDate = _tanggalMulaiCtrl.text.isNotEmpty ? DateTime.parse(_tanggalMulaiCtrl.text) : DateTime.now().add(const Duration(days: 1));
                               final picked = await showDatePicker(
                                 context: context,
                                 initialDate: minDate,
