@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import { configService } from "./configService.js";
+import { notificationIntegrationService } from "./notificationIntegrationService.js";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -93,7 +94,7 @@ export const scheduleService = {
         data.radius = 100;
       }
     }
-    return prisma.schedule.create({
+    const schedule = await prisma.schedule.create({
       data,
       include: {
         kelompok: {
@@ -101,6 +102,28 @@ export const scheduleService = {
         },
       },
     });
+
+    // SILENT PUSH UNTUK REALTIME KEGIATAN MAHASISWA
+    if (data.kelompokId) {
+      try {
+        const students = await prisma.studentKkn.findMany({
+          where: { kelompokId: data.kelompokId },
+          include: { user: true },
+        });
+        for (const s of students) {
+          if (s.user?.fcmToken) {
+            await notificationIntegrationService.sendSilentDataPush(
+              s.user.fcmToken,
+              { event: 'REFRESH_KEGIATAN_MAHASISWA' }
+            );
+          }
+        }
+      } catch (e) {
+        console.warn("[createSchedule] Failed to send silent push", e);
+      }
+    }
+
+    return schedule;
   },
 
   deleteSchedule: async (id: string) => {
