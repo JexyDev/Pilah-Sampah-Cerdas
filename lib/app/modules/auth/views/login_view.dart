@@ -7,7 +7,7 @@ import '../../../core/values/app_assets.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 /// Layar login — nomor telepon + password.
 class LoginView extends ConsumerStatefulWidget {
