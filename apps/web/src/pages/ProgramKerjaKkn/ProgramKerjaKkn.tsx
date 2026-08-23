@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   FileSpreadsheet,
   Plus,
@@ -50,17 +51,52 @@ export const ProgramKerjaKkn: React.FC = () => {
   const isManagement = ["SUPER_USER", "PANITIA_TASKFORCE", "DEVELOPER"].includes(userRole);
   const canModifyProker = isManagement || isDpl;
 
+  const [searchParams] = useSearchParams();
+
   const [loading, setLoading] = useState(true);
   const [prokerList, setProkerList] = useState<ProgramKerjaItem[]>([]);
   const [kelompokList, setKelompokList] = useState<any[]>([]);
 
   // 5 Filter States (Termasuk Status Usulan & Status Pelaksanaan)
-  const [selectedKelompokId, setSelectedKelompokId] = useState<string>("ALL");
-  const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+  const [selectedKelompokId, setSelectedKelompokId] = useState<string>(
+    searchParams.get("kelompokId") || searchParams.get("groupId") || "ALL"
+  );
+  const [categoryFilter, setCategoryFilter] = useState<string>(
+    searchParams.get("kategori") || searchParams.get("category") || "ALL"
+  );
   const [sourceFilter, setSourceFilter] = useState<string>("ALL");
-  const [statusUsulanFilter, setStatusUsulanFilter] = useState<string>("ALL");
-  const [statusPelaksanaanFilter, setStatusPelaksanaanFilter] = useState<string>("ALL");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [statusUsulanFilter, setStatusUsulanFilter] = useState<string>(
+    searchParams.get("statusUsulan") || "ALL"
+  );
+  const [statusPelaksanaanFilter, setStatusPelaksanaanFilter] = useState<string>(
+    searchParams.get("statusPelaksanaan") || "ALL"
+  );
+  const [searchQuery, setSearchQuery] = useState<string>(
+    searchParams.get("search") || searchParams.get("q") || ""
+  );
+
+  useEffect(() => {
+    const q = searchParams.get("search") || searchParams.get("q");
+    if (q !== null && q !== undefined) {
+      setSearchQuery(q);
+    }
+    const kId = searchParams.get("kelompokId") || searchParams.get("groupId");
+    if (kId) {
+      setSelectedKelompokId(kId);
+    }
+    const su = searchParams.get("statusUsulan");
+    if (su) {
+      setStatusUsulanFilter(su);
+    }
+    const sp = searchParams.get("statusPelaksanaan");
+    if (sp) {
+      setStatusPelaksanaanFilter(sp);
+    }
+    const cat = searchParams.get("kategori") || searchParams.get("category");
+    if (cat) {
+      setCategoryFilter(cat);
+    }
+  }, [searchParams]);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -224,6 +260,24 @@ export const ProgramKerjaKkn: React.FC = () => {
             kelurahan: g.kelurahan,
             cakupanRw: g.cakupanRw,
           }));
+        } else {
+          // Fallback if DPL getGroupSummary returned empty:
+          try {
+            const kelRes = await api.get("/kelompok");
+            const list =
+              kelRes.data?.data?.kelompok ||
+              (Array.isArray(kelRes.data?.data) ? kelRes.data?.data : []);
+            if (Array.isArray(list) && list.length > 0) {
+              groups = list.map((g: any) => ({
+                id: g.id,
+                name: g.name,
+                kelurahan: g.kelurahan,
+                cakupanRw: g.cakupanRw,
+              }));
+            }
+          } catch (e) {
+            console.error("Gagal memuat fallback kelompok:", e);
+          }
         }
       } else {
         // Management / Super User gets all groups
@@ -283,12 +337,12 @@ export const ProgramKerjaKkn: React.FC = () => {
     setFormEndDate(today);
     const initialRange = formatIndonesianDateRange(today, today);
 
-    const defaultKelompokId =
-      selectedKelompokId !== "ALL"
-        ? selectedKelompokId
-        : kelompokList.length > 0
-        ? kelompokList[0].id
-        : "";
+    let defaultKelompokId = "";
+    if (selectedKelompokId && selectedKelompokId !== "ALL") {
+      defaultKelompokId = selectedKelompokId;
+    } else if (kelompokList.length > 0) {
+      defaultKelompokId = kelompokList[0].id;
+    }
 
     setFormData({
       kelompokId: defaultKelompokId,
@@ -317,7 +371,7 @@ export const ProgramKerjaKkn: React.FC = () => {
     const normP = normalizeStatusPelaksanaan(item.statusPelaksanaan, item.status);
 
     setFormData({
-      kelompokId: item.kelompokId,
+      kelompokId: item.kelompokId || (kelompokList.length > 0 ? kelompokList[0].id : ""),
       nomor: item.nomor || 1,
       deskripsi: item.deskripsi,
       kategori: item.kategori || "Pemilahan",
@@ -335,7 +389,12 @@ export const ProgramKerjaKkn: React.FC = () => {
 
   const handleSaveForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.kelompokId || !formData.deskripsi.trim()) {
+    const effectiveKelompokId =
+      formData.kelompokId ||
+      (selectedKelompokId !== "ALL" ? selectedKelompokId : "") ||
+      (kelompokList.length > 0 ? kelompokList[0].id : "");
+
+    if (!effectiveKelompokId || !formData.deskripsi.trim()) {
       toast.error("Kelompok dan deskripsi kegiatan wajib diisi");
       return;
     }
@@ -355,7 +414,7 @@ export const ProgramKerjaKkn: React.FC = () => {
     try {
       if (formMode === "add") {
         await dplService.createProgramKerja({
-          kelompokId: formData.kelompokId,
+          kelompokId: effectiveKelompokId,
           nomor: Number(formData.nomor),
           deskripsi: formData.deskripsi.trim(),
           kategori: formData.kategori,

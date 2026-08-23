@@ -1,52 +1,13 @@
 import { prisma } from "../lib/prisma.js";
-
+import { ensureDplKelompokRelation } from "./dplService.js";
 
 export const kelompokService = {
   getAllKelompok: async (page = 1, limit = 0, search = "", kelurahan = "", dplUserId = "") => {
     const whereClause: any = {};
 
     if (dplUserId) {
-      const dplOr: any[] = [{ dplId: dplUserId }, { dpl: { id: dplUserId } }];
-      try {
-        const dplUser = await prisma.user.findUnique({
-          where: { id: dplUserId },
-          select: { id: true, name: true, phone: true, nip: true },
-        });
-
-        if (dplUser) {
-          if (dplUser.name && dplUser.name.trim()) {
-            dplOr.push({ dplNamaMentah: { equals: dplUser.name.trim(), mode: "insensitive" } });
-            dplOr.push({ dpl: { name: { equals: dplUser.name.trim(), mode: "insensitive" } } });
-          }
-          if (dplUser.phone) dplOr.push({ dpl: { phone: dplUser.phone } });
-          if (dplUser.nip) dplOr.push({ dpl: { nip: dplUser.nip } });
-
-          // Auto-heal
-          const unlinkedOr: any[] = [];
-          if (dplUser.name) unlinkedOr.push({ dplNamaMentah: { equals: dplUser.name.trim(), mode: "insensitive" } });
-          if (dplUser.nip) unlinkedOr.push({ dpl: { nip: dplUser.nip } });
-          if (dplUser.phone) unlinkedOr.push({ dpl: { phone: dplUser.phone } });
-
-          const unlinkedGroups = unlinkedOr.length > 0 ? await prisma.kelompokKkn.findMany({
-            where: {
-              OR: unlinkedOr,
-              NOT: { dplId: dplUserId },
-            },
-            select: { id: true },
-          }) : [];
-
-          if (unlinkedGroups.length > 0) {
-            await prisma.kelompokKkn.updateMany({
-              where: { id: { in: unlinkedGroups.map((g) => g.id) } },
-              data: { dplId: dplUserId, dplNamaMentah: dplUser.name },
-            });
-          }
-        }
-      } catch (err) {
-        console.warn("[kelompokService] Error resolving DPL fallback:", err);
-      }
-
-      whereClause.OR = dplOr;
+      await ensureDplKelompokRelation(dplUserId);
+      whereClause.OR = [{ dplId: dplUserId }, { dpl: { id: dplUserId } }];
     }
 
     if (search) {

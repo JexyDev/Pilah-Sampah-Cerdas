@@ -17,6 +17,7 @@ interface TimelineKknModalProps {
   editItem?: any | null;
   groups: any[];
   defaultKelompokId?: string;
+  kelurahanList?: string[];
 }
 
 const FASE_OPTIONS = [
@@ -59,6 +60,7 @@ export const TimelineKknModal: React.FC<TimelineKknModalProps> = ({
   editItem,
   groups,
   defaultKelompokId,
+  kelurahanList,
 }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -253,7 +255,7 @@ export const TimelineKknModal: React.FC<TimelineKknModalProps> = ({
                   onChange={(e) => setFormData({ ...formData, kelurahan: e.target.value })}
                   className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 transition"
                 >
-                  {KELURAHAN_OPTIONS.map((k) => (
+                  {(kelurahanList && kelurahanList.length > 0 ? ["Semua Kelurahan", ...kelurahanList] : KELURAHAN_OPTIONS).map((k) => (
                     <option key={k} value={k}>
                       {k}
                     </option>
