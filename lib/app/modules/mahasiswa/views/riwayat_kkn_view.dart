@@ -101,9 +101,9 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Padding(
-                  padding: EdgeInsets.all(16.0),
+                  padding: EdgeInsets.only(left: 16, right: 16, top: 24, bottom: 8),
                   child: Text(
-                    'Riwayat Aktivitas (Non Poin)',
+                    'Riwayat Aktivitas',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
