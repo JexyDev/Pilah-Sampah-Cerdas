@@ -255,10 +255,13 @@ router.post(
         });
       }
 
+      const accumulatedDuration = req.body.accumulatedDuration !== undefined ? Number(req.body.accumulatedDuration) : undefined;
+
       const result = await kknAttendanceServiceInstance.pingLocation(
         req.user!.userId,
         latitude,
-        longitude
+        longitude,
+        accumulatedDuration
       );
       res.json(result);
     } catch (error: any) {

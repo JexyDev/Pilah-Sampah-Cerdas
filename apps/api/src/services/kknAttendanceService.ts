@@ -136,7 +136,7 @@ export async function getScheduleTargetDurationMinutes(schedule: { time?: string
 }
 
 export class KknAttendanceService {
-  async pingLocation(userId: string, latitude: number, longitude: number) {
+  async pingLocation(userId: string, latitude: number, longitude: number, accumulatedDurationSeconds?: number) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { role: true },
@@ -325,7 +325,16 @@ export class KknAttendanceService {
           const logMins = logWib.getUTCHours() * 60 + logWib.getUTCMinutes();
           return logMins >= startMinutesTotal;
         });
-        const durationInZone = calculateInZoneDurationMinutes(scheduleLogs, geofence, bufferMeters, (existingAtt?.jedaLogs as any[]) || []);
+        let durationInZone = 0;
+        if (accumulatedDurationSeconds !== undefined && !isNaN(Number(accumulatedDurationSeconds))) {
+          // Sinkronisasi 2 arah: Gunakan durasi aktual dari mobile (yang dikirim dalam detik)
+          durationInZone = Math.floor(Number(accumulatedDurationSeconds) / 60);
+        } else {
+          // Fallback ke kalkulasi manual jika mobile lama/tidak mengirim durasi
+          const durationCalculated = calculateInZoneDurationMinutes(scheduleLogs, geofence, bufferMeters, (existingAtt?.jedaLogs as any[]) || []);
+          durationInZone = durationCalculated;
+        }
+
         inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
 
         // Cek posisi saat ini menggunakan buffer dinamis
