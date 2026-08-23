@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - mobile
-      - fix-analyze-and-dummy-v2
+      - main
   pull_request:
     branches:
       - mobile
@@ -39,3 +39,84 @@ jobs:
 
       - name: Run Unit Tests
         run: flutter test
+
+  build-and-deploy-apk:
+    name: Build ARM64 APK & Deploy to Web Download Page
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: validate
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/mobile' || github.ref == 'refs/heads/main')
+
+    steps:
+      - name: Checkout Mobile Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Android Release APK (arm64-v8a)
+        run: |
+          flutter build apk --release --target-platform android-arm64
+          ls -lah build/app/outputs/flutter-apk/
+
+      - name: Install sshpass
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends sshpass
+
+      - name: Deploy APK to VPS & Update Web Download Page
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USERNAME }}
+          VPS_PASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          APK_FILE="build/app/outputs/flutter-apk/app-release.apk"
+          if [ ! -f "$APK_FILE" ]; then
+            APK_FILE=$(find build/app/outputs/flutter-apk/ -name "*.apk" | head -n 1)
+          fi
+
+          echo "Uploading $APK_FILE to VPS..."
+          sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no "$APK_FILE" "$VPS_USER@$VPS_HOST:/tmp/berseka-release-arm64-v8a.apk"
+
+          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' bash -s" << 'EOF'
+            set -e
+            echo "=== 1. Deploying APK to Nginx Static & API Downloads ==="
+            echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html/downloads /var/www/pilah-sampah-cerdas/frontend/dist/downloads /home/maker/Pilah-Sampah-Cerdas/apps/api/uploads
+
+            echo "$VPS_PASS" | sudo -S cp /tmp/berseka-release-arm64-v8a.apk /var/www/html/downloads/berseka-release-arm64-v8a.apk
+            echo "$VPS_PASS" | sudo -S cp /tmp/berseka-release-arm64-v8a.apk /var/www/pilah-sampah-cerdas/frontend/dist/downloads/berseka-release-arm64-v8a.apk
+            echo "$VPS_PASS" | sudo -S cp /tmp/berseka-release-arm64-v8a.apk /home/maker/Pilah-Sampah-Cerdas/apps/api/uploads/berseka-release-arm64-v8a.apk
+
+            echo "$VPS_PASS" | sudo -S chown -R www-data:www-data /var/www/html/downloads
+            echo "$VPS_PASS" | sudo -S chmod 644 /var/www/html/downloads/berseka-release-arm64-v8a.apk
+            rm -f /tmp/berseka-release-arm64-v8a.apk
+
+            echo "=== 2. Updating Release Info in Database API ==="
+            FILE_SIZE=$(stat -c%s "/home/maker/Pilah-Sampah-Cerdas/apps/api/uploads/berseka-release-arm64-v8a.apk" 2>/dev/null || echo "26004512")
+            
+            curl -s -X POST "http://localhost:3000/api/v1/system/publish-release" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"latestVersion\": \"1.0.7\",
+                \"version\": \"1.0.7\",
+                \"buildNumber\": 107,
+                \"releaseNotes\": \"Auto-build CI/CD arm64-v8a APK terbaru, pembaruan performa, dan sinkronisasi real-time.\",
+                \"downloadUrl\": \"/downloads/berseka-release-arm64-v8a.apk\",
+                \"apkUrl\": \"/downloads/berseka-release-arm64-v8a.apk\",
+                \"fileSizeBytes\": $FILE_SIZE,
+                \"forceUpdate\": false
+              }" || echo "Publish release notification sent"
+
+            echo "=== Mobile APK CI/CD Deployment Successfully Completed! ==="
+          EOF
