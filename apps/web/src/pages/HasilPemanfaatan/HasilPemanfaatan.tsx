@@ -98,23 +98,6 @@ export const HasilPemanfaatan: React.FC = () => {
     fetchProgramList();
   }, []);
 
-  const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
-  const dplKelurahan = user?.kelurahan || "";
-
-  // Extract DPL assigned RW numbers from dplKelompok
-  const dplCakupanRwNumbers = useMemo(() => {
-    if (!isDpl || !user?.dplKelompok) return [];
-    const rws: string[] = [];
-    user.dplKelompok.forEach((k: any) => {
-      if (Array.isArray(k.cakupanRw)) {
-        rws.push(...k.cakupanRw.map(String));
-      } else if (typeof k.cakupanRw === "string" || typeof k.cakupanRw === "number") {
-        rws.push(String(k.cakupanRw));
-      }
-    });
-    return rws.map((r) => r.toLowerCase().replace(/^rw\s*/i, "").trim());
-  }, [user, isDpl]);
-
   // Filtered feedback calculation
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
