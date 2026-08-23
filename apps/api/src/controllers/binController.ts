@@ -729,6 +729,16 @@ export class BinController {
     }
   }
 
+  async debugPetugas(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.query.userId as string;
+      const result = await binService.debugPetugasData(userId);
+      res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal debug" });
+    }
+  }
+
   /**
    * Create a new bin reset request (Warga)
    */

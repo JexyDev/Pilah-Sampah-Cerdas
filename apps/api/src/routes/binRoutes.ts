@@ -379,9 +379,6 @@ router.get(
  *     tags: [Bins]
  *     security:
  *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Daftar petugas residu di wilayah warga
  */
 router.get(
   "/reset/petugas-wilayah",
@@ -390,11 +387,14 @@ router.get(
   binController.getPetugasByWilayah
 );
 
+router.get(
+  "/reset/debug-petugas",
+  binController.debugPetugas
+);
+
 /**
  * @swagger
  * /api/v1/bins/reset/set-default-petugas:
- *   post:
- *     summary: Simpan petugas tetap untuk warga (Mobile Spec)
  *     tags: [Bins]
  *     security:
  *       - bearerAuth: []

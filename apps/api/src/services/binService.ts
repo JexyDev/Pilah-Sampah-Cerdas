@@ -1208,6 +1208,31 @@ export class BinService {
     return result;
   }
 
+  async debugPetugasData(userId?: string) {
+    let warga = null;
+    if (userId) {
+      warga = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true, rwId: true, role: { select: { name: true } } },
+      });
+    }
+    
+    const petugasList = await prisma.user.findMany({
+      where: { role: { name: "PETUGAS_RESIDU" } },
+      select: { id: true, name: true, rwId: true, status: true },
+    });
+
+    const rwList = await prisma.rw.findMany({
+      select: { id: true, name: true, kelurahan: { select: { name: true } } }
+    });
+
+    return {
+      warga,
+      petugas: petugasList,
+      rws: rwList
+    };
+  }
+
   /**
    * Simpan petugas tetap (default) untuk warga.
    * Validasi: petugas wajib bertugas di RW yang sama dengan warga.
