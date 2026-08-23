@@ -1182,32 +1182,16 @@ export class BinService {
       select: { rwId: true },
     });
     console.log(`[getPetugasByRw] warga ${userId} → rwId: ${warga?.rwId}`);
-    
-    let result: any[] = [];
-    if (warga?.rwId) {
-      result = await prisma.user.findMany({
-        where: {
-          rwId: warga.rwId,
-          role: { name: "PETUGAS_RESIDU" },
-          status: "Aktif",
-        },
-        select: { id: true, name: true, fotoProfil: true },
-      });
-      console.log(`[getPetugasByRw] found ${result.length} petugas for rwId ${warga.rwId}:`, result.map(r => r.name));
-    }
+    if (!warga?.rwId) return [];
 
-    // Fallback: jika tidak ada petugas di RW, coba cari semua petugas aktif tanpa filter RW
-    if (result.length === 0) {
-      console.log(`[getPetugasByRw] no petugas found for rwId ${warga.rwId}, checking all petugas...`);
-      const allPetugas = await prisma.user.findMany({
-        where: { role: { name: "PETUGAS_RESIDU" }, status: "Aktif" },
-        select: { id: true, name: true, fotoProfil: true, rwId: true },
-      });
-      console.log(`[getPetugasByRw] returning fallback all petugas:`, allPetugas.map(p => `${p.name} rwId=${p.rwId}`));
-      return allPetugas;
-    }
-
-    return result;
+    return prisma.user.findMany({
+      where: {
+        rwId: warga.rwId,
+        role: { name: "PETUGAS_RESIDU" },
+        status: "Aktif",
+      },
+      select: { id: true, name: true, fotoProfil: true },
+    });
   }
 
   async debugPetugasData(userId?: string) {
@@ -1253,9 +1237,7 @@ export class BinService {
     if (!warga) throw new Error("RESOURCE_NOT_FOUND");
     if (!petugas) throw new Error("PETUGAS_NOT_FOUND");
     if (petugas.role.name !== "PETUGAS_RESIDU") throw new Error("NOT_PETUGAS");
-    
-    // Temporarily disable strict RW matching so testing can proceed if data is mismatched
-    // if (petugas.rwId !== warga.rwId) throw new Error("WILAYAH_MISMATCH");
+    if (petugas.rwId !== warga.rwId) throw new Error("WILAYAH_MISMATCH");
 
     await prisma.user.update({
       where: { id: userId },
