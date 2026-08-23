@@ -12,6 +12,7 @@ import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
 import { calculateDistance } from "./kknAttendanceService.js";
 import { pointService } from "./pointService.js";
+import { parseProkerDeskripsi } from "./dplService.js";
 
 export function normalizeProkerKategori(kategori?: string | null): string {
   if (!kategori) return "Lainnya";
@@ -2598,14 +2599,10 @@ export class KknService {
     });
 
     return list.map((item, index) => {
-      let judul = item.deskripsi;
-      let deskripsiDetail = item.deskripsi;
+      const parsed = parseProkerDeskripsi(item.deskripsi);
+      let judul = parsed.judul;
+      let deskripsiDetail = parsed.deskripsi;
       let catatan = item.catatanDpl;
-      const descSplit = item.deskripsi.split("\n\n");
-      if (descSplit.length > 1 && item.deskripsi.startsWith("**")) {
-        judul = descSplit[0].replace(/\*\*/g, "");
-        deskripsiDetail = descSplit.slice(1).join("\n\n");
-      }
       const st = String(item.status);
       let u = (item as any).statusUsulan;
       if (!u) {

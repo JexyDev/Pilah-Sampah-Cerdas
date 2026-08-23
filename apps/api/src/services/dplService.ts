@@ -2,6 +2,32 @@ import { prisma } from "../lib/prisma.js";
 import { configService } from "./configService.js";
 import { normalizeProkerKategori } from "./kknService.js";
 
+export function parseProkerDeskripsi(rawDeskripsi?: string | null): { judul: string; deskripsi: string } {
+  if (!rawDeskripsi || !rawDeskripsi.trim()) {
+    return { judul: "-", deskripsi: "-" };
+  }
+  const text = rawDeskripsi.trim();
+  const boldMatch = text.match(/^\*\*(.*?)\*\*(?:\r?\n+([\s\S]*))?$/);
+  if (boldMatch) {
+    const extractedJudul = boldMatch[1].trim();
+    const extractedDesc = (boldMatch[2] || "").trim();
+    return {
+      judul: extractedJudul || text,
+      deskripsi: extractedDesc || extractedJudul || text,
+    };
+  }
+  const lines = text.split(/\r?\n+/);
+  if (lines.length > 1) {
+    return {
+      judul: lines[0].trim() || text,
+      deskripsi: lines.slice(1).join("\n").trim() || text,
+    };
+  }
+  return {
+    judul: text,
+    deskripsi: text,
+  };
+}
 
 async function getEligiblePastSchedulesCount(groupId?: string): Promise<number> {
   try {
@@ -594,13 +620,9 @@ export const dplService = {
         let prokerSelesaiCount = 0;
 
         const mappedProker = prokerList.map((p, pIdx) => {
-          let judul = p.deskripsi;
-          let deskripsiDetail = p.deskripsi;
-          const descSplit = p.deskripsi.split("\n\n");
-          if (descSplit.length > 1 && p.deskripsi.startsWith("**")) {
-            judul = descSplit[0].replace(/\*\*/g, "");
-            deskripsiDetail = descSplit.slice(1).join("\n\n");
-          }
+          const parsed = parseProkerDeskripsi(p.deskripsi);
+          let judul = parsed.judul;
+          let deskripsiDetail = parsed.deskripsi;
           const legacySt = String(p.status || "").toUpperCase();
           let u = (p as any).statusUsulan;
           if (!u) {
@@ -1693,13 +1715,15 @@ export const dplService = {
         }
       }
 
+      const parsedDesc = parseProkerDeskripsi(p.deskripsi);
       return {
         id: p.id,
         kelompokId: p.kelompokId,
         kelompokName: groupMap.get(p.kelompokId)?.name || "-",
         kelurahan: groupMap.get(p.kelompokId)?.kelurahan || "-",
         nomor: p.nomor || 1,
-        deskripsi: p.deskripsi,
+        judul: parsedDesc.judul,
+        deskripsi: parsedDesc.deskripsi,
         kategori: normalizeProkerKategori(p.kategori),
         sumber: p.sumber || "MAHASISWA",
         waktuPelaksanaan: p.waktuPelaksanaan || null,
@@ -1789,10 +1813,17 @@ export const dplService = {
       legacyStatus = "DITOLAK";
     }
 
+    let combinedDeskripsi = (data.deskripsi || "").trim();
+    if ((data as any).judul && (data as any).judul.trim()) {
+      const cleanJ = (data as any).judul.trim().replace(/\*\*/g, "");
+      const cleanD = combinedDeskripsi.replace(/^\*\*.*?\*\*(?:\r?\n+)?/, "").trim();
+      combinedDeskripsi = cleanD ? `**${cleanJ}**\n\n${cleanD}` : `**${cleanJ}**`;
+    }
+
     const createPayload: any = {
       kelompokId: targetKelompokId,
       nomor: data.nomor || 1,
-      deskripsi: data.deskripsi,
+      deskripsi: combinedDeskripsi,
       kategori: normalizeProkerKategori(data.kategori),
       sumber: data.sumber || "MAHASISWA",
       waktuPelaksanaan: data.waktuPelaksanaan || null,
@@ -1853,7 +1884,12 @@ export const dplService = {
 
     const updateData: any = {};
     if (data.nomor !== undefined) updateData.nomor = data.nomor;
-    if (data.deskripsi !== undefined) updateData.deskripsi = data.deskripsi;
+    if ((data as any).judul !== undefined || data.deskripsi !== undefined) {
+      const existingParsed = parseProkerDeskripsi(prokerExisting.deskripsi);
+      const newJudul = (data as any).judul !== undefined ? String((data as any).judul).trim().replace(/\*\*/g, "") : existingParsed.judul;
+      const newDesc = data.deskripsi !== undefined ? data.deskripsi.replace(/^\*\*.*?\*\*(?:\r?\n+)?/, "").trim() : existingParsed.deskripsi;
+      updateData.deskripsi = newDesc ? `**${newJudul}**\n\n${newDesc}` : `**${newJudul}**`;
+    }
     if (data.kategori !== undefined) updateData.kategori = normalizeProkerKategori(data.kategori);
     if (data.sumber !== undefined) updateData.sumber = data.sumber;
     if (data.waktuPelaksanaan !== undefined) updateData.waktuPelaksanaan = data.waktuPelaksanaan;
