@@ -78,7 +78,7 @@ jobs:
 
       - name: Build Android Release APK (arm64-v8a)
         run: |
-          flutter build apk --release --target-platform android-arm64
+          flutter build apk --release --target-platform android-arm64 --build-name=1.0.${{ github.run_number }} --build-number=${{ github.run_number }}
           ls -lah build/app/outputs/flutter-apk/
 
       - name: Install sshpass
@@ -119,10 +119,10 @@ jobs:
               -H "Content-Type: application/json" \
               -H "x-ci-secret: berseka-ci-secret" \
               -d "{
-                \"latestVersion\": \"1.0.7\",
-                \"version\": \"1.0.7\",
-                \"buildNumber\": 107,
-                \"releaseNotes\": \"Auto-build CI/CD arm64-v8a APK terbaru, pembaruan performa, dan sinkronisasi real-time.\",
+                \"latestVersion\": \"1.0.${{ github.run_number }}\",
+                \"version\": \"1.0.${{ github.run_number }}\",
+                \"buildNumber\": ${{ github.run_number }},
+                \"releaseNotes\": \"Auto-build CI/CD arm64-v8a APK v1.0.${{ github.run_number }} (Build ${{ github.run_number }}), pembaruan performa, dan sinkronisasi real-time.\",
                 \"downloadUrl\": \"/downloads/berseka-release-arm64-v8a.apk\",
                 \"apkUrl\": \"/downloads/berseka-release-arm64-v8a.apk\",
                 \"fileSizeBytes\": $FILE_SIZE,
