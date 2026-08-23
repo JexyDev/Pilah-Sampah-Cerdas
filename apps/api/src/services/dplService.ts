@@ -2247,20 +2247,22 @@ export const dplService = {
       // Abaikan error
     }
 
-    // Filter bukti agar hanya sesuai dengan Program Kerja ini (berdasarkan Kategori & Keyword)
-    const prokerKeywords = proker.deskripsi.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-    const isPemanfaatanTerkait = ["Pemanfaatan", "Pengolahan", "Pemilahan"].includes(proker.kategori || "");
+    // Filter bukti agar masuk akal
+    // Karena Pemanfaatan tidak memiliki relasi langsung ke ProgramKerja,
+    // kita asumsikan semua foto pemanfaatan milik kelompok ini valid JIKA
+    // proker ini berkaitan dengan pengolahan sampah/budidaya.
+    const deskripsi = (proker.deskripsi || "").toLowerCase();
+    const kategori = (proker.kategori || "").toLowerCase();
+    const isPemanfaatanTerkait = 
+      ["pemanfaatan", "pengolahan", "pemilahan"].includes(kategori) || 
+      ["budidaya", "maggot", "kompos", "panen", "sampah", "pemanfaatan", "pengolahan"].some(k => deskripsi.includes(k));
 
     const filteredFeedbackPhotos = feedbackPhotos.filter((f: any) => {
-      if (isPemanfaatanTerkait) return true; // jika proker memang kategori pemanfaatan, masukkan semua
-      const text = `${f.activityTitle} ${f.description}`.toLowerCase();
-      return prokerKeywords.some(kw => text.includes(kw));
+      return isPemanfaatanTerkait;
     });
 
     const filteredPemanfaatanPhotos = pemanfaatanPhotos.filter((p: any) => {
-      if (isPemanfaatanTerkait) return true;
-      const text = `${p.activityTitle} ${p.description}`.toLowerCase();
-      return prokerKeywords.some(kw => text.includes(kw));
+      return isPemanfaatanTerkait;
     });
 
     const attendancesMapped = attendances.map((a) => ({
