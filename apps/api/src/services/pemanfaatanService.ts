@@ -39,7 +39,7 @@ function formatPemanfaatanRecord(item: any) {
   const rwName = item.rw?.name || (item.rwId ? `RW ${item.rwId}` : "RW 01");
 
   const rawProgram = item.program || "Program Pengolahan Mandiri";
-  let cleanProgramName = rawProgram.split("\n")[0].trim();
+  let cleanProgramName = rawProgram.replace(/\*\*/g, "").replace(/\*/g, "").split("\n")[0].trim();
   if (cleanProgramName.includes(" - ")) {
     cleanProgramName = cleanProgramName.split(" - ")[0].trim();
   } else if (cleanProgramName.includes(" : ")) {

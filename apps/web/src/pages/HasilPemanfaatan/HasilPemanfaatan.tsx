@@ -537,7 +537,8 @@ export const HasilPemanfaatan: React.FC = () => {
                         <span className="font-extrabold text-slate-900 dark:text-slate-100 block text-sm">
                           {(() => {
                             const raw = p.namaProgram || "Program Pengolahan Mandiri";
-                            let clean = raw.split("\n")[0].trim();
+                            const noMarkdown = raw.replace(/\*\*/g, "").replace(/\*/g, "").trim();
+                            let clean = noMarkdown.split("\n")[0].trim();
                             if (clean.includes(" - ")) clean = clean.split(" - ")[0].trim();
                             else if (clean.includes(" : ")) clean = clean.split(" : ")[0].trim();
                             else if (clean.includes(" – ")) clean = clean.split(" – ")[0].trim();
