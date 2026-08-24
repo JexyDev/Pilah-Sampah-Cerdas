@@ -14,7 +14,7 @@ String? _extractError(dynamic data, String? fallback) {
     final msg = data['message']?.toString() ?? data['error']?.toString();
     if (msg != null && msg.isNotEmpty) return msg;
   } else if (data is String && data.isNotEmpty) {
-    if (data.length > 200) return fallback; // Jangan tampilkan HTML 502 panjang
+    if (data.contains('<!DOCTYPE') || data.contains('<html') || data.length > 100) return fallback;
     return data;
   }
   return fallback;
@@ -238,54 +238,17 @@ class ApiKknRepository implements KknRepository {
     String? timestamp,
   }) async {
     try {
-      final payload = {
-        'latitude': latitude,
-        'longitude': longitude,
-        'method': method,
-        'scheduleId': scheduleId,
-        if (durationMinutes != null) 'durationMinutes': durationMinutes,
-        // Kirim detik aktual langsung — lebih presisi dari durationMinutes * 60
-        if (accumulatedSeconds != null) 'accumulatedDuration': accumulatedSeconds,
-        if (nim != null && nim.isNotEmpty) 'nim': nim,
-        if (namaMahasiswa != null && namaMahasiswa.isNotEmpty) 'namaMahasiswa': namaMahasiswa,
-        if (kodeZona != null && kodeZona.isNotEmpty) 'kodeZona': kodeZona,
-        if (rw != null && rw.isNotEmpty) 'rw': rw,
-        if (kelurahan != null && kelurahan.isNotEmpty) 'kelurahan': kelurahan,
-        if (kecamatan != null && kecamatan.isNotEmpty) 'kecamatan': kecamatan,
-        'timestamp': timestamp ?? DateTime.now().toUtc().toIso8601String(),
-      };
-
-      // Gunakan endpoint /kkn/absen sesuai dokumentasi API
-      try {
-        final res = await apiClient.dio.post(ApiEndpoints.kknAbsen, data: payload);
-        if (res.statusCode == 200 || res.statusCode == 201) {
-          if (res.data is Map<String, dynamic>) {
-            return res.data['data'] as Map<String, dynamic>? ?? res.data as Map<String, dynamic>;
-          }
-          return {'success': true};
-        }
-      } on DioException catch (e1) {
-        final msg1 = _extractError(e1.response?.data, '');
-        if (msg1 != null && msg1.isNotEmpty) {
-          throw Exception(msg1);
-        }
-        // Fallback ke endpoint lama jika 404
-        if (e1.response?.statusCode != 404) rethrow;
-        try {
-          final res = await apiClient.dio.post(ApiEndpoints.kegiatanAbsen(scheduleId), data: payload);
-          if (res.statusCode == 200 || res.statusCode == 201) {
-            if (res.data is Map<String, dynamic>) {
-              return res.data['data'] as Map<String, dynamic>? ?? res.data as Map<String, dynamic>;
-            }
-            return {'success': true};
-          }
-        } on DioException catch (e2) {
-          final msg2 = _extractError(e2.response?.data, '');
-          if (msg2 != null && msg2.isNotEmpty) throw Exception(msg2);
-          rethrow;
-        }
-      }
-      return {'success': false};
+      final totalMenit = (durationMinutes != null && durationMinutes > 0)
+          ? durationMinutes
+          : ((accumulatedSeconds ?? 0) / 60).ceil();
+      final response = await selesaiKegiatan(
+        scheduleId,
+        sessionId: 'SES-$scheduleId',
+        totalDurasiDalamZonaMenit: totalMenit,
+        accumulatedSeconds: accumulatedSeconds,
+        alasan: 'Presensi Selesai (Pulang)',
+      );
+      return response;
     } catch (e) {
       if (e is Exception) rethrow;
       throw Exception('Gagal menghubungi server presensi.');
