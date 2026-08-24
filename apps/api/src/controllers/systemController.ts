@@ -175,6 +175,12 @@ export class SystemController {
       const possiblePaths = [
         path.join(process.cwd(), "uploads", "berseka-release-arm64-v8a.apk"),
         path.join(process.cwd(), "uploads", "app-release.apk"),
+        path.join(process.cwd(), "apps", "api", "uploads", "berseka-release-arm64-v8a.apk"),
+        path.join(process.cwd(), "apps", "api", "uploads", "app-release.apk"),
+        path.join(__dirname, "..", "..", "uploads", "berseka-release-arm64-v8a.apk"),
+        path.join(__dirname, "..", "..", "uploads", "app-release.apk"),
+        path.join(__dirname, "..", "..", "..", "uploads", "berseka-release-arm64-v8a.apk"),
+        path.join(__dirname, "..", "..", "..", "uploads", "app-release.apk"),
         "/var/www/html/downloads/berseka-release-arm64-v8a.apk",
       ];
 
