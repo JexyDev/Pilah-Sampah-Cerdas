@@ -23,6 +23,10 @@ class RegisterFasilitasView extends ConsumerStatefulWidget {
 class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
   final _formKey = GlobalKey<FormState>();
   final _namaController = TextEditingController();
+  final _picController = TextEditingController();
+  final _kontakController = TextEditingController();
+  final _kapasitasController = TextEditingController();
+  final _alamatController = TextEditingController();
   final MapController _mapController = MapController();
 
   String? _selectedUserId;
@@ -44,6 +48,10 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
   @override
   void dispose() {
     _namaController.dispose();
+    _picController.dispose();
+    _kontakController.dispose();
+    _kapasitasController.dispose();
+    _alamatController.dispose();
     _mapController.dispose();
     super.dispose();
   }
@@ -160,8 +168,12 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
     }
 
     final success = await ref.read(fasilitasKknProvider.notifier).registerFasilitas(
-      userId: _selectedUserId!,
       nama: _namaController.text,
+      pic: _picController.text,
+      kontak: _kontakController.text,
+      kapasitas: int.tryParse(_kapasitasController.text) ?? 0,
+      alamat: _alamatController.text,
+      rwId: _selectedWarga?.rw != null && int.tryParse(_selectedWarga!.rw) != null ? int.parse(_selectedWarga!.rw) : 0,
       jenis: _selectedJenis!,
       latitude: _selectedLocation!.latitude,
       longitude: _selectedLocation!.longitude,
@@ -661,6 +673,49 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                     ),
                     const SizedBox(height: AppDimensions.md),
 
+                    // ── PIC Fasilitas ───────────────────────────────────────
+                    const _SectionLabel(icon: Icons.person_rounded, label: 'PIC (Penanggung Jawab)'),
+                    const SizedBox(height: 8),
+                    _StyledTextField(
+                      controller: _picController,
+                      hintText: 'Contoh: Budi Santoso',
+                      validator: (val) => (val == null || val.isEmpty) ? 'PIC wajib diisi' : null,
+                    ),
+                    const SizedBox(height: AppDimensions.md),
+
+                    // ── Kontak PIC ───────────────────────────────────────
+                    const _SectionLabel(icon: Icons.phone_rounded, label: 'Kontak PIC'),
+                    const SizedBox(height: 8),
+                    _StyledTextField(
+                      controller: _kontakController,
+                      hintText: 'Contoh: 08123456789',
+                      keyboardType: TextInputType.phone,
+                      validator: (val) => (val == null || val.isEmpty) ? 'Kontak wajib diisi' : null,
+                    ),
+                    const SizedBox(height: AppDimensions.md),
+
+                    // ── Kapasitas Fasilitas ───────────────────────────────────────
+                    const _SectionLabel(icon: Icons.people_rounded, label: 'Kapasitas (Orang/Kg/dll)'),
+                    const SizedBox(height: 8),
+                    _StyledTextField(
+                      controller: _kapasitasController,
+                      hintText: 'Contoh: 500',
+                      keyboardType: TextInputType.number,
+                      validator: (val) => (val == null || val.isEmpty) ? 'Kapasitas wajib diisi' : null,
+                    ),
+                    const SizedBox(height: AppDimensions.md),
+
+                    // ── Alamat Lengkap ───────────────────────────────────────
+                    const _SectionLabel(icon: Icons.map_rounded, label: 'Alamat Lengkap'),
+                    const SizedBox(height: 8),
+                    _StyledTextField(
+                      controller: _alamatController,
+                      hintText: 'Contoh: Jl. Sangkuriang No. 12, Coblong, Bandung',
+                      maxLines: 3,
+                      validator: (val) => (val == null || val.isEmpty) ? 'Alamat wajib diisi' : null,
+                    ),
+                    const SizedBox(height: AppDimensions.md),
+
                     // ── Koordinat GPS ────────────────────────────────────────
                     const _SectionLabel(icon: Icons.location_on_rounded, label: 'Koordinat GPS Fasilitas'),
                     const SizedBox(height: 4),
@@ -1009,16 +1064,22 @@ class _StyledTextField extends StatelessWidget {
     required this.controller,
     required this.hintText,
     this.validator,
+    this.keyboardType,
+    this.maxLines = 1,
   });
   final TextEditingController controller;
   final String hintText;
   final String? Function(String?)? validator;
+  final TextInputType? keyboardType;
+  final int maxLines;
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
       validator: validator,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 14),

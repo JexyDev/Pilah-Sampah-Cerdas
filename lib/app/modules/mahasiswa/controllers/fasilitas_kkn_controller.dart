@@ -57,8 +57,12 @@ class FasilitasKknController extends StateNotifier<FasilitasKknState> {
   /// - `rwId` tidak dikirim — backend resolve dari data mahasiswa (JWT).
   /// - `imagePath` wajib — foto fasilitas harus ada.
   Future<bool> registerFasilitas({
-    required String userId,
     required String nama,
+    required String pic,
+    required String kontak,
+    required int kapasitas,
+    required String alamat,
+    required int rwId,
     required String jenis,
     required double latitude,
     required double longitude,
@@ -68,11 +72,15 @@ class FasilitasKknController extends StateNotifier<FasilitasKknState> {
     try {
       final repository = ref.read(kknRepositoryProvider);
       final payload = <String, dynamic>{
-        'userId': userId,
-        'nama': nama,
         'jenis': jenis,
+        'nama': nama,
+        'pic': pic,
+        'kontak': kontak,
+        'kapasitas': kapasitas,
         'latitude': latitude,
         'longitude': longitude,
+        'alamat': alamat,
+        'rwId': rwId,
       };
 
       await repository.registerFasilitas(payload, imagePath: imagePath);
