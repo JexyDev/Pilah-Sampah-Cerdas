@@ -9,8 +9,6 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../controllers/fasilitas_kkn_controller.dart';
-import '../controllers/mahasiswa_controller.dart';
-import '../../auth/controllers/auth_controller.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class RegisterFasilitasView extends ConsumerStatefulWidget {
@@ -29,8 +27,6 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
   final _alamatController = TextEditingController();
   final MapController _mapController = MapController();
 
-  String? _selectedUserId;
-  WargaDampingan? _selectedWarga;
   String? _selectedJenis;
   String? _photoPath;
   LatLng? _selectedLocation;
@@ -142,12 +138,6 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedUserId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap pilih warga penanggung jawab.'), backgroundColor: AppColors.warningYellow),
-      );
-      return;
-    }
     if (_selectedJenis == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Harap pilih jenis fasilitas.'), backgroundColor: AppColors.warningYellow),
@@ -173,7 +163,7 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
       kontak: _kontakController.text,
       kapasitas: int.tryParse(_kapasitasController.text) ?? 0,
       alamat: _alamatController.text,
-      rwId: _selectedWarga?.rw != null && int.tryParse(_selectedWarga!.rw) != null ? int.parse(_selectedWarga!.rw) : 0,
+      rwId: 0,
       jenis: _selectedJenis!,
       latitude: _selectedLocation!.latitude,
       longitude: _selectedLocation!.longitude,
@@ -186,214 +176,6 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
       );
       Navigator.pop(context);
     }
-  }
-
-  // ── Bottom Sheet: Pilih Warga ─────────────────────────────────────────────
-  void _showWargaBottomSheet(List<WargaDampingan> wargaList) {
-    String searchQuery = '';
-    final searchController = TextEditingController();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return StatefulBuilder(builder: (ctx, setSheetState) {
-          // Group by RW
-          final filtered = wargaList.where((w) {
-            final q = searchQuery.toLowerCase();
-            return w.wargaName.toLowerCase().contains(q) || w.rw.toLowerCase().contains(q);
-          }).toList();
-
-          final Map<String, List<WargaDampingan>> grouped = {};
-          for (final w in filtered) {
-            final key = w.rw.isNotEmpty ? w.rw : 'Lainnya';
-            grouped.putIfAbsent(key, () => []).add(w);
-          }
-
-          return Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Handle
-                const SizedBox(height: 12),
-                Container(
-                  width: 40, height: 4,
-                  decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
-                ),
-                const SizedBox(height: 16),
-                // Header
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      const Text(
-                        'Pilih Penanggung Jawab (Warga)',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                      ),
-                      const Spacer(),
-                      GestureDetector(
-                        onTap: () => Navigator.pop(ctx),
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
-                          child: const Icon(Icons.close, size: 20, color: AppColors.textSecondary),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Search
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: TextField(
-                    controller: searchController,
-                    onChanged: (v) => setSheetState(() => searchQuery = v),
-                    decoration: InputDecoration(
-                      hintText: 'Cari nama warga atau RW...',
-                      hintStyle: const TextStyle(fontSize: 14, color: AppColors.textHint),
-                      prefixIcon: const Icon(Icons.search, color: AppColors.textHint, size: 20),
-                      suffixIcon: searchQuery.isNotEmpty
-                          ? GestureDetector(
-                              onTap: () {
-                                searchController.clear();
-                                setSheetState(() => searchQuery = '');
-                              },
-                              child: const Icon(Icons.cancel_rounded, color: AppColors.textHint, size: 20),
-                            )
-                          : null,
-                      filled: true,
-                      fillColor: const Color(0xFFF5F7FA),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // Count
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Menampilkan ${filtered.length} warga',
-                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Divider(height: 1),
-                // List
-                ConstrainedBox(
-                  constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.5),
-                  child: ListView(
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.only(bottom: 24),
-                    children: grouped.entries.map((entry) {
-                      final rwLabel = entry.key;
-                      final members = entry.value;
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: double.infinity,
-                            color: const Color(0xFFF5F7FA),
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                            child: Row(
-                              children: [
-                                Text(
-                                  rwLabel,
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                                ),
-                                const Spacer(),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryGreen,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    '${members.length}',
-                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          ...members.map((w) {
-                            final isSelected = _selectedUserId == w.wargaId;
-                            return InkWell(
-                              onTap: () {
-                                setState(() {
-                                  _selectedUserId = w.wargaId;
-                                  _selectedWarga = w;
-                                });
-                                Navigator.pop(ctx);
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 36, height: 36,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFE8F5E9),
-                                        borderRadius: BorderRadius.circular(18),
-                                      ),
-                                      child: const Icon(Icons.person, color: AppColors.primaryGreen, size: 20),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            w.wargaName,
-                                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                                          ),
-                                          const Text(
-                                            'Warga',
-                                            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    isSelected
-                                        ? Container(
-                                            width: 24, height: 24,
-                                            decoration: const BoxDecoration(color: AppColors.primaryGreen, shape: BoxShape.circle),
-                                            child: const Icon(Icons.check, color: Colors.white, size: 16),
-                                          )
-                                        : Container(
-                                            width: 24, height: 24,
-                                            decoration: BoxDecoration(
-                                              border: Border.all(color: Colors.grey.shade400),
-                                              shape: BoxShape.circle,
-                                            ),
-                                          ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }),
-                        ],
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ],
-            ),
-          );
-        });
-      },
-    );
   }
 
   // ── Bottom Sheet: Pilih Jenis ─────────────────────────────────────────────
@@ -533,8 +315,6 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(fasilitasKknProvider);
-    final mahasiswaState = ref.watch(mahasiswaControllerProvider);
-    final currentUser = ref.watch(authProvider).user;
 
     ref.listen<FasilitasKknState>(fasilitasKknProvider, (previous, next) {
       if (next.error != null && (previous?.error != next.error)) {
@@ -546,34 +326,6 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
         );
       }
     });
-
-    // Filter warga sesuai wilayah mahasiswa yang sedang login:
-    // Prioritas 1: cocokkan mahasiswaId (warga yang langsung didampingi mahasiswa ini)
-    // Prioritas 2 (fallback): cocokkan kelurahan yang sama
-    final myId = currentUser?.id ?? '';
-    final myKelurahan = (currentUser?.kelurahan ?? '').toLowerCase().trim();
-
-    List<WargaDampingan> wargaList;
-    if (myId.isNotEmpty) {
-      // Prioritas 1: warga yang didampingi langsung
-      final byMahasiswa = mahasiswaState.wargaList
-          .where((w) => w.role == 'WARGA' && w.mahasiswaId == myId)
-          .toList();
-      if (byMahasiswa.isNotEmpty) {
-        wargaList = byMahasiswa;
-      } else if (myKelurahan.isNotEmpty) {
-        // Fallback: semua warga di kelurahan yang sama
-        wargaList = mahasiswaState.wargaList
-            .where((w) =>
-                w.role == 'WARGA' &&
-                w.kelurahan.toLowerCase().trim() == myKelurahan)
-            .toList();
-      } else {
-        wargaList = mahasiswaState.wargaList.where((w) => w.role == 'WARGA').toList();
-      }
-    } else {
-      wargaList = mahasiswaState.wargaList.where((w) => w.role == 'WARGA').toList();
-    }
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -633,18 +385,6 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Penanggung Jawab ─────────────────────────────────────
-                    const _SectionLabel(
-                      icon: Icons.person_rounded,
-                      label: 'Penanggung Jawab (Warga)',
-                    ),
-                    const SizedBox(height: 8),
-                    _WargaPickerField(
-                      selected: _selectedWarga,
-                      onTap: () => _showWargaBottomSheet(wargaList),
-                      hasError: _selectedUserId == null && _formKey.currentState != null,
-                    ),
-                    const SizedBox(height: AppDimensions.md),
 
                     // ── Jenis Fasilitas ─────────────────────────────────────
                     const _SectionLabel(icon: Icons.local_offer_rounded, label: 'Jenis Fasilitas'),
@@ -1097,71 +837,6 @@ class _StyledTextField extends StatelessWidget {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Custom Picker Field: Warga ────────────────────────────────────────────────
-class _WargaPickerField extends StatelessWidget {
-  const _WargaPickerField({
-    required this.selected,
-    required this.onTap,
-    this.hasError = false,
-  });
-  final WargaDampingan? selected;
-  final VoidCallback onTap;
-  final bool hasError;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected != null ? AppColors.primaryGreen : Colors.grey.shade300,
-            width: selected != null ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32, height: 32,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(Icons.person, color: AppColors.primaryGreen, size: 18),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: selected == null
-                  ? const Text(
-                      'Pilih warga',
-                      style: TextStyle(fontSize: 14, color: AppColors.textHint),
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          selected!.wargaName,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                        ),
-                        Text(
-                          '${selected!.rw}${selected!.kelurahan.isNotEmpty ? ' • ${selected!.kelurahan}' : ''}',
-                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                        ),
-                      ],
-                    ),
-            ),
-            const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
-          ],
         ),
       ),
     );
