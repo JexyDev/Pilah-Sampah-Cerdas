@@ -737,9 +737,20 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<bool> submitProgramKerja(Map<String, dynamic> data) async {
     try {
+      dynamic requestData = data;
+      if (data.containsKey('filePdfPath') && data['filePdfPath'] != null) {
+        final formData = FormData.fromMap(data);
+        formData.files.add(MapEntry(
+          'filePdf',
+          await MultipartFile.fromFile(data['filePdfPath']),
+        ));
+        formData.fields.removeWhere((e) => e.key == 'filePdfPath');
+        requestData = formData;
+      }
+
       final response = await apiClient.dio.post(
         ApiEndpoints.kknProgramKerja,
-        data: data,
+        data: requestData,
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {

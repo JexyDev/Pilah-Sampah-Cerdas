@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
 
@@ -14,12 +16,28 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
   final _formKey = GlobalKey<FormState>();
   final _judulCtrl = TextEditingController();
   final _deskripsiCtrl = TextEditingController();
-  final _linkDriveCtrl = TextEditingController();
   
+  File? _selectedPdf;
   bool _isLoading = false;
+
+  Future<void> _pickPdf() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+    if (result != null && result.files.single.path != null) {
+      setState(() {
+        _selectedPdf = File(result.files.single.path!);
+      });
+    }
+  }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedPdf == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih file PDF Laporan Akhir terlebih dahulu!'), backgroundColor: Colors.red));
+      return;
+    }
     
     setState(() => _isLoading = true);
     try {
@@ -30,7 +48,7 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
         'rencanaAnggaran': 0,
         'targetTanggal': DateTime.now().toIso8601String(),
         'deskripsi': _deskripsiCtrl.text.trim(),
-        'linkGoogleDrive': _linkDriveCtrl.text.trim(),
+        'filePdfPath': _selectedPdf!.path,
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Laporan Akhir berhasil disubmit!')));
@@ -78,14 +96,29 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
                 validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _linkDriveCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Link Google Drive (PDF)', 
-                  border: OutlineInputBorder(),
-                  hintText: 'https://drive.google.com/...',
+              InkWell(
+                onTap: _pickPdf,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.picture_as_pdf, color: Colors.red),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _selectedPdf != null ? _selectedPdf!.path.split('/').last : 'Pilih File PDF Laporan',
+                          style: TextStyle(color: _selectedPdf != null ? Colors.black : Colors.grey[600]),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 32),
               ElevatedButton(

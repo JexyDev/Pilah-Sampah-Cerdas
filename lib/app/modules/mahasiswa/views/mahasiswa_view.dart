@@ -769,80 +769,26 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                               );
                             },
                           ),
-                          ListTile(
-                            leading: const Icon(
-                              Icons.menu_book_rounded,
-                              color: AppColors.primaryBlue,
-                            ),
-                            title: const Text('Laporan Akhir KKN'),
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.pushNamed(
-                                context,
-                                AppRoutes.inputLaporanAkhir,
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MenuTileCard(
-                icon: Icons.rule_rounded,
-                iconAsset: 'assets/icons/submission.png',
-                title: 'Pengajuan Izin',
-                subtitle: 'Izin/Sakit DPL',
-                gradientColors: const [
-                  AppColors.primaryBlueLight,
-                  AppColors.primaryBlue,
-                ],
-                onTap: () =>
-                    Navigator.pushNamed(context, AppRoutes.pengajuanIzin),
-              ),
-            ),
           ],
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _MenuTileCard(
-                icon: Icons.analytics_rounded,
-                iconAsset: 'assets/icons/view.png',
-                title: 'Monitoring Warga',
-                subtitle: 'Pantau poin & aktivitas',
-                gradientColors: const [
-                  AppColors.primaryBlueLight,
-                  AppColors.primaryBlue,
-                ],
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  AppRoutes.monitoringWarga,
-                  arguments: 'monitoring',
-                ),
+        const SizedBox(height: 16),
+        // Laporan Akhir KKN Button (Full width)
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.inputLaporanAkhir),
+            icon: const Icon(Icons.menu_book_rounded),
+            label: const Text('Laporan Akhir KKN', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
+              elevation: 2,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MenuTileCard(
-                icon: Icons.add_business_rounded,
-                iconAsset: 'assets/icons/recycle-bin.png',
-                title: 'Fasilitas Warga',
-                subtitle: 'Daftar fasilitas baru',
-                gradientColors: const [
-                  AppColors.primaryBlueLight,
-                  AppColors.primaryBlue,
-                ],
-                onTap: () =>
-                    Navigator.pushNamed(context, AppRoutes.registerFasilitas),
-              ),
-            ),
-          ],
+          ),
         ),
       ],
     );
