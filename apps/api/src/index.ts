@@ -238,6 +238,9 @@ archiveAuditLogsCron.start();
       'ALTER TABLE "jadwal" ADD COLUMN IF NOT EXISTS "is_aktif" BOOLEAN NOT NULL DEFAULT true;',
       'ALTER TABLE "kehadiran_kegiatan" ADD COLUMN IF NOT EXISTS "durasi_aktual_dalam_zona_menit" INTEGER;',
       'ALTER TABLE "fasilitas" ADD COLUMN IF NOT EXISTS "id_pendaftar" TEXT;',
+      'ALTER TABLE "pemanfaatan_sampah" ADD COLUMN IF NOT EXISTS "id_program_kerja" TEXT;',
+      'ALTER TABLE "pemanfaatan_sampah" ALTER COLUMN "id_rw" DROP NOT NULL;',
+      'ALTER TABLE "kritik_saran_pemanfaatan" ADD COLUMN IF NOT EXISTS "id_program_kerja" TEXT;',
       `DO $$ BEGIN
         CREATE TYPE "StatusProker" AS ENUM ('BELUM_DISETUJUI', 'DITERIMA', 'DITOLAK', 'SEDANG_BERJALAN', 'SELESAI');
       EXCEPTION
@@ -363,6 +366,7 @@ archiveAuditLogsCron.start();
         "id" TEXT PRIMARY KEY,
         "id_pengguna" TEXT NOT NULL,
         "warga_nama" TEXT NOT NULL,
+        "id_program_kerja" TEXT,
         "kategori" TEXT DEFAULT 'Pemanfaatan Sampah',
         "judul" TEXT NOT NULL,
         "isi_kritik_saran" TEXT NOT NULL,
@@ -378,7 +382,8 @@ archiveAuditLogsCron.start();
       );`,
       `CREATE TABLE IF NOT EXISTS "pemanfaatan_sampah" (
         "id" TEXT PRIMARY KEY,
-        "id_rw" INTEGER NOT NULL,
+        "id_rw" INTEGER,
+        "id_program_kerja" TEXT,
         "nomor_cara_pemanfaatan" TEXT NOT NULL,
         "program" TEXT NOT NULL,
         "teknologi" TEXT NOT NULL,
