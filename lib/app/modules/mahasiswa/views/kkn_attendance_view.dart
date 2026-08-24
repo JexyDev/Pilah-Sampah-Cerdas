@@ -508,11 +508,17 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                   return;
                 }
 
-                final isAlreadyActive = (state.isTracking || state.activeActivity != null) && !state.isSuccessAttendance;
-                if (isAlreadyActive) {
+                final activeId = state.activeActivity?['id']?.toString() ?? state.activeActivity?['scheduleId']?.toString();
+                final isDifferentActive = state.isTracking &&
+                    state.activeActivity != null &&
+                    activeId != null &&
+                    activeId != id &&
+                    !state.isSuccessAttendance;
+
+                if (isDifferentActive) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('Anda masih memiliki kegiatan KKN aktif. Silakan keluar dari kegiatan sebelumnya terlebih dahulu!'),
+                      content: Text('Anda masih memiliki kegiatan KKN lain yang aktif. Silakan keluar dari kegiatan sebelumnya terlebih dahulu!'),
                       backgroundColor: AppColors.dangerRed,
                     ));
                   }
