@@ -27,33 +27,43 @@ const storage = multer.diskStorage({
   },
 });
 
-// File Filter (JPEG, PNG, WEBP only)
+// File Filter (JPEG, PNG, WEBP, PDF)
 const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg", "application/octet-stream"];
+  const allowedMimeTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/jpg",
+    "application/octet-stream",
+    "application/pdf",
+    "application/x-pdf",
+  ];
   const mimetypeLower = (file.mimetype || "").toLowerCase();
   const extLower = path.extname(file.originalname || "").toLowerCase();
   
   if (
     allowedMimeTypes.includes(mimetypeLower) ||
-    [".jpg", ".jpeg", ".png", ".webp"].includes(extLower) ||
+    [".jpg", ".jpeg", ".png", ".webp", ".pdf"].includes(extLower) ||
     !file.mimetype
   ) {
     cb(null, true);
   } else {
     cb(
-      new Error("Format file tidak valid. Hanya JPG, PNG, dan WEBP yang diperbolehkan.") as any,
+      new Error("Format file tidak valid. Hanya JPG, PNG, WEBP, dan PDF yang diperbolehkan.") as any,
       false
     );
   }
 };
 
-export const uploadAvatarMiddleware = multer({
+export const upload = multer({
   storage,
   fileFilter,
   limits: {
     fileSize: 50 * 1024 * 1024, // 50MB limit
   },
 });
+
+export const uploadAvatarMiddleware = upload;
 
 export const uploadSingleImage = multer({
   storage,

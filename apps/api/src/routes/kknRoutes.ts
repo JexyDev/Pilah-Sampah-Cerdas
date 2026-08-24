@@ -11,7 +11,7 @@ import { kknController } from "../controllers/kknController.js";
 import { kknAttendanceController } from "../controllers/kknAttendanceController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
-import { uploadSingleImage, safeUploadSingleImage, uploadPemanfaatanImage } from "../middlewares/uploadMiddleware.js";
+import { uploadSingleImage, safeUploadSingleImage, uploadPemanfaatanImage, upload } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
 
