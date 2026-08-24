@@ -327,11 +327,47 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         });
       }
 
-      state = state.copyWith(
-        kegiatanList: list,
-        isLoadingKegiatan: false,
-      );
-      // Auto-start dihapus sesuai requirement (tracking on-demand setelah user memilih)
+      Map<String, dynamic>? activeItem;
+      for (final item in list) {
+        final status = (item['statusKehadiran'] ?? item['attendanceStatus'] ?? '').toString().toUpperCase();
+        if (status == 'BERLANGSUNG') {
+          activeItem = item;
+          break;
+        }
+      }
+
+      if (activeItem != null) {
+        final serverSecs = int.tryParse(activeItem['actualInZoneSeconds']?.toString() ?? '') ??
+            ((num.tryParse(activeItem['actualInZoneMinutes']?.toString() ?? '') ?? 0) * 60).toInt();
+
+        if (serverSecs > _accumulatedSeconds) {
+          _accumulatedSeconds = serverSecs;
+        }
+
+        final durasiWajib = int.tryParse(activeItem['durasiWajibMenit']?.toString() ?? '120') ?? 120;
+        final scheduleId = activeItem['id']?.toString() ?? activeItem['scheduleId']?.toString();
+
+        _currentTargetScheduleId = scheduleId;
+
+        state = state.copyWith(
+          kegiatanList: list,
+          activeActivity: activeItem,
+          selectedKegiatan: activeItem,
+          targetDurationMinutes: durasiWajib,
+          inZoneDurationSeconds: _accumulatedSeconds,
+          attendanceTime: activeItem['attendedAt']?.toString() ?? state.attendanceTime,
+          isLoadingKegiatan: false,
+        );
+
+        if (!state.isTracking) {
+          await startTracking(null, true);
+        }
+      } else {
+        state = state.copyWith(
+          kegiatanList: list,
+          isLoadingKegiatan: false,
+        );
+      }
     } catch (e) {
       state = state.copyWith(
         isLoadingKegiatan: false,
