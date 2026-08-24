@@ -1372,10 +1372,13 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     if (!_backgroundServiceStarted && isBerlangsung) {
       try {
         final repo = ref.read(kknRepositoryProvider);
+        final currentTotalSeconds = state.isInsideRadius && _zoneEntryTime != null
+            ? _accumulatedSeconds + DateTime.now().difference(_zoneEntryTime!).inSeconds
+            : _accumulatedSeconds;
         final pingResponse = await repo.sendLocationPing(
           pos.latitude,
           pos.longitude,
-          inZoneSeconds: _accumulatedSeconds,
+          inZoneSeconds: currentTotalSeconds,
         );
 
         // [FIX A3] Backend mengembalikan { success, data: { ... } }
