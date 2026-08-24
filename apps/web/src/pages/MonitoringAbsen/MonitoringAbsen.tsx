@@ -1650,7 +1650,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       const startDateTime = new Date(`${startDate}T${startTime}`).getTime();
       const endDateTime = new Date(`${endDate}T${endTime}`).getTime();
       if (!isNaN(startDateTime) && !isNaN(endDateTime) && endDateTime <= startDateTime) {
-        errors.endTime = "Waktu selesai (tanggal & jam) harus lebih besar dari waktu mulai";
+        if (endTime === "00:00" || endTime.startsWith("00:")) {
+          errors.endTime = "Waktu selesai (12:00 AM / 00:00 Tengah Malam) lebih awal dari waktu mulai. Silakan ubah ke 12:00 PM (12 Siang).";
+        } else {
+          errors.endTime = "Waktu selesai (tanggal & jam) harus lebih besar dari waktu mulai";
+        }
       }
     }
     if (!formData.location?.trim()) {
@@ -1812,6 +1816,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     if (Object.keys(step1Errors).length > 0) {
       setFormErrors(step1Errors);
       const firstErr = Object.values(step1Errors)[0];
+      toast.dismiss();
       toast.error(`Periksa Form: ${firstErr}`);
       return;
     }
@@ -1834,6 +1839,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
     if (Object.keys(combinedErrors).length > 0) {
       setFormErrors(combinedErrors);
+      toast.dismiss();
       if (Object.keys(step1Errors).length > 0) {
         setModalStep(1);
         const firstErr = Object.values(step1Errors)[0];
