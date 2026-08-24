@@ -59,11 +59,40 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(user: user);
       // Daftarkan FCM token jika sesi sudah ada (app restart)
       _registerFcmToken();
+      _restoreNotificationSyncState(user);
       NotificationEngine().scheduleRoleBasedNotifications(user.role.apiValue);
       
       // Sinkronisasi data terbaru di background agar state & cache lokal selalu update
       // tanpa pengguna harus manual pull-to-refresh.
       fetchProfile();
+    }
+  }
+
+  /// Sinkronisasi status notifikasi dari backend (Cloud Sync) ke local cache.
+  Future<void> _restoreNotificationSyncState(UserEntity user) async {
+    try {
+      final syncState = await _notificationRepository.getSyncState();
+      if (syncState.isEmpty) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      final role = user.role.name;
+      final userId = user.id;
+
+      if (syncState['readIds'] != null) {
+        final List<dynamic> readIdsDyn = syncState['readIds'];
+        final readIds = readIdsDyn.map((e) => e.toString()).toList();
+        await prefs.setStringList('read_notifs_${userId}_$role', readIds);
+      }
+      
+      if (syncState['markAllTimestamp'] != null) {
+        await prefs.setInt('mark_all_notifs_${userId}_$role', syncState['markAllTimestamp'] as int);
+      }
+
+      if (syncState['deleteAllTimestamp'] != null) {
+        await prefs.setInt('delete_all_notifs_${userId}_$role', syncState['deleteAllTimestamp'] as int);
+      }
+    } catch (_) {
+      // Ignore if failed
     }
   }
 
@@ -118,6 +147,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(user: user, isLoading: false);
       // Daftarkan FCM token setelah login berhasil
       _registerFcmToken();
+      _restoreNotificationSyncState(user);
       NotificationEngine().scheduleRoleBasedNotifications(user.role.apiValue);
       return true;
     } on AuthException catch (e) {
@@ -151,6 +181,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(user: user, isLoading: false);
       // Daftarkan FCM token setelah register berhasil
       _registerFcmToken();
+      _restoreNotificationSyncState(user);
       return true;
     } on AuthException catch (e) {
       state = state.copyWith(
@@ -205,6 +236,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       state = state.copyWith(user: user, isLoading: false);
       _registerFcmToken();
+      _restoreNotificationSyncState(user);
       return true;
     } on AuthException catch (e) {
       state = state.copyWith(isLoading: false, errorCode: e.code, clearUser: true);

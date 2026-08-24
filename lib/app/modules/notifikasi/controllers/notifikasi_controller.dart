@@ -241,6 +241,9 @@ class MarkReadNotifier extends StateNotifier<MarkReadState> {
       if (!readList.contains(id)) {
         readList.add(id);
         await prefs.setStringList(key, readList);
+        
+        // Backup to cloud
+        _repo.updateSyncState(readIds: readList);
       }
     }
     try {
@@ -269,7 +272,11 @@ class MarkReadNotifier extends StateNotifier<MarkReadState> {
       
       final prefs = await SharedPreferences.getInstance();
       final key = 'mark_all_notifs_${user.id}_${user.role.name}';
-      await prefs.setInt(key, DateTime.now().millisecondsSinceEpoch);
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      await prefs.setInt(key, timestamp);
+      
+      // Backup to cloud
+      _repo.updateSyncState(markAllTimestamp: timestamp);
     }
     try {
       await _repo.markAllAsRead();
@@ -316,8 +323,12 @@ class DeleteAllNotifier extends StateNotifier<MarkReadState> {
     final user = _ref.read(authProvider).user;
     if (user != null) {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('delete_all_notifs_${user.id}_${user.role.name}', DateTime.now().millisecondsSinceEpoch);
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      await prefs.setInt('delete_all_notifs_${user.id}_${user.role.name}', timestamp);
       LocalNotificationCacheService().clear();
+      
+      // Backup to cloud
+      _repo.updateSyncState(deleteAllTimestamp: timestamp);
     }
     try {
       await _repo.deleteAllNotifications();

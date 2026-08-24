@@ -100,7 +100,7 @@ class ApiNotificationRepository implements NotificationRepository {
     }
   }
 
-  // ─── Unregister FCM Device Token ──────────────────────────────────────────
+  // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   @override
   Future<void> unregisterDeviceToken(String token) async {
     try {
@@ -108,16 +108,46 @@ class ApiNotificationRepository implements NotificationRepository {
         ApiEndpoints.notificationsUnregisterToken,
         data: {'token': token},
       );
-    } on DioException catch (e) {
-      // Non-critical on logout — log warning only
-      throw NotificationException(
-        'NETWORK_ERROR',
-        'Gagal menghapus device token saat logout: ${e.message}',
-      );
+    } catch (_) {
+      // Abaikan jika network error, yang terpenting token telah dihapus secara lokal dan oleh Firebase backend.
     }
   }
 
-  // ─── Helper ───────────────────────────────────────────────────────────────
+  // ------------------------------------------------------------- Cloud Sync -------------------------------------------------------------
+
+  @override
+  Future<Map<String, dynamic>> getSyncState() async {
+    try {
+      final response = await apiClient.dio.get('/notifications/sync');
+      if (response.statusCode == 200 && response.data['data'] != null) {
+        return response.data['data'] as Map<String, dynamic>;
+      }
+      return {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  @override
+  Future<void> updateSyncState({
+    List<String>? readIds,
+    int? markAllTimestamp,
+    int? deleteAllTimestamp,
+  }) async {
+    try {
+      final payload = <String, dynamic>{};
+      if (readIds != null) payload['readIds'] = readIds;
+      if (markAllTimestamp != null) payload['markAllTimestamp'] = markAllTimestamp;
+      if (deleteAllTimestamp != null) payload['deleteAllTimestamp'] = deleteAllTimestamp;
+      
+      await apiClient.dio.put('/notifications/sync', data: payload);
+    } catch (_) {
+      // Fire and forget
+    }
+  }
+
+  // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  
   NotificationEntity _mapNotification(Map<String, dynamic> json) {
     final rawDesc = json['desc']?.toString() ??
         json['description']?.toString() ??

@@ -26,6 +26,18 @@ abstract class NotificationRepository {
   /// Hapus FCM device token saat user logout.
   /// POST /api/v1/notifications/unregister-token
   Future<void> unregisterDeviceToken(String token);
+
+  /// Sync state: ambil status notifikasi dari cloud
+  /// GET /api/v1/notifications/sync
+  Future<Map<String, dynamic>> getSyncState();
+
+  /// Sync state: simpan status notifikasi ke cloud
+  /// PUT /api/v1/notifications/sync
+  Future<void> updateSyncState({
+    List<String>? readIds,
+    int? markAllTimestamp,
+    int? deleteAllTimestamp,
+  });
 }
 
 /// Exception khusus notifikasi.
