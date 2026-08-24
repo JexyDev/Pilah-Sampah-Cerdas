@@ -341,19 +341,26 @@ export class KknAttendanceService {
           }
         }
 
+        const jedaLogsArray = (existingAtt?.jedaLogs as any[]) || [];
+        const lastResumeLog = [...jedaLogsArray].reverse().find((log) => log.waktuResume);
+        const lastResumeTime = lastResumeLog ? new Date(lastResumeLog.waktuResume) : null;
+
         const scheduleLogs = todayLogs.filter((l) => {
           const logWib = new Date(l.recordedAt.getTime() + 7 * 60 * 60 * 1000);
           const logMins = logWib.getUTCHours() * 60 + logWib.getUTCMinutes();
-          return logMins >= startMinutesTotal;
+          return logMins >= startMinutesTotal && (!lastResumeTime || l.recordedAt >= lastResumeTime);
         });
-        const durationCalculated = calculateInZoneDurationMinutes(scheduleLogs, geofence, bufferMeters, (existingAtt?.jedaLogs as any[]) || []);
 
-        let durationFromAttendedAt = 0;
-        if (existingAtt && existingAtt.attendedAt && isInsideZone) {
-          const attendedAtMs = new Date(existingAtt.attendedAt).getTime();
+        const durationCalculated = calculateInZoneDurationMinutes(scheduleLogs, geofence, bufferMeters, jedaLogsArray);
+
+        let durationFromStart = 0;
+        if (existingAtt && isInsideZone) {
+          const startTimeMs = lastResumeTime
+            ? lastResumeTime.getTime()
+            : new Date(existingAtt.attendedAt).getTime();
           const nowMs = Date.now();
-          if (nowMs > attendedAtMs) {
-            durationFromAttendedAt = Math.floor((nowMs - attendedAtMs) / 60000);
+          if (nowMs > startTimeMs) {
+            durationFromStart = Math.floor((nowMs - startTimeMs) / 60000);
           }
         }
 
@@ -362,9 +369,11 @@ export class KknAttendanceService {
           durationFromMobile = Math.floor(Number(accumulatedDurationSeconds) / 60);
         }
 
+        const baseMinutes = existingAtt?.actualInZoneMinutes ?? 0;
+
         let durationInZone = Math.max(
-          durationCalculated,
-          durationFromAttendedAt,
+          baseMinutes + durationCalculated,
+          baseMinutes + durationFromStart,
           durationFromMobile,
           existingAtt?.actualInZoneMinutes ?? 0
         );
@@ -640,10 +649,17 @@ export class KknAttendanceService {
 
         const geofence = await buildGeofence(sch);
 
-        const sessionLogs = (existingAtt && existingAtt.attendedAt) 
-          ? todayLogs.filter(log => log.recordedAt >= existingAtt.attendedAt!)
+        const jedaLogsArray = (existingAtt?.jedaLogs as any[]) || [];
+        const lastResumeLog = [...jedaLogsArray].reverse().find((log) => log.waktuResume);
+        const lastResumeTime = lastResumeLog ? new Date(lastResumeLog.waktuResume) : null;
+
+        const sessionLogs = (existingAtt && existingAtt.attendedAt)
+          ? todayLogs.filter((log) => log.recordedAt >= (lastResumeTime || existingAtt.attendedAt!))
           : todayLogs;
-        let durationInZone = calculateInZoneDurationMinutes(sessionLogs, geofence, bufferMeters, (existingAtt?.jedaLogs as any[]) || []);
+
+        const baseMinutes = existingAtt?.actualInZoneMinutes ?? 0;
+        const newDuration = calculateInZoneDurationMinutes(sessionLogs, geofence, bufferMeters, jedaLogsArray);
+        let durationInZone = baseMinutes + newDuration;
         
         // --- LOGIKA SINKRONISASI 2-ARAH (FIX: WEB MENJADI SOURCE OF TRUTH) ---
         // Backend menghitung murni berdasarkan log GPS di database (calculateInZoneDurationMinutes)
@@ -2303,7 +2319,15 @@ export class KknAttendanceService {
         },
       });
     } else {
-      // Mulai kegiatan baru atau update dari status DI_ZONA/DALAM_RADIUS
+      // Mulai kegiatan baru atau update dari status DI_ZONA/DALAM_RADIUS/TERJEDA
+      const currentLogs = (existingSession?.jedaLogs as any[]) || [];
+      if (existingSession?.status === "TERJEDA") {
+        currentLogs.push({
+          waktuResume: new Date().toISOString(),
+          durasiSebelumResumeMenit: existingSession.actualInZoneMinutes || 0,
+        });
+      }
+
       attendance = await prisma.activityAttendance.upsert({
         where: {
           studentId_scheduleId: {
@@ -2319,6 +2343,7 @@ export class KknAttendanceService {
           method: "GPS_ACTIVITY",
           checkOutAt: null,
           actualInZoneMinutes: existingSession?.actualInZoneMinutes || 0,
+          jedaLogs: currentLogs,
         },
         create: {
           studentId: studentUserId,
@@ -2328,6 +2353,7 @@ export class KknAttendanceService {
           latitude,
           longitude,
           method: "GPS_ACTIVITY",
+          jedaLogs: currentLogs,
         },
       });
     }
