@@ -69,14 +69,19 @@ export function calculateInZoneDurationMinutes(
     const lng = Number(loc.longitude);
     if (isNaN(lat) || isNaN(lng)) return false;
 
+    const dist = calculateDistance(lat, lng, geofence.latitude, geofence.longitude);
+
     if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
-      const polyPoints = (geofence.polygon as any[]).map((p) => ({
-        lat: Number(p[0]),
-        lng: Number(p[1]),
-      }));
-      return isPointInPolygonWithBuffer({ lat, lng }, polyPoints, bufferMeters);
+      const polyPoints = (geofence.polygon as any[]).map((p) => {
+        const val0 = Number(p[0]);
+        const val1 = Number(p[1]);
+        const pLat = Math.abs(val0) > 45 ? val1 : val0;
+        const pLng = Math.abs(val0) > 45 ? val0 : val1;
+        return { lat: pLat, lng: pLng };
+      });
+      const inPoly = isPointInPolygonWithBuffer({ lat, lng }, polyPoints, bufferMeters);
+      return inPoly || (dist <= (geofence.radius + bufferMeters));
     } else {
-      const dist = calculateDistance(lat, lng, geofence.latitude, geofence.longitude);
       return dist <= (geofence.radius + bufferMeters);
     }
   });
