@@ -265,22 +265,23 @@ class KknBackgroundTaskHandler extends TaskHandler {
       return;
     }
     
+    final effectiveRadius = _radius + _geofenceBufferMeters;
+    final distToTarget = Geolocator.distanceBetween(pos.latitude, pos.longitude, _targetLat, _targetLng);
+
     // Polygon check (Ray Casting)
     if (_polygon != null && _polygon!.length >= 3) {
       try {
-        nowInside = _isPointInPolygon(pos.latitude, pos.longitude, _polygon!);
-        // Distance to centroid
-        final centLat = _polygon!.map((p) => p[0]).reduce((a, b) => a + b) / _polygon!.length;
-        final centLng = _polygon!.map((p) => p[1]).reduce((a, b) => a + b) / _polygon!.length;
-        distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, centLat, centLng);
+        final insidePoly = _isPointInPolygon(pos.latitude, pos.longitude, _polygon!);
+        nowInside = insidePoly || (distToTarget <= effectiveRadius);
+        distance = distToTarget;
       } catch (_) {
-        distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, _targetLat, _targetLng);
-        nowInside = distance <= (_radius + _geofenceBufferMeters);
+        distance = distToTarget;
+        nowInside = distance <= effectiveRadius;
       }
     } else {
       // Radius check
-      distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, _targetLat, _targetLng);
-      nowInside = distance <= (_radius + _geofenceBufferMeters);
+      distance = distToTarget;
+      nowInside = distance <= effectiveRadius;
     }
     
     // ═════════════════════════════════════════════════════════
@@ -591,20 +592,30 @@ class KknBackgroundTaskHandler extends TaskHandler {
     }
   }
 
-  /// Ray Casting algorithm untuk Point-in-Polygon
-  bool _isPointInPolygon(double lat, double lng, List<List<double>> polygon) {
+  /// Ray Casting algorithm untuk Point-in-Polygon (dengan Smart Coordinate Detector)
+  bool _isPointInPolygon(double lat, double lng, List<List<double>> rawPolygon) {
+    if (rawPolygon.length < 3) return false;
+
+    final List<({double lat, double lng})> polygon = rawPolygon.map((p) {
+      final double val0 = (p[0] as num).toDouble();
+      final double val1 = (p[1] as num).toDouble();
+      final double pLat = (val0.abs() > 45.0) ? val1 : val0;
+      final double pLng = (val0.abs() > 45.0) ? val0 : val1;
+      return (lat: pLat, lng: pLng);
+    }).toList();
+
     bool inside = false;
     final int n = polygon.length;
     int j = n - 1;
     for (int i = 0; i < n; i++) {
-      final double xi = polygon[i][0];
-      final double yi = polygon[i][1];
-      final double xj = polygon[j][0];
-      final double yj = polygon[j][1];
+      final double latI = polygon[i].lat;
+      final double lngI = polygon[i].lng;
+      final double latJ = polygon[j].lat;
+      final double lngJ = polygon[j].lng;
 
       final bool intersect =
-          ((yi > lng) != (yj > lng)) &&
-          (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
+          ((latI > lat) != (latJ > lat)) &&
+          (lng < (lngJ - lngI) * (lat - latI) / (latJ - latI) + lngI);
 
       if (intersect) inside = !inside;
       j = i;

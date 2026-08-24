@@ -1477,6 +1477,11 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     bool nowInside = false;
     double distance;
 
+    final buffer = target['geofenceBufferMeters'] != null
+        ? (num.tryParse(target['geofenceBufferMeters'].toString())?.toDouble() ?? 15.0)
+        : 15.0;
+    final effectiveRadius = radius + buffer;
+
     // POLYGON CHECK: Jika API menyediakan polygon, gunakan Ray Casting algorithm
     // untuk cek apakah user berada di dalam area polygon tersebut.
     // Ini lebih akurat dan mengatasi kasus di mana titik pusat (lat/lng) salah input
@@ -1486,31 +1491,27 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       try {
         final polygonPoints = polygonRaw.map((point) {
           final List pts = point as List;
-          return (
-            lat: (pts[0] as num).toDouble(),
-            lng: (pts[1] as num).toDouble(),
-          );
+          final double val0 = (pts[0] as num).toDouble();
+          final double val1 = (pts[1] as num).toDouble();
+          final double pLat = (val0.abs() > 45.0) ? val1 : val0;
+          final double pLng = (val0.abs() > 45.0) ? val0 : val1;
+          return (lat: pLat, lng: pLng);
         }).toList();
 
-        nowInside = _isPointInPolygon(
+        final insidePoly = _isPointInPolygon(
           lat: pos.latitude,
           lng: pos.longitude,
           polygon: polygonPoints,
         );
 
-        // Hitung jarak ke centroid polygon untuk ditampilkan di UI
-        final centroidLat =
-            polygonPoints.map((p) => p.lat).reduce((a, b) => a + b) /
-            polygonPoints.length;
-        final centroidLng =
-            polygonPoints.map((p) => p.lng).reduce((a, b) => a + b) /
-            polygonPoints.length;
         distance = Geolocator.distanceBetween(
           pos.latitude,
           pos.longitude,
-          centroidLat,
-          centroidLng,
+          targetLat,
+          targetLng,
         );
+
+        nowInside = insidePoly || (distance <= effectiveRadius);
       } catch (_) {
         // Fallback ke radius jika parsing polygon gagal
         distance = Geolocator.distanceBetween(
@@ -1519,7 +1520,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           targetLat,
           targetLng,
         );
-        nowInside = distance <= radius;
+        nowInside = distance <= effectiveRadius;
       }
     } else {
       // RADIUS CHECK: Fallback jika tidak ada polygon
@@ -1529,7 +1530,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         targetLat,
         targetLng,
       );
-      nowInside = distance <= radius;
+      nowInside = distance <= effectiveRadius;
     }
 
     state = state.copyWith(
