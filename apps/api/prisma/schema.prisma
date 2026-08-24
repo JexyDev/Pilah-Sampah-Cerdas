@@ -682,6 +682,7 @@ model SetoranManual {
 model Pemanfaatan {
   id                      String   @id @default(uuid())
   rwId                    Int?     @map("id_rw")
+  programKerjaId          String?  @map("id_program_kerja")
   nomorCaraPemanfaatan    String   @unique @map("nomor_cara_pemanfaatan")
   program                 String   @map("program")
   teknologi               String   @map("teknologi")
@@ -701,6 +702,7 @@ model Pemanfaatan {
   masaFermentasiHari      Int?     @map("masa_fermentasi_hari")
   createdAt               DateTime @default(now()) @map("dibuat_pada")
   rw                      Rw?      @relation(fields: [rwId], references: [id], onDelete: Cascade)
+  programKerja            ProgramKerjaKkn? @relation(fields: [programKerjaId], references: [id], onDelete: SetNull)
 
   @@map("pemanfaatan_sampah")
 }
@@ -709,6 +711,7 @@ model KritikSaranPemanfaatan {
   id               String    @id @default(uuid())
   userId           String    @map("id_pengguna")
   wargaNama        String    @map("warga_nama")
+  programKerjaId   String?   @map("id_program_kerja")
   kategori         String    @default("Pemanfaatan Sampah") @map("kategori")
   judul            String    @map("judul")
   isiKritikSaran   String    @map("isi_kritik_saran")
@@ -723,6 +726,7 @@ model KritikSaranPemanfaatan {
   updatedAt        DateTime  @updatedAt @map("diperbarui_pada")
   user             User      @relation("UserKritikSaran", fields: [userId], references: [id], onDelete: Cascade)
   rw               Rw?       @relation(fields: [rwId], references: [id])
+  programKerja     ProgramKerjaKkn? @relation(fields: [programKerjaId], references: [id], onDelete: SetNull)
 
   @@map("kritik_saran_pemanfaatan")
 }

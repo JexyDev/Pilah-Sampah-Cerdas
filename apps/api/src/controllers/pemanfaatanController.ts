@@ -14,6 +14,7 @@ export class PemanfaatanController {
     try {
       const {
         rwId,
+        programKerjaId,
         nomorCaraPemanfaatan,
         program,
         teknologi,
@@ -52,6 +53,7 @@ export class PemanfaatanController {
 
       const result = await pemanfaatanService.create({
         rwId: parseInt(rwId, 10),
+        programKerjaId,
         nomorCaraPemanfaatan,
         program,
         teknologi,
@@ -143,7 +145,7 @@ export class PemanfaatanController {
     try {
       const user = (req as any).user;
       const userId = user?.userId || user?.id;
-      const { judul, isiKritikSaran, kategori, rating, rwId, fotoBuktiUrl } = req.body;
+      const { judul, isiKritikSaran, kategori, rating, rwId, programKerjaId, fotoBuktiUrl } = req.body;
 
       if (!judul || !isiKritikSaran) {
         res.status(400).json({ success: false, message: "Judul dan isi kritik/saran wajib diisi" });
@@ -160,13 +162,14 @@ export class PemanfaatanController {
         });
         if (dbU) {
           if (!wargaNama) wargaNama = dbU.name;
-          if (!userRwId) userRwId = dbU.rwId;
+          if (!userRwId && dbU.rwId) userRwId = dbU.rwId;
         }
       }
 
       const result = await pemanfaatanService.createFeedback({
         userId,
         wargaNama: wargaNama || "Warga BERSEKA",
+        programKerjaId,
         kategori: kategori || "Pemanfaatan Sampah",
         judul,
         isiKritikSaran,

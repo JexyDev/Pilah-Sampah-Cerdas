@@ -2172,12 +2172,12 @@ export const dplService = {
       },
     });
 
-    // Ambil foto dari KritikSaranPemanfaatan (Lapor Pemanfaatan)
+    // Ambil foto dari KritikSaranPemanfaatan (Lapor Pemanfaatan) berdasarkan programKerjaId
     let feedbackPhotos: any[] = [];
     try {
       const feedbacks = await (prisma as any).kritikSaranPemanfaatan.findMany({
         where: {
-          userId: { in: studentUserIds },
+          programKerjaId: prokerId,
           fotoBuktiUrl: { not: null },
         },
         orderBy: { createdAt: "desc" },
@@ -2197,73 +2197,33 @@ export const dplService = {
           user: { name: f.user?.name || f.wargaNama || "Mahasiswa" },
         }));
     } catch (e) {
-      // Abaikan jika tabel belum ada atau error
+      // Abaikan jika tabel belum di-migrate
     }
 
-    // Ambil foto dari Pemanfaatan (Catat Hasil) berdasarkan RW Kelompok
+    // Ambil foto dari Pemanfaatan (Catat Hasil) berdasarkan programKerjaId
     let pemanfaatanPhotos: any[] = [];
     try {
-      const cakupanRw = proker.kelompok.cakupanRw as any;
-      let rwNumbers: string[] = [];
-      if (Array.isArray(cakupanRw)) {
-        rwNumbers = cakupanRw.map(String).map((r: string) => r.toLowerCase().replace(/^rw\s*/i, "").trim());
-      } else if (typeof cakupanRw === "string" || typeof cakupanRw === "number") {
-        rwNumbers = [String(cakupanRw).toLowerCase().replace(/^rw\s*/i, "").trim()];
-      }
-      
-      let rwIds: number[] = [];
-      if (proker.kelompok.kelurahan) {
-        const kelNameMatch = proker.kelompok.kelurahan;
-        const matchingRws = await prisma.rw.findMany({
-          where: { kelurahan: { name: { contains: kelNameMatch } } },
-          select: { id: true, name: true }
-        });
-        rwIds = matchingRws
-          .filter(r => rwNumbers.length === 0 || rwNumbers.includes(r.name.toLowerCase().replace(/^rw\s*/i, "").trim()))
-          .map(r => r.id);
-      }
-
-      if (rwIds.length > 0) {
-        const pemanfaatans = await prisma.pemanfaatan.findMany({
-          where: {
-            rwId: { in: rwIds },
-            fotoDokumentasiUrl: { not: null },
-          },
-          orderBy: { createdAt: "desc" },
-          take: 12,
-        });
-        pemanfaatanPhotos = pemanfaatans
-          .filter(p => p.fotoDokumentasiUrl && p.fotoDokumentasiUrl.trim() !== "" && p.fotoDokumentasiUrl !== "null")
-          .map((p) => ({
-            id: p.id,
-            activityTitle: p.program || p.teknologi || "Catat Hasil Pemanfaatan",
-            description: `Komoditas: ${p.jenisKomoditas || p.bahanBaku || "-"}`,
-            photoUrl: p.fotoDokumentasiUrl,
-            checkIn: (p.tanggalPencatatan || new Date()).toISOString(),
-            user: { name: proker.kelompok.name },
-          }));
-      }
+      const pemanfaatans = await prisma.pemanfaatan.findMany({
+        where: {
+          programKerjaId: prokerId,
+          fotoDokumentasiUrl: { not: null },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 12,
+      });
+      pemanfaatanPhotos = pemanfaatans
+        .filter(p => p.fotoDokumentasiUrl && p.fotoDokumentasiUrl.trim() !== "" && p.fotoDokumentasiUrl !== "null")
+        .map((p) => ({
+          id: p.id,
+          activityTitle: p.program || p.teknologi || "Catat Hasil Pemanfaatan",
+          description: `Komoditas: ${p.jenisKomoditas || p.bahanBaku || "-"}`,
+          photoUrl: p.fotoDokumentasiUrl,
+          checkIn: (p.tanggalPencatatan || new Date()).toISOString(),
+          user: { name: proker.kelompok.name },
+        }));
     } catch (e) {
-      // Abaikan error
+      // Abaikan jika tabel belum di-migrate
     }
-
-    // Filter bukti agar masuk akal
-    // Karena Pemanfaatan tidak memiliki relasi langsung ke ProgramKerja,
-    // kita asumsikan semua foto pemanfaatan milik kelompok ini valid JIKA
-    // proker ini berkaitan dengan pengolahan sampah/budidaya.
-    const deskripsi = (proker.deskripsi || "").toLowerCase();
-    const kategori = (proker.kategori || "").toLowerCase();
-    const isPemanfaatanTerkait = 
-      ["pemanfaatan", "pengolahan", "pemilahan"].includes(kategori) || 
-      ["budidaya", "maggot", "kompos", "panen", "sampah", "pemanfaatan", "pengolahan"].some(k => deskripsi.includes(k));
-
-    const filteredFeedbackPhotos = feedbackPhotos.filter((f: any) => {
-      return isPemanfaatanTerkait;
-    });
-
-    const filteredPemanfaatanPhotos = pemanfaatanPhotos.filter((p: any) => {
-      return isPemanfaatanTerkait;
-    });
 
     const attendancesMapped = attendances.map((a) => ({
       id: a.id,
@@ -2274,7 +2234,7 @@ export const dplService = {
       user: { name: a.student?.name || "Mahasiswa" },
     }));
 
-    const allBukti = [...attendancesMapped, ...filteredFeedbackPhotos, ...filteredPemanfaatanPhotos]
+    const allBukti = [...attendancesMapped, ...feedbackPhotos, ...pemanfaatanPhotos]
       .sort((a, b) => new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime());
 
     return {

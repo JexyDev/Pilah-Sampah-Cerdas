@@ -74,6 +74,7 @@ function formatPemanfaatanRecord(item: any) {
 export class PemanfaatanService {
   async create(data: {
     rwId: number;
+    programKerjaId?: string;
     nomorCaraPemanfaatan: string;
     program: string;
     teknologi: string;
@@ -93,11 +94,25 @@ export class PemanfaatanService {
     masaFermentasiHari?: number;
   }) {
     const sanitizedData = {
-      ...data,
+      rwId: data.rwId,
+      programKerjaId: data.programKerjaId || null,
+      nomorCaraPemanfaatan: sanitizeString(data.nomorCaraPemanfaatan),
       program: sanitizeString(data.program),
       teknologi: sanitizeString(data.teknologi),
       bahanBaku: sanitizeString(data.bahanBaku),
-      jenisKomoditas: data.jenisKomoditas ? sanitizeString(data.jenisKomoditas) : undefined,
+      volumeBahanBaku: data.volumeBahanBaku,
+      unitBahanBaku: sanitizeString(data.unitBahanBaku),
+      hasil: data.hasil,
+      unitHasil: sanitizeString(data.unitHasil),
+      fotoDokumentasiUrl: data.fotoDokumentasiUrl,
+      tanggalPencatatan: data.tanggalPencatatan,
+      jenisKomoditas: sanitizeString(data.jenisKomoditas),
+      luasLahanM2: data.luasLahanM2,
+      volumePupukDipakaiKg: data.volumePupukDipakaiKg,
+      bibitTelurGram: data.bibitTelurGram,
+      hasilKasgotKg: data.hasilKasgotKg,
+      volumeBioaktivatorLiter: data.volumeBioaktivatorLiter,
+      masaFermentasiHari: data.masaFermentasiHari,
     };
 
     const created = await prisma.pemanfaatan.create({
@@ -301,7 +316,8 @@ export class PemanfaatanService {
 
   async createFeedback(data: {
     userId: string;
-    wargaNama: string;
+    wargaNama?: string;
+    programKerjaId?: string;
     kategori?: string;
     judul: string;
     isiKritikSaran: string;
@@ -324,6 +340,7 @@ export class PemanfaatanService {
           data: {
             userId: data.userId,
             wargaNama: cleanWargaNama,
+            programKerjaId: data.programKerjaId || null,
             kategori: cleanKategori,
             judul: cleanJudul,
             isiKritikSaran: cleanIsi,
@@ -351,12 +368,13 @@ export class PemanfaatanService {
       const isiKritikSaran = cleanIsi.replace(/'/g, "''");
       const rwIdVal = data.rwId ? data.rwId : "NULL";
       const fotoVal = data.fotoBuktiUrl ? `'${data.fotoBuktiUrl.replace(/'/g, "''")}'` : "NULL";
+      const programKerjaIdVal = data.programKerjaId ? `'${data.programKerjaId.replace(/'/g, "''")}'` : "NULL";
 
       await prisma.$executeRawUnsafe(`
         INSERT INTO "kritik_saran_pemanfaatan" (
-          "id", "id_pengguna", "warga_nama", "kategori", "judul", "isi_kritik_saran", "rating", "status", "foto_bukti_url", "id_rw", "dibuat_pada", "diperbarui_pada"
+          "id", "id_pengguna", "warga_nama", "id_program_kerja", "kategori", "judul", "isi_kritik_saran", "rating", "status", "foto_bukti_url", "id_rw", "dibuat_pada", "diperbarui_pada"
         ) VALUES (
-          '${id}', '${userId}', '${wargaNama}', '${kategori}', '${judul}', '${isiKritikSaran}', ${cleanRating}, 'MENUNGGU', ${fotoVal}, ${rwIdVal}, NOW(), NOW()
+          '${id}', '${userId}', '${wargaNama}', ${programKerjaIdVal}, '${kategori}', '${judul}', '${isiKritikSaran}', ${cleanRating}, 'MENUNGGU', ${fotoVal}, ${rwIdVal}, NOW(), NOW()
         )
       `);
 
@@ -364,6 +382,7 @@ export class PemanfaatanService {
         id,
         userId: data.userId,
         wargaNama: cleanWargaNama,
+        programKerjaId: data.programKerjaId || null,
         kategori: cleanKategori,
         judul: cleanJudul,
         isiKritikSaran: cleanIsi,
