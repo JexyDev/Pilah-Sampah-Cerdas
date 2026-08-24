@@ -344,6 +344,7 @@ export class KknAttendanceService {
         const jedaLogsArray = (existingAtt?.jedaLogs as any[]) || [];
         const lastResumeLog = [...jedaLogsArray].reverse().find((log) => log.waktuResume);
         const lastResumeTime = lastResumeLog ? new Date(lastResumeLog.waktuResume) : null;
+        const pausedBaseMinutes = lastResumeLog ? (Number(lastResumeLog.durasiSebelumResumeMenit) || 0) : 0;
 
         const scheduleLogs = todayLogs.filter((l) => {
           const logWib = new Date(l.recordedAt.getTime() + 7 * 60 * 60 * 1000);
@@ -369,11 +370,9 @@ export class KknAttendanceService {
           durationFromMobile = Math.floor(Number(accumulatedDurationSeconds) / 60);
         }
 
-        const baseMinutes = existingAtt?.actualInZoneMinutes ?? 0;
-
         let durationInZone = Math.max(
-          baseMinutes + durationCalculated,
-          baseMinutes + durationFromStart,
+          pausedBaseMinutes + durationCalculated,
+          pausedBaseMinutes + durationFromStart,
           durationFromMobile,
           existingAtt?.actualInZoneMinutes ?? 0
         );
@@ -652,14 +651,14 @@ export class KknAttendanceService {
         const jedaLogsArray = (existingAtt?.jedaLogs as any[]) || [];
         const lastResumeLog = [...jedaLogsArray].reverse().find((log) => log.waktuResume);
         const lastResumeTime = lastResumeLog ? new Date(lastResumeLog.waktuResume) : null;
+        const pausedBaseMinutes = lastResumeLog ? (Number(lastResumeLog.durasiSebelumResumeMenit) || 0) : 0;
 
         const sessionLogs = (existingAtt && existingAtt.attendedAt)
           ? todayLogs.filter((log) => log.recordedAt >= (lastResumeTime || existingAtt.attendedAt!))
           : todayLogs;
 
-        const baseMinutes = existingAtt?.actualInZoneMinutes ?? 0;
         const newDuration = calculateInZoneDurationMinutes(sessionLogs, geofence, bufferMeters, jedaLogsArray);
-        let durationInZone = baseMinutes + newDuration;
+        let durationInZone = pausedBaseMinutes + newDuration;
         
         // --- LOGIKA SINKRONISASI 2-ARAH (FIX: WEB MENJADI SOURCE OF TRUTH) ---
         // Backend menghitung murni berdasarkan log GPS di database (calculateInZoneDurationMinutes)
