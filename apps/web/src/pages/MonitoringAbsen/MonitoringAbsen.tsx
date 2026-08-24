@@ -2655,16 +2655,18 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       const isBerlangsung = statusUpper === "BERLANGSUNG" || statusUpper === "DALAM_RADIUS" || statusUpper === "DI_ZONA";
                       const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
                       const recAny = rec as any;
+                      const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, rec.completedAt) : 0;
+                      const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
                       const durationMins = isLeaveOrPending 
                         ? 0 
-                        : (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined && Number(recAny.actualInZoneMinutes) > 0)
-                        ? Number(recAny.actualInZoneMinutes)
-                        : calculateDurationMinutes(rec.attendedAt, rec.completedAt);
+                        : isBerlangsung
+                        ? Math.max(storedMins, liveElapsedMins)
+                        : (storedMins > 0 ? storedMins : liveElapsedMins);
                       const isHadir = (statusUpper === "HADIR" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || rec.completedAt !== null) && isAttended && !isOverrideDpl && !isBerlangsung;
 
                       const formattedHours = isLeaveOrPending
                         ? "-"
-                        : isAttended
+                        : (isAttended || isBerlangsung)
                         ? formatDurationUnits(durationMins)
                         : "-";
 
@@ -2700,7 +2702,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                   )}
                                 </div>
                               )
-                            : `${isAttended ? formatDurationUnits(durationMins) : "0 Menit"} / ${formatHoursToUnits(scheduleTargetHours)}`);
+                            : `${(isAttended || isBerlangsung) ? formatDurationUnits(durationMins) : "0 Menit"} / ${formatHoursToUnits(scheduleTargetHours)}`);
 
                       const poinDampingan = (isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal || isBerlangsung) ? 0 : (isHadir ? 10 : 0);
 
