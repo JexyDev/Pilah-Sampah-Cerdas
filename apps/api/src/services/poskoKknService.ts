@@ -45,8 +45,35 @@ export class PoskoKknService {
     });
   }
 
-  async getAllPosko() {
+  async getAllPosko(userId?: string, role?: string) {
+    let whereClause: any = {};
+    if (userId && role) {
+      const normalizedRole = role.toUpperCase();
+      const isAdmin = ["DEVELOPER", "ADMIN_DLH", "DLH", "DLH_ADMIN", "SUPER_USER", "ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN"].some(r => normalizedRole.includes(r));
+      
+      if (!isAdmin) {
+        if (normalizedRole.includes("MAHASISWA")) {
+          whereClause = { kelompok: { students: { some: { userId } } } };
+        } else if (normalizedRole.includes("DPL") || normalizedRole.includes("DOSEN")) {
+          whereClause = { OR: [{ kelompok: { dplId: userId } }, { kelompok: { dpl: { id: userId } } }] };
+        } else if (normalizedRole.includes("RW")) {
+          const userRw = await prisma.user.findUnique({ where: { id: userId }, select: { rwId: true } });
+          if (userRw?.rwId) {
+            const rwData = await prisma.rw.findUnique({ where: { id: userRw.rwId }, include: { kelurahan: true } });
+            if (rwData?.kelurahan?.name) {
+              whereClause = { kelompok: { kelurahan: { equals: rwData.kelurahan.name, mode: "insensitive" } } };
+            } else {
+              whereClause = { kelompokId: "NONE" };
+            }
+          } else {
+            whereClause = { kelompokId: "NONE" };
+          }
+        }
+      }
+    }
+
     return prisma.poskoKkn.findMany({
+      where: whereClause,
       orderBy: { createdAt: "desc" },
       include: {
         kelompok: {

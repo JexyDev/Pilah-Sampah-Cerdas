@@ -1176,7 +1176,7 @@ export const PenilaianProkerPage: React.FC = () => {
                         <div className="aspect-4/3 bg-slate-200 dark:bg-slate-700 relative overflow-hidden">
                           {att.photoUrl ? (
                             <img
-                              src={att.photoUrl}
+                              src={att.photoUrl.startsWith('/') ? `${import.meta.env.VITE_API_URL}${att.photoUrl}` : att.photoUrl}
                               alt={att.activityTitle}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />

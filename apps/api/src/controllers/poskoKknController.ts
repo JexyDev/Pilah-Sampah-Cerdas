@@ -1,4 +1,4 @@
-/**
+ï»¿/**
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
@@ -9,17 +9,17 @@ import { poskoKknService } from "../services/poskoKknService.js";
 import { prisma } from "../lib/prisma.js";
 
 export class PoskoKknController {
-  /** GET /posko-kkn — semua posko */
+  /** GET /posko-kkn â€” semua posko */
   async getAll(req: Request, res: Response): Promise<void> {
     try {
-      const data = await poskoKknService.getAllPosko();
+      const user = (req as any).user; const data = await poskoKknService.getAllPosko(user?.userId, user?.role);
       res.status(200).json({ success: true, data });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message || "Gagal mengambil data posko" });
     }
   }
 
-  /** GET /posko-kkn/me — posko milik kelompok user yg login */
+  /** GET /posko-kkn/me â€” posko milik kelompok user yg login */
   async getMyPosko(req: Request, res: Response): Promise<void> {
     try {
       const userId = (req as any).user?.userId;
@@ -30,7 +30,7 @@ export class PoskoKknController {
     }
   }
 
-  /** POST /posko-kkn — daftar / update posko (upsert) */
+  /** POST /posko-kkn â€” daftar / update posko (upsert) */
   async upsert(req: Request, res: Response): Promise<void> {
     try {
       const userId = (req as any).user?.userId;

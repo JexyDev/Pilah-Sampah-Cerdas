@@ -1328,7 +1328,7 @@ export class KknService {
           foto: payload.foto || existingPosko.foto,
           pic: picName,
           kontak,
-          statusApproval: "PENDING",
+          statusApproval: "APPROVED",
         },
       });
     } else {
@@ -1344,28 +1344,9 @@ export class KknService {
           foto: payload.foto,
           pic: picName,
           kontak,
-          statusApproval: "PENDING",
+          statusApproval: "APPROVED",
         },
       });
-    }
-
-    // Kirim notifikasi ke Ketua RW terkait
-    if (targetRwId) {
-      const rwUsers = await prisma.user.findMany({
-        where: {
-          rwId: targetRwId,
-          role: { name: "RW" },
-        },
-      });
-      for (const rwUser of rwUsers) {
-        await prisma.notification.create({
-          data: {
-            userId: rwUser.id,
-            title: "Pengajuan Posko KKN Baru",
-            message: `Kelompok ${student.kelompok.name} mengajukan titik Posko KKN di wilayah RW Anda dan menunggu verifikasi.`,
-          },
-        });
-      }
     }
 
     await prisma.auditTrail.create({
@@ -1377,7 +1358,7 @@ export class KknService {
           kelompokId: student.kelompokId,
           latitude: lat,
           longitude: lng,
-          status: "PENDING",
+          status: "APPROVED",
         },
       },
     });
