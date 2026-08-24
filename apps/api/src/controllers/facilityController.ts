@@ -43,9 +43,6 @@ export class FacilityController {
         targetRwId = Number((req as any).user.rwId);
       }
 
-      const isPrivileged = ["RW", "SUPER_USER", "ADMIN_DLH", "DEVELOPER"].includes(peran);
-      const statusApproval = isPrivileged ? "APPROVED" : "PENDING";
-
       const facility = await facilityService.createFacility(
         jenis,
         nama,
@@ -59,7 +56,7 @@ export class FacilityController {
         kelompokId,
         alamat,
         targetRwId,
-        statusApproval
+        "APPROVED"
       );
       res.status(201).json({ success: true, message: "Fasilitas berhasil dibuat", data: facility });
     } catch (error: any) {

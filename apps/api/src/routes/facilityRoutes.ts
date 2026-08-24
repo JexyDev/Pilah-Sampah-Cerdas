@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
@@ -15,7 +15,7 @@ const router = Router();
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "MAHASISWA_KKN", "RW", "RT"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "MAHASISWA_KKN", "RW", "RT", "WARGA"]),
   facilityController.createFacility
 );
 
