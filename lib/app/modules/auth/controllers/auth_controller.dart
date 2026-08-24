@@ -256,10 +256,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final kknState = _ref.read(kknLocationProvider);
       final kknNotifier = _ref.read(kknLocationProvider.notifier);
       final activeAct = kknState.activeActivity;
+      final statusUpper = (activeAct?['statusKehadiran'] ?? activeAct?['attendanceStatus'] ?? activeAct?['status'] ?? '').toString().toUpperCase();
       final isBerlangsung = kknState.isTracking ||
-          (activeAct != null &&
-              (activeAct['statusKehadiran']?.toString().toUpperCase() == 'BERLANGSUNG' ||
-               activeAct['attendanceStatus']?.toString().toUpperCase() == 'BERLANGSUNG'));
+          statusUpper == 'BERLANGSUNG' ||
+          statusUpper == 'DI_ZONA' ||
+          statusUpper == 'DALAM_RADIUS' ||
+          statusUpper == 'LAPANGAN';
       if (isBerlangsung) {
         await kknNotifier.jedaKegiatan('Pengguna Keluar / Logout Aplikasi');
       }
@@ -284,7 +286,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
     } catch (_) {}
 
-    // 2. Hentikan total background foreground GPS service KKN & cancel notifikasi
+    // 2. Jeda kegiatan KKN aktif ke backend sebelum stop service
+    // agar backend tidak auto-mark HADIR dari durasi yang sudah terakumulasi
+    try {
+      final kknNotifier = _ref.read(kknLocationProvider.notifier);
+      final kknState = _ref.read(kknLocationProvider);
+      if (kknState.isTracking && kknState.activeActivity != null && !kknState.isSuccessAttendance) {
+        await kknNotifier.jedaKegiatan('LOGOUT');
+      }
+    } catch (_) {}
+
+    // 3. Hentikan total background foreground GPS service KKN & cancel notifikasi
     try {
       await stopKknForegroundService();
     } catch (_) {}

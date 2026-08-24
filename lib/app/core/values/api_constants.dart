@@ -51,8 +51,9 @@ class ApiEndpoints {
   static const String kknWargaDampingan = '/kkn/warga-dampingan';
   static const String kknActivityLog = '/kkn/activity-log';
   static const String kknActiveZone = '/kkn/active-zone';
-  static const String kknLocationPing = '/location-ping';
+  static const String kknLocationPing = '/kkn/location-ping';
   static const String kknCheckIn = '/kkn/attendance/check-in';
+  static const String kknAbsen = '/kkn/absen';
   static const String kknWarga = '/kkn/warga';
   static const String kknActivateByScan = '/kkn/warga/activate-by-scan';
   static const String kknActivateBin = '/kkn/warga/activate-bin';

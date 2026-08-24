@@ -14,7 +14,7 @@ String? _extractError(dynamic data, String? fallback) {
     final msg = data['message']?.toString() ?? data['error']?.toString();
     if (msg != null && msg.isNotEmpty) return msg;
   } else if (data is String && data.isNotEmpty) {
-    if (data.length > 200) return fallback; // Jangan tampilkan HTML 502 panjang
+    if (data.contains('<!DOCTYPE') || data.contains('<html') || data.length > 100) return fallback;
     return data;
   }
   return fallback;
@@ -234,57 +234,21 @@ class ApiKknRepository implements KknRepository {
     String? rw,
     String? kecamatan, String? kelurahan,
     int? durationMinutes,
+    int? accumulatedSeconds,
     String? timestamp,
   }) async {
     try {
-      final payload = {
-        'latitude': latitude,
-        'longitude': longitude,
-        'method': method,
-        'scheduleId': scheduleId,
-        if (durationMinutes != null) 'durationMinutes': durationMinutes,
-        if (nim != null && nim.isNotEmpty) 'nim': nim,
-        if (namaMahasiswa != null && namaMahasiswa.isNotEmpty) 'namaMahasiswa': namaMahasiswa,
-        if (kodeZona != null && kodeZona.isNotEmpty) 'kodeZona': kodeZona,
-        if (rw != null && rw.isNotEmpty) 'rw': rw,
-        if (kelurahan != null && kelurahan.isNotEmpty) 'kelurahan': kelurahan,
-        if (kecamatan != null && kecamatan.isNotEmpty) 'kecamatan': kecamatan,
-        'timestamp': timestamp ?? DateTime.now().toUtc().toIso8601String(),
-      };
-
-      // Coba endpoint spesifik jadwal dahulu, jika gagal coba fallback /kkn/attendance/check-in
-      try {
-        final res = await apiClient.dio.post(ApiEndpoints.kegiatanAbsen(scheduleId), data: payload);
-        if (res.statusCode == 200 || res.statusCode == 201) {
-          if (res.data is Map<String, dynamic>) {
-            return res.data['data'] as Map<String, dynamic>? ?? res.data as Map<String, dynamic>;
-          }
-          return {'success': true};
-        }
-      } on DioException catch (e1) {
-        final msg1 = _extractError(e1.response?.data, '');
-        // Jika 400 atau 409 atau 403 (bukan 404), kemungkinan besar ini error bisnis (misal: di luar operasional / di luar radius)
-        if (e1.response?.statusCode != 404 && msg1 != null && msg1.isNotEmpty) {
-          throw Exception(msg1);
-        }
-        
-        try {
-          final res = await apiClient.dio.post(ApiEndpoints.kknCheckIn, data: payload);
-          if (res.statusCode == 200 || res.statusCode == 201) {
-            if (res.data is Map<String, dynamic>) {
-              return res.data['data'] as Map<String, dynamic>? ?? res.data as Map<String, dynamic>;
-            }
-            return {'success': true};
-          }
-        } on DioException catch (e2) {
-          final msg2 = _extractError(e2.response?.data, '');
-          if (msg2 != null && msg2.isNotEmpty) {
-            throw Exception(msg2);
-          }
-          rethrow;
-        }
-      }
-      return {'success': false};
+      final totalMenit = (durationMinutes != null && durationMinutes > 0)
+          ? durationMinutes
+          : ((accumulatedSeconds ?? 0) / 60).ceil();
+      final response = await selesaiKegiatan(
+        scheduleId,
+        sessionId: 'SES-$scheduleId',
+        totalDurasiDalamZonaMenit: totalMenit,
+        accumulatedSeconds: accumulatedSeconds,
+        alasan: 'Presensi Selesai (Pulang)',
+      );
+      return response;
     } catch (e) {
       if (e is Exception) rethrow;
       throw Exception('Gagal menghubungi server presensi.');
@@ -647,13 +611,14 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> selesaiKegiatan(String id, {required String sessionId, required int totalDurasiDalamZonaMenit, required String alasan}) async {
+  Future<Map<String, dynamic>> selesaiKegiatan(String id, {required String sessionId, required int totalDurasiDalamZonaMenit, int? accumulatedSeconds, required String alasan}) async {
     try {
       final response = await apiClient.dio.post(
         ApiEndpoints.kknSelesaiKegiatan(id),
         data: {
           'sessionId': sessionId,
           'totalDurasiDalamZonaMenit': totalDurasiDalamZonaMenit,
+          if (accumulatedSeconds != null) 'accumulatedDuration': accumulatedSeconds,
           'alasan': alasan,
         },
       );
@@ -671,13 +636,14 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> jedaKegiatan(String id, {required int totalDurasiDalamZonaMenit, int? totalDurasiDalamZonaDetik, required String alasan}) async {
+  Future<Map<String, dynamic>> jedaKegiatan(String id, {required int totalDurasiDalamZonaMenit, int? accumulatedSeconds, required String alasan}) async {
     try {
       final response = await apiClient.dio.post(
         ApiEndpoints.kknJedaKegiatan(id),
         data: {
           'totalDurasiDalamZonaMenit': totalDurasiDalamZonaMenit,
-          if (totalDurasiDalamZonaDetik != null) 'totalDurasiDalamZonaDetik': totalDurasiDalamZonaDetik,
+          if (accumulatedSeconds != null) 'totalDurasiDalamZonaDetik': accumulatedSeconds,
+          if (accumulatedSeconds != null) 'accumulatedDuration': accumulatedSeconds,
           'alasan': alasan,
         },
       );

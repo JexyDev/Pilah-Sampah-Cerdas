@@ -27,8 +27,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Fetch target lokasi (jadwal) di awal agar UI bisa menampilkan tombol "Mulai Tracking"
-      // atau pesan "Tidak ada jadwal" sebelum user klik apapun.
+      // Load durasi persisten dulu sebelum fetch agar tidak ke-reset ke 0
       await ref.read(kknLocationProvider.notifier).checkActiveSchedule();
       await ref.read(kknLocationProvider.notifier).fetchKegiatanAktif();
 
@@ -40,6 +39,12 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
         }
       }
       ref.read(kelompokKknProvider.notifier).fetchKelompok();
+
+      // Jika tracking masih aktif saat halaman dibuka, langsung tampilkan detail
+      final kknState = ref.read(kknLocationProvider);
+      if (kknState.isTracking && kknState.activeActivity != null && !kknState.isSuccessAttendance) {
+        if (mounted) setState(() => _showDetail = true);
+      }
     });
   }
 
@@ -146,9 +151,11 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                     size: 28,
                   ),
                   SizedBox(width: 8),
-                  Text(
-                    'Konfirmasi Kehadiran',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  Flexible(
+                    child: Text(
+                      'Konfirmasi Kehadiran',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
@@ -499,20 +506,17 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             return KegiatanKknCard(
               kegiatan: kegiatan,
               onMulai: (id) async {
-                final isTrackingThis = state.activeActivity != null &&
-                    state.isTracking &&
-                    (state.activeActivity!['id']?.toString() == id || state.activeActivity!['scheduleId']?.toString() == id);
-                
-                if (isTrackingThis) {
-                  setState(() => _showDetail = true);
-                  return;
-                }
-
+                // Cek kegiatan LAIN yang sedang BERLANGSUNG
                 final activeId = state.activeActivity?['id']?.toString() ?? state.activeActivity?['scheduleId']?.toString();
+                final statusAktif = (state.activeActivity?['statusKehadiran'] ??
+                        state.activeActivity?['attendanceStatus'] ?? '')
+                    .toString()
+                    .toUpperCase();
                 final isDifferentActive = state.isTracking &&
                     state.activeActivity != null &&
                     activeId != null &&
                     activeId != id &&
+                    statusAktif == 'BERLANGSUNG' &&
                     !state.isSuccessAttendance;
 
                 if (isDifferentActive) {
@@ -525,9 +529,9 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                   return;
                 }
 
+                // Selalu hit backend terlebih dahulu
                 final result = await notifier.mulaiKegiatan(id);
                 if (result == null) {
-                  // Sukses
                   if (mounted) {
                     ref.read(authProvider.notifier).fetchProfile();
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -537,7 +541,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                     setState(() => _showDetail = true);
                   }
                 } else if (mounted && result != 'CONFLICT') {
-                  // Bug #3 fix: tampilkan pesan error spesifik ke user
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     content: Text(result),
                     backgroundColor: AppColors.dangerRed,
