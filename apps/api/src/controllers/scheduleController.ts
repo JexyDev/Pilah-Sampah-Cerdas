@@ -9,6 +9,11 @@ import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { scheduleService } from "../services/scheduleService.js";
 
+function toWibDateString(d: Date): string {
+  const wibDate = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+  return wibDate.toISOString().slice(0, 10);
+}
+
 export const scheduleController = {
   getAllSchedules: async (req: Request, res: Response) => {
     try {
@@ -49,33 +54,18 @@ export const scheduleController = {
         return;
       }
 
-      // Validasi waktu mulai tidak boleh di masa lalu (kurang dari hari ini / jam saat ini)
+      // Validasi waktu mulai tidak boleh di masa lalu (kurang dari hari ini dalam WIB)
       const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const activityDate = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
+      const wibNowStr = toWibDateString(now);
+      const wibActivityStr = toWibDateString(parsedDate);
 
-      if (activityDate < today) {
+      if (wibActivityStr < wibNowStr) {
         res.status(400).json({
           success: false,
           error: "VALIDATION_ERROR",
           message: "Waktu/tanggal mulai kegiatan tidak boleh pada hari sebelumnya (masa lalu)",
         });
         return;
-      }
-
-      if (time && activityDate.getTime() === today.getTime()) {
-        const [h, m] = String(time).split(":").map(Number);
-        if (!isNaN(h) && !isNaN(m)) {
-          const activityDateTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
-          if (activityDateTime < now) {
-            res.status(400).json({
-              success: false,
-              error: "VALIDATION_ERROR",
-              message: "Waktu mulai kegiatan tidak boleh kurang dari jam saat ini",
-            });
-            return;
-          }
-        }
       }
 
       let resolvedKelompokId = kelompokId || undefined;
@@ -234,31 +224,16 @@ export const scheduleController = {
         }
 
         const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const activityDate = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
+        const wibNowStr = toWibDateString(now);
+        const wibActivityStr = toWibDateString(parsedDate);
 
-        if (activityDate < today) {
+        if (wibActivityStr < wibNowStr) {
           res.status(400).json({
             success: false,
             error: "VALIDATION_ERROR",
             message: "Waktu/tanggal mulai kegiatan tidak boleh pada hari sebelumnya (masa lalu)",
           });
           return;
-        }
-
-        if (time && activityDate.getTime() === today.getTime()) {
-          const [h, m] = String(time).split(":").map(Number);
-          if (!isNaN(h) && !isNaN(m)) {
-            const activityDateTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
-            if (activityDateTime < now) {
-              res.status(400).json({
-                success: false,
-                error: "VALIDATION_ERROR",
-                message: "Waktu mulai kegiatan tidak boleh kurang dari jam saat ini",
-              });
-              return;
-            }
-          }
         }
       }
 
