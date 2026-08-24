@@ -65,8 +65,39 @@ export const PemanfaatanSampah: React.FC = () => {
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/facilities");
-      setItems(res.data.data || []);
+      const [facRes, poskoRes] = await Promise.allSettled([
+        api.get("/facilities"),
+        api.get("/posko-kkn"),
+      ]);
+
+      let facilityList: FacilityItem[] = [];
+      if (facRes.status === "fulfilled") {
+        facilityList = facRes.value.data.data || [];
+      }
+
+      let poskoList: FacilityItem[] = [];
+      if (poskoRes.status === "fulfilled") {
+        const rawPosko = poskoRes.value.data.data || [];
+        poskoList = rawPosko.map((p: any) => ({
+          id: p.id,
+          nama: p.nama || `Posko ${p.kelompok?.name || "KKN"}`,
+          jenis: "posko_kkn",
+          pic: p.kelompok?.students?.find((s: any) => s.isKetua)?.user?.name || p.kelompok?.dpl?.name || "Ketua Kelompok KKN",
+          kontak: p.kelompok?.students?.find((s: any) => s.isKetua)?.user?.phone || "-",
+          alamat: p.alamat || `Kel. ${p.kelompok?.kelurahan || "-"}`,
+          latitude: p.latitude,
+          longitude: p.longitude,
+          foto: p.fotoUrl || undefined,
+          statusApproval: "APPROVED",
+          createdAt: p.createdAt || new Date().toISOString(),
+          rw: {
+            id: 0,
+            name: p.kelompok?.kelurahan ? `Kel. ${p.kelompok.kelurahan}` : "Posko KKN",
+          },
+        }));
+      }
+
+      setItems([...facilityList, ...poskoList]);
     } catch (err: any) {
       showToast.error(err.response?.data?.message || "Gagal memuat data fasilitas");
     } finally {
@@ -121,8 +152,8 @@ export const PemanfaatanSampah: React.FC = () => {
   return (
     <div className="pb-24 lg:pb-8">
       <PageHeader
-        title="Inovasi Pengolahan"
-        description="Pemetaan fasilitas pengolahan sampah dan inovasi daur ulang warga (Bata Terawang, Loseda, Rumah Maggot, TPS, dll)."
+        title="Inovasi & Posko KKN"
+        description="Pemetaan fasilitas pengolahan sampah, inovasi daur ulang warga (Bata Terawang, Loseda, Rumah Maggot, TPS, dll) serta lokasi Posko KKN."
         icon={Sprout}
       />
 
@@ -174,6 +205,7 @@ export const PemanfaatanSampah: React.FC = () => {
               className="px-4 py-2.5 bg-slate-50 hover:bg-white border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:border-[#009966] focus:ring-4 focus:ring-[#009966]/10 transition-all cursor-pointer"
             >
               <option value="ALL">Semua Jenis</option>
+              <option value="posko_kkn">Posko KKN</option>
               <option value="loseda">Loseda</option>
               <option value="bata_terawang">Bata Terawang</option>
               <option value="rumah_maggot">Rumah Maggot</option>
@@ -214,15 +246,15 @@ export const PemanfaatanSampah: React.FC = () => {
                 <div className="space-y-3">
                   <div className="space-y-1.5">
                     <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
-                      Fasilitas Pengolahan Sampah
+                      Fasilitas & Posko KKN
                     </span>
                     <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-[10.5px]">
+                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-[#4f46e5] shrink-0" /><span className="font-bold text-slate-700 truncate">Posko KKN</span></div>
                       <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-green-600 shrink-0" /><span className="font-bold text-slate-700 truncate">Bata Terawang</span></div>
                       <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-emerald-600 shrink-0" /><span className="font-bold text-slate-700 truncate">Loseda</span></div>
                       <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-amber-600 shrink-0" /><span className="font-bold text-slate-700 truncate">Rumah Maggot</span></div>
                       <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-blue-600 shrink-0" /><span className="font-bold text-slate-700 truncate">Bank Sampah</span></div>
                       <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-teal-600 shrink-0" /><span className="font-bold text-slate-700 truncate">TPS</span></div>
-                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs bg-orange-600 shrink-0" /><span className="font-bold text-slate-700 truncate">Incinerator</span></div>
                     </div>
                   </div>
                   <div className="space-y-1.5 border-t border-slate-100 pt-2">
