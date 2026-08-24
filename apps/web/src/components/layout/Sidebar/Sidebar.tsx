@@ -457,19 +457,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "PEMIMPIN",
               ] as UserRole[],
             },
-            {
-              to: "/rw/fasilitas",
-              label: "Fasilitas & Posko KKN",
-              allowed: [
-                "DEVELOPER",
-                "SUPER_USER",
-                "ADMIN_DLH",
-                "DPL",
-                "RW",
-                "PEMIMPIN",
-                "PANITIA_TASKFORCE",
-              ] as UserRole[],
-            },
           ],
         },
         {
@@ -739,7 +726,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/pengelolaan-sampah",
-              label: "Inovasi Pengolahan",
+              label: "Inovasi & Posko KKN",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",

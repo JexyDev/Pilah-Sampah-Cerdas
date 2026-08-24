@@ -60,7 +60,6 @@ import ManajemenEkosistemKkn from "../pages/ManajemenEkosistemKkn/ManajemenEkosi
 import PemanfaatanSampah from "../pages/PemanfaatanSampah/PemanfaatanSampah";
 import HasilPemanfaatan from "../pages/HasilPemanfaatan/HasilPemanfaatan";
 import { RwApproval } from "../pages/RwPortal/RwApproval";
-import { RwFacilityInput } from "../pages/RwPortal/RwFacilityInput";
 import InputSetoranManual from "../pages/InputSetoranManual/InputSetoranManual";
 import IdeDaurUlang from "../pages/IdeDaurUlang/IdeDaurUlang";
 import TentangAplikasi from "../pages/TentangAplikasi/TentangAplikasi";
@@ -844,14 +843,7 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/rw/fasilitas"
-          element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "RW", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]}>
-              <RwFacilityInput />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/rw/fasilitas" element={<Navigate to="/pengelolaan-sampah" replace />} />
         <Route
           path="/ide-daur-ulang"
           element={<IdeDaurUlang />}

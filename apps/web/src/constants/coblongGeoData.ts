@@ -290,10 +290,13 @@ export const createRealBinIcon = (categoryName: string, status: string, isPenuh:
 
 export const createFacilityIcon = (jenis: string, nama?: string) => {
   const t = (jenis || "").toLowerCase();
-  let bgColor = "#10b981"; // Emerald for posko_kkn
+  let bgColor = "#10b981"; // Emerald default
   let svgIcon = `<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>`;
 
-  if (t === "rumah_maggot") {
+  if (t === "posko_kkn" || t === "posko") {
+    bgColor = "#4f46e5"; // Indigo for Posko KKN
+    svgIcon = `<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>`;
+  } else if (t === "rumah_maggot") {
     bgColor = "#7c3aed"; // Purple
     svgIcon = `<path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/>`;
   } else if (t === "bank_sampah") {
