@@ -470,12 +470,12 @@ class KelompokKknView extends ConsumerWidget {
                     const Text('Lokasi Posko KKN', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                     const SizedBox(height: 2),
                     if (posko != null)
-                      Text(
-                        posko.statusApproval == 'PENDING' ? 'Menunggu verifikasi RW' : 'Posko Aktif',
+                      const Text(
+                        'Posko Aktif',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: posko.statusApproval == 'PENDING' ? AppColors.warningYellow : AppColors.primaryGreen,
+                          color: AppColors.primaryGreen,
                         ),
                       )
                     else
