@@ -2544,25 +2544,25 @@ const Dashboard: React.FC = () => {
                   <th className="py-2.5 px-3 rounded-l-lg">ID &amp; Jenis</th>
                   <th className="py-2.5 px-3">Lokasi</th>
                   <th className="py-2.5 px-3">Kapasitas Tempat Sampah</th>
-                  <th className="py-2.5 px-3 text-center">Nilai Tukar (Poin per Kg)</th>
                   <th className="py-2.5 px-3 text-right rounded-r-lg">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
                 {recentBins.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-500 dark:text-slate-400 font-medium">
+                    <td colSpan={4} className="py-8 text-center text-slate-500 dark:text-slate-400 font-medium">
                       Belum ada data tempat sampah terdaftar.
                     </td>
                   </tr>
                 ) : (
                   recentBins.map((bin, i) => {
                     const maxCapacityLiter = Number(bin.maxCapacityLiter);
+                    const currentVolumeLiter = Number(bin.currentVolumeLiter) || 0;
                     const cap = Math.min(100, Math.round(
                       bin.kapasitas != null
                         ? bin.kapasitas
                         : maxCapacityLiter > 0
-                        ? (Number(bin.currentVolumeLiter) / maxCapacityLiter) * 100
+                        ? (currentVolumeLiter / maxCapacityLiter) * 100
                         : 0
                     ));
                     const categoryStr = String(bin.category?.name || bin.categoryId || "UMUM").toUpperCase();
@@ -2607,7 +2607,7 @@ const Dashboard: React.FC = () => {
                             <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium">
                               {(() => {
                                 const rwStr = typeof bin.rtRw === "string" ? bin.rtRw : bin.rtRw?.name;
-                                if (!rwStr || rwStr === "-") return "RW -";
+                                if (!rwStr || rwStr === "-") return "Fasilitas Umum";
                                 return rwStr.toLowerCase().includes("rw") ? rwStr : `RW ${rwStr}`;
                               })()}
                             </span>
@@ -2618,7 +2618,7 @@ const Dashboard: React.FC = () => {
                           <div className="flex flex-col gap-1">
                             <div className="flex justify-between items-center text-[10px] font-bold">
                               <span className={isHighCap ? "text-rose-600 dark:text-rose-400 font-black" : "text-emerald-600 dark:text-emerald-400 font-extrabold"}>
-                                {isHighCap ? `${cap}% Terisi (Penuh)` : `${cap}% Terisi (Aman)`}
+                                {isHighCap ? `${cap}% Terisi (Penuh) — ${currentVolumeLiter}/${maxCapacityLiter} L` : `${cap}% Terisi (Aman) — ${currentVolumeLiter}/${maxCapacityLiter} L`}
                               </span>
                             </div>
                             <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700">
@@ -2630,12 +2630,6 @@ const Dashboard: React.FC = () => {
                               />
                             </div>
                           </div>
-                        </td>
-
-                        <td className="py-3 px-3 text-center">
-                          <span className="font-extrabold text-amber-600 dark:text-amber-400 font-mono text-[13px] bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/30">
-                            {bin.category?.pointsPerKg || 10}
-                          </span>
                         </td>
 
                         <td className="py-3 px-3 text-right">
