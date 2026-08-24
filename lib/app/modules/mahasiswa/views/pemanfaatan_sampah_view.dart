@@ -191,7 +191,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                   data: (prokers) {
                     if (prokers.isEmpty) return const SizedBox.shrink();
                     return DropdownButtonFormField<String>(
-                      value: _selectedProgramKerjaId,
+                      initialValue: _selectedProgramKerjaId,
                       decoration: InputDecoration(
                         labelText: 'Program Kerja KKN Terkait',
                         labelStyle: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
