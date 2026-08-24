@@ -330,7 +330,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       Map<String, dynamic>? activeItem;
       for (final item in list) {
         final status = (item['statusKehadiran'] ?? item['attendanceStatus'] ?? '').toString().toUpperCase();
-        if (status == 'BERLANGSUNG') {
+        if (status == 'BERLANGSUNG' || status == 'TERJEDA') {
           activeItem = item;
           break;
         }
@@ -360,7 +360,13 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         );
 
         if (!state.isTracking) {
-          await startTracking(null, true);
+          final statusUpper = (activeItem['statusKehadiran'] ?? activeItem['attendanceStatus'] ?? '').toString().toUpperCase();
+          if (statusUpper == 'TERJEDA' && scheduleId != null) {
+            // Otomatis resume sesi TERJEDA kembali ke BERLANGSUNG
+            await mulaiKegiatan(scheduleId, isAuto: true);
+          } else {
+            await startTracking(null, true);
+          }
         }
       } else {
         state = state.copyWith(
@@ -573,6 +579,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       await repo.jedaKegiatan(
         scheduleId,
         totalDurasiDalamZonaMenit: totalMenit,
+        totalDurasiDalamZonaDetik: _accumulatedSeconds,
         alasan: alasan,
       );
       isSuccess = true;

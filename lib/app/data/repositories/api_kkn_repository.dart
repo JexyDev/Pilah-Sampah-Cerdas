@@ -671,12 +671,13 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> jedaKegiatan(String id, {required int totalDurasiDalamZonaMenit, required String alasan}) async {
+  Future<Map<String, dynamic>> jedaKegiatan(String id, {required int totalDurasiDalamZonaMenit, int? totalDurasiDalamZonaDetik, required String alasan}) async {
     try {
       final response = await apiClient.dio.post(
         ApiEndpoints.kknJedaKegiatan(id),
         data: {
           'totalDurasiDalamZonaMenit': totalDurasiDalamZonaMenit,
+          if (totalDurasiDalamZonaDetik != null) 'totalDurasiDalamZonaDetik': totalDurasiDalamZonaDetik,
           'alasan': alasan,
         },
       );

@@ -7,6 +7,7 @@ import '../../../data/repositories/notification_repository.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/notification_engine.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
+import '../../mahasiswa/controllers/kkn_location_controller.dart';
 import '../../mahasiswa/services/kkn_background_task_handler.dart';
 
 /// State autentikasi.
@@ -40,13 +41,14 @@ class AuthState {
 /// Notifier autentikasi.
 /// Login menggunakan phone + password sesuai backend contract.
 class AuthNotifier extends StateNotifier<AuthState> {
-  AuthNotifier(this._authRepository, this._notificationRepository)
+  AuthNotifier(this._authRepository, this._notificationRepository, this._ref)
       : super(const AuthState()) {
     _initFuture = _init();
   }
 
   final AuthRepository _authRepository;
   final NotificationRepository _notificationRepository;
+  final Ref _ref;
   late final Future<void> _initFuture;
 
   Future<void> get initialized => _initFuture;
@@ -249,6 +251,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Logout — unregister FCM token per-user, hapus token secure storage, reset state & bersihkan system tray.
   Future<void> logout() async {
+    // 0. Otomatis jeda kegiatan KKN jika sedang BERLANGSUNG saat logout
+    try {
+      final kknState = _ref.read(kknLocationProvider);
+      final kknNotifier = _ref.read(kknLocationProvider.notifier);
+      final activeAct = kknState.activeActivity;
+      final isBerlangsung = kknState.isTracking ||
+          (activeAct != null &&
+              (activeAct['statusKehadiran']?.toString().toUpperCase() == 'BERLANGSUNG' ||
+               activeAct['attendanceStatus']?.toString().toUpperCase() == 'BERLANGSUNG'));
+      if (isBerlangsung) {
+        await kknNotifier.jedaKegiatan('Pengguna Keluar / Logout Aplikasi');
+      }
+    } catch (_) {}
+
     try {
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null) {
@@ -473,5 +489,6 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier(
     ref.watch(authRepositoryProvider),
     ref.watch(notificationRepositoryProvider),
+    ref,
   );
 });
