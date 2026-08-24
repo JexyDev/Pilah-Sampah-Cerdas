@@ -486,6 +486,13 @@ router.post(
 );
 
 router.post(
+  ["/absen", "/kegiatan/:id/absen"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.absenAlias
+);
+
+router.post(
   "/out-of-zone-violation",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),

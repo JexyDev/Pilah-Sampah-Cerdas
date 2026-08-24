@@ -439,6 +439,35 @@ export const kknAttendanceController = {
     }
   },
 
+  absenAlias: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const studentUserId = (req as any).user?.userId || (req as any).user?.id;
+      const id = req.params.id || req.body.scheduleId;
+      const { sessionId, totalDurasiDalamZonaMenit, durationMinutes, accumulatedDuration, accumulatedSeconds, alasan } = req.body;
+
+      const mins = totalDurasiDalamZonaMenit ?? durationMinutes ?? Math.ceil(((accumulatedDuration || accumulatedSeconds || 0) / 60));
+
+      const result = await kknAttendanceService.selesaiKegiatan(studentUserId, id, {
+        sessionId: sessionId || `SES-${id}`,
+        totalDurasiDalamZonaMenit: mins,
+        alasan: alasan || "Presensi Selesai",
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Sesi kegiatan berhasil diakhiri.",
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] absenAlias error:", error);
+      res.status(500).json({
+        success: false,
+        error: "INTERNAL_SERVER_ERROR",
+        message: error.message || "Gagal mencatat presensi",
+      });
+    }
+  },
+
   jedaKegiatan: async (req: Request, res: Response): Promise<void> => {
     try {
       const studentUserId = (req as any).user?.userId || (req as any).user?.id;
