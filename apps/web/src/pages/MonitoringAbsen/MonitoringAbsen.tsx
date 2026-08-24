@@ -1637,11 +1637,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
     if (!startTime) {
       errors.startTime = "Jam mulai wajib diisi";
-    } else if (startDate === todayStr) {
-      const nowTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-      if (startTime < nowTimeStr) {
-        errors.startTime = "Waktu/jam mulai kegiatan tidak boleh kurang dari jam saat ini";
-      }
     }
 
     if (!endTime) {
@@ -3478,11 +3473,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         <input
                           type="time"
                           lang="id"
-                          min={
-                            startDate === `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`
-                              ? `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`
-                              : undefined
-                          }
                           value={startTime}
                           onChange={(e) => setStartTime(e.target.value)}
                           className="w-full h-10 px-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none"
