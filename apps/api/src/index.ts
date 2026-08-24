@@ -241,6 +241,7 @@ archiveAuditLogsCron.start();
       'ALTER TABLE "pemanfaatan_sampah" ADD COLUMN IF NOT EXISTS "id_program_kerja" TEXT;',
       'ALTER TABLE "pemanfaatan_sampah" ALTER COLUMN "id_rw" DROP NOT NULL;',
       'ALTER TABLE "kritik_saran_pemanfaatan" ADD COLUMN IF NOT EXISTS "id_program_kerja" TEXT;',
+      'UPDATE "fasilitas" SET "status_approval" = \'APPROVED\' WHERE "status_approval" = \'PENDING\';',
       `DO $$ BEGIN
         CREATE TYPE "StatusProker" AS ENUM ('BELUM_DISETUJUI', 'DITERIMA', 'DITOLAK', 'SEDANG_BERJALAN', 'SELESAI');
       EXCEPTION

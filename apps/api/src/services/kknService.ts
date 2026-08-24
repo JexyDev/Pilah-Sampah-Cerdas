@@ -997,7 +997,7 @@ export class KknService {
         rwId: targetRwId,
         kelompokId: student?.kelompokId || null,
         foto: data.foto || null,
-        statusApproval: "PENDING",
+        statusApproval: "APPROVED",
         registeredByUserId: kknUserId,
       },
     });
