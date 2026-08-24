@@ -523,6 +523,7 @@ router.post(
   "/program-kerja",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
+  upload.single("filePdf"),
   kknController.createProgramKerja
 );
 

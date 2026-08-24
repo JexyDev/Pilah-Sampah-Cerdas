@@ -491,7 +491,11 @@ export class KknController {
 
   async createProgramKerja(req: Request, res: Response) {
     try {
-      const data = await kknService.createProgramKerja(req.user!.userId, req.body);
+      const payload = { ...req.body };
+      if (req.file) {
+        payload.linkGoogleDrive = `/uploads/${req.file.filename}`;
+      }
+      const data = await kknService.createProgramKerja(req.user!.userId, payload);
       
       try {
         const { PrismaClient } = require("@prisma/client");
