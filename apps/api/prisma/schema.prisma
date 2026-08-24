@@ -423,6 +423,8 @@ model ProgramKerjaKkn {
   kelompok         KelompokKkn  @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
   reviewedBy       User?        @relation("DplReviewedProker", fields: [reviewedById], references: [id])
   logbooks         LogbookKkn[]
+  pemanfaatan      Pemanfaatan[]
+  kritikSaran      KritikSaranPemanfaatan[]
 
   @@map("program_kerja_kkn")
 }
