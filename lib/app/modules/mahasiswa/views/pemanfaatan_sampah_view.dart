@@ -7,6 +7,13 @@ import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../controllers/pemanfaatan_sampah_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
 
+import '../../../data/providers/repository_providers.dart';
+
+final pemanfaatanProgramKerjaListProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final repo = ref.read(kknRepositoryProvider);
+  return repo.getProgramKerja();
+});
+
 class PemanfaatanSampahView extends ConsumerStatefulWidget {
   const PemanfaatanSampahView({super.key});
 
@@ -16,6 +23,7 @@ class PemanfaatanSampahView extends ConsumerStatefulWidget {
 
 class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
   String _jenisLaporan = 'Laporan Ide Program';
+  String? _selectedProgramKerjaId;
 
   final _formKey1 = GlobalKey<FormState>();
   final _programPemanfaatanCtrl = TextEditingController();
@@ -90,6 +98,13 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
     final isPemanfaatan = _jenisLaporan == 'Pemanfaatan & Hasil';
     final formKey = isPemanfaatan ? _formKey1 : _formKey2;
     if (!formKey.currentState!.validate()) return;
+    
+    if (_selectedProgramKerjaId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Anda harus memilih Program Kerja KKN terlebih dahulu!'), backgroundColor: AppColors.maroonRed),
+      );
+      return;
+    }
 
     final notifier = ref.read(pemanfaatanSampahProvider.notifier);
     final authState = ref.read(authProvider);
@@ -107,6 +122,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
       satuan: isPemanfaatan ? _unitBahanBaku : 'Rp',
       wilayahDampingan: isPemanfaatan ? _programPemanfaatanCtrl.text.trim() : _judulProkerCtrl.text.trim(),
       deskripsi: isPemanfaatan ? _catatanCtrl.text.trim() : _waktuPelaksanaanCtrl.text.trim(),
+      programKerjaId: _selectedProgramKerjaId,
       fotoPath: isPemanfaatan ? _selectedImage1?.path : _selectedImage2?.path,
     );
 
@@ -123,6 +139,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(pemanfaatanSampahProvider);
+    final prokerState = ref.watch(pemanfaatanProgramKerjaListProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -139,29 +156,67 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
         children: [
           Container(
             color: Colors.white,
+            width: double.infinity,
             padding: const EdgeInsets.all(16.0),
-            child: DropdownButtonFormField<String>(
-              initialValue: _jenisLaporan,
-              decoration: InputDecoration(
-                labelText: 'Pilih Jenis Laporan',
-                labelStyle: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.primaryGreen),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: _jenisLaporan,
+                  decoration: InputDecoration(
+                    labelText: 'Pilih Jenis Laporan',
+                    labelStyle: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.primaryGreen),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'Laporan Ide Program', child: Text('Laporan Ide Program')),
+                    DropdownMenuItem(value: 'Pemanfaatan & Hasil', child: Text('Pemanfaatan & Hasil')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) setState(() => _jenisLaporan = val);
+                  },
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+                const SizedBox(height: 16),
+                
+                // Dropdown Pilih Program Kerja
+                prokerState.when(
+                  data: (prokers) {
+                    if (prokers.isEmpty) return const SizedBox.shrink();
+                    return DropdownButtonFormField<String>(
+                      value: _selectedProgramKerjaId,
+                      decoration: InputDecoration(
+                        labelText: 'Program Kerja KKN Terkait',
+                        labelStyle: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                      hint: const Text('Wajib - Pilih Program Kerja', style: TextStyle(fontSize: 14)),
+                      items: prokers.map((p) {
+                        return DropdownMenuItem<String>(
+                          value: p['id'].toString(),
+                          child: Text(
+                            p['deskripsi']?.toString() ?? 'Program',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (val) => setState(() => _selectedProgramKerjaId = val),
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (_, __) => const SizedBox.shrink(),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-              items: const [
-                DropdownMenuItem(value: 'Laporan Ide Program', child: Text('Laporan Ide Program')),
-                DropdownMenuItem(value: 'Pemanfaatan & Hasil', child: Text('Pemanfaatan & Hasil')),
               ],
-              onChanged: (val) {
-                if (val != null) setState(() => _jenisLaporan = val);
-              },
             ),
           ),
           Expanded(

@@ -416,6 +416,7 @@ class PemanfaatanSampahRequest {
     required this.satuan,
     required this.wilayahDampingan,
     required this.deskripsi,
+    this.programKerjaId,
     this.rwTerkait,
     this.dplId,
     this.fotoPath,
@@ -428,6 +429,7 @@ class PemanfaatanSampahRequest {
   final String satuan;
   final String wilayahDampingan;
   final String deskripsi;
+  final String? programKerjaId;
   final String? rwTerkait;
   final String? dplId;
   final String? fotoPath;
@@ -441,6 +443,7 @@ class PemanfaatanSampahRequest {
       'satuan': satuan,
       'wilayahDampingan': wilayahDampingan,
       'deskripsi': deskripsi,
+      if (programKerjaId != null) 'programKerjaId': programKerjaId,
       if (rwTerkait != null) 'rwTerkait': rwTerkait,
       if (dplId != null) 'dplId': dplId,
       if (fotoPath != null) 'fotoPath': fotoPath,
