@@ -162,7 +162,13 @@ class ApiKknRepository implements KknRepository {
         'longitude': longitude,
       };
       if (inZoneSeconds != null) {
-        body['inZoneSeconds'] = inZoneSeconds;
+        // [BUGFIX] Backend membaca key 'accumulatedDuration' (lihat main/apps/api/src/routes/
+        // kknAttendanceRoutes.ts baris ~258), bukan 'inZoneSeconds'. Akibat mismatch ini,
+        // durasi akurat dari mobile tidak pernah sampai ke server — server jatuh ke estimasi
+        // kasar dari histori log GPS yang sering menghasilkan 0/nyaris-0 di awal sesi
+        // (dianggap "keluar zona" padahal user tidak pernah keluar), dan actualInZoneMinutes
+        // di database (sumber tampilan web) tidak pernah ter-update dari mobile.
+        body['accumulatedDuration'] = inZoneSeconds;
       }
       final response = await apiClient.dio.post(
         ApiEndpoints.kknLocationPing,

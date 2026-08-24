@@ -388,8 +388,19 @@ class KknBackgroundTaskHandler extends TaskHandler {
     if (_apiBaseUrl != null && _authToken != null && _authToken!.isNotEmpty) {
       _lastPingLat = pos.latitude;
       _lastPingLng = pos.longitude;
+      // [BUGFIX] Sertakan durasi akumulasi terkini (termasuk sesi berjalan bila sedang
+      // di dalam zona) ke payload ping. Sebelumnya _pingBackend() TIDAK mengirim durasi
+      // sama sekali (lihat payload lama di bawah), padahal jalur background service inilah
+      // yang aktif dipakai setiap kali mahasiswa menekan "Mulai Kegiatan" — bukan
+      // api_kkn_repository.dart. Akibatnya server tidak pernah menerima durasi akurat dari
+      // sesi tracking manapun yang lewat background service, dan actualInZoneMinutes di
+      // database (sumber tampilan web) tidak ter-update — persis laporan QC "waktu jalan
+      // tapi ga ke-trigger tracking-nya / ga sync ke web".
+      final currentTotalSeconds = nowInside && _zoneEntryTime != null
+          ? _accumulatedSeconds + now.difference(_zoneEntryTime!).inSeconds
+          : _accumulatedSeconds;
       // Ping backend secara fire-and-forget (jangan blocking)
-      _pingBackend(pos.latitude, pos.longitude);
+      _pingBackend(pos.latitude, pos.longitude, accumulatedSeconds: currentTotalSeconds);
     }
   }
 
@@ -525,7 +536,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
   }
 
   /// Ping backend — HTTP POST to update location in database & trigger WebSocket broadcast
-  Future<void> _pingBackend(double lat, double lng) async {
+  Future<void> _pingBackend(double lat, double lng, {int? accumulatedSeconds}) async {
     if (_apiBaseUrl == null || _authToken == null || _apiBaseUrl!.isEmpty || _authToken!.isEmpty) return;
 
     try {
@@ -547,6 +558,9 @@ class KknBackgroundTaskHandler extends TaskHandler {
         'longitude': lng,
         'scheduleId': _scheduleId,
         'timestamp': DateTime.now().toIso8601String(),
+        // [BUGFIX] Key harus sama persis dengan yang dibaca backend
+        // (main/apps/api/src/routes/kknAttendanceRoutes.ts: req.body.accumulatedDuration).
+        if (accumulatedSeconds != null) 'accumulatedDuration': accumulatedSeconds,
       });
       
       request.write(payload);

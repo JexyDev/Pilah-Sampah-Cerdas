@@ -500,6 +500,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
               kegiatan: kegiatan,
               onMulai: (id) async {
                 final isTrackingThis = state.activeActivity != null &&
+                    state.isTracking &&
                     (state.activeActivity!['id']?.toString() == id || state.activeActivity!['scheduleId']?.toString() == id);
                 
                 if (isTrackingThis) {

@@ -238,22 +238,23 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
         await _loadPersistentTimer();
 
-        // Menggunakan durasi dari backend sesuai permintaan terbaru
+        // [BUGFIX] Server (sama seperti yang tampil di web) adalah sumber kebenaran durasi.
+        // Sebelumnya nilai server DIABAIKAN jika selisihnya <= 60 detik (guard yang justru
+        // mempertahankan nilai lokal yang sudah menyimpang/menggembung dari disk), sehingga
+        // mobile bisa menampilkan durasi lebih besar dari yang sebenarnya tercatat di web
+        // (mis. mobile +37dtk vs web 7dtk hanya karena selisih 30dtk dianggap "wajar").
+        // Sekarang: SELALU sinkron ke nilai server saat data tersedia.
         if (activeZone['actualInZoneSeconds'] != null) {
           final serverSecs = int.tryParse(activeZone['actualInZoneSeconds'].toString()) ?? 0;
-          if (_accumulatedSeconds == 0 || (_accumulatedSeconds - serverSecs).abs() > 60) {
-            _accumulatedSeconds = serverSecs;
-            _zoneEntryTime = DateTime.now();
-            await _savePersistentTimer();
-          }
+          _accumulatedSeconds = serverSecs;
+          _zoneEntryTime = DateTime.now();
+          await _savePersistentTimer();
         } else if (activeZone['actualInZoneMinutes'] != null) {
           final actualMins = num.tryParse(activeZone['actualInZoneMinutes'].toString()) ?? 0;
           final serverSecs = (actualMins * 60).toInt();
-          if (_accumulatedSeconds == 0 || (_accumulatedSeconds - serverSecs).abs() > 60) {
-            _accumulatedSeconds = serverSecs;
-            _zoneEntryTime = DateTime.now();
-            await _savePersistentTimer();
-          }
+          _accumulatedSeconds = serverSecs;
+          _zoneEntryTime = DateTime.now();
+          await _savePersistentTimer();
         }
 
         final double? targetLat = (activeZone['latitude'] as num?)?.toDouble();
@@ -467,27 +468,30 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
   /// Selesai kegiatan: panggil endpoint, lalu stop GPS background
   Future<bool> selesaiKegiatan({String alasan = 'SELESAI'}) async {
-    final scheduleId = _currentTargetScheduleId;
-    final sessionId = state.sessionId;
+    final scheduleId = _currentTargetScheduleId ??
+        state.activeActivity?['scheduleId']?.toString() ??
+        state.activeActivity?['id']?.toString();
+    final sessionId = state.sessionId ??
+        state.activeActivity?['sessionId']?.toString() ??
+        'SES-${scheduleId ?? 'TODAY'}';
+
     if (scheduleId == null) return false;
 
     bool isSuccess = false;
 
     try {
-      if (sessionId != null) {
-        final repo = ref.read(kknRepositoryProvider);
-        final totalMenit = (_accumulatedSeconds / 60).ceil();
-        await repo.selesaiKegiatan(
-          scheduleId,
-          sessionId: sessionId,
-          totalDurasiDalamZonaMenit: totalMenit,
-          alasan: alasan,
-        );
-        isSuccess = true;
-        // Segarkan data dashboard (Poin) & Notifikasi
-        ref.read(mahasiswaControllerProvider.notifier).fetchDashboardData();
-        ref.invalidate(mahasiswaNotificationsProvider);
-      }
+      final repo = ref.read(kknRepositoryProvider);
+      final totalMenit = (_accumulatedSeconds / 60).ceil();
+      await repo.selesaiKegiatan(
+        scheduleId,
+        sessionId: sessionId,
+        totalDurasiDalamZonaMenit: totalMenit,
+        alasan: alasan,
+      );
+      isSuccess = true;
+      // Segarkan data dashboard (Poin) & Notifikasi
+      ref.read(mahasiswaControllerProvider.notifier).fetchDashboardData();
+      ref.invalidate(mahasiswaNotificationsProvider);
     } catch (e) {
       debugPrint('[KKN] selesaiKegiatan error: $e');
       isSuccess = false;
@@ -698,16 +702,21 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           if (activeZone['latitude'] != null &&
               activeZone['longitude'] != null) {
               
-            // [BUGFIX] Sinkronisasi prioritas durasi dari server (backend)
+            // [BUGFIX] Server selalu jadi otoritas durasi (sama seperti checkActiveSchedule()/
+            // fetchTargetLocation()). Sebelumnya hanya sync kalau server > lokal, sehingga kalau
+            // nilai lokal dari disk sudah menggembung (mis. sisa sesi lama), nilai salah itu tetap
+            // dipakai selamanya karena tidak pernah "dikoreksi turun" ke nilai server yang benar.
             int serverSeconds = _accumulatedSeconds;
+            bool hasServerDuration = false;
             if (activeZone['actualInZoneSeconds'] != null) {
               serverSeconds = int.tryParse(activeZone['actualInZoneSeconds'].toString()) ?? _accumulatedSeconds;
+              hasServerDuration = true;
             } else if (activeZone['actualInZoneMinutes'] != null) {
               serverSeconds = (num.tryParse(activeZone['actualInZoneMinutes'].toString()) ?? 0).toInt() * 60;
+              hasServerDuration = true;
             }
 
-            // Jika server punya durasi yang lebih besar (atau kita belum punya data lokal), gunakan server
-            if (serverSeconds > _accumulatedSeconds) {
+            if (hasServerDuration) {
               _accumulatedSeconds = serverSeconds;
               // Reset zona entry time agar akumulasi baru mulai dihitung dari durasi server ini
               _zoneEntryTime = DateTime.now(); 
@@ -863,13 +872,14 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         final lat = (data['lat'] as num?)?.toDouble();
         final lng = (data['lng'] as num?)?.toDouble();
         
-        // [BUGFIX] Update accumulated seconds dari background HANYA jika selisihnya masuk akal (<= 60 detik).
-        // Jangan biarkan background ngaco (misal: gagal mati dan tetap menghitung saat jeda) memaksa UI menggunakan nilai yang salah!
-        if (totalSeconds > _accumulatedSeconds || _accumulatedSeconds == 0) {
-          if ((totalSeconds - _accumulatedSeconds).abs() <= 60 || _accumulatedSeconds == 0) {
-            _accumulatedSeconds = totalSeconds;
-            _zoneEntryTime = DateTime.now();
-          }
+        // [BUGFIX] Background isolate memverifikasi ulang GPS+geofence tiap 30 detik, jadi
+        // kenaikannya legit meski jaraknya jauh (mis. layar terkunci lama membuat UI-isolate
+        // di-throttle Android sehingga baru menerima update setelah lompatan >60dtk).
+        // Guard lama menolak lompatan >60dtk dan membuat durasi UI beku permanen sampai
+        // tracking di-restart. Sekarang: terima setiap kenaikan (tidak pernah mundur).
+        if (totalSeconds > _accumulatedSeconds) {
+          _accumulatedSeconds = totalSeconds;
+          _zoneEntryTime = DateTime.now();
         }
         
         state = state.copyWith(
@@ -1057,22 +1067,20 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           .toLowerCase();
       final bool isAttended = mergedData['isAttended'] == true || status == 'hadir';
 
-      // Menggunakan durasi dari backend (sinkronisasi)
+      // [BUGFIX] Sama seperti checkActiveSchedule(): SELALU sinkron ke server, jangan
+      // pernah menolak nilai server hanya karena selisihnya "kelihatan wajar" (<=60dtk).
+      // Guard lama itu justru mempertahankan nilai lokal yang salah/menggembung.
       if (mergedData['actualInZoneSeconds'] != null) {
         final serverSecs = int.tryParse(mergedData['actualInZoneSeconds'].toString()) ?? 0;
-        if (_accumulatedSeconds == 0 || (_accumulatedSeconds - serverSecs).abs() > 60) {
-          _accumulatedSeconds = serverSecs;
-          _zoneEntryTime = DateTime.now();
-          await _savePersistentTimer();
-        }
+        _accumulatedSeconds = serverSecs;
+        _zoneEntryTime = DateTime.now();
+        await _savePersistentTimer();
       } else if (mergedData['actualInZoneMinutes'] != null) {
         final actualMins = num.tryParse(mergedData['actualInZoneMinutes'].toString()) ?? 0;
         final serverSecs = (actualMins * 60).toInt();
-        if (_accumulatedSeconds == 0 || (_accumulatedSeconds - serverSecs).abs() > 60) {
-          _accumulatedSeconds = serverSecs;
-          _zoneEntryTime = DateTime.now();
-          await _savePersistentTimer();
-        }
+        _accumulatedSeconds = serverSecs;
+        _zoneEntryTime = DateTime.now();
+        await _savePersistentTimer();
       }
 
       if (isAttended || status == 'hadir') {
