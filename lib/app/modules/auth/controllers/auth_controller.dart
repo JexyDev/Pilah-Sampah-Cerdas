@@ -9,6 +9,7 @@ import '../../../data/services/notification_engine.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../../mahasiswa/controllers/kkn_location_controller.dart';
 import '../../mahasiswa/services/kkn_background_task_handler.dart';
+import '../../mahasiswa/controllers/kkn_location_controller.dart';
 
 /// State autentikasi.
 class AuthState {
@@ -284,7 +285,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
     } catch (_) {}
 
-    // 2. Hentikan total background foreground GPS service KKN & cancel notifikasi
+    // 2. Jeda kegiatan KKN aktif ke backend sebelum stop service
+    // agar backend tidak auto-mark HADIR dari durasi yang sudah terakumulasi
+    try {
+      final kknNotifier = _ref.read(kknLocationProvider.notifier);
+      final kknState = _ref.read(kknLocationProvider);
+      if (kknState.isTracking && kknState.activeActivity != null && !kknState.isSuccessAttendance) {
+        await kknNotifier.jedaKegiatan('LOGOUT');
+      }
+    } catch (_) {}
+
+    // 3. Hentikan total background foreground GPS service KKN & cancel notifikasi
     try {
       await stopKknForegroundService();
     } catch (_) {}

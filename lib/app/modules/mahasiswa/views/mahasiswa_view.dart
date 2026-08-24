@@ -35,9 +35,12 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ref.read(mahasiswaControllerProvider.notifier).fetchAll();
-      ref.read(locationPingControllerProvider.notifier).startTracking();
-      final kknNotifier = ref.read(kknLocationProvider.notifier);
-      kknNotifier.startTracking(context);
+      // Hanya start tracking kalau belum aktif, agar tidak reset state saat kembali dari halaman lain
+      final kknState = ref.read(kknLocationProvider);
+      if (!kknState.isTracking) {
+        ref.read(locationPingControllerProvider.notifier).startTracking();
+        ref.read(kknLocationProvider.notifier).startTracking(context);
+      }
     });
   }
 

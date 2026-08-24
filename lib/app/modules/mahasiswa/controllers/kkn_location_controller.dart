@@ -340,6 +340,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         final serverSecs = int.tryParse(activeItem['actualInZoneSeconds']?.toString() ?? '') ??
             ((num.tryParse(activeItem['actualInZoneMinutes']?.toString() ?? '') ?? 0) * 60).toInt();
 
+        // Ambil nilai terbesar antara server dan lokal agar durasi tidak mundur
         if (serverSecs > _accumulatedSeconds) {
           _accumulatedSeconds = serverSecs;
         }
@@ -416,14 +417,37 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       final scheduleId = response['scheduleId']?.toString() ?? kegiatanId;
       _currentTargetScheduleId = scheduleId;
 
-      // Bersihkan timer lama dan set ke 0 detik agar dimulai dari 0 menit
-      // sesuai dengan permintaan eksplisit
-      _accumulatedSeconds = 0;
-      _zoneEntryTime = null;
+      // Sync durasi dari server — jika backend sudah punya sesi aktif (misal dari HP lain),
+      // gunakan nilai server sebagai titik awal agar durasi tidak mulai dari 0.
+      // Jika server tidak mengembalikan durasi, pertahankan nilai lokal yang sudah berjalan
+      // agar durasi tidak ke-reset saat user back → mulai kegiatan lagi.
+      if (response['actualInZoneSeconds'] != null) {
+        final serverSecs = int.tryParse(response['actualInZoneSeconds'].toString()) ?? 0;
+        // Ambil nilai terbesar antara server dan lokal
+        if (serverSecs > _accumulatedSeconds) {
+          _accumulatedSeconds = serverSecs;
+        }
+      } else if (response['actualInZoneMinutes'] != null) {
+        final serverSecs = ((num.tryParse(response['actualInZoneMinutes'].toString()) ?? 0) * 60).toInt();
+        if (serverSecs > _accumulatedSeconds) {
+          _accumulatedSeconds = serverSecs;
+        }
+      }
+      // Jika server tidak return durasi sama sekali, _accumulatedSeconds tetap dari nilai lokal sebelumnya
+      _zoneEntryTime = DateTime.now();
       try {
         final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('kkn_accumulated_seconds');
-        await prefs.remove('kkn_zone_entry_time');
+        if (_accumulatedSeconds > 0) {
+          final todayStr = DateTime.now().toIso8601String().substring(0, 10);
+          await prefs.setString('kkn_accumulated_date', todayStr);
+          await prefs.setInt('kkn_accumulated_seconds', _accumulatedSeconds);
+          if (_zoneEntryTime != null) {
+            await prefs.setString('kkn_zone_entry_time', _zoneEntryTime!.toIso8601String());
+          }
+        } else {
+          await prefs.remove('kkn_accumulated_seconds');
+          await prefs.remove('kkn_zone_entry_time');
+        }
       } catch (_) {}
 
       // Parse lokasi dari response
@@ -442,25 +466,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         'namaKegiatan': response['namaKegiatan'] ?? 'Kegiatan KKN',
       };
 
-      final durasiWajib = int.tryParse(response['durasiWajibMenit']?.toString() ?? '120') ?? 120;
-      
-      // Gunakan durasi dari backend saat mulai kegiatan
-      if (response['actualInZoneSeconds'] != null) {
-        final serverSecs = int.tryParse(response['actualInZoneSeconds'].toString()) ?? 0;
-        if (serverSecs > 0) {
-          _accumulatedSeconds = serverSecs;
-          _zoneEntryTime = DateTime.now();
-          await _savePersistentTimer();
-        }
-      } else if (response['actualInZoneMinutes'] != null) {
-        final actualMins = num.tryParse(response['actualInZoneMinutes'].toString()) ?? 0;
-        final serverSecs = (actualMins * 60).toInt();
-        if (_accumulatedSeconds == 0 && serverSecs > 0) {
-          _accumulatedSeconds = serverSecs;
-          _zoneEntryTime = DateTime.now();
-          await _savePersistentTimer();
-        }
-      }
+      final durasiWajib = (int.tryParse(response['durasiWajibMenit']?.toString() ?? '') ?? 120).clamp(1, 480);
 
       final updatedKegiatanList = state.kegiatanList.map((k) {
         if (k['id']?.toString() == scheduleId || k['scheduleId']?.toString() == scheduleId) {
@@ -485,7 +491,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         isLoadingKegiatan: false,
         isTracking: false, // Reset agar startTracking() tidak skip
         clearError: true,
-        attendanceTime: response['attendedAt']?.toString() ?? DateTime.now().toLocal().toString().split('.')[0],
+        attendanceTime: response['attendedAt']?.toString(),
       );
 
       // [FIX A2] Start GPS tracking dengan flag forceBackgroundStart
@@ -528,6 +534,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         scheduleId,
         sessionId: sessionId,
         totalDurasiDalamZonaMenit: totalMenit,
+        accumulatedSeconds: _accumulatedSeconds,
         alasan: alasan,
       );
       isSuccess = true;
@@ -579,7 +586,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       await repo.jedaKegiatan(
         scheduleId,
         totalDurasiDalamZonaMenit: totalMenit,
-        totalDurasiDalamZonaDetik: _accumulatedSeconds,
+        accumulatedSeconds: _accumulatedSeconds,
         alasan: alasan,
       );
       isSuccess = true;
@@ -1097,12 +1104,11 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       mergedData['geofenceBufferMeters'] ??= 15.0;
       mergedData['invalidationHours'] ??= 2.0;
 
-      int duration = 2;
+      int duration = 120;
       if (mergedData['targetDurationMinutes'] != null) {
-        duration =
-            int.tryParse(mergedData['targetDurationMinutes'].toString()) ?? 2;
+        duration = (int.tryParse(mergedData['targetDurationMinutes'].toString()) ?? 120).clamp(1, 480);
       } else if (mergedData['durationMinutes'] != null) {
-        duration = int.tryParse(mergedData['durationMinutes'].toString()) ?? 2;
+        duration = (int.tryParse(mergedData['durationMinutes'].toString()) ?? 120).clamp(1, 480);
       }
 
       final status = (mergedData['attendanceStatus'] ?? mergedData['status'] ?? mergedData['kehadiran'] ?? '')
@@ -1587,11 +1593,13 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     );
 
     // [FIX A1] Gate timer: cek STATUS BERLANGSUNG, bukan attendanceTime
-    // Sebelumnya attendanceTime selalu null karena stopTracking() clear state
+    // Fallback ke isTracking karena setelah mulaiKegiatan() berhasil, isTracking = true
+    // dan attendanceTime bisa null kalau backend tidak return attendedAt
     final isSesiBerlangsung = 
         (state.activeActivity?['attendanceStatus']?.toString().toLowerCase() == 'berlangsung')
         || (state.activeActivity?['statusKehadiran']?.toString().toLowerCase() == 'berlangsung')
-        || (state.attendanceTime != null); // Fallback ke cek lama
+        || (state.attendanceTime != null)
+        || state.isTracking; // Fallback: kalau tracking aktif, berarti sesi sudah dimulai
 
     if (nowInside && isSesiBerlangsung && !state.isSuccessAttendance) {
       _startZoneTimer();
@@ -1604,8 +1612,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         isExitingZone: _accumulatedSeconds > 0 || _zoneEntryTime != null,
       );
       
-      // Jika statusnya belum masuk (bukan berlangsung), reset accumulatedSeconds agar waktu di UI = 0
-      if (!isSesiBerlangsung && _accumulatedSeconds > 0) {
+      // Jika statusnya belum masuk (bukan berlangsung) DAN tidak sedang tracking,
+      // reset accumulatedSeconds agar waktu di UI = 0
+      if (!isSesiBerlangsung && !state.isTracking && _accumulatedSeconds > 0) {
         _accumulatedSeconds = 0;
         _zoneEntryTime = null;
       }
@@ -1675,8 +1684,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         '';
     final namaMahasiswa = user?.name ?? '-';
 
-    // Gunakan durasi aktual yang tercatat jika ada, minimal 0
-    final int durationMinutes = (_accumulatedSeconds / 60).floor();
+    final int accumulatedSeconds = _accumulatedSeconds;
+    final int durationMinutes = (accumulatedSeconds / 60).floor();
 
     try {
       const LocationSettings locationSettings = LocationSettings(
@@ -1698,7 +1707,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         rw: rw,
         kecamatan: user?.kecamatan,
         kelurahan: kelurahan,
-        durationMinutes: durationMinutes > 0 ? durationMinutes : 0,
+        durationMinutes: durationMinutes,
+        accumulatedSeconds: accumulatedSeconds,
         timestamp: DateTime.now().toUtc().toIso8601String(),
       );
 
