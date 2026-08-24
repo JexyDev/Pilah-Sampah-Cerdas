@@ -191,7 +191,7 @@ export const ManageConfigs: React.FC = () => {
               {/* Point Multipliers */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-600 dark:text-slate-400 uppercase">Organik (Poin/Kg)</label>
+                  <label className="text-[11px] font-bold text-gray-600 dark:text-slate-400 uppercase">Organik (Poin per Kg)</label>
                   <input
                     type="text"
                     value={organicMultiplier}
@@ -200,7 +200,7 @@ export const ManageConfigs: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-600 dark:text-slate-400 uppercase">Anorganik (Poin/Kg)</label>
+                  <label className="text-[11px] font-bold text-gray-600 dark:text-slate-400 uppercase">Anorganik (Poin per Kg)</label>
                   <input
                     type="text"
                     value={nonorganicMultiplier}

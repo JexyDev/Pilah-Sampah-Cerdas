@@ -198,7 +198,7 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
               RATA-RATA POIN INSENTIF
             </p>
             <h3 className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">
-              {categories.length > 0 ? Math.round(categories.reduce((s, c) => s + Number(c.pointsPerKg || 0), 0) / categories.length) : 0} <span className="text-xs font-bold text-amber-700 dark:text-amber-300">Poin/Kg</span>
+              {categories.length > 0 ? Math.round(categories.reduce((s, c) => s + Number(c.pointsPerKg || 0), 0) / categories.length) : 0} <span className="text-xs font-bold text-amber-700 dark:text-amber-300">Poin per Kg</span>
             </h3>
           </div>
           <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-100 dark:border-amber-700/50 shadow-2xs">
@@ -273,7 +273,7 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
                   {/* Points Pill */}
                   <span className="absolute top-3 right-3 bg-amber-500 text-white font-black text-xs px-3 py-1 rounded-full shadow-md flex items-center gap-1">
                     <Coins size={13} />
-                    {cat.pointsPerKg} Poin/Kg
+                    {cat.pointsPerKg} Poin per Kg
                   </span>
                 </div>
 
@@ -526,9 +526,9 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
                   <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Nama Kategori:</span>
                   <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">{detailModalCat.name}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Nilai Insentif Poin:</span>
-                  <span className="font-extrabold text-amber-600 dark:text-amber-400 text-xs">{detailModalCat.pointsPerKg} Poin/Kg</span>
+                <div className="flex flex-col gap-1 items-end">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Poin Nilai</span>
+                  <span className="font-extrabold text-amber-600 dark:text-amber-400 text-xs">{detailModalCat.pointsPerKg} Poin per Kg</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Total Bins di Kodefikasi:</span>

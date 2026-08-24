@@ -2544,7 +2544,7 @@ const Dashboard: React.FC = () => {
                   <th className="py-2.5 px-3 rounded-l-lg">ID &amp; Jenis</th>
                   <th className="py-2.5 px-3">Lokasi</th>
                   <th className="py-2.5 px-3">Kapasitas Tempat Sampah</th>
-                  <th className="py-2.5 px-3 text-center">Poin/Kg</th>
+                  <th className="py-2.5 px-3 text-center">Nilai Tukar (Poin per Kg)</th>
                   <th className="py-2.5 px-3 text-right rounded-r-lg">Aksi</th>
                 </tr>
               </thead>
