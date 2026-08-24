@@ -346,27 +346,44 @@ export class KknAttendanceService {
           const logMins = logWib.getUTCHours() * 60 + logWib.getUTCMinutes();
           return logMins >= startMinutesTotal;
         });
-        let durationInZone = 0;
-        if (accumulatedDurationSeconds !== undefined && !isNaN(Number(accumulatedDurationSeconds))) {
-          // Sinkronisasi 2 arah: Gunakan durasi aktual dari mobile (yang dikirim dalam detik)
-          durationInZone = Math.floor(Number(accumulatedDurationSeconds) / 60);
-        } else {
-          // Fallback ke kalkulasi manual jika mobile lama/tidak mengirim durasi
-          const durationCalculated = calculateInZoneDurationMinutes(scheduleLogs, geofence, bufferMeters, (existingAtt?.jedaLogs as any[]) || []);
-          durationInZone = durationCalculated;
+        const durationCalculated = calculateInZoneDurationMinutes(scheduleLogs, geofence, bufferMeters, (existingAtt?.jedaLogs as any[]) || []);
+
+        let durationFromAttendedAt = 0;
+        if (existingAtt && existingAtt.attendedAt && isInsideZone) {
+          const attendedAtMs = new Date(existingAtt.attendedAt).getTime();
+          const nowMs = Date.now();
+          if (nowMs > attendedAtMs) {
+            durationFromAttendedAt = Math.floor((nowMs - attendedAtMs) / 60000);
+          }
         }
+
+        let durationFromMobile = 0;
+        if (accumulatedDurationSeconds !== undefined && !isNaN(Number(accumulatedDurationSeconds))) {
+          durationFromMobile = Math.floor(Number(accumulatedDurationSeconds) / 60);
+        }
+
+        let durationInZone = Math.max(
+          durationCalculated,
+          durationFromAttendedAt,
+          durationFromMobile,
+          existingAtt?.actualInZoneMinutes ?? 0
+        );
 
         inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
 
-        // Cek posisi saat ini menggunakan buffer dinamis
+        // Cek posisi saat ini menggunakan buffer dinamis (Smart Coordinate Detector)
+        const dist = calculateDistance(latitude, longitude, geofence.latitude, geofence.longitude);
         if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
-          const polyPoints = (geofence.polygon as any[]).map((p) => ({
-            lat: Number(p[0]),
-            lng: Number(p[1]),
-          }));
-          isInsideZone = isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, bufferMeters);
+          const polyPoints = (geofence.polygon as any[]).map((p) => {
+            const val0 = Number(p[0]);
+            const val1 = Number(p[1]);
+            const pLat = Math.abs(val0) > 45 ? val1 : val0;
+            const pLng = Math.abs(val0) > 45 ? val0 : val1;
+            return { lat: pLat, lng: pLng };
+          });
+          const inPoly = isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, bufferMeters);
+          isInsideZone = inPoly || (dist <= (geofence.radius + bufferMeters));
         } else {
-          const dist = calculateDistance(latitude, longitude, geofence.latitude, geofence.longitude);
           isInsideZone = dist <= (geofence.radius + bufferMeters);
         }
 
@@ -1802,19 +1819,27 @@ export class KknAttendanceService {
 
       const sessionDetails = s.user.attendances.map((att) => {
         let durationMins = 0;
+        let storedMins = 0;
         if ((att as any).actualInZoneMinutes !== null && (att as any).actualInZoneMinutes !== undefined) {
-          // Prefer stored in-zone duration over simple time diff
-          durationMins = Math.min(480, Math.max(0, (att as any).actualInZoneMinutes));
-        } else if (att.checkOutAt) {
+          storedMins = Math.min(480, Math.max(0, (att as any).actualInZoneMinutes));
+        }
+
+        let timeDiffMins = 0;
+        if (att.checkOutAt) {
           const diffMs = att.checkOutAt.getTime() - att.attendedAt.getTime();
-          // Cap max 8 hours (480 mins) per session
-          durationMins = Math.min(480, Math.max(0, Math.floor(diffMs / (1000 * 60))));
+          timeDiffMins = Math.min(480, Math.max(0, Math.floor(diffMs / (1000 * 60))));
         } else if (att.attendedAt) {
           const isToday = new Date(att.attendedAt).toDateString() === new Date().toDateString();
           if (isToday) {
             const diffMs = Date.now() - new Date(att.attendedAt).getTime();
-            durationMins = Math.min(480, Math.max(0, Math.floor(diffMs / (1000 * 60))));
+            timeDiffMins = Math.min(480, Math.max(0, Math.floor(diffMs / (1000 * 60))));
           }
+        }
+
+        if (att.status === "BERLANGSUNG" || att.status === "DI_ZONA" || att.status === "DALAM_RADIUS") {
+          durationMins = Math.max(storedMins, timeDiffMins);
+        } else {
+          durationMins = storedMins > 0 ? storedMins : timeDiffMins;
         }
         totalMinutes += durationMins;
         if (durationMins > 0) validSessionsCount++;
@@ -2074,9 +2099,14 @@ export class KknAttendanceService {
       let actualInZoneMinutes = 0;
       const att = sch.attendances?.[0];
       if (att && (att.status === "BERLANGSUNG" || att.status === "DALAM_RADIUS" || att.status === "DI_ZONA")) {
-        // Gunakan nilai tersimpan di DB (yang hanya di-update saat GPS ping memvalidasi posisi di dalam zona)
-        // Tidak menggunakan Date.now() - attendedAt karena itu menghitung elapsed time tanpa validasi geofence
-        actualInZoneMinutes = att.actualInZoneMinutes ?? 0;
+        let liveMins = att.actualInZoneMinutes ?? 0;
+        if (att.attendedAt) {
+          const elapsedMins = Math.floor((Date.now() - new Date(att.attendedAt).getTime()) / 60000);
+          if (elapsedMins > liveMins) {
+            liveMins = elapsedMins;
+          }
+        }
+        actualInZoneMinutes = liveMins;
         actualInZoneSeconds = actualInZoneMinutes * 60;
       } else if (att && (att.status === "HADIR" || att.status === "SELESAI" || att.status === "SELESAI_TELAT")) {
         // Kegiatan sudah selesai — gunakan nilai tersimpan di DB
