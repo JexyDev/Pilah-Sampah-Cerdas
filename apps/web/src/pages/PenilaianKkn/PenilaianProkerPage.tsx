@@ -9,7 +9,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   Search,
   Folder,
-  ListFilter,
   BarChart3,
   Users,
   Award,
@@ -20,14 +19,14 @@ import {
   CheckCircle2,
   X,
   FileText,
-  Image as ImageIcon,
   AlertCircle,
   RefreshCw,
   Edit3,
   Eye,
   PlusCircle,
-  Clock,
   XCircle,
+  Clock,
+  Image as ImageIcon,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -54,11 +53,9 @@ export const PenilaianProkerPage: React.FC = () => {
   const [prokerList, setProkerList] = useState<ProgramKerjaItem[]>([]);
   const [selectedProkerId, setSelectedProkerId] = useState<string | null>(null);
 
-  // Filter States (5 Sumbu Filter)
+  // Filter States (Fokus pada Search, Kategori, dan Status Penilaian)
   const [searchQuery, setSearchQuery] = useState("");
   const [kategoriFilter, setKategoriFilter] = useState("ALL");
-  const [statusUsulanFilter, setStatusUsulanFilter] = useState("ALL");
-  const [statusPelaksanaanFilter, setStatusPelaksanaanFilter] = useState("ALL");
   const [statusPenilaianFilter, setStatusPenilaianFilter] = useState("ALL");
 
   // Paginasi
@@ -79,7 +76,6 @@ export const PenilaianProkerPage: React.FC = () => {
     7: "",
   });
   const [catatanDpl, setCatatanDpl] = useState("");
-  const [modalStatusPelaksanaan, setModalStatusPelaksanaan] = useState<string>("SEDANG_BERJALAN");
   const [isSaving, setIsSaving] = useState(false);
 
   // Modal Bukti Kegiatan
@@ -97,14 +93,14 @@ export const PenilaianProkerPage: React.FC = () => {
     }>;
   } | null>(null);
 
-  // Fetch Data Program Kerja dari Backend
+  // Fetch Data Program Kerja dari Backend: Hanya Program Kerja yang Disetujui & Selesai
   const fetchData = async () => {
     setLoading(true);
     try {
       const data = await dplService.getProgramKerja(undefined, {
         kategori: kategoriFilter !== "ALL" ? kategoriFilter : undefined,
-        statusUsulan: statusUsulanFilter !== "ALL" ? statusUsulanFilter : undefined,
-        statusPelaksanaan: statusPelaksanaanFilter !== "ALL" ? statusPelaksanaanFilter : undefined,
+        statusUsulan: "DISETUJUI",
+        statusPelaksanaan: "SELESAI",
         statusPenilaian: statusPenilaianFilter !== "ALL" ? statusPenilaianFilter : undefined,
         search: searchQuery.trim() ? searchQuery : undefined,
       });
@@ -119,20 +115,41 @@ export const PenilaianProkerPage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [kategoriFilter, statusUsulanFilter, statusPelaksanaanFilter, statusPenilaianFilter]);
+  }, [kategoriFilter, statusPenilaianFilter]);
 
-  // Client-side filtering fallback for immediate search responsiveness
+  // Client-side filtering fallback for immediate search responsiveness (Strict: Disetujui & Selesai)
   const filteredProkers = useMemo(() => {
     return prokerList.filter((p) => {
-      // Search
+      // 1. Validasi Status Usulan: Wajib Disetujui
+      const legacySt = String(p.status || "").toUpperCase();
+      let u = p.statusUsulan;
+      if (!u) {
+        if (legacySt === "DITERIMA" || legacySt === "DISETUJUI" || legacySt === "SEDANG_BERJALAN" || legacySt === "SELESAI") u = "DISETUJUI";
+        else if (legacySt === "DITOLAK" || legacySt === "TIDAK_DISETUJUI") u = "DITOLAK";
+        else u = "BELUM_DISETUJUI";
+      }
+      if (u !== "DISETUJUI" && u !== "DITERIMA") return false;
+
+      // 2. Validasi Status Pelaksanaan: Wajib Selesai
+      let pl = p.statusPelaksanaan;
+      if (!pl) {
+        if (legacySt === "SELESAI") pl = "SELESAI";
+        else if (legacySt === "SEDANG_BERJALAN" || legacySt === "SEDANG_DILAKSANAKAN" || legacySt === "BERJALAN") pl = "SEDANG_BERJALAN";
+        else pl = "BELUM_MULAI";
+      }
+      if (pl !== "SELESAI") return false;
+
+      // 3. Search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchesDeskripsi = p.deskripsi?.toLowerCase().includes(q);
         const matchesKelompok = p.kelompokName?.toLowerCase().includes(q);
         const matchesKategori = p.kategori?.toLowerCase().includes(q);
-        if (!matchesDeskripsi && !matchesKelompok && !matchesKategori) return false;
+        const matchesJudul = p.judul?.toLowerCase().includes(q);
+        if (!matchesDeskripsi && !matchesKelompok && !matchesKategori && !matchesJudul) return false;
       }
-      // Kategori
+
+      // 4. Kategori
       if (kategoriFilter !== "ALL") {
         const pKat = (p.kategori || "Lainnya").toLowerCase();
         const filterKat = kategoriFilter.toLowerCase();
@@ -150,44 +167,8 @@ export const PenilaianProkerPage: React.FC = () => {
           if (pKat !== filterKat) return false;
         }
       }
-      // Status Usulan
-      if (statusUsulanFilter !== "ALL") {
-        const legacySt = String(p.status || "").toUpperCase();
-        let u = p.statusUsulan;
-        if (!u) {
-          if (legacySt === "DITERIMA" || legacySt === "DISETUJUI" || legacySt === "SEDANG_BERJALAN" || legacySt === "SELESAI") u = "DISETUJUI";
-          else if (legacySt === "DITOLAK" || legacySt === "TIDAK_DISETUJUI") u = "DITOLAK";
-          else u = "BELUM_DISETUJUI";
-        }
-        if (statusUsulanFilter === "DISETUJUI" && u !== "DISETUJUI" && u !== "DITERIMA") return false;
-        if (statusUsulanFilter === "DITOLAK" && u !== "DITOLAK" && u !== "TIDAK_DISETUJUI") return false;
-        if (statusUsulanFilter === "BELUM_DISETUJUI" && u !== "BELUM_DISETUJUI" && u !== "MENUNGGU" && u !== "PENDING") return false;
-      }
-      // Status Pelaksanaan
-      if (statusPelaksanaanFilter !== "ALL") {
-        const legacySt = String(p.status || "").toUpperCase();
-        let pl = p.statusPelaksanaan;
-        if (!pl) {
-          if (legacySt === "SELESAI") pl = "SELESAI";
-          else if (legacySt === "SEDANG_BERJALAN" || legacySt === "SEDANG_DILAKSANAKAN" || legacySt === "BERJALAN") pl = "SEDANG_BERJALAN";
-          else pl = "BELUM_MULAI";
-        }
-        if (statusPelaksanaanFilter === "SELESAI" && pl !== "SELESAI") return false;
-        if (
-          (statusPelaksanaanFilter === "BERJALAN" || statusPelaksanaanFilter === "SEDANG_BERJALAN") &&
-          pl !== "SEDANG_BERJALAN" &&
-          pl !== "SEDANG_DILAKSANAKAN" &&
-          pl !== "BERJALAN"
-        )
-          return false;
-        if (
-          statusPelaksanaanFilter === "BELUM_MULAI" &&
-          pl !== "BELUM_MULAI" &&
-          pl !== "BELUM"
-        )
-          return false;
-      }
-      // Status Penilaian
+
+      // 5. Status Penilaian
       if (statusPenilaianFilter !== "ALL") {
         const currentStatusPenilaian =
           p.statusPenilaian || (p.skorPenilaian ? "SUDAH_DINILAI" : "BELUM_DINILAI");
@@ -195,7 +176,7 @@ export const PenilaianProkerPage: React.FC = () => {
       }
       return true;
     });
-  }, [prokerList, searchQuery, kategoriFilter, statusUsulanFilter, statusPelaksanaanFilter, statusPenilaianFilter]);
+  }, [prokerList, searchQuery, kategoriFilter, statusPenilaianFilter]);
 
   // Sync Form State when selected proker changes
   const selectedProker = useMemo(() => {
@@ -229,15 +210,6 @@ export const PenilaianProkerPage: React.FC = () => {
 
       setInputNilai(newInputs);
       setCatatanDpl(selectedProker.evaluasiDpl || selectedProker.catatanDpl || "");
-
-      const legacySt = String(selectedProker.status || "").toUpperCase();
-      let initPl = selectedProker.statusPelaksanaan;
-      if (!initPl) {
-        if (legacySt === "SELESAI") initPl = "SELESAI";
-        else if (legacySt === "SEDANG_BERJALAN" || legacySt === "SEDANG_DILAKSANAKAN" || legacySt === "BERJALAN") initPl = "SEDANG_BERJALAN";
-        else initPl = "BELUM_MULAI";
-      }
-      setModalStatusPelaksanaan(initPl);
     }
   }, [selectedProker]);
 
@@ -307,10 +279,22 @@ export const PenilaianProkerPage: React.FC = () => {
       else if (leg === "DITOLAK" || leg === "TIDAK_DISETUJUI") u = "DITOLAK";
       else u = "BELUM_DISETUJUI";
     }
-    if (u === "DITOLAK" || u === "TIDAK_DISETUJUI") {
-      toast.error("Program kerja dengan status Ditolak tidak dapat dinilai");
+    if (u !== "DISETUJUI" && u !== "DITERIMA") {
+      toast.error("Hanya program kerja yang telah disetujui yang dapat dinilai");
       return;
     }
+
+    let pl = proker.statusPelaksanaan;
+    if (!pl) {
+      if (leg === "SELESAI") pl = "SELESAI";
+      else if (leg === "SEDANG_BERJALAN" || leg === "SEDANG_DILAKSANAKAN" || leg === "BERJALAN") pl = "SEDANG_BERJALAN";
+      else pl = "BELUM_MULAI";
+    }
+    if (pl !== "SELESAI") {
+      toast.error("Hanya program kerja yang telah selesai pelaksanaannya yang dapat dinilai");
+      return;
+    }
+
     setSelectedProkerId(proker.id);
     setIsAssessModalOpen(true);
   };
@@ -348,7 +332,7 @@ export const PenilaianProkerPage: React.FC = () => {
         payloadAspek,
         calculatedRubrik.predikat,
         statusPenilaian,
-        modalStatusPelaksanaan
+        "SELESAI"
       );
 
       toast.success(
@@ -366,7 +350,7 @@ export const PenilaianProkerPage: React.FC = () => {
                 aspekPenilaian: payloadAspek,
                 predikat: calculatedRubrik.predikat,
                 statusPenilaian: statusPenilaian,
-                statusPelaksanaan: modalStatusPelaksanaan,
+                statusPelaksanaan: "SELESAI",
               }
             : p
         )
@@ -597,7 +581,7 @@ export const PenilaianProkerPage: React.FC = () => {
             Penilaian Program Kerja
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Evaluasi pelaksanaan dan dampak program kerja setiap kelompok KKN berdasarkan status usulan dan status pelaksanaan
+            Evaluasi dan penilaian capaian program kerja setiap kelompok KKN yang telah disetujui dan selesai dilaksanakan
           </p>
         </div>
 
@@ -611,14 +595,14 @@ export const PenilaianProkerPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Baris Filter Interaktif (5 Kontrol: Search, Kategori, Status Usulan, Status Pelaksanaan, Status Penilaian) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+      {/* Baris Filter Interaktif (3 Kontrol: Search, Kategori, Status Penilaian + Info Banner) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs items-center">
         {/* Search */}
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Cari kelompok / proker..."
+            placeholder="Cari kelompok / judul / deskripsi..."
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -652,48 +636,6 @@ export const PenilaianProkerPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Filter Status Usulan (Approval: Menunggu / Disetujui / Ditolak) */}
-        <div className="relative">
-          <CheckCircle2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-          <select
-            value={statusUsulanFilter}
-            onChange={(e) => {
-              setStatusUsulanFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 cursor-pointer appearance-none"
-          >
-            <option value="ALL">Semua Status Usulan</option>
-            <option value="BELUM_DISETUJUI">Menunggu Persetujuan</option>
-            <option value="DISETUJUI">Disetujui</option>
-            <option value="DITOLAK">Ditolak</option>
-          </select>
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-            ▼
-          </div>
-        </div>
-
-        {/* Filter Status Pelaksanaan (Execution: Belum Mulai / Sedang Berjalan / Selesai) */}
-        <div className="relative">
-          <ListFilter size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-          <select
-            value={statusPelaksanaanFilter}
-            onChange={(e) => {
-              setStatusPelaksanaanFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 cursor-pointer appearance-none"
-          >
-            <option value="ALL">Semua Status Pelaksanaan</option>
-            <option value="BELUM_MULAI">Belum Mulai</option>
-            <option value="BERJALAN">Sedang Berjalan</option>
-            <option value="SELESAI">Selesai</option>
-          </select>
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-            ▼
-          </div>
-        </div>
-
         {/* Filter Status Penilaian */}
         <div className="relative">
           <BarChart3 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -714,6 +656,12 @@ export const PenilaianProkerPage: React.FC = () => {
             ▼
           </div>
         </div>
+
+        {/* Info Banner Indikator Kriteria */}
+        <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/40 rounded-xl text-emerald-800 dark:text-emerald-300 text-xs">
+          <CheckCircle2 size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+          <span className="truncate font-medium">Khusus Proker Disetujui &amp; Selesai</span>
+        </div>
       </div>
 
       {/* Tabel Program Kerja KKN (Full Width Master View) */}
@@ -721,19 +669,17 @@ export const PenilaianProkerPage: React.FC = () => {
         {loading ? (
           <div className="p-12 flex flex-col items-center justify-center gap-3 text-slate-400">
             <Loader2 className="animate-spin text-emerald-600" size={28} />
-            <span className="text-xs font-medium">Memuat daftar program kerja kelompok...</span>
+            <span className="text-xs font-medium">Memuat daftar program kerja yang siap dinilai...</span>
           </div>
         ) : filteredProkers.length === 0 ? (
           <div className="p-8">
             <EmptyTableState
-              entityName="Program Kerja KKN"
-              isSearch={!!(searchQuery || kategoriFilter !== "ALL" || statusUsulanFilter !== "ALL" || statusPelaksanaanFilter !== "ALL" || statusPenilaianFilter !== "ALL")}
+              entityName="Program Kerja Siap Dinilai (Disetujui &amp; Selesai)"
+              isSearch={!!(searchQuery || kategoriFilter !== "ALL" || statusPenilaianFilter !== "ALL")}
               searchQuery={searchQuery}
               onResetSearch={() => {
                 setSearchQuery("");
                 setKategoriFilter("ALL");
-                setStatusUsulanFilter("ALL");
-                setStatusPelaksanaanFilter("ALL");
                 setStatusPenilaianFilter("ALL");
               }}
             />
@@ -745,7 +691,7 @@ export const PenilaianProkerPage: React.FC = () => {
                 <thead>
                   <tr className="bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-bold">
                     <th className="py-3.5 px-3 w-12 text-center">No.</th>
-                    <th className="py-3.5 px-4 min-w-[160px]">Nama Kelompok & Wilayah</th>
+                    <th className="py-3.5 px-4 min-w-[160px]">Nama Kelompok &amp; Wilayah</th>
                     <th className="py-3.5 px-3.5 min-w-[120px]">Kategori</th>
                     <th className="py-3.5 px-4 min-w-[200px]">Judul Program</th>
                     <th className="py-3.5 px-4 min-w-[260px]">Deskripsi Program Kerja</th>
@@ -818,82 +764,43 @@ export const PenilaianProkerPage: React.FC = () => {
                         {/* Aksi Buttons */}
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                            {(() => {
-                              let u = p.statusUsulan;
-                              const leg = String(p.status || "").toUpperCase();
-                              if (!u) {
-                                if (leg === "DITERIMA" || leg === "DISETUJUI" || leg === "SEDANG_BERJALAN" || leg === "SELESAI") u = "DISETUJUI";
-                                else if (leg === "DITOLAK" || leg === "TIDAK_DISETUJUI") u = "DITOLAK";
-                                else u = "BELUM_DISETUJUI";
-                              }
-                              const isDitolak = u === "DITOLAK" || u === "TIDAK_DISETUJUI";
+                            {statusPenilaian === "SEDANG_DINILAI" ? (
+                              <button
+                                onClick={() => handleOpenAssessModal(p)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
+                                title="Lanjutkan Pengisian Nilai"
+                              >
+                                <Edit3 size={12} />
+                                <span>Lanjutkan</span>
+                              </button>
+                            ) : statusPenilaian === "SUDAH_DINILAI" ? (
+                              <button
+                                onClick={() => handleOpenAssessModal(p)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 border border-emerald-600 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg font-semibold text-xs transition-colors cursor-pointer"
+                                title="Lihat / Edit Nilai"
+                              >
+                                <Eye size={12} />
+                                <span>Lihat / Edit Nilai</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleOpenAssessModal(p)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
+                                title="Beri Penilaian Baru"
+                              >
+                                <PlusCircle size={12} />
+                                <span>Beri Nilai</span>
+                              </button>
+                            )}
 
-                              if (isDitolak) {
-                                return (
-                                  <>
-                                    <button
-                                      disabled
-                                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-800/40 text-slate-400 dark:text-slate-500 rounded-lg font-semibold text-xs cursor-not-allowed border border-slate-200 dark:border-slate-800"
-                                      title="Program kerja ditolak, tidak dapat dinilai"
-                                    >
-                                      <XCircle size={12} />
-                                      <span>Tidak Bisa Dinilai</span>
-                                    </button>
-
-                                    <button
-                                      disabled
-                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800/40 text-slate-400 dark:text-slate-500 rounded-lg font-semibold text-xs cursor-not-allowed border border-slate-200 dark:border-slate-800"
-                                      title="Program kerja ditolak, bukti tidak tersedia"
-                                    >
-                                      <FileText size={12} />
-                                      <span className="hidden xl:inline">Bukti N/A</span>
-                                    </button>
-                                  </>
-                                );
-                              }
-
-                              return (
-                                <>
-                                  {statusPenilaian === "SEDANG_DINILAI" ? (
-                                    <button
-                                      onClick={() => handleOpenAssessModal(p)}
-                                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
-                                      title="Lanjutkan Pengisian Nilai"
-                                    >
-                                      <Edit3 size={12} />
-                                      <span>Lanjutkan</span>
-                                    </button>
-                                  ) : statusPenilaian === "SUDAH_DINILAI" ? (
-                                    <button
-                                      onClick={() => handleOpenAssessModal(p)}
-                                      className="inline-flex items-center gap-1 px-3 py-1.5 border border-emerald-600 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg font-semibold text-xs transition-colors cursor-pointer"
-                                      title="Lihat / Edit Nilai"
-                                    >
-                                      <Eye size={12} />
-                                      <span>Lihat / Edit Nilai</span>
-                                    </button>
-                                  ) : (
-                                    <button
-                                      onClick={() => handleOpenAssessModal(p)}
-                                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
-                                      title="Beri Penilaian Baru"
-                                    >
-                                      <PlusCircle size={12} />
-                                      <span>Beri Nilai</span>
-                                    </button>
-                                  )}
-
-                                  <button
-                                    onClick={() => handleOpenBukti(p)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-                                    title="Lihat Dokumentasi Kegiatan"
-                                  >
-                                    <FileText size={12} />
-                                    <span className="hidden xl:inline">Bukti</span>
-                                  </button>
-                                </>
-                              );
-                            })()}
+                            <button
+                              onClick={() => handleOpenBukti(p)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                              title="Lihat Dokumentasi Kegiatan"
+                            >
+                              <FileText size={12} />
+                              <span className="hidden xl:inline">Bukti</span>
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -998,17 +905,9 @@ export const PenilaianProkerPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
-                  <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-lg">
-                    <span className="text-[11px] font-medium text-slate-500">Pelaksanaan:</span>
-                    <select
-                      value={modalStatusPelaksanaan}
-                      onChange={(e) => setModalStatusPelaksanaan(e.target.value)}
-                      className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-hidden cursor-pointer"
-                    >
-                      <option value="BELUM_MULAI">Belum Mulai</option>
-                      <option value="SEDANG_BERJALAN">Sedang Berjalan</option>
-                      <option value="SELESAI">Selesai</option>
-                    </select>
+                  <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800/50 px-2.5 py-1 rounded-lg text-emerald-700 dark:text-emerald-400">
+                    <CheckCircle2 size={13} />
+                    <span className="text-xs font-bold">Pelaksanaan: Selesai</span>
                   </div>
 
                   <button

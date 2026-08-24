@@ -212,9 +212,10 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       ]);
 
       expect(result.success).toBe(true);
-      expect(result.status).toBe("LAPANGAN");
-      expect(result.inZoneMinutes).toBe(0);
-      expect(result.autoAttendanceTriggered).toEqual([]);
+      const data = (result as any).data || result;
+      expect(data.status).toBe("LAPANGAN");
+      expect(data.inZoneMinutes).toBe(0);
+      expect(data.autoAttendanceTriggered).toEqual([]);
       expect(recordAttendanceSpy).not.toHaveBeenCalled();
     });
 
@@ -284,8 +285,9 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       ]);
 
       expect(result.success).toBe(true);
-      expect(result.inZoneMinutes).toBe(60);
-      expect(result.status).toBe("LAPANGAN");
+      const data = (result as any).data || result;
+      expect(data.inZoneMinutes).toBe(60);
+      expect(data.status).toBe("LAPANGAN");
     });
   });
 

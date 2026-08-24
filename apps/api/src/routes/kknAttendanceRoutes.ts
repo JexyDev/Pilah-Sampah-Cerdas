@@ -255,7 +255,9 @@ router.post(
         });
       }
 
-      const accumulatedDuration = req.body.accumulatedDuration !== undefined ? Number(req.body.accumulatedDuration) : undefined;
+      // Baca durasi dari mobile — menerima 'accumulatedDurationSeconds', 'accumulatedDuration', atau 'inZoneSeconds'
+      const rawDuration = req.body.accumulatedDurationSeconds ?? req.body.accumulatedDuration ?? req.body.inZoneSeconds;
+      const accumulatedDuration = rawDuration !== undefined ? Number(rawDuration) : undefined;
 
       const result = await kknAttendanceServiceInstance.pingLocation(
         req.user!.userId,

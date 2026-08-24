@@ -1611,6 +1611,8 @@ export const dplService = {
       kelompokId: { in: groupIds },
     };
 
+    const andConditions: any[] = [];
+
     if (filters?.kategori && filters.kategori !== "ALL") {
       prokerWhere.kategori = { equals: filters.kategori, mode: "insensitive" };
     }
@@ -1619,20 +1621,26 @@ export const dplService = {
     if (filters?.statusUsulan && filters.statusUsulan !== "ALL") {
       const u = filters.statusUsulan.toUpperCase();
       if (u === "DISETUJUI" || u === "DITERIMA") {
-        prokerWhere.OR = [
-          { statusUsulan: { in: ["DISETUJUI", "DITERIMA"] } },
-          { status: { in: ["DITERIMA", "SEDANG_BERJALAN", "SELESAI"] } },
-        ];
+        andConditions.push({
+          OR: [
+            { statusUsulan: { in: ["DISETUJUI", "DITERIMA"] } },
+            { status: { in: ["DITERIMA", "SEDANG_BERJALAN", "SELESAI"] } },
+          ],
+        });
       } else if (u === "DITOLAK" || u === "TIDAK_DISETUJUI") {
-        prokerWhere.OR = [
-          { statusUsulan: { in: ["DITOLAK", "TIDAK_DISETUJUI"] } },
-          { status: "DITOLAK" },
-        ];
+        andConditions.push({
+          OR: [
+            { statusUsulan: { in: ["DITOLAK", "TIDAK_DISETUJUI"] } },
+            { status: "DITOLAK" },
+          ],
+        });
       } else if (u === "BELUM_DISETUJUI" || u === "MENUNGGU" || u === "PENDING") {
-        prokerWhere.OR = [
-          { statusUsulan: { in: ["BELUM_DISETUJUI", "MENUNGGU", "PENDING"] } },
-          { status: "BELUM_DISETUJUI" },
-        ];
+        andConditions.push({
+          OR: [
+            { statusUsulan: { in: ["BELUM_DISETUJUI", "MENUNGGU", "PENDING"] } },
+            { status: "BELUM_DISETUJUI" },
+          ],
+        });
       }
     }
 
@@ -1640,20 +1648,26 @@ export const dplService = {
     if (filters?.statusPelaksanaan && filters.statusPelaksanaan !== "ALL") {
       const p = filters.statusPelaksanaan.toUpperCase();
       if (p === "SELESAI" || p === "SUDAH") {
-        prokerWhere.OR = [
-          { statusPelaksanaan: "SELESAI" },
-          { status: "SELESAI" },
-        ];
+        andConditions.push({
+          OR: [
+            { statusPelaksanaan: "SELESAI" },
+            { status: "SELESAI" },
+          ],
+        });
       } else if (p === "BERJALAN" || p === "SEDANG_BERJALAN" || p === "SEDANG" || p === "SEDANG_DILAKSANAKAN") {
-        prokerWhere.OR = [
-          { statusPelaksanaan: { in: ["SEDANG_BERJALAN", "SEDANG_DILAKSANAKAN", "BERJALAN"] } },
-          { status: "SEDANG_BERJALAN" },
-        ];
+        andConditions.push({
+          OR: [
+            { statusPelaksanaan: { in: ["SEDANG_BERJALAN", "SEDANG_DILAKSANAKAN", "BERJALAN"] } },
+            { status: "SEDANG_BERJALAN" },
+          ],
+        });
       } else if (p === "BELUM_MULAI" || p === "BELUM") {
-        prokerWhere.OR = [
-          { statusPelaksanaan: { in: ["BELUM_MULAI", "BELUM"] } },
-          { status: { in: ["BELUM_DISETUJUI", "DITERIMA"] } },
-        ];
+        andConditions.push({
+          OR: [
+            { statusPelaksanaan: { in: ["BELUM_MULAI", "BELUM"] } },
+            { status: { in: ["BELUM_DISETUJUI", "DITERIMA"] } },
+          ],
+        });
       }
     }
 
@@ -1667,11 +1681,17 @@ export const dplService = {
 
     if (filters?.search && filters.search.trim()) {
       const q = filters.search.trim();
-      prokerWhere.OR = [
-        { deskripsi: { contains: q, mode: "insensitive" } },
-        { kategori: { contains: q, mode: "insensitive" } },
-        { kelompok: { name: { contains: q, mode: "insensitive" } } },
-      ];
+      andConditions.push({
+        OR: [
+          { deskripsi: { contains: q, mode: "insensitive" } },
+          { kategori: { contains: q, mode: "insensitive" } },
+          { kelompok: { name: { contains: q, mode: "insensitive" } } },
+        ],
+      });
+    }
+
+    if (andConditions.length > 0) {
+      prokerWhere.AND = andConditions;
     }
 
     const prokers = await prisma.programKerjaKkn.findMany({
@@ -2071,8 +2091,18 @@ export const dplService = {
     if (!prokerExisting) throw new Error("Program kerja tidak ditemukan");
 
     const statusUsulanStr = String(prokerExisting.statusUsulan || prokerExisting.status || "").toUpperCase();
-    if (statusUsulanStr === "DITOLAK" || statusUsulanStr === "TIDAK_DISETUJUI") {
-      throw new Error("PROKER_REJECTED");
+    const isApproved = statusUsulanStr === "DISETUJUI" || statusUsulanStr === "DITERIMA";
+    if (!isApproved) {
+      if (statusUsulanStr === "DITOLAK" || statusUsulanStr === "TIDAK_DISETUJUI") {
+        throw new Error("PROKER_REJECTED");
+      }
+      throw new Error("PROKER_NOT_APPROVED");
+    }
+
+    const statusPelaksanaanStr = String(prokerExisting.statusPelaksanaan || prokerExisting.status || "").toUpperCase();
+    const isCompleted = statusPelaksanaanStr === "SELESAI";
+    if (!isCompleted) {
+      throw new Error("PROKER_NOT_COMPLETED");
     }
 
     const groups = await prisma.kelompokKkn.findMany({

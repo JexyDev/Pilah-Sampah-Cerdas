@@ -7,7 +7,7 @@ import { prisma } from "../lib/prisma.js";
  */
 
 import { Router } from "express";
-import { authMiddleware, requireAdmin, requireWarga } from "../middlewares/authMiddleware.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { notificationSyncController } from "../controllers/notificationSyncController.js";
 
 const router = Router();

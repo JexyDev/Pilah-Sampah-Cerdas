@@ -22,7 +22,9 @@ model Role {
   @@map("peran")
 }
 
-/** Hak akses per role per resource — dikelola via UI SUPER USER */
+/**
+ * Hak akses per role per resource — dikelola via UI SUPER USER
+ */
 model Permission {
   id        Int      @id @default(autoincrement())
   roleId    Int      @map("id_peran")
@@ -53,12 +55,12 @@ model Provinsi {
 }
 
 model Kabupaten {
-  id         Int        @id @default(autoincrement())
-  provinsiId Int        @map("id_provinsi")
-  name       String     @map("nama")
-  createdAt  DateTime   @default(now()) @map("dibuat_pada")
-  updatedAt  DateTime   @updatedAt @map("diperbarui_pada")
-  provinsi   Provinsi   @relation(fields: [provinsiId], references: [id], onDelete: Cascade)
+  id         Int         @id @default(autoincrement())
+  provinsiId Int         @map("id_provinsi")
+  name       String      @map("nama")
+  createdAt  DateTime    @default(now()) @map("dibuat_pada")
+  updatedAt  DateTime    @updatedAt @map("diperbarui_pada")
+  provinsi   Provinsi    @relation(fields: [provinsiId], references: [id], onDelete: Cascade)
   kecamatans Kecamatan[]
 
   @@unique([provinsiId, name])
@@ -79,11 +81,11 @@ model Kecamatan {
 }
 
 model Kelurahan {
-  id          String    @id @default(uuid())
-  kecamatanId Int?      @map("id_kecamatan")
-  name        String    @unique @map("nama")
-  createdAt   DateTime  @default(now()) @map("dibuat_pada")
-  updatedAt   DateTime  @updatedAt @map("diperbarui_pada")
+  id          String     @id @default(uuid())
+  kecamatanId Int?       @map("id_kecamatan")
+  name        String     @unique @map("nama")
+  createdAt   DateTime   @default(now()) @map("dibuat_pada")
+  updatedAt   DateTime   @updatedAt @map("diperbarui_pada")
   kecamatan   Kecamatan? @relation(fields: [kecamatanId], references: [id])
   bins        Bin[]
   rws         Rw[]
@@ -91,18 +93,20 @@ model Kelurahan {
   @@map("kelurahan")
 }
 
-/** RW — pengganti RtRwArea, relasi ke Kelurahan */
+/**
+ * RW — pengganti RtRwArea, relasi ke Kelurahan
+ */
 model Rw {
-  id              Int                  @id @default(autoincrement())
-  kelurahanId     String               @map("id_kelurahan")
-  name            String               @map("nama")
-  latitude        Decimal?             @db.Decimal(11, 8)
-  longitude       Decimal?             @db.Decimal(11, 8)
-  petugasResiduId String?              @unique @map("id_petugas_residu")
-  createdAt       DateTime             @default(now()) @map("dibuat_pada")
-  updatedAt       DateTime             @updatedAt @map("diperbarui_pada")
-  kelurahan       Kelurahan            @relation(fields: [kelurahanId], references: [id])
-  petugasResidu   User?                @relation("RwPetugasResidu", fields: [petugasResiduId], references: [id])
+  id              Int                      @id @default(autoincrement())
+  kelurahanId     String                   @map("id_kelurahan")
+  name            String                   @map("nama")
+  latitude        Decimal?                 @db.Decimal(11, 8)
+  longitude       Decimal?                 @db.Decimal(11, 8)
+  petugasResiduId String?                  @unique @map("id_petugas_residu")
+  createdAt       DateTime                 @default(now()) @map("dibuat_pada")
+  updatedAt       DateTime                 @updatedAt @map("diperbarui_pada")
+  kelurahan       Kelurahan                @relation(fields: [kelurahanId], references: [id])
+  petugasResidu   User?                    @relation("RwPetugasResidu", fields: [petugasResiduId], references: [id])
   rts             Rt[]
   users           User[]
   bins            Bin[]
@@ -118,7 +122,9 @@ model Rw {
   @@map("rw")
 }
 
-/** RT — tabel baru, relasi ke Rw */
+/**
+ * RT — tabel baru, relasi ke Rw
+ */
 model Rt {
   id        Int      @id @default(autoincrement())
   rwId      Int      @map("id_rw")
@@ -137,75 +143,75 @@ model Rt {
 // ─────────────────────────────────────────────
 
 model User {
-  id                    String               @id @default(uuid())
-  name                  String               @map("nama")
-  password              String               @map("kata_sandi")
-  fcmToken              String?              @map("token_fcm")
-  roleId                Int                  @map("id_peran")
-  createdAt             DateTime             @default(now()) @map("dibuat_pada")
-  updatedAt             DateTime             @updatedAt @map("diperbarui_pada")
-  fotoProfil            String?              @map("foto_profil")
-  rwId                  Int?                 @map("id_rw")
-  rtId                  Int?                 @map("id_rt")
-  status                String               @default("Aktif")
-  address               String?              @map("alamat")
-  phone                 String               @unique @map("no_telepon")
-  mustChangePassword    Boolean              @default(false) @map("harus_ganti_password")
-  wargaSubtype          String?              @map("subtipe_warga")
-  nip                   String?              @map("nip")
-  institusi             String?              @map("institusi")
-  jabatan               String?              @map("jabatan")
-  programStudi          String?              @map("program_studi")
-  jenjangPendidikan     String?              @map("jenjang_pendidikan")
-  provinsi              String?              @map("provinsi")
-  kabupaten             String?              @map("kabupaten")
-  jumlahAnggotaKeluarga Int?                 @map("jumlah_anggota_keluarga")
-  defaultPetugasId      String?              @map("id_petugas_tetap")
+  id                    String                   @id @default(uuid())
+  name                  String                   @map("nama")
+  password              String                   @map("kata_sandi")
+  fcmToken              String?                  @map("token_fcm")
+  roleId                Int                      @map("id_peran")
+  createdAt             DateTime                 @default(now()) @map("dibuat_pada")
+  updatedAt             DateTime                 @updatedAt @map("diperbarui_pada")
+  fotoProfil            String?                  @map("foto_profil")
+  rwId                  Int?                     @map("id_rw")
+  rtId                  Int?                     @map("id_rt")
+  status                String                   @default("Aktif")
+  address               String?                  @map("alamat")
+  phone                 String                   @unique @map("no_telepon")
+  mustChangePassword    Boolean                  @default(false) @map("harus_ganti_password")
+  wargaSubtype          String?                  @map("subtipe_warga")
+  nip                   String?                  @map("nip")
+  institusi             String?                  @map("institusi")
+  jabatan               String?                  @map("jabatan")
+  programStudi          String?                  @map("program_studi")
+  jenjangPendidikan     String?                  @map("jenjang_pendidikan")
+  provinsi              String?                  @map("provinsi")
+  kabupaten             String?                  @map("kabupaten")
+  jumlahAnggotaKeluarga Int?                     @map("jumlah_anggota_keluarga")
+  defaultPetugasId      String?                  @map("id_petugas_tetap")
   bankSampahLedger      BankSampahLedger?
   aiRequestLogs         AiRequestLog[]
-  picBatches            QrBatch[]            @relation("PicBatches")
+  picBatches            QrBatch[]                @relation("PicBatches")
   ideDaurUlang          IdeDaurUlang[]
   auditLogs             AuditTrail[]
-  attendances           ActivityAttendance[] @relation("StudentAttendance")
-  dplKelompok           KelompokKkn[]        @relation("DplKelompok")
+  attendances           ActivityAttendance[]     @relation("StudentAttendance")
+  dplKelompok           KelompokKkn[]            @relation("DplKelompok")
   binOwnerships         BinOwnership[]
-  locations             StudentLocation[]    @relation("StudentLocations")
+  locations             StudentLocation[]        @relation("StudentLocations")
   studentProfile        StudentKkn?
   notifications         Notification[]
-  wargaViolations       Violation[]          @relation("WargaViolations")
-  recordedViolations    Violation[]          @relation("RecordedViolations")
-  requestedResets       BinResetRequest[]    @relation("RequestedResets")
-  reviewedResets        BinResetRequest[]    @relation("ReviewedResets")
-  assignedResets        BinResetRequest[]    @relation("ResetRequestPetugas")
-  role                  Role                 @relation(fields: [roleId], references: [id])
-  rw                    Rw?                  @relation(fields: [rwId], references: [id])
-  rt                    Rt?                  @relation(fields: [rtId], references: [id])
+  wargaViolations       Violation[]              @relation("WargaViolations")
+  recordedViolations    Violation[]              @relation("RecordedViolations")
+  requestedResets       BinResetRequest[]        @relation("RequestedResets")
+  reviewedResets        BinResetRequest[]        @relation("ReviewedResets")
+  assignedResets        BinResetRequest[]        @relation("ResetRequestPetugas")
+  role                  Role                     @relation(fields: [roleId], references: [id])
+  rw                    Rw?                      @relation(fields: [rwId], references: [id])
+  rt                    Rt?                      @relation(fields: [rtId], references: [id])
   petugasProfile        PetugasResidu?
   pointHistory          PointHistory[]
-  fromHandovers         KknHandoverHistory[] @relation("FromStudentHandovers")
-  toHandovers           KknHandoverHistory[] @relation("ToStudentHandovers")
+  fromHandovers         KknHandoverHistory[]     @relation("FromStudentHandovers")
+  toHandovers           KknHandoverHistory[]     @relation("ToStudentHandovers")
   households            Household[]
-  setoranManual         SetoranManual[]      @relation("PetugasSetoranManual")
+  setoranManual         SetoranManual[]          @relation("PetugasSetoranManual")
   setoranOtomatis       SetoranOtomatis[]
   refreshTokens         RefreshToken[]
-  registeredBins        Bin[]                @relation("StudentRegisteredBins")
-  bins                  Bin[]                @relation("UserBins")
-  claimedTasks          DispatchTask[]       @relation("ClaimedTasks")
-  rwOwned               Rw?                  @relation("RwPetugasResidu")
-  studentLeaveRequests  StudentLeaveRequest[] @relation("StudentLeaveRequests")
-  reviewedLeaveRequests StudentLeaveRequest[] @relation("ReviewedLeaveRequests")
-  importLogs            ImportLog[]          @relation("UserImportLogs")
-  validasiBaseline      SurveiKelurahan[]    @relation("DplBaselineValidasi")
+  registeredBins        Bin[]                    @relation("StudentRegisteredBins")
+  bins                  Bin[]                    @relation("UserBins")
+  claimedTasks          DispatchTask[]           @relation("ClaimedTasks")
+  rwOwned               Rw?                      @relation("RwPetugasResidu")
+  studentLeaveRequests  StudentLeaveRequest[]    @relation("StudentLeaveRequests")
+  reviewedLeaveRequests StudentLeaveRequest[]    @relation("ReviewedLeaveRequests")
+  importLogs            ImportLog[]              @relation("UserImportLogs")
+  validasiBaseline      SurveiKelurahan[]        @relation("DplBaselineValidasi")
   validasiEndline       EndlineSurveiKelurahan[] @relation("DplEndlineValidasi")
   kritikSaran           KritikSaranPemanfaatan[] @relation("UserKritikSaran")
-  reviewedProkers       ProgramKerjaKkn[]    @relation("DplReviewedProker")
-  penilaianKkn          PenilaianKknMahasiswa? @relation("StudentPenilaianKkn")
-  penilaianKknDiberikan PenilaianKknMahasiswa[] @relation("DplPenilaianKkn")
-  facilitiesRegistered  Facility[]           @relation("FacilityRegisteredBy")
-  logbooksWritten       LogbookKkn[]         @relation("LogbookPenulis")
-  logbooksApprovedKetua LogbookKkn[]         @relation("LogbookKetuaPenyetuju")
-  logbooksVerifiedDpl   LogbookKkn[]         @relation("LogbookDplVerifikator")
-  dplLogbooks           LogbookDpl[]         @relation("DplLogbooks")
+  reviewedProkers       ProgramKerjaKkn[]        @relation("DplReviewedProker")
+  penilaianKkn          PenilaianKknMahasiswa?   @relation("StudentPenilaianKkn")
+  penilaianKknDiberikan PenilaianKknMahasiswa[]  @relation("DplPenilaianKkn")
+  facilitiesRegistered  Facility[]               @relation("FacilityRegisteredBy")
+  logbooksWritten       LogbookKkn[]             @relation("LogbookPenulis")
+  logbooksApprovedKetua LogbookKkn[]             @relation("LogbookKetuaPenyetuju")
+  logbooksVerifiedDpl   LogbookKkn[]             @relation("LogbookDplVerifikator")
+  dplLogbooks           LogbookDpl[]             @relation("DplLogbooks")
   notificationSync      UserNotificationSync?
 
   @@index([roleId])
@@ -342,16 +348,16 @@ model StudentKkn {
   assignedRwId      Int?         @map("id_rw_ditugaskan")
   whitelistStatus   String       @default("PENDING") @map("status_whitelist")
   createdAt         DateTime     @default(now()) @map("dibuat_pada")
-  updatedAt         DateTime          @updatedAt @map("diperbarui_pada")
-  kelompokId        String?           @map("id_kelompok")
-  assessmentScore   Decimal?          @default(0.0) @map("skor_penilaian_dpl") @db.Decimal(5, 2)
-  assessmentNote    String?           @map("catatan_penilaian_dpl")
-  isAssessed        Boolean           @default(false) @map("sudah_dinilai")
-  isKetua           Boolean           @default(false) @map("is_ketua")
-  jenjangPendidikan String?           @map("jenjang_pendidikan")
-  kelompok          KelompokKkn?      @relation(fields: [kelompokId], references: [id])
-  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  assignedRw        Rw?               @relation(fields: [assignedRwId], references: [id])
+  updatedAt         DateTime     @updatedAt @map("diperbarui_pada")
+  kelompokId        String?      @map("id_kelompok")
+  assessmentScore   Decimal?     @default(0.0) @map("skor_penilaian_dpl") @db.Decimal(5, 2)
+  assessmentNote    String?      @map("catatan_penilaian_dpl")
+  isAssessed        Boolean      @default(false) @map("sudah_dinilai")
+  isKetua           Boolean      @default(false) @map("is_ketua")
+  jenjangPendidikan String?      @map("jenjang_pendidikan")
+  kelompok          KelompokKkn? @relation(fields: [kelompokId], references: [id])
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedRw        Rw?          @relation(fields: [assignedRwId], references: [id])
 
   @@index([kelompokId])
   @@index([assignedRwId])
@@ -359,15 +365,15 @@ model StudentKkn {
 }
 
 model KelompokKkn {
-  id            String            @id @default(uuid())
-  name          String            @unique @map("nama")
-  kelurahan     String?           @map("kelurahan")
-  cakupanRw     Json?             @map("cakupan_rw")
-  dplNamaMentah String?           @map("dpl_nama_mentah")
-  dplId         String?           @map("id_dpl")
-  createdAt     DateTime          @default(now()) @map("dibuat_pada")
-  updatedAt     DateTime          @updatedAt @map("diperbarui_pada")
-  dpl           User?             @relation("DplKelompok", fields: [dplId], references: [id])
+  id                 String                  @id @default(uuid())
+  name               String                  @unique @map("nama")
+  kelurahan          String?                 @map("kelurahan")
+  cakupanRw          Json?                   @map("cakupan_rw")
+  dplNamaMentah      String?                 @map("dpl_nama_mentah")
+  dplId              String?                 @map("id_dpl")
+  createdAt          DateTime                @default(now()) @map("dibuat_pada")
+  updatedAt          DateTime                @updatedAt @map("diperbarui_pada")
+  dpl                User?                   @relation("DplKelompok", fields: [dplId], references: [id])
   students           StudentKkn[]
   schedules          Schedule[]
   timelines          TimelineKkn[]
@@ -431,50 +437,50 @@ model ProgramKerjaKkn {
 }
 
 model PenilaianKknMahasiswa {
-  id                     String             @id @default(uuid())
-  studentId              String             @unique @map("id_mahasiswa")
-  kelompokId             String?            @map("id_kelompok")
-  dplId                  String?            @map("id_dpl")
-  mitraId                String?            @map("id_mitra")
-  namaMitraPenilai       String?            @map("nama_mitra_penilai")
+  id               String  @id @default(uuid())
+  studentId        String  @unique @map("id_mahasiswa")
+  kelompokId       String? @map("id_kelompok")
+  dplId            String? @map("id_dpl")
+  mitraId          String? @map("id_mitra")
+  namaMitraPenilai String? @map("nama_mitra_penilai")
 
   // Skor Aspek Mitra / PL (0 - 4)
-  skorMitraKehadiran     Int                @default(0) @map("skor_mitra_kehadiran")
-  skorMitraWargaBinaan   Int                @default(0) @map("skor_mitra_warga_binaan")
-  skorMitraProker        Int                @default(0) @map("skor_mitra_proker")
-  skorMitraKomunikasi    Int                @default(0) @map("skor_mitra_komunikasi")
-  skorMitraTanggungJawab Int                @default(0) @map("skor_mitra_tanggung_jawab")
-  skorMitraBuktiKegiatan Int                @default(0) @map("skor_mitra_bukti_kegiatan")
-  skorMitraDampak        Int                @default(0) @map("skor_mitra_dampak")
-  skorMitraInisiatif     Int                @default(0) @map("skor_mitra_inisiatif")
-  subtotalMitra          Decimal            @default(0.00) @map("subtotal_mitra") @db.Decimal(5, 2)
+  skorMitraKehadiran     Int     @default(0) @map("skor_mitra_kehadiran")
+  skorMitraWargaBinaan   Int     @default(0) @map("skor_mitra_warga_binaan")
+  skorMitraProker        Int     @default(0) @map("skor_mitra_proker")
+  skorMitraKomunikasi    Int     @default(0) @map("skor_mitra_komunikasi")
+  skorMitraTanggungJawab Int     @default(0) @map("skor_mitra_tanggung_jawab")
+  skorMitraBuktiKegiatan Int     @default(0) @map("skor_mitra_bukti_kegiatan")
+  skorMitraDampak        Int     @default(0) @map("skor_mitra_dampak")
+  skorMitraInisiatif     Int     @default(0) @map("skor_mitra_inisiatif")
+  subtotalMitra          Decimal @default(0.00) @map("subtotal_mitra") @db.Decimal(5, 2)
 
   // Skor Aspek DPL (0 - 4)
-  skorDplPerencanaan     Int                @default(0) @map("skor_dpl_perencanaan")
-  skorDplKontribusi      Int                @default(0) @map("skor_dpl_kontribusi")
-  skorDplLogbook         Int                @default(0) @map("skor_dpl_logbook")
-  skorDplAnalisis        Int                @default(0) @map("skor_dpl_analisis")
-  skorDplOutput          Int                @default(0) @map("skor_dpl_output")
-  skorDplLaporanAkhir    Int                @default(0) @map("skor_dpl_laporan_akhir")
-  subtotalDpl            Decimal            @default(0.00) @map("subtotal_dpl") @db.Decimal(5, 2)
+  skorDplPerencanaan  Int     @default(0) @map("skor_dpl_perencanaan")
+  skorDplKontribusi   Int     @default(0) @map("skor_dpl_kontribusi")
+  skorDplLogbook      Int     @default(0) @map("skor_dpl_logbook")
+  skorDplAnalisis     Int     @default(0) @map("skor_dpl_analisis")
+  skorDplOutput       Int     @default(0) @map("skor_dpl_output")
+  skorDplLaporanAkhir Int     @default(0) @map("skor_dpl_laporan_akhir")
+  subtotalDpl         Decimal @default(0.00) @map("subtotal_dpl") @db.Decimal(5, 2)
 
   // Nilai Akhir & Kategori
-  nilaiAkhir             Decimal            @default(0.00) @map("nilai_akhir") @db.Decimal(5, 2)
-  kategoriNilai          String?            @map("kategori_nilai")
+  nilaiAkhir    Decimal @default(0.00) @map("nilai_akhir") @db.Decimal(5, 2)
+  kategoriNilai String? @map("kategori_nilai")
 
   // Catatan & Status
-  catatanDpl             String?            @map("catatan_dpl")
-  catatanMitra           String?            @map("catatan_mitra")
-  status                 StatusPenilaianKkn @default(DRAFT) @map("status")
-  isFinalized            Boolean            @default(false) @map("is_finalized")
-  finalizedAt            DateTime?          @map("difinalisasi_pada")
+  catatanDpl   String?            @map("catatan_dpl")
+  catatanMitra String?            @map("catatan_mitra")
+  status       StatusPenilaianKkn @default(DRAFT) @map("status")
+  isFinalized  Boolean            @default(false) @map("is_finalized")
+  finalizedAt  DateTime?          @map("difinalisasi_pada")
 
-  createdAt              DateTime           @default(now()) @map("dibuat_pada")
-  updatedAt              DateTime           @updatedAt @map("diperbarui_pada")
+  createdAt DateTime @default(now()) @map("dibuat_pada")
+  updatedAt DateTime @updatedAt @map("diperbarui_pada")
 
-  student                User               @relation("StudentPenilaianKkn", fields: [studentId], references: [id], onDelete: Cascade)
-  dpl                    User?              @relation("DplPenilaianKkn", fields: [dplId], references: [id])
-  kelompok               KelompokKkn?       @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
+  student  User         @relation("StudentPenilaianKkn", fields: [studentId], references: [id], onDelete: Cascade)
+  dpl      User?        @relation("DplPenilaianKkn", fields: [dplId], references: [id])
+  kelompok KelompokKkn? @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
 
   @@map("penilaian_kkn_mahasiswa")
 }
@@ -494,19 +500,19 @@ model KknHandoverHistory {
 }
 
 model ActivityAttendance {
-  id         String    @id @default(uuid())
-  studentId  String    @map("id_mahasiswa")
-  scheduleId String    @map("id_jadwal")
-  attendedAt DateTime  @default(now()) @map("waktu_absen")
-  method     String    @map("metode")
-  latitude   Decimal   @map("latitude") @db.Decimal(11, 8)
-  longitude  Decimal   @map("longitude") @db.Decimal(11, 8)
-  checkOutAt DateTime? @map("waktu_checkout")
-  status     String    @default("DALAM_RADIUS") @map("status")
+  id                  String    @id @default(uuid())
+  studentId           String    @map("id_mahasiswa")
+  scheduleId          String    @map("id_jadwal")
+  attendedAt          DateTime  @default(now()) @map("waktu_absen")
+  method              String    @map("metode")
+  latitude            Decimal   @map("latitude") @db.Decimal(11, 8)
+  longitude           Decimal   @map("longitude") @db.Decimal(11, 8)
+  checkOutAt          DateTime? @map("waktu_checkout")
+  status              String    @default("DALAM_RADIUS") @map("status")
   actualInZoneMinutes Int?      @map("durasi_aktual_dalam_zona_menit")
-  jedaLogs   Json?     @map("log_jeda")
-  schedule   Schedule  @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
-  student    User      @relation("StudentAttendance", fields: [studentId], references: [id], onDelete: Cascade)
+  jedaLogs            Json?     @map("log_jeda")
+  schedule            Schedule  @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  student             User      @relation("StudentAttendance", fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, scheduleId])
   @@index([studentId, attendedAt(sort: Desc)])
@@ -572,20 +578,20 @@ model PetugasResidu {
 // ─────────────────────────────────────────────
 
 model Facility {
-  id             String                  @id @default(uuid())
-  jenis          FacilityType
-  nama           String
-  pic            String
-  foto           String?
-  kontak         String?
-  kapasitas      Decimal?                @db.Decimal(10, 2)
-  latitude       Decimal                 @db.Decimal(11, 8)
-  longitude      Decimal                 @db.Decimal(11, 8)
-  createdAt      DateTime                @default(now()) @map("dibuat_pada")
-  updatedAt      DateTime                @updatedAt @map("diperbarui_pada")
-  rwId           Int?                    @map("id_rw")
-  kelompokId     String?                 @map("id_kelompok")
-  alamat         String?                 @map("alamat")
+  id                 String                  @id @default(uuid())
+  jenis              FacilityType
+  nama               String
+  pic                String
+  foto               String?
+  kontak             String?
+  kapasitas          Decimal?                @db.Decimal(10, 2)
+  latitude           Decimal                 @db.Decimal(11, 8)
+  longitude          Decimal                 @db.Decimal(11, 8)
+  createdAt          DateTime                @default(now()) @map("dibuat_pada")
+  updatedAt          DateTime                @updatedAt @map("diperbarui_pada")
+  rwId               Int?                    @map("id_rw")
+  kelompokId         String?                 @map("id_kelompok")
+  alamat             String?                 @map("alamat")
   statusApproval     String                  @default("PENDING") @map("status_persetujuan")
   productionLogs     FacilityProductionLog[]
   rw                 Rw?                     @relation(fields: [rwId], references: [id])
@@ -659,20 +665,20 @@ model SetoranOtomatis {
 }
 
 model SetoranManual {
-  id              String   @id @default(uuid())
-  petugasResiduId String   @map("petugas_residu_id")
-  diinputOleh     String   @map("diinput_oleh")
-  rwId            Int      @map("rw_id")
-  fotoResiduUrl   String   @map("foto_residu_url")
-  berat           Decimal  @map("berat") @db.Decimal(10, 2)
-  unit            String   @default("Kg") @map("unit")
-  lokasiGps       String?  @map("lokasi_gps")
-  kategori        String   @default("residu") @map("kategori")
-  status          String   @default("PENDING") @map("status")
+  id               String   @id @default(uuid())
+  petugasResiduId  String   @map("petugas_residu_id")
+  diinputOleh      String   @map("diinput_oleh")
+  rwId             Int      @map("rw_id")
+  fotoResiduUrl    String   @map("foto_residu_url")
+  berat            Decimal  @map("berat") @db.Decimal(10, 2)
+  unit             String   @default("Kg") @map("unit")
+  lokasiGps        String?  @map("lokasi_gps")
+  kategori         String   @default("residu") @map("kategori")
+  status           String   @default("PENDING") @map("status")
   catatanPenolakan String?  @map("catatan_penolakan")
-  createdAt       DateTime @default(now()) @map("created_at")
-  petugas         User     @relation("PetugasSetoranManual", fields: [petugasResiduId], references: [id], onDelete: Cascade)
-  rw              Rw       @relation(fields: [rwId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now()) @map("created_at")
+  petugas          User     @relation("PetugasSetoranManual", fields: [petugasResiduId], references: [id], onDelete: Cascade)
+  rw               Rw       @relation(fields: [rwId], references: [id], onDelete: Cascade)
 
   @@index([petugasResiduId, createdAt(sort: Desc)])
   @@map("setoran_manual")
@@ -683,53 +689,53 @@ model SetoranManual {
 // ─────────────────────────────────────────────
 
 model Pemanfaatan {
-  id                      String   @id @default(uuid())
-  rwId                    Int?     @map("id_rw")
-  programKerjaId          String?  @map("id_program_kerja")
-  nomorCaraPemanfaatan    String   @unique @map("nomor_cara_pemanfaatan")
-  program                 String   @map("program")
-  teknologi               String   @map("teknologi")
-  bahanBaku               String   @map("bahan_baku")
-  volumeBahanBaku         Decimal  @map("volume_bahan_baku") @db.Decimal(10, 2)
-  unitBahanBaku           String   @map("unit_bahan_baku")
-  hasil                   Decimal  @map("hasil") @db.Decimal(10, 2)
-  unitHasil               String   @map("unit_hasil")
-  fotoDokumentasiUrl      String   @map("foto_dokumentasi_url")
-  tanggalPencatatan       DateTime @map("tanggal_pencatatan")
-  jenisKomoditas          String?  @map("jenis_komoditas")
-  luasLahanM2             Decimal? @map("luas_lahan_m2") @db.Decimal(8, 2)
-  volumePupukDipakaiKg    Decimal? @map("volume_pupuk_dipakai_kg") @db.Decimal(10, 2)
-  bibitTelurGram          Decimal? @map("bibit_telur_gram") @db.Decimal(8, 2)
-  hasilKasgotKg           Decimal? @map("hasil_kasgot_kg") @db.Decimal(10, 2)
-  volumeBioaktivatorLiter Decimal? @map("volume_bioaktivator_liter") @db.Decimal(8, 2)
-  masaFermentasiHari      Int?     @map("masa_fermentasi_hari")
-  createdAt               DateTime @default(now()) @map("dibuat_pada")
-  rw                      Rw?      @relation(fields: [rwId], references: [id], onDelete: Cascade)
+  id                      String           @id @default(uuid())
+  rwId                    Int?             @map("id_rw")
+  programKerjaId          String?          @map("id_program_kerja")
+  nomorCaraPemanfaatan    String           @unique @map("nomor_cara_pemanfaatan")
+  program                 String           @map("program")
+  teknologi               String           @map("teknologi")
+  bahanBaku               String           @map("bahan_baku")
+  volumeBahanBaku         Decimal          @map("volume_bahan_baku") @db.Decimal(10, 2)
+  unitBahanBaku           String           @map("unit_bahan_baku")
+  hasil                   Decimal          @map("hasil") @db.Decimal(10, 2)
+  unitHasil               String           @map("unit_hasil")
+  fotoDokumentasiUrl      String           @map("foto_dokumentasi_url")
+  tanggalPencatatan       DateTime         @map("tanggal_pencatatan")
+  jenisKomoditas          String?          @map("jenis_komoditas")
+  luasLahanM2             Decimal?         @map("luas_lahan_m2") @db.Decimal(8, 2)
+  volumePupukDipakaiKg    Decimal?         @map("volume_pupuk_dipakai_kg") @db.Decimal(10, 2)
+  bibitTelurGram          Decimal?         @map("bibit_telur_gram") @db.Decimal(8, 2)
+  hasilKasgotKg           Decimal?         @map("hasil_kasgot_kg") @db.Decimal(10, 2)
+  volumeBioaktivatorLiter Decimal?         @map("volume_bioaktivator_liter") @db.Decimal(8, 2)
+  masaFermentasiHari      Int?             @map("masa_fermentasi_hari")
+  createdAt               DateTime         @default(now()) @map("dibuat_pada")
+  rw                      Rw?              @relation(fields: [rwId], references: [id], onDelete: Cascade)
   programKerja            ProgramKerjaKkn? @relation(fields: [programKerjaId], references: [id], onDelete: SetNull)
 
   @@map("pemanfaatan_sampah")
 }
 
 model KritikSaranPemanfaatan {
-  id               String    @id @default(uuid())
-  userId           String    @map("id_pengguna")
-  wargaNama        String    @map("warga_nama")
-  programKerjaId   String?   @map("id_program_kerja")
-  kategori         String    @default("Pemanfaatan Sampah") @map("kategori")
-  judul            String    @map("judul")
-  isiKritikSaran   String    @map("isi_kritik_saran")
-  rating           Int       @default(5) @map("rating")
-  status           String    @default("MENUNGGU") @map("status")
-  tanggapan        String?   @map("tanggapan")
-  ditanggapiOleh   String?   @map("ditanggapi_oleh")
-  ditanggapiPada   DateTime? @map("ditanggapi_pada")
-  fotoBuktiUrl     String?   @map("foto_bukti_url")
-  rwId             Int?      @map("id_rw")
-  createdAt        DateTime  @default(now()) @map("dibuat_pada")
-  updatedAt        DateTime  @updatedAt @map("diperbarui_pada")
-  user             User      @relation("UserKritikSaran", fields: [userId], references: [id], onDelete: Cascade)
-  rw               Rw?       @relation(fields: [rwId], references: [id])
-  programKerja     ProgramKerjaKkn? @relation(fields: [programKerjaId], references: [id], onDelete: SetNull)
+  id             String           @id @default(uuid())
+  userId         String           @map("id_pengguna")
+  wargaNama      String           @map("warga_nama")
+  programKerjaId String?          @map("id_program_kerja")
+  kategori       String           @default("Pemanfaatan Sampah") @map("kategori")
+  judul          String           @map("judul")
+  isiKritikSaran String           @map("isi_kritik_saran")
+  rating         Int              @default(5) @map("rating")
+  status         String           @default("MENUNGGU") @map("status")
+  tanggapan      String?          @map("tanggapan")
+  ditanggapiOleh String?          @map("ditanggapi_oleh")
+  ditanggapiPada DateTime?        @map("ditanggapi_pada")
+  fotoBuktiUrl   String?          @map("foto_bukti_url")
+  rwId           Int?             @map("id_rw")
+  createdAt      DateTime         @default(now()) @map("dibuat_pada")
+  updatedAt      DateTime         @updatedAt @map("diperbarui_pada")
+  user           User             @relation("UserKritikSaran", fields: [userId], references: [id], onDelete: Cascade)
+  rw             Rw?              @relation(fields: [rwId], references: [id])
+  programKerja   ProgramKerjaKkn? @relation(fields: [programKerjaId], references: [id], onDelete: SetNull)
 
   @@map("kritik_saran_pemanfaatan")
 }
@@ -1042,114 +1048,114 @@ model Violation {
 // ─────────────────────────────────────────────
 
 model SurveiKelurahan {
-  kelurahanId            Int       @id @map("id_kelurahan_survei")
-  namaKelurahan          String    @map("nama_kelurahan") @db.VarChar(100)
-  kecamatan              String?   @db.VarChar(100)
-  jumlahRw               Int?      @map("jumlah_rw")
-  jumlahRt               Int?      @map("jumlah_rt")
-  tanggalSurvei          DateTime? @map("tanggal_survei") @db.Date
-  jumlahKk               Int?      @map("jumlah_kk")
-  jumlahRumahTotal       Int?      @map("jumlah_rumah_total")
-  enumerator             String?   @db.VarChar(100)
-  titikKumpulMahasiswa   String?   @map("titik_kumpul_mahasiswa") @db.VarChar(255)
-  catatanData            String?   @map("catatan_data")
-  validasiDplId          String?   @map("id_validasi_dpl")
-  statusValidasi         String    @default("BELUM_VALIDASI") @map("status_validasi")
-  catatanValidasi        String?   @map("catatan_validasi")
-  createdAt              DateTime  @default(now()) @map("dibuat_pada")
-  updatedAt              DateTime  @updatedAt @map("diperbarui_pada")
+  kelurahanId          Int       @id @map("id_kelurahan_survei")
+  namaKelurahan        String    @map("nama_kelurahan") @db.VarChar(100)
+  kecamatan            String?   @db.VarChar(100)
+  jumlahRw             Int?      @map("jumlah_rw")
+  jumlahRt             Int?      @map("jumlah_rt")
+  tanggalSurvei        DateTime? @map("tanggal_survei") @db.Date
+  jumlahKk             Int?      @map("jumlah_kk")
+  jumlahRumahTotal     Int?      @map("jumlah_rumah_total")
+  enumerator           String?   @db.VarChar(100)
+  titikKumpulMahasiswa String?   @map("titik_kumpul_mahasiswa") @db.VarChar(255)
+  catatanData          String?   @map("catatan_data")
+  validasiDplId        String?   @map("id_validasi_dpl")
+  statusValidasi       String    @default("BELUM_VALIDASI") @map("status_validasi")
+  catatanValidasi      String?   @map("catatan_validasi")
+  createdAt            DateTime  @default(now()) @map("dibuat_pada")
+  updatedAt            DateTime  @updatedAt @map("diperbarui_pada")
 
-  karakteristikWilayah   SurveiKarakteristikWilayah?
-  pemilahanSampah        SurveiPemilahanSampah?
-  bankSampahPengolahan   SurveiBankSampahPengolahan?
-  keyPlayers             SurveiKeyPlayer[]
-  volumeSampah           SurveiVolumeSampah?
-  catatanKesimpulan      SurveiCatatanKesimpulan?
-  validasiDpl            User?     @relation("DplBaselineValidasi", fields: [validasiDplId], references: [id])
+  karakteristikWilayah SurveiKarakteristikWilayah?
+  pemilahanSampah      SurveiPemilahanSampah?
+  bankSampahPengolahan SurveiBankSampahPengolahan?
+  keyPlayers           SurveiKeyPlayer[]
+  volumeSampah         SurveiVolumeSampah?
+  catatanKesimpulan    SurveiCatatanKesimpulan?
+  validasiDpl          User?                       @relation("DplBaselineValidasi", fields: [validasiDplId], references: [id])
 
   @@map("survei_kelurahan")
 }
 
 model SurveiKarakteristikWilayah {
-  id                              Int              @id @default(autoincrement())
-  kelurahanId                     Int              @unique @map("id_kelurahan_survei")
-  padatPenduduk                   Boolean?         @map("padat_penduduk")
-  banyakKosKontrakan              Boolean?         @map("banyak_kos_kontrakan")
-  banyakUmkmWarungKafe            Boolean?         @map("banyak_umkm_warung_kafe")
-  dekatKampusSekolah              Boolean?         @map("dekat_kampus_sekolah")
-  pasar                           Boolean?
-  bantaranSungai                  Boolean?         @map("bantaran_sungai")
-  karakterLainnyaFlag             Boolean?         @map("karakter_lainnya_flag")
-  karakterLainnyaKeterangan       String?          @map("karakter_lainnya_keterangan")
-  perkiraanJumlahKosKontrakan     String?          @map("perkiraan_jumlah_kos_kontrakan") @db.VarChar(50)
-  perkiraanJumlahUmkmWarungKafe   String?          @map("perkiraan_jumlah_umkm_warung_kafe") @db.VarChar(50)
-  kelurahan                       SurveiKelurahan  @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+  id                            Int             @id @default(autoincrement())
+  kelurahanId                   Int             @unique @map("id_kelurahan_survei")
+  padatPenduduk                 Boolean?        @map("padat_penduduk")
+  banyakKosKontrakan            Boolean?        @map("banyak_kos_kontrakan")
+  banyakUmkmWarungKafe          Boolean?        @map("banyak_umkm_warung_kafe")
+  dekatKampusSekolah            Boolean?        @map("dekat_kampus_sekolah")
+  pasar                         Boolean?
+  bantaranSungai                Boolean?        @map("bantaran_sungai")
+  karakterLainnyaFlag           Boolean?        @map("karakter_lainnya_flag")
+  karakterLainnyaKeterangan     String?         @map("karakter_lainnya_keterangan")
+  perkiraanJumlahKosKontrakan   String?         @map("perkiraan_jumlah_kos_kontrakan") @db.VarChar(50)
+  perkiraanJumlahUmkmWarungKafe String?         @map("perkiraan_jumlah_umkm_warung_kafe") @db.VarChar(50)
+  kelurahan                     SurveiKelurahan @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
 
   @@map("survei_karakteristik_wilayah")
 }
 
 model SurveiPemilahanSampah {
-  id                       Int              @id @default(autoincrement())
-  kelurahanId              Int              @unique @map("id_kelurahan_survei")
-  jumlahRumahMemilah       Int?             @map("jumlah_rumah_memilah")
-  totalJumlahRumahDiRw     Int?             @map("total_jumlah_rumah_di_rw")
-  persentasePemilahan      Decimal?         @map("persentase_pemilahan") @db.Decimal(5, 4)
-  tingkatPemilahan         String?          @map("tingkat_pemilahan") @db.VarChar(50)
-  catatan                  String?
-  kelurahan                SurveiKelurahan  @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+  id                   Int             @id @default(autoincrement())
+  kelurahanId          Int             @unique @map("id_kelurahan_survei")
+  jumlahRumahMemilah   Int?            @map("jumlah_rumah_memilah")
+  totalJumlahRumahDiRw Int?            @map("total_jumlah_rumah_di_rw")
+  persentasePemilahan  Decimal?        @map("persentase_pemilahan") @db.Decimal(5, 4)
+  tingkatPemilahan     String?         @map("tingkat_pemilahan") @db.VarChar(50)
+  catatan              String?
+  kelurahan            SurveiKelurahan @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
 
   @@map("survei_pemilahan_sampah")
 }
 
 model SurveiBankSampahPengolahan {
-  id                             Int              @id @default(autoincrement())
-  kelurahanId                    Int              @unique @map("id_kelurahan_survei")
-  bankSampahAktif                Int?             @map("bank_sampah_aktif")
-  bankSampahTidakAktif           Int?             @map("bank_sampah_tidak_aktif")
-  jumlahUnitKomposter            String?          @map("jumlah_unit_komposter") @db.VarChar(50)
-  jumlahTitikMaggotBsf           String?          @map("jumlah_titik_maggot_bsf") @db.VarChar(100)
-  bioporiLoseda                  Boolean?         @map("biopori_loseda")
-  ecobrickKerajinanDaurUlang     Boolean?         @map("ecobrick_kerajinan_daur_ulang")
-  buruanSae                      Boolean?         @map("buruan_sae")
-  pengepulMitraDaurUlang         Boolean?         @map("pengepul_mitra_daur_ulang")
-  digitalisasiData               Boolean?         @map("digitalisasi_data")
-  aktivitasLainnyaKeterangan     String?          @map("aktivitas_lainnya_keterangan")
-  kelurahan                      SurveiKelurahan  @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+  id                         Int             @id @default(autoincrement())
+  kelurahanId                Int             @unique @map("id_kelurahan_survei")
+  bankSampahAktif            Int?            @map("bank_sampah_aktif")
+  bankSampahTidakAktif       Int?            @map("bank_sampah_tidak_aktif")
+  jumlahUnitKomposter        String?         @map("jumlah_unit_komposter") @db.VarChar(50)
+  jumlahTitikMaggotBsf       String?         @map("jumlah_titik_maggot_bsf") @db.VarChar(100)
+  bioporiLoseda              Boolean?        @map("biopori_loseda")
+  ecobrickKerajinanDaurUlang Boolean?        @map("ecobrick_kerajinan_daur_ulang")
+  buruanSae                  Boolean?        @map("buruan_sae")
+  pengepulMitraDaurUlang     Boolean?        @map("pengepul_mitra_daur_ulang")
+  digitalisasiData           Boolean?        @map("digitalisasi_data")
+  aktivitasLainnyaKeterangan String?         @map("aktivitas_lainnya_keterangan")
+  kelurahan                  SurveiKelurahan @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
 
   @@map("survei_bank_sampah_pengolahan")
 }
 
 model SurveiKeyPlayer {
-  id            Int              @id @default(autoincrement())
-  kelurahanId   Int              @map("id_kelurahan_survei")
-  jenisAktor    String?          @map("jenis_aktor") @db.VarChar(100)
-  nama          String?          @db.VarChar(150)
-  kontak        String?          @db.VarChar(50)
-  peran         String?          @db.VarChar(255)
-  kelurahan     SurveiKelurahan  @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+  id          Int             @id @default(autoincrement())
+  kelurahanId Int             @map("id_kelurahan_survei")
+  jenisAktor  String?         @map("jenis_aktor") @db.VarChar(100)
+  nama        String?         @db.VarChar(150)
+  kontak      String?         @db.VarChar(50)
+  peran       String?         @db.VarChar(255)
+  kelurahan   SurveiKelurahan @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
 
   @@map("survei_key_player")
 }
 
 model SurveiVolumeSampah {
-  id                      Int              @id @default(autoincrement())
-  kelurahanId             Int              @unique @map("id_kelurahan_survei")
-  organikKgPerHari        Decimal?         @map("organik_kg_per_hari") @db.Decimal(10, 2)
-  anorganikKgPerHari      Decimal?         @map("anorganik_kg_per_hari") @db.Decimal(10, 2)
-  residuKgPerHari         Decimal?         @map("residu_kg_per_hari") @db.Decimal(10, 2)
-  totalVolumeKgPerHari    Decimal?         @map("total_volume_kg_per_hari") @db.Decimal(10, 2)
-  catatan                 String?
-  kelurahan               SurveiKelurahan  @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+  id                   Int             @id @default(autoincrement())
+  kelurahanId          Int             @unique @map("id_kelurahan_survei")
+  organikKgPerHari     Decimal?        @map("organik_kg_per_hari") @db.Decimal(10, 2)
+  anorganikKgPerHari   Decimal?        @map("anorganik_kg_per_hari") @db.Decimal(10, 2)
+  residuKgPerHari      Decimal?        @map("residu_kg_per_hari") @db.Decimal(10, 2)
+  totalVolumeKgPerHari Decimal?        @map("total_volume_kg_per_hari") @db.Decimal(10, 2)
+  catatan              String?
+  kelurahan            SurveiKelurahan @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
 
   @@map("survei_volume_sampah")
 }
 
 model SurveiCatatanKesimpulan {
-  id                            Int              @id @default(autoincrement())
-  kelurahanId                   Int              @unique @map("id_kelurahan_survei")
-  prioritasIntervensi           String?          @map("prioritas_intervensi")
-  catatanTambahanRisikoSosial   String?          @map("catatan_tambahan_risiko_sosial")
-  kelurahan                     SurveiKelurahan  @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+  id                          Int             @id @default(autoincrement())
+  kelurahanId                 Int             @unique @map("id_kelurahan_survei")
+  prioritasIntervensi         String?         @map("prioritas_intervensi")
+  catatanTambahanRisikoSosial String?         @map("catatan_tambahan_risiko_sosial")
+  kelurahan                   SurveiKelurahan @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
 
   @@map("survei_catatan_kesimpulan")
 }
@@ -1159,82 +1165,84 @@ model SurveiCatatanKesimpulan {
 // ─────────────────────────────────────────────
 
 model EndlineSurveiKelurahan {
-  kelurahanId            Int       @id @map("id_kelurahan_endline")
-  namaKelurahan          String    @map("nama_kelurahan") @db.VarChar(100)
-  kecamatan              String?   @db.VarChar(100)
-  tanggalSurvei          DateTime? @map("tanggal_survei") @db.Date
-  enumerator             String?   @db.VarChar(100)
-  catatanData            String?   @map("catatan_data")
-  validasiDplId          String?   @map("id_validasi_dpl")
-  statusValidasi         String    @default("BELUM_VALIDASI") @map("status_validasi")
-  catatanValidasi        String?   @map("catatan_validasi")
-  createdAt              DateTime  @default(now()) @map("dibuat_pada")
-  updatedAt              DateTime  @updatedAt @map("diperbarui_pada")
+  kelurahanId     Int       @id @map("id_kelurahan_endline")
+  namaKelurahan   String    @map("nama_kelurahan") @db.VarChar(100)
+  kecamatan       String?   @db.VarChar(100)
+  tanggalSurvei   DateTime? @map("tanggal_survei") @db.Date
+  enumerator      String?   @db.VarChar(100)
+  catatanData     String?   @map("catatan_data")
+  validasiDplId   String?   @map("id_validasi_dpl")
+  statusValidasi  String    @default("BELUM_VALIDASI") @map("status_validasi")
+  catatanValidasi String?   @map("catatan_validasi")
+  createdAt       DateTime  @default(now()) @map("dibuat_pada")
+  updatedAt       DateTime  @updatedAt @map("diperbarui_pada")
 
-  pemilahanSampah        EndlinePemilahanSampah?
-  volumeSampah           EndlineVolumeSampah?
-  bankSampahPengolahan   EndlineBankSampahPengolahan?
-  catatanKesimpulan      EndlineCatatanKesimpulan?
-  validasiDpl            User?     @relation("DplEndlineValidasi", fields: [validasiDplId], references: [id])
+  pemilahanSampah      EndlinePemilahanSampah?
+  volumeSampah         EndlineVolumeSampah?
+  bankSampahPengolahan EndlineBankSampahPengolahan?
+  catatanKesimpulan    EndlineCatatanKesimpulan?
+  validasiDpl          User?                        @relation("DplEndlineValidasi", fields: [validasiDplId], references: [id])
 
   @@map("endline_survei_kelurahan")
 }
 
 model EndlinePemilahanSampah {
-  id                       Int                       @id @default(autoincrement())
-  kelurahanId              Int                       @unique @map("id_kelurahan_endline")
-  jumlahRumahMemilah       Int?                      @map("jumlah_rumah_memilah")
-  totalJumlahRumahDiRw     Int?                      @map("total_jumlah_rumah_di_rw")
-  persentasePemilahan      Decimal?                  @map("persentase_pemilahan") @db.Decimal(5, 4)
-  tingkatPemilahan         String?                   @map("tingkat_pemilahan") @db.VarChar(50)
-  catatan                  String?
-  kelurahan                EndlineSurveiKelurahan    @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+  id                   Int                    @id @default(autoincrement())
+  kelurahanId          Int                    @unique @map("id_kelurahan_endline")
+  jumlahRumahMemilah   Int?                   @map("jumlah_rumah_memilah")
+  totalJumlahRumahDiRw Int?                   @map("total_jumlah_rumah_di_rw")
+  persentasePemilahan  Decimal?               @map("persentase_pemilahan") @db.Decimal(5, 4)
+  tingkatPemilahan     String?                @map("tingkat_pemilahan") @db.VarChar(50)
+  catatan              String?
+  kelurahan            EndlineSurveiKelurahan @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
 
   @@map("endline_pemilahan_sampah")
 }
 
 model EndlineVolumeSampah {
-  id                      Int                       @id @default(autoincrement())
-  kelurahanId             Int                       @unique @map("id_kelurahan_endline")
-  organikKgPerHari        Decimal?                  @map("organik_kg_per_hari") @db.Decimal(10, 2)
-  anorganikKgPerHari      Decimal?                  @map("anorganik_kg_per_hari") @db.Decimal(10, 2)
-  residuKgPerHari         Decimal?                  @map("residu_kg_per_hari") @db.Decimal(10, 2)
-  totalVolumeKgPerHari    Decimal?                  @map("total_volume_kg_per_hari") @db.Decimal(10, 2)
-  catatan                 String?
-  kelurahan               EndlineSurveiKelurahan    @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+  id                   Int                    @id @default(autoincrement())
+  kelurahanId          Int                    @unique @map("id_kelurahan_endline")
+  organikKgPerHari     Decimal?               @map("organik_kg_per_hari") @db.Decimal(10, 2)
+  anorganikKgPerHari   Decimal?               @map("anorganik_kg_per_hari") @db.Decimal(10, 2)
+  residuKgPerHari      Decimal?               @map("residu_kg_per_hari") @db.Decimal(10, 2)
+  totalVolumeKgPerHari Decimal?               @map("total_volume_kg_per_hari") @db.Decimal(10, 2)
+  catatan              String?
+  kelurahan            EndlineSurveiKelurahan @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
 
   @@map("endline_volume_sampah")
 }
 
 model EndlineBankSampahPengolahan {
-  id                             Int                       @id @default(autoincrement())
-  kelurahanId                    Int                       @unique @map("id_kelurahan_endline")
-  bankSampahAktif                Int?                      @map("bank_sampah_aktif")
-  bankSampahTidakAktif           Int?                      @map("bank_sampah_tidak_aktif")
-  jumlahUnitKomposter            String?                   @map("jumlah_unit_komposter") @db.VarChar(50)
-  jumlahTitikMaggotBsf           String?                   @map("jumlah_titik_maggot_bsf") @db.VarChar(100)
-  bioporiLoseda                  Boolean?                  @map("biopori_loseda")
-  ecobrickKerajinanDaurUlang     Boolean?                  @map("ecobrick_kerajinan_daur_ulang")
-  buruanSae                      Boolean?                  @map("buruan_sae")
-  pengepulMitraDaurUlang         Boolean?                  @map("pengepul_mitra_daur_ulang")
-  digitalisasiData               Boolean?                  @map("digitalisasi_data")
-  aktivitasLainnyaKeterangan     String?                   @map("aktivitas_lainnya_keterangan")
-  kelurahan                      EndlineSurveiKelurahan    @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+  id                         Int                    @id @default(autoincrement())
+  kelurahanId                Int                    @unique @map("id_kelurahan_endline")
+  bankSampahAktif            Int?                   @map("bank_sampah_aktif")
+  bankSampahTidakAktif       Int?                   @map("bank_sampah_tidak_aktif")
+  jumlahUnitKomposter        String?                @map("jumlah_unit_komposter") @db.VarChar(50)
+  jumlahTitikMaggotBsf       String?                @map("jumlah_titik_maggot_bsf") @db.VarChar(100)
+  bioporiLoseda              Boolean?               @map("biopori_loseda")
+  ecobrickKerajinanDaurUlang Boolean?               @map("ecobrick_kerajinan_daur_ulang")
+  buruanSae                  Boolean?               @map("buruan_sae")
+  pengepulMitraDaurUlang     Boolean?               @map("pengepul_mitra_daur_ulang")
+  digitalisasiData           Boolean?               @map("digitalisasi_data")
+  aktivitasLainnyaKeterangan String?                @map("aktivitas_lainnya_keterangan")
+  kelurahan                  EndlineSurveiKelurahan @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
 
   @@map("endline_bank_sampah_pengolahan")
 }
 
 model EndlineCatatanKesimpulan {
-  id                            Int                       @id @default(autoincrement())
-  kelurahanId                   Int                       @unique @map("id_kelurahan_endline")
-  prioritasIntervensi           String?                   @map("prioritas_intervensi")
-  catatanTambahanRisikoSosial   String?                   @map("catatan_tambahan_risiko_sosial")
-  kelurahan                     EndlineSurveiKelurahan    @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
+  id                          Int                    @id @default(autoincrement())
+  kelurahanId                 Int                    @unique @map("id_kelurahan_endline")
+  prioritasIntervensi         String?                @map("prioritas_intervensi")
+  catatanTambahanRisikoSosial String?                @map("catatan_tambahan_risiko_sosial")
+  kelurahan                   EndlineSurveiKelurahan @relation(fields: [kelurahanId], references: [kelurahanId], onDelete: Cascade)
 
   @@map("endline_catatan_kesimpulan")
 }
 
-/** Riwayat impor file ke database — untuk audit dan pelacakan */
+/**
+ * Riwayat impor file ke database — untuk audit dan pelacakan
+ */
 model ImportLog {
   id            String       @id @default(uuid())
   userId        String       @map("id_pengguna")
@@ -1340,43 +1348,43 @@ enum StatusPenilaianKkn {
 // ─────────────────────────────────────────────
 
 model LogbookKkn {
-  id                    String            @id @default(uuid())
-  nomor                 Int?              @map("nomor")
-  kelompokId            String            @map("id_kelompok")
-  penulisId             String            @map("id_penulis")
-  tanggalKegiatan       DateTime          @map("tanggal_kegiatan") @db.Date
-  waktuMulai            String?           @map("waktu_mulai")
-  waktuSelesai          String?           @map("waktu_selesai")
-  tempat                String            @map("tempat")
-  deskripsi             String            @map("deskripsi")
-  fotoBuktiUrl          String            @map("foto_bukti_url")
-  tipeAktivitas         TipeAktivitasKkn  @default(KELOMPOK) @map("tipe_aktivitas")
-  programKerjaId        String?           @map("id_program_kerja")
-  fasilitasId           String?           @map("id_fasilitas")
-  
-  // Status Approval 2-Tingkat
-  statusApproval        StatusLogbookKkn  @default(MENUNGGU_PERSETUJUAN_KETUA) @map("status_persetujuan")
-  
-  // Approval Ketua Kelompok
-  disetujuiKetuaOlehId  String?           @map("id_ketua_penyetuju")
-  disetujuiKetuaPada    DateTime?         @map("disetujui_ketua_pada")
-  catatanKetua          String?           @map("catatan_ketua")
-  
-  // Verifikasi DPL
-  diverifikasiDplOlehId String?           @map("id_dpl_verifikator")
-  diverifikasiDplPada   DateTime?         @map("diverifikasi_dpl_pada")
-  catatanDpl            String?           @map("catatan_dpl")
-  
-  pekanKe               Int               @default(1) @map("pekan_ke")
-  createdAt             DateTime          @default(now()) @map("dibuat_pada")
-  updatedAt             DateTime          @updatedAt @map("diperbarui_pada")
+  id              String           @id @default(uuid())
+  nomor           Int?             @map("nomor")
+  kelompokId      String           @map("id_kelompok")
+  penulisId       String           @map("id_penulis")
+  tanggalKegiatan DateTime         @map("tanggal_kegiatan") @db.Date
+  waktuMulai      String?          @map("waktu_mulai")
+  waktuSelesai    String?          @map("waktu_selesai")
+  tempat          String           @map("tempat")
+  deskripsi       String           @map("deskripsi")
+  fotoBuktiUrl    String           @map("foto_bukti_url")
+  tipeAktivitas   TipeAktivitasKkn @default(KELOMPOK) @map("tipe_aktivitas")
+  programKerjaId  String?          @map("id_program_kerja")
+  fasilitasId     String?          @map("id_fasilitas")
 
-  kelompok              KelompokKkn       @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
-  penulis               User              @relation("LogbookPenulis", fields: [penulisId], references: [id], onDelete: Cascade)
-  disetujuiKetuaOleh    User?             @relation("LogbookKetuaPenyetuju", fields: [disetujuiKetuaOlehId], references: [id])
-  diverifikasiDplOleh   User?             @relation("LogbookDplVerifikator", fields: [diverifikasiDplOlehId], references: [id])
-  programKerja          ProgramKerjaKkn?  @relation(fields: [programKerjaId], references: [id], onDelete: SetNull)
-  fasilitas             Facility?         @relation(fields: [fasilitasId], references: [id], onDelete: SetNull)
+  // Status Approval 2-Tingkat
+  statusApproval StatusLogbookKkn @default(MENUNGGU_PERSETUJUAN_KETUA) @map("status_persetujuan")
+
+  // Approval Ketua Kelompok
+  disetujuiKetuaOlehId String?   @map("id_ketua_penyetuju")
+  disetujuiKetuaPada   DateTime? @map("disetujui_ketua_pada")
+  catatanKetua         String?   @map("catatan_ketua")
+
+  // Verifikasi DPL
+  diverifikasiDplOlehId String?   @map("id_dpl_verifikator")
+  diverifikasiDplPada   DateTime? @map("diverifikasi_dpl_pada")
+  catatanDpl            String?   @map("catatan_dpl")
+
+  pekanKe   Int      @default(1) @map("pekan_ke")
+  createdAt DateTime @default(now()) @map("dibuat_pada")
+  updatedAt DateTime @updatedAt @map("diperbarui_pada")
+
+  kelompok            KelompokKkn      @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
+  penulis             User             @relation("LogbookPenulis", fields: [penulisId], references: [id], onDelete: Cascade)
+  disetujuiKetuaOleh  User?            @relation("LogbookKetuaPenyetuju", fields: [disetujuiKetuaOlehId], references: [id])
+  diverifikasiDplOleh User?            @relation("LogbookDplVerifikator", fields: [diverifikasiDplOlehId], references: [id])
+  programKerja        ProgramKerjaKkn? @relation(fields: [programKerjaId], references: [id], onDelete: SetNull)
+  fasilitas           Facility?        @relation(fields: [fasilitasId], references: [id], onDelete: SetNull)
 
   @@index([kelompokId, tanggalKegiatan(sort: Desc)])
   @@index([penulisId])
@@ -1385,27 +1393,27 @@ model LogbookKkn {
 }
 
 model LogbookDpl {
-  id              String      @id @default(uuid())
-  dplId           String      @map("id_dpl")
-  kelompokId      String      @map("id_kelompok")
-  tanggal         DateTime    @map("tanggal") @db.Date
-  waktuMulai      String?     @map("waktu_mulai")
-  waktuSelesai    String?     @map("waktu_selesai")
-  kategori        String?     @default("Kunjungan Lapangan") @map("kategori")
-  tempat          String      @map("tempat")
-  programKerjaId  String?     @map("id_program_kerja")
-  deskripsi       String      @map("deskripsi")
-  arahanEvaluasi  String?     @map("arahan_evaluasi")
-  fotoBuktiUrl    String?     @map("foto_bukti_url")
-  status          String?     @default("TERKIRIM") @map("status")
-  durasiMenit     Int?        @default(120) @map("durasi_menit")
-  simpanLokasi    Boolean?    @default(true) @map("simpan_lokasi")
-  pekanKe         Int         @default(1) @map("pekan_ke")
-  createdAt       DateTime    @default(now()) @map("dibuat_pada")
-  updatedAt       DateTime    @updatedAt @map("diperbarui_pada")
+  id             String   @id @default(uuid())
+  dplId          String   @map("id_dpl")
+  kelompokId     String   @map("id_kelompok")
+  tanggal        DateTime @map("tanggal") @db.Date
+  waktuMulai     String?  @map("waktu_mulai")
+  waktuSelesai   String?  @map("waktu_selesai")
+  kategori       String?  @default("Kunjungan Lapangan") @map("kategori")
+  tempat         String   @map("tempat")
+  programKerjaId String?  @map("id_program_kerja")
+  deskripsi      String   @map("deskripsi")
+  arahanEvaluasi String?  @map("arahan_evaluasi")
+  fotoBuktiUrl   String?  @map("foto_bukti_url")
+  status         String?  @default("TERKIRIM") @map("status")
+  durasiMenit    Int?     @default(120) @map("durasi_menit")
+  simpanLokasi   Boolean? @default(true) @map("simpan_lokasi")
+  pekanKe        Int      @default(1) @map("pekan_ke")
+  createdAt      DateTime @default(now()) @map("dibuat_pada")
+  updatedAt      DateTime @updatedAt @map("diperbarui_pada")
 
-  dpl             User        @relation("DplLogbooks", fields: [dplId], references: [id], onDelete: Cascade)
-  kelompok        KelompokKkn @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
+  dpl      User        @relation("DplLogbooks", fields: [dplId], references: [id], onDelete: Cascade)
+  kelompok KelompokKkn @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
 
   @@index([dplId, pekanKe])
   @@index([kelompokId])
@@ -1424,8 +1432,6 @@ enum StatusLogbookKkn {
   DISETUJUI_DPL
   PERLU_REVISI_DPL
 }
-
-
 
 model UserNotificationSync {
   userId             String   @id @map("id_pengguna")

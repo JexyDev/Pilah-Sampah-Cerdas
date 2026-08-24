@@ -348,6 +348,14 @@ export const dplController = {
         res.status(400).json({ error: "BAD_REQUEST", message: "Program kerja yang ditolak tidak dapat dinilai" });
         return;
       }
+      if (error.message === "PROKER_NOT_APPROVED") {
+        res.status(400).json({ error: "BAD_REQUEST", message: "Hanya program kerja yang telah disetujui yang dapat dinilai" });
+        return;
+      }
+      if (error.message === "PROKER_NOT_COMPLETED") {
+        res.status(400).json({ error: "BAD_REQUEST", message: "Hanya program kerja yang telah selesai pelaksanaannya yang dapat dinilai" });
+        return;
+      }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   },

@@ -235,18 +235,10 @@ export class AuthService {
         select: { userId: true },
       });
       if (record?.userId) {
-        const userId = record.userId;
-        await prisma.studentLocation.deleteMany({
-          where: { studentId: userId },
-        });
-
-        // Clear student location logs on logout (presensi tetap BERLANGSUNG/ter-freeze tanpa 10 poin)
-
-        // Broadcast removal via WebSocket
-        websocketService.broadcastStudentLogout(userId);
-        websocketService.broadcastStudentLocationRemoved(userId);
+        await this.logoutUserById(record.userId);
+      } else {
+        await authRepository.deleteRefreshToken(token);
       }
-      await authRepository.deleteRefreshToken(token);
     }
   }
 
@@ -255,9 +247,11 @@ export class AuthService {
       where: { studentId: userId },
     });
 
-    // Auto check-out any unclosed attendance session today
+    // Auto check-out any unclosed attendance session today (catat jam pulang/jam pergi aktual)
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
+    const now = new Date();
+
     await prisma.activityAttendance.updateMany({
       where: {
         studentId: userId,
@@ -265,10 +259,17 @@ export class AuthService {
         checkOutAt: null,
       },
       data: {
-        checkOutAt: new Date(),
+        checkOutAt: now,
         status: "SELESAI",
       },
     }).catch(() => {});
+
+    // Broadcast checkout event via WebSocket so Web Monitoring table & map update status immediately
+    websocketService.broadcastStudentCheckout({
+      studentId: userId,
+      completedAt: now.toISOString(),
+      status: "SELESAI",
+    });
 
     // Broadcast removal via WebSocket
     websocketService.broadcastStudentLogout(userId);

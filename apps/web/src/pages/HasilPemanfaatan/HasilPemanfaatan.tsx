@@ -98,6 +98,7 @@ export const HasilPemanfaatan: React.FC = () => {
     fetchProgramList();
   }, []);
 
+
   // Filtered feedback calculation
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
