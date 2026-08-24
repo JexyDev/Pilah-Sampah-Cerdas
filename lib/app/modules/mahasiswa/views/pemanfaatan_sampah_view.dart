@@ -95,6 +95,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
   }
 
   Future<void> _onSubmit() async {
+    ScaffoldMessenger.of(context).clearSnackBars();
     final isPemanfaatan = _jenisLaporan == 'Pemanfaatan & Hasil';
     final formKey = isPemanfaatan ? _formKey1 : _formKey2;
     if (!formKey.currentState!.validate()) return;
@@ -191,6 +192,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                   data: (prokers) {
                     if (prokers.isEmpty) return const SizedBox.shrink();
                     return DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue: _selectedProgramKerjaId,
                       decoration: InputDecoration(
                         labelText: 'Program Kerja KKN Terkait',

@@ -46,7 +46,6 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
         'judul': _judulCtrl.text.trim(),
         'kategori': 'LAPORAN_AKHIR',
         'rencanaAnggaran': 0,
-        'targetTanggal': DateTime.now().toIso8601String(),
         'deskripsi': _deskripsiCtrl.text.trim(),
         'filePdfPath': _selectedPdf!.path,
       });

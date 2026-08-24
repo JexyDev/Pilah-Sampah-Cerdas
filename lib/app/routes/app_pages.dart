@@ -28,12 +28,14 @@ import '../modules/mahasiswa/views/mahasiswa_view.dart';
 import '../modules/mahasiswa/views/kelompok_kkn_view.dart';
 import '../modules/mahasiswa/views/daftar_warga_view.dart';
 import '../modules/mahasiswa/views/detail_warga_view.dart';
+import '../modules/warga/views/warga_aspirasi_view.dart';
 import '../modules/mahasiswa/views/register_posko_view.dart';
 import '../modules/mahasiswa/views/register_fasilitas_view.dart';
 import '../modules/mahasiswa/views/pemanfaatan_sampah_view.dart';
 import '../modules/mahasiswa/views/edit_profil_mahasiswa_view.dart';
 import '../modules/mahasiswa/views/pengajuan_izin_form_view.dart';
 import '../modules/mahasiswa/views/input_laporan_akhir_view.dart';
+import '../modules/mahasiswa/views/input_logbook_kkn_view.dart';
 import '../modules/mahasiswa/views/monitoring_dampak_kelurahan_view.dart';
 import '../modules/mahasiswa/views/riwayat_kkn_view.dart';
 import '../modules/petugas_pemilahan/views/riwayat_petugas_pemilahan_view.dart';
@@ -116,6 +118,8 @@ class AppPages {
         return _buildRoute(const DetailWargaView(), settings);
       case AppRoutes.aktivasiWarga:
         return _buildRoute(const AktivasiWargaView(), settings);
+      case AppRoutes.aspirasiWarga:
+        return _buildRoute(const WargaAspirasiView(), settings);
       case AppRoutes.pemanfaatanSampah:
         return _buildRoute(const PemanfaatanSampahView(), settings);
       case AppRoutes.editProfilMahasiswa:
@@ -143,6 +147,8 @@ class AppPages {
         return _buildRoute(const RegisterFasilitasView(), settings);
       case AppRoutes.inputLaporanAkhir:
         return _buildRoute(const InputLaporanAkhirView(), settings);
+      case AppRoutes.inputLogbookKkn:
+        return _buildRoute(const InputLogbookKknView(), settings);
       case AppRoutes.riwayatKkn:
         return _buildRoute(const RiwayatKknView(), settings);
       case AppRoutes.poin:

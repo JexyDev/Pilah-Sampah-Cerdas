@@ -781,6 +781,44 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
+  Future<bool> submitLogbookHarian(Map<String, dynamic> data, {String? imagePath}) async {
+    try {
+      FormData formData;
+      if (imagePath != null) {
+        final fileExt = imagePath.split('.').last.toLowerCase();
+        String mimeType = 'image/jpeg';
+        if (fileExt == 'png') mimeType = 'image/png';
+        if (fileExt == 'webp') mimeType = 'image/webp';
+
+        formData = FormData.fromMap({
+          ...data,
+          'fotoBukti': await MultipartFile.fromFile(
+            imagePath,
+            filename: 'logbook_harian_${DateTime.now().millisecondsSinceEpoch}.$fileExt',
+            contentType: MediaType.parse(mimeType),
+          ),
+        });
+      } else {
+        formData = FormData.fromMap(data);
+      }
+
+      final response = await apiClient.dio.post(
+        ApiEndpoints.logbookMahasiswa,
+        data: formData,
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+        if (e is DioException) {
+          final rawData = e.response?.data?.toString() ?? 'null';
+          final snippet = rawData.length > 50 ? rawData.substring(0, 50) : rawData;
+          final msg = _extractError(e.response?.data, 'HTTP ${e.response?.statusCode}: $snippet');
+          throw Exception(msg);
+        }
+      rethrow;
+    }
+  }
+
+  @override
   Future<List<dynamic>> getUnharvestedLogbooks() async {
     try {
       final response = await apiClient.dio.get(ApiEndpoints.kknPemanfaatanUnharvested);

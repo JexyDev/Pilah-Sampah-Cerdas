@@ -67,6 +67,7 @@ class ApiEndpoints {
   static const String kknPemanfaatanUnharvested = '/kkn/pemanfaatan-sampah/unharvested';
   static const String kknPengajuanIzin = '/kkn/pengajuan-izin';
   static const String kknPoskoRegister = '/kkn/posko/register';
+  static const String logbookMahasiswa = '/logbook/mahasiswa';
   static const String kknPoskoMe = '/kkn/posko/me';
   static const String kknFacilities = '/facilities';
   static const String kknFasilitasJenis = '/kkn/fasilitas/jenis';

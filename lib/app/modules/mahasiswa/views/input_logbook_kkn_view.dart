@@ -2,11 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/notification_engine.dart';
-import '../../riwayat/controllers/riwayat_controller.dart' show pointHistoryProvider;
 import '../controllers/mahasiswa_notifikasi_controller.dart';
 import 'riwayat_program_kerja_view.dart'; // import provider untuk dropdown program kerja
 
@@ -15,22 +13,37 @@ final fasilitasWargaListProvider = FutureProvider.autoDispose<List<Map<String, d
   return repo.getFasilitasWarga();
 });
 
-class LogbookPemanfaatanView extends ConsumerStatefulWidget {
-  const LogbookPemanfaatanView({super.key});
+class InputLogbookKknView extends ConsumerStatefulWidget {
+  const InputLogbookKknView({super.key});
 
   @override
-  ConsumerState<LogbookPemanfaatanView> createState() => _LogbookPemanfaatanViewState();
+  ConsumerState<InputLogbookKknView> createState() => _InputLogbookKknViewState();
 }
 
-class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView> {
+class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
   final _formKey = GlobalKey<FormState>();
+  
   String? _selectedProkerId;
   String? _selectedFasilitasId;
-  final _teknologiCtrl = TextEditingController();
-  final _bahanBakuCtrl = TextEditingController();
-  final _beratInputCtrl = TextEditingController();
+  
+  final _tanggalCtrl = TextEditingController();
+  final _waktuMulaiCtrl = TextEditingController();
+  final _waktuSelesaiCtrl = TextEditingController();
+  final _lokasiCtrl = TextEditingController();
+  final _deskripsiCtrl = TextEditingController();
+  
+  DateTime _selectedDate = DateTime.now();
+  TimeOfDay? _startTime;
+  TimeOfDay? _endTime;
+  
   File? _selectedImage;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tanggalCtrl.text = "${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}";
+  }
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
@@ -43,41 +56,102 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
       setState(() => _selectedImage = File(picked.path));
     }
   }
+  
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 30)),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primaryGreen,
+              onPrimary: Colors.white,
+              onSurface: AppColors.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+        _tanggalCtrl.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
+    }
+  }
+
+  Future<void> _selectTime(bool isStart) async {
+    final initialTime = isStart ? _startTime ?? TimeOfDay.now() : _endTime ?? TimeOfDay.now();
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primaryGreen,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        final formatted = "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
+        if (isStart) {
+          _startTime = picked;
+          _waktuMulaiCtrl.text = formatted;
+        } else {
+          _endTime = picked;
+          _waktuSelesaiCtrl.text = formatted;
+        }
+      });
+    }
+  }
 
   Future<void> _submit() async {
+    ScaffoldMessenger.of(context).clearSnackBars();
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedProkerId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih Program Kerja terlebih dahulu.')));
+    
+    if (_selectedImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Foto dokumentasi wajib diambil.'),
+        backgroundColor: AppColors.dangerRed,
+      ));
       return;
     }
     
     setState(() => _isLoading = true);
     try {
       final repo = ref.read(kknRepositoryProvider);
-      await repo.submitLogbookPemanfaatan({
-        'programKerjaId': _selectedProkerId,
+      await repo.submitLogbookHarian({
+        'tanggalKegiatan': _tanggalCtrl.text,
+        'waktuMulai': _waktuMulaiCtrl.text,
+        'waktuSelesai': _waktuSelesaiCtrl.text,
+        'tempat': _lokasiCtrl.text.trim(),
+        'deskripsi': _deskripsiCtrl.text.trim(),
+        if (_selectedProkerId != null) 'programKerjaId': _selectedProkerId,
         if (_selectedFasilitasId != null) 'fasilitasId': _selectedFasilitasId,
-        'teknologi': _teknologiCtrl.text.trim(),
-        'bahanBaku': _bahanBakuCtrl.text.trim(),
-        'beratInputKg': double.tryParse(_beratInputCtrl.text.trim()) ?? 0,
       }, imagePath: _selectedImage?.path);
       
       if (mounted) {
-        // 1. Tampilkan Notifikasi Latar Belakang (Push Notification Local)
         NotificationEngine().showGenericNotification(
           id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
-          title: 'Kegiatan Berhasil Dicatat! 🎉',
-          body: 'Laporan kegiatan/aksi KKN Anda telah disubmit dan mendapatkan poin KKN.',
+          title: 'Logbook Berhasil Dikirim! ✅',
+          body: 'Laporan aktivitas harian Anda telah masuk dan menunggu validasi DPL.',
           color: AppColors.primaryGreen,
           payload: 'ROUTE_POIN',
         );
 
-        // 2. Invalidate Data Poin dan Notifikasi agar langsung update
-        ref.invalidate(pointHistoryProvider);
         ref.invalidate(mahasiswaNotificationsProvider);
 
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Berhasil mencatat aksi harian!'),
+          content: Text('Berhasil mencatat logbook harian!'),
           backgroundColor: AppColors.success,
         ));
         Navigator.pop(context);
@@ -96,9 +170,11 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
 
   @override
   void dispose() {
-    _teknologiCtrl.dispose();
-    _bahanBakuCtrl.dispose();
-    _beratInputCtrl.dispose();
+    _tanggalCtrl.dispose();
+    _waktuMulaiCtrl.dispose();
+    _waktuSelesaiCtrl.dispose();
+    _lokasiCtrl.dispose();
+    _deskripsiCtrl.dispose();
     super.dispose();
   }
 
@@ -109,7 +185,7 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        title: const Text('Laporan Kegiatan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        title: const Text('Input Logbook Harian', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
@@ -130,65 +206,104 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
               const SizedBox(height: 16),
               
               _buildSectionCard(
-                title: 'Data Program',
-                icon: Icons.assignment_rounded,
+                title: 'Data Aktivitas',
+                icon: Icons.article_rounded,
                 children: [
-                  const Text('Pilih Program (Hanya yang di-ACC)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
+                  const Text('Tanggal Kegiatan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _tanggalCtrl,
+                    readOnly: true,
+                    onTap: _selectDate,
+                    decoration: _inputDecoration('YYYY-MM-DD').copyWith(
+                      suffixIcon: const Icon(Icons.calendar_month_rounded, color: AppColors.primaryGreen),
+                    ),
+                    validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Waktu Mulai', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _waktuMulaiCtrl,
+                              readOnly: true,
+                              onTap: () => _selectTime(true),
+                              decoration: _inputDecoration('08:00').copyWith(
+                                suffixIcon: const Icon(Icons.access_time_rounded, color: AppColors.primaryGreen),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Waktu Selesai', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _waktuSelesaiCtrl,
+                              readOnly: true,
+                              onTap: () => _selectTime(false),
+                              decoration: _inputDecoration('16:00').copyWith(
+                                suffixIcon: const Icon(Icons.access_time_rounded, color: AppColors.primaryGreen),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  const Text('Lokasi / Tempat', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _lokasiCtrl,
+                    decoration: _inputDecoration('Cth: RW 05 / Kelurahan / Lapangan'),
+                    validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+              
+              _buildSectionCard(
+                title: 'Relasi Program (Opsional)',
+                icon: Icons.link_rounded,
+                children: [
+                  const Text('Program Kerja Terkait', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
                   const SizedBox(height: 8),
                   prokerState.when(
                     loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen)),
                     error: (e, _) => Text(e.toString(), style: const TextStyle(color: AppColors.dangerRed)),
                     data: (list) {
                       final approvedProker = list.where((p) {
-                        final isApproved = p['status'] == 'APPROVED' || p['statusUsulan'] == 'APPROVED';
-                        
-                        // Check if expired
-                        bool isExpired = false;
-                        final rawWaktu = p['waktuPelaksanaan'] ?? p['waktu_pelaksanaan'] ?? '';
-                        if (rawWaktu.toString().isNotEmpty) {
-                          final RegExp dateRegex = RegExp(r'\d{4}-\d{2}-\d{2}');
-                          final matches = dateRegex.allMatches(rawWaktu.toString());
-                          if (matches.isNotEmpty) {
-                            final lastMatch = matches.last.group(0)!;
-                            final endDate = DateTime.tryParse(lastMatch);
-                            if (endDate != null && DateTime.now().isAfter(endDate.add(const Duration(days: 1)))) {
-                              isExpired = true;
-                            }
-                          }
-                        }
-                        
-                        return isApproved && !isExpired;
+                        return p['status'] == 'APPROVED' || p['statusUsulan'] == 'APPROVED';
                       }).toList();
-                      if (approvedProker.isEmpty) {
-                        return Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.dangerRed.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: AppColors.dangerRed.withValues(alpha: 0.3)),
-                          ),
-                          child: const Text(
-                            'Belum ada Program Kerja yang disetujui DPL.',
-                            style: TextStyle(color: AppColors.dangerRed, fontSize: 13),
-                          ),
-                        );
-                      }
+                      
                       return DropdownButtonFormField<String>(
                         isExpanded: true,
                         initialValue: _selectedProkerId,
-                        decoration: _inputDecoration('Pilih Proker...'),
+                        decoration: _inputDecoration('Pilih Proker (Jika ada)...'),
                         items: approvedProker.map((p) => DropdownMenuItem(
                           value: p['id'].toString(),
                           child: Text(p['judul'], style: const TextStyle(fontSize: 14)),
                         )).toList(),
                         onChanged: (val) => setState(() => _selectedProkerId = val),
-                        validator: (val) => val == null ? 'Wajib dipilih' : null,
                       );
                     },
                   ),
 
                   const SizedBox(height: 16),
-                  const Text('Pilih Fasilitas Warga (Opsional)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
+                  const Text('Fasilitas Warga Terkait', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
                   const SizedBox(height: 8),
                   Consumer(
                     builder: (ctx, ref, _) {
@@ -197,13 +312,10 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
                         loading: () => const LinearProgressIndicator(color: AppColors.primaryGreen),
                         error: (e, _) => Text(e.toString(), style: const TextStyle(color: AppColors.dangerRed)),
                         data: (list) {
-                          if (list.isEmpty) {
-                            return const Text('Tidak ada fasilitas warga di RW ini.', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontStyle: FontStyle.italic));
-                          }
                           return DropdownButtonFormField<String>(
                             isExpanded: true,
                             initialValue: _selectedFasilitasId,
-                            decoration: _inputDecoration('Pilih Fasilitas...'),
+                            decoration: _inputDecoration('Pilih Fasilitas (Jika ada)...'),
                             items: list.map((f) => DropdownMenuItem(
                               value: f['id'].toString(),
                               child: Text(f['nama'] ?? '-', style: const TextStyle(fontSize: 14)),
@@ -215,49 +327,24 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
                   }),
                 ],
               ),
-
+              
               const SizedBox(height: 16),
 
               _buildSectionCard(
-                title: 'Detail Kegiatan',
-                icon: Icons.tune_rounded,
+                title: 'Uraian & Dokumentasi',
+                icon: Icons.edit_note_rounded,
                 children: [
-                  const Text('Teknologi / Metode', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
+                  const Text('Uraian Aktivitas & Hasil', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
                   const SizedBox(height: 8),
                   TextFormField(
-                    controller: _teknologiCtrl,
-                    decoration: _inputDecoration('Contoh: Komposter, Maggot BSF'),
+                    controller: _deskripsiCtrl,
+                    maxLines: 4,
+                    decoration: _inputDecoration('Ceritakan secara singkat apa yang dilakukan dan bagaimana hasilnya...'),
                     validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
                   ),
                   const SizedBox(height: 16),
 
-                  const Text('Bahan Baku Utama', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _bahanBakuCtrl,
-                    decoration: _inputDecoration('Contoh: Sisa Makanan Warga'),
-                    validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
-                  ),
-                  const SizedBox(height: 16),
-
-                  const Text('Berat Sampah Masuk (Input)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _beratInputCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: _inputDecoration('').copyWith(suffixText: 'Kg'),
-                    validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              _buildSectionCard(
-                title: 'Dokumentasi',
-                icon: Icons.camera_alt_rounded,
-                children: [
-                  const Text('Foto Dokumentasi Aksi', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
+                  const Text('Foto Kegiatan (Wajib)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
                   const SizedBox(height: 8),
                   InkWell(
                     onTap: _pickImage,
@@ -279,9 +366,9 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
                                   decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3))),
                                   child: const Icon(Icons.add_a_photo_rounded, size: 32, color: AppColors.primaryGreen),
                                 ),
-                                  const SizedBox(height: 12),
-                                  const Text('Ambil Foto Kegiatan (Kamera Langsung)', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600, fontSize: 13)),
-                                ],
+                                const SizedBox(height: 12),
+                                const Text('Ambil Foto Kegiatan (Kamera Langsung)', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600, fontSize: 13)),
+                              ],
                             ),
                     ),
                   ),
@@ -306,7 +393,7 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
                         children: [
                           Icon(Icons.send_rounded, size: 20),
                           SizedBox(width: 10),
-                          Text('Simpan Laporan & Dapatkan Poin', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                          Text('Kirim Logbook Harian', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                         ],
                       ),
               ),
@@ -329,19 +416,19 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.stars_rounded, color: AppColors.warningOrange, size: 24),
+          Icon(Icons.info_outline_rounded, color: AppColors.primaryGreen, size: 24),
           SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Lapor Kegiatan = Poin',
+                  'Catat Aktivitas Harian',
                   style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14),
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Setiap laporan pemanfaatan sampah yang kamu simpan akan menambahkan poin kontribusi KKN.',
+                  'Laporan harian ini akan menjadi dasar penilaian kinerja individu maupun kelompok oleh DPL Anda.',
                   style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3),
                 ),
               ],

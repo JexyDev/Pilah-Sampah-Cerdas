@@ -803,7 +803,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
     // Default: Warga
     return Row(
       children: [
-        // Scan Sampah ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â hijau/biru gradient
+        // Scan Sampah
         Expanded(
           child: GestureDetector(
             onTap: isOnline
@@ -813,33 +813,52 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
               opacity: isOnline ? 1.0 : 0.5,
               duration: const Duration(milliseconds: 200),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 18,
-                  horizontal: 16,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.organicColor, Color(0xFF388E3C)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.qr_code_scanner_rounded,
-                      color: Colors.white,
-                      size: 28,
+                  border: Border.all(color: Colors.grey.shade200, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
                     ),
-                    SizedBox(height: 8),
-                    Text(
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppColors.organicColor, Color(0xFF388E3C)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.qr_code_scanner_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
                       'Scan Sampah',
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        height: 1.1,
                       ),
                     ),
                   ],
@@ -848,14 +867,15 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
             ),
           ),
         ),
-        const SizedBox(width: 12),
-        // Minta Kosongkan Tempat Sampah ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â outline merah/biru
+        const SizedBox(width: 10),
+        // Minta Kosongkan
         Expanded(
           child: GestureDetector(
             onTap: isOnline
                 ? () => Navigator.of(context).pushNamed(AppRoutes.resetBin)
                 : () {
-                    ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(context).clearSnackBars(); 
+                    ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Koneksi internet diperlukan.'),
                         backgroundColor: AppColors.dangerRed,
@@ -867,36 +887,118 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
               opacity: isOnline ? 1.0 : 0.5,
               duration: const Duration(milliseconds: 200),
               child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.primaryGreen, width: 1.5),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Image.asset(
-                    'assets/icons/waste.png',
-                    color: AppColors.primaryGreen,
-                    width: 28,
-                    height: 28,
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Minta Kosongkan',
-                    style: TextStyle(
-                      color: AppColors.primaryGreen,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade200, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Image.asset(
+                          'assets/icons/waste.png',
+                          color: AppColors.primaryGreen,
+                          width: 22,
+                          height: 22,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Kosongkan',
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
+        const SizedBox(width: 10),
+        // Kritik & Saran
+        Expanded(
+          child: GestureDetector(
+            onTap: isOnline
+                ? () => Navigator.of(context).pushNamed(AppRoutes.aspirasiWarga)
+                : null,
+            child: AnimatedOpacity(
+              opacity: isOnline ? 1.0 : 0.5,
+              duration: const Duration(milliseconds: 200),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade200, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.forum_rounded,
+                          color: AppColors.primaryGreen,
+                          size: 22,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Kritik/Saran',
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }

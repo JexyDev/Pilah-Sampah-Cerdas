@@ -27,6 +27,7 @@ class AppRoutes {
   static const String daftarWarga = '/daftar-warga';
   static const String detailWarga = '/detail-warga';
   static const String aktivasiWarga = '/aktivasi-warga';
+  static const String aspirasiWarga = '/warga/aspirasi';
 
   static const String riwayatPetugasPemilahan = '/riwayat-petugas-pemilahan';
   static const String pemanfaatanSampah = '/pemanfaatan-sampah';
@@ -46,5 +47,6 @@ class AppRoutes {
   static const String logbookPemanfaatan = '/mahasiswa/pemanfaatan/logbook';
   static const String catatPanen = '/mahasiswa/pemanfaatan/panen';
   static const String inputLaporanAkhir = '/mahasiswa/laporan-akhir/input';
+  static const String inputLogbookKkn = '/mahasiswa/logbook-kkn/input';
 }
 
