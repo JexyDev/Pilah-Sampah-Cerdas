@@ -34,7 +34,7 @@ router.get(
 router.post(
   "/mahasiswa",
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
-  safeUploadSingleImage,
+  safeUploadSingleImage("fotoBukti"),
   logbookController.createMahasiswaLogbook
 );
 
@@ -76,7 +76,7 @@ router.get(
 router.post(
   "/dpl",
   roleMiddleware(["DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "DEVELOPER"]),
-  safeUploadSingleImage,
+  safeUploadSingleImage("file"),
   logbookController.createDplLogbook
 );
 
