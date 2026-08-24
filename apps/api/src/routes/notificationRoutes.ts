@@ -7,9 +7,32 @@ import { prisma } from "../lib/prisma.js";
  */
 
 import { Router } from "express";
-import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { authMiddleware, requireAdmin, requireWarga } from "../middlewares/authMiddleware.js";
+import { notificationSyncController } from "../controllers/notificationSyncController.js";
 
 const router = Router();
+
+/**
+ * @swagger
+ * /api/v1/notifications/sync:
+ *   get:
+ *     summary: Mendapatkan status sinkronisasi cache notifikasi HP (Cloud Sync)
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get("/sync", authMiddleware, notificationSyncController.getSyncState);
+
+/**
+ * @swagger
+ * /api/v1/notifications/sync:
+ *   put:
+ *     summary: Update status sinkronisasi cache notifikasi HP (Cloud Sync)
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.put("/sync", authMiddleware, notificationSyncController.updateSyncState);
 
 // Helper to map DB Notification to Frontend format
 const mapNotification = (n: any) => {

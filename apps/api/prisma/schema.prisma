@@ -206,6 +206,7 @@ model User {
   logbooksApprovedKetua LogbookKkn[]         @relation("LogbookKetuaPenyetuju")
   logbooksVerifiedDpl   LogbookKkn[]         @relation("LogbookDplVerifikator")
   dplLogbooks           LogbookDpl[]         @relation("DplLogbooks")
+  notificationSync      UserNotificationSync?
 
   @@index([roleId])
   @@index([rwId])
@@ -1425,3 +1426,15 @@ enum StatusLogbookKkn {
 }
 
 
+
+model UserNotificationSync {
+  userId             String   @id @map("id_pengguna")
+  readIds            String   @db.Text
+  markAllTimestamp   BigInt   @default(0)
+  deleteAllTimestamp BigInt   @default(0)
+  updatedAt          DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sinkronisasi_notifikasi_user")
+}
