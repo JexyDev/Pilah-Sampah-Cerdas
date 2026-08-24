@@ -769,6 +769,65 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                               );
                             },
                           ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _MenuTileCard(
+                icon: Icons.rule_rounded,
+                iconAsset: 'assets/icons/submission.png',
+                title: 'Pengajuan Izin',
+                subtitle: 'Izin/Sakit DPL',
+                gradientColors: const [
+                  AppColors.primaryBlueLight,
+                  AppColors.primaryBlue,
+                ],
+                onTap: () =>
+                    Navigator.pushNamed(context, AppRoutes.pengajuanIzin),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _MenuTileCard(
+                icon: Icons.analytics_rounded,
+                iconAsset: 'assets/icons/view.png',
+                title: 'Monitoring Warga',
+                subtitle: 'Pantau poin & aktivitas',
+                gradientColors: const [
+                  AppColors.primaryBlueLight,
+                  AppColors.primaryBlue,
+                ],
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  AppRoutes.monitoringWarga,
+                  arguments: 'monitoring',
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _MenuTileCard(
+                icon: Icons.add_business_rounded,
+                iconAsset: 'assets/icons/recycle-bin.png',
+                title: 'Fasilitas Warga',
+                subtitle: 'Daftar fasilitas baru',
+                gradientColors: const [
+                  AppColors.primaryBlueLight,
+                  AppColors.primaryBlue,
+                ],
+                onTap: () =>
+                    Navigator.pushNamed(context, AppRoutes.registerFasilitas),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 16),
