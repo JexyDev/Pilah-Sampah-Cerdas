@@ -679,6 +679,7 @@ class ApiKknRepository implements KknRepository {
         ApiEndpoints.kknJedaKegiatan(id),
         data: {
           'totalDurasiDalamZonaMenit': totalDurasiDalamZonaMenit,
+          if (accumulatedSeconds != null) 'totalDurasiDalamZonaDetik': accumulatedSeconds,
           if (accumulatedSeconds != null) 'accumulatedDuration': accumulatedSeconds,
           'alasan': alasan,
         },

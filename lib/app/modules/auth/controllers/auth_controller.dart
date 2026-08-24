@@ -256,10 +256,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final kknState = _ref.read(kknLocationProvider);
       final kknNotifier = _ref.read(kknLocationProvider.notifier);
       final activeAct = kknState.activeActivity;
+      final statusUpper = (activeAct?['statusKehadiran'] ?? activeAct?['attendanceStatus'] ?? activeAct?['status'] ?? '').toString().toUpperCase();
       final isBerlangsung = kknState.isTracking ||
-          (activeAct != null &&
-              (activeAct['statusKehadiran']?.toString().toUpperCase() == 'BERLANGSUNG' ||
-               activeAct['attendanceStatus']?.toString().toUpperCase() == 'BERLANGSUNG'));
+          statusUpper == 'BERLANGSUNG' ||
+          statusUpper == 'DI_ZONA' ||
+          statusUpper == 'DALAM_RADIUS' ||
+          statusUpper == 'LAPANGAN';
       if (isBerlangsung) {
         await kknNotifier.jedaKegiatan('Pengguna Keluar / Logout Aplikasi');
       }

@@ -576,7 +576,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
   /// Jeda Kegiatan: panggil endpoint Jeda, dan matikan GPS lokal, tetapi pertahankan accumulatedSeconds.
   Future<bool> jedaKegiatan(String alasan) async {
-    final scheduleId = _currentTargetScheduleId;
+    final scheduleId = _currentTargetScheduleId ??
+        state.activeActivity?['scheduleId']?.toString() ??
+        state.activeActivity?['id']?.toString();
     if (scheduleId == null) return false;
 
     bool isSuccess = false;
