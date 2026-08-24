@@ -15,7 +15,8 @@ class RegisterFasilitasView extends ConsumerStatefulWidget {
   const RegisterFasilitasView({super.key});
 
   @override
-  ConsumerState<RegisterFasilitasView> createState() => _RegisterFasilitasViewState();
+  ConsumerState<RegisterFasilitasView> createState() =>
+      _RegisterFasilitasViewState();
 }
 
 class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
@@ -54,7 +55,7 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    
+
     // Tampilkan pilihan Camera atau Gallery
     final ImageSource? source = await showModalBottomSheet<ImageSource>(
       context: context,
@@ -65,12 +66,18 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
         child: Wrap(
           children: [
             ListTile(
-              leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primaryGreen),
+              leading: const Icon(
+                Icons.camera_alt_rounded,
+                color: AppColors.primaryGreen,
+              ),
               title: const Text('Ambil dari Kamera'),
               onTap: () => Navigator.of(context).pop(ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library_rounded, color: AppColors.primaryGreen),
+              leading: const Icon(
+                Icons.photo_library_rounded,
+                color: AppColors.primaryGreen,
+              ),
               title: const Text('Pilih dari Galeri'),
               onTap: () => Navigator.of(context).pop(ImageSource.gallery),
             ),
@@ -99,9 +106,13 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) throw Exception('Izin lokasi ditolak.');
+        if (permission == LocationPermission.denied) {
+          throw Exception('Izin lokasi ditolak.');
+        }
       }
-      if (permission == LocationPermission.deniedForever) throw Exception('Izin lokasi ditolak permanen.');
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception('Izin lokasi ditolak permanen.');
+      }
 
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
@@ -119,15 +130,17 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
         final errText = e.toString().replaceAll('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errText), 
+            content: Text(errText),
             backgroundColor: AppColors.dangerRed,
-            action: (errText.toLowerCase().contains('izin') || errText.toLowerCase().contains('ditolak')) 
-              ? SnackBarAction(
-                  label: 'Pengaturan',
-                  textColor: Colors.white,
-                  onPressed: () => openAppSettings(),
-                )
-              : null,
+            action:
+                (errText.toLowerCase().contains('izin') ||
+                    errText.toLowerCase().contains('ditolak'))
+                ? SnackBarAction(
+                    label: 'Pengaturan',
+                    textColor: Colors.white,
+                    onPressed: () => openAppSettings(),
+                  )
+                : null,
           ),
         );
       }
@@ -140,39 +153,53 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedJenis == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap pilih jenis fasilitas.'), backgroundColor: AppColors.warningYellow),
+        const SnackBar(
+          content: Text('Harap pilih jenis fasilitas.'),
+          backgroundColor: AppColors.warningYellow,
+        ),
       );
       return;
     }
     if (_selectedLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap ambil koordinat lokasi fasilitas.'), backgroundColor: AppColors.warningYellow),
+        const SnackBar(
+          content: Text('Harap ambil koordinat lokasi fasilitas.'),
+          backgroundColor: AppColors.warningYellow,
+        ),
       );
       return;
     }
     if (_photoPath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap unggah foto fasilitas.'), backgroundColor: AppColors.warningYellow),
+        const SnackBar(
+          content: Text('Harap unggah foto fasilitas.'),
+          backgroundColor: AppColors.warningYellow,
+        ),
       );
       return;
     }
 
-    final success = await ref.read(fasilitasKknProvider.notifier).registerFasilitas(
-      nama: _namaController.text,
-      pic: _picController.text,
-      kontak: _kontakController.text,
-      kapasitas: int.tryParse(_kapasitasController.text) ?? 0,
-      alamat: _alamatController.text,
-      rwId: 0,
-      jenis: _selectedJenis!,
-      latitude: _selectedLocation!.latitude,
-      longitude: _selectedLocation!.longitude,
-      imagePath: _photoPath!,
-    );
+    final success = await ref
+        .read(fasilitasKknProvider.notifier)
+        .registerFasilitas(
+          nama: _namaController.text,
+          pic: _picController.text,
+          kontak: _kontakController.text,
+          kapasitas: int.tryParse(_kapasitasController.text) ?? 0,
+          alamat: _alamatController.text,
+          rwId: 0,
+          jenis: _selectedJenis!,
+          latitude: _selectedLocation!.latitude,
+          longitude: _selectedLocation!.longitude,
+          imagePath: _photoPath!,
+        );
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Berhasil mendaftarkan fasilitas warga!'), backgroundColor: AppColors.primaryGreen),
+        const SnackBar(
+          content: Text('Berhasil mendaftarkan fasilitas warga!'),
+          backgroundColor: AppColors.primaryGreen,
+        ),
       );
       Navigator.pop(context);
     }
@@ -205,22 +232,40 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                   // Handle + header (tidak ikut scroll)
                   const SizedBox(height: 12),
                   Container(
-                    width: 40, height: 4,
-                    decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Row(
                       children: [
-                        const Text('Pilih Jenis Fasilitas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                        const Text(
+                          'Pilih Jenis Failitas',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
                         const Spacer(),
                         GestureDetector(
                           onTap: () => Navigator.pop(ctx),
                           child: Container(
                             padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
-                            child: const Icon(Icons.close, size: 20, color: AppColors.textSecondary),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              size: 20,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ),
                       ],
@@ -241,44 +286,76 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                             Navigator.pop(ctx);
                           },
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 14,
+                            ),
                             child: Row(
                               children: [
                                 Container(
-                                  width: 36, height: 36,
+                                  width: 36,
+                                  height: 36,
                                   decoration: BoxDecoration(
-                                    color: isSelected ? const Color(0xFFE8F5E9) : const Color(0xFFF5F7FA),
+                                    color: isSelected
+                                        ? const Color(0xFFE8F5E9)
+                                        : const Color(0xFFF5F7FA),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: jenis.iconUrl != null && jenis.iconUrl!.isNotEmpty
+                                  child:
+                                      jenis.iconUrl != null &&
+                                          jenis.iconUrl!.isNotEmpty
                                       ? ClipRRect(
-                                          borderRadius: BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                           child: Image.network(
                                             jenis.iconUrl!,
-                                            width: 36, height: 36,
+                                            width: 36,
+                                            height: 36,
                                             fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) => Icon(Icons.eco_rounded, size: 20, color: isSelected ? AppColors.primaryGreen : AppColors.textHint),
+                                            errorBuilder: (_, __, ___) => Icon(
+                                              Icons.eco_rounded,
+                                              size: 20,
+                                              color: isSelected
+                                                  ? AppColors.primaryGreen
+                                                  : AppColors.textHint,
+                                            ),
                                           ),
                                         )
-                                      : Icon(Icons.eco_rounded, size: 20, color: isSelected ? AppColors.primaryGreen : AppColors.textHint),
+                                      : Icon(
+                                          Icons.eco_rounded,
+                                          size: 20,
+                                          color: isSelected
+                                              ? AppColors.primaryGreen
+                                              : AppColors.textHint,
+                                        ),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         jenis.nama,
                                         style: TextStyle(
                                           fontSize: 14,
-                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                          color: isSelected ? AppColors.primaryGreen : AppColors.textPrimary,
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.w500,
+                                          color: isSelected
+                                              ? AppColors.primaryGreen
+                                              : AppColors.textPrimary,
                                         ),
                                       ),
-                                      if (jenis.deskripsi != null && jenis.deskripsi!.isNotEmpty)
+                                      if (jenis.deskripsi != null &&
+                                          jenis.deskripsi!.isNotEmpty)
                                         Text(
                                           jenis.deskripsi!,
-                                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: AppColors.textSecondary,
+                                          ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -287,14 +364,28 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                                 ),
                                 if (isSelected)
                                   Container(
-                                    width: 24, height: 24,
-                                    decoration: const BoxDecoration(color: AppColors.primaryGreen, shape: BoxShape.circle),
-                                    child: const Icon(Icons.check, color: Colors.white, size: 16),
+                                    width: 24,
+                                    height: 24,
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.primaryGreen,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.check,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
                                   )
                                 else
                                   Container(
-                                    width: 24, height: 24,
-                                    decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade400), shape: BoxShape.circle),
+                                    width: 24,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Colors.grey.shade400,
+                                      ),
+                                      shape: BoxShape.circle,
+                                    ),
                                   ),
                               ],
                             ),
@@ -318,6 +409,7 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
 
     ref.listen<FasilitasKknState>(fasilitasKknProvider, (previous, next) {
       if (next.error != null && (previous?.error != next.error)) {
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.error!),
@@ -352,7 +444,10 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                       children: [
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
-                          child: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                          child: const Icon(
+                            Icons.arrow_back,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         const Text(
@@ -366,7 +461,11 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                         const SizedBox(height: 4),
                         const Text(
                           'Lengkapi informasi fasilitas untuk\nmemudahkan pemantauan',
-                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                            height: 1.4,
+                          ),
                         ),
                       ],
                     ),
@@ -385,83 +484,121 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     // ── Jenis Fasilitas ─────────────────────────────────────
-                    const _SectionLabel(icon: Icons.local_offer_rounded, label: 'Jenis Fasilitas'),
+                    const _SectionLabel(
+                      icon: Icons.local_offer_rounded,
+                      label: 'Jenis Fasilitas',
+                    ),
                     const SizedBox(height: 8),
-                    Builder(builder: (_) {
-                      final jenisList = state.jenisFasilitasList;
-                      final selectedJenisObj = _selectedJenis != null
-                          ? jenisList.where((j) => j.key == _selectedJenis).firstOrNull
-                          : null;
-                      return _JenisPickerField(
-                        selectedKey: _selectedJenis,
-                        label: selectedJenisObj?.nama ?? 'Pilih jenis fasilitas',
-                        isLoading: state.isLoadingJenis,
-                        onTap: () => _showJenisBottomSheet(jenisList),
-                      );
-                    }),
+                    Builder(
+                      builder: (_) {
+                        final jenisList = state.jenisFasilitasList;
+                        final selectedJenisObj = _selectedJenis != null
+                            ? jenisList
+                                  .where((j) => j.key == _selectedJenis)
+                                  .firstOrNull
+                            : null;
+                        return _JenisPickerField(
+                          selectedKey: _selectedJenis,
+                          label:
+                              selectedJenisObj?.nama ?? 'Pilih jenis fasilitas',
+                          isLoading: state.isLoadingJenis,
+                          onTap: () => _showJenisBottomSheet(jenisList),
+                        );
+                      },
+                    ),
                     const SizedBox(height: AppDimensions.md),
 
                     // ── Nama Fasilitas ───────────────────────────────────────
-                    const _SectionLabel(icon: Icons.business_rounded, label: 'Nama Fasilitas'),
+                    const _SectionLabel(
+                      icon: Icons.business_rounded,
+                      label: 'Nama Fasilitas',
+                    ),
                     const SizedBox(height: 8),
                     _StyledTextField(
                       controller: _namaController,
-                      hintText: 'Contoh: Rumah Maggot Berkah RT 03',
-                      validator: (val) => (val == null || val.isEmpty) ? 'Nama fasilitas wajib diisi' : null,
+                      hintText: 'Masukkan Nama Fasilitas',
+                      validator: (val) => (val == null || val.isEmpty)
+                          ? 'Nama fasilitas wajib diisi'
+                          : null,
                     ),
                     const SizedBox(height: AppDimensions.md),
 
                     // ── PIC Fasilitas ───────────────────────────────────────
-                    const _SectionLabel(icon: Icons.person_rounded, label: 'PIC (Penanggung Jawab)'),
+                    const _SectionLabel(
+                      icon: Icons.person_rounded,
+                      label: 'PIC (Penanggung Jawab)',
+                    ),
                     const SizedBox(height: 8),
                     _StyledTextField(
                       controller: _picController,
-                      hintText: 'Contoh: Budi Santoso',
-                      validator: (val) => (val == null || val.isEmpty) ? 'PIC wajib diisi' : null,
+                      hintText: 'Masukkan Nama PIC',
+                      validator: (val) => (val == null || val.isEmpty)
+                          ? 'PIC wajib diisi'
+                          : null,
                     ),
                     const SizedBox(height: AppDimensions.md),
 
                     // ── Kontak PIC ───────────────────────────────────────
-                    const _SectionLabel(icon: Icons.phone_rounded, label: 'Kontak PIC'),
+                    const _SectionLabel(
+                      icon: Icons.phone_rounded,
+                      label: 'Kontak PIC',
+                    ),
                     const SizedBox(height: 8),
                     _StyledTextField(
                       controller: _kontakController,
-                      hintText: 'Contoh: 08123456789',
+                      hintText: 'Masukkan Nomor Telepon PIC',
                       keyboardType: TextInputType.phone,
-                      validator: (val) => (val == null || val.isEmpty) ? 'Kontak wajib diisi' : null,
+                      validator: (val) => (val == null || val.isEmpty)
+                          ? 'Kontak wajib diisi'
+                          : null,
                     ),
                     const SizedBox(height: AppDimensions.md),
 
                     // ── Kapasitas Fasilitas ───────────────────────────────────────
-                    const _SectionLabel(icon: Icons.people_rounded, label: 'Kapasitas (Orang/Kg/dll)'),
+                    const _SectionLabel(
+                      icon: Icons.people_rounded,
+                      label: 'Kapasitas (Orang/Kg/dll)',
+                    ),
                     const SizedBox(height: 8),
                     _StyledTextField(
                       controller: _kapasitasController,
-                      hintText: 'Contoh: 500',
+                      hintText: 'Masukkan Kapasitas',
                       keyboardType: TextInputType.number,
-                      validator: (val) => (val == null || val.isEmpty) ? 'Kapasitas wajib diisi' : null,
+                      validator: (val) => (val == null || val.isEmpty)
+                          ? 'Kapasitas wajib diisi'
+                          : null,
                     ),
                     const SizedBox(height: AppDimensions.md),
 
                     // ── Alamat Lengkap ───────────────────────────────────────
-                    const _SectionLabel(icon: Icons.map_rounded, label: 'Alamat Lengkap'),
+                    const _SectionLabel(
+                      icon: Icons.map_rounded,
+                      label: 'Alamat Lengkap',
+                    ),
                     const SizedBox(height: 8),
                     _StyledTextField(
                       controller: _alamatController,
-                      hintText: 'Contoh: Jl. Sangkuriang No. 12, Coblong, Bandung',
+                      hintText: 'Masukkan Alamat Lengkap',
                       maxLines: 3,
-                      validator: (val) => (val == null || val.isEmpty) ? 'Alamat wajib diisi' : null,
+                      validator: (val) => (val == null || val.isEmpty)
+                          ? 'Alamat wajib diisi'
+                          : null,
                     ),
                     const SizedBox(height: AppDimensions.md),
 
                     // ── Koordinat GPS ────────────────────────────────────────
-                    const _SectionLabel(icon: Icons.location_on_rounded, label: 'Koordinat GPS Fasilitas'),
+                    const _SectionLabel(
+                      icon: Icons.location_on_rounded,
+                      label: 'Koordinat GPS Fasilitas',
+                    ),
                     const SizedBox(height: 4),
                     const Text(
                       'Tentukan lokasi fasilitas pada peta dengan menempatkan pin di posisi yang tepat.',
-                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Container(
@@ -478,7 +615,9 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                           FlutterMap(
                             mapController: _mapController,
                             options: MapOptions(
-                              initialCenter: _selectedLocation ?? const LatLng(-6.914744, 107.609810),
+                              initialCenter:
+                                  _selectedLocation ??
+                                  const LatLng(-6.914744, 107.609810),
                               initialZoom: 15.0,
                               onTap: (tapPosition, point) {
                                 setState(() {
@@ -488,8 +627,10 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                             ),
                             children: [
                               TileLayer(
-                                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                userAgentPackageName: 'com.makerindo.pilahsampah',
+                                urlTemplate:
+                                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                userAgentPackageName:
+                                    'com.makerindo.pilahsampah',
                               ),
                               if (_selectedLocation != null)
                                 MarkerLayer(
@@ -520,7 +661,10 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                                 onTap: _isGettingLocation ? null : _getLocation,
                                 borderRadius: BorderRadius.circular(8),
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -528,13 +672,24 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                                           ? const SizedBox(
                                               width: 16,
                                               height: 16,
-                                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryGreen),
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: AppColors.primaryGreen,
+                                              ),
                                             )
-                                          : const Icon(Icons.my_location_rounded, size: 18, color: AppColors.primaryGreen),
+                                          : const Icon(
+                                              Icons.my_location_rounded,
+                                              size: 18,
+                                              color: AppColors.primaryGreen,
+                                            ),
                                       const SizedBox(width: 6),
                                       const Text(
                                         'Lokasi Saya',
-                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.textPrimary,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -550,25 +705,43 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                               right: 0,
                               child: Center(
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.white.withValues(alpha: 0.9),
                                     borderRadius: BorderRadius.circular(8),
                                     boxShadow: [
-                                      BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4, offset: const Offset(0, 2)),
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
                                     ],
                                   ),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        _namaController.text.isNotEmpty ? _namaController.text : 'Lokasi Terpilih',
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textPrimary),
+                                        _namaController.text.isNotEmpty
+                                            ? _namaController.text
+                                            : 'Lokasi Terpilih',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                          color: AppColors.textPrimary,
+                                        ),
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
                                         '${_selectedLocation!.latitude.toStringAsFixed(6)}, ${_selectedLocation!.longitude.toStringAsFixed(6)}',
-                                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.textSecondary,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -580,71 +753,106 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                     ),
                     const SizedBox(height: 16),
                     // ── Legenda Peta (Dinamis dari API) ─────────────────────
-                    Builder(builder: (_) {
-                      final jenisList = state.jenisFasilitasList;
-                      if (jenisList.isEmpty) {
-                        return const SizedBox.shrink();
-                      }
-                      return Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Row(
-                              children: [
-                                Icon(Icons.map_rounded, size: 18, color: AppColors.primaryGreen),
-                                SizedBox(width: 8),
-                                Text('Legenda Peta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Wrap(
-                              spacing: 12,
-                              runSpacing: 10,
-                              children: jenisList.map((jenis) {
-                                return SizedBox(
-                                  width: (MediaQuery.of(context).size.width - 40 - 32 - 12) / 2, // 2 kolom
-                                  child: Row(
-                                    children: [
-                                      if (jenis.iconUrl != null && jenis.iconUrl!.isNotEmpty)
-                                        Image.network(
-                                          jenis.iconUrl!,
-                                          width: 22, height: 22,
-                                          errorBuilder: (_, __, ___) => const Icon(Icons.location_on, size: 22, color: AppColors.primaryGreen),
-                                        )
-                                      else
-                                        Icon(
-                                          jenis.key == 'posko_kkn' ? Icons.home_work_rounded : Icons.location_on,
-                                          size: 22,
-                                          color: jenis.key == 'posko_kkn' ? Colors.deepPurple : AppColors.primaryGreen,
-                                        ),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                        child: Text(
-                                          jenis.nama,
-                                          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
+                    Builder(
+                      builder: (_) {
+                        final jenisList = state.jenisFasilitasList;
+                        if (jenisList.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
+                        return Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(
+                                    Icons.map_rounded,
+                                    size: 18,
+                                    color: AppColors.primaryGreen,
                                   ),
-                                );
-                              }).toList(),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Legenda Peta',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 12,
+                                runSpacing: 10,
+                                children: jenisList.map((jenis) {
+                                  return SizedBox(
+                                    width:
+                                        (MediaQuery.of(context).size.width -
+                                            40 -
+                                            32 -
+                                            12) /
+                                        2, // 2 kolom
+                                    child: Row(
+                                      children: [
+                                        if (jenis.iconUrl != null &&
+                                            jenis.iconUrl!.isNotEmpty)
+                                          Image.network(
+                                            jenis.iconUrl!,
+                                            width: 22,
+                                            height: 22,
+                                            errorBuilder: (_, __, ___) =>
+                                                const Icon(
+                                                  Icons.location_on,
+                                                  size: 22,
+                                                  color: AppColors.primaryGreen,
+                                                ),
+                                          )
+                                        else
+                                          Icon(
+                                            jenis.key == 'posko_kkn'
+                                                ? Icons.home_work_rounded
+                                                : Icons.location_on,
+                                            size: 22,
+                                            color: jenis.key == 'posko_kkn'
+                                                ? Colors.deepPurple
+                                                : AppColors.primaryGreen,
+                                          ),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            jenis.nama,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 11,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                     const SizedBox(height: AppDimensions.md),
 
                     // ── Foto Fasilitas ───────────────────────────────────────
-                    const _SectionLabel(icon: Icons.camera_alt_rounded, label: 'Foto Fasilitas'),
+                    const _SectionLabel(
+                      icon: Icons.camera_alt_rounded,
+                      label: 'Foto Fasilitas',
+                    ),
                     const SizedBox(height: 8),
                     GestureDetector(
                       onTap: _pickImage,
@@ -655,7 +863,9 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: AppColors.primaryGreen.withValues(alpha: 0.5),
+                            color: AppColors.primaryGreen.withValues(
+                              alpha: 0.5,
+                            ),
                             width: 1,
                             style: BorderStyle.solid,
                           ),
@@ -676,11 +886,19 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                                     top: 8,
                                     right: 8,
                                     child: GestureDetector(
-                                      onTap: () => setState(() => _photoPath = null),
+                                      onTap: () =>
+                                          setState(() => _photoPath = null),
                                       child: Container(
                                         padding: const EdgeInsets.all(4),
-                                        decoration: const BoxDecoration(color: AppColors.dangerRed, shape: BoxShape.circle),
-                                        child: const Icon(Icons.close, color: Colors.white, size: 16),
+                                        decoration: const BoxDecoration(
+                                          color: AppColors.dangerRed,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.close,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -696,21 +914,35 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                                       color: const Color(0xFFE8F5E9),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: const Icon(Icons.cloud_upload_rounded, color: AppColors.primaryGreen, size: 28),
+                                    child: const Icon(
+                                      Icons.cloud_upload_rounded,
+                                      color: AppColors.primaryGreen,
+                                      size: 28,
+                                    ),
                                   ),
                                   const SizedBox(height: 10),
                                   const Text(
                                     'Unggah foto fasilitas',
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryGreen),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      color: AppColors.primaryGreen,
+                                    ),
                                   ),
                                   const SizedBox(height: 4),
                                   const Text(
                                     'Ketuk untuk mengambil/memilih foto',
-                                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
                                   ),
                                   const Text(
                                     'Format JPG, PNG (Maks. 5MB)',
-                                    style: TextStyle(fontSize: 11, color: AppColors.textHint),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textHint,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -725,17 +957,31 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                       child: ElevatedButton.icon(
                         onPressed: state.isLoading ? null : _submit,
                         icon: state.isLoading
-                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
                             : const Icon(Icons.save_alt_rounded, size: 20),
                         label: Text(
-                          state.isLoading ? 'Memproses...' : 'Daftarkan Fasilitas',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          state.isLoading
+                              ? 'Memproses...'
+                              : 'Daftarkan Fasilitas',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryGreen,
                           foregroundColor: Colors.white,
                           elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                       ),
                     ),
@@ -743,25 +989,38 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
 
                     // ── Footer info ──────────────────────────────────────────
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFE8F5E9),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.verified_rounded, color: AppColors.primaryGreen, size: 18),
+                          Icon(
+                            Icons.verified_rounded,
+                            color: AppColors.primaryGreen,
+                            size: 18,
+                          ),
                           SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               'Data fasilitas yang Anda daftarkan akan digunakan untuk pemantauan dan pengelolaan sampah yang lebih baik.',
-                              style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                                height: 1.4,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(height: MediaQuery.of(context).padding.bottom + 40),
+                    SizedBox(
+                      height: MediaQuery.of(context).padding.bottom + 40,
+                    ),
                   ],
                 ),
               ),
@@ -793,7 +1052,14 @@ class _SectionLabel extends StatelessWidget {
           child: Icon(icon, size: 16, color: AppColors.primaryGreen),
         ),
         const SizedBox(width: 8),
-        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
       ],
     );
   }
@@ -825,7 +1091,10 @@ class _StyledTextField extends StatelessWidget {
         hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 14),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey.shade300),
@@ -836,7 +1105,10 @@ class _StyledTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+          borderSide: const BorderSide(
+            color: AppColors.primaryGreen,
+            width: 1.5,
+          ),
         ),
       ),
     );
@@ -871,31 +1143,45 @@ class _JenisPickerField extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 32, height: 32,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
                 color: const Color(0xFFE8F5E9),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 18),
+              child: const Icon(
+                Icons.eco_rounded,
+                color: AppColors.primaryGreen,
+                size: 18,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(
-                  fontSize: 14, 
-                  fontWeight: FontWeight.w500, 
-                  color: selectedKey == null ? AppColors.textHint : AppColors.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: selectedKey == null
+                      ? AppColors.textHint
+                      : AppColors.textPrimary,
                 ),
               ),
             ),
             if (isLoading)
               const SizedBox(
-                width: 16, height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryGreen),
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primaryGreen,
+                ),
               )
             else
-              const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
+              const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: AppColors.textSecondary,
+              ),
           ],
         ),
       ),

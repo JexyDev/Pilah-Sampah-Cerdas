@@ -88,7 +88,8 @@ class FasilitasKknController extends StateNotifier<FasilitasKknState> {
       state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      final errorMsg = e.toString().replaceAll('Exception: ', '').trim();
+      state = state.copyWith(isLoading: false, error: errorMsg);
       return false;
     }
   }
