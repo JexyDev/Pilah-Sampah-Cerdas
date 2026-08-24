@@ -57,7 +57,7 @@ export const HasilPemanfaatan: React.FC = () => {
 
   // Form states - Add Feedback
   const [formJudul, setFormJudul] = useState("");
-  const [formKategori, setFormKategori] = useState("Pengolahan Kompos");
+  const [formKategori, setFormKategori] = useState("UMUM");
   const [formIsi, setFormIsi] = useState("");
   const [formRating, setFormRating] = useState(5);
   const [formFotoUrl, setFormFotoUrl] = useState("");
@@ -119,7 +119,9 @@ export const HasilPemanfaatan: React.FC = () => {
         statusFilter === "ALL" ? true : item?.status === statusFilter;
 
       const matchesKategori =
-        kategoriFilter === "ALL" ? true : (item?.kategori || "").toLowerCase() === (kategoriFilter || "").toLowerCase();
+        kategoriFilter === "ALL"
+          ? true
+          : (item?.kategori || "").toLowerCase().includes((kategoriFilter || "").toLowerCase());
 
       // ponytail: client-side DPL/RW filter removed — backend rbacScoping handles scoping
       return matchesSearch && matchesStatus && matchesKategori;
@@ -668,11 +670,10 @@ export const HasilPemanfaatan: React.FC = () => {
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 pl-9 pr-3 py-2.5 rounded-2xl text-xs font-bold outline-none focus:border-[#009966] transition-all cursor-pointer"
                   >
                     <option value="ALL">Semua Kategori</option>
-                    <option value="Pengolahan Kompos">Pengolahan Kompos</option>
-                    <option value="Bank Sampah">Bank Sampah</option>
-                    <option value="Rumah Maggot BSF">Rumah Maggot BSF</option>
-                    <option value="Pupuk Organik Cair (POC)">Pupuk Organik Cair (POC)</option>
-                    <option value="Kualitas Layanan & Fasilitas">Kualitas Layanan &amp; Fasilitas</option>
+                    <option value="UMUM">UMUM</option>
+                    <option value="Fasilitas">Fasilitas</option>
+                    <option value="Pelayanan">Pelayanan</option>
+                    <option value="Lainnya">Lainnya</option>
                   </select>
                 </div>
               </div>
@@ -891,11 +892,10 @@ export const HasilPemanfaatan: React.FC = () => {
                   onChange={(e) => setFormKategori(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-[#009966] transition cursor-pointer"
                 >
-                  <option value="Pengolahan Kompos">Pengolahan Kompos</option>
-                  <option value="Bank Sampah">Bank Sampah</option>
-                  <option value="Rumah Maggot BSF">Rumah Maggot BSF</option>
-                  <option value="Pupuk Organik Cair (POC)">Pupuk Organik Cair (POC)</option>
-                  <option value="Kualitas Layanan & Fasilitas">Kualitas Layanan &amp; Fasilitas</option>
+                  <option value="UMUM">UMUM</option>
+                  <option value="Fasilitas">Fasilitas</option>
+                  <option value="Pelayanan">Pelayanan</option>
+                  <option value="Lainnya">Lainnya</option>
                 </select>
               </div>
 
