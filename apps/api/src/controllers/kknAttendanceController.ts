@@ -443,7 +443,7 @@ export const kknAttendanceController = {
     try {
       const studentUserId = (req as any).user?.userId || (req as any).user?.id;
       const { id } = req.params;
-      const { totalDurasiDalamZonaMenit, alasan } = req.body;
+      const { totalDurasiDalamZonaMenit, totalDurasiDalamZonaDetik, alasan } = req.body;
 
       if (!alasan) {
         res.status(400).json({ success: false, message: "Alasan jeda wajib diisi." });
@@ -452,7 +452,8 @@ export const kknAttendanceController = {
 
       const result = await kknAttendanceService.jedaKegiatan(studentUserId, id, {
         alasan,
-        totalDurasiDalamZonaMenit,
+        totalDurasiDalamZonaMenit: totalDurasiDalamZonaMenit !== undefined ? Number(totalDurasiDalamZonaMenit) : undefined,
+        totalDurasiDalamZonaDetik: totalDurasiDalamZonaDetik !== undefined ? Number(totalDurasiDalamZonaDetik) : undefined,
       });
 
       res.status(200).json({

@@ -2084,6 +2084,8 @@ export class KknAttendanceService {
           statusKehadiran = "HADIR";
         } else if (att.status === "BERLANGSUNG") {
           statusKehadiran = "BERLANGSUNG";
+        } else if (att.status === "TERJEDA") {
+          statusKehadiran = "TERJEDA";
         } else if (att.status === "DALAM_RADIUS" || att.status === "DI_ZONA") {
           statusKehadiran = "DI_ZONA";
         }
@@ -2108,8 +2110,8 @@ export class KknAttendanceService {
         }
         actualInZoneMinutes = liveMins;
         actualInZoneSeconds = actualInZoneMinutes * 60;
-      } else if (att && (att.status === "HADIR" || att.status === "SELESAI" || att.status === "SELESAI_TELAT")) {
-        // Kegiatan sudah selesai — gunakan nilai tersimpan di DB
+      } else if (att && (att.status === "TERJEDA" || att.status === "HADIR" || att.status === "SELESAI" || att.status === "SELESAI_TELAT")) {
+        // Sesi terjeda / selesai — gunakan nilai tersimpan di DB secara pasti tanpa penambahan elapsed time
         actualInZoneMinutes = att.actualInZoneMinutes ?? 0;
         actualInZoneSeconds = actualInZoneMinutes * 60;
       }
@@ -2463,7 +2465,7 @@ export class KknAttendanceService {
   async jedaKegiatan(
     studentUserId: string,
     scheduleId: string,
-    payload: { alasan: string; totalDurasiDalamZonaMenit?: number }
+    payload: { alasan: string; totalDurasiDalamZonaMenit?: number; totalDurasiDalamZonaDetik?: number }
   ) {
     const existing = await prisma.activityAttendance.findUnique({
       where: {
@@ -2478,24 +2480,42 @@ export class KknAttendanceService {
       throw new Error("Kegiatan aktif tidak ditemukan.");
     }
 
-    if (existing.status === "SELESAI") {
+    if (existing.status === "SELESAI" || existing.status === "HADIR") {
       throw new Error("Kegiatan sudah diselesaikan.");
     }
 
-    const currentLogs = existing.jedaLogs as any[] || [];
+    const calculatedMins = payload.totalDurasiDalamZonaDetik
+      ? Math.max(existing.actualInZoneMinutes || 0, Math.floor(payload.totalDurasiDalamZonaDetik / 60))
+      : Math.max(existing.actualInZoneMinutes || 0, payload.totalDurasiDalamZonaMenit || 0);
+
+    const currentLogs = (existing.jedaLogs as any[]) || [];
     currentLogs.push({
       alasan: payload.alasan,
       waktuJeda: new Date().toISOString(),
-      durasiSebelumJedaMenit: payload.totalDurasiDalamZonaMenit || 0
+      durasiSebelumJedaMenit: calculatedMins,
+      durasiSebelumJedaDetik: payload.totalDurasiDalamZonaDetik || (calculatedMins * 60),
     });
 
     const updated = await prisma.activityAttendance.update({
       where: { id: existing.id },
       data: {
+        status: "TERJEDA",
+        actualInZoneMinutes: calculatedMins,
         jedaLogs: currentLogs,
-        // Status tetap DALAM_RADIUS atau BERLANGSUNG, tidak SELESAI
       },
     });
+
+    try {
+      websocketService.broadcastStudentAttendance({
+        id: updated.id,
+        studentId: studentUserId,
+        scheduleId,
+        status: "TERJEDA",
+        currentStatus: "DI_LUAR_ZONA",
+        actualInZoneMinutes: calculatedMins,
+        attendedAt: updated.attendedAt.toISOString(),
+      });
+    } catch (_) {}
 
     return updated;
   }

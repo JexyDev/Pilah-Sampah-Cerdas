@@ -2652,6 +2652,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
                       
                       const isLeaveOrPending = isSakit || isIzin || isSakitPending || isIzinPending || isCancelRequested;
+                      const isTerjeda = statusUpper === "TERJEDA";
                       const isBerlangsung = statusUpper === "BERLANGSUNG" || statusUpper === "DALAM_RADIUS" || statusUpper === "DI_ZONA";
                       const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
                       const recAny = rec as any;
@@ -2662,11 +2663,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         : isBerlangsung
                         ? Math.max(storedMins, liveElapsedMins)
                         : (storedMins > 0 ? storedMins : liveElapsedMins);
-                      const isHadir = (statusUpper === "HADIR" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || rec.completedAt !== null) && isAttended && !isOverrideDpl && !isBerlangsung;
+                      const isHadir = (statusUpper === "HADIR" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || rec.completedAt !== null) && isAttended && !isOverrideDpl && !isBerlangsung && !isTerjeda;
 
                       const formattedHours = isLeaveOrPending
                         ? "-"
-                        : (isAttended || isBerlangsung)
+                        : (isAttended || isBerlangsung || isTerjeda)
                         ? formatDurationUnits(durationMins)
                         : "-";
 
@@ -2809,6 +2810,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
                                 <XCircle size={13} className="text-rose-600" />
                                 Tanpa Keterangan
+                              </span>
+                            ) : isTerjeda ? (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                                <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-ping" />
+                                <span>Terjeda</span>
                               </span>
                             ) : isBerlangsung ? (
                               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700 animate-pulse">
