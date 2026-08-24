@@ -247,29 +247,39 @@ export class AuthService {
       where: { studentId: userId },
     });
 
-    // Auto check-out any unclosed attendance session today (catat jam pulang/jam pergi aktual)
+    // Auto-pause unclosed attendance sessions today if still BERLANGSUNG / HADIR (fallback if mobile didn't call /jeda)
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
-    const now = new Date();
 
-    await prisma.activityAttendance.updateMany({
+    const openAttendances = await prisma.activityAttendance.findMany({
       where: {
         studentId: userId,
         attendedAt: { gte: startOfDay },
         checkOutAt: null,
+        status: { in: ["BERLANGSUNG", "HADIR"] },
       },
-      data: {
-        checkOutAt: now,
-        status: "SELESAI",
-      },
-    }).catch(() => {});
-
-    // Broadcast checkout event via WebSocket so Web Monitoring table & map update status immediately
-    websocketService.broadcastStudentCheckout({
-      studentId: userId,
-      completedAt: now.toISOString(),
-      status: "SELESAI",
     });
+
+    for (const att of openAttendances) {
+      const updated = await prisma.activityAttendance.update({
+        where: { id: att.id },
+        data: {
+          status: "TERJEDA",
+        },
+      }).catch(() => null);
+
+      if (updated) {
+        websocketService.broadcastStudentAttendance({
+          id: updated.id,
+          studentId: userId,
+          scheduleId: updated.scheduleId,
+          status: "TERJEDA",
+          currentStatus: "DI_LUAR_ZONA",
+          actualInZoneMinutes: updated.actualInZoneMinutes || 0,
+          attendedAt: updated.attendedAt.toISOString(),
+        });
+      }
+    }
 
     // Broadcast removal via WebSocket
     websocketService.broadcastStudentLogout(userId);
