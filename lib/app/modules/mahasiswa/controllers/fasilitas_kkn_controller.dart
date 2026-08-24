@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../data/providers/repository_providers.dart';
@@ -74,7 +75,8 @@ class FasilitasKknController extends StateNotifier<FasilitasKknState> {
       final payload = <String, dynamic>{
         'jenis': jenis,
         'nama': nama,
-        'pic': pic,
+        'userId': pic, // API expect userId
+        'pic': pic, // but still send pic just in case
         'kontak': kontak,
         'kapasitas': kapasitas,
         'latitude': latitude,
@@ -83,12 +85,15 @@ class FasilitasKknController extends StateNotifier<FasilitasKknState> {
         'rwId': rwId,
       };
 
+      log('Payload registerFasilitas: $payload');
+
       await repository.registerFasilitas(payload, imagePath: imagePath);
       
       state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
       final errorMsg = e.toString().replaceAll('Exception: ', '').trim();
+      log('Error registerFasilitas: $errorMsg');
       state = state.copyWith(isLoading: false, error: errorMsg);
       return false;
     }
