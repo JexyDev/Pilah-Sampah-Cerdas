@@ -18,7 +18,6 @@ abstract class PemanfaatanRepository {
     String? kategori,
     int? rating,
     String? fotoBuktiUrl,
-    String? imagePath,
     int? rwId,
   });
 
