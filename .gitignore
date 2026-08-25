@@ -15,29 +15,53 @@ apps/web/dist/
 *.lock
 *.tsbuildinfo
 
-# Environment & Secrets (NEVER COMMIT)
+# Environment & Secrets (NEVER COMMIT / NEVER PUSH)
 .env
 .env.*
 *.env
 !.env.example
+*.pem
+*.key
+*.cert
+*.crt
+credentials.json
+service-account*.json
 
-# Database & Data Dumps (NEVER COMMIT)
+# Database & Data Dumps (STRICTLY FORBIDDEN FROM GIT / NEVER COMMIT / NEVER PUSH)
 *.sql
 !apps/api/prisma/migrations/**/*.sql
 *.sqlite
 *.sqlite3
 *.db
+*.db3
 *.dump
+*.dmp
+*.bak
+*.backup
+*.psql
+*.rdb
+*.sql.gz
+*.sql.tar
+*.dump.gz
 database/
-database/*.sql
+databases/
+db/
+db_dumps/
+dumps/
+backup/
+backups/
+vps_backup/
 vps_db_dump.sql
+vps_latest.sql
+trashcare.sql
 vps_users_real.json
 fetch_users.js
 check_vps_details.js
-vps_backup/
 apps/api/scripts/query-vps-user.ts
 apps/api/scripts/sync-live-vps-db-to-local.ts
 *.csv
+*.tsv
+*.parquet
 
 # Python & Temporary scripts
 *.py
