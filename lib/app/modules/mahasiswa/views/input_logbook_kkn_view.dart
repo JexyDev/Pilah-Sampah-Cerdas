@@ -58,11 +58,13 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
   }
   
   Future<void> _selectDate() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 30)),
-      lastDate: DateTime.now(),
+      firstDate: today.subtract(const Duration(days: 30)),
+      lastDate: today.add(const Duration(hours: 23, minutes: 59)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -237,6 +239,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                               decoration: _inputDecoration('08:00').copyWith(
                                 suffixIcon: const Icon(Icons.access_time_rounded, color: AppColors.primaryGreen),
                               ),
+                              validator: (val) => val == null || val.isEmpty ? 'Wajib dipilih' : null,
                             ),
                           ],
                         ),
@@ -255,6 +258,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                               decoration: _inputDecoration('16:00').copyWith(
                                 suffixIcon: const Icon(Icons.access_time_rounded, color: AppColors.primaryGreen),
                               ),
+                              validator: (val) => val == null || val.isEmpty ? 'Wajib dipilih' : null,
                             ),
                           ],
                         ),
