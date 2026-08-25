@@ -59,4 +59,4 @@ export const archiveAuditLogsCron = cron.schedule('0 0 1 * *', async () => {
   } catch (error) {
     console.error('[Cron] Failed to archive audit logs:', error);
   }
-});
+}, { timezone: 'Asia/Jakarta' });
