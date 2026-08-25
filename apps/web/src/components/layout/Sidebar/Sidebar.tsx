@@ -284,7 +284,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit",
-        }).replace(/:/g, ".") + " WIB"
+        }).replace(/:/g, ".")
       );
       setDateStr(
         now.toLocaleDateString("id-ID", {
@@ -1029,8 +1029,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                     {dateStr || "Kamis, 20 Agustus 2026"}
                   </p>
                 </div>
-                <p className="text-sm font-black text-[#035941] dark:text-emerald-400 tracking-wider font-mono">
-                  {timeStr || "09.55.12 WIB"}
+                <p className="text-sm font-black text-[#035941] dark:text-emerald-400">
+                  {timeStr || "09.55.12"}
                 </p>
               </div>
 
