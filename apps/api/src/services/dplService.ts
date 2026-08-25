@@ -2756,6 +2756,7 @@ export const dplService = {
       groupId?: string;
       kategori?: string;
       status?: string;
+      pekanKe?: number;
       page?: number;
       limit?: number;
     }
@@ -2788,6 +2789,10 @@ export const dplService = {
 
     if (params?.status && params.status !== "ALL" && params.status !== "Semua Status") {
       where.status = params.status;
+    }
+
+    if (params?.pekanKe !== undefined && params.pekanKe !== null && !isNaN(Number(params.pekanKe))) {
+      where.pekanKe = Number(params.pekanKe);
     }
 
     if (params?.search && params.search.trim() !== "") {
@@ -3041,17 +3046,16 @@ export const dplService = {
     // Calculate duration minutes
     let durasiMenit = 120;
     if (data.waktuMulai && data.waktuSelesai) {
-      try {
-        const parseM = (t: string) => {
-          const p = t.replace(".", ":").split(":");
-          return parseInt(p[0] || "0", 10) * 60 + parseInt(p[1] || "0", 10);
-        };
-        const s = parseM(data.waktuMulai);
-        const e = parseM(data.waktuSelesai);
-        if (e > s) durasiMenit = e - s;
-      } catch {
-        // fallback
+      const parseM = (t: string) => {
+        const p = t.replace(".", ":").split(":");
+        return parseInt(p[0] || "0", 10) * 60 + parseInt(p[1] || "0", 10);
+      };
+      const s = parseM(data.waktuMulai);
+      const e = parseM(data.waktuSelesai);
+      if (e <= s) {
+        throw new Error("Waktu selesai harus lebih besar dari waktu mulai");
       }
+      durasiMenit = e - s;
     }
 
     const created = await prisma.logbookDpl.create({
@@ -3133,18 +3137,19 @@ export const dplService = {
     if (data.status !== undefined) updateData.status = data.status;
     if (data.simpanLokasi !== undefined) updateData.simpanLokasi = Boolean(data.simpanLokasi);
 
-    if (data.waktuMulai && data.waktuSelesai) {
-      try {
-        const parseM = (t: string) => {
-          const p = t.replace(".", ":").split(":");
-          return parseInt(p[0] || "0", 10) * 60 + parseInt(p[1] || "0", 10);
-        };
-        const s = parseM(data.waktuMulai);
-        const e = parseM(data.waktuSelesai);
-        if (e > s) updateData.durasiMenit = e - s;
-      } catch {
-        // fallback
+    const startT = data.waktuMulai || existing.waktuMulai;
+    const endT = data.waktuSelesai || existing.waktuSelesai;
+    if (startT && endT) {
+      const parseM = (t: string) => {
+        const p = t.replace(".", ":").split(":");
+        return parseInt(p[0] || "0", 10) * 60 + parseInt(p[1] || "0", 10);
+      };
+      const s = parseM(startT);
+      const e = parseM(endT);
+      if (e <= s) {
+        throw new Error("Waktu selesai harus lebih besar dari waktu mulai");
       }
+      updateData.durasiMenit = e - s;
     }
 
     const updated = await prisma.logbookDpl.update({

@@ -98,6 +98,13 @@ export const LogAktivitasDpl: React.FC = () => {
   const [formSimpanLokasi, setFormSimpanLokasi] = useState<boolean>(true);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<{
+    kelompokId?: string;
+    tanggal?: string;
+    waktuMulai?: string;
+    waktuSelesai?: string;
+    deskripsi?: string;
+  }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Modal Detail State
@@ -105,19 +112,31 @@ export const LogAktivitasDpl: React.FC = () => {
 
   // Kalkulasi Durasi Dinamis Real-Time dengan Satuan "Jam"
   const calculatedDuration = useMemo(() => {
-    if (!formWaktuMulai || !formWaktuSelesai) return { label: "2 jam", minutes: 120 };
+    if (!formWaktuMulai || !formWaktuSelesai) {
+      return { isValid: false, label: "0 menit", minutes: 0, error: "Tentukan jam mulai dan selesai" };
+    }
     const parseM = (t: string) => {
       const p = t.replace(".", ":").split(":");
       return parseInt(p[0] || "0", 10) * 60 + parseInt(p[1] || "0", 10);
     };
     const s = parseM(formWaktuMulai);
     const e = parseM(formWaktuSelesai);
-    const diff = e > s ? e - s : 120;
+    if (isNaN(s) || isNaN(e)) {
+      return { isValid: false, label: "0 menit", minutes: 0, error: "Format jam tidak valid" };
+    }
+    if (e <= s) {
+      return {
+        isValid: false,
+        label: "0 menit",
+        minutes: 0,
+        error: `Jam selesai (${formWaktuSelesai}) harus lebih lambat dari jam mulai (${formWaktuMulai})`,
+      };
+    }
+    const diff = e - s;
     const h = Math.floor(diff / 60);
     const m = diff % 60;
-    if (h > 0 && m > 0) return { label: `${h} jam ${m} menit`, minutes: diff };
-    if (h > 0) return { label: `${h} jam`, minutes: diff };
-    return { label: `${m} menit`, minutes: diff };
+    const label = h > 0 && m > 0 ? `${h} jam ${m} menit` : h > 0 ? `${h} jam` : `${m} menit`;
+    return { isValid: true, label, minutes: diff, error: null };
   }, [formWaktuMulai, formWaktuSelesai]);
 
   // Fetch Summary Groups & Timeline Weeks on mount
@@ -259,6 +278,7 @@ export const LogAktivitasDpl: React.FC = () => {
     setFormDeskripsi("");
     setFormHasilTindakLanjut("");
     setFormSimpanLokasi(true);
+    setFormErrors({});
     handleClearFile();
     setIsFormModalOpen(true);
   };
@@ -277,23 +297,43 @@ export const LogAktivitasDpl: React.FC = () => {
     setFormDeskripsi(item.deskripsi || "");
     setFormHasilTindakLanjut(item.hasilTindakLanjut || item.arahanEvaluasi || "");
     setFormSimpanLokasi(item.simpanLokasi ?? true);
+    setFormErrors({});
     setSelectedFile(null);
     setFilePreview(item.fotoBuktiUrl || null);
     setIsFormModalOpen(true);
   };
 
-  // Submit Handler (Draf vs Terkirim)
-  const handleSubmit = async (status: "DRAF" | "TERKIRIM") => {
+  // Client-Side Validation
+  const validateForm = (): boolean => {
+    const errors: typeof formErrors = {};
     if (!formKelompokId) {
-      toast.error("Silakan pilih kelompok dampingan");
-      return;
+      errors.kelompokId = "Silakan pilih kelompok dampingan KKN";
     }
     if (!formTanggal) {
-      toast.error("Silakan tentukan tanggal kegiatan");
-      return;
+      errors.tanggal = "Tanggal kegiatan wajib diisi";
+    }
+    if (!formWaktuMulai) {
+      errors.waktuMulai = "Jam mulai wajib diisi";
+    }
+    if (!formWaktuSelesai) {
+      errors.waktuSelesai = "Jam selesai wajib diisi";
+    } else if (!calculatedDuration.isValid) {
+      errors.waktuSelesai = calculatedDuration.error || "Waktu selesai harus lebih lambat dari waktu mulai";
     }
     if (!formDeskripsi.trim()) {
-      toast.error("Uraian aktivitas wajib diisi");
+      errors.deskripsi = "Uraian aktivitas supervisi wajib diisi";
+    } else if (formDeskripsi.trim().length < 5) {
+      errors.deskripsi = "Uraian aktivitas terlalu singkat (minimal 5 karakter)";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Submit Handler (Draf vs Terkirim)
+  const handleSubmit = async (status: "DRAF" | "TERKIRIM") => {
+    if (!validateForm()) {
+      toast.error("Mohon lengkapi seluruh kolom bertanda bintang (*) dengan benar");
       return;
     }
 
@@ -794,15 +834,26 @@ export const LogAktivitasDpl: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {/* Kelompok Dampingan */}
                 <div className="space-y-1 sm:col-span-2">
-                  <label className="block font-semibold text-slate-700">
-                    Kelompok Dampingan <span className="text-rose-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="block font-semibold text-slate-700">
+                      Kelompok Dampingan <span className="text-rose-500">*</span>
+                    </label>
+                    <span className="text-[11px] text-slate-400">Pilih kelompok mahasiswa dampingan Anda</span>
+                  </div>
                   <div className="relative">
                     <select
                       value={formKelompokId}
-                      onChange={(e) => setFormKelompokId(e.target.value)}
-                      className="w-full appearance-none px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
-                      required
+                      onChange={(e) => {
+                        setFormKelompokId(e.target.value);
+                        if (formErrors.kelompokId) {
+                          setFormErrors((prev) => ({ ...prev, kelompokId: undefined }));
+                        }
+                      }}
+                      className={`w-full appearance-none px-3 py-2.5 bg-slate-50 border rounded-xl text-slate-800 font-medium focus:bg-white focus:outline-none focus:ring-2 cursor-pointer transition-all ${
+                        formErrors.kelompokId
+                          ? "border-rose-400 focus:ring-rose-400 bg-rose-50/20"
+                          : "border-slate-200 focus:ring-emerald-600"
+                      }`}
                     >
                       <option value="">-- Pilih Kelompok KKN --</option>
                       {groups.map((g) => (
@@ -813,6 +864,12 @@ export const LogAktivitasDpl: React.FC = () => {
                     </select>
                     <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
+                  {formErrors.kelompokId && (
+                    <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1 mt-1">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{formErrors.kelompokId}</span>
+                    </p>
+                  )}
                 </div>
 
                 {/* Tanggal Kegiatan */}
@@ -823,27 +880,43 @@ export const LogAktivitasDpl: React.FC = () => {
                   <input
                     type="date"
                     value={formTanggal}
-                    onChange={(e) => setFormTanggal(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
-                    required
+                    onChange={(e) => {
+                      setFormTanggal(e.target.value);
+                      if (formErrors.tanggal) {
+                        setFormErrors((prev) => ({ ...prev, tanggal: undefined }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2.5 bg-slate-50 border rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-2 transition-all ${
+                      formErrors.tanggal
+                        ? "border-rose-400 focus:ring-rose-400 bg-rose-50/20"
+                        : "border-slate-200 focus:ring-emerald-600"
+                    }`}
                   />
+                  {formErrors.tanggal && (
+                    <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1 mt-1">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{formErrors.tanggal}</span>
+                    </p>
+                  )}
                 </div>
 
                 {/* Pekan Ke- Dinamis (1 s.d 12) */}
                 <div className="space-y-1">
-                  <label className="block font-semibold text-slate-700">
-                    Pekan Ke- (Linimasa Dinamis) <span className="text-rose-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="block font-semibold text-slate-700">
+                      Pekan Ke- (Linimasa Dinamis) <span className="text-rose-500">*</span>
+                    </label>
+                    <span className="text-[10px] text-emerald-600 font-medium">Auto-sinkron</span>
+                  </div>
                   <div className="relative">
                     <select
                       value={formPekanKe}
                       onChange={(e) => setFormPekanKe(parseInt(e.target.value, 10))}
-                      className="w-full appearance-none px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
-                      required
+                      className="w-full appearance-none px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600 cursor-pointer"
                     >
                       {timelineWeeks.map((w) => (
                         <option key={w.pekanKe} value={w.pekanKe}>
-                          Pekan {w.pekanKe} - {w.tanggalRange || w.tahapMinggu}
+                          Pekan {w.pekanKe} - {w.tanggalRange || w.tahapMinggu} {w.kegiatanUtama ? `(${w.kegiatanUtama})` : ""}
                         </option>
                       ))}
                     </select>
@@ -851,7 +924,7 @@ export const LogAktivitasDpl: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Waktu Mulai & Waktu Selesai */}
+                {/* Waktu Mulai */}
                 <div className="space-y-1">
                   <label className="block font-semibold text-slate-700">
                     Waktu Mulai <span className="text-rose-500">*</span>
@@ -859,11 +932,27 @@ export const LogAktivitasDpl: React.FC = () => {
                   <input
                     type="time"
                     value={formWaktuMulai}
-                    onChange={(e) => setFormWaktuMulai(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
-                    required
+                    onChange={(e) => {
+                      setFormWaktuMulai(e.target.value);
+                      if (formErrors.waktuMulai || formErrors.waktuSelesai) {
+                        setFormErrors((prev) => ({ ...prev, waktuMulai: undefined, waktuSelesai: undefined }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2.5 bg-slate-50 border rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-2 transition-all ${
+                      formErrors.waktuMulai
+                        ? "border-rose-400 focus:ring-rose-400 bg-rose-50/20"
+                        : "border-slate-200 focus:ring-emerald-600"
+                    }`}
                   />
+                  {formErrors.waktuMulai && (
+                    <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1 mt-1">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{formErrors.waktuMulai}</span>
+                    </p>
+                  )}
                 </div>
+
+                {/* Waktu Selesai */}
                 <div className="space-y-1">
                   <label className="block font-semibold text-slate-700">
                     Waktu Selesai <span className="text-rose-500">*</span>
@@ -871,10 +960,47 @@ export const LogAktivitasDpl: React.FC = () => {
                   <input
                     type="time"
                     value={formWaktuSelesai}
-                    onChange={(e) => setFormWaktuSelesai(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
-                    required
+                    onChange={(e) => {
+                      setFormWaktuSelesai(e.target.value);
+                      if (formErrors.waktuSelesai) {
+                        setFormErrors((prev) => ({ ...prev, waktuSelesai: undefined }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2.5 bg-slate-50 border rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-2 transition-all ${
+                      formErrors.waktuSelesai || !calculatedDuration.isValid
+                        ? "border-rose-400 focus:ring-rose-400 bg-rose-50/20"
+                        : "border-slate-200 focus:ring-emerald-600"
+                    }`}
                   />
+                  {formErrors.waktuSelesai && (
+                    <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1 mt-1">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{formErrors.waktuSelesai}</span>
+                    </p>
+                  )}
+                </div>
+
+                {/* Kalkulasi Durasi Dinamis Banner */}
+                <div className="sm:col-span-2">
+                  {calculatedDuration.isValid ? (
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200 text-emerald-800 text-xs">
+                      <div className="flex items-center gap-2 font-medium">
+                        <Clock className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                        <span>
+                          Kalkulasi Durasi: <strong className="font-bold text-emerald-900">{calculatedDuration.label}</strong>
+                          <span className="text-emerald-700 text-[11px] ml-1.5 font-normal">({formWaktuMulai} s.d {formWaktuSelesai})</span>
+                        </span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-200/70 text-emerald-900 text-[10px] font-bold">
+                        Dinamis Otomatis
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                      <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                      <span>{calculatedDuration.error || "Waktu selesai harus setelah waktu mulai"}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Kategori Aktivitas */}
@@ -886,8 +1012,7 @@ export const LogAktivitasDpl: React.FC = () => {
                     <select
                       value={formKategori}
                       onChange={(e) => setFormKategori(e.target.value)}
-                      className="w-full appearance-none px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
-                      required
+                      className="w-full appearance-none px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600 cursor-pointer"
                     >
                       <option value="Kunjungan Lapangan">Kunjungan Lapangan</option>
                       <option value="Koordinasi">Koordinasi</option>
@@ -907,19 +1032,22 @@ export const LogAktivitasDpl: React.FC = () => {
                     placeholder="Misal: Posko KKN RW 05 / Kantor Kelurahan"
                     value={formLokasi}
                     onChange={(e) => setFormLokasi(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600"
                   />
                 </div>
               </div>
 
               {/* Program Kerja Terkait (Opsional) */}
               <div className="space-y-1">
-                <label className="block font-semibold text-slate-700">Program Kerja Terkait (Opsional)</label>
+                <div className="flex items-center justify-between">
+                  <label className="block font-semibold text-slate-700">Program Kerja Terkait (Opsional)</label>
+                  <span className="text-[11px] text-slate-400">Hubungkan dengan agenda proker kelompok</span>
+                </div>
                 <div className="relative">
                   <select
                     value={formProkerId}
                     onChange={(e) => setFormProkerId(e.target.value)}
-                    className="w-full appearance-none px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
+                    className="w-full appearance-none px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600 cursor-pointer"
                   >
                     <option value="">-- Hubungkan dengan Program Kerja --</option>
                     {prokers.map((p) => (
@@ -934,17 +1062,34 @@ export const LogAktivitasDpl: React.FC = () => {
 
               {/* Uraian Aktivitas */}
               <div className="space-y-1">
-                <label className="block font-semibold text-slate-700">
-                  Uraian Aktivitas Supervisi <span className="text-rose-500">*</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block font-semibold text-slate-700">
+                    Uraian Aktivitas Supervisi <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-[11px] text-slate-400">Minimal 5 karakter</span>
+                </div>
                 <textarea
                   rows={3}
                   placeholder="Jelaskan secara rinci agenda pendampingan, temuan di posko, atau observasi lapangan..."
                   value={formDeskripsi}
-                  onChange={(e) => setFormDeskripsi(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
-                  required
+                  onChange={(e) => {
+                    setFormDeskripsi(e.target.value);
+                    if (formErrors.deskripsi) {
+                      setFormErrors((prev) => ({ ...prev, deskripsi: undefined }));
+                    }
+                  }}
+                  className={`w-full px-3 py-2.5 bg-slate-50 border rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 transition-all leading-relaxed ${
+                    formErrors.deskripsi
+                      ? "border-rose-400 focus:ring-rose-400 bg-rose-50/20"
+                      : "border-slate-200 focus:ring-emerald-600"
+                  }`}
                 />
+                {formErrors.deskripsi && (
+                  <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span>{formErrors.deskripsi}</span>
+                  </p>
+                )}
               </div>
 
               {/* Hasil dan Tindak Lanjut / Arahan Evaluasi */}
@@ -955,7 +1100,7 @@ export const LogAktivitasDpl: React.FC = () => {
                   placeholder="Tuliskan arahan perbaikan atau tindak lanjut yang harus dilakukan mahasiswa dampingan..."
                   value={formHasilTindakLanjut}
                   onChange={(e) => setFormHasilTindakLanjut(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600 leading-relaxed"
                 />
               </div>
 
@@ -971,17 +1116,22 @@ export const LogAktivitasDpl: React.FC = () => {
                 />
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-xl p-3 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-emerald-50/20"
+                  className="border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-xl p-3.5 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-emerald-50/20"
                 >
                   {selectedFile ? (
-                    <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200">
-                      <div className="flex items-center gap-2 truncate">
+                    <div className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-slate-200 shadow-xs">
+                      <div className="flex items-center gap-2.5 truncate">
                         {filePreview ? (
-                          <img src={filePreview} alt="Preview" className="w-8 h-8 rounded object-cover flex-shrink-0" />
+                          <img src={filePreview} alt="Preview" className="w-9 h-9 rounded-lg object-cover flex-shrink-0 border border-slate-100" />
                         ) : (
-                          <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                          <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                            <FileText className="w-5 h-5 text-emerald-600" />
+                          </div>
                         )}
-                        <span className="truncate text-slate-800 font-medium">{selectedFile.name}</span>
+                        <div className="text-left truncate">
+                          <span className="block truncate text-slate-800 font-semibold text-xs">{selectedFile.name}</span>
+                          <span className="block text-[10px] text-slate-400">{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</span>
+                        </div>
                       </div>
                       <button
                         type="button"
@@ -989,29 +1139,28 @@ export const LogAktivitasDpl: React.FC = () => {
                           e.stopPropagation();
                           handleClearFile();
                         }}
-                        className="text-slate-400 hover:text-rose-500 p-1"
+                        className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
+                        title="Hapus berkas"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center gap-1 text-slate-500">
-                      <UploadCloud className="w-5 h-5 text-slate-400" />
-                      <span className="text-[11px] font-medium text-slate-600">
-                        Klik untuk unggah foto, PDF, atau notula • Maks. 10 MB
+                    <div className="flex flex-col items-center justify-center gap-1 text-slate-500 py-1">
+                      <UploadCloud className="w-6 h-6 text-slate-400" />
+                      <span className="text-xs font-semibold text-slate-700">
+                        Klik untuk unggah foto, PDF, atau notula
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        Format: JPG, PNG, PDF, DOC • Ukuran Maks. 10 MB
                       </span>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Durasi Info & Checkbox Simpan Lokasi */}
-              <div className="flex items-center justify-between pt-1">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-100">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>Kalkulasi Durasi: {calculatedDuration.label}</span>
-                </div>
-
+              {/* Checkbox Simpan Lokasi */}
+              <div className="flex items-center justify-end pt-1">
                 <label className="inline-flex items-center gap-2 cursor-pointer select-none text-slate-600 font-medium text-xs">
                   <input
                     type="checkbox"
@@ -1019,7 +1168,7 @@ export const LogAktivitasDpl: React.FC = () => {
                     onChange={(e) => setFormSimpanLokasi(e.target.checked)}
                     className="rounded text-emerald-700 focus:ring-emerald-600 w-3.5 h-3.5"
                   />
-                  <span>Simpan lokasi kegiatan</span>
+                  <span>Simpan lokasi kegiatan sebagai default</span>
                 </label>
               </div>
 

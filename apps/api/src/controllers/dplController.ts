@@ -446,13 +446,14 @@ export const dplController = {
     try {
       const dplUserId = getUserId(req);
       const userRole = (req.user as any)?.role;
-      const { search, groupId, kategori, status, page, limit } = req.query;
+      const { search, groupId, kategori, status, pekanKe, page, limit } = req.query;
 
       const data = await dplService.getDplActivityLogs(dplUserId, userRole, {
         search: search as string,
         groupId: groupId as string,
         kategori: kategori as string,
         status: status as string,
+        pekanKe: pekanKe ? parseInt(pekanKe as string, 10) : undefined,
         page: page ? parseInt(page as string, 10) : undefined,
         limit: limit ? parseInt(limit as string, 10) : undefined,
       });
@@ -474,13 +475,19 @@ export const dplController = {
         fotoBuktiUrl = `/uploads/${req.file.filename}`;
       } else if (req.files) {
         const filesObj = req.files as any;
-        const f = filesObj.fotoBukti?.[0] || filesObj.image?.[0] || filesObj.foto?.[0] || filesObj.file?.[0];
+        const f =
+          filesObj.fotoBukti?.[0] ||
+          filesObj.fotoDokumentasi?.[0] ||
+          filesObj.image?.[0] ||
+          filesObj.foto?.[0] ||
+          filesObj.file?.[0];
         if (f) fotoBuktiUrl = `/uploads/${f.filename}`;
       }
 
       const {
         kelompokId,
         tanggal,
+        pekanKe,
         waktuMulai,
         waktuSelesai,
         kategori,
@@ -497,6 +504,7 @@ export const dplController = {
       const data = await dplService.createDplActivityLog(dplUserId, userRole, {
         kelompokId,
         tanggal: tanggal || new Date().toISOString().split("T")[0],
+        pekanKe: pekanKe ? Number(pekanKe) : undefined,
         waktuMulai,
         waktuSelesai,
         kategori,
@@ -545,6 +553,7 @@ export const dplController = {
       const {
         kelompokId,
         tanggal,
+        pekanKe,
         waktuMulai,
         waktuSelesai,
         kategori,
@@ -561,6 +570,7 @@ export const dplController = {
       const data = await dplService.updateDplActivityLog(id, dplUserId, userRole, {
         kelompokId,
         tanggal,
+        pekanKe: pekanKe !== undefined ? Number(pekanKe) : undefined,
         waktuMulai,
         waktuSelesai,
         kategori,
