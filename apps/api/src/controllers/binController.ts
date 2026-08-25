@@ -121,6 +121,7 @@ export class BinController {
 
         return {
           id: bin.id,
+          qrCode: bin.qrCode,
           kode: ensureTcFormat(bin.qrCode, bin.category?.name),
           lokasi: calculatedAddress,
           address: calculatedAddress,
@@ -137,13 +138,15 @@ export class BinController {
             : null,
           kapasitas,
           status:
-            bin.status === "BROKEN"
-              ? "Rusak"
-              : kapasitas > 80
-                ? "Penuh"
-                : kapasitas > 50
-                  ? "Sedang"
-                  : "Normal",
+            bin.status === "PRINTED"
+              ? "PRINTED"
+              : bin.status === "BROKEN"
+                ? "Rusak"
+                : kapasitas > 80
+                  ? "Penuh"
+                  : kapasitas > 50
+                    ? "Sedang"
+                    : "Normal",
           lastUpdate: bin.updatedAt ? new Date(bin.updatedAt).toLocaleTimeString() : "-",
           verifiedAt: verifiedAtStr,
           gpsFormatted,
@@ -179,7 +182,7 @@ export class BinController {
           }
           if (targetStatus === "normal") {
             return (
-              st === "normal" || rst === "active_bound" || rst === "active" || rst === "printed"
+              st === "normal" || rst === "active_bound" || rst === "active"
             );
           }
           return st === targetStatus || rst === targetStatus;
@@ -187,6 +190,7 @@ export class BinController {
       }
 
       res.status(200).json({
+        status: "success",
         success: true,
         data: mappedBins,
       });
@@ -1191,6 +1195,37 @@ export class BinController {
         res
           .status(500)
           .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal membuat pengajuan pengosongan" });
+      }
+    }
+  }
+
+  async resetOwnership(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const adminUserId = req.user?.userId;
+      const result = await binService.resetBinOwnership(id, adminUserId);
+      res.status(200).json({
+        status: "success",
+        success: true,
+        message: "Kepemilikan tempat sampah berhasil di-reset ke status PRINTED",
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[BinController] resetOwnership error:", error);
+      if (error.message === "BIN_NOT_FOUND") {
+        res.status(404).json({
+          status: "error",
+          success: false,
+          error: "RESOURCE_NOT_FOUND",
+          message: "Tempat sampah tidak ditemukan",
+        });
+      } else {
+        res.status(500).json({
+          status: "error",
+          success: false,
+          error: "INTERNAL_SERVER_ERROR",
+          message: "Gagal mereset kepemilikan tempat sampah",
+        });
       }
     }
   }

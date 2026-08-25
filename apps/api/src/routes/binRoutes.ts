@@ -599,4 +599,18 @@ router.put(
   binController.approveResetRequest
 );
 
+router.post(
+  "/:id/reset-ownership",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "MAHASISWA_KKN", "RW"]),
+  binController.resetOwnership
+);
+
+router.post(
+  "/reset-ownership/:id",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "MAHASISWA_KKN", "RW"]),
+  binController.resetOwnership
+);
+
 export default router;
