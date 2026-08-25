@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http_parser/http_parser.dart';
 import '../models/pemanfaatan_entity.dart';
 import '../providers/api_client.dart';
 import '../../core/values/api_constants.dart';
@@ -107,19 +108,45 @@ class ApiPemanfaatanRepository implements PemanfaatanRepository {
     String? kategori,
     int? rating,
     String? fotoBuktiUrl,
+    String? imagePath,
     int? rwId,
   }) async {
     try {
-      final response = await apiClient.dio.post(
-        ApiEndpoints.pemanfaatanFeedback,
-        data: {
+      dynamic payload;
+
+      if (imagePath != null && imagePath.isNotEmpty) {
+        final fileExt = imagePath.split('.').last.toLowerCase();
+        String mimeType = 'image/jpeg';
+        if (fileExt == 'png') mimeType = 'image/png';
+        if (fileExt == 'webp') mimeType = 'image/webp';
+
+        payload = FormData.fromMap({
+          'judul': judul,
+          'isiKritikSaran': isiKritikSaran,
+          if (kategori != null) 'kategori': kategori,
+          if (rating != null) 'rating': rating,
+          if (rwId != null) 'rwId': rwId,
+          if (fotoBuktiUrl != null && fotoBuktiUrl.isNotEmpty) 'fotoBuktiUrl': fotoBuktiUrl,
+          'fotoBukti': await MultipartFile.fromFile(
+            imagePath,
+            filename: 'aspirasi_${DateTime.now().millisecondsSinceEpoch}.$fileExt',
+            contentType: MediaType.parse(mimeType),
+          ),
+        });
+      } else {
+        payload = {
           'judul': judul,
           'isiKritikSaran': isiKritikSaran,
           if (kategori != null) 'kategori': kategori,
           if (rating != null) 'rating': rating,
           if (fotoBuktiUrl != null && fotoBuktiUrl.isNotEmpty) 'fotoBuktiUrl': fotoBuktiUrl,
           if (rwId != null) 'rwId': rwId,
-        },
+        };
+      }
+
+      final response = await apiClient.dio.post(
+        ApiEndpoints.pemanfaatanFeedback,
+        data: payload,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {

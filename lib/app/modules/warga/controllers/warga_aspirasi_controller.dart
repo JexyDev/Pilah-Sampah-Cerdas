@@ -47,6 +47,7 @@ class WargaAspirasiNotifier extends StateNotifier<WargaAspirasiState> {
         kategori: data['kategori'] as String?,
         rating: data['rating'] as int?,
         fotoBuktiUrl: data['fotoBuktiUrl'] as String?,
+        imagePath: data['imagePath'] as String?,
         rwId: int.tryParse(user?.rw ?? ''),
       );
       
