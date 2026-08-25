@@ -5,50 +5,52 @@ import { kknAttendanceService } from "./kknAttendanceService.js";
 
 export class CronService {
   public start() {
+    const tzOptions = { timezone: "Asia/Jakarta" };
+
     // Notifications for schedule start
     cron.schedule("0 6 * * *", () => {
       this.triggerScheduleNotifications("MORNING");
-    });
+    }, tzOptions);
     cron.schedule("0 16 * * *", () => {
       this.triggerScheduleNotifications("EVENING");
-    });
+    }, tzOptions);
     // Escalations at the end of the window
     cron.schedule("1 8 * * *", () => {
       this.checkEscalations("MORNING");
-    });
+    }, tzOptions);
     cron.schedule("1 18 * * *", () => {
       this.checkEscalations("EVENING");
-    });
+    }, tzOptions);
     // Daily citizens absence penalty
     cron.schedule("0 0 * * *", () => {
       this.evaluateDailyWargaPenalty();
-    });
+    }, tzOptions);
     // Window absence penalty (At the end of each window)
     cron.schedule("5 8 * * *", () => {
       this.checkWindowAbsence("MORNING");
-    });
+    }, tzOptions);
     cron.schedule("5 18 * * *", () => {
       this.checkWindowAbsence("EVENING");
-    });
+    }, tzOptions);
     // Inactive bins synchronization daily at 01:00 AM
     cron.schedule("0 1 * * *", () => {
       this.syncInactiveBins();
-    });
+    }, tzOptions);
     // Check Mahasiswa Geofence every 2 hours
     cron.schedule("0 */2 * * *", () => {
       this.checkMahasiswaGeofence();
-    });
+    }, tzOptions);
     // Cleanup expired tokens, OTPs, and stale logs daily at 02:00 AM
     cron.schedule("0 2 * * *", () => {
       this.cleanupStaleData();
-    });
+    }, tzOptions);
 
     // Auto checkout ended KKN schedules every minute
     cron.schedule("* * * * *", () => {
       kknAttendanceService.autoCheckOutEndedSchedules();
-    });
+    }, tzOptions);
 
-    console.log("[CronService] Escalation and optimization cron jobs started.");
+    console.log("[CronService] Escalation and optimization cron jobs started (Asia/Jakarta Timezone).");
   }
   public async cleanupStaleData() {
     try {
