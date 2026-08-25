@@ -651,7 +651,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     !allowed ||
     userRole === "DEVELOPER" ||
     userRole === "SUPER_USER" ||
-    userRole === "ADMIN_DLH" ||
     allowed.includes(userRole);
 
   const getFilteredGroupChildren = (
