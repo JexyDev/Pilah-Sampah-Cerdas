@@ -902,7 +902,9 @@ export class KknService {
   async bantuInputFasilitas(
     kknUserId: string,
     data: {
-      userId: string;
+      userId?: string;
+      pic?: string;
+      kontak?: string;
       rwId?: any;
       nama: string;
       jenis: any;
@@ -980,18 +982,34 @@ export class KknService {
       targetRwId = firstRw?.id || 1;
     }
 
-    let picName = wargaUser ? wargaUser.name : (data.userId || "Warga Binaan");
-    let kontakPhone = wargaUser ? wargaUser.phone || "-" : "-";
+    // Prioritaskan nama PIC warga yang diinput langsung atau dari profil warga binaan
+    let picName = (data.pic || "").trim();
+    if (!picName && wargaUser?.name) {
+      picName = wargaUser.name;
+    } else if (!picName && data.userId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.userId.trim())) {
+      picName = data.userId.trim();
+    }
+
+    let kontakPhone = (data.kontak || "").trim();
+    if (!kontakPhone || kontakPhone === "-") {
+      kontakPhone = wargaUser ? (wargaUser.phone || "-") : "-";
+    }
+
     const alamatLokasi = data.alamat || (wargaUser ? wargaUser.address || "-" : "-");
 
-    if (picName && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(picName.trim())) {
-      const u = await prisma.user.findUnique({ where: { id: picName.trim() }, select: { name: true, phone: true } });
+    // Jika picName masih berupa string UUID (legacy), lookup ke nama user warga
+    if (picName && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(picName)) {
+      const u = await prisma.user.findUnique({ where: { id: picName }, select: { name: true, phone: true } });
       if (u?.name) {
         picName = u.name;
         if ((!kontakPhone || kontakPhone === "-") && u.phone) kontakPhone = u.phone;
-      } else if (student?.user?.name) {
-        picName = student.user.name;
+      } else {
+        picName = "Warga Pengelola";
       }
+    }
+
+    if (!picName) {
+      picName = "Warga Pengelola";
     }
 
     const facility = await prisma.facility.create({

@@ -18,7 +18,7 @@ import {
   Coins,
   Phone,
   Layers,
-  Sparkles,
+  Boxes,
   X,
   ExternalLink,
   Copy,
@@ -67,29 +67,56 @@ export const isUUID = (str?: string): boolean => {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str.trim());
 };
 
-// Helper smart resolver PIC (mengubah UUID menjadi nama orang jika ada)
-export const getDisplayPic = (item: FacilityItem): { name: string; isFromRegistrant: boolean; contact?: string } => {
+// Helper smart resolver PIC (memisahkan data PIC Warga dan data Mahasiswa Pendata)
+export const getDisplayPic = (item: FacilityItem): {
+  name: string;
+  roleBadge: string;
+  isWarga: boolean;
+  registeredByName?: string;
+  contact?: string;
+} => {
   const rawPic = (item.pic || "").trim();
   const regName = item.registeredBy?.name?.trim();
   const regPhone = item.registeredBy?.phone?.trim();
   const directPhone = item.kontak && item.kontak !== "-" ? item.kontak.trim() : undefined;
+  const isPosko = item.jenis === "posko_kkn" || item.jenis === "posko";
 
-  if (isUUID(rawPic)) {
-    if (regName) {
-      return { name: regName, isFromRegistrant: true, contact: directPhone || regPhone };
-    }
-    return { name: "Penanggung Jawab Fasilitas", isFromRegistrant: false, contact: directPhone };
+  // Kasus 1: Posko KKN (PIC adalah Ketua Posko Mahasiswa / DPL)
+  if (isPosko) {
+    const poskoPicName = (!isUUID(rawPic) && rawPic && rawPic !== "-") ? rawPic : (regName || "Ketua Kelompok KKN");
+    return {
+      name: poskoPicName,
+      roleBadge: "Ketua Posko KKN",
+      isWarga: false,
+      registeredByName: undefined,
+      contact: directPhone || regPhone,
+    };
   }
 
-  if (rawPic && rawPic !== "-") {
-    return { name: rawPic, isFromRegistrant: false, contact: directPhone || regPhone };
+  // Kasus 2: Fasilitas Warga (Buruan Sae, Bank Sampah, Maggot, Loseda, Bata Terawang, POC, TPS)
+  // Jika rawPic berupa nama warga (bukan UUID)
+  if (rawPic && rawPic !== "-" && !isUUID(rawPic)) {
+    return {
+      name: rawPic,
+      roleBadge: "Warga Pengelola",
+      isWarga: true,
+      registeredByName: regName && regName.toLowerCase() !== rawPic.toLowerCase() ? regName : undefined,
+      contact: directPhone,
+    };
   }
 
-  if (regName) {
-    return { name: regName, isFromRegistrant: true, contact: directPhone || regPhone };
-  }
+  // Jika rawPic berupa UUID atau kosong (data lama yang terisi ID atau belum diset nama warganya)
+  const defaultWargaLabel = item.rw?.name 
+    ? `Warga Pengelola (${item.rw.name.startsWith("RW") || item.rw.name.startsWith("Kel.") ? item.rw.name : `RW ${item.rw.name}`})`
+    : "Warga Pengelola Setempat";
 
-  return { name: "Penanggung Jawab Fasilitas", isFromRegistrant: false, contact: directPhone };
+  return {
+    name: defaultWargaLabel,
+    roleBadge: "Warga Pengelola",
+    isWarga: true,
+    registeredByName: regName,
+    contact: directPhone || regPhone,
+  };
 };
 
 // Helper format label jenis fasilitas
@@ -344,152 +371,176 @@ export const PemanfaatanSampah: React.FC = () => {
       <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
         
         {/* ========================================================================= */}
-        {/* 1. CARD JUMLAH FASILITAS (METRIC & QUICK FILTER CARDS)                    */}
+        {/* 1. CARD JUMLAH FASILITAS (METRIC & QUICK FILTER CARDS - CLEAN LOOK)       */}
         {/* ========================================================================= */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3.5 sm:gap-4.5">
           
           {/* Card 1: Semua Fasilitas */}
           <button
             type="button"
             onClick={() => handleCardFilterClick("ALL")}
-            className={`p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer relative overflow-hidden group ${
+            className={`relative p-4 sm:p-4.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group ${
               selectedJenis === "ALL"
-                ? "bg-emerald-900 text-white border-emerald-800 shadow-md scale-[1.02] ring-2 ring-emerald-500"
-                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-emerald-400 hover:shadow-sm"
+                ? "bg-emerald-50/90 dark:bg-emerald-950/50 border-emerald-500 text-emerald-950 dark:text-emerald-50 shadow-md ring-2 ring-emerald-500/20"
+                : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-emerald-400 hover:shadow-xs"
             }`}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className={`text-[11px] font-black uppercase tracking-wider ${selectedJenis === "ALL" ? "text-emerald-200" : "text-slate-500 dark:text-slate-400"}`}>
+            <div className="flex items-center justify-between w-full mb-2.5">
+              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${selectedJenis === "ALL" ? "text-emerald-800 dark:text-emerald-300" : "text-slate-500 dark:text-slate-400"}`}>
                 Semua Data
               </span>
-              <Layers size={17} className={selectedJenis === "ALL" ? "text-emerald-300" : "text-emerald-600 dark:text-emerald-400"} />
+              <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "ALL" ? "bg-emerald-200/60 dark:bg-emerald-800/60 text-emerald-900 dark:text-emerald-200" : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400"}`}>
+                <Layers size={17} />
+              </div>
             </div>
-            <div className={`text-2xl font-extrabold tracking-tight ${selectedJenis === "ALL" ? "text-white" : "text-slate-900 dark:text-white"}`}>
-              {metrics.total}
+            <div>
+              <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "ALL" ? "text-emerald-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+                {metrics.total}
+              </div>
+              <p className={`text-xs font-semibold mt-1 truncate ${selectedJenis === "ALL" ? "text-emerald-700 dark:text-emerald-300" : "text-slate-500 dark:text-slate-400"}`}>
+                Titik Terdata
+              </p>
             </div>
-            <p className={`text-[11px] font-medium mt-1 truncate ${selectedJenis === "ALL" ? "text-emerald-100" : "text-slate-500 dark:text-slate-400"}`}>
-              Titik Terdata
-            </p>
           </button>
 
           {/* Card 2: Posko KKN */}
           <button
             type="button"
             onClick={() => handleCardFilterClick("posko_kkn")}
-            className={`p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer relative overflow-hidden group ${
+            className={`relative p-4 sm:p-4.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group ${
               selectedJenis === "posko_kkn"
-                ? "bg-indigo-900 text-white border-indigo-800 shadow-md scale-[1.02] ring-2 ring-indigo-500"
-                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-indigo-400 hover:shadow-sm"
+                ? "bg-indigo-50/90 dark:bg-indigo-950/50 border-indigo-500 text-indigo-950 dark:text-indigo-50 shadow-md ring-2 ring-indigo-500/20"
+                : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:shadow-xs"
             }`}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className={`text-[11px] font-black uppercase tracking-wider ${selectedJenis === "posko_kkn" ? "text-indigo-200" : "text-slate-500 dark:text-slate-400"}`}>
+            <div className="flex items-center justify-between w-full mb-2.5">
+              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${selectedJenis === "posko_kkn" ? "text-indigo-800 dark:text-indigo-300" : "text-slate-500 dark:text-slate-400"}`}>
                 Posko KKN
               </span>
-              <GraduationCap size={17} className={selectedJenis === "posko_kkn" ? "text-indigo-300" : "text-indigo-600 dark:text-indigo-400"} />
+              <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "posko_kkn" ? "bg-indigo-200/60 dark:bg-indigo-800/60 text-indigo-900 dark:text-indigo-200" : "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400"}`}>
+                <GraduationCap size={17} />
+              </div>
             </div>
-            <div className={`text-2xl font-extrabold tracking-tight ${selectedJenis === "posko_kkn" ? "text-white" : "text-indigo-600 dark:text-indigo-400"}`}>
-              {metrics.posko}
+            <div>
+              <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "posko_kkn" ? "text-indigo-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+                {metrics.posko}
+              </div>
+              <p className={`text-xs font-semibold mt-1 truncate ${selectedJenis === "posko_kkn" ? "text-indigo-700 dark:text-indigo-300" : "text-slate-500 dark:text-slate-400"}`}>
+                Posko Mahasiswa
+              </p>
             </div>
-            <p className={`text-[11px] font-medium mt-1 truncate ${selectedJenis === "posko_kkn" ? "text-indigo-100" : "text-slate-500 dark:text-slate-400"}`}>
-              Posko Mahasiswa
-            </p>
           </button>
 
           {/* Card 3: Buruan Sae */}
           <button
             type="button"
             onClick={() => handleCardFilterClick("buruan_sae")}
-            className={`p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer relative overflow-hidden group ${
+            className={`relative p-4 sm:p-4.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group ${
               selectedJenis === "buruan_sae"
-                ? "bg-lime-900 text-white border-lime-800 shadow-md scale-[1.02] ring-2 ring-lime-500"
-                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-lime-400 hover:shadow-sm"
+                ? "bg-lime-50/90 dark:bg-lime-950/50 border-lime-500 text-lime-950 dark:text-lime-50 shadow-md ring-2 ring-lime-500/20"
+                : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-lime-400 hover:shadow-xs"
             }`}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className={`text-[11px] font-black uppercase tracking-wider ${selectedJenis === "buruan_sae" ? "text-lime-200" : "text-slate-500 dark:text-slate-400"}`}>
+            <div className="flex items-center justify-between w-full mb-2.5">
+              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${selectedJenis === "buruan_sae" ? "text-lime-800 dark:text-lime-300" : "text-slate-500 dark:text-slate-400"}`}>
                 Buruan Sae
               </span>
-              <Leaf size={17} className={selectedJenis === "buruan_sae" ? "text-lime-300" : "text-lime-600 dark:text-lime-400"} />
+              <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "buruan_sae" ? "bg-lime-200/60 dark:bg-lime-800/60 text-lime-900 dark:text-lime-200" : "bg-lime-50 dark:bg-lime-950/60 text-lime-600 dark:text-lime-400"}`}>
+                <Leaf size={17} />
+              </div>
             </div>
-            <div className={`text-2xl font-extrabold tracking-tight ${selectedJenis === "buruan_sae" ? "text-white" : "text-lime-700 dark:text-lime-400"}`}>
-              {metrics.buruanSae}
+            <div>
+              <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "buruan_sae" ? "text-lime-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+                {metrics.buruanSae}
+              </div>
+              <p className={`text-xs font-semibold mt-1 truncate ${selectedJenis === "buruan_sae" ? "text-lime-700 dark:text-lime-300" : "text-slate-500 dark:text-slate-400"}`}>
+                Kebun Urban Warga
+              </p>
             </div>
-            <p className={`text-[11px] font-medium mt-1 truncate ${selectedJenis === "buruan_sae" ? "text-lime-100" : "text-slate-500 dark:text-slate-400"}`}>
-              Kebun Urban Warga
-            </p>
           </button>
 
           {/* Card 4: Inovasi Organik */}
           <button
             type="button"
             onClick={() => handleCardFilterClick("organik_group")}
-            className={`p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer relative overflow-hidden group ${
+            className={`relative p-4 sm:p-4.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group ${
               selectedJenis === "organik_group"
-                ? "bg-emerald-900 text-white border-emerald-800 shadow-md scale-[1.02] ring-2 ring-emerald-500"
-                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-emerald-400 hover:shadow-sm"
+                ? "bg-teal-50/90 dark:bg-teal-950/50 border-teal-500 text-teal-950 dark:text-teal-50 shadow-md ring-2 ring-teal-500/20"
+                : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-teal-400 hover:shadow-xs"
             }`}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className={`text-[11px] font-black uppercase tracking-wider ${selectedJenis === "organik_group" ? "text-emerald-200" : "text-slate-500 dark:text-slate-400"}`}>
+            <div className="flex items-center justify-between w-full mb-2.5">
+              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${selectedJenis === "organik_group" ? "text-teal-800 dark:text-teal-300" : "text-slate-500 dark:text-slate-400"}`}>
                 Inovasi Organik
               </span>
-              <Recycle size={17} className={selectedJenis === "organik_group" ? "text-emerald-300" : "text-emerald-600 dark:text-emerald-400"} />
+              <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "organik_group" ? "bg-teal-200/60 dark:bg-teal-800/60 text-teal-900 dark:text-teal-200" : "bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400"}`}>
+                <Recycle size={17} />
+              </div>
             </div>
-            <div className={`text-2xl font-extrabold tracking-tight ${selectedJenis === "organik_group" ? "text-white" : "text-emerald-600 dark:text-emerald-400"}`}>
-              {metrics.organik}
+            <div>
+              <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "organik_group" ? "text-teal-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+                {metrics.organik}
+              </div>
+              <p className={`text-xs font-semibold mt-1 truncate ${selectedJenis === "organik_group" ? "text-teal-700 dark:text-teal-300" : "text-slate-500 dark:text-slate-400"}`}>
+                Loseda, Maggot, Bata
+              </p>
             </div>
-            <p className={`text-[11px] font-medium mt-1 truncate ${selectedJenis === "organik_group" ? "text-emerald-100" : "text-slate-500 dark:text-slate-400"}`}>
-              Loseda, Maggot, Bata
-            </p>
           </button>
 
           {/* Card 5: Bank Sampah */}
           <button
             type="button"
             onClick={() => handleCardFilterClick("bank_sampah")}
-            className={`p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer relative overflow-hidden group ${
+            className={`relative p-4 sm:p-4.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group ${
               selectedJenis === "bank_sampah"
-                ? "bg-blue-900 text-white border-blue-800 shadow-md scale-[1.02] ring-2 ring-blue-500"
-                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-blue-400 hover:shadow-sm"
+                ? "bg-blue-50/90 dark:bg-blue-950/50 border-blue-500 text-blue-950 dark:text-blue-50 shadow-md ring-2 ring-blue-500/20"
+                : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-blue-400 hover:shadow-xs"
             }`}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className={`text-[11px] font-black uppercase tracking-wider ${selectedJenis === "bank_sampah" ? "text-blue-200" : "text-slate-500 dark:text-slate-400"}`}>
+            <div className="flex items-center justify-between w-full mb-2.5">
+              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${selectedJenis === "bank_sampah" ? "text-blue-800 dark:text-blue-300" : "text-slate-500 dark:text-slate-400"}`}>
                 Bank Sampah
               </span>
-              <Coins size={17} className={selectedJenis === "bank_sampah" ? "text-blue-300" : "text-blue-600 dark:text-blue-400"} />
+              <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "bank_sampah" ? "bg-blue-200/60 dark:bg-blue-800/60 text-blue-900 dark:text-blue-200" : "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400"}`}>
+                <Coins size={17} />
+              </div>
             </div>
-            <div className={`text-2xl font-extrabold tracking-tight ${selectedJenis === "bank_sampah" ? "text-white" : "text-blue-600 dark:text-blue-400"}`}>
-              {metrics.bankSampah}
+            <div>
+              <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "bank_sampah" ? "text-blue-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+                {metrics.bankSampah}
+              </div>
+              <p className={`text-xs font-semibold mt-1 truncate ${selectedJenis === "bank_sampah" ? "text-blue-700 dark:text-blue-300" : "text-slate-500 dark:text-slate-400"}`}>
+                Unit Tabungan Warga
+              </p>
             </div>
-            <p className={`text-[11px] font-medium mt-1 truncate ${selectedJenis === "bank_sampah" ? "text-blue-100" : "text-slate-500 dark:text-slate-400"}`}>
-              Unit Tabungan Sampah
-            </p>
           </button>
 
           {/* Card 6: TPS (Tempat Penampungan Sementara) */}
           <button
             type="button"
             onClick={() => handleCardFilterClick("tps")}
-            className={`p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer relative overflow-hidden group ${
+            className={`relative p-4 sm:p-4.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group ${
               selectedJenis === "tps"
-                ? "bg-slate-900 text-white border-slate-800 shadow-md scale-[1.02] ring-2 ring-slate-400"
-                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-400 hover:shadow-sm"
+                ? "bg-amber-50/90 dark:bg-amber-950/50 border-amber-500 text-amber-950 dark:text-amber-50 shadow-md ring-2 ring-amber-500/20"
+                : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-amber-400 hover:shadow-xs"
             }`}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className={`text-[11px] font-black uppercase tracking-wider ${selectedJenis === "tps" ? "text-slate-300" : "text-slate-500 dark:text-slate-400"}`}>
+            <div className="flex items-center justify-between w-full mb-2.5">
+              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${selectedJenis === "tps" ? "text-amber-800 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
                 TPS
               </span>
-              <Trash2 size={17} className={selectedJenis === "tps" ? "text-slate-300" : "text-slate-600 dark:text-slate-400"} />
+              <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "tps" ? "bg-amber-200/60 dark:bg-amber-800/60 text-amber-900 dark:text-amber-200" : "bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400"}`}>
+                <Trash2 size={17} />
+              </div>
             </div>
-            <div className={`text-2xl font-extrabold tracking-tight ${selectedJenis === "tps" ? "text-white" : "text-slate-800 dark:text-slate-200"}`}>
-              {metrics.tps}
+            <div>
+              <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "tps" ? "text-amber-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+                {metrics.tps}
+              </div>
+              <p className={`text-xs font-semibold mt-1 truncate ${selectedJenis === "tps" ? "text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
+                Tempat Penampungan
+              </p>
             </div>
-            <p className={`text-[11px] font-medium mt-1 truncate ${selectedJenis === "tps" ? "text-slate-300" : "text-slate-500 dark:text-slate-400"}`}>
-              Tempat Penampungan
-            </p>
           </button>
 
         </div>
@@ -691,7 +742,7 @@ export const PemanfaatanSampah: React.FC = () => {
           <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-3 md:items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
             <div className="flex items-center gap-2.5">
               <span className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-[#009966] dark:text-emerald-400">
-                <Sparkles size={18} />
+                <Boxes size={18} />
               </span>
               <div>
                 <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-slate-100">
@@ -847,14 +898,23 @@ export const PemanfaatanSampah: React.FC = () => {
                           </span>
                         </td>
 
-                        {/* 4. Kolom Penanggung Jawab (PIC) */}
+                        {/* 4. Kolom Penanggung Jawab (PIC Warga / Posko) */}
                         <td className="py-4 px-4">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1.5">
-                              <User size={13} className="text-slate-400 shrink-0" />
-                              <p className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
-                                {picInfo.name}
-                              </p>
+                          <div className="space-y-1.5">
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <User size={13} className="text-slate-400 shrink-0" />
+                                <p className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm leading-snug">
+                                  {picInfo.name}
+                                </p>
+                              </div>
+                              <span className={`inline-block mt-0.5 text-[9.5px] font-bold px-1.5 py-0.2 rounded border ${
+                                picInfo.isWarga
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+                                  : "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800"
+                              }`}>
+                                {picInfo.roleBadge}
+                              </span>
                             </div>
 
                             {picInfo.contact && picInfo.contact !== "-" && (
@@ -864,7 +924,7 @@ export const PemanfaatanSampah: React.FC = () => {
                                   href={`https://wa.me/${picInfo.contact.replace(/\D/g, '')}`} 
                                   target="_blank" 
                                   rel="noreferrer"
-                                  className="hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline font-mono text-[11.5px]"
+                                  className="hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline font-mono text-[11px]"
                                   title="Hubungi via WhatsApp"
                                 >
                                   {picInfo.contact}
@@ -872,10 +932,13 @@ export const PemanfaatanSampah: React.FC = () => {
                               </div>
                             )}
 
-                            {picInfo.isFromRegistrant && (
-                              <span className="inline-block text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                                Pendata Mahasiswa
-                              </span>
+                            {picInfo.registeredByName && (
+                              <div className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1 pt-0.5 border-t border-slate-100 dark:border-slate-800/80">
+                                <span>Didata KKN:</span>
+                                <span className="font-medium text-slate-600 dark:text-slate-300 truncate max-w-[130px]">
+                                  {picInfo.registeredByName}
+                                </span>
+                              </div>
                             )}
                           </div>
                         </td>

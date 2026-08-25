@@ -56,16 +56,6 @@ function isPhoneValid(val: string): boolean {
   return PHONE_REGEX.test(normalizePhone(val));
 }
 
-// ─── Aturan validasi password ────────────────────────────────────────────────
-// Minimal 8 karakter, wajib mengandung huruf dan angka.
-const PASSWORD_MIN_LEN = 8;
-function isPasswordValid(pw: string): { ok: boolean; reason?: string } {
-  if (pw.length < PASSWORD_MIN_LEN) return { ok: false, reason: `Kata sandi minimal ${PASSWORD_MIN_LEN} karakter` };
-  if (!/[A-Za-z]/.test(pw)) return { ok: false, reason: "Kata sandi harus mengandung minimal 1 huruf" };
-  if (!/\d/.test(pw)) return { ok: false, reason: "Kata sandi harus mengandung minimal 1 angka" };
-  return { ok: true };
-}
-
 // ─── Main Login Component ─────────────────────────────────────────────────────
 const Login: React.FC = () => {
   const navigate = useNavigate();
