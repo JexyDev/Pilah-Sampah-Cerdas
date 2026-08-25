@@ -8,9 +8,9 @@ import { prisma } from "../lib/prisma.js";
  * 100% Real-time Database integration with automatic criteria detection & strict formula calculation.
  */
 
-import { StatusPenilaianKkn, StatusProker } from "@prisma/client";
+import { StatusPenilaianKkn, StatusProker, StatusLogbookKkn } from "@prisma/client";
 
-// Helper to determine category from score (Grading A-E sesuai notulensi)
+// Helper to determine category from score (Grading A-E)
 export const calculateGradeCategory = (score: number): string => {
   const num = Number(score) || 0;
   if (num >= 80) return "A";
@@ -26,6 +26,23 @@ export const calculateAspectScore = (score: number, weight: number): number => {
   const num = Number(score) || 0;
   const safeScore = Math.max(0, Math.min(100, num));
   return Number(((safeScore * weight) / 100).toFixed(2));
+};
+
+// Helper to calculate composite final score (Mitra 70% + DPL 30%)
+export const calculateCompositeScore = (subtotalMitra: number, subtotalDpl: number): number => {
+  const sMitra = Number(subtotalMitra) || 0;
+  const sDpl = Number(subtotalDpl) || 0;
+
+  if (sMitra > 0 && sDpl > 0) {
+    return Number((sMitra + (sDpl * 0.3)).toFixed(2));
+  }
+  if (sDpl > 0) {
+    return Number(sDpl.toFixed(2));
+  }
+  if (sMitra > 0) {
+    return Number(((sMitra / 70) * 100).toFixed(2));
+  }
+  return 0;
 };
 
 export const penilaianKknService = {
@@ -94,7 +111,7 @@ export const penilaianKknService = {
       }
     }
 
-    // 1. Hitung Kehadiran Real dari Database
+    // 1. Hitung Kehadiran Real dari Database (Strict schedule scope)
     const pastSchedulesCount = await prisma.schedule.count({
       where: {
         OR: [
@@ -109,6 +126,13 @@ export const penilaianKknService = {
       where: {
         studentId,
         status: "DALAM_RADIUS",
+        schedule: {
+          OR: [
+            { kelompokId: kelompok?.id },
+            { kelompokId: null },
+          ],
+          date: { lte: new Date() },
+        },
       },
     }).catch(() => 0);
 
@@ -116,13 +140,21 @@ export const penilaianKknService = {
       ? Math.min(100, Math.round((attendancesCount / pastSchedulesCount) * 100))
       : 0;
 
-    // 2. Hitung Warga Binaan Real dari Database
-    const wargaBinaanCount = await prisma.user.count({
-      where: {
-        rwId: profile?.assignedRwId || studentUser.rwId || undefined,
-        role: { name: "WARGA" },
-      },
+    // 2. Hitung Warga Binaan Real dari Database (Berdasarkan Tempat Sampah/Bin pendaftaran mahasiswa, fallback ke RW)
+    const directRegisteredBinsCount = await prisma.bin.count({
+      where: { registeredByStudentId: studentId },
     }).catch(() => 0);
+
+    let wargaBinaanCount = directRegisteredBinsCount;
+    if (wargaBinaanCount === 0) {
+      const rwWarga = await prisma.user.count({
+        where: {
+          rwId: profile?.assignedRwId || studentUser.rwId || undefined,
+          role: { name: "WARGA" },
+        },
+      }).catch(() => 0);
+      wargaBinaanCount = rwWarga;
+    }
 
     // 3. Hitung Program Kerja Aktif / Selesai
     const prokerCount = kelompok?.id
@@ -132,19 +164,25 @@ export const penilaianKknService = {
       : 0;
 
     // 3b. Hitung Kepatuhan Logbook KKN (Target standar: 24 aktivitas terverifikasi DPL)
-    const approvedLogbookCount = kelompok?.id
-      ? await prisma.logbookKkn.count({
-          where: {
-            kelompokId: kelompok.id,
-            statusApproval: "DISETUJUI_DPL",
-          },
-        }).catch(() => 0)
-      : 0;
-    const totalSubmittedLogbooks = kelompok?.id
-      ? await prisma.logbookKkn.count({
-          where: { kelompokId: kelompok.id },
-        }).catch(() => 0)
-      : 0;
+    const approvedLogbookCount = await prisma.logbookKkn.count({
+      where: {
+        statusApproval: StatusLogbookKkn.DISETUJUI_DPL,
+        OR: [
+          { penulisId: studentId },
+          ...(kelompok?.id ? [{ kelompokId: kelompok.id }] : []),
+        ],
+      },
+    }).catch(() => 0);
+
+    const totalSubmittedLogbooks = await prisma.logbookKkn.count({
+      where: {
+        OR: [
+          { penulisId: studentId },
+          ...(kelompok?.id ? [{ kelompokId: kelompok.id }] : []),
+        ],
+      },
+    }).catch(() => 0);
+
     const calculatedLogbookScore = Math.min(100, Math.round((approvedLogbookCount / 24) * 100));
 
     // 4. Mitra Penilai (Ketua RW atau Mitra Lapangan)
@@ -190,7 +228,7 @@ export const penilaianKknService = {
       finalizedAt: null,
     };
 
-    // Calculate dynamic subtotal from actual aspect scores
+    // Calculate dynamic subtotal from actual aspect scores (Skala 0-100 per aspek)
     const subMitra =
       calculateAspectScore(assessment.skorMitraKehadiran, 10) +
       calculateAspectScore(assessment.skorMitraWargaBinaan, 10) +
@@ -201,7 +239,7 @@ export const penilaianKknService = {
       calculateAspectScore(assessment.skorMitraDampak, 10) +
       calculateAspectScore(assessment.skorMitraInisiatif, 7);
 
-    // DPL academic 6 aspects (Total 100%: Perencanaan Kelompok 20%, Kontribusi Individu 10%, Logbook 20%, Analisis 20%, Output 20%, Laporan Akhir 10%)
+    // DPL academic 6 aspects (Total Bobot 100%: Perencanaan 20%, Kontribusi 10%, Logbook 20%, Analisis 20%, Output 20%, Laporan Akhir 10%)
     const subDpl =
       calculateAspectScore(assessment.skorDplPerencanaan, 20) +
       calculateAspectScore(assessment.skorDplKontribusi, 10) +
@@ -210,7 +248,7 @@ export const penilaianKknService = {
       calculateAspectScore(assessment.skorDplOutput, 20) +
       calculateAspectScore(assessment.skorDplLaporanAkhir, 10);
 
-    const totalNilai = Number((subDpl > 0 ? subDpl : (subMitra + subDpl)).toFixed(2));
+    const totalNilai = calculateCompositeScore(subMitra, subDpl);
     const kategori = totalNilai === 0 && !existing ? "Belum Dinilai" : calculateGradeCategory(totalNilai);
 
     return {
@@ -321,7 +359,7 @@ export const penilaianKknService = {
 
     const prev = studentUser.penilaianKkn;
 
-    // Merge scores safely based on evaluator role
+    // Merge scores safely in unified 0-100 scale
     const skorMitraKehadiran = isDpl
       ? (prev?.skorMitraKehadiran ?? 0)
       : (payload.skorMitraKehadiran !== undefined ? Number(payload.skorMitraKehadiran) : (prev?.skorMitraKehadiran ?? 0));
@@ -400,8 +438,8 @@ export const penilaianKknService = {
       calculateAspectScore(skorDplLaporanAkhir, 10)
     ).toFixed(2));
 
-    // 4. Kalkulasi Nilai Akhir & Kategori
-    const nilaiAkhir = Number((subtotalDpl > 0 ? subtotalDpl : (subtotalMitra + subtotalDpl)).toFixed(2));
+    // 4. Kalkulasi Nilai Akhir & Kategori (Formula Komposisi Mitra 70% + DPL 30%)
+    const nilaiAkhir = calculateCompositeScore(subtotalMitra, subtotalDpl);
     const kategoriNilai = calculateGradeCategory(nilaiAkhir);
 
     const isFinal = Boolean(payload.isFinalizeAction);
@@ -431,6 +469,7 @@ export const penilaianKknService = {
         data: {
           assessmentScore: subtotalDpl,
           assessmentNote: catatanDpl || undefined,
+          isAssessed: true,
         },
       });
     }
@@ -443,21 +482,21 @@ export const penilaianKknService = {
         dplId,
         mitraId,
         namaMitraPenilai,
-        skorMitraKehadiran,
-        skorMitraWargaBinaan,
-        skorMitraProker,
-        skorMitraKomunikasi,
-        skorMitraTanggungJawab,
-        skorMitraBuktiKegiatan,
-        skorMitraDampak,
-        skorMitraInisiatif,
+        skorMitraKehadiran: Math.round(skorMitraKehadiran),
+        skorMitraWargaBinaan: Math.round(skorMitraWargaBinaan),
+        skorMitraProker: Math.round(skorMitraProker),
+        skorMitraKomunikasi: Math.round(skorMitraKomunikasi),
+        skorMitraTanggungJawab: Math.round(skorMitraTanggungJawab),
+        skorMitraBuktiKegiatan: Math.round(skorMitraBuktiKegiatan),
+        skorMitraDampak: Math.round(skorMitraDampak),
+        skorMitraInisiatif: Math.round(skorMitraInisiatif),
         subtotalMitra,
-        skorDplPerencanaan,
-        skorDplKontribusi,
-        skorDplLogbook,
-        skorDplAnalisis,
-        skorDplOutput,
-        skorDplLaporanAkhir,
+        skorDplPerencanaan: Math.round(skorDplPerencanaan),
+        skorDplKontribusi: Math.round(skorDplKontribusi),
+        skorDplLogbook: Math.round(skorDplLogbook),
+        skorDplAnalisis: Math.round(skorDplAnalisis),
+        skorDplOutput: Math.round(skorDplOutput),
+        skorDplLaporanAkhir: Math.round(skorDplLaporanAkhir),
         subtotalDpl,
         nilaiAkhir,
         kategoriNilai,
@@ -472,21 +511,21 @@ export const penilaianKknService = {
         dplId: dplId || undefined,
         mitraId: mitraId || undefined,
         namaMitraPenilai: namaMitraPenilai || undefined,
-        skorMitraKehadiran,
-        skorMitraWargaBinaan,
-        skorMitraProker,
-        skorMitraKomunikasi,
-        skorMitraTanggungJawab,
-        skorMitraBuktiKegiatan,
-        skorMitraDampak,
-        skorMitraInisiatif,
+        skorMitraKehadiran: Math.round(skorMitraKehadiran),
+        skorMitraWargaBinaan: Math.round(skorMitraWargaBinaan),
+        skorMitraProker: Math.round(skorMitraProker),
+        skorMitraKomunikasi: Math.round(skorMitraKomunikasi),
+        skorMitraTanggungJawab: Math.round(skorMitraTanggungJawab),
+        skorMitraBuktiKegiatan: Math.round(skorMitraBuktiKegiatan),
+        skorMitraDampak: Math.round(skorMitraDampak),
+        skorMitraInisiatif: Math.round(skorMitraInisiatif),
         subtotalMitra,
-        skorDplPerencanaan,
-        skorDplKontribusi,
-        skorDplLogbook,
-        skorDplAnalisis,
-        skorDplOutput,
-        skorDplLaporanAkhir,
+        skorDplPerencanaan: Math.round(skorDplPerencanaan),
+        skorDplKontribusi: Math.round(skorDplKontribusi),
+        skorDplLogbook: Math.round(skorDplLogbook),
+        skorDplAnalisis: Math.round(skorDplAnalisis),
+        skorDplOutput: Math.round(skorDplOutput),
+        skorDplLaporanAkhir: Math.round(skorDplLaporanAkhir),
         subtotalDpl,
         nilaiAkhir,
         kategoriNilai,
@@ -600,6 +639,10 @@ export const penilaianKknService = {
             calculateAspectScore(skorDplLaporanAkhir, 10)
           ).toFixed(2)) || (directScore > 0 ? directScore : 0);
 
+      const subtotalMitra = p ? Number(p.subtotalMitra) : 0;
+      const calculatedNilaiAkhir = calculateCompositeScore(subtotalMitra, subtotalDpl);
+      const finalNilai = p && Number(p.nilaiAkhir) > 0 ? Number(p.nilaiAkhir) : calculatedNilaiAkhir;
+
       const hasAnyScore =
         skorDplPerencanaan > 0 ||
         skorDplKontribusi > 0 ||
@@ -635,10 +678,10 @@ export const penilaianKknService = {
         kelurahan: s.studentProfile?.assignedRw?.kelurahan?.name || "-",
         rw: s.studentProfile?.assignedRw?.name || "-",
         dplNama: s.studentProfile?.kelompok?.dpl?.name || "-",
-        subtotalMitra: p ? Number(p.subtotalMitra) : 0,
+        subtotalMitra,
         subtotalDpl,
-        nilaiAkhir: subtotalDpl,
-        kategori: p?.kategoriNilai || (subtotalDpl > 0 ? calculateGradeCategory(subtotalDpl) : "Belum Dinilai"),
+        nilaiAkhir: finalNilai,
+        kategori: p?.kategoriNilai || (finalNilai > 0 ? calculateGradeCategory(finalNilai) : "Belum Dinilai"),
         status: p?.status || "BELUM_DINILAI",
         statusDpl,
         isFinalized: Boolean(p?.isFinalized),
@@ -703,96 +746,25 @@ export const penilaianKknService = {
         },
         orderBy: { name: "asc" },
       })) as any[];
-
-      // Jika DPL tidak memiliki kelompok binaan yang cocok, pastikan tidak bocor ke kelompok lain
-      const isDplRole = evaluatorRole && ["DPL", "DOSEN_PEMBIMBING"].includes(evaluatorRole.toUpperCase());
-      if (kelompokRecords.length === 0 && isDplRole) {
-        return {
-          kelompokList: [],
-          students: [],
-          totalMahasiswa: 0,
-          sudahDinilai: 0,
-          belumDinilai: 0,
-          rerataNilai: 0,
-        };
-      }
     } catch (dbErr) {
-      console.error("[getLaporanAkhirList] Database query error, returning safe structured data:", dbErr);
+      console.error("[getLaporanAkhirList] Database query error:", dbErr);
       kelompokRecords = [];
     }
 
-    // Jika database kosong / tidak memiliki kelompok (hanya untuk non-DPL / Management), sediakan master kelompok KKN Coblong default
     if (kelompokRecords.length === 0) {
-      const fallbackKelompokDefaults = [
-        { name: "Kelompok 1 Dago", kelurahan: "Dago", rw: ["RW 01", "RW 02"], dpl: "Prof Umi Narimawati,dra, S.E. M.Si.,M.pd", nip: "4127.34.02.015" },
-        { name: "Kelompok 2 Dago", kelurahan: "Dago", rw: ["RW 03", "RW 04"], dpl: "Assoc Prof. Dr. Agus Riyanto S.E., M.S.i", nip: "4127.70.03.007" },
-        { name: "Kelompok 3 Dago", kelurahan: "Dago", rw: ["RW 05", "RW 06"], dpl: "Assoc. Prof. Dr. Raeni Dwi Santy, S.E., M.Si., CIMA, CDMP", nip: "4127.34.02.006" },
-        { name: "Kelompok 4 Dago", kelurahan: "Dago", rw: ["RW 07", "RW 08"], dpl: "Dr. Linna Ismawati, S.E., M.Si.", nip: "4127.34.02.008" },
-        { name: "Kelompok 1 Cipaganti", kelurahan: "Cipaganti", rw: ["RW 01", "RW 02"], dpl: "Iyan Andriana, S.T., M.T.", nip: "4127.70.03.009" },
-        { name: "Kelompok 2 Cipaganti", kelurahan: "Cipaganti", rw: ["RW 03", "RW 04"], dpl: "Hanhan Maulana, M.Kom., Ph.D.", nip: "4127.70.06.134" },
-        { name: "Kelompok 3 Cipaganti", kelurahan: "Cipaganti", rw: ["RW 05", "RW 06"], dpl: "Assoc. Prof. Dr. Rini Maulina, S.Sn., M.Sn.", nip: "4127.32.06.011" },
-        { name: "Kelompok 4 Cipaganti", kelurahan: "Cipaganti", rw: ["RW 07", "RW 08"], dpl: "Rangga Sidik, S.Kom., M.Kom., M.Eng", nip: "4127.70.26.113" },
-        { name: "Kelompok 1 Lebak Siliwangi", kelurahan: "Lebak Siliwangi", rw: ["RW 01", "RW 02"], dpl: "Fenny Febrianti, S.S.,M.Hum", nip: "4127.20.04.004" },
-        { name: "Kelompok 2 Lebak Siliwangi", kelurahan: "Lebak Siliwangi", rw: ["RW 03", "RW 04"], dpl: "Dr. Tatik Fidowaty, S.IP., M.Si", nip: "4127.35.31.009" },
-        { name: "Kelompok 3 Lebak Siliwangi", kelurahan: "Lebak Siliwangi", rw: ["RW 05", "RW 06"], dpl: "Dr. Nungki Heriyati, S.S.S.,I.Kom.,M.A.", nip: "4127.20.03.020" },
-        { name: "Kelompok 1 Sadang Serang", kelurahan: "Sadang Serang", rw: ["RW 01", "RW 02"], dpl: "Dr. Agus Mulyana, S.Kom, M.T.", nip: "4127.70.05.017" },
-        { name: "Kelompok 2 Sadang Serang", kelurahan: "Sadang Serang", rw: ["RW 03", "RW 04"], dpl: "Amilia Widya, S.Pd., M.T.", nip: "4127.70.17.015" },
-        { name: "Kelompok 3 Sadang Serang", kelurahan: "Sadang Serang", rw: ["RW 05", "RW 06"], dpl: "Wahyudi, S.H., M.H.", nip: "4127.33.00.019" },
-        { name: "Kelompok 4 Sadang Serang", kelurahan: "Sadang Serang", rw: ["RW 07", "RW 08"], dpl: "Richi Dwi Agustia, S.Kom., M.Kom.", nip: "4127.70.06.132" },
-        { name: "Kelompok 5 Sadang Serang", kelurahan: "Sadang Serang", rw: ["RW 09", "RW 10"], dpl: "Assoc. Prof., Dr. Manap Solihat, Drs., M.Si.", nip: "4127.35.30.007" },
-        { name: "Kelompok 6 Sadang Serang", kelurahan: "Sadang Serang", rw: ["RW 11", "RW 12"], dpl: "Cherry Dharmawan, S.Sn., M.Sn.", nip: "4127.32.04.002" },
-        { name: "Kelompok 1 Sekeloa", kelurahan: "Sekeloa", rw: ["RW 01", "RW 02"], dpl: "Dr. Lilis Puspitawati, S.E., M.Si., Ak. CA", nip: "4127.34.03.007" },
-        { name: "Kelompok 2 Sekeloa", kelurahan: "Sekeloa", rw: ["RW 03", "RW 04"], dpl: "Assoc. Prof. Dr. Ely Suhayati, S.E., M.Si., Ak., CA", nip: "4127.34.03.004" },
-        { name: "Kelompok 3 Sekeloa", kelurahan: "Sekeloa", rw: ["RW 05", "RW 06"], dpl: "Dr. Nina Hermina, S.Kom, M.T.", nip: "4127.70.05.011" },
-        { name: "Kelompok 4 Sekeloa", kelurahan: "Sekeloa", rw: ["RW 07", "RW 08"], dpl: "Dr. Dian Indiyati, S.E., M.Si.", nip: "4127.34.02.040" },
-        { name: "Kelompok 5 Sekeloa", kelurahan: "Sekeloa", rw: ["RW 09", "RW 10"], dpl: "Dr. Sri Roslindawati, S.E., M.Si.", nip: "4127.34.03.018" },
-        { name: "Kelompok 6 Sekeloa", kelurahan: "Sekeloa", rw: ["RW 11", "RW 12"], dpl: "Dr. Dewi Triwahyuni, S.IP., M.Si.", nip: "4127.35.32.011" },
-      ];
-
-      kelompokRecords = fallbackKelompokDefaults.map((def, idx) => ({
-        id: `mock-kelompok-${idx + 1}`,
-        name: def.name,
-        kelurahan: def.kelurahan,
-        cakupanRw: def.rw,
-        dplNamaMentah: def.dpl,
-        dpl: { id: `mock-dpl-${idx + 1}`, name: def.dpl, nip: def.nip, phone: "+628123456789" },
-        students: [
-          {
-            userId: `mock-st-${idx}-1`,
-            nim: `101230${idx + 10}`,
-            jurusan: "Teknik Informatika",
-            fakultas: "Teknik & Ilmu Komputer",
-            user: { id: `mock-st-${idx}-1`, name: `Mahasiswa ${idx + 1}A`, phone: "+62812000001" },
-            assignedRw: { name: def.rw[0], kelurahan: { name: def.kelurahan } },
-          },
-          {
-            userId: `mock-st-${idx}-2`,
-            nim: `101230${idx + 20}`,
-            jurusan: "Ilmu Komunikasi",
-            fakultas: "Ilmu Sosial & Ilmu Politik",
-            user: { id: `mock-st-${idx}-2`, name: `Mahasiswa ${idx + 1}B`, phone: "+62812000002" },
-            assignedRw: { name: def.rw[0], kelurahan: { name: def.kelurahan } },
-          },
-        ],
-        programKerja: [
-          {
-            id: `mock-proker-${idx + 1}`,
-            kategori: "LAPORAN_AKHIR",
-            deskripsi: `Laporan Akhir KKN Tematik Coblong - ${def.name}`,
-            linkGoogleDrive: `https://berseka.bandung.go.id/docs/laporan-akhir/${def.name.toLowerCase().replace(/\s+/g, "-")}.pdf`,
-            skorPenilaian: idx % 3 === 0 ? 88 : idx % 3 === 1 ? 82 : null,
-            statusPenilaian: idx % 3 === 0 ? "DISETUJUI" : idx % 3 === 1 ? "PERLU_REVISI" : "MENUNGGU_TELAAH",
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            aspekPenilaian: {
-              rubrikScores: { sistematika: 85, analisis: 85, output: 85, refleksi: 85 },
-              catatanBab: { bab1: "Pendahuluan lengkap", bab2: "Proker berjalan baik", bab3: "Dampak terukur", bab4: "Rekomendasi aplikatif" },
-            },
-          },
-        ],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }));
+      return {
+        stats: {
+          totalKelompok: 0,
+          disetujuiCount: 0,
+          perluRevisiCount: 0,
+          menungguTelaahCount: 0,
+          totalMahasiswa: 0,
+          sudahDinilaiCount: 0,
+          belumDinilaiCount: 0,
+        },
+        students: [],
+        kelompokList: [],
+      };
     }
 
     const kelompokList = kelompokRecords.map((k: any, index: number) => {
@@ -844,8 +816,8 @@ export const penilaianKknService = {
         ? `Laporan Akhir KKN: ${primaryProker.deskripsi}`
         : `Laporan Akhir KKN Tematik Coblong - ${groupName}`;
 
-      const fileUrl = primaryProker?.linkGoogleDrive || `https://berseka.bandung.go.id/docs/laporan-akhir/${groupName.toLowerCase().replace(/\s+/g, "-")}.pdf`;
-      const fileName = `Laporan_Akhir_${groupName.replace(/\s+/g, "_")}.pdf`;
+      const fileUrl = primaryProker?.linkGoogleDrive || null;
+      const fileName = fileUrl ? `Laporan_Akhir_${groupName.replace(/\s+/g, "_")}.pdf` : null;
 
       let predikat = "Belum Dinilai";
       if (scoreVal !== null) {
@@ -882,7 +854,7 @@ export const penilaianKknService = {
         kelurahan: k.kelurahan || (k.students?.[0]?.assignedRw?.kelurahan?.name ?? "Coblong"),
         cakupanRw: k.cakupanRw || (k.students?.[0]?.assignedRw?.name ? [k.students[0].assignedRw.name] : ["RW 01", "RW 02"]),
         dplNama: k.dpl?.name || k.dplNamaMentah || "Dosen Pendamping Lapangan",
-        dplNip: k.dpl?.nip || "198503152010121002",
+        dplNip: k.dpl?.nip || "-",
         dplId: k.dplId || k.dpl?.id || null,
         totalAnggota: (k.students || []).length,
         students: studentsMapped,
@@ -1000,7 +972,6 @@ export const penilaianKknService = {
     const refl = Math.max(0, Math.min(100, Number(rubrikScores.refleksi || 0)));
 
     const finalScore = Math.round(sist * 0.25 + anal * 0.25 + outp * 0.25 + refl * 0.25);
-    const aspectScore0to4 = Math.min(4, Math.max(0, Math.round((finalScore / 100) * 4)));
 
     // Upsert or Update Primary Proker / Laporan Akhir Kelompok
     let primaryProker = kelompok.programKerja.find((p) => p.kategori === "LAPORAN_AKHIR") || kelompok.programKerja[0];
@@ -1037,7 +1008,7 @@ export const penilaianKknService = {
           kelompokId: kelompok.id,
           deskripsi: judulLaporan || `Laporan Akhir KKN Tematik Coblong - ${kelompok.name}`,
           kategori: "LAPORAN_AKHIR",
-          linkGoogleDrive: fileUrl || `https://berseka.bandung.go.id/docs/laporan-akhir/${kelompok.name.toLowerCase().replace(/\s+/g, "-")}.pdf`,
+          linkGoogleDrive: fileUrl || undefined,
           skorPenilaian: finalScore,
           statusPenilaian: statusTelaah,
           status: statusProkerVal,
@@ -1061,21 +1032,22 @@ export const penilaianKknService = {
           data: {
             assessmentScore: finalScore,
             assessmentNote: catatanUmum || "Nilai Laporan Akhir Kelompok telah disahkan",
+            isAssessed: true,
           },
         });
 
-        // Upsert PenilaianKknMahasiswa
+        // Upsert PenilaianKknMahasiswa in unified 0-100 scale
         const existing = await prisma.penilaianKknMahasiswa.findUnique({
           where: { studentId: st.userId },
         });
 
         const subtotalMitra = existing ? Number(existing.subtotalMitra) : 0;
-        const currentSkorDplPerencanaan = existing?.skorDplPerencanaan ?? aspectScore0to4;
-        const currentSkorDplKontribusi = existing?.skorDplKontribusi ?? aspectScore0to4;
-        const currentSkorDplLogbook = existing?.skorDplLogbook ?? aspectScore0to4;
-        const currentSkorDplAnalisis = existing?.skorDplAnalisis ?? aspectScore0to4;
-        const currentSkorDplOutput = existing?.skorDplOutput ?? aspectScore0to4;
-        const currentSkorDplLaporanAkhir = aspectScore0to4;
+        const currentSkorDplPerencanaan = existing?.skorDplPerencanaan ?? 0;
+        const currentSkorDplKontribusi = existing?.skorDplKontribusi ?? 0;
+        const currentSkorDplLogbook = existing?.skorDplLogbook ?? 0;
+        const currentSkorDplAnalisis = existing?.skorDplAnalisis ?? 0;
+        const currentSkorDplOutput = existing?.skorDplOutput ?? 0;
+        const currentSkorDplLaporanAkhir = finalScore;
 
         const subtotalDpl = Number((
           calculateAspectScore(currentSkorDplPerencanaan, 20) +
@@ -1086,7 +1058,7 @@ export const penilaianKknService = {
           calculateAspectScore(currentSkorDplLaporanAkhir, 10)
         ).toFixed(2));
 
-        const nilaiAkhir = Number((subtotalMitra + subtotalDpl).toFixed(2));
+        const nilaiAkhir = calculateCompositeScore(subtotalMitra, subtotalDpl);
         const kategoriNilai = calculateGradeCategory(nilaiAkhir);
 
         await prisma.penilaianKknMahasiswa.upsert({
@@ -1095,7 +1067,7 @@ export const penilaianKknService = {
             studentId: st.userId,
             kelompokId: kelompok.id,
             dplId: evaluatorId || kelompok.dplId || undefined,
-            skorDplLaporanAkhir: aspectScore0to4,
+            skorDplLaporanAkhir: finalScore,
             skorDplPerencanaan: currentSkorDplPerencanaan,
             skorDplKontribusi: currentSkorDplKontribusi,
             skorDplLogbook: currentSkorDplLogbook,
@@ -1109,7 +1081,7 @@ export const penilaianKknService = {
           },
           update: {
             dplId: evaluatorId || kelompok.dplId || undefined,
-            skorDplLaporanAkhir: aspectScore0to4,
+            skorDplLaporanAkhir: finalScore,
             subtotalDpl,
             nilaiAkhir,
             kategoriNilai,
@@ -1161,14 +1133,15 @@ export const penilaianKknService = {
       throw new Error("Mahasiswa tidak ditemukan");
     }
 
-    const aspectScore = Math.min(4, Math.max(0, Math.round((score / 100) * 4)));
+    const finalScore = Math.round(score);
 
     if (studentUser.studentProfile) {
       await prisma.studentKkn.update({
         where: { id: studentUser.studentProfile.id },
         data: {
-          assessmentScore: score,
+          assessmentScore: finalScore,
           assessmentNote: catatan || "Laporan akhir telah dinilai oleh DPL",
+          isAssessed: true,
         },
       });
     }
@@ -1180,12 +1153,12 @@ export const penilaianKknService = {
       : existing?.dplId || studentUser.studentProfile?.kelompok?.dplId || null;
 
     const subtotalMitra = existing ? Number(existing.subtotalMitra) : 0;
-    const currentSkorDplPerencanaan = existing?.skorDplPerencanaan ?? aspectScore;
-    const currentSkorDplKontribusi = existing?.skorDplKontribusi ?? aspectScore;
-    const currentSkorDplLogbook = existing?.skorDplLogbook ?? aspectScore;
-    const currentSkorDplAnalisis = existing?.skorDplAnalisis ?? aspectScore;
-    const currentSkorDplOutput = existing?.skorDplOutput ?? aspectScore;
-    const currentSkorDplLaporanAkhir = aspectScore;
+    const currentSkorDplPerencanaan = existing?.skorDplPerencanaan ?? 0;
+    const currentSkorDplKontribusi = existing?.skorDplKontribusi ?? 0;
+    const currentSkorDplLogbook = existing?.skorDplLogbook ?? 0;
+    const currentSkorDplAnalisis = existing?.skorDplAnalisis ?? 0;
+    const currentSkorDplOutput = existing?.skorDplOutput ?? 0;
+    const currentSkorDplLaporanAkhir = finalScore;
 
     const subtotalDpl = Number((
       calculateAspectScore(currentSkorDplPerencanaan, 20) +
@@ -1196,7 +1169,7 @@ export const penilaianKknService = {
       calculateAspectScore(currentSkorDplLaporanAkhir, 10)
     ).toFixed(2));
 
-    const nilaiAkhir = Number((subtotalMitra + subtotalDpl).toFixed(2));
+    const nilaiAkhir = calculateCompositeScore(subtotalMitra, subtotalDpl);
     const kategoriNilai = calculateGradeCategory(nilaiAkhir);
 
     const saved = await prisma.penilaianKknMahasiswa.upsert({
@@ -1205,7 +1178,7 @@ export const penilaianKknService = {
         studentId,
         kelompokId,
         dplId,
-        skorDplLaporanAkhir: aspectScore,
+        skorDplLaporanAkhir: finalScore,
         skorDplPerencanaan: currentSkorDplPerencanaan,
         skorDplKontribusi: currentSkorDplKontribusi,
         skorDplLogbook: currentSkorDplLogbook,
@@ -1219,7 +1192,7 @@ export const penilaianKknService = {
       },
       update: {
         dplId: dplId || undefined,
-        skorDplLaporanAkhir: aspectScore,
+        skorDplLaporanAkhir: finalScore,
         subtotalDpl,
         nilaiAkhir,
         kategoriNilai,
@@ -1230,7 +1203,7 @@ export const penilaianKknService = {
 
     return {
       studentId,
-      score,
+      score: finalScore,
       status: "Sudah Dinilai",
       catatan,
       penilaianRecord: saved,
