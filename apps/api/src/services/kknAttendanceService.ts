@@ -289,7 +289,7 @@ export class KknAttendanceService {
         });
 
         // Skip HANYA jika kegiatan sudah checkout / selesai sepenuhnya
-        if (existingAtt && (existingAtt.status === "SELESAI" || existingAtt.status === "SELESAI_TELAT" || Boolean(existingAtt.checkOutAt))) {
+        if (existingAtt && (existingAtt.status === "SELESAI" || existingAtt.status === "SELESAI_TELAT" || existingAtt.status === "HADIR_MEMENUHI" || existingAtt.status === "HADIR_TIDAK_MEMENUHI" || existingAtt.status === "HADIR" || Boolean(existingAtt.checkOutAt))) {
           continue;
         }
 
@@ -400,7 +400,7 @@ export class KknAttendanceService {
         // Update / upsert actualInZoneMinutes so Web Dashboard and Mobile are 100% in sync
         // Catatan: Status tetap BERLANGSUNG sampai mahasiswa menekan tombol "Absen Sekarang"
         if (existingAtt) {
-          if (existingAtt.status !== "SELESAI" && existingAtt.status !== "SELESAI_TELAT") {
+          if (existingAtt.status !== "SELESAI" && existingAtt.status !== "SELESAI_TELAT" && existingAtt.status !== "HADIR_MEMENUHI" && existingAtt.status !== "HADIR_TIDAK_MEMENUHI" && existingAtt.status !== "HADIR") {
             await prisma.activityAttendance.update({
               where: { id: existingAtt.id },
               data: { actualInZoneMinutes: durationInZone },
@@ -642,7 +642,7 @@ export class KknAttendanceService {
         }
 
         // Skip jika sudah selesai / hadir / sudah checkout
-        if (existingAtt && (existingAtt.status === "HADIR" || existingAtt.status === "SELESAI" || existingAtt.status === "SELESAI_TELAT" || Boolean(existingAtt.checkOutAt))) {
+        if (existingAtt && (existingAtt.status === "HADIR" || existingAtt.status === "SELESAI" || existingAtt.status === "SELESAI_TELAT" || existingAtt.status === "HADIR_MEMENUHI" || existingAtt.status === "HADIR_TIDAK_MEMENUHI" || Boolean(existingAtt.checkOutAt))) {
           continue;
         }
 
@@ -800,17 +800,22 @@ export class KknAttendanceService {
       });
 
       if (attendance) {
-        // Bug #1 fix: SELESAI_TELAT juga dianggap finished; BERLANGSUNG bukan "LAPANGAN"
         const isFinished =
           Boolean(attendance.checkOutAt) ||
           attendance.status === "HADIR" ||
           attendance.status === "SELESAI" ||
-          attendance.status === "SELESAI_TELAT";
+          attendance.status === "SELESAI_TELAT" ||
+          attendance.status === "HADIR_MEMENUHI" ||
+          attendance.status === "HADIR_TIDAK_MEMENUHI";
         isAttended = isFinished;
+        const actualMins = attendance.actualInZoneMinutes ?? 0;
+        const isMemenuhi = actualMins >= targetDurationMinutes;
         attendanceStatus = isFinished
-          ? (["SELESAI", "SELESAI_TELAT"].includes(attendance.status)
+          ? (attendance.status === "HADIR_MEMENUHI" || attendance.status === "HADIR_TIDAK_MEMENUHI"
               ? attendance.status
-              : "HADIR")
+              : (attendance.status === "SELESAI_TELAT"
+                  ? "HADIR_TIDAK_MEMENUHI"
+                  : (isMemenuhi ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI")))
           : (attendance.status === "ALPA"
               ? "ALPA"
               : attendance.status === "BERLANGSUNG"
@@ -821,6 +826,8 @@ export class KknAttendanceService {
         method = attendance.method;
       }
     }
+
+    const isMemenuhiDurasi = isAttended && (attendanceStatus === "HADIR_MEMENUHI");
 
     return {
       scheduleId: schedule.id,
@@ -835,6 +842,13 @@ export class KknAttendanceService {
       isAttended,
       attendanceStatus: attendanceStatus || "BELUM_ABSEN",
       status: attendanceStatus || "BELUM_ABSEN",
+      statusKehadiran: attendanceStatus || "BELUM_ABSEN",
+      statusDisplay: attendanceStatus === "HADIR_MEMENUHI"
+        ? "Hadir & Memenuhi"
+        : attendanceStatus === "HADIR_TIDAK_MEMENUHI"
+        ? "Hadir & Tidak Memenuhi"
+        : attendanceStatus,
+      isMemenuhiDurasi,
       checkInTime,
       checkOutTime,
       method,
@@ -957,19 +971,34 @@ export class KknAttendanceService {
       });
 
       if (existing) {
-        // If already completed as HADIR or SELESAI or checked out, return existing
-        if (existing.status === "HADIR" || existing.status === "SELESAI" || Boolean(existing.checkOutAt)) {
+        // If already completed as HADIR, SELESAI, HADIR_MEMENUHI, HADIR_TIDAK_MEMENUHI or checked out, return existing
+        if (
+          existing.status === "HADIR" ||
+          existing.status === "SELESAI" ||
+          existing.status === "HADIR_MEMENUHI" ||
+          existing.status === "HADIR_TIDAK_MEMENUHI" ||
+          Boolean(existing.checkOutAt)
+        ) {
           return existing;
         }
 
-        // If was ongoing (BERLANGSUNG/DALAM_RADIUS), mark as HADIR (or ALPA)
+        let recordStatus = isAutoAlpa ? "ALPA" : "HADIR_MEMENUHI";
+        if (!isAutoAlpa && actLoc) {
+          const targetMins = actLoc.targetDurationMinutes || 120;
+          const actualMins = existing.actualInZoneMinutes ?? 0;
+          if (targetMins > 0 && actualMins < targetMins) {
+            recordStatus = "HADIR_TIDAK_MEMENUHI";
+          }
+        }
+
+        // If was ongoing (BERLANGSUNG/DALAM_RADIUS), mark as HADIR_MEMENUHI / HADIR_TIDAK_MEMENUHI (or ALPA)
         const updated = await tx.activityAttendance.update({
           where: { id: existing.id },
           data: {
             method: isAutoAlpa ? "ALPA_AUTO" : method,
             latitude,
             longitude,
-            status: isAutoAlpa ? "ALPA" : "HADIR",
+            status: recordStatus,
             checkOutAt: new Date(),
             attendedAt: existing.attendedAt || new Date(),
           },
@@ -1188,13 +1217,17 @@ export class KknAttendanceService {
       actualInZoneMins = calculateInZoneDurationMinutes(todayLogsForCheckout, checkoutGeofence, checkoutBufferMeters, (attendance.jedaLogs as any[]) || []);
     }
 
-    // Determine final status: SELESAI or SELESAI_TELAT
+    // Determine final status: HADIR_MEMENUHI or HADIR_TIDAK_MEMENUHI
+    let isMemenuhi = true;
+    let durasiWajibMenit = 0;
     if (schedule) {
-      const durasiWajibMenit = await getScheduleTargetDurationMinutes(schedule);
+      durasiWajibMenit = await getScheduleTargetDurationMinutes(schedule);
       if (durasiWajibMenit > 0 && actualInZoneMins < durasiWajibMenit) {
-        checkoutFinalStatus = "SELESAI_TELAT";
+        isMemenuhi = false;
       }
     }
+    checkoutFinalStatus = isMemenuhi ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
+    const statusDisplay = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
 
     const durationMinutes = actualInZoneMins;
 
@@ -1255,6 +1288,9 @@ export class KknAttendanceService {
       checkOutAt: updated.checkOutAt,
       durationMinutes,
       status: updated.status,
+      statusDisplay,
+      statusKehadiran: updated.status,
+      isMemenuhiDurasi: isMemenuhi,
       student: updated.student,
     });
 
@@ -1264,9 +1300,13 @@ export class KknAttendanceService {
       studentId,
       scheduleId: updated.scheduleId,
       status: updated.status,
+      statusDisplay,
+      statusKehadiran: updated.status,
+      isMemenuhiDurasi: isMemenuhi,
       attendedAt: updated.attendedAt,
       completedAt: updated.checkOutAt,
       totalMinutes: durationMinutes,
+      actualInZoneMinutes: actualInZoneMins,
       method: updated.method,
       latitude: updated.latitude,
       longitude: updated.longitude,
@@ -1275,7 +1315,7 @@ export class KknAttendanceService {
 
     return {
       success: true,
-      message: "Check-out presensi berhasil dicatat. GPS dinonaktifkan.",
+      message: `Check-out presensi berhasil dicatat (${statusDisplay}). GPS dinonaktifkan.`,
       data: {
         attendanceId: updated.id,
         scheduleId: updated.scheduleId,
@@ -1284,6 +1324,12 @@ export class KknAttendanceService {
         durationMinutes,
         durationFormatted: `${Math.floor(durationMinutes / 60)} Jam ${durationMinutes % 60} Menit`,
         status: updated.status,
+        statusDisplay,
+        statusKehadiran: updated.status,
+        isMemenuhiDurasi: isMemenuhi,
+        durasiWajibMenit,
+        actualInZoneMinutes: actualInZoneMins,
+        actualInZoneSeconds: actualInZoneMins * 60,
         gpsActive: false,
         statusGps: "INACTIVE",
       },
@@ -1534,25 +1580,59 @@ export class KknAttendanceService {
       const latestLoc = locMap.get(att.studentId);
       const leave = leaveMap.get(att.studentId);
 
-      const isFinished = Boolean(att.checkOutAt) || att.status === "SELESAI" || att.status === "SELESAI_TELAT" || att.status === "HADIR";
+      const isFinished =
+        Boolean(att.checkOutAt) ||
+        att.status === "SELESAI" ||
+        att.status === "SELESAI_TELAT" ||
+        att.status === "HADIR" ||
+        att.status === "HADIR_MEMENUHI" ||
+        att.status === "HADIR_TIDAK_MEMENUHI";
 
       let currentStatus = "TERCATAT_ABSEN";
       let status = att.status;
+      let statusDisplay = att.status;
+      let isMemenuhiDurasi = false;
+
+      const durasiWajib = scheduleLoc?.targetDurationMinutes || 120;
+      const actualMins = att.actualInZoneMinutes ?? 0;
 
       if (att.method === "IZIN_DPL" || String(att.status).toUpperCase().includes("IZIN") || String(att.status).toUpperCase().includes("SAKIT")) {
         currentStatus = "IZIN_DISETUJUI";
         status = String(att.status).toUpperCase().includes("SAKIT") ? "SAKIT" : "IZIN";
-      } else if (att.method === "OVERRIDE_DPL" || String(att.status).toUpperCase().includes("OVERRIDE")) {
+        statusDisplay = status === "SAKIT" ? "Sakit (Disetujui)" : "Izin (Disetujui)";
+      } else if (att.method === "OVERRIDE_DPL" || String(att.status).toUpperCase().includes("OVERRIDE") || att.status === "OVERRIDDEN_HADIR") {
         currentStatus = "OVERRIDDEN_HADIR";
-        status = "HADIR";
-      } else if (isFinished || att.status === "HADIR" || att.status === "SELESAI") {
+        status = "HADIR_MEMENUHI";
+        statusDisplay = "Hadir (Batal Izin)";
+        isMemenuhiDurasi = true;
+      } else if (isFinished || att.status === "HADIR" || att.status === "SELESAI" || att.status === "HADIR_MEMENUHI" || att.status === "HADIR_TIDAK_MEMENUHI") {
         currentStatus = "TERCATAT_ABSEN";
-        status = "HADIR";
+        if (att.status === "HADIR_MEMENUHI") {
+          status = "HADIR_MEMENUHI";
+          statusDisplay = "Hadir & Memenuhi";
+          isMemenuhiDurasi = true;
+        } else if (att.status === "HADIR_TIDAK_MEMENUHI" || att.status === "SELESAI_TELAT") {
+          status = "HADIR_TIDAK_MEMENUHI";
+          statusDisplay = "Hadir & Tidak Memenuhi";
+          isMemenuhiDurasi = false;
+        } else {
+          // Legacy HADIR or SELESAI
+          const isDurMet = durasiWajib <= 0 || actualMins >= durasiWajib;
+          status = isDurMet ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
+          statusDisplay = isDurMet ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
+          isMemenuhiDurasi = isDurMet;
+        }
       } else if (att.status === "BERLANGSUNG") {
         status = "BERLANGSUNG";
         currentStatus = "MASIH_DI_LOKASI";
+        statusDisplay = "Sedang di Lapangan";
+      } else if (att.status === "TERJEDA") {
+        status = "TERJEDA";
+        currentStatus = "TERJEDA";
+        statusDisplay = "Terjeda";
       } else {
         status = att.status;
+        statusDisplay = att.status;
       }
 
       const isLeave = att.method === "IZIN_DPL" || String(att.status).toUpperCase().includes("IZIN") || String(att.status).toUpperCase().includes("SAKIT");
@@ -1560,7 +1640,9 @@ export class KknAttendanceService {
         ...att,
         status,
         currentStatus,
-        statusDisplay: status === "HADIR" ? "Hadir" : status === "SELESAI" ? "Selesai" : status === "LEPAS_RADIUS" ? "Lepas Radius" : status,
+        statusDisplay,
+        isMemenuhiDurasi,
+        actualInZoneMinutes: actualMins,
         attendedAt: isLeave ? null : att.attendedAt,
         completedAt: isFinished ? (att.checkOutAt || (att as any).completedAt || null) : null,
         leaveRequest: leave
@@ -1610,7 +1692,9 @@ export class KknAttendanceService {
             existingLeaveAtt.status !== attStatus &&
             existingLeaveAtt.status !== "HADIR" &&
             existingLeaveAtt.status !== "SELESAI" &&
-            existingLeaveAtt.status !== "SELESAI_TELAT"
+            existingLeaveAtt.status !== "SELESAI_TELAT" &&
+            existingLeaveAtt.status !== "HADIR_MEMENUHI" &&
+            existingLeaveAtt.status !== "HADIR_TIDAK_MEMENUHI"
           ) {
             await prisma.activityAttendance.update({
               where: { id: existingLeaveAtt.id },
@@ -1697,9 +1781,10 @@ export class KknAttendanceService {
           method: "OVERRIDE_DPL",
           latitude: latestLoc ? latestLoc.latitude : scheduleLoc.latitude,
           longitude: latestLoc ? latestLoc.longitude : scheduleLoc.longitude,
-          status: "HADIR",
+          status: "HADIR_MEMENUHI",
           currentStatus: "OVERRIDDEN_HADIR",
           statusDisplay: "Hadir (Batal Izin)",
+          isMemenuhiDurasi: true,
           student: s,
           leaveRequest: {
             id: leave.id,
@@ -2089,14 +2174,24 @@ export class KknAttendanceService {
 
       // Status Kehadiran mahasiswa
       let statusKehadiran: string | null = null;
+      let isMemenuhiDurasi = false;
       if (approvedLeave) {
         statusKehadiran = approvedLeave.type.toUpperCase() === "SAKIT" ? "SAKIT" : "IZIN";
       } else if (sch.attendances && sch.attendances.length > 0) {
         const att = sch.attendances[0];
+        const actualMins = att.actualInZoneMinutes ?? 0;
+        const isMemenuhi = durasiWajibMenit <= 0 || actualMins >= durasiWajibMenit;
         if (att.status === "ALPA") {
           statusKehadiran = "ALPA";
+        } else if (att.status === "HADIR_MEMENUHI") {
+          statusKehadiran = "HADIR_MEMENUHI";
+          isMemenuhiDurasi = true;
+        } else if (att.status === "HADIR_TIDAK_MEMENUHI" || att.status === "SELESAI_TELAT") {
+          statusKehadiran = "HADIR_TIDAK_MEMENUHI";
+          isMemenuhiDurasi = false;
         } else if (att.checkOutAt || att.status === "HADIR" || att.status === "SELESAI") {
-          statusKehadiran = "HADIR";
+          statusKehadiran = isMemenuhi ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
+          isMemenuhiDurasi = isMemenuhi;
         } else if (att.status === "BERLANGSUNG") {
           statusKehadiran = "BERLANGSUNG";
         } else if (att.status === "TERJEDA") {
@@ -2125,11 +2220,17 @@ export class KknAttendanceService {
         }
         actualInZoneMinutes = liveMins;
         actualInZoneSeconds = actualInZoneMinutes * 60;
-      } else if (att && (att.status === "TERJEDA" || att.status === "HADIR" || att.status === "SELESAI" || att.status === "SELESAI_TELAT")) {
+      } else if (att && (att.status === "TERJEDA" || att.status === "HADIR" || att.status === "SELESAI" || att.status === "SELESAI_TELAT" || att.status === "HADIR_MEMENUHI" || att.status === "HADIR_TIDAK_MEMENUHI")) {
         // Sesi terjeda / selesai — gunakan nilai tersimpan di DB secara pasti tanpa penambahan elapsed time
         actualInZoneMinutes = att.actualInZoneMinutes ?? 0;
         actualInZoneSeconds = actualInZoneMinutes * 60;
       }
+
+      const statusDisplay = statusKehadiran === "HADIR_MEMENUHI"
+        ? "Hadir & Memenuhi"
+        : statusKehadiran === "HADIR_TIDAK_MEMENUHI"
+        ? "Hadir & Tidak Memenuhi"
+        : statusKehadiran;
 
       return {
         id: sch.id,
@@ -2147,6 +2248,8 @@ export class KknAttendanceService {
         },
         status: scheduleStatus,
         statusKehadiran,
+        statusDisplay,
+        isMemenuhiDurasi,
         actualInZoneSeconds,
         actualInZoneMinutes,
         attendedAt: att?.attendedAt ? att.attendedAt.toISOString() : null,
@@ -2282,7 +2385,15 @@ export class KknAttendanceService {
       },
     });
 
-    if (existingSession && (existingSession.status === "HADIR" || existingSession.status === "SELESAI" || existingSession.status === "SELESAI_TELAT" || Boolean(existingSession.checkOutAt))) {
+    if (
+      existingSession &&
+      (existingSession.status === "HADIR" ||
+        existingSession.status === "SELESAI" ||
+        existingSession.status === "SELESAI_TELAT" ||
+        existingSession.status === "HADIR_MEMENUHI" ||
+        existingSession.status === "HADIR_TIDAK_MEMENUHI" ||
+        Boolean(existingSession.checkOutAt))
+    ) {
       throw new Error("FORBIDDEN: Anda sudah menyelesaikan kegiatan ini (Hadir). Anda tidak dapat memulainya kembali.");
     }
 
@@ -2505,7 +2616,14 @@ export class KknAttendanceService {
       throw new Error("Kegiatan aktif tidak ditemukan.");
     }
 
-    if (existing.status === "SELESAI" || existing.status === "HADIR") {
+    if (
+      existing.status === "SELESAI" ||
+      existing.status === "HADIR" ||
+      existing.status === "SELESAI_TELAT" ||
+      existing.status === "HADIR_MEMENUHI" ||
+      existing.status === "HADIR_TIDAK_MEMENUHI" ||
+      Boolean(existing.checkOutAt)
+    ) {
       throw new Error("Kegiatan sudah diselesaikan.");
     }
 
@@ -2723,10 +2841,28 @@ export class KknAttendanceService {
       durasiAktualMenit = Math.round((jamPulang.getTime() - jamMasuk.getTime()) / 60000);
     }
 
+    const isMemenuhiDurasi = durasiAktualMenit >= targetDurationMinutes;
+    let finalStatus = attendance.status;
+    let statusDisplay = attendance.status;
+
+    if (attendance.status === "HADIR_MEMENUHI") {
+      finalStatus = "HADIR_MEMENUHI";
+      statusDisplay = "Hadir & Memenuhi";
+    } else if (attendance.status === "HADIR_TIDAK_MEMENUHI" || attendance.status === "SELESAI_TELAT") {
+      finalStatus = "HADIR_TIDAK_MEMENUHI";
+      statusDisplay = "Hadir & Tidak Memenuhi";
+    } else if (attendance.status === "HADIR" || attendance.status === "SELESAI" || Boolean(jamPulang)) {
+      finalStatus = isMemenuhiDurasi ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
+      statusDisplay = isMemenuhiDurasi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
+    }
+
     return {
       scheduleId: attendance.scheduleId,
       attendanceId: attendance.id,
-      status: attendance.status,
+      status: finalStatus,
+      statusDisplay,
+      statusKehadiran: finalStatus,
+      isMemenuhiDurasi,
       namaKegiatan: attendance.schedule?.title ?? "-",
       jamMasuk: jamMasuk?.toISOString() ?? null,
       jamPulang: jamPulang?.toISOString() ?? null,
@@ -2734,7 +2870,7 @@ export class KknAttendanceService {
       durasiTargetMenit: targetDurationMinutes,
       durasiAktualDetik: durasiAktualMenit * 60,
       durasiTargetDetik: targetDurationMinutes * 60,
-      isHadir: attendance.status === "HADIR" || attendance.status === "SELESAI",
+      isHadir: ["HADIR", "SELESAI", "SELESAI_TELAT", "HADIR_MEMENUHI", "HADIR_TIDAK_MEMENUHI"].includes(attendance.status) || Boolean(jamPulang),
       isBerlangsung: attendance.status === "BERLANGSUNG",
       method: attendance.method,
     };

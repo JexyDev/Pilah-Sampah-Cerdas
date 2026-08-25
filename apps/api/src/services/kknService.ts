@@ -2158,11 +2158,16 @@ export class KknService {
       : null;
 
     let attendanceStatus = "belum_absen";
+    let isMemenuhiDurasi = false;
     if (activeLeave) {
       const typeLower = (activeLeave.type || "").toLowerCase();
       attendanceStatus = typeLower.includes("sakit") ? "sakit" : "izin";
     } else if (attendanceForActiveSchedule) {
       const attStatUpper = String(attendanceForActiveSchedule.status || "").toUpperCase();
+      const actualMins = attendanceForActiveSchedule.actualInZoneMinutes ?? 0;
+      const isDurMet = targetDurationMinutes <= 0 || actualMins >= targetDurationMinutes;
+      isMemenuhiDurasi = isDurMet;
+
       if (attStatUpper.includes("IZIN")) {
         attendanceStatus = "izin";
       } else if (attStatUpper.includes("SAKIT")) {
@@ -2171,8 +2176,14 @@ export class KknService {
         attendanceStatus = "alpa";
       } else if (attStatUpper === "BERLANGSUNG" || attStatUpper === "DALAM_RADIUS" || attStatUpper === "DI_ZONA") {
         attendanceStatus = "berlangsung";
+      } else if (attStatUpper === "HADIR_MEMENUHI") {
+        attendanceStatus = "hadir_memenuhi";
+        isMemenuhiDurasi = true;
+      } else if (attStatUpper === "HADIR_TIDAK_MEMENUHI" || attStatUpper === "SELESAI_TELAT") {
+        attendanceStatus = "hadir_tidak_memenuhi";
+        isMemenuhiDurasi = false;
       } else if (attStatUpper === "HADIR" || attStatUpper === "SELESAI" || attendanceForActiveSchedule.checkOutAt !== null) {
-        attendanceStatus = "hadir";
+        attendanceStatus = isDurMet ? "hadir_memenuhi" : "hadir_tidak_memenuhi";
       } else {
         attendanceStatus = attStatUpper.toLowerCase();
       }
@@ -2348,6 +2359,8 @@ export class KknService {
         attendanceStatus,
         status: attendanceStatus,
         statusKehadiran: attendanceStatus.toUpperCase(),
+        statusDisplay: attendanceStatus === "hadir_memenuhi" ? "Hadir & Memenuhi" : attendanceStatus === "hadir_tidak_memenuhi" ? "Hadir & Tidak Memenuhi" : attendanceStatus,
+        isMemenuhiDurasi,
         kehadiran: attendanceStatus,
         attendedAt: attendanceForActiveSchedule?.attendedAt,
         polygon: activeSchedule && activeSchedule.polygon ? activeSchedule.polygon : null,
@@ -2383,6 +2396,8 @@ export class KknService {
       attendanceStatus,
       status: attendanceStatus,
       statusKehadiran: attendanceStatus.toUpperCase(),
+      statusDisplay: attendanceStatus === "hadir_memenuhi" ? "Hadir & Memenuhi" : attendanceStatus === "hadir_tidak_memenuhi" ? "Hadir & Tidak Memenuhi" : attendanceStatus,
+      isMemenuhiDurasi,
       kehadiran: attendanceStatus,
       polygonPoints:
         lat && lng
@@ -2903,6 +2918,76 @@ export class KknService {
     }
 
     return report;
+  }
+
+  async claimWargaMandiri(kknUserId: string, wargaId: string) {
+    return await prisma.$transaction(async (tx) => {
+      // 1. Validasi warga
+      const warga = await tx.user.findUnique({
+        where: { id: wargaId },
+        select: { id: true, name: true, phone: true, address: true },
+      });
+      if (!warga) {
+        throw new Error("WARGA_NOT_FOUND");
+      }
+
+      // 2. Cari tempat sampah aktif milik warga
+      const bins = await tx.bin.findMany({
+        where: {
+          userId: wargaId,
+          status: "ACTIVE_BOUND",
+        },
+        select: {
+          id: true,
+          qrCode: true,
+          binType: true,
+          status: true,
+          registeredByStudentId: true,
+        },
+      });
+
+      if (bins.length === 0) {
+        throw new Error("NO_ACTIVE_BINS");
+      }
+
+      // 3. Filter bin yang belum terikat mahasiswa (mandiri)
+      const unassignedBins = bins.filter((b) => b.registeredByStudentId === null);
+      if (unassignedBins.length === 0) {
+        throw new Error("ALREADY_CLAIMED");
+      }
+
+      const unassignedBinIds = unassignedBins.map((b) => b.id);
+
+      // 4. Update Bin untuk menetapkan pendamping
+      await tx.bin.updateMany({
+        where: { id: { in: unassignedBinIds } },
+        data: { registeredByStudentId: kknUserId },
+      });
+
+      // 5. Beri Poin Gamifikasi
+      const points = 5;
+      const pointDesc = `Mengklaim pendampingan warga mandiri: ${warga.name}`;
+      await tx.pointHistory.create({
+        data: {
+          userId: kknUserId,
+          points,
+          description: pointDesc,
+          kategori: "PARTISIPASI_STREAK",
+        },
+      });
+
+      return {
+        warga,
+        claimedBinsCount: unassignedBins.length,
+        claimedBins: unassignedBins.map(({ registeredByStudentId, ...rest }) => rest),
+        gamification: {
+          pointsEarned: points,
+          category: "PARTISIPASI_STREAK",
+          description: pointDesc,
+        },
+        claimedAt: new Date().toISOString(),
+      };
+    });
   }
 }
 

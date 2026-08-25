@@ -598,6 +598,35 @@ export class KknController {
       res.status(400).json({ success: false, message: error.message });
     }
   }
+
+  async claimWargaMandiri(req: Request, res: Response): Promise<void> {
+    try {
+      const kknUserId = req.user!.userId;
+      const { wargaId } = req.params;
+
+      const result = await kknService.claimWargaMandiri(kknUserId, wargaId);
+      res.status(200).json({
+        success: true,
+        message: "Berhasil mengklaim warga menjadi dampingan.",
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[KknController] claimWargaMandiri error:", error);
+      if (error.message === "WARGA_NOT_FOUND") {
+        res.status(404).json({ success: false, error: "WARGA_NOT_FOUND", message: "Warga tidak ditemukan." });
+        return;
+      }
+      if (error.message === "NO_ACTIVE_BINS") {
+        res.status(400).json({ success: false, error: "NO_ACTIVE_BINS", message: "Warga ini belum memiliki tempat sampah aktif untuk diklaim." });
+        return;
+      }
+      if (error.message === "ALREADY_CLAIMED") {
+        res.status(400).json({ success: false, error: "ALREADY_CLAIMED", message: "Warga ini sudah menjadi dampingan mahasiswa lain." });
+        return;
+      }
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
 }
 
 export const kknController = new KknController();
