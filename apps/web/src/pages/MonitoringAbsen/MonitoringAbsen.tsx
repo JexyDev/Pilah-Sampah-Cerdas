@@ -229,6 +229,9 @@ interface AttendanceRecord {
   latitude: string;
   longitude: string;
   status: string;
+  statusDisplay?: string;
+  isMemenuhiDurasi?: boolean;
+  actualInZoneMinutes?: number;
   currentStatus:
     | "MASIH_DI_LOKASI"
     | "SUDAH_MENINGGALKAN_RADIUS"
@@ -821,12 +824,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     const active = attendance.filter((a) => {
       const st = String(a.status || "").toUpperCase();
       const isIzinSakit = st.includes("IZIN") || st.includes("SAKIT");
-      return Boolean(a.attendedAt) && !a.completedAt && !isIzinSakit;
+      const isFinished = Boolean(a.completedAt) || st === "HADIR_MEMENUHI" || st === "HADIR_TIDAK_MEMENUHI" || st === "SELESAI";
+      return Boolean(a.attendedAt) && !isFinished && !isIzinSakit;
     }).length;
     const completed = attendance.filter((a) => {
       const st = String(a.status || "").toUpperCase();
       const isIzinSakit = st.includes("IZIN") || st.includes("SAKIT");
-      return Boolean(a.completedAt) && !isIzinSakit;
+      return (Boolean(a.completedAt) || st === "HADIR_MEMENUHI" || st === "HADIR_TIDAK_MEMENUHI" || st === "SELESAI") && !isIzinSakit;
     }).length;
     const izinSakit = attendance.filter((a) => {
       const st = String(a.status || "").toUpperCase();
@@ -835,9 +839,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     const notAttended = attendance.filter((a) => {
       const st = String(a.status || "").toUpperCase();
       const isIzinSakit = st.includes("IZIN") || st.includes("SAKIT");
-      return !a.attendedAt && !isIzinSakit;
+      const isAttended = Boolean(a.attendedAt) || st === "HADIR_MEMENUHI" || st === "HADIR_TIDAK_MEMENUHI" || st === "SELESAI";
+      return !isAttended && !isIzinSakit;
     }).length;
     const fulfilledTarget = attendance.filter((a) => {
+      const st = String(a.status || "").toUpperCase();
+      if (st === "HADIR_MEMENUHI") return true;
+      if (st === "HADIR_TIDAK_MEMENUHI" || st === "SELESAI_TELAT") return false;
+      if (a.isMemenuhiDurasi !== undefined) return a.isMemenuhiDurasi;
       if (!a.completedAt) return false;
       const mins = calculateDurationMinutes(a.attendedAt, a.completedAt);
       return mins >= scheduleTargetHours * 60;
@@ -1232,17 +1241,28 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     const rows = filtered.map((rec) => {
       const isAttended = Boolean(rec.attendedAt);
       const isCompleted = Boolean(rec.completedAt);
-      const durationMins = calculateDurationMinutes(
-        rec.attendedAt,
-        rec.completedAt
-      );
+      const statusUpper = String(rec.status || "").toUpperCase();
+      const isFinished = isCompleted || statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI";
+      const recAny = rec as any;
+      const liveElapsedMins = calculateDurationMinutes(rec.attendedAt, rec.completedAt);
+      const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
+      const durationMins = storedMins > 0 ? storedMins : liveElapsedMins;
+
       let statusStr = "Belum Absen";
-      if (isAttended && !isCompleted) statusStr = "Sedang di Lapangan";
-      else if (isCompleted)
-        statusStr =
-          durationMins >= scheduleTargetHours * 60
-            ? "Selesai (Memenuhi Target)"
-            : "Selesai (Kurang Jam)";
+      if (statusUpper.includes("SAKIT")) {
+        statusStr = "Sakit (Disetujui)";
+      } else if (statusUpper.includes("IZIN")) {
+        statusStr = "Izin (Disetujui)";
+      } else if (statusUpper.includes("ALPA")) {
+        statusStr = "Alpa";
+      } else if (isAttended && !isFinished) {
+        statusStr = "Sedang di Lapangan";
+      } else if (isFinished) {
+        const isMemenuhi = rec.isMemenuhiDurasi !== undefined
+          ? rec.isMemenuhiDurasi
+          : (statusUpper === "HADIR_MEMENUHI" ? true : statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT" ? false : (durationMins >= scheduleTargetHours * 60));
+        statusStr = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
+      }
 
       return [
         `"${(rec.student?.name || "").replace(/"/g, '""')}"`,
@@ -1309,11 +1329,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       const isIzinSakit = isIzin || isSakit;
       const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
       const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
-      const isHadir = isAttended && !isTanpaKeterangan && !isIzinSakit && !isBelumAdaJadwal;
-      const isActivePresence = isHadir && !isCompleted;
+      const isFinished = isCompleted || statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI";
+      const isHadir = (isAttended || isFinished) && !isTanpaKeterangan && !isIzinSakit && !isBelumAdaJadwal;
+      const isActivePresence = isHadir && !isFinished;
 
       if (attendanceFilterTab === "ACTIVE" && !isActivePresence) return false;
-      if (attendanceFilterTab === "COMPLETED" && (!isCompleted || isIzinSakit)) return false;
+      if (attendanceFilterTab === "COMPLETED" && (!isFinished || isIzinSakit)) return false;
       if (attendanceFilterTab === "IZIN_SAKIT" && !isIzinSakit) return false;
       if (attendanceFilterTab === "NOT_ATTENDED" && (isHadir || isIzinSakit)) return false;
 
@@ -2663,7 +2684,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         : isBerlangsung
                         ? Math.max(storedMins, liveElapsedMins)
                         : (storedMins > 0 ? storedMins : liveElapsedMins);
-                      const isHadir = (statusUpper === "HADIR" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || rec.completedAt !== null) && isAttended && !isOverrideDpl && !isBerlangsung && !isTerjeda;
+                      const isFinished = statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || rec.completedAt !== null;
+                      const isHadir = (statusUpper === "HADIR" || isFinished) && isAttended && !isOverrideDpl && !isBerlangsung && !isTerjeda;
+                      const isMemenuhiDurasi = rec.isMemenuhiDurasi !== undefined
+                        ? rec.isMemenuhiDurasi
+                        : (statusUpper === "HADIR_MEMENUHI"
+                          ? true
+                          : (statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT")
+                          ? false
+                          : (scheduleTargetHours > 0 ? durationMins >= scheduleTargetHours * 60 : true));
 
                       const formattedHours = isLeaveOrPending
                         ? "-"
@@ -2822,10 +2851,17 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                 <span>Berlangsung</span>
                               </span>
                             ) : isHadir ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                <CheckCircle2 size={13} className="text-emerald-600" />
-                                Hadir
-                              </span>
+                              isMemenuhiDurasi ? (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700" title="Hadir dan durasi di lokasi memenuhi target minimal">
+                                  <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400" />
+                                  Hadir & Memenuhi
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700" title="Hadir tetapi durasi di lokasi kurang dari target minimal">
+                                  <Clock size={13} className="text-amber-600 dark:text-amber-400" />
+                                  Hadir & Tidak Memenuhi
+                                </span>
+                              )
                             ) : (
                               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
                                 <Clock size={13} className="text-slate-400" />
@@ -2977,10 +3013,26 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
                             Di Lapangan
                           </span>
-                        ) : isCompleted ? (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200 shrink-0">
-                            Selesai
-                          </span>
+                        ) : (isCompleted || String(rec.status).toUpperCase() === "HADIR_MEMENUHI" || String(rec.status).toUpperCase() === "HADIR_TIDAK_MEMENUHI" || String(rec.status).toUpperCase() === "SELESAI") ? (
+                          (() => {
+                            const stUpper = String(rec.status || "").toUpperCase();
+                            const isMem = rec.isMemenuhiDurasi !== undefined
+                              ? rec.isMemenuhiDurasi
+                              : (stUpper === "HADIR_MEMENUHI"
+                                ? true
+                                : (stUpper === "HADIR_TIDAK_MEMENUHI" || stUpper === "SELESAI_TELAT")
+                                ? false
+                                : isDurationSufficient);
+                            return isMem ? (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 shrink-0">
+                                Hadir & Memenuhi
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700 shrink-0">
+                                Hadir & Tidak Memenuhi
+                              </span>
+                            );
+                          })()
                         ) : (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 shrink-0">
                             Belum Absen
