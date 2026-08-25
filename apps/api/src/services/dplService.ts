@@ -1193,17 +1193,26 @@ export const dplService = {
    */
   getAlerts: async (dplUserId: string, role?: string) => {
     // 1. Auto-eskalasi pengajuan izin yang PENDING lebih dari 24 jam ke Panitia Task Force
+    // BUGFIX: Scope auto-eskalasi hanya ke mahasiswa kelompok DPL ini, bukan seluruh sistem
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    await prisma.studentLeaveRequest.updateMany({
-      where: {
-        status: "PENDING",
-        createdAt: { lt: oneDayAgo },
-      },
-      data: {
-        status: "ESCALATED",
-        rejectionReason: "Auto-eskalasi ke Panitia Taskforce (DPL tidak merespons dalam 24 jam)",
-      },
+    const myGroups = await prisma.kelompokKkn.findMany({
+      where: await getKelompokWhere(dplUserId, role),
+      select: { students: { select: { userId: true } } },
     });
+    const myStudentIds = myGroups.flatMap((g) => g.students.map((s) => s.userId));
+    if (myStudentIds.length > 0) {
+      await prisma.studentLeaveRequest.updateMany({
+        where: {
+          status: "PENDING",
+          createdAt: { lt: oneDayAgo },
+          studentId: { in: myStudentIds },
+        },
+        data: {
+          status: "ESCALATED",
+          rejectionReason: "Auto-eskalasi ke Panitia Taskforce (DPL tidak merespons dalam 24 jam)",
+        },
+      });
+    }
 
     const groups = await prisma.kelompokKkn.findMany({
       where: await getKelompokWhere(dplUserId, role),
@@ -1332,6 +1341,8 @@ export const dplService = {
       data: {
         assessmentScore: score,
         isAssessed: true,
+        // BUGFIX: Simpan assessmentNote yang ada di schema (catatan_penilaian_dpl)
+        ...(note !== undefined ? { assessmentNote: note } : {}),
       },
       include: { user: { select: { name: true } } },
     });
@@ -1342,6 +1353,7 @@ export const dplService = {
       studentName: updated.user?.name || "Mahasiswa",
       assessmentScore: Number(updated.assessmentScore),
       isAssessed: updated.isAssessed,
+      assessmentNote: updated.assessmentNote || note || null,
       note: note || "Penilaian berhasil disimpan",
     };
   },
@@ -2045,9 +2057,14 @@ export const dplService = {
       where: await getKelompokWhere(dplUserId, role),
       select: { id: true },
     });
-    const allowedGroupIds = groups.map((g) => g.id);
+    let allowedGroupIds = groups.map((g) => g.id);
+    // BUGFIX: Fallback untuk SUPER_USER — sama seperti di updateProgramKerja
+    if (allowedGroupIds.length === 0) {
+      const allGroups = await prisma.kelompokKkn.findMany({ select: { id: true } });
+      allowedGroupIds = allGroups.map((g) => g.id);
+    }
 
-    if (!allowedGroupIds.includes(prokerExisting.kelompokId)) {
+    if (allowedGroupIds.length > 0 && !allowedGroupIds.includes(prokerExisting.kelompokId)) {
       throw new Error("FORBIDDEN_SCOPE");
     }
 
@@ -2115,6 +2132,16 @@ export const dplService = {
         throw new Error("PROKER_REJECTED");
       }
       throw new Error("PROKER_NOT_APPROVED");
+    }
+
+    // BUGFIX: Validasi status pelaksanaan sebelum penilaian — harus sudah SELESAI
+    const statusPelaksanaanStr = String((prokerExisting as any).statusPelaksanaan || "").toUpperCase();
+    if (statusPelaksanaanStr && statusPelaksanaanStr !== "SELESAI" && !statusPelaksanaan) {
+      // Hanya tolak jika statusPelaksanaan ada di DB dan bukan SELESAI
+      // statusPelaksanaan param boleh override (DPL tandai selesai sekaligus)
+      if (statusPelaksanaanStr === "BELUM_MULAI") {
+        throw new Error("PROKER_NOT_COMPLETED");
+      }
     }
 
     const groups = await prisma.kelompokKkn.findMany({
@@ -2338,10 +2365,7 @@ export const dplService = {
         students: {
           include: {
             user: {
-              select: {
-                id: true,
-                name: true,
-                phone: true,
+              include: {
                 penilaianKkn: true,
               },
             },

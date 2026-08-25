@@ -20,6 +20,9 @@ import {
   Boxes,
   TrendingUp,
   MapPin,
+  ExternalLink,
+  Eye,
+  Image as ImageIcon,
 } from "lucide-react";
 import pemanfaatanApiService, { type FeedbackItem, type PemanfaatanProgram } from "../../services/pemanfaatanService";
 import showToast from "../../utils/showToast";
@@ -28,6 +31,7 @@ import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import PageHeader from "../../components/common/PageHeader";
+import { resolveImageUrl } from "../../utils/imageUrl";
 
 export const HasilPemanfaatan: React.FC = () => {
   const { user } = useAuthStore();
@@ -822,20 +826,41 @@ export const HasilPemanfaatan: React.FC = () => {
                     </p>
 
                     {item.fotoBuktiUrl && (
-                      <div className="pt-2">
+                      <div className="pt-2 flex flex-wrap items-center gap-3">
                         <button
+                          type="button"
                           onClick={() => setPreviewPhotoUrl(item.fotoBuktiUrl || null)}
-                          className="group relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 w-36 h-24 block cursor-pointer"
+                          className="group relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 w-36 h-24 bg-slate-100 dark:bg-slate-800 block cursor-pointer shrink-0"
                         >
                           <img
-                            src={item.fotoBuktiUrl}
-                            alt="Bukti"
+                            src={resolveImageUrl(item.fotoBuktiUrl)}
+                            alt="Bukti Lampiran"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              target.style.display = "none";
+                              const fallback = target.parentElement?.querySelector(".img-card-fallback");
+                              if (fallback) (fallback as HTMLElement).style.display = "flex";
+                            }}
                           />
-                          <span className="absolute inset-0 bg-black/40 text-white text-[10px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            Lihat Foto
+                          <div className="img-card-fallback hidden w-full h-full flex-col items-center justify-center text-slate-400 gap-1 p-2 text-center">
+                            <ImageIcon size={18} />
+                            <span className="text-[10px] font-bold">Foto Bukti</span>
+                          </div>
+                          <span className="absolute inset-0 bg-black/40 text-white text-[10px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-1">
+                            <Eye size={12} /> Lihat Foto
                           </span>
                         </button>
+
+                        <a
+                          href={resolveImageUrl(item.fotoBuktiUrl)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100/70 px-3 py-1.5 rounded-xl border border-emerald-200/80 dark:border-emerald-800/50 transition cursor-pointer"
+                        >
+                          <ExternalLink size={12} />
+                          <span>Buka Lampiran</span>
+                        </a>
                       </div>
                     )}
                   </div>
@@ -1120,18 +1145,56 @@ export const HasilPemanfaatan: React.FC = () => {
           className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs animate-in fade-in"
           onClick={() => setPreviewPhotoUrl(null)}
         >
-          <div className="relative max-w-3xl w-full bg-white dark:bg-slate-900 p-2 rounded-3xl shadow-2xl border border-slate-700 overflow-hidden">
-            <button
-              onClick={() => setPreviewPhotoUrl(null)}
-              className="absolute top-4 right-4 bg-slate-900/80 text-white p-2 rounded-full hover:bg-slate-900 cursor-pointer"
-            >
-              <X size={18} />
-            </button>
-            <img
-              src={previewPhotoUrl}
-              alt="Bukti Lampiran Foto"
-              className="w-full h-auto max-h-[80vh] object-contain rounded-2xl"
-            />
+          <div
+            className="relative max-w-3xl w-full bg-white dark:bg-slate-900 p-4 rounded-3xl shadow-2xl border border-slate-700 overflow-hidden space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-1 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+              <span className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                <ImageIcon size={15} className="text-[#009966] dark:text-emerald-400" /> Bukti Lampiran Foto
+              </span>
+              <div className="flex items-center gap-2">
+                <a
+                  href={resolveImageUrl(previewPhotoUrl)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 hover:bg-emerald-100 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-emerald-200 dark:border-emerald-800 cursor-pointer"
+                >
+                  <ExternalLink size={13} /> Buka di Tab Baru
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewPhotoUrl(null)}
+                  className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 p-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer transition"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center justify-center bg-slate-950/90 rounded-2xl overflow-hidden min-h-[220px] p-2">
+              <img
+                src={resolveImageUrl(previewPhotoUrl)}
+                alt="Bukti Lampiran Foto"
+                className="w-full h-auto max-h-[75vh] object-contain rounded-xl"
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = "none";
+                  const fallback = e.currentTarget.parentElement?.querySelector(".modal-img-fallback");
+                  if (fallback) (fallback as HTMLElement).style.display = "flex";
+                }}
+              />
+              <div className="modal-img-fallback hidden w-full py-12 flex-col items-center justify-center text-slate-400 gap-2.5 text-center">
+                <ImageIcon size={36} className="text-slate-500" />
+                <p className="text-xs font-bold text-slate-300">Gambar tidak dapat dimuat langsung di browser.</p>
+                <a
+                  href={resolveImageUrl(previewPhotoUrl)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 px-4 py-2 bg-[#009966] hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
+                >
+                  <ExternalLink size={14} /> Buka Tautan Lampiran
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       )}

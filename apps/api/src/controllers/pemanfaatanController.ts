@@ -145,7 +145,24 @@ export class PemanfaatanController {
     try {
       const user = (req as any).user;
       const userId = user?.userId || user?.id;
-      const { judul, isiKritikSaran, kategori, rating, rwId, programKerjaId, fotoBuktiUrl } = req.body;
+      const { judul, isiKritikSaran, kategori, rating, rwId, programKerjaId } = req.body;
+      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl || req.body.buktiUrl || req.body.foto;
+
+      // Handle multipart uploaded files
+      if (req.file) {
+        fotoBuktiUrl = `/uploads/${req.file.filename}`;
+      } else if (req.files) {
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+        const uploaded =
+          files.fotoBukti?.[0] ||
+          files.fotoDokumentasi?.[0] ||
+          files.foto?.[0] ||
+          files.image?.[0] ||
+          files.file?.[0];
+        if (uploaded) {
+          fotoBuktiUrl = `/uploads/${uploaded.filename}`;
+        }
+      }
 
       if (!judul || !isiKritikSaran) {
         res.status(400).json({ success: false, message: "Judul dan isi kritik/saran wajib diisi" });
@@ -175,7 +192,7 @@ export class PemanfaatanController {
         isiKritikSaran,
         rating: rating ? parseInt(rating, 10) : 5,
         rwId: userRwId ? parseInt(userRwId, 10) : undefined,
-        fotoBuktiUrl,
+        fotoBuktiUrl: fotoBuktiUrl ? String(fotoBuktiUrl).trim() : undefined,
       });
 
       res.status(201).json({ success: true, data: result, message: "Kritik & saran berhasil dikirim" });

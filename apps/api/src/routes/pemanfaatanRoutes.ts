@@ -8,6 +8,7 @@ import { Router } from "express";
 import { pemanfaatanController } from "../controllers/pemanfaatanController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { readOnlyGuard } from "../middlewares/readOnlyGuard.js";
+import { safeUploadPemanfaatanImage } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
 
@@ -16,8 +17,8 @@ router.get("/feedback", authMiddleware, pemanfaatanController.getAllFeedback);
 router.get("/feedbacks", authMiddleware, pemanfaatanController.getAllFeedback);
 router.get("/kritik-saran", authMiddleware, pemanfaatanController.getAllFeedback);
 router.get("/ulasan", authMiddleware, pemanfaatanController.getAllFeedback);
-router.post("/feedback", authMiddleware, pemanfaatanController.createFeedback);
-router.post("/kritik-saran", authMiddleware, pemanfaatanController.createFeedback);
+router.post("/feedback", authMiddleware, safeUploadPemanfaatanImage, pemanfaatanController.createFeedback);
+router.post("/kritik-saran", authMiddleware, safeUploadPemanfaatanImage, pemanfaatanController.createFeedback);
 router.put("/feedback/:id/tanggapan", authMiddleware, pemanfaatanController.respondFeedback);
 router.delete("/feedback/:id", authMiddleware, readOnlyGuard, pemanfaatanController.deleteFeedback);
 

@@ -176,10 +176,11 @@ router.put(
 // ─────────────────────────────────────────────
 // PROGRAM KERJA KKN
 // ─────────────────────────────────────────────
-router.get("/program-kerja", dplController.getProgramKerja);
-router.post("/program-kerja", dplController.createProgramKerja);
-router.put("/program-kerja/:id", dplController.updateProgramKerja);
-router.delete("/program-kerja/:id", dplController.deleteProgramKerja);
+// BUGFIX: Tambahkan dplScopeMiddleware ke semua route program kerja agar tidak bisa diakses sembarangan
+router.get("/program-kerja", dplScopeMiddleware, dplController.getProgramKerja);
+router.post("/program-kerja", dplScopeMiddleware, dplController.createProgramKerja);
+router.put("/program-kerja/:id", dplScopeMiddleware, dplController.updateProgramKerja);
+router.delete("/program-kerja/:id", dplScopeMiddleware, dplController.deleteProgramKerja);
 router.patch("/program-kerja/:id/decision", dplScopeMiddleware, dplController.decideProgramKerja);
 router.patch("/program-kerja/:id/penilaian", dplScopeMiddleware, dplController.assessProgramKerja);
 router.get("/program-kerja/:id/bukti", dplScopeMiddleware, dplController.getProgramKerjaBukti);
@@ -198,10 +199,11 @@ router.put("/config-targets", roleMiddleware(["SUPER_USER", "DEVELOPER"]), dplCo
 // ─────────────────────────────────────────────
 // LOG AKTIVITAS DPL (WEB ENTRY & MONITORING)
 // ─────────────────────────────────────────────
-router.get("/activity-logs", dplController.getDplActivityLogs);
-router.post("/activity-logs", safeUploadPemanfaatanImage, dplController.createDplActivityLog);
-router.put("/activity-logs/:id", safeUploadPemanfaatanImage, dplController.updateDplActivityLog);
-router.patch("/activity-logs/:id", safeUploadPemanfaatanImage, dplController.updateDplActivityLog);
-router.delete("/activity-logs/:id", dplController.deleteDplActivityLog);
+// BUGFIX: Tambahkan dplScopeMiddleware ke semua route activity logs
+router.get("/activity-logs", dplScopeMiddleware, dplController.getDplActivityLogs);
+router.post("/activity-logs", dplScopeMiddleware, safeUploadPemanfaatanImage, dplController.createDplActivityLog);
+router.put("/activity-logs/:id", dplScopeMiddleware, safeUploadPemanfaatanImage, dplController.updateDplActivityLog);
+router.patch("/activity-logs/:id", dplScopeMiddleware, safeUploadPemanfaatanImage, dplController.updateDplActivityLog);
+router.delete("/activity-logs/:id", dplScopeMiddleware, dplController.deleteDplActivityLog);
 
 export default router;
