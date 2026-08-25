@@ -2927,7 +2927,7 @@ export const dplService = {
         const durasiM = item.durasiMenit || 120;
         const durasiH = Math.floor(durasiM / 60);
         const durasiRemM = durasiM % 60;
-        const durasiLabel = durasiH > 0 && durasiRemM > 0 ? `${durasiH}j ${durasiRemM}m` : durasiH > 0 ? `${durasiH}j` : `${durasiM}m`;
+        const durasiLabel = durasiH > 0 && durasiRemM > 0 ? `${durasiH} jam ${durasiRemM} menit` : durasiH > 0 ? `${durasiH} jam` : `${durasiM} menit`;
 
         return {
           id: item.id,

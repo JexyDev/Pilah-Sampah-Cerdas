@@ -72,6 +72,8 @@ export interface LogbookComplianceStats {
   isTargetMet: boolean;
 }
 
+export type ComplianceStats = LogbookComplianceStats;
+
 export const logbookApiService = {
   /**
    * Mengambil daftar logbook tabular mahasiswa

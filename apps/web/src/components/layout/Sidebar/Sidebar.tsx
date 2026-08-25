@@ -20,7 +20,6 @@ import {
   GraduationCap,
   ChevronDown,
   Clock,
-  Recycle,
   ShieldCheck,
   Award,
   BookOpen,
@@ -74,6 +73,8 @@ const checkRouteActive = (
     if (tQuery?.includes("tab=dpl") && dplLogAliases.includes(cPath) && logbookAliases.includes(tPath)) return true;
     const userMasterAliases = ["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"];
     if (userMasterAliases.includes(tPath) && userMasterAliases.includes(cPath)) return true;
+    const fasilitasAliases = ["/pengelolaan-sampah", "/fasilitas-posko", "/pemanfaatan-sampah", "/fasilitas-dan-posko"];
+    if (fasilitasAliases.includes(tPath) && fasilitasAliases.includes(cPath)) return true;
     return false;
   };
 
@@ -392,6 +393,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "DOSEN_PEMBIMBING",
             "PANITIA_TASKFORCE",
             "PEMIMPIN",
+            "MAHASISWA_KKN",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "WARGA",
           ] as UserRole[],
           children: [
             {
@@ -455,6 +461,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
                 "PEMIMPIN",
+              ] as UserRole[],
+            },
+            {
+              to: "/pengelolaan-sampah",
+              label: "Fasilitas & Posko KKN",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "DPL",
+                "DOSEN_PEMBIMBING",
+                "PANITIA_TASKFORCE",
+                "PEMIMPIN",
+                "MAHASISWA_KKN",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "WARGA",
               ] as UserRole[],
             },
           ],
@@ -647,6 +671,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "RW",
             "PETUGAS_RESIDU",
             "WARGA",
+            "PEMIMPIN",
+            "PANITIA_TASKFORCE",
           ] as UserRole[],
           children: [
             {
@@ -689,26 +715,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "PETUGAS_RESIDU",
               ] as UserRole[],
             },
-          ],
-        },
-        {
-          type: "group",
-          label: "Pemanfaatan & Hasil",
-          icon: Recycle,
-          allowed: [
-            "DEVELOPER",
-            "SUPER_USER",
-            "ADMIN_DLH",
-            "CAMAT",
-            "LURAH",
-            "RW",
-            "PEMIMPIN",
-            "PANITIA_TASKFORCE",
-            "PETUGAS_RESIDU",
-            "WARGA",
-            "DPL",
-          ] as UserRole[],
-          children: [
             {
               to: "/pemantauan-rekapitulasi",
               label: "Rekapitulasi Setoran",
@@ -722,36 +728,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "PANITIA_TASKFORCE",
                 "PEMIMPIN",
                 "PETUGAS_RESIDU",
-              ] as UserRole[],
-            },
-            {
-              to: "/pengelolaan-sampah",
-              label: "Inovasi & Posko KKN",
-              allowed: [
-                "DEVELOPER",
-                "SUPER_USER",
-                "ADMIN_DLH",
-                "CAMAT",
-                "LURAH",
-                "RW",
-                "WARGA",
-                "DPL",
-                "PANITIA_TASKFORCE",
-              ] as UserRole[],
-            },
-            {
-              to: "/hasil-pemanfaatan",
-              label: "Hasil Pemanfaatan",
-              allowed: [
-                "DEVELOPER",
-                "SUPER_USER",
-                "ADMIN_DLH",
-                "CAMAT",
-                "LURAH",
-                "RW",
-                "WARGA",
-                "DPL",
-                "PANITIA_TASKFORCE",
               ] as UserRole[],
             },
           ],

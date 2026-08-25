@@ -5,6 +5,10 @@
  * 
  * Halaman Log Aktivitas DPL
  * Desain pixel-perfect sesuai mockup Berseka dan terhubung langsung ke Real Database API.
+ * - Tabel Riwayat Full-Width 12 Kolom
+ * - Form Catat / Edit Kegiatan DPL dikemas dalam Popup Modal Komprehensif
+ * - Pekan 1-12 Terhubung Dinamis ke Linimasa Backend
+ * - Standardisasi Satuan Durasi Waktu "Jam"
  */
 
 import React, { useEffect, useState, useMemo, useRef } from "react";
@@ -15,7 +19,7 @@ import {
   Clock,
   Hourglass,
   Search,
-  Download,
+  Plus,
   UploadCloud,
   ChevronLeft,
   ChevronRight,
@@ -24,12 +28,17 @@ import {
   AlertCircle,
   ChevronDown,
   Trash2,
+  RefreshCw,
+  Edit3,
+  Eye,
+  MapPin,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   dplActivityLogService,
   type DplActivityLogItem,
   type DplActivityStats,
+  type DynamicWeekItem,
 } from "../../services/dplActivityLogService";
 import { dplService, type GroupSummary, type ProgramKerjaItem } from "../../services/dplService";
 import { resolveImageUrl } from "../../utils/imageUrl";
@@ -56,6 +65,7 @@ export const LogAktivitasDpl: React.FC = () => {
   });
   const [groups, setGroups] = useState<GroupSummary[]>([]);
   const [prokers, setProkers] = useState<ProgramKerjaItem[]>([]);
+  const [timelineWeeks, setTimelineWeeks] = useState<DynamicWeekItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
@@ -64,16 +74,19 @@ export const LogAktivitasDpl: React.FC = () => {
   const [selectedGroupFilter, setSelectedGroupFilter] = useState<string>("ALL");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("ALL");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>("ALL");
+  const [selectedPekanFilter, setSelectedPekanFilter] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalItems, setTotalItems] = useState<number>(0);
   const pageSize = 10;
 
-  // Form State
+  // Modal Form State (Catat / Edit Kegiatan DPL)
+  const [isFormModalOpen, setIsFormModalOpen] = useState<boolean>(false);
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
   const [formTanggal, setFormTanggal] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
+  const [formPekanKe, setFormPekanKe] = useState<number>(1);
   const [formWaktuMulai, setFormWaktuMulai] = useState<string>("09:00");
   const [formWaktuSelesai, setFormWaktuSelesai] = useState<string>("11:00");
   const [formKelompokId, setFormKelompokId] = useState<string>("");
@@ -90,7 +103,7 @@ export const LogAktivitasDpl: React.FC = () => {
   // Modal Detail State
   const [selectedDetailLog, setSelectedDetailLog] = useState<DplActivityLogItem | null>(null);
 
-  // Kalkulasi Durasi Dinamis Real-Time
+  // Kalkulasi Durasi Dinamis Real-Time dengan Satuan "Jam"
   const calculatedDuration = useMemo(() => {
     if (!formWaktuMulai || !formWaktuSelesai) return { label: "2 jam", minutes: 120 };
     const parseM = (t: string) => {
@@ -107,22 +120,28 @@ export const LogAktivitasDpl: React.FC = () => {
     return { label: `${m} menit`, minutes: diff };
   }, [formWaktuMulai, formWaktuSelesai]);
 
-  // Fetch Summary Groups for dropdown
+  // Fetch Summary Groups & Timeline Weeks on mount
   useEffect(() => {
-    const fetchGroups = async () => {
+    const fetchInitialData = async () => {
       try {
-        const res = await dplService.getGroupSummary();
-        if (Array.isArray(res)) {
-          setGroups(res);
-          if (res.length > 0 && !formKelompokId) {
-            setFormKelompokId(res[0].id);
+        const [groupRes, weekRes] = await Promise.all([
+          dplService.getGroupSummary(),
+          dplActivityLogService.getTimelineWeeks(),
+        ]);
+        if (Array.isArray(groupRes)) {
+          setGroups(groupRes);
+          if (groupRes.length > 0 && !formKelompokId) {
+            setFormKelompokId(groupRes[0].id);
           }
         }
+        if (Array.isArray(weekRes) && weekRes.length > 0) {
+          setTimelineWeeks(weekRes);
+        }
       } catch (err) {
-        console.error("Gagal memuat kelompok DPL:", err);
+        console.error("Gagal memuat data inisial DPL:", err);
       }
     };
-    fetchGroups();
+    fetchInitialData();
   }, []);
 
   // Fetch Program Kerja when formKelompokId changes
@@ -144,6 +163,27 @@ export const LogAktivitasDpl: React.FC = () => {
     fetchProkers();
   }, [formKelompokId]);
 
+  // Auto-detect matching pekan when formTanggal changes
+  useEffect(() => {
+    if (!formTanggal || timelineWeeks.length === 0) return;
+    try {
+      const selectedDate = new Date(formTanggal).getTime();
+      const matched = timelineWeeks.find((w) => {
+        if (w.startDate && w.endDate) {
+          const s = new Date(w.startDate).getTime();
+          const e = new Date(w.endDate).getTime();
+          return selectedDate >= s && selectedDate <= e;
+        }
+        return false;
+      });
+      if (matched && !editingLogId) {
+        setFormPekanKe(matched.pekanKe);
+      }
+    } catch {
+      // fallback
+    }
+  }, [formTanggal, timelineWeeks, editingLogId]);
+
   // Fetch Activity Logs
   const fetchActivityLogs = async () => {
     setLoading(true);
@@ -153,6 +193,7 @@ export const LogAktivitasDpl: React.FC = () => {
         groupId: selectedGroupFilter !== "ALL" ? selectedGroupFilter : undefined,
         kategori: selectedCategoryFilter !== "ALL" ? selectedCategoryFilter : undefined,
         status: selectedStatusFilter !== "ALL" ? selectedStatusFilter : undefined,
+        pekanKe: selectedPekanFilter !== "ALL" ? parseInt(selectedPekanFilter, 10) : undefined,
         page: currentPage,
         limit: pageSize,
       });
@@ -179,7 +220,7 @@ export const LogAktivitasDpl: React.FC = () => {
 
   useEffect(() => {
     fetchActivityLogs();
-  }, [searchQuery, selectedGroupFilter, selectedCategoryFilter, selectedStatusFilter, currentPage]);
+  }, [searchQuery, selectedGroupFilter, selectedCategoryFilter, selectedStatusFilter, selectedPekanFilter, currentPage]);
 
   // File Upload Handlers
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -204,12 +245,14 @@ export const LogAktivitasDpl: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // Reset Form
-  const resetForm = () => {
+  // Reset & Open Create Form Modal
+  const handleOpenCreateModal = () => {
     setEditingLogId(null);
     setFormTanggal(new Date().toISOString().split("T")[0]);
+    setFormPekanKe(1);
     setFormWaktuMulai("09:00");
     setFormWaktuSelesai("11:00");
+    setFormKelompokId(groups[0]?.id || "");
     setFormKategori("Kunjungan Lapangan");
     setFormLokasi("");
     setFormProkerId("");
@@ -217,6 +260,26 @@ export const LogAktivitasDpl: React.FC = () => {
     setFormHasilTindakLanjut("");
     setFormSimpanLokasi(true);
     handleClearFile();
+    setIsFormModalOpen(true);
+  };
+
+  // Open Edit Form Modal
+  const handleEditClick = (item: DplActivityLogItem) => {
+    setEditingLogId(item.id);
+    setFormTanggal(item.tanggal || new Date().toISOString().split("T")[0]);
+    setFormPekanKe(item.pekanKe || 1);
+    setFormWaktuMulai(item.waktuMulai?.replace(".", ":") || "09:00");
+    setFormWaktuSelesai(item.waktuSelesai?.replace(".", ":") || "11:00");
+    setFormKelompokId(item.kelompokId);
+    setFormKategori(item.kategori || "Kunjungan Lapangan");
+    setFormLokasi(item.lokasi || item.tempat || "");
+    setFormProkerId(item.programKerjaId || "");
+    setFormDeskripsi(item.deskripsi || "");
+    setFormHasilTindakLanjut(item.hasilTindakLanjut || item.arahanEvaluasi || "");
+    setFormSimpanLokasi(item.simpanLokasi ?? true);
+    setSelectedFile(null);
+    setFilePreview(item.fotoBuktiUrl || null);
+    setIsFormModalOpen(true);
   };
 
   // Submit Handler (Draf vs Terkirim)
@@ -239,6 +302,7 @@ export const LogAktivitasDpl: React.FC = () => {
       const formData = new FormData();
       formData.append("kelompokId", formKelompokId);
       formData.append("tanggal", formTanggal);
+      formData.append("pekanKe", String(formPekanKe));
       formData.append("waktuMulai", formWaktuMulai.replace(":", "."));
       formData.append("waktuSelesai", formWaktuSelesai.replace(":", "."));
       formData.append("kategori", formKategori);
@@ -265,7 +329,7 @@ export const LogAktivitasDpl: React.FC = () => {
         toast.success(status === "DRAF" ? "Draf kegiatan berhasil disimpan" : "Kegiatan DPL berhasil disimpan!");
       }
 
-      resetForm();
+      setIsFormModalOpen(false);
       fetchActivityLogs();
     } catch (err: any) {
       console.error("Gagal menyimpan kegiatan:", err);
@@ -275,35 +339,12 @@ export const LogAktivitasDpl: React.FC = () => {
     }
   };
 
-  // Edit Click Handler
-  const handleEditClick = (item: DplActivityLogItem) => {
-    setEditingLogId(item.id);
-    setFormTanggal(item.tanggal || new Date().toISOString().split("T")[0]);
-    setFormWaktuMulai(item.waktuMulai?.replace(".", ":") || "09:00");
-    setFormWaktuSelesai(item.waktuSelesai?.replace(".", ":") || "11:00");
-    setFormKelompokId(item.kelompokId);
-    setFormKategori(item.kategori || "Kunjungan Lapangan");
-    setFormLokasi(item.lokasi || item.tempat || "");
-    setFormProkerId(item.programKerjaId || "");
-    setFormDeskripsi(item.deskripsi || "");
-    setFormHasilTindakLanjut(item.hasilTindakLanjut || item.arahanEvaluasi || "");
-    setFormSimpanLokasi(item.simpanLokasi ?? true);
-    setSelectedFile(null);
-    setFilePreview(item.fotoBuktiUrl || null);
-
-    // Scroll to right form smoothly
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
   // Delete Click Handler
   const handleDeleteLog = async (id: string) => {
     if (!window.confirm("Apakah Anda yakin ingin menghapus log aktivitas DPL ini?")) return;
     try {
       await dplActivityLogService.deleteActivityLog(id);
       toast.success("Kegiatan DPL berhasil dihapus");
-      if (editingLogId === id) {
-        resetForm();
-      }
       if (selectedDetailLog?.id === id) {
         setSelectedDetailLog(null);
       }
@@ -313,72 +354,51 @@ export const LogAktivitasDpl: React.FC = () => {
     }
   };
 
-  // Export CSV Handler
-  const handleExportCSV = () => {
-    if (logs.length === 0) {
-      toast.error("Tidak ada data untuk diekspor");
-      return;
-    }
-
-    const headers = [
-      "Tanggal",
-      "Waktu Mulai",
-      "Waktu Selesai",
-      "Kelompok Dampingan",
-      "Kelurahan",
-      "Kategori",
-      "Ringkasan Aktivitas",
-      "Lokasi",
-      "Durasi",
-      "Status",
-    ];
-
-    const rows = logs.map((l: any) => [
-      `"${l.tanggalFormatted}"`,
-      `"${l.waktuMulai}"`,
-      `"${l.waktuSelesai}"`,
-      `"${l.kelompokNama}"`,
-      `"${l.kelurahan}"`,
-      `"${l.kategori}"`,
-      `"${l.deskripsi.replace(/"/g, '""')}"`,
-      `"${l.lokasi.replace(/"/g, '""')}"`,
-      `"${l.durasi}"`,
-      `"${l.status}"`,
-    ]);
-
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e: any) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Log_Aktivitas_DPL_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("File CSV berhasil diunduh");
-  };
-
   const displayName = user?.name || (user as any)?.nama || "Iyan Andriana, S.T., M.T.";
 
   return (
     <div className="min-h-screen bg-slate-50/60 p-4 md:p-6 lg:p-8 space-y-6">
       {/* ─────────────────────────────────────────────
-          1. HEADER ROW
+          1. HEADER ROW & UTAMA ACTION BUTTON
           ───────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Log Aktivitas DPL</h1>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+            Log Aktivitas DPL
+          </h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Catat, dokumentasikan, dan pantau kegiatan pendampingan DPL melalui web
+            Catat, dokumentasikan, dan pantau kegiatan pendampingan mingguan DPL secara terstruktur
           </p>
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Action Button: Catat Kegiatan DPL */}
+          <button
+            type="button"
+            onClick={handleOpenCreateModal}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Catat Kegiatan DPL</span>
+          </button>
+
+          {/* Refresh Data */}
+          <button
+            type="button"
+            onClick={fetchActivityLogs}
+            disabled={loading}
+            className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-slate-600 transition-colors shadow-2xs cursor-pointer"
+            title="Segarkan Data"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          </button>
+
           {/* User Profile Pill */}
           <div className="flex items-center gap-2.5 bg-white border border-slate-200 rounded-full py-1 pl-1 pr-3 shadow-xs">
             <div className="w-7 h-7 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-xs">
               {getInitials(displayName)}
             </div>
-            <div className="text-left">
+            <div className="text-left hidden sm:block">
               <span className="block text-xs font-semibold text-slate-800 leading-tight">
                 {displayName}
               </span>
@@ -413,7 +433,7 @@ export const LogAktivitasDpl: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 3: Total Durasi */}
+        {/* Card 3: Total Durasi (Satuan Jam) */}
         <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-xs font-medium text-slate-500">Total Durasi</p>
@@ -437,544 +457,630 @@ export const LogAktivitasDpl: React.FC = () => {
       </div>
 
       {/* ─────────────────────────────────────────────
-          3. MAIN 2-COLUMN LAYOUT
+          3. FULL-WIDTH TABLE: RIWAYAT KEGIATAN DPL (12 Kolom)
           ───────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* ── LEFT COLUMN: RIWAYAT KEGIATAN DPL (7 Cols) ── */}
-        <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
-          <div className="flex items-center justify-between">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
             <h2 className="text-lg font-bold text-slate-800 tracking-tight">Riwayat Kegiatan DPL</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Daftar seluruh aktivitas supervisi dan monitoring DPL di posko kelompok dampingan
+            </p>
           </div>
-
-          {/* Filter Bar */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Search */}
-            <div className="relative flex-1 min-w-[160px]">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Cari kegiatan..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
-              />
-            </div>
-
-            {/* Filter Kelompok */}
-            <div className="relative">
-              <select
-                value={selectedGroupFilter}
-                onChange={(e) => {
-                  setSelectedGroupFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="appearance-none bg-slate-50 border border-slate-200 rounded-lg pl-3 pr-7 py-1.5 text-xs text-slate-700 font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
-              >
-                <option value="ALL">Semua Kelompok</option>
-                {groups.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-
-            {/* Filter Kategori */}
-            <div className="relative">
-              <select
-                value={selectedCategoryFilter}
-                onChange={(e) => {
-                  setSelectedCategoryFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="appearance-none bg-slate-50 border border-slate-200 rounded-lg pl-3 pr-7 py-1.5 text-xs text-slate-700 font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
-              >
-                <option value="ALL">Semua Kategori</option>
-                <option value="Kunjungan Lapangan">Kunjungan Lapangan</option>
-                <option value="Koordinasi">Koordinasi</option>
-                <option value="Pendampingan">Pendampingan</option>
-                <option value="Monitoring Lapangan">Monitoring Lapangan</option>
-                <option value="Evaluasi Lapangan">Evaluasi Lapangan</option>
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-
-            {/* Filter Status */}
-            <div className="relative">
-              <select
-                value={selectedStatusFilter}
-                onChange={(e) => {
-                  setSelectedStatusFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="appearance-none bg-slate-50 border border-slate-200 rounded-lg pl-3 pr-7 py-1.5 text-xs text-slate-700 font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
-              >
-                <option value="ALL">Semua Status</option>
-                <option value="TERKIRIM">Terkirim</option>
-                <option value="TERVERIFIKASI">Terverifikasi</option>
-                <option value="DRAF">Draf</option>
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-
-            {/* Button Ekspor */}
-            <button
-              type="button"
-              onClick={handleExportCSV}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-emerald-700 text-emerald-800 hover:bg-emerald-50 rounded-lg text-xs font-semibold shadow-2xs transition-colors"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Ekspor</span>
-            </button>
-          </div>
-
-          {/* Table Container */}
-          <div className="overflow-x-auto rounded-xl border border-slate-200/80">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-50/90 text-slate-600 font-semibold border-b border-slate-200">
-                  <th className="py-2.5 px-3 whitespace-nowrap">Tanggal & Waktu</th>
-                  <th className="py-2.5 px-3 whitespace-nowrap">Kelompok Dampingan</th>
-                  <th className="py-2.5 px-3 whitespace-nowrap">Kategori</th>
-                  <th className="py-2.5 px-3 min-w-[170px]">Ringkasan Aktivitas</th>
-                  <th className="py-2.5 px-3 whitespace-nowrap">Lokasi</th>
-                  <th className="py-2.5 px-3 whitespace-nowrap">Durasi</th>
-                  <th className="py-2.5 px-3 whitespace-nowrap">Bukti</th>
-                  <th className="py-2.5 px-3 whitespace-nowrap">Status</th>
-                  <th className="py-2.5 px-3 text-center whitespace-nowrap">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
-                {loading ? (
-                  <tr>
-                    <td colSpan={9} className="py-8 text-center text-slate-400">
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-                        <span>Memuat riwayat aktivitas...</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : logs.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="py-8 text-center text-slate-400">
-                      <div className="flex flex-col items-center justify-center gap-1.5">
-                        <AlertCircle className="w-6 h-6 text-slate-300" />
-                        <span className="font-medium text-slate-600">Belum ada kegiatan DPL</span>
-                        <span className="text-[11px] text-slate-400">
-                          Gunakan formulir di sisi kanan untuk menambahkan entri baru.
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  logs.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
-                      {/* Tanggal & Waktu */}
-                      <td className="py-3 px-3 whitespace-nowrap">
-                        <div className="font-semibold text-slate-800">{item.tanggalFormatted}</div>
-                        <div className="text-[11px] text-slate-400">{item.waktuLengkap}</div>
-                      </td>
-
-                      {/* Kelompok Dampingan */}
-                      <td className="py-3 px-3 whitespace-nowrap font-medium text-slate-800">
-                        {item.kelompokNama}
-                      </td>
-
-                      {/* Kategori */}
-                      <td className="py-3 px-3 whitespace-nowrap text-slate-600">
-                        {item.kategori}
-                      </td>
-
-                      {/* Ringkasan Aktivitas */}
-                      <td className="py-3 px-3 text-slate-700 font-medium">
-                        <p className="line-clamp-2 max-w-[200px]" title={item.deskripsi}>
-                          {item.deskripsi}
-                        </p>
-                      </td>
-
-                      {/* Lokasi */}
-                      <td className="py-3 px-3 whitespace-nowrap text-slate-600">
-                        {item.lokasi}
-                      </td>
-
-                      {/* Durasi */}
-                      <td className="py-3 px-3 whitespace-nowrap font-medium text-slate-700">
-                        {item.durasi}
-                      </td>
-
-                      {/* Bukti */}
-                      <td className="py-3 px-3 whitespace-nowrap">
-                        {item.fotoBuktiUrl ? (
-                          <button
-                            type="button"
-                            onClick={() => setSelectedDetailLog(item)}
-                            className="text-emerald-700 hover:text-emerald-800 hover:underline font-medium cursor-pointer"
-                          >
-                            {item.bukti}
-                          </button>
-                        ) : (
-                          <span className="text-slate-400">{item.bukti}</span>
-                        )}
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-3 px-3 whitespace-nowrap">
-                        {item.status === "TERVERIFIKASI" ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            Terverifikasi
-                          </span>
-                        ) : item.status === "DRAF" ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-                            Draf
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                            Terkirim
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Aksi */}
-                      <td className="py-3 px-3 whitespace-nowrap text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedDetailLog(item)}
-                            className="px-2.5 py-1 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-50 text-[11px] font-semibold transition-colors"
-                          >
-                            Lihat
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleEditClick(item)}
-                            className="px-2.5 py-1 rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 text-[11px] font-semibold transition-colors"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteLog(item.id)}
-                            className="px-2 py-1 rounded-md border border-rose-300 text-rose-600 hover:bg-rose-50 text-[11px] font-semibold transition-colors"
-                            title="Hapus Kegiatan"
-                          >
-                            Hapus
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Table Footer / Pagination */}
-          <div className="flex items-center justify-between pt-2 text-xs text-slate-500">
-            <span>
-              Menampilkan {logs.length} dari {totalItems} kegiatan
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                disabled={currentPage <= 1}
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
-                <button
-                  key={pg}
-                  type="button"
-                  onClick={() => setCurrentPage(pg)}
-                  className={`w-7 h-7 flex items-center justify-center rounded-md text-xs font-semibold transition-colors ${
-                    currentPage === pg
-                      ? "bg-slate-800 text-white"
-                      : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  {pg}
-                </button>
-              ))}
-              <button
-                type="button"
-                disabled={currentPage >= totalPages}
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
+          <div className="text-xs font-semibold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+            Total {totalItems} Kegiatan Tercatat
           </div>
         </div>
 
-        {/* ── RIGHT COLUMN: CATAT KEGIATAN DPL FORM (5 Cols) ── */}
-        <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
-              <h2 className="text-lg font-bold text-slate-800 tracking-tight">
-                {editingLogId ? "Edit Kegiatan DPL" : "Catat Kegiatan DPL"}
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">Lengkapi data kegiatan sebelum disimpan.</p>
-            </div>
-            {editingLogId && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="text-xs text-rose-600 hover:underline font-medium flex items-center gap-1"
-              >
-                <X className="w-3.5 h-3.5" /> Batal Edit
-              </button>
-            )}
+        {/* Filter Bar */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Cari ringkasan kegiatan, lokasi, atau kelompok..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
+            />
           </div>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSubmit("TERKIRIM");
-            }}
-            className="space-y-3.5 text-xs text-slate-700"
-          >
-            {/* Tanggal Kegiatan */}
-            <div className="space-y-1">
-              <label className="block font-semibold text-slate-700">Tanggal Kegiatan</label>
-              <div className="relative">
-                <input
-                  type="date"
-                  value={formTanggal}
-                  onChange={(e) => setFormTanggal(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
-                  required
-                />
-              </div>
-            </div>
+          {/* Filter Kelompok */}
+          <div className="relative">
+            <select
+              value={selectedGroupFilter}
+              onChange={(e) => {
+                setSelectedGroupFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2 text-xs text-slate-700 font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
+            >
+              <option value="ALL">Semua Kelompok</option>
+              {groups.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name} - {g.kelurahan}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
 
-            {/* Waktu Mulai & Waktu Selesai */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="block font-semibold text-slate-700">Waktu Mulai</label>
-                <input
-                  type="time"
-                  value={formWaktuMulai}
-                  onChange={(e) => setFormWaktuMulai(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="block font-semibold text-slate-700">Waktu Selesai</label>
-                <input
-                  type="time"
-                  value={formWaktuSelesai}
-                  onChange={(e) => setFormWaktuSelesai(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
-                  required
-                />
-              </div>
-            </div>
+          {/* Filter Pekan (Dinamis 1-12) */}
+          <div className="relative">
+            <select
+              value={selectedPekanFilter}
+              onChange={(e) => {
+                setSelectedPekanFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2 text-xs text-slate-700 font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
+            >
+              <option value="ALL">Semua Pekan (1-12)</option>
+              {timelineWeeks.map((w) => (
+                <option key={w.pekanKe} value={w.pekanKe}>
+                  Pekan {w.pekanKe} ({w.tanggalRange || w.tahapMinggu})
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
 
-            {/* Kelompok Dampingan */}
-            <div className="space-y-1">
-              <label className="block font-semibold text-slate-700">Kelompok Dampingan</label>
-              <div className="relative">
-                <select
-                  value={formKelompokId}
-                  onChange={(e) => setFormKelompokId(e.target.value)}
-                  className="w-full appearance-none px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
-                  required
-                >
-                  <option value="">Pilih kelompok</option>
-                  {groups.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.name} - {g.kelurahan}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-            </div>
+          {/* Filter Kategori */}
+          <div className="relative">
+            <select
+              value={selectedCategoryFilter}
+              onChange={(e) => {
+                setSelectedCategoryFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2 text-xs text-slate-700 font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
+            >
+              <option value="ALL">Semua Kategori</option>
+              <option value="Kunjungan Lapangan">Kunjungan Lapangan</option>
+              <option value="Koordinasi">Koordinasi</option>
+              <option value="Pendampingan">Pendampingan</option>
+              <option value="Monitoring Lapangan">Monitoring Lapangan</option>
+              <option value="Evaluasi Lapangan">Evaluasi Lapangan</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
 
-            {/* Kategori Aktivitas */}
-            <div className="space-y-1">
-              <label className="block font-semibold text-slate-700">Kategori Aktivitas</label>
-              <div className="relative">
-                <select
-                  value={formKategori}
-                  onChange={(e) => setFormKategori(e.target.value)}
-                  className="w-full appearance-none px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
-                  required
-                >
-                  <option value="Kunjungan Lapangan">Kunjungan Lapangan</option>
-                  <option value="Koordinasi">Koordinasi</option>
-                  <option value="Pendampingan">Pendampingan</option>
-                  <option value="Monitoring Lapangan">Monitoring Lapangan</option>
-                  <option value="Evaluasi Lapangan">Evaluasi Lapangan</option>
-                </select>
-                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-            </div>
+          {/* Filter Status */}
+          <div className="relative">
+            <select
+              value={selectedStatusFilter}
+              onChange={(e) => {
+                setSelectedStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2 text-xs text-slate-700 font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
+            >
+              <option value="ALL">Semua Status</option>
+              <option value="TERKIRIM">Terkirim</option>
+              <option value="TERVERIFIKASI">Terverifikasi</option>
+              <option value="DRAF">Draf</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+        </div>
 
-            {/* Lokasi Kegiatan */}
-            <div className="space-y-1">
-              <label className="block font-semibold text-slate-700">Lokasi Kegiatan</label>
-              <input
-                type="text"
-                placeholder="Masukkan lokasi kegiatan"
-                value={formLokasi}
-                onChange={(e) => setFormLokasi(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
-              />
-            </div>
-
-            {/* Program Kerja Terkait (Opsional) */}
-            <div className="space-y-1">
-              <label className="block font-semibold text-slate-700">Program Kerja Terkait</label>
-              <div className="relative">
-                <select
-                  value={formProkerId}
-                  onChange={(e) => setFormProkerId(e.target.value)}
-                  className="w-full appearance-none px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
-                >
-                  <option value="">Pilih program kerja (opsional)</option>
-                  {prokers.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nomor ? `Proker #${p.nomor}: ` : ""}{p.deskripsi}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Uraian Aktivitas */}
-            <div className="space-y-1">
-              <label className="block font-semibold text-slate-700">Uraian Aktivitas</label>
-              <textarea
-                rows={3}
-                placeholder="Jelaskan aktivitas yang dilakukan..."
-                value={formDeskripsi}
-                onChange={(e) => setFormDeskripsi(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 resize-none"
-                required
-              />
-            </div>
-
-            {/* Hasil dan Tindak Lanjut */}
-            <div className="space-y-1">
-              <label className="block font-semibold text-slate-700">Hasil dan Tindak Lanjut</label>
-              <textarea
-                rows={3}
-                placeholder="Tuliskan hasil, kendala, dan rencana tindak lanjut..."
-                value={formHasilTindakLanjut}
-                onChange={(e) => setFormHasilTindakLanjut(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 resize-none"
-              />
-            </div>
-
-            {/* Unggah Bukti Kegiatan */}
-            <div className="space-y-1">
-              <label className="block font-semibold text-slate-700">Unggah Bukti Kegiatan</label>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept="image/*,.pdf,.doc,.docx"
-                className="hidden"
-              />
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-xl p-4 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-emerald-50/20"
-              >
-                {selectedFile ? (
-                  <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200">
-                    <div className="flex items-center gap-2 truncate">
-                      {filePreview ? (
-                        <img src={filePreview} alt="Preview" className="w-8 h-8 rounded object-cover flex-shrink-0" />
-                      ) : (
-                        <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                      )}
-                      <span className="truncate text-slate-800 font-medium">{selectedFile.name}</span>
+        {/* Full-Width Table Container */}
+        <div className="overflow-x-auto rounded-xl border border-slate-200/80">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="bg-slate-50/90 text-slate-600 font-semibold border-b border-slate-200">
+                <th className="py-3 px-3.5 whitespace-nowrap">Tanggal & Waktu</th>
+                <th className="py-3 px-3.5 whitespace-nowrap">Kelompok Dampingan</th>
+                <th className="py-3 px-3.5 whitespace-nowrap text-center">Pekan</th>
+                <th className="py-3 px-3.5 whitespace-nowrap">Kategori</th>
+                <th className="py-3 px-3.5 min-w-[220px]">Ringkasan Aktivitas</th>
+                <th className="py-3 px-3.5 whitespace-nowrap">Lokasi Kegiatan</th>
+                <th className="py-3 px-3.5 whitespace-nowrap text-center">Durasi (Jam)</th>
+                <th className="py-3 px-3.5 whitespace-nowrap text-center">Bukti</th>
+                <th className="py-3 px-3.5 whitespace-nowrap text-center">Status</th>
+                <th className="py-3 px-3.5 text-center whitespace-nowrap">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-slate-700">
+              {loading ? (
+                <tr>
+                  <td colSpan={10} className="py-12 text-center text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+                      <span>Memuat riwayat aktivitas DPL...</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleClearFile();
-                      }}
-                      className="text-slate-400 hover:text-rose-500 p-1"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center gap-1 text-slate-500">
-                    <UploadCloud className="w-6 h-6 text-slate-400" />
-                    <span className="text-[11px] font-medium text-slate-600">
-                      Foto, PDF, atau notula • Maks. 10 MB
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
+                  </td>
+                </tr>
+              ) : logs.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="py-12 text-center text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <AlertCircle className="w-7 h-7 text-slate-300" />
+                      <span className="font-semibold text-slate-600 text-sm">Belum ada kegiatan DPL</span>
+                      <span className="text-xs text-slate-400 max-w-sm">
+                        Klik tombol "+ Catat Kegiatan DPL" di atas untuk menambahkan entri supervisi baru.
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                logs.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
+                    {/* 1. Tanggal & Waktu */}
+                    <td className="py-3 px-3.5 whitespace-nowrap">
+                      <div className="font-bold text-slate-800">{item.tanggalFormatted}</div>
+                      <div className="text-[11px] text-slate-400">{item.waktuLengkap}</div>
+                    </td>
 
-            {/* Durasi & Simpan Lokasi Option Row */}
-            <div className="flex items-center justify-between pt-1">
-              {/* Durasi Pill Badge */}
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-100">
-                <Clock className="w-3.5 h-3.5" />
-                <span>Durasi: {calculatedDuration.label}</span>
-              </div>
+                    {/* 2. Kelompok Dampingan */}
+                    <td className="py-3 px-3.5 whitespace-nowrap">
+                      <div className="font-semibold text-slate-800">{item.kelompokNama}</div>
+                      <div className="text-[11px] text-slate-400">{item.kelurahan}</div>
+                    </td>
 
-              {/* Checkbox Simpan Lokasi */}
-              <label className="inline-flex items-center gap-2 cursor-pointer select-none text-slate-600 font-medium text-xs">
-                <input
-                  type="checkbox"
-                  checked={formSimpanLokasi}
-                  onChange={(e) => setFormSimpanLokasi(e.target.checked)}
-                  className="rounded text-emerald-700 focus:ring-emerald-600 w-3.5 h-3.5"
-                />
-                <span>Simpan lokasi kegiatan</span>
-              </label>
-            </div>
+                    {/* 3. Pekan */}
+                    <td className="py-3 px-3.5 whitespace-nowrap text-center">
+                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                        Pekan {item.pekanKe || 1}
+                      </span>
+                    </td>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3 pt-2">
+                    {/* 4. Kategori */}
+                    <td className="py-3 px-3.5 whitespace-nowrap">
+                      <span className="inline-block px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-700">
+                        {item.kategori}
+                      </span>
+                    </td>
+
+                    {/* 5. Ringkasan Aktivitas */}
+                    <td className="py-3 px-3.5 text-slate-700">
+                      <p className="line-clamp-2 max-w-[280px] leading-relaxed" title={item.deskripsi}>
+                        {item.deskripsi}
+                      </p>
+                    </td>
+
+                    {/* 6. Lokasi */}
+                    <td className="py-3 px-3.5 whitespace-nowrap text-slate-600">
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                        <span>{item.lokasi}</span>
+                      </div>
+                    </td>
+
+                    {/* 7. Durasi (Jam) */}
+                    <td className="py-3 px-3.5 whitespace-nowrap text-center font-medium text-slate-700">
+                      <span className="inline-flex items-center gap-1 font-semibold text-slate-800">
+                        <Clock className="w-3 h-3 text-indigo-500" />
+                        {item.durasi}
+                      </span>
+                    </td>
+
+                    {/* 8. Bukti */}
+                    <td className="py-3 px-3.5 whitespace-nowrap text-center">
+                      {item.fotoBuktiUrl ? (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDetailLog(item)}
+                          className="text-emerald-700 hover:text-emerald-800 hover:underline font-semibold cursor-pointer"
+                        >
+                          {item.bukti}
+                        </button>
+                      ) : (
+                        <span className="text-slate-400">-</span>
+                      )}
+                    </td>
+
+                    {/* 9. Status */}
+                    <td className="py-3 px-3.5 whitespace-nowrap text-center">
+                      {item.status === "TERVERIFIKASI" ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          Terverifikasi
+                        </span>
+                      ) : item.status === "DRAF" ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                          Draf
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                          Terkirim
+                        </span>
+                      )}
+                    </td>
+
+                    {/* 10. Aksi */}
+                    <td className="py-3 px-3.5 whitespace-nowrap text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDetailLog(item)}
+                          className="px-2.5 py-1.5 rounded-lg border border-blue-500 text-blue-600 hover:bg-blue-50 text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1"
+                        >
+                          <Eye className="w-3 h-3" />
+                          <span>Lihat</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleEditClick(item)}
+                          className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteLog(item.id)}
+                          className="p-1.5 rounded-lg border border-rose-300 text-rose-600 hover:bg-rose-50 text-[11px] font-semibold transition-colors cursor-pointer"
+                          title="Hapus Kegiatan"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Table Footer / Pagination */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 text-xs text-slate-500">
+          <span>
+            Menampilkan <span className="font-semibold text-slate-700">{logs.length}</span> dari{" "}
+            <span className="font-semibold text-slate-700">{totalItems}</span> kegiatan
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
               <button
+                key={pg}
                 type="button"
-                disabled={submitting}
-                onClick={() => handleSubmit("DRAF")}
-                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-xs shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
+                onClick={() => setCurrentPage(pg)}
+                className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-colors ${
+                  currentPage === pg
+                    ? "bg-slate-800 text-white"
+                    : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
               >
-                Simpan Draf
+                {pg}
               </button>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={() => handleSubmit("TERKIRIM")}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-[#0e5b3f] hover:bg-[#0b4832] text-white font-semibold text-xs shadow-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                {submitting ? "Menyimpan..." : "Kirim Aktivitas"}
-              </button>
-            </div>
-          </form>
+            ))}
+            <button
+              type="button"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* ─────────────────────────────────────────────
-          4. MODAL DETAIL AKTIVITAS ("LIHAT")
+          4. POPUP MODAL: FORM CATAT / EDIT KEGIATAN DPL
+          ───────────────────────────────────────────── */}
+      {isFormModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto text-xs text-slate-700">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <ClipboardCheck className="w-5 h-5 text-emerald-600" />
+                  {editingLogId ? "Edit Kegiatan Supervisi DPL" : "Catat Kegiatan Supervisi DPL"}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Lengkapi data dokumentasi kegiatan pendampingan sebelum disimpan ke database.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFormModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Form Content */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmit("TERKIRIM");
+              }}
+              className="space-y-4 text-xs text-slate-700"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* Kelompok Dampingan */}
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="block font-semibold text-slate-700">
+                    Kelompok Dampingan <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={formKelompokId}
+                      onChange={(e) => setFormKelompokId(e.target.value)}
+                      className="w-full appearance-none px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
+                      required
+                    >
+                      <option value="">-- Pilih Kelompok KKN --</option>
+                      {groups.map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.name} - {g.kelurahan}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Tanggal Kegiatan */}
+                <div className="space-y-1">
+                  <label className="block font-semibold text-slate-700">
+                    Tanggal Kegiatan <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={formTanggal}
+                    onChange={(e) => setFormTanggal(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                    required
+                  />
+                </div>
+
+                {/* Pekan Ke- Dinamis (1 s.d 12) */}
+                <div className="space-y-1">
+                  <label className="block font-semibold text-slate-700">
+                    Pekan Ke- (Linimasa Dinamis) <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={formPekanKe}
+                      onChange={(e) => setFormPekanKe(parseInt(e.target.value, 10))}
+                      className="w-full appearance-none px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
+                      required
+                    >
+                      {timelineWeeks.map((w) => (
+                        <option key={w.pekanKe} value={w.pekanKe}>
+                          Pekan {w.pekanKe} - {w.tanggalRange || w.tahapMinggu}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Waktu Mulai & Waktu Selesai */}
+                <div className="space-y-1">
+                  <label className="block font-semibold text-slate-700">
+                    Waktu Mulai <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="time"
+                    value={formWaktuMulai}
+                    onChange={(e) => setFormWaktuMulai(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block font-semibold text-slate-700">
+                    Waktu Selesai <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="time"
+                    value={formWaktuSelesai}
+                    onChange={(e) => setFormWaktuSelesai(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                    required
+                  />
+                </div>
+
+                {/* Kategori Aktivitas */}
+                <div className="space-y-1">
+                  <label className="block font-semibold text-slate-700">
+                    Kategori Aktivitas <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={formKategori}
+                      onChange={(e) => setFormKategori(e.target.value)}
+                      className="w-full appearance-none px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
+                      required
+                    >
+                      <option value="Kunjungan Lapangan">Kunjungan Lapangan</option>
+                      <option value="Koordinasi">Koordinasi</option>
+                      <option value="Pendampingan">Pendampingan</option>
+                      <option value="Monitoring Lapangan">Monitoring Lapangan</option>
+                      <option value="Evaluasi Lapangan">Evaluasi Lapangan</option>
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Lokasi Kegiatan */}
+                <div className="space-y-1">
+                  <label className="block font-semibold text-slate-700">Lokasi / Tempat Kegiatan</label>
+                  <input
+                    type="text"
+                    placeholder="Misal: Posko KKN RW 05 / Kantor Kelurahan"
+                    value={formLokasi}
+                    onChange={(e) => setFormLokasi(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                  />
+                </div>
+              </div>
+
+              {/* Program Kerja Terkait (Opsional) */}
+              <div className="space-y-1">
+                <label className="block font-semibold text-slate-700">Program Kerja Terkait (Opsional)</label>
+                <div className="relative">
+                  <select
+                    value={formProkerId}
+                    onChange={(e) => setFormProkerId(e.target.value)}
+                    className="w-full appearance-none px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
+                  >
+                    <option value="">-- Hubungkan dengan Program Kerja --</option>
+                    {prokers.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nomor ? `Proker #${p.nomor}: ` : ""}{p.deskripsi}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Uraian Aktivitas */}
+              <div className="space-y-1">
+                <label className="block font-semibold text-slate-700">
+                  Uraian Aktivitas Supervisi <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Jelaskan secara rinci agenda pendampingan, temuan di posko, atau observasi lapangan..."
+                  value={formDeskripsi}
+                  onChange={(e) => setFormDeskripsi(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                  required
+                />
+              </div>
+
+              {/* Hasil dan Tindak Lanjut / Arahan Evaluasi */}
+              <div className="space-y-1">
+                <label className="block font-semibold text-slate-700">Hasil, Kendala, & Arahan Evaluasi DPL</label>
+                <textarea
+                  rows={2}
+                  placeholder="Tuliskan arahan perbaikan atau tindak lanjut yang harus dilakukan mahasiswa dampingan..."
+                  value={formHasilTindakLanjut}
+                  onChange={(e) => setFormHasilTindakLanjut(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                />
+              </div>
+
+              {/* Unggah Bukti Kegiatan */}
+              <div className="space-y-1">
+                <label className="block font-semibold text-slate-700">Unggah Bukti Kegiatan (Foto / Dokumen)</label>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/*,.pdf,.doc,.docx"
+                  className="hidden"
+                />
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-xl p-3 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-emerald-50/20"
+                >
+                  {selectedFile ? (
+                    <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200">
+                      <div className="flex items-center gap-2 truncate">
+                        {filePreview ? (
+                          <img src={filePreview} alt="Preview" className="w-8 h-8 rounded object-cover flex-shrink-0" />
+                        ) : (
+                          <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                        )}
+                        <span className="truncate text-slate-800 font-medium">{selectedFile.name}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleClearFile();
+                        }}
+                        className="text-slate-400 hover:text-rose-500 p-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-1 text-slate-500">
+                      <UploadCloud className="w-5 h-5 text-slate-400" />
+                      <span className="text-[11px] font-medium text-slate-600">
+                        Klik untuk unggah foto, PDF, atau notula • Maks. 10 MB
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Durasi Info & Checkbox Simpan Lokasi */}
+              <div className="flex items-center justify-between pt-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-100">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Kalkulasi Durasi: {calculatedDuration.label}</span>
+                </div>
+
+                <label className="inline-flex items-center gap-2 cursor-pointer select-none text-slate-600 font-medium text-xs">
+                  <input
+                    type="checkbox"
+                    checked={formSimpanLokasi}
+                    onChange={(e) => setFormSimpanLokasi(e.target.checked)}
+                    className="rounded text-emerald-700 focus:ring-emerald-600 w-3.5 h-3.5"
+                  />
+                  <span>Simpan lokasi kegiatan</span>
+                </label>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsFormModalOpen(false)}
+                  className="py-2.5 px-4 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 font-semibold text-xs transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => handleSubmit("DRAF")}
+                  className="py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-xs transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  Simpan Draf
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="py-2.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                >
+                  {submitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{editingLogId ? "Simpan Perubahan" : "Kirim Aktivitas"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────
+          5. POPUP MODAL: DETAIL AKTIVITAS ("LIHAT")
           ───────────────────────────────────────────── */}
       {selectedDetailLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto text-xs text-slate-700">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 mb-1">
-                  {selectedDetailLog.kategori}
-                </span>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    {selectedDetailLog.kategori}
+                  </span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                    Pekan {selectedDetailLog.pekanKe || 1}
+                  </span>
+                </div>
                 <h3 className="text-base font-bold text-slate-800">{selectedDetailLog.kelompokNama}</h3>
               </div>
               <button
@@ -994,7 +1100,7 @@ export const LogAktivitasDpl: React.FC = () => {
                 </span>
               </div>
               <div>
-                <span className="text-slate-400 block text-[11px]">Durasi</span>
+                <span className="text-slate-400 block text-[11px]">Durasi (Satuan Jam)</span>
                 <span className="font-semibold text-slate-800">{selectedDetailLog.durasi}</span>
               </div>
               <div>
@@ -1018,7 +1124,7 @@ export const LogAktivitasDpl: React.FC = () => {
 
             <div className="space-y-1">
               <span className="font-semibold text-slate-700">Uraian Aktivitas:</span>
-              <p className="text-slate-600 whitespace-pre-wrap bg-slate-50 p-3 rounded-xl">
+              <p className="text-slate-600 whitespace-pre-wrap bg-slate-50 p-3 rounded-xl leading-relaxed">
                 {selectedDetailLog.deskripsi}
               </p>
             </div>
@@ -1026,7 +1132,7 @@ export const LogAktivitasDpl: React.FC = () => {
             {selectedDetailLog.hasilTindakLanjut && (
               <div className="space-y-1">
                 <span className="font-semibold text-slate-700">Hasil dan Tindak Lanjut:</span>
-                <p className="text-slate-600 whitespace-pre-wrap bg-slate-50 p-3 rounded-xl">
+                <p className="text-slate-600 whitespace-pre-wrap bg-slate-50 p-3 rounded-xl leading-relaxed">
                   {selectedDetailLog.hasilTindakLanjut}
                 </p>
               </div>
