@@ -261,10 +261,19 @@ export class AuthService {
     });
 
     for (const att of openAttendances) {
+      const currentLogs = (att.jedaLogs as any[]) || [];
+      currentLogs.push({
+        alasan: "Logout Aplikasi (Otomatis)",
+        waktuJeda: new Date().toISOString(),
+        durasiSebelumJedaMenit: att.actualInZoneMinutes || 0,
+        autoTriggered: true,
+      });
+
       const updated = await prisma.activityAttendance.update({
         where: { id: att.id },
         data: {
           status: "TERJEDA",
+          jedaLogs: currentLogs,
         },
       }).catch(() => null);
 

@@ -546,11 +546,25 @@ export class KknAttendanceService {
       const activeAtt = await prisma.activityAttendance.findFirst({
         where: {
           studentId: userId,
-          status: "BERLANGSUNG",
+          status: { in: ["BERLANGSUNG", "TERJEDA"] },
         },
       });
       if (activeAtt) {
         currentScheduleId = activeAtt.scheduleId;
+      }
+    }
+
+    let attendanceStatus = "TIDAK_ADA_KEGIATAN";
+    if (currentScheduleId) {
+      const activeAtt = await prisma.activityAttendance.findFirst({
+        where: {
+          studentId: userId,
+          scheduleId: currentScheduleId,
+        },
+        select: { status: true },
+      });
+      if (activeAtt) {
+        attendanceStatus = activeAtt.status;
       }
     }
 
@@ -561,6 +575,7 @@ export class KknAttendanceService {
         activeScheduleId: currentScheduleId,
         status: isInsideZone ? "LAPANGAN" : "DI_LUAR_ZONA",
         currentStatus: isInsideZone ? "LAPANGAN" : "DI_LUAR_ZONA",
+        attendanceStatus,
         inZoneMinutes,
         actualInZoneSeconds: inZoneMinutes * 60,
         actualInZoneMinutes: inZoneMinutes,
@@ -2392,6 +2407,7 @@ export class KknAttendanceService {
         },
         status: scheduleStatus,
         statusKehadiran,
+        attendanceStatus: statusKehadiran,
         statusDisplay,
         isMemenuhiDurasi,
         actualInZoneSeconds,
