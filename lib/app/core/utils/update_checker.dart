@@ -4,9 +4,10 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../values/app_config.dart';
 
 class UpdateChecker {
-  static const String _versionUrl = 'http://157.10.252.252:3000/api/v1/app-version';
+  static String get _versionUrl => '${AppConfig.apiBaseUrl}/system/latest-release';
 
   static Future<void> checkForUpdate(BuildContext context) async {
     try {
@@ -20,9 +21,15 @@ class UpdateChecker {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final latestVersion = response.data['latestVersion']?.toString();
-        final downloadUrl = response.data['downloadUrl']?.toString();
-        final isForceUpdate = response.data['forceUpdate'] == true;
+        // Handle both direct object and nested 'data' object
+        final Map<String, dynamic> responseData = 
+            (response.data is Map<String, dynamic> && response.data['latestVersion'] == null && response.data['data'] != null)
+                ? response.data['data']
+                : response.data;
+
+        final latestVersion = responseData['latestVersion']?.toString() ?? responseData['version']?.toString();
+        final downloadUrl = responseData['downloadUrl']?.toString() ?? responseData['apkUrl']?.toString();
+        final isForceUpdate = responseData['forceUpdate'] == true;
 
         if (latestVersion != null && downloadUrl != null) {
           final packageInfo = await PackageInfo.fromPlatform();
@@ -42,8 +49,12 @@ class UpdateChecker {
   }
 
   static bool _isUpdateAvailable(String current, String latest) {
-    List<int> currentParts = current.split('.').map((e) => int.tryParse(e) ?? 0).toList();
-    List<int> latestParts = latest.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    // Bersihkan dari build number (contoh 1.0.6+106 -> 1.0.6)
+    final cleanCurrent = current.split('+')[0].replaceAll(RegExp(r'[^0-9.]'), '');
+    final cleanLatest = latest.split('+')[0].replaceAll(RegExp(r'[^0-9.]'), '');
+
+    List<int> currentParts = cleanCurrent.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    List<int> latestParts = cleanLatest.split('.').map((e) => int.tryParse(e) ?? 0).toList();
 
     for (int i = 0; i < 3; i++) {
       int c = i < currentParts.length ? currentParts[i] : 0;
