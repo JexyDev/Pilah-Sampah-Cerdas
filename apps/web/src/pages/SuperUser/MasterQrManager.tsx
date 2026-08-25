@@ -5,7 +5,7 @@ import { Badge } from "../../components/common/Badge";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
-import { QrCode, AlertTriangle, PlayCircle, Download, RefreshCw, Trash2, Plus, Search, Filter, Printer } from "lucide-react";
+import { QrCode, AlertTriangle, PlayCircle, Download, RefreshCw, Trash2, Plus, Search, Filter, Printer, RotateCcw } from "lucide-react";
 import { printQrStickers } from "../../utils/printQrStickers";
 
 import { useAuthStore } from "../../store/useAuthStore";
@@ -63,6 +63,26 @@ export const MasterQrManager: React.FC = () => {
   const [submittingReplace, setSubmittingReplace] = useState<boolean>(false);
   const [deleteQrModal, setDeleteQrModal] = useState<{ id: string; qrCode: string } | null>(null);
   const [isDeletingQr, setIsDeletingQr] = useState<boolean>(false);
+  const [resetOwnershipModal, setResetOwnershipModal] = useState<{ id: string; qrCode: string } | null>(null);
+  const [isResettingOwnership, setIsResettingOwnership] = useState<boolean>(false);
+
+  const handleConfirmResetOwnership = async () => {
+    if (!resetOwnershipModal) return;
+    try {
+      setIsResettingOwnership(true);
+      const res = await api.post(`/bins/${resetOwnershipModal.id}/reset-ownership`);
+      if (res.data?.success || res.data?.status === "success") {
+        toast.success(`Kepemilikan QR Code ${resetOwnershipModal.qrCode} berhasil di-reset ke status PRINTED`);
+        setResetOwnershipModal(null);
+        fetchQrData();
+      }
+    } catch (e: any) {
+      console.error("Gagal mereset kepemilikan QR Code:", e);
+      toast.error(e.response?.data?.message || "Gagal mereset kepemilikan tempat sampah");
+    } finally {
+      setIsResettingOwnership(false);
+    }
+  };
 
   const fetchQrData = async () => {
     try {
@@ -541,6 +561,17 @@ export const MasterQrManager: React.FC = () => {
                                  </button>
                               )}
 
+                              {q.user && (
+                                <button
+                                  onClick={() => setResetOwnershipModal({ id: q.id, qrCode: q.qrCode })}
+                                  title="Reset Kepemilikan (Lepas dari Warga)"
+                                  className="p-1.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded-lg text-xs font-bold transition-all border border-amber-200 dark:border-amber-800 cursor-pointer inline-flex items-center gap-1"
+                                >
+                                  <RotateCcw size={14} className="text-amber-600 dark:text-amber-400" />
+                                  <span className="hidden sm:inline">Reset</span>
+                                </button>
+                              )}
+
                               <button
                                 onClick={() => handleDeleteBin(q.id, q.qrCode)}
                                 title="Hapus QR Code"
@@ -806,6 +837,18 @@ export const MasterQrManager: React.FC = () => {
         message={`Apakah Anda yakin ingin menghapus QR Code ${deleteQrModal?.qrCode || ""}? Tindakan ini permanen.`}
         confirmText="Ya, Hapus QR"
         type="danger"
+      />
+
+      {/* Confirmation Modal Reset Kepemilikan */}
+      <ConfirmModal
+        isOpen={Boolean(resetOwnershipModal)}
+        onClose={() => setResetOwnershipModal(null)}
+        onConfirm={handleConfirmResetOwnership}
+        isLoading={isResettingOwnership}
+        title="Reset Kepemilikan Tempat Sampah"
+        message={`Apakah Anda yakin ingin melepas kepemilikan Warga dari QR Code ${resetOwnershipModal?.qrCode || ""}? Status tempat sampah akan di-reset kembali menjadi PRINTED (Belum Terikat).`}
+        confirmText="Ya, Reset Kepemilikan"
+        type="warning"
       />
     </div>
   );

@@ -71,7 +71,7 @@ export class BinService {
     }
   ) {
     let whereClause: any = {};
-    if (currentUser) {
+    if (currentUser && (!filters || (filters.status !== "PRINTED" && filters.status !== "printed"))) {
       const { getScopingFilters } = await import("../utils/rbacScoping.js");
       const scoping = await getScopingFilters(currentUser);
       whereClause = { ...scoping.binFilter };
@@ -87,7 +87,7 @@ export class BinService {
           "BROKEN",
           "PENDING_APPROVAL",
         ];
-        if (filters.status === "PRINTED") {
+        if (filters.status === "PRINTED" || filters.status === "printed") {
           // [MODIFIKASI]: Bypass scoping wilayah khusus untuk status PRINTED
           // karena QR baru belum memiliki rwId/kelurahanId.
           whereClause = { status: "PRINTED" };
@@ -116,6 +116,58 @@ export class BinService {
     }
 
     return binRepository.findAll(whereClause);
+  }
+
+  /**
+   * Reset ownership of a bin back to PRINTED (unassigned)
+   */
+  async resetBinOwnership(binIdOrQrCode: string, adminUserId?: string) {
+    const bin = await prisma.bin.findFirst({
+      where: {
+        OR: [{ id: binIdOrQrCode }, { qrCode: binIdOrQrCode }],
+      },
+    });
+
+    if (!bin) {
+      throw new Error("BIN_NOT_FOUND");
+    }
+
+    return prisma.$transaction(async (tx) => {
+      // 1. Delete all ownership links
+      await tx.binOwnership.deleteMany({
+        where: { binId: bin.id },
+      });
+
+      // 2. Update bin to PRINTED state with cleared owner & coordinates
+      const updatedBin = await tx.bin.update({
+        where: { id: bin.id },
+        data: {
+          status: "PRINTED",
+          userId: null,
+          rwId: null,
+          latitude: null,
+          longitude: null,
+          currentVolumeLiter: 0,
+        },
+        include: {
+          category: true,
+        },
+      });
+
+      // 3. Record Audit Trail
+      if (adminUserId) {
+        await tx.auditTrail.create({
+          data: {
+            action: "RESET_BIN_OWNERSHIP",
+            userId: adminUserId,
+            oldValue: JSON.parse(JSON.stringify(bin)),
+            newValue: JSON.parse(JSON.stringify(updatedBin)),
+          },
+        });
+      }
+
+      return updatedBin;
+    });
   }
 
   /**
