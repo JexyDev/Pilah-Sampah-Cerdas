@@ -52,9 +52,10 @@ export const PenilaianProkerPage: React.FC = () => {
   const [prokerList, setProkerList] = useState<ProgramKerjaItem[]>([]);
   const [selectedProkerId, setSelectedProkerId] = useState<string | null>(null);
 
-  // Filter States (Fokus pada Search, Kategori, dan Status Penilaian)
+  // Filter States (Fokus pada Search, Kategori, Status Pelaksanaan, dan Status Penilaian)
   const [searchQuery, setSearchQuery] = useState("");
   const [kategoriFilter, setKategoriFilter] = useState("ALL");
+  const [statusPelaksanaanFilter, setStatusPelaksanaanFilter] = useState("ALL");
   const [statusPenilaianFilter, setStatusPenilaianFilter] = useState("ALL");
 
   // Paginasi
@@ -92,14 +93,14 @@ export const PenilaianProkerPage: React.FC = () => {
     }>;
   } | null>(null);
 
-  // Fetch Data Program Kerja dari Backend: Hanya Program Kerja yang Disetujui & Selesai
+  // Fetch Data Program Kerja dari Backend: Semua Program Kerja yang Telah Disetujui (ACC)
   const fetchData = async () => {
     setLoading(true);
     try {
       const data = await dplService.getProgramKerja(undefined, {
         kategori: kategoriFilter !== "ALL" ? kategoriFilter : undefined,
         statusUsulan: "DISETUJUI",
-        statusPelaksanaan: "SELESAI",
+        statusPelaksanaan: statusPelaksanaanFilter !== "ALL" ? statusPelaksanaanFilter : undefined,
         statusPenilaian: statusPenilaianFilter !== "ALL" ? statusPenilaianFilter : undefined,
         search: searchQuery.trim() ? searchQuery : undefined,
       });
@@ -114,12 +115,12 @@ export const PenilaianProkerPage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [kategoriFilter, statusPenilaianFilter]);
+  }, [kategoriFilter, statusPelaksanaanFilter, statusPenilaianFilter]);
 
-  // Client-side filtering fallback for immediate search responsiveness (Strict: Disetujui & Selesai)
+  // Client-side filtering fallback for immediate search responsiveness
   const filteredProkers = useMemo(() => {
     return prokerList.filter((p) => {
-      // 1. Validasi Status Usulan: Wajib Disetujui
+      // 1. Validasi Status Usulan: Wajib Disetujui (ACC)
       const legacySt = String(p.status || "").toUpperCase();
       let u = p.statusUsulan;
       if (!u) {
@@ -129,14 +130,16 @@ export const PenilaianProkerPage: React.FC = () => {
       }
       if (u !== "DISETUJUI" && u !== "DITERIMA") return false;
 
-      // 2. Validasi Status Pelaksanaan: Wajib Selesai
+      // 2. Validasi Status Pelaksanaan
       let pl = p.statusPelaksanaan;
       if (!pl) {
         if (legacySt === "SELESAI") pl = "SELESAI";
         else if (legacySt === "SEDANG_BERJALAN" || legacySt === "SEDANG_DILAKSANAKAN" || legacySt === "BERJALAN") pl = "SEDANG_BERJALAN";
         else pl = "BELUM_MULAI";
       }
-      if (pl !== "SELESAI") return false;
+      if (statusPelaksanaanFilter !== "ALL") {
+        if (pl !== statusPelaksanaanFilter) return false;
+      }
 
       // 3. Search
       if (searchQuery.trim()) {
@@ -279,18 +282,7 @@ export const PenilaianProkerPage: React.FC = () => {
       else u = "BELUM_DISETUJUI";
     }
     if (u !== "DISETUJUI" && u !== "DITERIMA") {
-      toast.error("Hanya program kerja yang telah disetujui yang dapat dinilai");
-      return;
-    }
-
-    let pl = proker.statusPelaksanaan;
-    if (!pl) {
-      if (leg === "SELESAI") pl = "SELESAI";
-      else if (leg === "SEDANG_BERJALAN" || leg === "SEDANG_DILAKSANAKAN" || leg === "BERJALAN") pl = "SEDANG_BERJALAN";
-      else pl = "BELUM_MULAI";
-    }
-    if (pl !== "SELESAI") {
-      toast.error("Hanya program kerja yang telah selesai pelaksanaannya yang dapat dinilai");
+      toast.error("Hanya program kerja yang telah disetujui (ACC) yang dapat dinilai");
       return;
     }
 
@@ -585,8 +577,8 @@ export const PenilaianProkerPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Baris Filter Interaktif (3 Kontrol: Search, Kategori, Status Penilaian + Info Banner) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs items-center">
+      {/* Baris Filter Interaktif (4 Kontrol: Search, Kategori, Status Pelaksanaan, Status Penilaian + Info Banner) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs items-center">
         {/* Search */}
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -626,6 +618,27 @@ export const PenilaianProkerPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Filter Status Pelaksanaan */}
+        <div className="relative">
+          <Clock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <select
+            value={statusPelaksanaanFilter}
+            onChange={(e) => {
+              setStatusPelaksanaanFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 cursor-pointer appearance-none"
+          >
+            <option value="ALL">Semua Pelaksanaan</option>
+            <option value="BELUM_MULAI">Belum Mulai</option>
+            <option value="SEDANG_BERJALAN">Sedang Berjalan</option>
+            <option value="SELESAI">Selesai</option>
+          </select>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+            ▼
+          </div>
+        </div>
+
         {/* Filter Status Penilaian */}
         <div className="relative">
           <BarChart3 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -650,7 +663,7 @@ export const PenilaianProkerPage: React.FC = () => {
         {/* Info Banner Indikator Kriteria */}
         <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/40 rounded-xl text-emerald-800 dark:text-emerald-300 text-xs">
           <CheckCircle2 size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-          <span className="truncate font-medium">Khusus Proker Disetujui &amp; Selesai</span>
+          <span className="truncate font-medium">Khusus Proker Disetujui (ACC)</span>
         </div>
       </div>
 
@@ -664,12 +677,13 @@ export const PenilaianProkerPage: React.FC = () => {
         ) : filteredProkers.length === 0 ? (
           <div className="p-8">
             <EmptyTableState
-              entityName="Program Kerja Siap Dinilai (Disetujui &amp; Selesai)"
-              isSearch={!!(searchQuery || kategoriFilter !== "ALL" || statusPenilaianFilter !== "ALL")}
+              entityName="Program Kerja Disetujui (ACC)"
+              isSearch={!!(searchQuery || kategoriFilter !== "ALL" || statusPelaksanaanFilter !== "ALL" || statusPenilaianFilter !== "ALL")}
               searchQuery={searchQuery}
               onResetSearch={() => {
                 setSearchQuery("");
                 setKategoriFilter("ALL");
+                setStatusPelaksanaanFilter("ALL");
                 setStatusPenilaianFilter("ALL");
               }}
             />

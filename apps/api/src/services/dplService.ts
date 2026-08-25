@@ -2117,12 +2117,6 @@ export const dplService = {
       throw new Error("PROKER_NOT_APPROVED");
     }
 
-    const statusPelaksanaanStr = String(prokerExisting.statusPelaksanaan || prokerExisting.status || "").toUpperCase();
-    const isCompleted = statusPelaksanaanStr === "SELESAI";
-    if (!isCompleted) {
-      throw new Error("PROKER_NOT_COMPLETED");
-    }
-
     const groups = await prisma.kelompokKkn.findMany({
       where: await getKelompokWhere(dplUserId, role),
       select: { id: true },
@@ -2142,6 +2136,7 @@ export const dplService = {
     }
 
     const finalStatusPenilaian = statusPenilaian || (skorPenilaian > 0 ? "SUDAH_DINILAI" : "SEDANG_DINILAI");
+    const targetStatusPelaksanaan = statusPelaksanaan || "SELESAI";
 
     const updateData: any = {
       skorPenilaian,
@@ -2150,16 +2145,12 @@ export const dplService = {
       reviewedAt: new Date(),
       predikat: finalPredikat,
       statusPenilaian: finalStatusPenilaian,
+      statusPelaksanaan: targetStatusPelaksanaan,
+      status: targetStatusPelaksanaan === "SELESAI" ? "SELESAI" : "SEDANG_BERJALAN",
     };
 
     if (aspekPenilaian !== undefined) {
       updateData.aspekPenilaian = aspekPenilaian;
-    }
-
-    if (statusPelaksanaan) {
-      updateData.statusPelaksanaan = statusPelaksanaan;
-      if (statusPelaksanaan === "SELESAI") updateData.status = "SELESAI";
-      else if (statusPelaksanaan === "SEDANG_BERJALAN") updateData.status = "SEDANG_BERJALAN";
     }
 
     const proker = await prisma.programKerjaKkn.update({
