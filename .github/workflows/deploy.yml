@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - mobile
-      - main
   pull_request:
     branches:
       - mobile
@@ -41,11 +40,11 @@ jobs:
         run: flutter test
 
   build-and-deploy-apk:
-    name: Build ARM64 APK & Deploy to Web Download Page
+    name: Build Release APK & Deploy to Web Download Page
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     needs: validate
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/mobile' || github.ref == 'refs/heads/main')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/mobile'
 
     steps:
       - name: Checkout Mobile Code
@@ -63,6 +62,16 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Gradle Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Install Dependencies
         run: flutter pub get
 
@@ -76,9 +85,9 @@ jobs:
           yes | $SDK_MANAGER --licenses || true
           $SDK_MANAGER "cmake;3.22.1"
 
-      - name: Build Android Release APK (arm64-v8a)
+      - name: Build Android Release APK (Universal Build)
         run: |
-          flutter build apk --release --target-platform android-arm64 --build-name=1.0.${{ github.run_number }} --build-number=${{ github.run_number }}
+          flutter build apk --release --build-name=1.0.${{ github.run_number }} --build-number=${{ github.run_number }}
           ls -lah build/app/outputs/flutter-apk/
 
       - name: Install sshpass
@@ -90,6 +99,7 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USERNAME }}
           VPS_PASS: ${{ secrets.VPS_PASSWORD }}
+          CI_SECRET: ${{ secrets.CI_SECRET || 'berseka-ci-secret' }}
         run: |
           APK_FILE="build/app/outputs/flutter-apk/app-release.apk"
           if [ ! -f "$APK_FILE" ]; then
@@ -99,7 +109,7 @@ jobs:
           echo "Uploading $APK_FILE to VPS..."
           sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no "$APK_FILE" "$VPS_USER@$VPS_HOST:/tmp/berseka-release-arm64-v8a.apk"
 
-          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' bash -s" << 'EOF'
+          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' CI_SECRET='$CI_SECRET' bash -s" << 'EOF'
             set -e
             echo "=== 1. Deploying APK to Nginx Static & API Downloads ==="
             echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html/downloads /var/www/pilah-sampah-cerdas/frontend/dist/downloads /home/maker/Pilah-Sampah-Cerdas/apps/api/uploads
@@ -117,12 +127,12 @@ jobs:
             
             curl -s -X POST "http://localhost:3000/api/v1/system/publish-release" \
               -H "Content-Type: application/json" \
-              -H "x-ci-secret: berseka-ci-secret" \
+              -H "x-ci-secret: $CI_SECRET" \
               -d "{
                 \"latestVersion\": \"1.0.${{ github.run_number }}\",
                 \"version\": \"1.0.${{ github.run_number }}\",
                 \"buildNumber\": ${{ github.run_number }},
-                \"releaseNotes\": \"Auto-build CI/CD arm64-v8a APK v1.0.${{ github.run_number }} (Build ${{ github.run_number }}), pembaruan performa, dan sinkronisasi real-time.\",
+                \"releaseNotes\": \"Auto-build CI/CD universal APK v1.0.${{ github.run_number }} (Build ${{ github.run_number }}), pembaruan performa, dan sinkronisasi real-time.\",
                 \"downloadUrl\": \"/downloads/berseka-release-arm64-v8a.apk\",
                 \"apkUrl\": \"/downloads/berseka-release-arm64-v8a.apk\",
                 \"fileSizeBytes\": $FILE_SIZE,
