@@ -118,17 +118,15 @@ jobs:
 
             if [ ! -f "$REPO_DIR/apps/api/.env" ]; then
               echo "Recreating production .env for backend on VPS..."
-              cat > "$REPO_DIR/apps/api/.env" << 'ENVEOF'
-DATABASE_URL=postgresql://psc_user:psc_password@localhost:5432/psc_db
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=ganti_ini_dengan_string_random_minimal_32_karakter
-JWT_EXPIRES_IN=24h
-PORT=3000
-NODE_ENV=production
-FRONTEND_URL=https://psc.makerindo.com
-GOOGLE_APPLICATION_CREDENTIALS=./firebase-service-account.json
-ENVEOF
-              cp "$REPO_DIR/apps/api/.env" "$REPO_DIR/.env"
+              echo "DATABASE_URL=postgresql://psc_user:psc_password@localhost:5432/psc_db" > "$REPO_DIR/apps/api/.env"
+              echo "REDIS_URL=redis://localhost:6379" >> "$REPO_DIR/apps/api/.env"
+              echo "JWT_SECRET=ganti_ini_dengan_string_random_minimal_32_karakter" >> "$REPO_DIR/apps/api/.env"
+              echo "JWT_EXPIRES_IN=24h" >> "$REPO_DIR/apps/api/.env"
+              echo "PORT=3000" >> "$REPO_DIR/apps/api/.env"
+              echo "NODE_ENV=production" >> "$REPO_DIR/apps/api/.env"
+              echo "FRONTEND_URL=https://psc.makerindo.com" >> "$REPO_DIR/apps/api/.env"
+              echo "GOOGLE_APPLICATION_CREDENTIALS=./firebase-service-account.json" >> "$REPO_DIR/apps/api/.env"
+              cp "$REPO_DIR/apps/api/.env" "$REPO_DIR/.env" 2>/dev/null || true
             fi
 
             export DATABASE_URL="postgresql://psc_user:psc_password@localhost:5432/psc_db"
