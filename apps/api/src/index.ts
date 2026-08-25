@@ -212,7 +212,9 @@ const server = app.listen(PORT, () => {
 
 server.on("error", (err: any) => {
   if (err.code === "EADDRINUSE") {
-    console.error(`[Server Warning] Port ${PORT} is already in use. Please check running Node processes.`);
+    console.error(
+      `[Server Warning] Port ${PORT} is already in use. Please check running Node processes.`
+    );
   } else {
     console.error("[Server Error]", err);
   }

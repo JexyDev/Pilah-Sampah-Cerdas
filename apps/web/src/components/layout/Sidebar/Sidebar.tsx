@@ -861,13 +861,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       header: "LOG AKTIVITAS",
       items: [
         {
-          to: "/logbook-kkn?tab=mahasiswa",
+          to: "/logbook-kkn",
           icon: ClipboardList,
           label: "Log Aktivitas Mahasiswa",
           allowed: ALL_ROLES,
         },
         {
-          to: "/logbook-kkn?tab=dpl",
+          to: "/log-aktivitas-dpl",
           icon: BookOpen,
           label: "Log Aktivitas DPL",
           allowed: [

@@ -3,16 +3,16 @@
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
- * Modul Logbook & Supervisi Lapangan KKN (DPL & Admin)
- * Fitur:
+ * Modul Logbook & Supervisi Lapangan KKN Mahasiswa (DPL & Admin)
+ * Halaman Mandiri Khusus Log Aktivitas Mahasiswa:
  * 1. Rekap Log Aktivitas Kelompok Mahasiswa (Tabel Full-Width 12 Kolom + Popup Modal Detail & Validasi DPL)
  * 2. Standardisasi Satuan Waktu Durasi 'Jam'
- * 3. Log Aktivitas Supervisi DPL (Dinamis 1-12 Pekan)
+ * 3. Validasi Individual DPL melalui Modal Tinjau
  * 4. Kalkulasi Kepatuhan Logbook & Prasyarat Nilai KKN
  */
 
 import React, { useEffect, useState, useMemo } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import {
   BookOpen,
@@ -24,26 +24,33 @@ import {
   Download,
   Eye,
   RefreshCw,
-  Plus,
   Users,
   ChevronRight,
   ChevronLeft,
   Settings,
-  ShieldCheck,
   Award,
   Smartphone,
   X,
+  TrendingUp,
+  BarChart3,
+  Calendar,
+  CheckCircle2,
+  ListChecks,
+  UserCheck,
+  FileText,
+  ArrowUpRight,
+  HelpCircle,
+  Sparkles,
+  Layers,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   logbookApiService,
   type LogbookMahasiswaItem,
-  type LogbookDplItem,
   type ComplianceStats,
 } from "../../services/logbookService";
 import { dplService, type GroupSummary } from "../../services/dplService";
 import { resolveImageUrl } from "../../utils/imageUrl";
-import LogAktivitasDpl from "./LogAktivitasDpl";
 
 // Helper Format Tanggal
 const formatDateShort = (dateStr: string): string => {
@@ -129,27 +136,9 @@ const resolveHasilOutput = (item: LogbookMahasiswaItem): string => {
 export const LogbookKknPage: React.FC = () => {
   const { user } = useAuthStore();
   const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
-  const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
   const isDeveloper = ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"].includes(userRole);
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get("tab");
-  const [activeTab, setActiveTab] = useState<"mahasiswa" | "dpl" | "kepatuhan">(
-    tabParam === "dpl" ? "dpl" : tabParam === "kepatuhan" ? "kepatuhan" : "mahasiswa"
-  );
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const currentTab = searchParams.get("tab");
-    if (currentTab === "dpl" || currentTab === "mahasiswa" || currentTab === "kepatuhan") {
-      setActiveTab(currentTab);
-    }
-  }, [searchParams]);
-
-  const handleTabChange = (tab: "mahasiswa" | "dpl" | "kepatuhan") => {
-    setActiveTab(tab);
-    setSearchParams({ tab });
-  };
 
   // State Data
   const [groups, setGroups] = useState<GroupSummary[]>([]);
@@ -159,7 +148,6 @@ export const LogbookKknPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const [logbooks, setLogbooks] = useState<LogbookMahasiswaItem[]>([]);
-  const [dplLogbooks, setDplLogbooks] = useState<LogbookDplItem[]>([]);
   const [complianceStats, setComplianceStats] = useState<ComplianceStats | null>(null);
   const [toleranceDays, setToleranceDays] = useState<number>(1);
 
@@ -198,20 +186,14 @@ export const LogbookKknPage: React.FC = () => {
       });
       setLogbooks(mhsData);
 
-      // 3. Ambil logbook DPL
-      const dplData = await logbookApiService.getDplLogbooks(
-        selectedGroup !== "ALL" ? selectedGroup : undefined
-      );
-      setDplLogbooks(dplData);
-
-      // 4. Ambil kepatuhan untuk kelompok terpilih
+      // 3. Ambil kepatuhan untuk kelompok terpilih
       const targetGroupId = selectedGroup !== "ALL" ? selectedGroup : groupData[0]?.id;
       if (targetGroupId) {
         const stats = await logbookApiService.getComplianceScore(targetGroupId).catch(() => null);
         setComplianceStats(stats);
       }
 
-      // 5. Ambil toleransi config
+      // 4. Ambil toleransi config
       const conf = await logbookApiService.getToleranceConfig().catch(() => ({ toleranceDays: 1 }));
       setToleranceDays(conf.toleranceDays);
       setConfigInputDays(conf.toleranceDays);
@@ -425,21 +407,10 @@ export const LogbookKknPage: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            {isDpl && (
-              <button
-                type="button"
-                onClick={() => handleTabChange("dpl")}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition-all cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                Catat Kegiatan DPL
-              </button>
-            )}
-
             {isDeveloper && (
               <button
                 onClick={() => setShowConfigModal(true)}
-                className="inline-flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition-colors"
+                className="inline-flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
                 title="Konfigurasi Batas Toleransi Hari (H-1)"
               >
                 <Settings className="w-4 h-4" />
@@ -516,466 +487,861 @@ export const LogbookKknPage: React.FC = () => {
         </div>
 
         {/* ─────────────────────────────────────────────
-            3. TAB NAVIGATION BAR
+            3. REKAP AKTIVITAS MAHASISWA (FULL WIDTH TABLE)
             ───────────────────────────────────────────── */}
-        <div className="border-b border-slate-200 dark:border-slate-700 flex items-center gap-6">
-          <button
-            onClick={() => handleTabChange("mahasiswa")}
-            className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
-              activeTab === "mahasiswa"
-                ? "border-emerald-600 text-emerald-600 dark:text-emerald-400"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            Log Aktivitas Mahasiswa
-            <span className="ml-1 px-2 py-0.5 text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full">
-              {logbooks.length}
-            </span>
-          </button>
-
-          <button
-            onClick={() => handleTabChange("dpl")}
-            className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
-              activeTab === "dpl"
-                ? "border-emerald-600 text-emerald-600 dark:text-emerald-400"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-            }`}
-          >
-            <ShieldCheck className="w-4 h-4" />
-            Log Aktivitas DPL
-            <span className="ml-1 px-2 py-0.5 text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full">
-              {dplLogbooks.length}
-            </span>
-          </button>
-
-          <button
-            onClick={() => handleTabChange("kepatuhan")}
-            className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
-              activeTab === "kepatuhan"
-                ? "border-emerald-600 text-emerald-600 dark:text-emerald-400"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-            }`}
-          >
-            <Award className="w-4 h-4" />
-            Kepatuhan & Prasyarat Nilai KKN
-          </button>
-        </div>
-
-        {/* ─────────────────────────────────────────────
-            TAB 1: REKAP AKTIVITAS MAHASISWA (FULL WIDTH TABLE)
-            ───────────────────────────────────────────── */}
-        {activeTab === "mahasiswa" && (
-          <div className="space-y-4">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden">
-              
-              {/* Header Table & Filters */}
-              <div className="p-5 border-b border-slate-200 dark:border-slate-700 space-y-3.5">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <div>
-                    <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                      Rekap Aktivitas Kelompok Mahasiswa
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Daftar logbook harian yang diisi mahasiswa melalui aplikasi mobile berbasis presensi & GPS
-                    </p>
-                  </div>
-                  {groups.length === 1 && (
-                    <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-300">
-                      {groups[0].name} ({groups[0].kelurahan || "Coblong"})
-                    </span>
-                  )}
-                </div>
-
-                {/* Filter Controls Row */}
-                <div className="flex flex-wrap items-center gap-2.5">
-                  {/* Search Input */}
-                  <div className="relative flex-1 min-w-[200px]">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => {
-                        setSearchQuery(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      placeholder="Cari kelompok, nama mahasiswa, atau uraian kegiatan..."
-                      className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 dark:text-slate-200"
-                    />
-                  </div>
-
-                  {/* Filter Kelompok */}
-                  {groups.length > 1 && (
-                    <select
-                      value={selectedGroup}
-                      onChange={(e) => {
-                        setSelectedGroup(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
-                    >
-                      <option value="ALL">Semua Kelompok</option>
-                      {groups.map((g) => (
-                        <option key={g.id} value={g.id}>
-                          {g.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-
-                  {/* Filter Kategori */}
-                  <select
-                    value={selectedKategori}
-                    onChange={(e) => {
-                      setSelectedKategori(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
-                  >
-                    <option value="ALL">Semua Kategori</option>
-                    <option value="Pemilahan">Pemilahan</option>
-                    <option value="Pengangkutan">Pengangkutan</option>
-                    <option value="Pengolahan">Pengolahan</option>
-                    <option value="Pemanfaatan">Pemanfaatan</option>
-                    <option value="Sosialisasi">Sosialisasi / Edukasi</option>
-                    <option value="Pendataan">Pendataan</option>
-                  </select>
-
-                  {/* Filter Status */}
-                  <select
-                    value={selectedStatus}
-                    onChange={(e) => {
-                      setSelectedStatus(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
-                  >
-                    <option value="ALL">Semua Status</option>
-                    <option value="MENUNGGU_VERIFIKASI_DPL">Menunggu Validasi</option>
-                    <option value="DISETUJUI_DPL">Tervalidasi</option>
-                    <option value="PERLU_REVISI_DPL">Perlu Perbaikan</option>
-                  </select>
-
-                  {/* Button Ekspor */}
-                  <button
-                    onClick={handleExportCsv}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-400 transition-colors shadow-2xs cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    Ekspor
-                  </button>
-                </div>
-              </div>
-
-              {/* Full-Width Table Component (12 Kolom) */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-50/70 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-semibold">
-                      <th className="p-3.5 whitespace-nowrap">Tanggal & Waktu</th>
-                      <th className="p-3.5 whitespace-nowrap">Kelompok</th>
-                      <th className="p-3.5 whitespace-nowrap">Diinput Oleh</th>
-                      <th className="p-3.5 whitespace-nowrap">Kategori</th>
-                      <th className="p-3.5 min-w-[220px]">Ringkasan Aktivitas Kelompok</th>
-                      <th className="p-3.5 whitespace-nowrap">Lokasi / GPS</th>
-                      <th className="p-3.5 whitespace-nowrap text-center">Durasi (Jam)</th>
-                      <th className="p-3.5 whitespace-nowrap text-center">Anggota</th>
-                      <th className="p-3.5 whitespace-nowrap text-center">Bukti</th>
-                      <th className="p-3.5 whitespace-nowrap text-center">Status</th>
-                      <th className="p-3.5 whitespace-nowrap text-center">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-750">
-                    {loading ? (
-                      <tr>
-                        <td colSpan={11} className="p-12 text-center text-slate-500">
-                          <div className="flex flex-col items-center justify-center gap-2">
-                            <RefreshCw className="w-5 h-5 animate-spin text-emerald-500" />
-                            <span>Memuat rekap aktivitas kelompok mahasiswa...</span>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : paginatedLogbooks.length === 0 ? (
-                      <tr>
-                        <td colSpan={11} className="p-12 text-center text-slate-500">
-                          <div className="flex flex-col items-center justify-center gap-2">
-                            <BookOpen className="w-8 h-8 text-slate-300 dark:text-slate-600" />
-                            <p className="font-semibold text-slate-700 dark:text-slate-300">Tidak ada data aktivitas</p>
-                            <p className="text-[11px] text-slate-400">
-                              Ubah filter atau tunggu input logbook terbaru dari mahasiswa melalui aplikasi mobile.
-                            </p>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : (
-                      paginatedLogbooks.map((item) => {
-                        const durasi = formatDuration(item.waktuMulai, item.waktuSelesai);
-                        const kategori = resolveKategori(item);
-                        const memberCount = item.anggotaKelompok?.length || 0;
-
-                        return (
-                          <tr
-                            key={item.id}
-                            className="hover:bg-slate-50/80 dark:hover:bg-slate-750/50 transition-colors"
-                          >
-                            {/* 1. Tanggal & Waktu */}
-                            <td className="p-3.5 align-top whitespace-nowrap">
-                              <div className="font-bold text-slate-800 dark:text-slate-200">
-                                {formatDateShort(item.tanggalKegiatan)}
-                              </div>
-                              <div className="text-[11px] text-slate-500 mt-0.5">
-                                {item.waktuLengkap}
-                              </div>
-                            </td>
-
-                            {/* 2. Kelompok */}
-                            <td className="p-3.5 align-top whitespace-nowrap font-medium text-slate-800 dark:text-slate-200">
-                              {item.kelompokNama}
-                            </td>
-
-                            {/* 3. Diinput Oleh */}
-                            <td className="p-3.5 align-top whitespace-nowrap text-slate-700 dark:text-slate-300">
-                              <div className="font-semibold text-slate-800 dark:text-slate-100">{item.penulisNama}</div>
-                              {item.penulisNim && (
-                                <div className="text-[10px] text-slate-400 font-mono">{item.penulisNim}</div>
-                              )}
-                            </td>
-
-                            {/* 4. Kategori */}
-                            <td className="p-3.5 align-top whitespace-nowrap">
-                              <span className="inline-block px-2.5 py-1 text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-300">
-                                {kategori}
-                              </span>
-                            </td>
-
-                            {/* 5. Ringkasan Aktivitas Kelompok */}
-                            <td className="p-3.5 align-top">
-                              <p className="text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed" title={item.deskripsi}>
-                                {item.deskripsi}
-                              </p>
-                            </td>
-
-                            {/* 6. Lokasi / GPS */}
-                            <td className="p-3.5 align-top whitespace-nowrap">
-                              <div className="text-slate-800 dark:text-slate-200 font-medium">
-                                {item.tempat}
-                              </div>
-                              <span className="inline-flex items-center gap-0.5 mt-0.5 px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 rounded">
-                                GPS Terverifikasi
-                              </span>
-                            </td>
-
-                            {/* 7. Durasi (Jam) */}
-                            <td className="p-3.5 align-top whitespace-nowrap text-center text-slate-700 dark:text-slate-300 font-medium">
-                              <span className="inline-flex items-center gap-1 font-semibold">
-                                <Clock className="w-3 h-3 text-indigo-500" />
-                                {durasi.short}
-                              </span>
-                            </td>
-
-                            {/* 8. Anggota */}
-                            <td className="p-3.5 align-top whitespace-nowrap text-center font-semibold text-slate-700 dark:text-slate-300">
-                              {memberCount > 0 ? `${memberCount}/${memberCount}` : "Tim"}
-                            </td>
-
-                            {/* 9. Bukti */}
-                            <td className="p-3.5 align-top whitespace-nowrap text-center">
-                              {item.fotoBuktiUrl ? (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setPreviewPhotoUrl(resolveImageUrl(item.fotoBuktiUrl));
-                                    setPreviewTitle(`Bukti: ${item.tempat} (${formatDateShort(item.tanggalKegiatan)})`);
-                                  }}
-                                  className="text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 font-semibold hover:underline cursor-pointer"
-                                >
-                                  Foto Bukti
-                                </button>
-                              ) : (
-                                <span className="text-slate-400">-</span>
-                              )}
-                            </td>
-
-                            {/* 10. Status */}
-                            <td className="p-3.5 align-top whitespace-nowrap text-center">
-                              {renderStatusBadge(item.statusApproval)}
-                            </td>
-
-                            {/* 11. Aksi */}
-                            <td className="p-3.5 align-top whitespace-nowrap text-center">
-                              <button
-                                type="button"
-                                onClick={() => handleOpenDetailModal(item)}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1 mx-auto ${
-                                  item.statusApproval === "MENUNGGU_VERIFIKASI_DPL"
-                                    ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-                                    : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600"
-                                }`}
-                              >
-                                <Eye className="w-3 h-3" />
-                                <span>{item.statusApproval === "MENUNGGU_VERIFIKASI_DPL" ? "Tinjau" : "Lihat"}</span>
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Bottom Pagination Bar */}
-              <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden">
+            
+            {/* Header Table & Filters */}
+            <div className="p-5 border-b border-slate-200 dark:border-slate-700 space-y-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
-                  Menampilkan{" "}
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    {filteredLogbooks.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}-
-                    {Math.min(currentPage * pageSize, filteredLogbooks.length)}
-                  </span>{" "}
-                  dari{" "}
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    {filteredLogbooks.length}
-                  </span>{" "}
-                  aktivitas
+                  <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                    Rekap Aktivitas Kelompok Mahasiswa
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Daftar logbook harian yang diisi mahasiswa melalui aplikasi mobile berbasis presensi & GPS
+                  </p>
+                </div>
+                {groups.length === 1 && (
+                  <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-300">
+                    {groups[0].name} ({groups[0].kelurahan || "Coblong"})
+                  </span>
+                )}
+              </div>
+
+              {/* Filter Controls Row */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                {/* Search Input */}
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    placeholder="Cari kelompok, nama mahasiswa, atau uraian kegiatan..."
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 dark:text-slate-200"
+                  />
                 </div>
 
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
+                {/* Filter Kelompok */}
+                {groups.length > 1 && (
+                  <select
+                    value={selectedGroup}
+                    onChange={(e) => {
+                      setSelectedGroup(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
                   >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
+                    <option value="ALL">Semua Kelompok</option>
+                    {groups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
 
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                    <button
-                      key={pageNum}
-                      onClick={() => setCurrentPage(pageNum)}
-                      className={`w-7 h-7 rounded-lg text-xs font-semibold transition-all ${
-                        currentPage === pageNum
-                          ? "bg-emerald-600 text-white shadow-xs"
-                          : "border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  ))}
+                {/* Filter Kategori */}
+                <select
+                  value={selectedKategori}
+                  onChange={(e) => {
+                    setSelectedKategori(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
+                >
+                  <option value="ALL">Semua Kategori</option>
+                  <option value="Pemilahan">Pemilahan</option>
+                  <option value="Pengangkutan">Pengangkutan</option>
+                  <option value="Pengolahan">Pengolahan</option>
+                  <option value="Pemanfaatan">Pemanfaatan</option>
+                  <option value="Sosialisasi">Sosialisasi / Edukasi</option>
+                  <option value="Pendataan">Pendataan</option>
+                </select>
 
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
+                {/* Filter Status */}
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => {
+                    setSelectedStatus(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
+                >
+                  <option value="ALL">Semua Status</option>
+                  <option value="MENUNGGU_VERIFIKASI_DPL">Menunggu Validasi</option>
+                  <option value="DISETUJUI_DPL">Tervalidasi</option>
+                  <option value="PERLU_REVISI_DPL">Perlu Perbaikan</option>
+                </select>
+
+                {/* Button Ekspor */}
+                <button
+                  onClick={handleExportCsv}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-400 transition-colors shadow-2xs cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Ekspor
+                </button>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* ─────────────────────────────────────────────
-            TAB 2: LOG AKTIVITAS DPL (TERINTEGRASI)
-            ───────────────────────────────────────────── */}
-        {activeTab === "dpl" && (
-          <div className="-m-4 md:-m-6 lg:-m-8">
-            <LogAktivitasDpl />
-          </div>
-        )}
+            {/* Full-Width Table Component (12 Kolom) */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50/70 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-semibold">
+                    <th className="p-3.5 whitespace-nowrap">Tanggal & Waktu</th>
+                    <th className="p-3.5 whitespace-nowrap">Kelompok</th>
+                    <th className="p-3.5 whitespace-nowrap">Diinput Oleh</th>
+                    <th className="p-3.5 whitespace-nowrap">Kategori</th>
+                    <th className="p-3.5 min-w-[220px]">Ringkasan Aktivitas Kelompok</th>
+                    <th className="p-3.5 whitespace-nowrap">Lokasi / GPS</th>
+                    <th className="p-3.5 whitespace-nowrap text-center">Durasi (Jam)</th>
+                    <th className="p-3.5 whitespace-nowrap text-center">Anggota</th>
+                    <th className="p-3.5 whitespace-nowrap text-center">Bukti</th>
+                    <th className="p-3.5 whitespace-nowrap text-center">Status</th>
+                    <th className="p-3.5 whitespace-nowrap text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-750">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={11} className="p-12 text-center text-slate-500">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <RefreshCw className="w-5 h-5 animate-spin text-emerald-500" />
+                          <span>Memuat rekap aktivitas kelompok mahasiswa...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : paginatedLogbooks.length === 0 ? (
+                    <tr>
+                      <td colSpan={11} className="p-12 text-center text-slate-500">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <BookOpen className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+                          <p className="font-semibold text-slate-700 dark:text-slate-300">Tidak ada data aktivitas</p>
+                          <p className="text-[11px] text-slate-400">
+                            Ubah filter atau tunggu input logbook terbaru dari mahasiswa melalui aplikasi mobile.
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedLogbooks.map((item) => {
+                      const durasi = formatDuration(item.waktuMulai, item.waktuSelesai);
+                      const kategori = resolveKategori(item);
+                      const memberCount = item.anggotaKelompok?.length || 0;
 
-        {/* ─────────────────────────────────────────────
-            TAB 3: KEPATUHAN & PRASYARAT NILAI AKHIR
+                      return (
+                        <tr
+                          key={item.id}
+                          className="hover:bg-slate-50/80 dark:hover:bg-slate-750/50 transition-colors"
+                        >
+                          {/* 1. Tanggal & Waktu */}
+                          <td className="p-3.5 align-top whitespace-nowrap">
+                            <div className="font-bold text-slate-800 dark:text-slate-200">
+                              {formatDateShort(item.tanggalKegiatan)}
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">
+                              {item.waktuLengkap}
+                            </div>
+                          </td>
+
+                          {/* 2. Kelompok */}
+                          <td className="p-3.5 align-top whitespace-nowrap font-medium text-slate-800 dark:text-slate-200">
+                            {item.kelompokNama}
+                          </td>
+
+                          {/* 3. Diinput Oleh */}
+                          <td className="p-3.5 align-top whitespace-nowrap text-slate-700 dark:text-slate-300">
+                            <div className="font-semibold text-slate-800 dark:text-slate-100">{item.penulisNama}</div>
+                            {item.penulisNim && (
+                              <div className="text-[10px] text-slate-400 font-mono">{item.penulisNim}</div>
+                            )}
+                          </td>
+
+                          {/* 4. Kategori */}
+                          <td className="p-3.5 align-top whitespace-nowrap">
+                            <span className="inline-block px-2.5 py-1 text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-300">
+                              {kategori}
+                            </span>
+                          </td>
+
+                          {/* 5. Ringkasan Aktivitas Kelompok */}
+                          <td className="p-3.5 align-top">
+                            <p className="text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed" title={item.deskripsi}>
+                              {item.deskripsi}
+                            </p>
+                          </td>
+
+                          {/* 6. Lokasi / GPS */}
+                          <td className="p-3.5 align-top whitespace-nowrap">
+                            <div className="text-slate-800 dark:text-slate-200 font-medium">
+                              {item.tempat}
+                            </div>
+                            <span className="inline-flex items-center gap-0.5 mt-0.5 px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 rounded">
+                              GPS Terverifikasi
+                            </span>
+                          </td>
+
+                          {/* 7. Durasi (Jam) */}
+                          <td className="p-3.5 align-top whitespace-nowrap text-center text-slate-700 dark:text-slate-300 font-medium">
+                            <span className="inline-flex items-center gap-1 font-semibold">
+                              <Clock className="w-3 h-3 text-indigo-500" />
+                              {durasi.short}
+                            </span>
+                          </td>
+
+                          {/* 8. Anggota */}
+                          <td className="p-3.5 align-top whitespace-nowrap text-center font-semibold text-slate-700 dark:text-slate-300">
+                            {memberCount > 0 ? `${memberCount}/${memberCount}` : "Tim"}
+                          </td>
+
+                          {/* 9. Bukti */}
+                          <td className="p-3.5 align-top whitespace-nowrap text-center">
+                            {item.fotoBuktiUrl ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPreviewPhotoUrl(resolveImageUrl(item.fotoBuktiUrl));
+                                  setPreviewTitle(`Bukti: ${item.tempat} (${formatDateShort(item.tanggalKegiatan)})`);
+                                }}
+                                className="text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 font-semibold hover:underline cursor-pointer"
+                              >
+                                Foto Bukti
+                              </button>
+                            ) : (
+                              <span className="text-slate-400">-</span>
+                            )}
+                          </td>
+
+                          {/* 10. Status */}
+                          <td className="p-3.5 align-top whitespace-nowrap text-center">
+                            {renderStatusBadge(item.statusApproval)}
+                          </td>
+
+                          {/* 11. Aksi */}
+                          <td className="p-3.5 align-top whitespace-nowrap text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDetailModal(item)}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1 mx-auto ${
+                                item.statusApproval === "MENUNGGU_VERIFIKASI_DPL"
+                                  ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                                  : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600"
+                              }`}
+                            >
+                              <Eye className="w-3 h-3" />
+                              <span>{item.statusApproval === "MENUNGGU_VERIFIKASI_DPL" ? "Tinjau" : "Lihat"}</span>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Bottom Pagination Bar */}
+            <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+              <div>
+                Menampilkan{" "}
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {filteredLogbooks.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}-
+                  {Math.min(currentPage * pageSize, filteredLogbooks.length)}
+                </span>{" "}
+                dari{" "}
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {filteredLogbooks.length}
+                </span>{" "}
+                aktivitas
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-7 h-7 rounded-lg text-xs font-semibold transition-all ${
+                      currentPage === pageNum
+                        ? "bg-emerald-600 text-white shadow-xs"
+                        : "border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-1.5        {/* ─────────────────────────────────────────────
+            TAB 3: KEPATUHAN & PRASYARAT NILAI AKHIR (FULL REAL DB)
             ───────────────────────────────────────────── */}
         {activeTab === "kepatuhan" && (
           <div className="space-y-6">
+            {/* 1. Header & Policy Information */}
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Modul Integrasi Akademik & Penilaian DPL
+                    </span>
+                    {complianceStats?.kelompok && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                        Kel. {complianceStats.kelompok.kelurahan}
+                      </span>
+                    )}
+                  </div>
                   <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                     <Award className="w-5 h-5 text-emerald-600" />
                     Kalkulasi Kepatuhan Logbook & Prasyarat Nilai KKN
                   </h3>
-                  <p className="text-sm text-slate-500 mt-1">
-                    Logbook memiliki bobot 20% dalam penilaian akademik DPL. Standar minimal kelulusan logbook: 24 aktivitas terverifikasi DPL.
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-3xl leading-relaxed">
+                    Kalkulasi otomatis kepatuhan aktivitas kelompok berbasis database real-time. Standar minimal kelulusan:{" "}
+                    <strong className="text-slate-700 dark:text-slate-200 font-semibold">24 aktivitas terverifikasi DPL</strong>{" "}
+                    (rata-rata 6 aktivitas/pekan selama 4 pekan). Logbook memiliki bobot{" "}
+                    <strong className="text-emerald-600 dark:text-emerald-400 font-bold">20% dalam Penilaian Akademik DPL</strong>{" "}
+                    (setara 6% total Nilai Akhir KKN).
                   </p>
                 </div>
 
-                {groups.length > 1 && (
+                {/* Group Selector Dropdown */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs font-semibold text-slate-500 hidden sm:inline">Pilih Kelompok:</span>
                   <select
                     value={selectedGroup}
                     onChange={(e) => setSelectedGroup(e.target.value)}
-                    className="px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 focus:outline-none font-medium"
+                    className="px-3.5 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-medium cursor-pointer"
                   >
+                    <option value="ALL">Semua Kelompok Binaan (Agregat)</option>
                     {groups.map((g) => (
                       <option key={g.id} value={g.id}>
                         {g.name} ({g.kelurahan || "-"})
                       </option>
                     ))}
                   </select>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => fetchData()}
+                    title="Segarkan Data Real-Time"
+                    className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+                  </button>
+                </div>
               </div>
 
-              {complianceStats && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-                  <div className="p-5 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-700">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tingkat Kepatuhan</p>
-                    <div className="flex items-baseline gap-2 mt-2">
-                      <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
-                        {complianceStats.complianceRate}%
-                      </span>
-                      <span className="text-xs text-slate-400">({complianceStats.approvedCount} / {complianceStats.targetCount} aktivitas)</span>
+              {/* 2. Executive Metric Cards (4 Grid) */}
+              {complianceStats ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                  {/* Metric 1: Tingkat Kepatuhan */}
+                  <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tingkat Kepatuhan</p>
+                        <TrendingUp className="w-4 h-4 text-emerald-600" />
+                      </div>
+                      <div className="flex items-baseline gap-2 mt-2">
+                        <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+                          {complianceStats.complianceRate}%
+                        </span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                          ({complianceStats.approvedCount} / {complianceStats.targetCount} aktivitas)
+                        </span>
+                      </div>
                     </div>
-                    <div className="w-full bg-slate-200 dark:bg-slate-700 h-2.5 rounded-full mt-3 overflow-hidden">
-                      <div
-                        className="bg-emerald-500 h-full rounded-full transition-all"
-                        style={{ width: `${Math.min(100, complianceStats.complianceRate)}%` }}
-                      />
+                    <div className="mt-3">
+                      <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                        <div
+                          className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min(100, complianceStats.complianceRate)}%` }}
+                        />
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-1.5 flex items-center justify-between">
+                        <span>Target: {complianceStats.targetCount} Terverifikasi</span>
+                        <span>{Math.min(100, complianceStats.complianceRate)}% tercapai</span>
+                      </p>
                     </div>
                   </div>
 
-                  <div className="p-5 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-700">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Status Prasyarat Nilai</p>
-                    <div className="mt-2">
-                      {complianceStats.isTargetMet ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                          <CheckCircle className="w-4 h-4" />
-                          Prasyarat Terpenuhi (Lolos)
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                          <AlertTriangle className="w-4 h-4" />
-                          Belum Mencapai Target (Kurang {complianceStats.targetCount - complianceStats.approvedCount})
-                        </span>
-                      )}
+                  {/* Metric 2: Status Prasyarat Kelulusan */}
+                  <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Prasyarat Nilai</p>
+                        {complianceStats.isTargetMet ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        ) : (
+                          <AlertTriangle className="w-4 h-4 text-amber-500" />
+                        )}
+                      </div>
+                      <div className="mt-2.5">
+                        {complianceStats.isTargetMet ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            Prasyarat Terpenuhi (Lolos)
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                            Kurang {complianceStats.shortageCount || Math.max(0, complianceStats.targetCount - complianceStats.approvedCount)} Aktivitas
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-xs text-slate-400 mt-2">
-                      Nilai otomatis terintegrasi ke modul penilaian DPL.
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 leading-tight">
+                      {complianceStats.isTargetMet
+                        ? "Syarat minimal 24 aktivitas telah tuntas. Nilai akhir siap divalidasi."
+                        : "Wajib mencapai 24 logbook terverifikasi DPL untuk pembukaan nilai akhir."}
                     </p>
                   </div>
 
-                  <div className="p-5 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-700">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Aksi Penilaian</p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Kunjungi halaman Penilaian KKN untuk melihat rekapitulasi nilai akhir (Mitra 70% + DPL 30%).
+                  {/* Metric 3: Distribusi Status Validasi */}
+                  <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Distribusi Logbook</p>
+                        <ListChecks className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5 mt-2">
+                        <div className="flex items-center justify-between px-2 py-1 bg-emerald-50 dark:bg-emerald-950/40 rounded-lg text-[11px]">
+                          <span className="text-emerald-700 dark:text-emerald-300 font-medium">Disetujui DPL</span>
+                          <span className="font-bold text-emerald-800 dark:text-emerald-200">{complianceStats.approvedCount}</span>
+                        </div>
+                        <div className="flex items-center justify-between px-2 py-1 bg-blue-50 dark:bg-blue-950/40 rounded-lg text-[11px]">
+                          <span className="text-blue-700 dark:text-blue-300 font-medium">Menunggu DPL</span>
+                          <span className="font-bold text-blue-800 dark:text-blue-200">{complianceStats.pendingDplCount}</span>
+                        </div>
+                        <div className="flex items-center justify-between px-2 py-1 bg-amber-50 dark:bg-amber-950/40 rounded-lg text-[11px]">
+                          <span className="text-amber-700 dark:text-amber-300 font-medium">Menunggu Ketua</span>
+                          <span className="font-bold text-amber-800 dark:text-amber-200">{complianceStats.pendingKetuaCount}</span>
+                        </div>
+                        <div className="flex items-center justify-between px-2 py-1 bg-rose-50 dark:bg-rose-950/40 rounded-lg text-[11px]">
+                          <span className="text-rose-700 dark:text-rose-300 font-medium">Perlu Revisi</span>
+                          <span className="font-bold text-rose-800 dark:text-rose-200">{complianceStats.revisiCount}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-1.5">
+                      Total diajukan: <strong className="text-slate-600 dark:text-slate-300">{complianceStats.totalSubmitted} aktivitas</strong>
                     </p>
-                    <Link
-                      to="/dpl"
-                      className="inline-flex items-center gap-1.5 px-4 py-2 mt-3 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold transition-colors"
-                    >
-                      Buka Portal DPL
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </Link>
+                  </div>
+
+                  {/* Metric 4: Integrasi Nilai Akademik DPL */}
+                  <div className="p-4 sm:p-5 bg-emerald-50/50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
+                          Nilai Logbook DPL (20%)
+                        </p>
+                        <Award className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      <div className="flex items-baseline gap-2 mt-2">
+                        <span className="text-3xl font-black text-emerald-700 dark:text-emerald-300">
+                          {complianceStats.gradingIntegration?.skorDasarLogbook ?? complianceStats.calculatedScore}
+                        </span>
+                        <span className="text-xs text-slate-500">/ 100 skor dasar</span>
+                      </div>
+                    </div>
+                    <div className="mt-2 space-y-1 text-[11px]">
+                      <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
+                        <span>Kontribusi Nilai DPL (20%):</span>
+                        <strong className="font-bold text-emerald-700 dark:text-emerald-300">
+                          +{complianceStats.gradingIntegration?.kontribusiPoinDpl ?? Number(((complianceStats.calculatedScore * 20) / 100).toFixed(1))} / 20.0 Poin
+                        </strong>
+                      </div>
+                      <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[10px]">
+                        <span>Kontribusi Nilai Akhir KKN (6%):</span>
+                        <strong className="font-semibold text-slate-700 dark:text-slate-300">
+                          +{complianceStats.gradingIntegration?.kontribusiNilaiAkhirKkn ?? Number((((complianceStats.calculatedScore * 20) / 100) * 0.3).toFixed(2))} / 6.0 Poin
+                        </strong>
+                      </div>
+                    </div>
                   </div>
                 </div>
+              ) : (
+                <div className="p-8 text-center text-slate-400 text-xs">Memuat kalkulasi kepatuhan database...</div>
               )}
+            </div>
+
+            {/* 3. Weekly Progress Breakdown (Pekan 1 s.d. 4) */}
+            {complianceStats && complianceStats.pekanBreakdown && (
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 dark:border-slate-700 pb-3">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-emerald-600" />
+                      Progres Kepatuhan Mingguan (Target Standar: 6 Aktivitas Terverifikasi / Pekan)
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Evaluasi pemenuhan target aktivitas logbook untuk setiap tahapan program kerja 4 pekan
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                  {[
+                    { pekan: 1, title: "Pekan 1: Orientasi & Pendataan", desc: "Observasi wilayah, survei baseline & proker" },
+                    { pekan: 2, title: "Pekan 2: Edukasi & Sosialisasi", desc: "Sosialisasi warga, aktivasi wadah pilah & edukasi" },
+                    { pekan: 3, title: "Pekan 3: Pengolahan Sampah", desc: "Pendampingan bank sampah, kompos & maggot" },
+                    { pekan: 4, title: "Pekan 4: Evaluasi & Handover", desc: "Survei endline, laporan akhir & serah terima" },
+                  ].map((w) => {
+                    const pb = complianceStats.pekanBreakdown[w.pekan] || {
+                      total: 0,
+                      approved: 0,
+                      pending: 0,
+                      target: 6,
+                      completionRate: 0,
+                      isMet: false,
+                    };
+                    const target = pb.target || 6;
+                    const approved = pb.approved || 0;
+                    const completionPct = pb.completionRate ?? Math.min(100, Math.round((approved / target) * 100));
+                    const isMet = approved >= target;
+
+                    return (
+                      <div
+                        key={w.pekan}
+                        className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/60 flex flex-col justify-between space-y-3"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200">
+                              {w.title}
+                            </span>
+                            {isMet ? (
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                <CheckCircle className="w-3 h-3" />
+                                Tuntas
+                              </span>
+                            ) : approved > 0 ? (
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                                {approved}/{target}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                                Belum Terisi
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-1 leading-snug">{w.desc}</p>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            <span>{approved} / {target} Terverifikasi</span>
+                            <span className="text-emerald-600 dark:text-emerald-400">{completionPct}%</span>
+                          </div>
+                          <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-305 ${
+                                isMet ? "bg-emerald-500" : approved > 0 ? "bg-amber-500" : "bg-slate-300 dark:bg-slate-600"
+                              }`}
+                              style={{ width: `${completionPct}%` }}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1.5">
+                            <span>Total input: {pb.total}</span>
+                            {(pb.pending || 0) > 0 && (
+                              <span className="text-blue-600 dark:text-blue-400 font-semibold">{pb.pending} Menunggu DPL</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 4. Student Contribution Table (Single Group Mode) OR Groups Comparison Table (All Groups Mode) */}
+            {complianceStats && complianceStats.studentsList && complianceStats.studentsList.length > 0 && (
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden">
+                <div className="p-5 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <Users className="w-4 h-4 text-emerald-600" />
+                      Kontribusi Aktivitas Logbook per Anggota Mahasiswa
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Rincian logbook yang diinput dan diverifikasi dari masing-masing mahasiswa dalam kelompok
+                    </p>
+                  </div>
+                  <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg">
+                    {complianceStats.studentsList.length} Mahasiswa Terdaftar
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
+                        <th className="py-3 px-4 w-12 text-center">No</th>
+                        <th className="py-3 px-4">Nama Mahasiswa & NIM</th>
+                        <th className="py-3 px-4">Program Studi & Fakultas</th>
+                        <th className="py-3 px-4 text-center">Peran</th>
+                        <th className="py-3 px-4 text-center">Log Diajukan</th>
+                        <th className="py-3 px-4 text-center">Terverifikasi DPL</th>
+                        <th className="py-3 px-4 text-center">Kontribusi (%)</th>
+                        <th className="py-3 px-4 text-center">Status Keaktifan</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-slate-700 dark:text-slate-300">
+                      {complianceStats.studentsList.map((st, idx) => (
+                        <tr key={st.id || idx} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors">
+                          <td className="py-3 px-4 text-center text-slate-400 font-mono">{idx + 1}</td>
+                          <td className="py-3 px-4">
+                            <div className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                              <span>{st.name}</span>
+                              {st.isKetua && (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300">
+                                  Ketua
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-400 font-mono mt-0.5">NIM: {st.nim}</div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="font-medium text-slate-700 dark:text-slate-300">{st.jurusan}</div>
+                            <div className="text-[10px] text-slate-400">{st.fakultas}</div>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                st.isKetua
+                                  ? "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300"
+                                  : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                              }`}
+                            >
+                              {st.isKetua ? "Ketua Kelompok" : "Anggota Kelompok"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-center font-bold text-slate-700 dark:text-slate-200">
+                            {st.submittedCount}
+                          </td>
+                          <td className="py-3 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">
+                            {st.approvedCount}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">
+                              {st.contributionPct}%
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            {st.approvedCount >= 4 ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                <CheckCircle className="w-3 h-3" /> Sangat Aktif
+                              </span>
+                            ) : st.submittedCount > 0 ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                                Aktif Mengisi
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+                                Belum Input Log
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* 4b. Groups Summary Table (All Groups Mode) */}
+            {complianceStats?.isAggregate && complianceStats.groupsSummary && complianceStats.groupsSummary.length > 0 && (
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden">
+                <div className="p-5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-emerald-600" />
+                      Rekapitulasi Kepatuhan Antar-Kelompok KKN
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Perbandingan capaian logbook terhadap target 24 aktivitas di seluruh kelompok binaan
+                    </p>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
+                        <th className="py-3 px-4">Nama Kelompok</th>
+                        <th className="py-3 px-4">Kelurahan</th>
+                        <th className="py-3 px-4">DPL Pembimbing</th>
+                        <th className="py-3 px-4 text-center">Jumlah Mhs</th>
+                        <th className="py-3 px-4 text-center">Disetujui DPL</th>
+                        <th className="py-3 px-4 text-center">Kepatuhan (%)</th>
+                        <th className="py-3 px-4 text-center">Status Prasyarat</th>
+                        <th className="py-3 px-4 text-center">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-slate-700 dark:text-slate-300">
+                      {complianceStats.groupsSummary.map((g) => (
+                        <tr key={g.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors">
+                          <td className="py-3 px-4 font-bold text-slate-800 dark:text-slate-100">{g.name}</td>
+                          <td className="py-3 px-4 text-slate-600 dark:text-slate-300">{g.kelurahan}</td>
+                          <td className="py-3 px-4 text-slate-600 dark:text-slate-300">{g.dplNama}</td>
+                          <td className="py-3 px-4 text-center font-medium">{g.studentCount}</td>
+                          <td className="py-3 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">
+                            {g.approvedCount} / {g.targetCount}
+                          </td>
+                          <td className="py-3 px-4 text-center font-extrabold text-slate-800 dark:text-slate-200">
+                            {g.complianceRate}%
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            {g.isTargetMet ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                <CheckCircle className="w-3 h-3" /> Lolos
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                                Kurang {Math.max(0, g.targetCount - g.approvedCount)}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedGroup(g.id)}
+                              className="px-2.5 py-1 text-[11px] font-semibold bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 text-white rounded-lg transition-colors cursor-pointer"
+                            >
+                              Lihat Rincian
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* 5. Recent Verified Activities (Audit Trail 24 Target) */}
+            {complianceStats && complianceStats.recentApprovedActivities && complianceStats.recentApprovedActivities.length > 0 && (
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden">
+                <div className="p-5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <ListChecks className="w-4 h-4 text-emerald-600" />
+                      Daftar Aktivitas Terverifikasi Terakhir (Audit Trail Target 24)
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Logbook aktivitas lapangan yang telah disetujui DPL dan terhitung ke dalam kelulusan prasyarat
+                    </p>
+                  </div>
+                </div>
+
+                <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                  {complianceStats.recentApprovedActivities.map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-4 hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                            Pekan {item.pekanKe}
+                          </span>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                            {item.kategori}
+                          </span>
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">
+                            {formatDateShort(item.tanggalKegiatan)}
+                          </span>
+                          <span className="text-slate-400">•</span>
+                          <span className="text-slate-500">{item.tempat}</span>
+                        </div>
+                        <p className="text-slate-800 dark:text-slate-200 line-clamp-2 leading-relaxed">
+                          {item.deskripsi}
+                        </p>
+                        <div className="text-[11px] text-slate-400 flex items-center gap-2">
+                          <span>Diinput: <strong className="text-slate-600 dark:text-slate-300">{item.penulisNama}</strong> ({item.penulisNim})</span>
+                          {item.catatanDpl && (
+                            <span className="italic text-emerald-700 dark:text-emerald-300">• Catatan DPL: "{item.catatanDpl}"</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="shrink-0">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          Terverifikasi DPL
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 6. Quick Action & Direct Grading Links */}
+            <div className="p-5 bg-linear-to-r from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-900 rounded-2xl text-white flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-sm">
+              <div className="space-y-1">
+                <h4 className="text-sm font-bold flex items-center gap-2 text-white">
+                  <Award className="w-4 h-4 text-emerald-400" />
+                  Integrasi Langsung ke Modul Penilaian KKN
+                </h4>
+                <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                  Nilai kepatuhan logbook otomatis mengisi Aspek 3 (Logbook & Aktivitas Lapangan - Bobot 20%) pada formulir Penilaian Akademik DPL.
+                  Rekapitulasi nilai akhir memadukan penilaian Mitra Lapangan (70%) dan DPL (30%).
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleTabChange("mahasiswa");
+                    setSelectedStatus("MENUNGGU_VERIFIKASI_DPL");
+                  }}
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer border border-white/20"
+                >
+                  <ListChecks className="w-3.5 h-3.5 text-blue-400" />
+                  Tinjau Logbook Pending
+                </button>
+                <Link
+                  to="/penilaian-kkn/mahasiswa"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm"
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  Buka Penilaian Mahasiswa
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </Link>
+                <Link
+                  to="/penilaian-kkn/rekap"
+                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 border border-slate-600"
+                >
+                  <FileText className="w-3.5 h-3.5 text-slate-300" />
+                  Rekap Nilai Akhir
+                </Link>
+              </div>
             </div>
           </div>
         )}
       </div>
 
       {/* ─────────────────────────────────────────────
-          4. POPUP MODAL: DETAIL AKTIVITAS MAHASISWA & VALIDASI DPL
+          5. POPUP MODAL: DETAIL AKTIVITAS MAHASISWA & VALIDASI DPL
           ───────────────────────────────────────────── */}
       {isDetailModalOpen && selectedItemDetail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
@@ -1000,7 +1366,7 @@ export const LogbookKknPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsDetailModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1110,7 +1476,7 @@ export const LogbookKknPage: React.FC = () => {
                       setPreviewPhotoUrl(resolveImageUrl(selectedItemDetail.fotoBuktiUrl));
                       setPreviewTitle(`Bukti: ${selectedItemDetail.tempat}`);
                     }}
-                    className="absolute bottom-2 right-2 px-3 py-1 bg-black/60 hover:bg-black/80 text-white rounded-lg text-xs font-semibold flex items-center gap-1"
+                    className="absolute bottom-2 right-2 px-3 py-1 bg-black/60 hover:bg-black/80 text-white rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer"
                   >
                     <Eye className="w-3.5 h-3.5" /> Buka Fullsize
                   </button>
@@ -1181,7 +1547,7 @@ export const LogbookKknPage: React.FC = () => {
       )}
 
       {/* ─────────────────────────────────────────────
-          5. MODAL: PREVIEW FOTO LIGHTBOX
+          6. MODAL: PREVIEW FOTO LIGHTBOX
           ───────────────────────────────────────────── */}
       {previewPhotoUrl && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
@@ -1212,7 +1578,7 @@ export const LogbookKknPage: React.FC = () => {
       )}
 
       {/* ─────────────────────────────────────────────
-          6. MODAL: KONFIGURASI TOLERANSI BACKDATE (DEVELOPER)
+          7. MODAL: KONFIGURASI TOLERANSI BACKDATE (DEVELOPER)
           ───────────────────────────────────────────── */}
       {showConfigModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
