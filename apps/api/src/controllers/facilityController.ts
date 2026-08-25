@@ -15,7 +15,10 @@ export class FacilityController {
    */
   async createFacility(req: Request, res: Response): Promise<void> {
     try {
-      const { jenis, nama, pic, foto, kontak, kapasitas, latitude, longitude, alamat, rwId } = req.body;
+      let { jenis, nama, pic, foto, kontak, kapasitas, latitude, longitude, alamat, rwId } = req.body;
+      if (req.file) {
+        foto = `/uploads/${req.file.filename}`;
+      }
       const userId = (req as any).user?.userId;
       const peran = (req as any).user?.role;
 

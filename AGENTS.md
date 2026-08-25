@@ -10,7 +10,7 @@
 - **Breakdown Backlog Mandiri**: Setiap kali menerima prompt/instruksi dari pengguna, AI WAJIB menyusun daftar **BACKLOG** (task list) terperinci sesuai kebutuhan fitur/perbaikan.
 - **Sistem Eksekusi Strict (`BACKLOG` ➡️ `QC` ➡️ `Lanjut`)**:
   1. Kerjakan 1 item **BACKLOG**.
-  2. Lakukan **QC Verification** (pastikan 100% bebas error secara **syntax**, **runtime**, dan **logical** via `npx tsc --noEmit`, test suite, atau linter).
+  2. Lakukan **QC Verification** (pastikan 100% bebas error secara **syntax**, **runtime**, dan **logical** via `npx tsc --noEmit` di `apps/api` dan `apps/web`, test suite, atau linter).
   3. **Jika PASS**: Baru diperbolehkan lanjut mengerjakan item BACKLOG selanjutnya.
   4. **Jika BELUM PASS**: WAJIB diperbaiki dan di-QC ulang sampai benar-benar PASS tanpa bug/error sebelum menyentuh backlog berikutnya.
 
@@ -38,6 +38,85 @@ Jika tim Mobile membutuhkan endpoint API baru yang belum selesai diimplementasik
      `flutter run --dart-define=API_BASE_URL=http://192.168.1.43:3000`
   3. Setiap pengujian & perbaikan bug API dilakukan secara real-time di jaringan LAN kantor tanpa mengganggu server produksi VPS.
 - **Kesepakatan Spec Dokumen**: Pembuatan endpoint baru wajib didokumentasikan strukturnya terlebih dahulu di `docs/API_MOBILE_DOCUMENTATION.md` untuk menyamakan skema JSON (request & response) sebelum kode ditulis.
+
+---
+
+## 📚 PANDUAN WORKFLOW DEVELOPER B — PROJEK BERSEKA
+
+Alur kerja (SOP) pengembangan lokal di kantor untuk repositori **`main`** (Backend API & Web Dashboard). Branch **`development`** digunakan sebagai tempat penggabungan kode dan testing lokal sebelum dideploy ke VPS produksi.
+
+### 🛠️ BAGIAN 1: SETUP AWAL DI LAPTOP DEV B
+1. **Ambil Kode Terbaru dari Branch `development`**:
+   ```bash
+   git fetch origin
+   git checkout development
+   git pull origin development
+   ```
+2. **Pasang Dependencies**:
+   ```bash
+   npm install --legacy-peer-deps
+   ```
+3. **Setup Environment Variables**:
+   ```bash
+   cp apps/api/.env.example apps/api/.env
+   ```
+
+---
+
+### 💻 BAGIAN 2: CARA MENJALANKAN DI LOCALHOST
+
+#### **OPSI A: Hanya Coding Frontend Web (Menembak Backend Laptop Dev A)**
+*Gunakan opsi ini jika hanya ingin fokus merubah tampilan Web Frontend tanpa menyalakan Docker database/backend di laptop sendiri.*
+1. **Konfigurasi Endpoint API (`apps/web/.env`)**:
+   ```env
+   VITE_API_BASE_URL=http://192.168.1.43:3000/api/v1
+   ```
+2. **Jalankan Web Frontend**:
+   ```bash
+   npm run dev:web
+   ```
+   *(Web aktif di `http://localhost:5173` menembak database riil di laptop Dev A IP `192.168.1.43`).*
+
+#### **OPSI B: Menjalankan Full Stack Sendiri (Mandiri)**
+*Gunakan opsi ini jika ingin melakukan perubahan pada Backend API atau skema database.*
+1. **Jalankan Database & Redis Lokal (Docker)**:
+   ```bash
+   docker compose up -d postgres redis
+   ```
+2. **Sinkronkan Data VPS ke Lokal (Opsional/Rekomendasi)**:
+   ```bash
+   npm run db:sync-vps
+   ```
+3. **Generate Client Database**:
+   ```bash
+   npm run prisma:generate
+   ```
+4. **Jalankan API & Web Secara Bersamaan**:
+   ```bash
+   npm run dev:all
+   ```
+   - **Backend API**: `http://localhost:3000`
+   - **Web Dashboard**: `http://localhost:5173`
+
+---
+
+### 🔄 BAGIAN 3: ALUR GIT WORKFLOW (PUSH & DEPLOY)
+
+Ketika menyelesaikan sebuah fitur atau perbaikan bug:
+
+1. **Lakukan Verifikasi QC Lokal (Wajib 0 Errors!)**:
+   ```bash
+   cd apps/api && npx tsc --noEmit
+   cd ../web && npx tsc --noEmit
+   ```
+2. **Commit & Push ke Branch `development`**:
+   ```bash
+   git add .
+   git commit -m "feat(web): deskripsi perubahan fitur"
+   git push origin development
+   ```
+3. **Koordinasi dengan Dev A (Host API Kantor)**:
+   > *"Bro, fitur XYZ sudah saya push ke branch **development**. Tolong di-pull di laptopmu agar bisa langsung dites oleh tim Mobile di IP `192.168.1.43`."*
 
 ---
 
@@ -106,6 +185,7 @@ Jika tim Mobile membutuhkan endpoint API baru yang belum selesai diimplementasik
 ## Git & PR Workflow (Branching Policy)
 
 - **Development Branch First**: Seluruh perbaikan, penambahan fitur, dan perbaikan UI wajib di-commit dan di-push ke branch **`development`** terlebih dahulu. Dilarang push langsung ke `main`.
+- **Target Branch**: `development` untuk fitur harian dan pengujian lokal kantor.
 - **Production Merge via Main**: Penggabungan dari `development` ke `main` (yang memicu CI/CD auto-deploy VPS) HANYA dilakukan setelah kode lolos 100% QC dan memperoleh konfirmasi pengguna.
 - **Commit format**: `<type>(<scope>): <description>` — Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`.
 - **Pre-Commit Review**: Dilarang push/commit otomatis sebelum menyampaikan Ringkasan Review Perubahan kepada pengguna.

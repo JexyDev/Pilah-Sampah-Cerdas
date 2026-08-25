@@ -541,7 +541,20 @@ export class KknController {
 
   async createLogbookPemanfaatan(req: Request, res: Response) {
     try {
-      const fotoDokumentasiUrl = req.file ? `/uploads/${req.file.filename}` : null;
+      let fotoDokumentasiUrl = req.body.fotoDokumentasiUrl || req.body.fotoBuktiUrl || req.body.fotoUrl;
+      if (req.file) {
+        fotoDokumentasiUrl = `/uploads/${req.file.filename}`;
+      } else if (req.files) {
+        const filesObj = req.files as any;
+        const f =
+          filesObj.fotoDokumentasi?.[0] ||
+          filesObj.fotoBukti?.[0] ||
+          filesObj.image?.[0] ||
+          filesObj.foto?.[0] ||
+          filesObj.file?.[0];
+        if (f) fotoDokumentasiUrl = `/uploads/${f.filename}`;
+      }
+
       const payload = { ...req.body, fotoDokumentasiUrl };
       const data = await kknService.createLogbookPemanfaatan(req.user!.userId, payload);
       res.status(201).json({ success: true, message: "Aksi Pemanfaatan berhasil dicatat.", data });
@@ -563,7 +576,20 @@ export class KknController {
 
   async createPanenHasil(req: Request, res: Response) {
     try {
-      const fotoDokumentasiUrl = req.file ? `/uploads/${req.file.filename}` : null;
+      let fotoDokumentasiUrl = req.body.fotoDokumentasiUrl || req.body.fotoBuktiUrl || req.body.fotoUrl;
+      if (req.file) {
+        fotoDokumentasiUrl = `/uploads/${req.file.filename}`;
+      } else if (req.files) {
+        const filesObj = req.files as any;
+        const f =
+          filesObj.fotoDokumentasi?.[0] ||
+          filesObj.fotoBukti?.[0] ||
+          filesObj.image?.[0] ||
+          filesObj.foto?.[0] ||
+          filesObj.file?.[0];
+        if (f) fotoDokumentasiUrl = `/uploads/${f.filename}`;
+      }
+
       const payload = { ...req.body, fotoDokumentasiUrl };
       const data = await kknService.createPanenHasil(req.user!.userId, payload);
       res.status(201).json({ success: true, message: "Hasil Panen berhasil dicatat.", data });

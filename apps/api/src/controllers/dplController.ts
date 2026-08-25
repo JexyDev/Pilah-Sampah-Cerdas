@@ -528,9 +528,18 @@ export const dplController = {
       const dplUserId = getUserId(req);
       const userRole = (req.user as any)?.role;
 
-      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl;
+      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl || req.body.evidencePhotoUrl;
       if (req.file) {
         fotoBuktiUrl = `/uploads/${req.file.filename}`;
+      } else if (req.files) {
+        const filesObj = req.files as any;
+        const f =
+          filesObj.fotoBukti?.[0] ||
+          filesObj.fotoDokumentasi?.[0] ||
+          filesObj.image?.[0] ||
+          filesObj.foto?.[0] ||
+          filesObj.file?.[0];
+        if (f) fotoBuktiUrl = `/uploads/${f.filename}`;
       }
 
       const {

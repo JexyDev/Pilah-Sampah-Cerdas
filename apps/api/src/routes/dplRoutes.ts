@@ -2,7 +2,7 @@ import { Router } from "express";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 import { dplScopeMiddleware } from "../middlewares/dplScopeMiddleware.js";
-import { safeUploadSingleImage } from "../middlewares/uploadMiddleware.js";
+import { safeUploadPemanfaatanImage } from "../middlewares/uploadMiddleware.js";
 import { dplController } from "../controllers/dplController.js";
 
 const router = Router();
@@ -199,9 +199,9 @@ router.put("/config-targets", roleMiddleware(["SUPER_USER", "DEVELOPER"]), dplCo
 // LOG AKTIVITAS DPL (WEB ENTRY & MONITORING)
 // ─────────────────────────────────────────────
 router.get("/activity-logs", dplController.getDplActivityLogs);
-router.post("/activity-logs", safeUploadSingleImage, dplController.createDplActivityLog);
-router.put("/activity-logs/:id", safeUploadSingleImage, dplController.updateDplActivityLog);
-router.patch("/activity-logs/:id", safeUploadSingleImage, dplController.updateDplActivityLog);
+router.post("/activity-logs", safeUploadPemanfaatanImage, dplController.createDplActivityLog);
+router.put("/activity-logs/:id", safeUploadPemanfaatanImage, dplController.updateDplActivityLog);
+router.patch("/activity-logs/:id", safeUploadPemanfaatanImage, dplController.updateDplActivityLog);
 router.delete("/activity-logs/:id", dplController.deleteDplActivityLog);
 
 export default router;

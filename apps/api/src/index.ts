@@ -213,8 +213,6 @@ archiveAuditLogsCron.start();
 // Auto-migrate missing database columns on startup
 (async () => {
   try {
-    const { PrismaClient } = await import("@prisma/client");
-    
     const alterStatements = [
       'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_rw" INTEGER;',
       'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_rt" INTEGER;',
@@ -241,7 +239,7 @@ archiveAuditLogsCron.start();
       'ALTER TABLE "pemanfaatan_sampah" ADD COLUMN IF NOT EXISTS "id_program_kerja" TEXT;',
       'ALTER TABLE "pemanfaatan_sampah" ALTER COLUMN "id_rw" DROP NOT NULL;',
       'ALTER TABLE "kritik_saran_pemanfaatan" ADD COLUMN IF NOT EXISTS "id_program_kerja" TEXT;',
-      'UPDATE "fasilitas" SET "status_approval" = \'APPROVED\' WHERE "status_approval" = \'PENDING\';',
+      'UPDATE "fasilitas" SET "status_persetujuan" = \'APPROVED\' WHERE "status_persetujuan" = \'PENDING\';',
       `DO $$ BEGIN
         CREATE TYPE "StatusProker" AS ENUM ('BELUM_DISETUJUI', 'DITERIMA', 'DITOLAK', 'SEDANG_BERJALAN', 'SELESAI');
       EXCEPTION
@@ -488,7 +486,7 @@ archiveAuditLogsCron.start();
     for (const stmt of alterStatements) {
       try {
         await prisma.$executeRawUnsafe(stmt);
-      } catch (err: any) {
+      } catch {
         // Ignore duplicate column errors
       }
     }

@@ -84,10 +84,7 @@ export const dplActivityLogService = {
    * Menyimpan aktivitas DPL baru (Draf atau Terkirim)
    */
   createActivityLog: async (data: FormData | Record<string, any>) => {
-    const isFormData = data instanceof FormData;
-    const res = await api.post("/dpl/activity-logs", data, {
-      headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
-    });
+    const res = await api.post("/dpl/activity-logs", data);
     return res.data;
   },
 
@@ -95,10 +92,7 @@ export const dplActivityLogService = {
    * Memperbarui aktivitas DPL (Edit Draf atau Kirim)
    */
   updateActivityLog: async (id: string, data: FormData | Record<string, any>) => {
-    const isFormData = data instanceof FormData;
-    const res = await api.put(`/dpl/activity-logs/${id}`, data, {
-      headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
-    });
+    const res = await api.put(`/dpl/activity-logs/${id}`, data);
     return res.data;
   },
 

@@ -61,12 +61,17 @@ export const logbookController = {
       const userId = getUserId(req);
       const userRole = getUserRole(req);
 
-      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl || req.body.evidencePhotoUrl;
+      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl || req.body.evidencePhotoUrl || req.body.fotoDokumentasiUrl;
       if (req.file) {
         fotoBuktiUrl = `/uploads/${req.file.filename}`;
       } else if (req.files) {
         const filesObj = req.files as any;
-        const f = filesObj.fotoBukti?.[0] || filesObj.image?.[0] || filesObj.foto?.[0] || filesObj.file?.[0];
+        const f =
+          filesObj.fotoDokumentasi?.[0] ||
+          filesObj.fotoBukti?.[0] ||
+          filesObj.image?.[0] ||
+          filesObj.foto?.[0] ||
+          filesObj.file?.[0];
         if (f) fotoBuktiUrl = `/uploads/${f.filename}`;
       }
 
@@ -206,9 +211,18 @@ export const logbookController = {
       const dplUserId = getUserId(req);
       const userRole = getUserRole(req);
 
-      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl;
+      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl || req.body.evidencePhotoUrl || req.body.fotoDokumentasiUrl;
       if (req.file) {
         fotoBuktiUrl = `/uploads/${req.file.filename}`;
+      } else if (req.files) {
+        const filesObj = req.files as any;
+        const f =
+          filesObj.fotoBukti?.[0] ||
+          filesObj.fotoDokumentasi?.[0] ||
+          filesObj.image?.[0] ||
+          filesObj.foto?.[0] ||
+          filesObj.file?.[0];
+        if (f) fotoBuktiUrl = `/uploads/${f.filename}`;
       }
 
       const payload = {

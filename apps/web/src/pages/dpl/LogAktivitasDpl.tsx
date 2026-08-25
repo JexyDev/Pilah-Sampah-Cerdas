@@ -32,6 +32,7 @@ import {
   type DplActivityStats,
 } from "../../services/dplActivityLogService";
 import { dplService, type GroupSummary, type ProgramKerjaItem } from "../../services/dplService";
+import { resolveImageUrl } from "../../utils/imageUrl";
 
 // Helper Inisial Profil
 const getInitials = (name: string): string => {
@@ -268,7 +269,7 @@ export const LogAktivitasDpl: React.FC = () => {
       fetchActivityLogs();
     } catch (err: any) {
       console.error("Gagal menyimpan kegiatan:", err);
-      toast.error(err.response?.data?.message || "Gagal menyimpan kegiatan DPL");
+      toast.error(err.response?.data?.message || err.message || "Gagal menyimpan kegiatan DPL");
     } finally {
       setSubmitting(false);
     }
@@ -1036,13 +1037,13 @@ export const LogAktivitasDpl: React.FC = () => {
                 <span className="font-semibold text-slate-700">Bukti Lampiran:</span>
                 {selectedDetailLog.fotoBuktiUrl.match(/\.(jpeg|jpg|png|webp|gif)$/i) ? (
                   <img
-                    src={selectedDetailLog.fotoBuktiUrl}
+                    src={resolveImageUrl(selectedDetailLog.fotoBuktiUrl)}
                     alt="Bukti Aktivitas"
                     className="w-full max-h-56 object-cover rounded-xl border border-slate-200"
                   />
                 ) : (
                   <a
-                    href={selectedDetailLog.fotoBuktiUrl}
+                    href={resolveImageUrl(selectedDetailLog.fotoBuktiUrl)}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-2 text-emerald-700 font-semibold hover:underline bg-emerald-50 px-3 py-2 rounded-xl"

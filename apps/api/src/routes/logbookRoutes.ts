@@ -9,7 +9,7 @@
 import { Router } from "express";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
-import { safeUploadSingleImage } from "../middlewares/uploadMiddleware.js";
+import { uploadPemanfaatanImage } from "../middlewares/uploadMiddleware.js";
 import { logbookController } from "../controllers/logbookController.js";
 
 const router = Router();
@@ -34,7 +34,7 @@ router.get(
 router.post(
   "/mahasiswa",
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
-  safeUploadSingleImage("fotoBukti"),
+  uploadPemanfaatanImage,
   logbookController.createMahasiswaLogbook
 );
 
@@ -76,7 +76,7 @@ router.get(
 router.post(
   "/dpl",
   roleMiddleware(["DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "DEVELOPER"]),
-  safeUploadSingleImage("file"),
+  uploadPemanfaatanImage,
   logbookController.createDplLogbook
 );
 

@@ -41,6 +41,7 @@ import {
   type LogbookComplianceStats,
 } from "../../services/logbookService";
 import { dplService, type GroupSummary } from "../../services/dplService";
+import { resolveImageUrl } from "../../utils/imageUrl";
 import LogAktivitasDpl from "./LogAktivitasDpl";
 
 // Helper Inisial Nama
@@ -785,7 +786,7 @@ export const LogbookKknPage: React.FC = () => {
                           const isSelected = selectedItemDetail?.id === item.id;
                           const durasi = formatDuration(item.waktuMulai, item.waktuSelesai);
                           const kategori = resolveKategori(item);
-                          const totalMembers = item.anggotaKelompok?.length || 8;
+                          const memberCount = item.anggotaKelompok?.length || 0;
 
                           return (
                             <tr
@@ -837,7 +838,7 @@ export const LogbookKknPage: React.FC = () => {
                                   {item.tempat}
                                 </div>
                                 <span className="inline-flex items-center gap-0.5 mt-0.5 px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 rounded">
-                                  GPS Valid
+                                  GPS Terverifikasi
                                 </span>
                               </td>
 
@@ -848,7 +849,7 @@ export const LogbookKknPage: React.FC = () => {
 
                               {/* 8. Anggota */}
                               <td className="p-3 align-top whitespace-nowrap text-center font-semibold text-slate-700 dark:text-slate-300">
-                                {totalMembers}/{totalMembers}
+                                {memberCount > 0 ? `${memberCount}/${memberCount}` : "Tim"}
                               </td>
 
                               {/* 9. Bukti */}
@@ -858,7 +859,7 @@ export const LogbookKknPage: React.FC = () => {
                                     type="button"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setPreviewPhotoUrl(item.fotoBuktiUrl);
+                                      setPreviewPhotoUrl(resolveImageUrl(item.fotoBuktiUrl));
                                       setPreviewTitle(`Bukti: ${item.tempat} (${formatDateShort(item.tanggalKegiatan)})`);
                                     }}
                                     className="text-blue-600 hover:text-blue-800 dark:text-blue-400 font-semibold hover:underline"
@@ -1017,9 +1018,7 @@ export const LogbookKknPage: React.FC = () => {
                             {selectedItemDetail.tempat} ({selectedItemDetail.kelurahan || "Coblong"})
                           </div>
                           <div className="inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 rounded-md text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
-                            <span>GPS Valid</span>
-                            <span>•</span>
-                            <span className="font-normal">Akurasi 8 m</span>
+                            <span>GPS Terverifikasi</span>
                           </div>
                         </div>
                       </div>
@@ -1043,33 +1042,33 @@ export const LogbookKknPage: React.FC = () => {
                       {/* Anggota Hadir */}
                       <div className="flex items-start gap-4">
                         <span className="w-28 text-slate-400 font-medium flex-shrink-0">Anggota Hadir</span>
-                        <div className="space-y-2">
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">
-                            {selectedItemDetail.anggotaKelompok?.length || 8} dari {selectedItemDetail.anggotaKelompok?.length || 8} mahasiswa
-                          </span>
-                          <div className="flex flex-wrap gap-1.5">
-                            {(selectedItemDetail.anggotaKelompok && selectedItemDetail.anggotaKelompok.length > 0
-                              ? selectedItemDetail.anggotaKelompok
-                              : [
-                                  { id: "1", name: "Anugrah Rizky", isKetua: true },
-                                  { id: "2", name: "Asep Saepul", isKetua: false },
-                                  { id: "3", name: "Khoirunnisa", isKetua: false },
-                                  { id: "4", name: "Miko Pratama", isKetua: false },
-                                  { id: "5", name: "Dina Fitriani", isKetua: false },
-                                  { id: "6", name: "Siti Rahma", isKetua: false },
-                                  { id: "7", name: "Indra Nugraha", isKetua: false },
-                                  { id: "8", name: "Yusuf Arya", isKetua: false },
-                                ]
-                            ).map((st) => (
-                              <span
-                                key={st.id}
-                                title={st.name}
-                                className="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center justify-center font-bold text-[10px]"
-                              >
-                                {getInitials(st.name)}
+                        <div className="space-y-2 flex-1">
+                          {selectedItemDetail.anggotaKelompok && selectedItemDetail.anggotaKelompok.length > 0 ? (
+                            <>
+                              <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                {selectedItemDetail.anggotaKelompok.length} dari {selectedItemDetail.anggotaKelompok.length} mahasiswa
                               </span>
-                            ))}
-                          </div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {selectedItemDetail.anggotaKelompok.map((st) => (
+                                  <span
+                                    key={st.id}
+                                    title={st.name + (st.isKetua ? " (Ketua)" : "")}
+                                    className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                                      st.isKetua
+                                        ? "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
+                                        : "bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                                    }`}
+                                  >
+                                    {getInitials(st.name)}
+                                  </span>
+                                ))}
+                              </div>
+                            </>
+                          ) : (
+                            <span className="text-slate-500 italic">
+                              Semua anggota kelompok terdaftar ({selectedItemDetail.penulisNama || "Mahasiswa"})
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -1090,19 +1089,15 @@ export const LogbookKknPage: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setPreviewPhotoUrl(selectedItemDetail.fotoBuktiUrl);
+                                  setPreviewPhotoUrl(resolveImageUrl(selectedItemDetail.fotoBuktiUrl));
                                   setPreviewTitle(`Bukti: ${selectedItemDetail.tempat}`);
                                 }}
-                                className="relative group w-20 h-14 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm"
+                                className="relative group w-20 h-14 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm bg-slate-100 dark:bg-slate-800"
                               >
                                 <img
-                                  src={selectedItemDetail.fotoBuktiUrl}
+                                  src={resolveImageUrl(selectedItemDetail.fotoBuktiUrl)}
                                   alt="Bukti Dokumentasi"
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                                  onError={(e) => {
-                                    (e.target as any).src =
-                                      "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=300";
-                                  }}
                                 />
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
                                   <Eye className="w-4 h-4" />
@@ -1112,7 +1107,7 @@ export const LogbookKknPage: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setPreviewPhotoUrl(selectedItemDetail.fotoBuktiUrl);
+                                  setPreviewPhotoUrl(resolveImageUrl(selectedItemDetail.fotoBuktiUrl));
                                   setPreviewTitle(`Bukti Dokumentasi: ${selectedItemDetail.tempat}`);
                                 }}
                                 className="text-blue-600 hover:text-blue-700 dark:text-blue-400 font-semibold hover:underline text-xs flex items-center gap-1"
@@ -1127,13 +1122,17 @@ export const LogbookKknPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Catatan Mahasiswa */}
-                      <div className="flex items-start gap-4">
-                        <span className="w-28 text-slate-400 font-medium flex-shrink-0">Catatan Mahasiswa</span>
-                        <div className="text-slate-600 dark:text-slate-300 italic">
-                          "Kegiatan berjalan sesuai jadwal dan mendapat respons positif dari warga setempat."
+                      {/* Catatan Tambahan / Status Verifikasi */}
+                      {(selectedItemDetail.catatanKetua || selectedItemDetail.catatanDpl) && (
+                        <div className="flex items-start gap-4">
+                          <span className="w-28 text-slate-400 font-medium flex-shrink-0">
+                            {selectedItemDetail.catatanKetua ? "Catatan Ketua" : "Catatan DPL"}
+                          </span>
+                          <div className="text-slate-600 dark:text-slate-300 italic bg-slate-50 dark:bg-slate-900/40 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                            "{selectedItemDetail.catatanKetua || selectedItemDetail.catatanDpl}"
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
 
                     {/* Section Form Validasi DPL */}

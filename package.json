@@ -18,7 +18,8 @@
     "prisma:generate": "npm run prisma:generate --workspace=apps/api",
     "prisma:migrate": "npm run prisma:migrate --workspace=apps/api",
     "test:api": "npm exec --workspace=apps/api -- vitest run",
-    "bulk-insert-kkn": "npm run bulk-insert-kkn --workspace=apps/api --"
+    "bulk-insert-kkn": "npm run bulk-insert-kkn --workspace=apps/api --",
+    "db:sync-vps": "node scripts/tools/sync_db_from_vps.cjs"
   },
   "devDependencies": {
     "concurrently": "^10.0.4"
