@@ -2211,7 +2211,38 @@ export const dplService = {
       },
     });
 
-    // Ambil foto dari KritikSaranPemanfaatan (Lapor Pemanfaatan) berdasarkan programKerjaId
+    // 1. Ambil foto dari Logbook KKN (Kegiatan & Laporan Mahasiswa) berdasarkan programKerjaId atau kelompokId
+    let logbookPhotos: any[] = [];
+    try {
+      const logbooks = await prisma.logbookKkn.findMany({
+        where: {
+          OR: [
+            { programKerjaId: prokerId },
+            { kelompokId: proker.kelompokId },
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+        take: 24,
+        include: {
+          penulis: { select: { name: true } },
+        },
+      });
+      logbookPhotos = logbooks
+        .filter((l) => l.fotoBuktiUrl && l.fotoBuktiUrl.trim() !== "" && l.fotoBuktiUrl !== "null")
+        .map((l) => ({
+          id: l.id,
+          activityTitle: l.deskripsi?.split("\n")[0]?.replace(/^[*#\s]+/, "") || "Logbook Kegiatan KKN",
+          description: l.tempat ? `Tempat: ${l.tempat}` : "Dokumentasi Logbook",
+          photoUrl: l.fotoBuktiUrl,
+          checkIn: (l.tanggalKegiatan || l.createdAt).toISOString(),
+          user: { name: l.penulis?.name || "Mahasiswa" },
+          type: "LOGBOOK",
+        }));
+    } catch (e) {
+      // Abaikan jika error
+    }
+
+    // 2. Ambil foto dari KritikSaranPemanfaatan (Lapor Pemanfaatan) berdasarkan programKerjaId
     let feedbackPhotos: any[] = [];
     try {
       const feedbacks = await (prisma as any).kritikSaranPemanfaatan.findMany({
@@ -2234,12 +2265,13 @@ export const dplService = {
           photoUrl: f.fotoBuktiUrl,
           checkIn: (f.createdAt || new Date()).toISOString(),
           user: { name: f.user?.name || f.wargaNama || "Mahasiswa" },
+          type: "LAPOR_PEMANFAATAN",
         }));
     } catch (e) {
       // Abaikan jika tabel belum di-migrate
     }
 
-    // Ambil foto dari Pemanfaatan (Catat Hasil) berdasarkan programKerjaId
+    // 3. Ambil foto dari Pemanfaatan (Catat Hasil) berdasarkan programKerjaId
     let pemanfaatanPhotos: any[] = [];
     try {
       const pemanfaatans = await prisma.pemanfaatan.findMany({
@@ -2259,21 +2291,24 @@ export const dplService = {
           photoUrl: p.fotoDokumentasiUrl,
           checkIn: (p.tanggalPencatatan || new Date()).toISOString(),
           user: { name: proker.kelompok.name },
+          type: "CATAT_PEMANFAATAN",
         }));
     } catch (e) {
       // Abaikan jika tabel belum di-migrate
     }
 
+    // 4. Presensi Kehadiran Mahasiswa di Lapangan
     const attendancesMapped = attendances.map((a) => ({
       id: a.id,
-      activityTitle: a.schedule?.title || "Kegiatan Lapangan",
-      description: a.schedule?.location || a.schedule?.category || "",
+      activityTitle: a.schedule?.title || "Kegiatan Presensi Lapangan",
+      description: a.schedule?.location || a.schedule?.category || "Presensi Terverifikasi",
       photoUrl: null,
       checkIn: a.attendedAt.toISOString(),
       user: { name: a.student?.name || "Mahasiswa" },
+      type: "PRESENSI",
     }));
 
-    const allBukti = [...attendancesMapped, ...feedbackPhotos, ...pemanfaatanPhotos]
+    const allBukti = [...logbookPhotos, ...feedbackPhotos, ...pemanfaatanPhotos, ...attendancesMapped]
       .sort((a, b) => new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime());
 
     return {

@@ -306,10 +306,12 @@ export class SuperUserService {
       let currentSeq = maxSeq + 1;
       const binsData = [];
       for (let i = 0; i < totalQr; i++) {
-        let qrCode = `BSK-${codeTag}-${dateStr}-${currentSeq}`;
+        let paddedSeq = String(currentSeq).padStart(4, "0");
+        let qrCode = `BSK-${codeTag}-${dateStr}-${paddedSeq}`;
         while (await tx.bin.findUnique({ where: { qrCode } })) {
           currentSeq++;
-          qrCode = `BSK-${codeTag}-${dateStr}-${currentSeq}`;
+          paddedSeq = String(currentSeq).padStart(4, "0");
+          qrCode = `BSK-${codeTag}-${dateStr}-${paddedSeq}`;
         }
 
         binsData.push({

@@ -26,6 +26,8 @@ import {
   XCircle,
   Clock,
   Image as ImageIcon,
+  ZoomIn,
+  Camera,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -34,6 +36,7 @@ import {
   type AspekPenilaianItem,
 } from "../../services/dplService";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
+import { getMediaPhotoUrl, formatGoogleDriveUrl } from "../../utils/photoUtils";
 
 // 7 Standar Aspek Rubrik Penilaian Program Kerja KKN
 const ASPEK_RUBRIK_PROKER: Array<{ no: number; aspek: string; bobot: number }> = [
@@ -81,15 +84,19 @@ export const PenilaianProkerPage: React.FC = () => {
   // Modal Bukti Kegiatan
   const [isBuktiModalOpen, setIsBuktiModalOpen] = useState(false);
   const [loadingBukti, setLoadingBukti] = useState(false);
+  const [buktiFilterTab, setBuktiFilterTab] = useState<"ALL" | "FOTO" | "PRESENSI">("ALL");
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [failedImageIds, setFailedImageIds] = useState<Record<string, boolean>>({});
   const [buktiData, setBuktiData] = useState<{
     proker?: any;
     attendances: Array<{
       id: string;
       activityTitle: string;
       description?: string;
-      photoUrl?: string;
+      photoUrl?: string | null;
       checkIn: string;
       user?: { name: string };
+      type?: string;
     }>;
   } | null>(null);
 
@@ -379,6 +386,8 @@ export const PenilaianProkerPage: React.FC = () => {
 
     setIsBuktiModalOpen(true);
     setLoadingBukti(true);
+    setFailedImageIds({});
+    setBuktiFilterTab("ALL");
     try {
       const res = await dplService.getProgramKerjaBukti(targetProker.id);
       setBuktiData(res);
@@ -925,7 +934,7 @@ export const PenilaianProkerPage: React.FC = () => {
 
                   {selectedProker.linkGoogleDrive && (
                     <a
-                      href={selectedProker.linkGoogleDrive}
+                      href={formatGoogleDriveUrl(selectedProker.linkGoogleDrive)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
@@ -1102,9 +1111,9 @@ export const PenilaianProkerPage: React.FC = () => {
       {/* Modal Bukti Kegiatan & Dokumentasi (z-[60] to open over assessment popup if triggered) */}
       {isBuktiModalOpen && (
         <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-3xl w-full border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col max-h-[88vh] animate-in fade-in zoom-in-95 duration-150">
             {/* Modal Header */}
-            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/40">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 flex items-center justify-center">
                   <FileText size={16} />
@@ -1133,7 +1142,7 @@ export const PenilaianProkerPage: React.FC = () => {
               <div className="p-3.5 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-xl flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 text-xs text-blue-900 dark:text-blue-200 font-medium">
                   <ExternalLink size={16} className="text-blue-600 shrink-0" />
-                  <span>
+                  <span className="truncate">
                     {selectedProker?.linkGoogleDrive
                       ? "Tautan Google Drive Dokumentasi & Laporan Proker"
                       : "Belum ada link Google Drive terlampir pada proker ini"}
@@ -1142,10 +1151,10 @@ export const PenilaianProkerPage: React.FC = () => {
 
                 {selectedProker?.linkGoogleDrive && (
                   <a
-                    href={selectedProker.linkGoogleDrive}
+                    href={formatGoogleDriveUrl(selectedProker.linkGoogleDrive)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 shrink-0"
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs"
                   >
                     <span>Buka Drive</span>
                     <ExternalLink size={12} />
@@ -1153,12 +1162,53 @@ export const PenilaianProkerPage: React.FC = () => {
                 )}
               </div>
 
-              {/* Activity Attendance & Photos Gallery */}
+              {/* Activity Attendance & Photos Section */}
               <div>
-                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2.5 flex items-center gap-1.5">
-                  <ImageIcon size={14} className="text-slate-500" />
-                  <span>Dokumentasi Presensi & Aktivitas Lapangan Kelompok</span>
-                </h4>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                  <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <ImageIcon size={14} className="text-emerald-600 dark:text-emerald-400" />
+                    <span>Dokumentasi Presensi & Aktivitas Lapangan Kelompok</span>
+                  </h4>
+
+                  {/* Tabs Filter */}
+                  {buktiData?.attendances && buktiData.attendances.length > 0 && (
+                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-[11px] font-semibold">
+                      <button
+                        type="button"
+                        onClick={() => setBuktiFilterTab("ALL")}
+                        className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                          buktiFilterTab === "ALL"
+                            ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs"
+                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                        }`}
+                      >
+                        Semua ({buktiData.attendances.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBuktiFilterTab("FOTO")}
+                        className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                          buktiFilterTab === "FOTO"
+                            ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs"
+                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                        }`}
+                      >
+                        Foto & Logbook ({buktiData.attendances.filter((a) => !!a.photoUrl && a.photoUrl.trim() !== "" && a.photoUrl !== "null").length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBuktiFilterTab("PRESENSI")}
+                        className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                          buktiFilterTab === "PRESENSI"
+                            ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs"
+                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                        }`}
+                      >
+                        Presensi ({buktiData.attendances.filter((a) => !a.photoUrl || a.photoUrl.trim() === "" || a.photoUrl === "null").length})
+                      </button>
+                    </div>
+                  )}
+                </div>
 
                 {loadingBukti ? (
                   <div className="p-8 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
@@ -1168,52 +1218,232 @@ export const PenilaianProkerPage: React.FC = () => {
                 ) : !buktiData?.attendances || buktiData.attendances.length === 0 ? (
                   <div className="p-8 text-center text-slate-400 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-800">
                     <AlertCircle size={24} className="mx-auto mb-1.5 text-slate-300" />
-                    <p className="text-xs">Belum ada foto dokumentasi aktivitas dari kelompok ini.</p>
+                    <p className="text-xs">Belum ada foto dokumentasi atau presensi dari kelompok ini.</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {buktiData.attendances.map((att) => (
-                      <div
-                        key={att.id}
-                        className="group border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-800/40 flex flex-col"
-                      >
-                        <div className="aspect-4/3 bg-slate-200 dark:bg-slate-700 relative overflow-hidden">
-                          {att.photoUrl ? (
-                            <img
-                              src={att.photoUrl.startsWith('/') ? `${import.meta.env.VITE_API_URL}${att.photoUrl}` : att.photoUrl}
-                              alt={att.activityTitle}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-400">
-                              <ImageIcon size={24} />
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-2 text-[11px]">
-                          <div className="font-bold text-slate-800 dark:text-slate-200 truncate">
-                            {att.activityTitle}
+                  <div className="space-y-4">
+                    {/* Grid Foto Dokumentasi & Logbook */}
+                    {buktiData.attendances
+                      .filter((att) => {
+                        const hasPhoto = !!att.photoUrl && att.photoUrl.trim() !== "" && att.photoUrl !== "null";
+                        if (buktiFilterTab === "FOTO") return hasPhoto;
+                        if (buktiFilterTab === "PRESENSI") return false;
+                        return hasPhoto;
+                      })
+                      .length > 0 && (
+                      <div>
+                        {buktiFilterTab === "ALL" && (
+                          <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1">
+                            <Camera size={13} />
+                            <span>Foto Dokumentasi & Logbook Kegiatan</span>
                           </div>
-                          <div className="text-slate-500 truncate mt-0.5">
-                            Oleh: {att.user?.name || "Mahasiswa"}
-                          </div>
+                        )}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {buktiData.attendances
+                            .filter((att) => {
+                              const hasPhoto = !!att.photoUrl && att.photoUrl.trim() !== "" && att.photoUrl !== "null";
+                              if (buktiFilterTab === "FOTO") return hasPhoto;
+                              if (buktiFilterTab === "PRESENSI") return false;
+                              return hasPhoto;
+                            })
+                            .map((att) => {
+                              const fullPhotoUrl = getMediaPhotoUrl(att.photoUrl);
+                              const isFailed = failedImageIds[att.id];
+
+                              return (
+                                <div
+                                  key={att.id}
+                                  className="group border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-800/80 shadow-2xs hover:shadow-md transition-all flex flex-col"
+                                >
+                                  <div className="aspect-4/3 bg-slate-100 dark:bg-slate-700/60 relative overflow-hidden">
+                                    {fullPhotoUrl && !isFailed ? (
+                                      <div
+                                        className="w-full h-full relative cursor-pointer group/img"
+                                        onClick={() => setPreviewImageUrl(fullPhotoUrl)}
+                                      >
+                                        <img
+                                          src={fullPhotoUrl}
+                                          alt={att.activityTitle}
+                                          onError={() => setFailedImageIds((prev) => ({ ...prev, [att.id]: true }))}
+                                          className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
+                                        />
+                                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center text-white gap-1.5 text-xs font-semibold backdrop-blur-2xs">
+                                          <ZoomIn size={16} />
+                                          <span>Lihat Foto</span>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-slate-50 dark:bg-slate-800 text-slate-400">
+                                        <Camera size={24} className="mb-1 text-slate-300 dark:text-slate-600" />
+                                        <span className="text-[10px] font-medium text-slate-500">
+                                          Foto Dokumentasi
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    {/* Badge Tipe di Sudut Atas */}
+                                    <div className="absolute top-2 left-2 pointer-events-none">
+                                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-900/70 text-white backdrop-blur-xs">
+                                        {att.type === "LOGBOOK"
+                                          ? "Logbook"
+                                          : att.type === "LAPOR_PEMANFAATAN"
+                                          ? "Pemanfaatan"
+                                          : att.type === "CATAT_PEMANFAATAN"
+                                          ? "Catat Hasil"
+                                          : "Dokumentasi"}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <div className="p-2.5 text-[11px] flex-1 flex flex-col justify-between">
+                                    <div>
+                                      <div className="font-bold text-slate-800 dark:text-slate-200 line-clamp-1" title={att.activityTitle}>
+                                        {att.activityTitle}
+                                      </div>
+                                      {att.description && (
+                                        <div className="text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5" title={att.description}>
+                                          {att.description}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    <div className="pt-2 mt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
+                                      <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[110px]">
+                                        Oleh: {att.user?.name || "Mahasiswa"}
+                                      </span>
+                                      <span>
+                                        {new Date(att.checkIn).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
                         </div>
                       </div>
-                    ))}
+                    )}
+
+                    {/* List Presensi Kehadiran Lapangan */}
+                    {buktiData.attendances
+                      .filter((att) => {
+                        const hasNoPhoto = !att.photoUrl || att.photoUrl.trim() === "" || att.photoUrl === "null";
+                        if (buktiFilterTab === "PRESENSI") return true;
+                        if (buktiFilterTab === "FOTO") return false;
+                        return hasNoPhoto;
+                      })
+                      .length > 0 && (
+                      <div>
+                        {buktiFilterTab === "ALL" && (
+                          <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1 pt-2">
+                            <Clock size={13} />
+                            <span>Presensi Kehadiran & Aktivitas Lapangan</span>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          {buktiData.attendances
+                            .filter((att) => {
+                              const hasNoPhoto = !att.photoUrl || att.photoUrl.trim() === "" || att.photoUrl === "null";
+                              if (buktiFilterTab === "PRESENSI") return true;
+                              if (buktiFilterTab === "FOTO") return false;
+                              return hasNoPhoto;
+                            })
+                            .map((att) => (
+                              <div
+                                key={att.id}
+                                className="border border-slate-200/90 dark:border-slate-800 rounded-xl p-3 bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 dark:hover:bg-slate-800/70 transition-colors flex items-start gap-3"
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                                  <CheckCircle2 size={16} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">
+                                      {att.activityTitle}
+                                    </div>
+                                    <span className="shrink-0 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40">
+                                      Hadir
+                                    </span>
+                                  </div>
+                                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                                    Oleh: <strong className="text-slate-700 dark:text-slate-300">{att.user?.name || "Mahasiswa"}</strong>
+                                    {att.description ? ` • ${att.description}` : ""}
+                                  </div>
+                                  <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
+                                    <Clock size={11} />
+                                    <span>
+                                      {new Date(att.checkIn).toLocaleDateString("id-ID", {
+                                        day: "numeric",
+                                        month: "short",
+                                        year: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+            <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 flex justify-end bg-slate-50/50 dark:bg-slate-800/40">
               <button
                 type="button"
                 onClick={() => setIsBuktiModalOpen(false)}
-                className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                className="px-4 py-1.5 bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
               >
                 Tutup
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL LIGHTBOX: Preview Zoom Foto */}
+      {previewImageUrl && (
+        <div
+          className="fixed inset-0 z-[70] bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => setPreviewImageUrl(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] bg-slate-900 rounded-2xl overflow-hidden shadow-2xl flex flex-col border border-slate-700"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-3 bg-slate-900/90 flex items-center justify-between border-b border-slate-800">
+              <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                <ImageIcon size={14} className="text-emerald-400" />
+                <span>Dokumentasi Foto Kegiatan</span>
+              </span>
+              <div className="flex items-center gap-2">
+                <a
+                  href={previewImageUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors"
+                >
+                  <ExternalLink size={12} />
+                  <span>Buka Gambar Asli</span>
+                </a>
+                <button
+                  onClick={() => setPreviewImageUrl(null)}
+                  className="w-7 h-7 rounded-lg hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+            <div className="p-2 overflow-auto max-h-[80vh] flex items-center justify-center bg-black/40">
+              <img
+                src={previewImageUrl}
+                alt="Dokumentasi Kegiatan"
+                className="max-h-[75vh] w-auto max-w-full object-contain rounded-lg"
+              />
             </div>
           </div>
         </div>
