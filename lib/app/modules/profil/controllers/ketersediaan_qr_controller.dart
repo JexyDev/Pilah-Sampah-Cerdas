@@ -123,7 +123,7 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
                 mainAxisSpacing: 5 * PdfPageFormat.mm,
                 children: chunk.map((item) {
                   final qrCodeStr = item['qrCode']?.toString() ?? 'UNKNOWN';
-                  final typeLabel = item['typeLabel']?.toString() ?? 'Unknown';
+                  final typeLabel = item['category']?['name']?.toString() ?? 'Unknown';
                   return pw.Container(
                     decoration: pw.BoxDecoration(
                       border: pw.Border.all(color: PdfColors.black, width: 1),

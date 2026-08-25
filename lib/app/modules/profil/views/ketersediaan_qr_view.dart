@@ -156,7 +156,8 @@ class KetersediaanQrView extends ConsumerWidget {
       itemBuilder: (context, index) {
         final item = state.items[index];
         final qrCodeStr = item['qrCode']?.toString() ?? 'UNKNOWN';
-        final isOrganik = (item['type']?.toString().toLowerCase() == 'organik');
+        final categoryName = item['category']?['name']?.toString() ?? 'Unknown';
+        final isOrganik = categoryName.toLowerCase() == 'organik';
 
         return Container(
           decoration: BoxDecoration(
@@ -204,7 +205,7 @@ class KetersediaanQrView extends ConsumerWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    isOrganik ? 'Organik' : 'Anorganik',
+                    categoryName,
                     style: const TextStyle(
                       fontSize: 11,
                       color: AppColors.textSecondary,
