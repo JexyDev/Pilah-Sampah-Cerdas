@@ -153,6 +153,28 @@ class ApiBinRepository implements BinRepository {
   }
 
   @override
+  Future<List<dynamic>> getUnusedBins({String? categoryId}) async {
+    try {
+      final queryParams = <String, dynamic>{'status': 'PRINTED'};
+      if (categoryId != null && categoryId != 'Semua') {
+        queryParams['categoryId'] = categoryId;
+      }
+
+      final response = await apiClient.dio.get(
+        '/bins',
+        queryParameters: queryParams,
+      );
+
+      if (response.statusCode == 200) {
+        return response.data['data'] as List<dynamic>;
+      }
+      return [];
+    } catch (e) {
+      throw BinException('UNKNOWN_ERROR', NetworkExceptionHelper.getErrorMessage(e));
+    }
+  }
+
+  @override
   Future<List<BinEntity>> getAllBins() async {
     try {
       final response = await apiClient.dio.get(ApiEndpoints.binsMyBins);

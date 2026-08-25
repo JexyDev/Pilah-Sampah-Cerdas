@@ -10,6 +10,9 @@ abstract class BinRepository {
   /// Ambil tempat sampah milik user/rumah tangga tertentu.
   Future<List<BinEntity>> getBinsByHousehold(String householdId);
 
+  /// Ambil tempat sampah yang belum terpakai (status PRINTED)
+  Future<List<dynamic>> getUnusedBins({String? categoryId});
+
   /// Ambil semua data tempat sampah untuk Peta Monitoring
   Future<List<BinEntity>> getAllBins();
 

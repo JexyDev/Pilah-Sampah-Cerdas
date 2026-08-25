@@ -65,6 +65,13 @@ abstract class AuthRepository {
     required String newPassword,
   });
 
+  /// Ganti sandi paksa tanpa token (misal saat REQUIRE_PASSWORD_CHANGE)
+  Future<bool> forceChangePassword({
+    required String phone,
+    required String oldPassword,
+    required String newPassword,
+  });
+
   /// Fetch dynamic list of registered Kelurahan & RT/RW from Web Admin roles backend.
   Future<Map<String, dynamic>> fetchTerritories();
 }

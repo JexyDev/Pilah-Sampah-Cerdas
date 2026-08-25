@@ -191,16 +191,16 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
                           ),
                         );
                       }
-                      return DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        initialValue: _selectedProkerId,
-                        decoration: _inputDecoration('Pilih Proker...'),
-                        items: approvedProker.map((p) => DropdownMenuItem(
-                          value: p['id'].toString(),
-                          child: Text(p['judul'], style: const TextStyle(fontSize: 14)),
-                        )).toList(),
-                        onChanged: (val) => setState(() => _selectedProkerId = val),
-                        validator: (val) => val == null ? 'Wajib dipilih' : null,
+                      return _buildBottomSheetDropdown(
+                        hint: 'Pilih Proker...',
+                        title: 'Pilih Program Kerja',
+                        selectedValue: _selectedProkerId,
+                        items: approvedProker.map((p) => {
+                          'id': p['id'].toString(),
+                          'label': p['judul'],
+                          'icon': Icons.assignment_rounded,
+                        }).toList(),
+                        onSelected: (val) => setState(() => _selectedProkerId = val),
                       );
                     },
                   ),
@@ -218,15 +218,17 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
                           if (list.isEmpty) {
                             return const Text('Tidak ada fasilitas warga di RW ini.', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontStyle: FontStyle.italic));
                           }
-                          return DropdownButtonFormField<String>(
-                            isExpanded: true,
-                            initialValue: _selectedFasilitasId,
-                            decoration: _inputDecoration('Pilih Fasilitas...'),
-                            items: list.map((f) => DropdownMenuItem(
-                              value: f['id'].toString(),
-                              child: Text(f['nama'] ?? '-', style: const TextStyle(fontSize: 14)),
-                            )).toList(),
-                            onChanged: (val) => setState(() => _selectedFasilitasId = val),
+                          return _buildBottomSheetDropdown(
+                            hint: 'Pilih Fasilitas...',
+                            title: 'Fasilitas Warga',
+                            selectedValue: _selectedFasilitasId,
+                            items: list.map((f) => {
+                              'id': f['id'].toString(),
+                              'label': f['nama'] ?? '-',
+                              'icon': Icons.business_rounded,
+                            }).toList(),
+                            onSelected: (val) => setState(() => _selectedFasilitasId = val),
+                            isRequired: false,
                           );
                         }
                       );
@@ -242,21 +244,16 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
                 children: [
                   const Text('Teknologi / Metode Pengolahan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
                   const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedTeknologi,
-                    isExpanded: true,
-                    decoration: _inputDecoration('Pilih Jenis Pengolahan'),
-                    items: _teknologiList.map((tek) {
-                      return DropdownMenuItem<String>(
-                        value: tek,
-                        child: Text(
-                          tek,
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                        ),
-                      );
+                  _buildBottomSheetDropdown(
+                    hint: 'Pilih Jenis Pengolahan',
+                    title: 'Metode Pengolahan',
+                    selectedValue: _selectedTeknologi,
+                    items: _teknologiList.map((tek) => {
+                      'id': tek,
+                      'label': tek,
+                      'icon': Icons.science_rounded,
                     }).toList(),
-                    onChanged: (val) => setState(() => _selectedTeknologi = val),
-                    validator: (val) => val == null || val.isEmpty ? 'Wajib dipilih' : null,
+                    onSelected: (val) => setState(() => _selectedTeknologi = val),
                   ),
                   const SizedBox(height: 16),
 
@@ -424,6 +421,208 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
           ),
         ],
       ),
+    );
+  }
+
+  void _showBottomSheetSelection({
+    required String title,
+    required List<Map<String, dynamic>> items,
+    required String? selectedValue,
+    required ValueChanged<String> onSelected,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5,
+          minChildSize: 0.4,
+          maxChildSize: 0.85,
+          expand: false,
+          builder: (ctx, scrollController) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(ctx),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              size: 20,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      padding: const EdgeInsets.only(bottom: 32),
+                      children: items.map((item) {
+                        final isSelected = selectedValue == item['id'];
+                        return InkWell(
+                          onTap: () {
+                            onSelected(item['id']);
+                            Navigator.pop(ctx);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? const Color(0xFFE8F5E9) : const Color(0xFFF5F7FA),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    item['icon'] ?? Icons.check_circle_outline,
+                                    size: 20,
+                                    color: isSelected ? AppColors.primaryGreen : AppColors.textHint,
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Text(
+                                    item['label'],
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                      color: isSelected ? AppColors.primaryGreen : AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ),
+                                if (isSelected)
+                                  Container(
+                                    width: 24,
+                                    height: 24,
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.primaryGreen,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.check,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  )
+                                else
+                                  Container(
+                                    width: 24,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Colors.grey.shade400,
+                                      ),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildBottomSheetDropdown({
+    required String hint,
+    required String title,
+    required String? selectedValue,
+    required List<Map<String, dynamic>> items,
+    required ValueChanged<String> onSelected,
+    bool isRequired = true,
+  }) {
+    String? selectedLabel;
+    if (selectedValue != null) {
+      final matches = items.where((e) => e['id'] == selectedValue).toList();
+      if (matches.isNotEmpty) {
+        selectedLabel = matches.first['label'] as String?;
+      } else {
+        selectedLabel = selectedValue;
+      }
+    }
+
+    return FormField<String>(
+      initialValue: selectedValue,
+      validator: (val) => isRequired && selectedValue == null ? 'Wajib dipilih' : null,
+      builder: (state) {
+        return InkWell(
+          onTap: () {
+            _showBottomSheetSelection(
+              title: title,
+              items: items,
+              selectedValue: selectedValue,
+              onSelected: (val) {
+                onSelected(val);
+                state.didChange(val);
+              },
+            );
+          },
+          child: InputDecorator(
+            decoration: _inputDecoration(hint).copyWith(
+              errorText: state.errorText,
+              suffixIcon: const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
+            ),
+            child: Text(
+              selectedLabel ?? hint,
+              style: TextStyle(
+                fontSize: 14,
+                color: selectedLabel != null ? AppColors.textPrimary : AppColors.textHint,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        );
+      },
     );
   }
 

@@ -9,6 +9,7 @@ import '../modules/notifikasi/views/detail_notifikasi_view.dart';
 import '../modules/splash/splash_view.dart';
 import '../modules/auth/views/login_view.dart';
 import '../modules/auth/views/register_view.dart';
+import '../modules/auth/views/force_change_password_view.dart';
 import '../modules/auth/views/forgot_password_view.dart';
 import '../modules/onboarding/views/onboarding_view.dart';
 import '../modules/dashboard/dashboard_view.dart';
@@ -51,6 +52,8 @@ import '../modules/mahasiswa/views/logbook_pemanfaatan_view.dart';
 import '../modules/mahasiswa/views/catat_panen_view.dart';
 
 /// Peta route terpusat untuk MaterialApp.
+import '../modules/profil/views/ketersediaan_qr_view.dart';
+
 class AppPages {
   AppPages._();
 
@@ -64,6 +67,8 @@ class AppPages {
         return _buildRoute(const OnboardingView(), settings);
       case AppRoutes.login:
         return _buildRoute(const LoginView(), settings);
+      case AppRoutes.forceChangePassword:
+        return _buildRoute(const ForceChangePasswordView(), settings);
       case AppRoutes.register:
         return _buildRoute(const RegisterView(), settings);
       case AppRoutes.forgotPassword:
@@ -137,6 +142,8 @@ class AppPages {
         return _buildRoute(const RiwayatPetugasPemilahanView(), settings);
       case AppRoutes.petugasPemilahanGantiPassword:
         return _buildRoute(const GantiPasswordPetugasView(), settings);
+      case AppRoutes.ketersediaanQr:
+        return _buildRoute(const KetersediaanQrView(), settings);
       case AppRoutes.pengajuanWarga:
         return _buildRoute(const PengajuanWargaView(), settings);
       case AppRoutes.monitoringDampakKelurahan:

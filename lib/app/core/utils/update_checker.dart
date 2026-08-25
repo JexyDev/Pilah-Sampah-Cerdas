@@ -100,9 +100,10 @@ class _UpdateDialogState extends State<_UpdateDialog> {
     });
 
     try {
-      // 1. Siapkan direktori penyimpanan
-      final dir = await getExternalStorageDirectory();
-      final savePath = '${dir?.path ?? '/storage/emulated/0/Download'}/update_v${widget.latestVersion}.apk';
+      // 1. Siapkan direktori penyimpanan menggunakan temporary directory
+      // agar FileProvider open_filex bisa membagikannya ke PackageInstaller
+      final dir = await getTemporaryDirectory();
+      final savePath = '${dir.path}/update_v${widget.latestVersion}.apk';
 
       // 2. Download menggunakan Dio
       final dio = Dio();

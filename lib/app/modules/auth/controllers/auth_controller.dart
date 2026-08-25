@@ -495,6 +495,35 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return false;
     }
   }
+
+  /// Ganti sandi paksa dan otomatis login jika sukses
+  Future<bool> forceChangePassword({
+    required String phone,
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final success = await _authRepository.changePassword(
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
+      
+      if (success) {
+        state = state.copyWith(isLoading: false);
+        return true;
+      }
+      
+      state = state.copyWith(isLoading: false);
+      return false;
+    } on AuthException catch (e) {
+      state = state.copyWith(isLoading: false, errorCode: e.code);
+      return false;
+    } catch (_) {
+      state = state.copyWith(isLoading: false, errorCode: 'CHANGE_PASSWORD_FAILED');
+      return false;
+    }
+  }
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {

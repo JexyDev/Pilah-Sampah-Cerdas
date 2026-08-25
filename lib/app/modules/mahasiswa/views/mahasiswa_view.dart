@@ -35,11 +35,12 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ref.read(mahasiswaControllerProvider.notifier).fetchAll();
-      // Hanya start tracking kalau belum aktif, agar tidak reset state saat kembali dari halaman lain
+      
       final kknState = ref.read(kknLocationProvider);
       if (!kknState.isTracking) {
         ref.read(locationPingControllerProvider.notifier).startTracking();
-        ref.read(kknLocationProvider.notifier).startTracking(context);
+        // Cek status kegiatan KKN terbaru dari server. Jika ada yang aktif, otomatis resume.
+        ref.read(kknLocationProvider.notifier).fetchKegiatanAktif();
       }
     });
   }
@@ -54,8 +55,14 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       if (!mounted) return;
-      // Auto-refresh location when app is resumed
-      ref.read(kknLocationProvider.notifier).forceLocationUpdate(context);
+      
+      final kknState = ref.read(kknLocationProvider);
+      if (kknState.isTracking) {
+        ref.read(kknLocationProvider.notifier).forceLocationUpdate(context);
+      } else {
+        ref.read(kknLocationProvider.notifier).fetchKegiatanAktif();
+      }
+      
       ref.read(mahasiswaControllerProvider.notifier).refresh();
     }
   }
@@ -668,6 +675,9 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
             label: 'Tempat Sampah Aktif',
             value: '$wargaAktif',
             color: AppColors.primaryBlueDark,
+            onTap: () {
+              Navigator.pushNamed(context, AppRoutes.kelolaBin);
+            },
           ),
         ),
         const SizedBox(width: AppDimensions.sm),
@@ -678,6 +688,9 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
             label: 'Poin Personal',
             value: '${d?.contributionPoints ?? 0}',
             color: AppColors.success,
+            onTap: () {
+              Navigator.pushNamed(context, AppRoutes.poin);
+            },
           ),
         ),
       ],
@@ -1273,10 +1286,6 @@ class _SummaryCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          if (onTap != null) ...[
-            const SizedBox(height: 6),
-            Icon(Icons.chevron_right, size: 18, color: color),
-          ],
         ],
       ),
     ))));
